@@ -1,0 +1,26 @@
+plugins {
+  id 'java-library'
+  id 'groovy'
+  id 'com.diffplug.spotless'
+}
+
+sourceSets {
+  examples { }
+}
+
+dependencies {
+  compileOnly project(':DB')
+
+  annotationProcessor 'org.immutables:value:2.8.1'
+  compileOnly 'org.immutables:value-annotations:2.8.1'
+
+  examplesCompileOnly "org.codehaus.groovy:groovy-all:2.5.11"
+  examplesCompileOnly project(':DB')
+  examplesCompile sourceSets.main.output
+}
+
+spotless {
+  java {
+    eclipse().configFile("${rootDir}/style/eclipse-java-google-style.xml")
+  }
+}

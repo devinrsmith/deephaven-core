@@ -114,6 +114,9 @@ project(':classgraph-extension').projectDir = file('extensions/classgraph')
 include(':suanshu-extension')
 project(':suanshu-extension').projectDir = file('extensions/suanshu')
 
+include(':logic-gate-extension')
+project(':logic-gate-extension').projectDir = file('extensions/logic-gate')
+
 include(':Internals')
 
 include(':Base')

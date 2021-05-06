@@ -19,7 +19,7 @@ services:
       # https://bugs.openjdk.java.net/browse/JDK-8230305
       # cgroups v2 resource reservations only work w/ java 15+ ATM, so it's best for our java processes to be explicit
       # with max memory.
-      - JAVA_TOOL_OPTIONS=-Xmx700m
+      - JAVA_TOOL_OPTIONS=-Xmx4000m
 #      - JAVA_TOOL_OPTIONS=-Dlogback.configurationFile=logback-debug.xml
 #      - JAVA_TOOL_OPTIONS=-Dlogback.configurationFile=logback-minimal.xml
     expose:
@@ -37,7 +37,7 @@ services:
       resources:
         limits:
           cpus: '4.0'
-          memory: 1G
+          memory: 5G
         reservations:
           memory: 1G
 

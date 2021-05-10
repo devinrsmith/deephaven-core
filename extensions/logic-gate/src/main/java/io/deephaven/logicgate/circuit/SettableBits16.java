@@ -8,12 +8,9 @@ import org.immutables.value.Value.Immutable;
 public abstract class SettableBits16 {
 
     public static SettableBits16 create(BitBuilder builder) {
-        return ImmutableSettableBits16.builder()
-            .s0(SettableBits4.create(builder))
-            .s4(SettableBits4.create(builder))
-            .s8(SettableBits4.create(builder))
-            .s12(SettableBits4.create(builder))
-            .build();
+        return ImmutableSettableBits16.builder().s0(SettableBits4.create(builder))
+            .s4(SettableBits4.create(builder)).s8(SettableBits4.create(builder))
+            .s12(SettableBits4.create(builder)).build();
     }
 
     public abstract SettableBits4 s0();
@@ -39,13 +36,14 @@ public abstract class SettableBits16 {
     }
 
     public final void set(short b) {
-        s0().set((byte)(b & 0xF));
-        s4().set((byte)((b >> 4) & 0xF));
-        s8().set((byte)((b >> 8) & 0xF));
-        s12().set((byte)((b >> 12) & 0xF));
+        s0().set((byte) (b & 0xF));
+        s4().set((byte) ((b >> 4) & 0xF));
+        s8().set((byte) ((b >> 8) & 0xF));
+        s12().set((byte) ((b >> 12) & 0xF));
     }
 
     public final Bits16 toBits() {
-        return ImmutableBits16.builder().b0(s0().toBits()).b4(s4().toBits()).b8(s8().toBits()).b12(s12().toBits()).build();
+        return ImmutableBits16.builder().b0(s0().toBits()).b4(s4().toBits()).b8(s8().toBits())
+            .b12(s12().toBits()).build();
     }
 }

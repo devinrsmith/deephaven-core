@@ -5,7 +5,17 @@ plugins {
 }
 
 sourceSets {
-  examples { }
+  examples {
+    compileClasspath += sourceSets.main.output
+    runtimeClasspath += sourceSets.main.output
+    resources {
+      srcDir 'src/examples/groovy'
+    }
+  }
+  test {
+    compileClasspath += sourceSets.examples.output
+    runtimeClasspath += sourceSets.examples.output
+  }
 }
 
 dependencies {
@@ -16,7 +26,17 @@ dependencies {
 
   examplesCompileOnly "org.codehaus.groovy:groovy-all:2.5.11"
   examplesCompileOnly project(':DB')
-  examplesCompile sourceSets.main.output
+
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+jar {
+  from sourceSets.examples.output
 }
 
 spotless {
@@ -24,3 +44,4 @@ spotless {
     eclipse().configFile("${rootDir}/style/eclipse-java-google-style.xml")
   }
 }
+

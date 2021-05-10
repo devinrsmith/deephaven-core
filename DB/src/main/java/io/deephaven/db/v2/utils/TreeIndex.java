@@ -5,6 +5,7 @@
 package io.deephaven.db.v2.utils;
 
 import java.io.*;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.function.LongConsumer;
 
@@ -59,7 +60,7 @@ public class TreeIndex extends SortedIndex implements ImplementedByTreeIndexImpl
                 return prevImpl;
             }
             prevImpl.ixRelease();
-            prevImpl = impl.ixCowRef();
+            prevImpl = Objects.requireNonNull(impl.ixCowRef());
             changeTimeStep = currentClockStep;
             return prevImpl;
         }
@@ -96,7 +97,7 @@ public class TreeIndex extends SortedIndex implements ImplementedByTreeIndexImpl
     }
 
     public TreeIndex(final TreeIndexImpl impl) {
-        this.impl = impl;
+        this.impl = Objects.requireNonNull(impl);
         this.prevImpl = TreeIndexImpl.EMPTY;
         changeTimeStep = -1;
     }
@@ -111,6 +112,7 @@ public class TreeIndex extends SortedIndex implements ImplementedByTreeIndexImpl
     }
 
     private void assign(final TreeIndexImpl maybeNewImpl) {
+        Objects.requireNonNull(maybeNewImpl);
         invalidateOrderedKeysAsChunkImpl();
         if (maybeNewImpl == impl) {
             return;

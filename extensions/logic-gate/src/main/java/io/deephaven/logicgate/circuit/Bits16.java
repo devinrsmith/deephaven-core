@@ -3,6 +3,8 @@ package io.deephaven.logicgate.circuit;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.logicgate.BitBuilder;
+import java.time.Duration;
+import java.util.Random;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
@@ -13,6 +15,14 @@ public abstract class Bits16 {
         Bits4 b4 = Bits4.of(x >> 4, builder);
         Bits4 b8 = Bits4.of(x >> 8, builder);
         Bits4 b12 = Bits4.of(x >> 12, builder);
+        return ImmutableBits16.builder().b0(b0).b4(b4).b8(b8).b12(b12).build();
+    }
+
+    public static Bits16 ofTimed(Random r, Duration min, Duration max, BitBuilder builder) {
+        Bits4 b0 = Bits4.ofTimed(r, min, max, builder);
+        Bits4 b4 = Bits4.ofTimed(r, min, max, builder);
+        Bits4 b8 = Bits4.ofTimed(r, min, max, builder);
+        Bits4 b12 = Bits4.ofTimed(r, min, max, builder);
         return ImmutableBits16.builder().b0(b0).b4(b4).b8(b8).b12(b12).build();
     }
 

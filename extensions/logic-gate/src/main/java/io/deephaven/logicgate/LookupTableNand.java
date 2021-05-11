@@ -8,6 +8,7 @@ import io.deephaven.db.v2.select.SourceColumn;
 import io.deephaven.db.v2.utils.KeyedArrayBackedMutableTable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.Objects;
 
 public class LookupTableNand {
@@ -48,6 +49,11 @@ public class LookupTableNand {
         @Override
         public final SettableBit settable() {
             return new MySettable(KeyedArrayBackedMutableTable.make(ZERO_BIT));
+        }
+
+        @Override
+        public final Table timedBit(Duration duration) {
+            return TableTools.merge(ZERO_BIT, TableTools.timeTable(duration.toNanos()).view("Q=(byte)(i % 2)")).tail(1);
         }
 
         @Override

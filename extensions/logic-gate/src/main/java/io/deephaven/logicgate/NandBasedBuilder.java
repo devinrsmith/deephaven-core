@@ -3,6 +3,7 @@ package io.deephaven.logicgate;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.v2.utils.KeyedArrayBackedMutableTable;
+import java.time.Duration;
 import org.immutables.value.Value.Immutable;
 
 /**
@@ -30,6 +31,11 @@ public abstract class NandBasedBuilder implements LogicGateBuilder {
     @Override
     public final SettableBit settable() {
         return bitBuilder().settable();
+    }
+
+    @Override
+    public final Table timedBit(Duration duration) {
+        return bitBuilder().timedBit(duration);
     }
 
     @Override

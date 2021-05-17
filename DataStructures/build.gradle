@@ -1,3 +1,8 @@
 dependencies {
     compile project(':Base')
+
+    annotationProcessor 'org.immutables:value:2.8.1'
+    compileOnly 'org.immutables:value-annotations:2.8.1'
+
+    testCompile 'junit:junit:4.12'
 }

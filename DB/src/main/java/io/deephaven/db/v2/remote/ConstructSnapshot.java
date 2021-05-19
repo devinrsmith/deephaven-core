@@ -26,7 +26,6 @@ import io.deephaven.db.util.liveness.LivenessManager;
 import io.deephaven.db.util.liveness.LivenessScope;
 import io.deephaven.db.util.liveness.LivenessScopeStack;
 import io.deephaven.db.v2.BaseTable;
-import io.deephaven.db.v2.InstrumentedListener;
 import io.deephaven.db.v2.NotificationStepSource;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.LogicalClock;
@@ -64,7 +63,7 @@ public class ConstructSnapshot {
         }
     }
 
-    private static final io.deephaven.io.logger.Logger log = LoggerFactory.getLogger(InstrumentedListener.class);
+    private static final io.deephaven.io.logger.Logger log = LoggerFactory.getLogger(ConstructSnapshot.class);
 
     /**
      * The maximum number of allowed attempts to construct a snapshot concurrently with {@link LiveTableMonitor} refresh

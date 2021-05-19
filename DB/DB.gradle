@@ -40,7 +40,7 @@ sourceSets {
             srcDirs 'test', 'benchmark'
         }
         resources {
-            srcDirs = [ 'test-resources' ]
+            srcDir 'test-resources'
         }
     }
 }
@@ -76,7 +76,7 @@ dependencies {
             'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 
     testRuntimeOnly project(':log-to-slf4j')
-    testRuntimeOnly 'org.slf4j:slf4j-simple:1.7.30'
+    testRuntimeOnly 'ch.qos.logback:logback-classic:1.2.3'
 }
 
 task jmhRun(type: JavaExec)  {

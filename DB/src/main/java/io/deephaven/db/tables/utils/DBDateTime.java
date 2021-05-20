@@ -46,6 +46,12 @@ public final class DBDateTime implements Comparable<DBDateTime>, Externalizable 
     private static final DateTimeFormatter dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     private static final DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd");
 
+    public static DBDateTime from(Instant instant) {
+        final long nanos = instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
+        return new DBDateTime(nanos);
+    }
+
+
     /**
      * Create a new DBDatetime initialized to the epoch.
      */

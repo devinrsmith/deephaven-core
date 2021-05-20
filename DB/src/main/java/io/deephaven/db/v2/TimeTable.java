@@ -32,6 +32,13 @@ import java.util.Map;
 public class TimeTable extends QueryTable implements LiveTable {
     private static final Logger log = LoggerFactory.getLogger(TimeTable.class);
 
+    public static TimeTable from(io.deephaven.qst.time.TimeTable timeTable) {
+        return new TimeTable(
+            TimeProvider.from(timeTable),
+            DBDateTime.from(timeTable.firstTime()),
+            timeTable.tickInterval().toNanos());
+    }
+
     private static final String TIMESTAMP = "Timestamp";
     private long lastIndex = -1;
     private final DateTimeArraySource dateTimeArraySource;

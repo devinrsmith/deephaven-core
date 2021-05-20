@@ -1,4 +1,4 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
 import java.util.Arrays;
 import java.util.List;

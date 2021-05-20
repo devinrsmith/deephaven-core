@@ -1,6 +1,6 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
-import io.deephaven.datastructures.util.ImmutableNewTable.Builder;
+import io.deephaven.qst.ImmutableNewTable.Builder;
 import java.util.stream.Stream;
 
 public abstract class NewTableBuildable {

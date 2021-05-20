@@ -1,7 +1,9 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+
+import org.junit.jupiter.api.Test;
 
 public class NewTableTest {
 
@@ -11,7 +13,7 @@ public class NewTableTest {
             NewTable.of(
                 Column.of("Size1", 1),
                 Column.of("Size2", 1, 2));
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -23,7 +25,7 @@ public class NewTableTest {
             NewTable.of(
                 Column.of("Size1", 1),
                 Column.of("Size1", 2));
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -43,7 +45,7 @@ public class NewTableTest {
 
         NewTable actual = NewTable.of(Column.of("X", 1, null, 3));
 
-        Assert.assertEquals(expected, actual);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -76,7 +78,6 @@ public class NewTableTest {
             .row(2, "two")
             .build();
 
-        Assert.assertEquals(expected, actual);
+        assertThat(actual).isEqualTo(expected);
     }
-
 }

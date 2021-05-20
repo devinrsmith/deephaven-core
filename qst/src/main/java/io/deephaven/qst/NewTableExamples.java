@@ -1,6 +1,4 @@
-package io.deephaven.datastructures.util;
-
-import org.jetbrains.annotations.NotNull;
+package io.deephaven.qst;
 
 public class NewTableExamples {
 
@@ -57,7 +55,6 @@ public class NewTableExamples {
             .build();
     }
 
-    @NotNull
     private static ColumnHeaders3<String, Integer, String> employeeHeader() {
         return ColumnHeader.of(
           lastName(),

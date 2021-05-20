@@ -1,4 +1,4 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
 public class Examples4 {
 

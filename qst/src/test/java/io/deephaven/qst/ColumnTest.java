@@ -1,7 +1,9 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+
+import org.junit.jupiter.api.Test;
 
 public class ColumnTest {
 
@@ -9,7 +11,7 @@ public class ColumnTest {
     public void noIntegerMinValue() {
         try {
             Column.of("AnInt", 1, Integer.MIN_VALUE, 3);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -27,7 +29,7 @@ public class ColumnTest {
 
         Column<Integer> actual = Column.of("AnInt", 1, null, 3);
 
-        Assert.assertEquals(expected, actual);
+        assertThat(actual).isEqualTo(expected);
     }
 
 
@@ -35,7 +37,7 @@ public class ColumnTest {
     public void noDoubleNegativeMax() {
         try {
             Column.of("ADouble", 1.0, -Double.MAX_VALUE, 3.0);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -53,6 +55,6 @@ public class ColumnTest {
 
         Column<Double> actual = Column.of("ADouble", 1., null, 3.);
 
-        Assert.assertEquals(expected, actual);
+        assertThat(actual).isEqualTo(expected);
     }
 }

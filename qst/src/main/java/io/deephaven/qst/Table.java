@@ -2,7 +2,15 @@ package io.deephaven.qst;
 
 public interface Table {
 
-    Table head(long size);
+    static EmptyTable empty(long size) {
+        return EmptyTable.of(size);
+    }
 
-    Table tail(long size);
+    static EmptyTable empty(long size, TableHeader header) {
+        return EmptyTable.of(size, header);
+    }
+
+    HeadTable head(long size);
+
+    TailTable tail(long size);
 }

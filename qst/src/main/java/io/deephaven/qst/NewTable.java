@@ -1,11 +1,13 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
+import io.deephaven.qst.ImmutableTableHeader.Builder;
+import java.util.Iterator;
 import java.util.List;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
-public abstract class NewTable {
+public abstract class NewTable extends TableBase {
 
     static NewTable of(Column<?>... columns) {
         return ImmutableNewTable.builder().addColumns(columns).build();
@@ -20,6 +22,14 @@ public abstract class NewTable {
     }
 
     public abstract List<Column<?>> columns();
+
+    public final TableHeader header() {
+        Builder builder = ImmutableTableHeader.builder();
+        for (Column<?> column : columns()) {
+          builder.addHeaders(column.header());
+        }
+        return builder.build();
+    }
 
     public final NewTable with(Column<?> column) {
         return ImmutableNewTable.builder()
@@ -42,9 +52,7 @@ public abstract class NewTable {
     }
 
     @Check
-    final void checkDistinctColumnNames() {
-        if (columns().size() != columns().stream().map(Column::header).map(ColumnHeader::name).distinct().count()) {
-            throw new IllegalArgumentException("All columns must have distinct names");
-        }
+    final void checkValidHeader() {
+        header(); // ensure we can build the header
     }
 }

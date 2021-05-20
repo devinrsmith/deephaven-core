@@ -1,7 +1,8 @@
-package io.deephaven.datastructures.util;
+package io.deephaven.qst;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+
+import org.junit.jupiter.api.Test;
 
 public class GenericTypeTest {
 
@@ -9,7 +10,7 @@ public class GenericTypeTest {
   public void noGenericInt() {
       try {
           GenericType.of(int.class);
-          Assert.fail("Expected exception");
+          failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
       } catch (IllegalArgumentException e) {
           // expected
       }
@@ -19,7 +20,7 @@ public class GenericTypeTest {
     public void noGenericInteger() {
         try {
             GenericType.of(Integer.class);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -29,7 +30,7 @@ public class GenericTypeTest {
     public void noGenericDoublePrimitive() {
         try {
             GenericType.of(double.class);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -39,7 +40,7 @@ public class GenericTypeTest {
     public void noGenericDouble() {
         try {
             GenericType.of(Double.class);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -49,7 +50,7 @@ public class GenericTypeTest {
     public void noGenericString() {
         try {
             GenericType.of(String.class);
-            Assert.fail("Expected exception");
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             // expected
         }

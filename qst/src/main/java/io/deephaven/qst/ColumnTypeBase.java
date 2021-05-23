@@ -25,4 +25,10 @@ public abstract class ColumnTypeBase<T> implements ColumnType<T> {
         //noinspection unchecked
         return (Column<T>)column;
     }
+
+    @Override
+    public final ColumnHeader<T> cast(ColumnHeader<?> columnHeader) {
+        //noinspection unchecked
+        return (ColumnHeader<T>)columnHeader;
+    }
 }

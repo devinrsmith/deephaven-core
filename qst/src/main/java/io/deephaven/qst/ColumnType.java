@@ -30,6 +30,8 @@ public interface ColumnType<T> {
 
     Column<T> cast(Column<?> column);
 
+    ColumnHeader<T> cast(ColumnHeader<?> columnHeader);
+
     interface Visitor {
         void visit(IntType intType);
         void visit(StringType stringType);

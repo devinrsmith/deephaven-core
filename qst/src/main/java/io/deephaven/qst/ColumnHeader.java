@@ -1,5 +1,6 @@
 package io.deephaven.qst;
 
+import io.deephaven.qst.Column.ColumnBuilder;
 import java.util.stream.Stream;
 import org.immutables.value.Value.Immutable;
 
@@ -71,6 +72,14 @@ public abstract class ColumnHeader<T> {
 
     public final Column<T> withData(Iterable<T> data) {
         return Column.of(this, data);
+    }
+
+    public final ColumnBuilder<T> withBuilder() {
+        return Column.builder(this);
+    }
+
+    public final TableHeader toTableHeader() {
+        return TableHeader.of(headerA());
     }
 
     public final Rows start() {

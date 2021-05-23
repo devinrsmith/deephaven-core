@@ -33,6 +33,10 @@ public abstract class ColumnHeaders4<A, B, C, D> {
         return others().headerC();
     }
 
+    public final TableHeader toTableHeader() {
+        return TableHeader.of(headerA(), headerB(), headerC(), headerD());
+    }
+
     public final Rows start() {
         return new Rows();
     }

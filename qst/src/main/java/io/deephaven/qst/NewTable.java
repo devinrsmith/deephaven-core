@@ -10,7 +10,7 @@ import org.immutables.value.Value.Immutable;
 @Immutable
 public abstract class NewTable extends TableBase {
 
-    static NewTable empty(TableHeader header) {
+    public static NewTable empty(TableHeader header) {
         ImmutableNewTable.Builder builder = ImmutableNewTable.builder().size(0);
         for (ColumnHeader<?> columnHeader : header.headers()) {
             builder.addColumns(columnHeader.emptyData());
@@ -18,18 +18,18 @@ public abstract class NewTable extends TableBase {
         return builder.build();
     }
 
-    static NewTable of(Column<?>... columns) {
+    public static NewTable of(Column<?>... columns) {
         final int size = columns.length > 0 ? columns[0].size() : 0;
         return ImmutableNewTable.builder().addColumns(columns).size(size).build();
     }
 
-    static NewTable of(Iterable<Column<?>> columns) {
+    public static NewTable of(Iterable<Column<?>> columns) {
         Iterator<Column<?>> it = columns.iterator();
         final int size = it.hasNext() ? it.next().size() : 0;
         return ImmutableNewTable.builder().addAllColumns(columns).size(size).build();
     }
 
-    static <A> ColumnHeader<A> header(String name, Class<A> clazz) {
+    public static <A> ColumnHeader<A> header(String name, Class<A> clazz) {
         return ColumnHeader.of(name, clazz);
     }
 

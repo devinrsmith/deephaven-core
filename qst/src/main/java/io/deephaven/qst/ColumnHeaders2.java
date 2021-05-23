@@ -21,6 +21,10 @@ public abstract class ColumnHeaders2<A, B> {
           .build();
     }
 
+    public final TableHeader toTableHeader() {
+        return TableHeader.of(headerA(), headerB());
+    }
+
     public final Rows start() {
         return new Rows();
     }

@@ -1,6 +1,8 @@
 package io.deephaven.qst;
 
+import io.deephaven.qst.ImmutableColumn.Builder;
 import java.util.List;
+import java.util.Objects;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
@@ -39,6 +41,10 @@ public abstract class Column<T> {
         return ImmutableColumn.<T>builder().header(header).addAllValues(data).build();
     }
 
+    public static <T> ColumnBuilder<T> builder(ColumnHeader<T> header) {
+        return new ColumnBuilder<>(ImmutableColumn.<T>builder().header(header));
+    }
+
     public abstract ColumnHeader<T> header();
 
     @AllowNulls
@@ -66,6 +72,24 @@ public abstract class Column<T> {
             if (!type().isValidValue(value)) {
                 throw new IllegalArgumentException(String.format("Invalid value: %s", value));
             }
+        }
+    }
+
+    public static class ColumnBuilder<T> {
+
+        private final ImmutableColumn.Builder<T> builder;
+
+        private ColumnBuilder(Builder<T> builder) {
+            this.builder = Objects.requireNonNull(builder);
+        }
+
+        public ColumnBuilder<T> add(T item) {
+            builder.addValues(item);
+            return this;
+        }
+
+        public Column<T> build() {
+            return builder.build();
         }
     }
 }

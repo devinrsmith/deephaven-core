@@ -19,4 +19,10 @@ public abstract class ColumnTypeBase<T> implements ColumnType<T> {
     public final Stream<Class<T>> classes() {
         return classes.stream();
     }
+
+    @Override
+    public final Column<T> cast(Column<?> column) {
+        //noinspection unchecked
+        return (Column<T>)column;
+    }
 }

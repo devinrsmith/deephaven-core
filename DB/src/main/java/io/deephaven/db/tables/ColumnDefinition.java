@@ -10,6 +10,12 @@ import io.deephaven.dataobjects.persistence.ColumnsetConversionSchema;
 import io.deephaven.dataobjects.persistence.PersistentInputStream;
 import io.deephaven.base.formatters.EnumFormatter;
 import io.deephaven.db.tables.utils.DBDateTime;
+import io.deephaven.qst.ColumnHeader;
+import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.GenericType;
+import io.deephaven.qst.IntType;
+import io.deephaven.qst.StringType;
 import io.deephaven.util.codec.ObjectCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -127,6 +133,45 @@ public class ColumnDefinition<TYPE> extends DefaultColumnDefinition {
         }
         cd.setComponentType(componentType);
         return cd;
+    }
+
+    public static <T> ColumnDefinition<T> from(ColumnHeader<T> header) {
+        //noinspection unchecked
+        return (ColumnDefinition<T>) header.type().walk(new ColumnHeaderTranslation(header)).getOut();
+    }
+
+    private static class ColumnHeaderTranslation implements Visitor {
+
+        private final ColumnHeader<?> in;
+        private ColumnDefinition<?> out;
+
+        public ColumnHeaderTranslation(ColumnHeader<?> in) {
+            this.in = Objects.requireNonNull(in);
+        }
+
+        public ColumnDefinition<?> getOut() {
+            return Objects.requireNonNull(out);
+        }
+
+        @Override
+        public void visit(IntType intType) {
+            out = ofInt(in.name());
+        }
+
+        @Override
+        public void visit(StringType stringType) {
+            out = ofString(in.name());
+        }
+
+        @Override
+        public void visit(DoubleType doubleType) {
+            out = ofDouble(in.name());
+        }
+
+        @Override
+        public void visit(GenericType<?> genericType) {
+            out = fromGenericType(in.name(), genericType.clazz()); // todo, array types
+        }
     }
 
     // needed for deserialization

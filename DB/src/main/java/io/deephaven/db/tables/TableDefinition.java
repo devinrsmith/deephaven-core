@@ -17,6 +17,8 @@ import io.deephaven.compilertools.CompilerTools;
 import io.deephaven.db.v2.InMemoryTable;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.utils.ColumnHolder;
+import io.deephaven.qst.ColumnHeader;
+import io.deephaven.qst.TableHeader;
 import java.util.Map.Entry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,6 +64,15 @@ public class TableDefinition extends DefaultTableDefinition {
             final ColumnDefinition<?> inferred = ColumnDefinition
               .fromGenericType(e.getKey(), e.getValue().getType(), e.getValue().getComponentType());
             definitions.add(inferred);
+        }
+        return new TableDefinition(definitions);
+    }
+
+    public static TableDefinition from(Iterable<ColumnHeader<?>> headers) {
+        List<ColumnDefinition> definitions = new ArrayList<>();
+        for (ColumnHeader<?> columnHeader : headers) {
+            final ColumnDefinition<?> columnDefinition = ColumnDefinition.from(columnHeader);
+            definitions.add(columnDefinition);
         }
         return new TableDefinition(definitions);
     }

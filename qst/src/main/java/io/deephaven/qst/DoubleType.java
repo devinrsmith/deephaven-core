@@ -24,4 +24,9 @@ public final class DoubleType extends ColumnTypeBase<Double> {
         visitor.visit(this);
         return visitor;
     }
+
+    @Override
+    public final String toString() {
+        return DoubleType.class.getName();
+    }
 }

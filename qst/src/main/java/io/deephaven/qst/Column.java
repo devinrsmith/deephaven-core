@@ -27,10 +27,34 @@ public abstract class Column<T> {
         return ColumnHeader.ofString(name).withData(values);
     }
 
+    public static <T> Column<T> empty(ColumnHeader<T> header) {
+        return ImmutableColumn.<T>builder().header(header).build();
+    }
+
+    public static <T> Column<T> of(ColumnHeader<T> header, T... data) {
+        return ImmutableColumn.<T>builder().header(header).addValues(data).build();
+    }
+
+    public static <T> Column<T> of(ColumnHeader<T> header, Iterable<T> data) {
+        return ImmutableColumn.<T>builder().header(header).addAllValues(data).build();
+    }
+
     public abstract ColumnHeader<T> header();
 
     @AllowNulls
     public abstract List<T> values();
+
+    public final String name() {
+        return header().name();
+    }
+
+    public final ColumnType<T> type() {
+        return header().type();
+    }
+
+    public final int size() {
+        return values().size();
+    }
 
     public final NewTable toTable() {
         return NewTable.of(this);
@@ -39,7 +63,7 @@ public abstract class Column<T> {
     @Check
     final void checkValues() {
         for (T value : values()) {
-            if (!header().type().isValidValue(value)) {
+            if (!type().isValidValue(value)) {
                 throw new IllegalArgumentException(String.format("Invalid value: %s", value));
             }
         }

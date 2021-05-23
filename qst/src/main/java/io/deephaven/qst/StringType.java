@@ -24,4 +24,9 @@ public final class StringType extends ColumnTypeBase<String> {
         visitor.visit(this);
         return visitor;
     }
+
+    @Override
+    public final String toString() {
+        return StringType.class.getName();
+    }
 }

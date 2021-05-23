@@ -24,6 +24,12 @@ public abstract class GenericType<T> implements ColumnType<T> {
     }
 
     @Override
+    public final Column<T> cast(Column<?> column) {
+        //noinspection unchecked
+        return (Column<T>) column;
+    }
+
+    @Override
     public final <V extends Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

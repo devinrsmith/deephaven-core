@@ -61,18 +61,16 @@ public abstract class ColumnHeader<T> {
           .build();
     }
 
+    public final Column<T> emptyData() {
+        return Column.empty(this);
+    }
+
     public final Column<T> withData(T... data) {
-        return ImmutableColumn.<T>builder()
-            .header(this)
-            .addValues(data)
-            .build();
+        return Column.of(this, data);
     }
 
     public final Column<T> withData(Iterable<T> data) {
-        return ImmutableColumn.<T>builder()
-            .header(this)
-            .addAllValues(data)
-            .build();
+        return Column.of(this, data);
     }
 
     public final Rows start() {

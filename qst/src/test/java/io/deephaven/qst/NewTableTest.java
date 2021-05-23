@@ -34,6 +34,7 @@ public class NewTableTest {
     @Test
     public void newTableHelperColumnOriented() {
         NewTable expected = ImmutableNewTable.builder()
+            .size(3)
             .addColumns(ImmutableColumn.<Integer>builder()
                 .header(ImmutableColumnHeader.<Integer>builder()
                     .name("X")
@@ -68,6 +69,7 @@ public class NewTableTest {
             .build();
 
         NewTable expected = ImmutableNewTable.builder()
+            .size(2)
             .addColumns(x, y)
             .build();
 

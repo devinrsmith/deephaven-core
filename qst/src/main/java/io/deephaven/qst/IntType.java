@@ -24,4 +24,9 @@ public final class IntType extends ColumnTypeBase<Integer> {
         visitor.visit(this);
         return visitor;
     }
+
+    @Override
+    public final String toString() {
+        return IntType.class.getName();
+    }
 }

@@ -28,6 +28,8 @@ public interface ColumnType<T> {
 
     <V extends Visitor> V walk(V visitor);
 
+    Column<T> cast(Column<?> column);
+
     interface Visitor {
         void visit(IntType intType);
         void visit(StringType stringType);

@@ -65,6 +65,9 @@ dependencies {
 
     compileOnly 'javax.inject:javax.inject:1'
 
+    annotationProcessor 'org.immutables:value:2.8.1'
+    compileOnly 'org.immutables:value-annotations:2.8.1'
+
     testCompile TestTools.projectDependency(project, 'Util'),
             project(':BenchmarkSupport'),
             'org.openjdk.jmh:jmh-core:1.21',

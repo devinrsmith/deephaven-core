@@ -1,7 +1,6 @@
 package io.deephaven.qst;
 
 import io.deephaven.qst.ImmutableTableHeader.Builder;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.immutables.value.Value.Check;
@@ -55,6 +54,22 @@ public abstract class NewTable extends TableBase {
             .addAllColumns(columns())
             .addColumns(column)
             .build();
+    }
+
+    public final NewTable transformByPosition(TableHeader other) {
+        final int L = numColumns();
+        if (L != other.numColumns()) {
+            throw new IllegalArgumentException("Unable to tranformByPosition if the number of columns is different");
+        }
+
+        final ImmutableNewTable.Builder builder = ImmutableNewTable.builder();
+        for (int i = 0; i < L; ++i) {
+            columns().get(i);
+        }
+    }
+
+    public final NewTable transformByName(TableHeader header) {
+        return null;
     }
 
     @Check

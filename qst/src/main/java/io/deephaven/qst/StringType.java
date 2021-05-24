@@ -29,4 +29,9 @@ public final class StringType extends ColumnTypeBase<String> {
     public final String toString() {
         return StringType.class.getName();
     }
+
+    @Override
+    public final <R> String transformValue(ColumnType<R> otherType, R otherValue) {
+        return otherValue == null ? null : otherValue.toString();
+    }
 }

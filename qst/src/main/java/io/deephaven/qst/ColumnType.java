@@ -22,6 +22,22 @@ public interface ColumnType<T> {
         return GenericType.of(clazz);
     }
 
+    static BooleanType booleanType() {
+        return BooleanType.instance();
+    }
+
+    static IntType intType() {
+        return IntType.instance();
+    }
+
+    static DoubleType doubleType() {
+        return DoubleType.instance();
+    }
+
+    static StringType stringType() {
+        return StringType.instance();
+    }
+
     Stream<Class<T>> classes();
 
     boolean isValidValue(T item);
@@ -32,7 +48,12 @@ public interface ColumnType<T> {
 
     ColumnHeader<T> cast(ColumnHeader<?> columnHeader);
 
+    T castValue(Object value);
+
+    <R> Iterable<T> transformValues(TypeLogic logic, ColumnType<R> fromType, Iterable<R> fromValues);
+
     interface Visitor {
+        void visit(BooleanType booleanType);
         void visit(IntType intType);
         void visit(StringType stringType);
         void visit(DoubleType doubleType);

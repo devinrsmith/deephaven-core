@@ -1,8 +1,6 @@
 package io.deephaven.qst;
 
-import io.deephaven.qst.ImmutableColumn.Builder;
 import java.util.List;
-import java.util.Objects;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
@@ -42,7 +40,7 @@ public abstract class Column<T> {
     }
 
     public static <T> ColumnBuilder<T> builder(ColumnHeader<T> header) {
-        return new ColumnBuilder<>(ImmutableColumn.<T>builder().header(header));
+        return ImmutableColumn.<T>builder().header(header);
     }
 
     public abstract ColumnHeader<T> header();
@@ -66,6 +64,12 @@ public abstract class Column<T> {
         return NewTable.of(this);
     }
 
+    public final <R> Column<R> into(TypeLogic logic, ColumnType<R> intoType) {
+        return Column.of(
+            ColumnHeader.of(name(), intoType),
+            intoType.transformValues(logic, type(), values()));
+    }
+
     @Check
     final void checkValues() {
         for (T value : values()) {
@@ -75,21 +79,12 @@ public abstract class Column<T> {
         }
     }
 
-    public static class ColumnBuilder<T> {
-
-        private final ImmutableColumn.Builder<T> builder;
-
-        private ColumnBuilder(Builder<T> builder) {
-            this.builder = Objects.requireNonNull(builder);
+    abstract static class Builder<T> implements ColumnBuilder<T> {
+        @Override
+        public final ColumnBuilder<T> add(T item) {
+            return addValues(item);
         }
 
-        public ColumnBuilder<T> add(T item) {
-            builder.addValues(item);
-            return this;
-        }
-
-        public Column<T> build() {
-            return builder.build();
-        }
+        abstract Builder<T> addValues(T element);
     }
 }

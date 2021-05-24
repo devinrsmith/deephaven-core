@@ -1,7 +1,7 @@
 package io.deephaven.db.tables.utils;
 
 import io.deephaven.qst.Column;
-import io.deephaven.qst.Column.ColumnBuilder;
+import io.deephaven.qst.ColumnBuilder;
 import io.deephaven.qst.ColumnHeader;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;

@@ -15,6 +15,11 @@ public abstract class BooleanLogicLax extends BooleanLogicBase {
     }
 
     @Override
+    public final boolean transform(long x) {
+        return x != 0;
+    }
+
+    @Override
     public final boolean transform(double x) {
         return x != 0;
     }

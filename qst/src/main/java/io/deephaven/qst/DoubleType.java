@@ -2,16 +2,16 @@ package io.deephaven.qst;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.immutables.value.Value.Immutable;
 
-public final class DoubleType extends ColumnTypeBase<Double> {
-
-    private static final DoubleType INSTANCE = new DoubleType();
+@Immutable(builder = false)
+public abstract class DoubleType extends ColumnTypeBase<Double> {
 
     public static DoubleType instance() {
-        return INSTANCE;
+        return ImmutableDoubleType.of();
     }
 
-    private DoubleType() {
+    DoubleType() {
         super(Arrays.asList(double.class, Double.class));
     }
 

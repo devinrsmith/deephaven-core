@@ -14,6 +14,8 @@ abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
 
     public abstract boolean transform(int x);
 
+    public abstract boolean transform(long x);
+
     public abstract boolean transform(double x);
 
     public abstract boolean transform(String x);
@@ -41,6 +43,11 @@ abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
         @Override
         public void visit(IntType intType) {
             out = transform(intType.castValue(in));
+        }
+
+        @Override
+        public void visit(LongType longType) {
+            out = transform(longType.castValue(in));
         }
 
         @Override

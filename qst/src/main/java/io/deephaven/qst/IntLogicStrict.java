@@ -15,6 +15,15 @@ public abstract class IntLogicStrict extends IntLogicBase {
     }
 
     @Override
+    public final int transform(long x) {
+        try {
+            return Math.toIntExact(x);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @Override
     public final int transform(double x) {
         throw new IllegalArgumentException();
     }

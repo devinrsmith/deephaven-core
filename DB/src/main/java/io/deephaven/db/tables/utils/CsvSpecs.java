@@ -34,15 +34,19 @@ public abstract class CsvSpecs {
 
     private static final List<ColumnType<?>> INFER_ORDER = Arrays.asList(
         ColumnType.booleanType(),
-        ColumnType.intType(),
+        ColumnType.longType(),
         ColumnType.doubleType());
+
+    public static ImmutableCsvSpecs.Builder builder() {
+        return ImmutableCsvSpecs.builder();
+    }
 
     public static NewTable parse(TableHeader header, String file) throws IOException {
         return parse(header, new File(file));
     }
 
     public static NewTable parse(TableHeader header, File file) throws IOException {
-        return ImmutableCsvSpecs.builder()
+        return builder()
             .header(header)
             .file(file)
             .build()
@@ -50,7 +54,7 @@ public abstract class CsvSpecs {
     }
 
     public static NewTable parse(TableHeader header, URL url) throws IOException {
-        return ImmutableCsvSpecs.builder()
+        return builder()
             .header(header)
             .url(url)
             .build()
@@ -62,14 +66,14 @@ public abstract class CsvSpecs {
     }
 
     public static NewTable parse(File file) throws IOException {
-        return ImmutableCsvSpecs.builder()
+        return builder()
             .file(file)
             .build()
             .parse();
     }
 
     public static NewTable parse(URL url) throws IOException {
-        return ImmutableCsvSpecs.builder()
+        return builder()
             .url(url)
             .build()
             .parse();
@@ -108,7 +112,7 @@ public abstract class CsvSpecs {
 
     @Default
     public TypeLogic typeLogic() {
-        return TypeLogicImpl.lax();
+        return TypeLogicImpl.strict();
     }
 
     @Check
@@ -159,6 +163,7 @@ public abstract class CsvSpecs {
                 throw new RuntimeException("Unable to infer types with no TableHeader and no data");
             }
 
+            final int numColumns = records.get(0).size();
             final TableHeader header;
             if (header().isPresent()) {
                 header = header().get();
@@ -169,7 +174,6 @@ public abstract class CsvSpecs {
                     columnNames = records.get(0);
                 } else {
                     // todo: this should be safe, given our check earlier about inferring
-                    final int numColumns = dataRecords.get(0).size();
                     columnNames = IntStream
                         .range(0, numColumns)
                         .mapToObj(i -> String.format("Column_%d", i))
@@ -186,6 +190,11 @@ public abstract class CsvSpecs {
                 }
                 header = TableHeader.of(columnHeaders);
             }
+
+            if (numColumns != header.numColumns()) {
+                throw new IllegalArgumentException(String.format("Number of columns %d does not match expected %d", numColumns, header.numColumns()));
+            }
+
             return parse(header, dataRecords);
         }
     }
@@ -223,7 +232,10 @@ public abstract class CsvSpecs {
 
             @Override
             public String next() {
-                return it.next().get(index);
+                CSVRecord next = it.next();
+                String stringValue = next.get(index);
+                // treating empty string as null
+                return stringValue.isEmpty() ? null : stringValue;
             }
         };
     }

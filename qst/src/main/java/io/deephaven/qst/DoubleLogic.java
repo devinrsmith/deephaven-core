@@ -20,6 +20,11 @@ public abstract class DoubleLogic extends DoubleLogicBase {
     }
 
     @Override
+    public final double transform(long x) {
+        return x;
+    }
+
+    @Override
     public final double transform(String x) {
         return Double.parseDouble(x);
     }

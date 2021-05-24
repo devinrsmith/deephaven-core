@@ -16,6 +16,7 @@ import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
 import io.deephaven.qst.GenericType;
 import io.deephaven.qst.IntType;
+import io.deephaven.qst.LongType;
 import io.deephaven.qst.StringType;
 import io.deephaven.util.codec.ObjectCodec;
 import org.jetbrains.annotations.NotNull;
@@ -162,6 +163,11 @@ public class ColumnDefinition<TYPE> extends DefaultColumnDefinition {
         @Override
         public void visit(IntType intType) {
             out = ofInt(in.name());
+        }
+
+        @Override
+        public void visit(LongType longType) {
+            out = ofLong(in.name());
         }
 
         @Override

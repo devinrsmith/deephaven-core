@@ -1,16 +1,16 @@
 package io.deephaven.qst;
 
 import java.util.Arrays;
+import org.immutables.value.Value.Immutable;
 
-public final class BooleanType extends ColumnTypeBase<Boolean> {
-
-    private static final BooleanType INSTANCE = new BooleanType();
+@Immutable(builder = false)
+public abstract class BooleanType extends ColumnTypeBase<Boolean> {
 
     public static BooleanType instance() {
-        return INSTANCE;
+        return ImmutableBooleanType.of();
     }
 
-    private BooleanType() {
+    BooleanType() {
         super(Arrays.asList(boolean.class, Boolean.class));
     }
 

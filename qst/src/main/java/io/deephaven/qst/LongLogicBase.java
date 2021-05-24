@@ -3,35 +3,35 @@ package io.deephaven.qst;
 import io.deephaven.qst.ColumnType.Visitor;
 import java.util.Objects;
 
-abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
+abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
     @Override
-    public final <T> Double transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Long transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract double transform(boolean x);
+    public abstract long transform(boolean x);
 
-    public abstract double transform(int x);
+    public abstract long transform(int x);
 
-    public abstract double transform(long x);
+    public abstract long transform(double x);
 
-    public abstract double transform(String x);
+    public abstract long transform(String x);
 
-    public abstract <T> double transform(GenericType<T> type, T value);
+    public abstract <T> long transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Double out;
+        private Long out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Double getOut() {
+        public Long getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -47,7 +47,7 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
         @Override
         public void visit(LongType longType) {
-            out = transform(longType.castValue(in));
+            out = longType.castValue(in);
         }
 
         @Override
@@ -57,7 +57,7 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
         @Override
         public void visit(DoubleType doubleType) {
-            out = doubleType.castValue(in);
+            out = transform(doubleType.castValue(in));
         }
 
         @Override

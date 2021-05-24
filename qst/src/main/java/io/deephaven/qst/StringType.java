@@ -1,16 +1,16 @@
 package io.deephaven.qst;
 
 import java.util.Collections;
+import org.immutables.value.Value.Immutable;
 
-public final class StringType extends ColumnTypeBase<String> {
-
-    private static final StringType INSTANCE = new StringType();
+@Immutable(builder = false)
+public abstract class StringType extends ColumnTypeBase<String> {
 
     public static StringType instance() {
-        return INSTANCE;
+        return ImmutableStringType.of();
     }
 
-    private StringType() {
+    StringType() {
         super(Collections.singletonList(String.class));
     }
 

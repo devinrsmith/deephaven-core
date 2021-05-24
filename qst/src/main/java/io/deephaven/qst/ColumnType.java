@@ -30,6 +30,10 @@ public interface ColumnType<T> {
         return IntType.instance();
     }
 
+    static LongType longType() {
+        return LongType.instance();
+    }
+
     static DoubleType doubleType() {
         return DoubleType.instance();
     }
@@ -55,6 +59,7 @@ public interface ColumnType<T> {
     interface Visitor {
         void visit(BooleanType booleanType);
         void visit(IntType intType);
+        void visit(LongType longType);
         void visit(StringType stringType);
         void visit(DoubleType doubleType);
         void visit(GenericType<?> genericType);

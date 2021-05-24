@@ -1,16 +1,16 @@
 package io.deephaven.qst;
 
 import java.util.Arrays;
+import org.immutables.value.Value.Immutable;
 
-public final class IntType extends ColumnTypeBase<Integer> {
-
-    private static final IntType INSTANCE = new IntType();
+@Immutable(builder = false)
+public abstract class IntType extends ColumnTypeBase<Integer> {
 
     public static IntType instance() {
-        return INSTANCE;
+        return ImmutableIntType.of();
     }
 
-    private IntType() {
+    IntType() {
         super(Arrays.asList(int.class, Integer.class));
     }
 

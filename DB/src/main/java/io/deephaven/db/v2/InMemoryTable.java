@@ -12,6 +12,7 @@ import io.deephaven.db.v2.sources.immutable.ImmutableColumnBooleanSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnDoubleSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnGenericSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnIntegerSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnLongSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableDoubleArraySource;
 import io.deephaven.db.v2.sources.immutable.ImmutableIntArraySource;
 import io.deephaven.db.v2.sources.immutable.ImmutableObjectArraySource;
@@ -23,6 +24,7 @@ import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
 import io.deephaven.qst.GenericType;
 import io.deephaven.qst.IntType;
+import io.deephaven.qst.LongType;
 import io.deephaven.qst.NewTable;
 import io.deephaven.qst.StringType;
 import io.deephaven.util.QueryConstants;
@@ -58,9 +60,13 @@ public class InMemoryTable extends QueryTable {
         }
 
         @Override
+        public void visit(LongType longType) {
+            out = new ImmutableColumnLongSource(longType.cast(column));
+        }
+
+        @Override
         public void visit(StringType stringType) {
             out = new ImmutableColumnGenericSource<>(stringType.cast(column), String.class);
-
         }
 
         @Override

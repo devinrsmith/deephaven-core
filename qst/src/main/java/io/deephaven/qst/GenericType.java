@@ -1,5 +1,6 @@
 package io.deephaven.qst;
 
+import java.util.Iterator;
 import java.util.stream.Stream;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
@@ -39,6 +40,29 @@ public abstract class GenericType<T> implements ColumnType<T> {
     public final <V extends Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;
+    }
+
+    @Override
+    public final T castValue(Object value) {
+        //noinspection unchecked
+        return (T)value;
+    }
+
+    @Override
+    public final <R> Iterable<T> transformValues(TypeLogic logic, ColumnType<R> fromType, Iterable<R> fromValues) {
+        return () -> new Iterator<T>() {
+            private final Iterator<R> it = fromValues.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public T next() {
+                return logic.transform(GenericType.this, fromType, it.next());
+            }
+        };
     }
 
     @Check

@@ -12,6 +12,8 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
+    public abstract int transform(boolean x);
+
     public abstract int transform(double x);
 
     public abstract int transform(String x);
@@ -29,6 +31,11 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
         public Integer getOut() {
             return Objects.requireNonNull(out);
+        }
+
+        @Override
+        public void visit(BooleanType booleanType) {
+            out = transform(booleanType.castValue(in));
         }
 
         @Override

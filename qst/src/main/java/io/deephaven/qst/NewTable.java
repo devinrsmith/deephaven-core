@@ -56,22 +56,6 @@ public abstract class NewTable extends TableBase {
             .build();
     }
 
-    public final NewTable transformByPosition(TableHeader other) {
-        final int L = numColumns();
-        if (L != other.numColumns()) {
-            throw new IllegalArgumentException("Unable to tranformByPosition if the number of columns is different");
-        }
-
-        final ImmutableNewTable.Builder builder = ImmutableNewTable.builder();
-        for (int i = 0; i < L; ++i) {
-            columns().get(i);
-        }
-    }
-
-    public final NewTable transformByName(TableHeader header) {
-        return null;
-    }
-
     @Check
     final void checkColumnsSizes() {
         if (!columns()

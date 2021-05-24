@@ -6,6 +6,7 @@ import io.deephaven.qst.ColumnType;
 import io.deephaven.qst.NewTable;
 import io.deephaven.qst.TableHeader;
 import io.deephaven.qst.TypeLogic;
+import io.deephaven.qst.TypeLogicImpl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -35,6 +36,44 @@ public abstract class CsvSpecs {
         ColumnType.booleanType(),
         ColumnType.intType(),
         ColumnType.doubleType());
+
+    public static NewTable parse(TableHeader header, String file) throws IOException {
+        return parse(header, new File(file));
+    }
+
+    public static NewTable parse(TableHeader header, File file) throws IOException {
+        return ImmutableCsvSpecs.builder()
+            .header(header)
+            .file(file)
+            .build()
+            .parse();
+    }
+
+    public static NewTable parse(TableHeader header, URL url) throws IOException {
+        return ImmutableCsvSpecs.builder()
+            .header(header)
+            .url(url)
+            .build()
+            .parse();
+    }
+
+    public static NewTable parse(String file) throws IOException {
+        return parse(new File(file));
+    }
+
+    public static NewTable parse(File file) throws IOException {
+        return ImmutableCsvSpecs.builder()
+            .file(file)
+            .build()
+            .parse();
+    }
+
+    public static NewTable parse(URL url) throws IOException {
+        return ImmutableCsvSpecs.builder()
+            .url(url)
+            .build()
+            .parse();
+    }
 
     public abstract Optional<TableHeader> header();
 
@@ -69,7 +108,7 @@ public abstract class CsvSpecs {
 
     @Default
     public TypeLogic typeLogic() {
-        return null; // todo
+        return TypeLogicImpl.lax();
     }
 
     @Check

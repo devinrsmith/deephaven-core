@@ -8,6 +8,7 @@ import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.db.v2.sources.ArrayBackedColumnSource;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.WritableSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnBooleanSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnDoubleSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnGenericSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnIntegerSource;
@@ -16,6 +17,7 @@ import io.deephaven.db.v2.sources.immutable.ImmutableIntArraySource;
 import io.deephaven.db.v2.sources.immutable.ImmutableObjectArraySource;
 import io.deephaven.db.v2.utils.Index;
 
+import io.deephaven.qst.BooleanType;
 import io.deephaven.qst.Column;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
@@ -46,6 +48,11 @@ public class InMemoryTable extends QueryTable {
         }
 
         @Override
+        public void visit(BooleanType booleanType) {
+            out = new ImmutableColumnBooleanSource(booleanType.cast(column));
+        }
+
+        @Override
         public void visit(IntType intType) {
             out = new ImmutableColumnIntegerSource(intType.cast(column));
         }
@@ -70,10 +77,13 @@ public class InMemoryTable extends QueryTable {
 
     public static InMemoryTable from(NewTable table) {
         final int L = table.numColumns();
-        final Map<String, ColumnSource> columns = new LinkedHashMap<>(L);
+        final Map<String, ColumnSource<?>> columns = new LinkedHashMap<>(L);
         for (int i = 0; i < L; ++i) {
             Column<?> column = table.columns().get(i);
-            columns.put(column.name(), column.type().walk(new ColumnToImmutableDhFormat(column)).getOut());
+            ColumnSource<?> source = column.type()
+                .walk(new ColumnToImmutableDhFormat(column))
+                .getOut();
+            columns.put(column.name(), source);
         }
         return new InMemoryTable(
             TableDefinition.from(table.header()),
@@ -92,13 +102,13 @@ public class InMemoryTable extends QueryTable {
         this.definition.setStorageType(TableDefinition.STORAGETYPE_INMEMORY);
     }
 
-    private InMemoryTable(TableDefinition definition, Index index, Map<String, ? extends ColumnSource> columns) {
+    private InMemoryTable(TableDefinition definition, Index index, Map<String, ? extends ColumnSource<?>> columns) {
         super(definition, index, columns);
         this.definition.setStorageType(TableDefinition.STORAGETYPE_INMEMORY);
     }
 
-    private static Map<String, ColumnSource> createColumnsMap(String[] columnNames, Object[] arrayValues) {
-        Map<String, ColumnSource> map = new LinkedHashMap<>();
+    private static Map<String, ColumnSource<?>> createColumnsMap(String[] columnNames, Object[] arrayValues) {
+        Map<String, ColumnSource<?>> map = new LinkedHashMap<>();
         for (int i = 0; i < columnNames.length; i++) {
             map.put(columnNames[i], ArrayBackedColumnSource.getMemoryColumnSource((arrayValues[i])));
         }

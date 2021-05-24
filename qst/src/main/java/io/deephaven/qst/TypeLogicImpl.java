@@ -5,15 +5,27 @@ import java.util.Objects;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
-abstract class TypeLogicImpl implements TypeLogic {
+public abstract class TypeLogicImpl implements TypeLogic {
 
     public static TypeLogicImpl strict() {
-        return null;
+        return ImmutableTypeLogicImpl.builder()
+            .booleanLogic(BooleanLogicStrict.instance())
+            .intLogic(IntLogicStrict.instance())
+            .doubleLogic(DoubleLogic.instance())
+            .stringLogic(StringLogic.instance())
+            .build();
     }
 
     public static TypeLogicImpl lax() {
-        return null;
+        return ImmutableTypeLogicImpl.builder()
+            .booleanLogic(BooleanLogicLax.instance())
+            .intLogic(IntLogicLax.instance())
+            .doubleLogic(DoubleLogic.instance())
+            .stringLogic(StringLogic.instance())
+            .build();
     }
+
+    public abstract ReturnTypeLogic<Boolean> booleanLogic();
 
     public abstract ReturnTypeLogic<Integer> intLogic();
 
@@ -34,6 +46,12 @@ abstract class TypeLogicImpl implements TypeLogic {
 
         public ReturnTypeLogic<R> getOut() {
             return Objects.requireNonNull(out);
+        }
+
+        @Override
+        public void visit(BooleanType booleanType) {
+            //noinspection unchecked
+            out = (ReturnTypeLogic<R>) booleanLogic();
         }
 
         @Override
@@ -59,16 +77,4 @@ abstract class TypeLogicImpl implements TypeLogic {
             throw new IllegalArgumentException("todo");
         }
     }
-
-    enum IntWhat implements ReturnTypeLogic<Integer> {
-        INSTANCE;
-
-
-        @Override
-        public final <T> Integer transform(ColumnType<T> inputType, T inputValue) {
-            return null;
-        }
-    }
-
-
 }

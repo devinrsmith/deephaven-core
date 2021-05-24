@@ -1,13 +1,17 @@
 package io.deephaven.qst;
 
-public class IntLogicStrict extends IntLogicBase {
-    private static final IntLogicStrict INSTANCE = new IntLogicStrict();
+import org.immutables.value.Value.Immutable;
+
+@Immutable(builder = false)
+public abstract class IntLogicStrict extends IntLogicBase {
 
     public static IntLogicStrict instance() {
-        return INSTANCE;
+        return ImmutableIntLogicStrict.of();
     }
 
-    private IntLogicStrict() {
+    @Override
+    public final int transform(boolean x) {
+        throw new IllegalArgumentException();
     }
 
     @Override

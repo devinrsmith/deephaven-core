@@ -1,6 +1,6 @@
 package io.deephaven.qst;
 
-enum StringLogic implements ReturnTypeLogic<String> {
+public enum StringLogic implements ReturnTypeLogic<String> {
     INSTANCE;
 
     public static StringLogic instance() {

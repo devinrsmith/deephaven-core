@@ -10,6 +10,7 @@ import io.deephaven.dataobjects.persistence.ColumnsetConversionSchema;
 import io.deephaven.dataobjects.persistence.PersistentInputStream;
 import io.deephaven.base.formatters.EnumFormatter;
 import io.deephaven.db.tables.utils.DBDateTime;
+import io.deephaven.qst.BooleanType;
 import io.deephaven.qst.ColumnHeader;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
@@ -151,6 +152,11 @@ public class ColumnDefinition<TYPE> extends DefaultColumnDefinition {
 
         public ColumnDefinition<?> getOut() {
             return Objects.requireNonNull(out);
+        }
+
+        @Override
+        public void visit(BooleanType booleanType) {
+            out = ofBoolean(in.name());
         }
 
         @Override

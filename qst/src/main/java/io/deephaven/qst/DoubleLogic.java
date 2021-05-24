@@ -1,6 +1,18 @@
 package io.deephaven.qst;
 
-class DoubleLogic extends DoubleLogicBase {
+import org.immutables.value.Value.Immutable;
+
+@Immutable(builder = false)
+public abstract class DoubleLogic extends DoubleLogicBase {
+
+    public static DoubleLogic instance() {
+        return ImmutableDoubleLogic.of();
+    }
+
+    @Override
+    public double transform(boolean x) {
+        throw new IllegalArgumentException();
+    }
 
     @Override
     public final double transform(int x) {

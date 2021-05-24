@@ -1,6 +1,18 @@
 package io.deephaven.qst;
 
-class IntLogicLax extends IntLogicBase {
+import org.immutables.value.Value.Immutable;
+
+@Immutable(builder = false)
+public abstract class IntLogicLax extends IntLogicBase {
+
+    public static IntLogicLax instance() {
+        return ImmutableIntLogicLax.of();
+    }
+
+    @Override
+    public final int transform(boolean x) {
+        throw new IllegalArgumentException();
+    }
 
     @Override
     public final int transform(double x) {

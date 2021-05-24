@@ -1,7 +1,6 @@
 package io.deephaven.qst;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 public final class BooleanType extends ColumnTypeBase<Boolean> {
 

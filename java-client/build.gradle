@@ -1,0 +1,11 @@
+plugins {
+  id 'java-library'
+}
+
+dependencies {
+  implementation project(':proto:proto-backplane-grpc')
+  implementation project(':log-factory')
+
+  runtimeOnly project(':log-to-slf4j')
+  runtimeOnly 'ch.qos.logback:logback-classic:1.2.3'
+}

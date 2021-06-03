@@ -2,7 +2,7 @@ package io.deephaven.qst.time;
 
 import org.immutables.value.Value.Immutable;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class SystemTimeProvider extends TimeProviderBase {
 
     public static SystemTimeProvider of() {

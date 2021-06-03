@@ -3,7 +3,7 @@ package io.deephaven.qst.time;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class ScaledTimeProvider extends TimeProviderBase {
 
     @Parameter

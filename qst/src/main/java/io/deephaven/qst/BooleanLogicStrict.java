@@ -2,7 +2,7 @@ package io.deephaven.qst;
 
 import org.immutables.value.Value.Immutable;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class BooleanLogicStrict extends BooleanLogicBase {
 
     public static BooleanLogicStrict instance() {

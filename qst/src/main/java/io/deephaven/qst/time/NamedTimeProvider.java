@@ -4,7 +4,7 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 // todo: should we have a better way w/ query scopes and handles to deal w/ any variables?
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class NamedTimeProvider extends TimeProviderBase {
 
     public static NamedTimeProvider of(String name) {

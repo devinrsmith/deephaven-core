@@ -5,7 +5,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class GenericType<T> extends ColumnTypeBase<T> {
 
     public static <T> GenericType<T> of(Class<T> clazz) {

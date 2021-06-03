@@ -2,7 +2,7 @@ package io.deephaven.qst;
 
 import org.immutables.value.Value.Immutable;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class FloatType extends ColumnTypeBase<Float> {
 
     public static FloatType instance() {

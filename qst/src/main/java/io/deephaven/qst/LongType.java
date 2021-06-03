@@ -1,9 +1,8 @@
 package io.deephaven.qst;
 
-import java.util.Arrays;
 import org.immutables.value.Value.Immutable;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class LongType extends ColumnTypeBase<Long> {
 
     public static LongType instance() {

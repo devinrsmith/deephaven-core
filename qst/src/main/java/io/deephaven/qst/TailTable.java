@@ -4,7 +4,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-@Immutable(builder = false)
+@Immutable(builder = false, copy = false)
 public abstract class TailTable extends TableBase {
 
     @Parameter

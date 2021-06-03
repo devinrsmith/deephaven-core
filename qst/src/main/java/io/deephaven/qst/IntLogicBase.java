@@ -14,6 +14,12 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
     public abstract int transform(boolean x);
 
+    public abstract int transform(byte x);
+
+    public abstract int transform(char x);
+
+    public abstract int transform(short x);
+
     public abstract int transform(long x);
 
     public abstract int transform(float x);
@@ -40,6 +46,21 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
         @Override
         public void visit(BooleanType booleanType) {
             out = transform(booleanType.castValue(in));
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            out = transform(byteType.castValue(in));
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = transform(charType.castValue(in));
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = transform(shortType.castValue(in));
         }
 
         @Override

@@ -9,23 +9,31 @@ import io.deephaven.db.v2.sources.ArrayBackedColumnSource;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.WritableSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnBooleanSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnByteSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnCharSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnDoubleSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnFloatSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnGenericSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnIntegerSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableColumnLongSource;
+import io.deephaven.db.v2.sources.immutable.ImmutableColumnShortSource;
 import io.deephaven.db.v2.sources.immutable.ImmutableDoubleArraySource;
 import io.deephaven.db.v2.sources.immutable.ImmutableIntArraySource;
 import io.deephaven.db.v2.sources.immutable.ImmutableObjectArraySource;
 import io.deephaven.db.v2.utils.Index;
 
 import io.deephaven.qst.BooleanType;
+import io.deephaven.qst.ByteType;
+import io.deephaven.qst.CharType;
 import io.deephaven.qst.Column;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.FloatType;
 import io.deephaven.qst.GenericType;
 import io.deephaven.qst.IntType;
 import io.deephaven.qst.LongType;
 import io.deephaven.qst.NewTable;
+import io.deephaven.qst.ShortType;
 import io.deephaven.qst.StringType;
 import io.deephaven.util.QueryConstants;
 import java.lang.reflect.Array;
@@ -55,6 +63,21 @@ public class InMemoryTable extends QueryTable {
         }
 
         @Override
+        public void visit(ByteType byteType) {
+            out = new ImmutableColumnByteSource(Column.cast(byteType, column));
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = new ImmutableColumnCharSource(Column.cast(charType, column));
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = new ImmutableColumnShortSource(Column.cast(shortType, column));
+        }
+
+        @Override
         public void visit(IntType intType) {
             out = new ImmutableColumnIntegerSource(Column.cast(intType, column));
         }
@@ -67,6 +90,11 @@ public class InMemoryTable extends QueryTable {
         @Override
         public void visit(StringType stringType) {
             out = new ImmutableColumnGenericSource<>(Column.cast(stringType, column), String.class);
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            out = new ImmutableColumnFloatSource(Column.cast(floatType, column));
         }
 
         @Override

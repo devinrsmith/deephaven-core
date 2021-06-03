@@ -110,6 +110,27 @@ public abstract class Column<T> {
         }
 
         @Override
+        public void visit(ByteType byteType) {
+            if (byteType.castValue(in) == Byte.MIN_VALUE) {
+                throw new IllegalArgumentException("Unable to represent Byte.MIN_VALUE with ByteType column");
+            }
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            if (charType.castValue(in) == Character.MAX_VALUE - 1) {
+                throw new IllegalArgumentException("Unable to represent Character.MAX_VALUE - 1 with CharType column");
+            }
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            if (shortType.castValue(in) == Short.MIN_VALUE) {
+                throw new IllegalArgumentException("Unable to represent Short.MIN_VALUE with ShortType column");
+            }
+        }
+
+        @Override
         public void visit(IntType intType) {
             if (intType.castValue(in) == Integer.MIN_VALUE) {
                 throw new IllegalArgumentException("Unable to represent Integer.MIN_VALUE with IntType column");

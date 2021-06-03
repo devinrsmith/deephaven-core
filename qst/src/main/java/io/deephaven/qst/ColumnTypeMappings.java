@@ -35,6 +35,24 @@ class ColumnTypeMappings {
         }
 
         @Override
+        public void visit(ByteType byteType) {
+            mappings.put(byte.class, byteType);
+            mappings.put(Byte.class, byteType);
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            mappings.put(char.class, charType);
+            mappings.put(Character.class, charType);
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            mappings.put(short.class, shortType);
+            mappings.put(Short.class, shortType);
+        }
+
+        @Override
         public void visit(IntType intType) {
             mappings.put(int.class, intType);
             mappings.put(Integer.class, intType);

@@ -11,6 +11,8 @@ import io.deephaven.dataobjects.persistence.PersistentInputStream;
 import io.deephaven.base.formatters.EnumFormatter;
 import io.deephaven.db.tables.utils.DBDateTime;
 import io.deephaven.qst.BooleanType;
+import io.deephaven.qst.ByteType;
+import io.deephaven.qst.CharType;
 import io.deephaven.qst.ColumnHeader;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
@@ -18,6 +20,7 @@ import io.deephaven.qst.FloatType;
 import io.deephaven.qst.GenericType;
 import io.deephaven.qst.IntType;
 import io.deephaven.qst.LongType;
+import io.deephaven.qst.ShortType;
 import io.deephaven.qst.StringType;
 import io.deephaven.util.codec.ObjectCodec;
 import org.jetbrains.annotations.NotNull;
@@ -159,6 +162,21 @@ public class ColumnDefinition<TYPE> extends DefaultColumnDefinition {
         @Override
         public void visit(BooleanType booleanType) {
             out = ofBoolean(in.name());
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            out = ofByte(in.name());
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = ofChar(in.name());
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = ofShort(in.name());
         }
 
         @Override

@@ -12,6 +12,12 @@ abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
+    public abstract boolean transform(byte x);
+
+    public abstract boolean transform(char x);
+
+    public abstract boolean transform(short x);
+
     public abstract boolean transform(int x);
 
     public abstract boolean transform(long x);
@@ -40,6 +46,21 @@ abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
         @Override
         public void visit(BooleanType booleanType) {
             out = ColumnType.castValue(booleanType, in);
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            out = transform(ColumnType.castValue(byteType, in));
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = transform(ColumnType.castValue(charType, in));
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = transform(ColumnType.castValue(shortType, in));
         }
 
         @Override

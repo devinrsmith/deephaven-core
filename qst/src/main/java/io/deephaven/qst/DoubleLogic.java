@@ -15,6 +15,21 @@ public abstract class DoubleLogic extends DoubleLogicBase {
     }
 
     @Override
+    public final double transform(byte x) {
+        return x;
+    }
+
+    @Override
+    public final double transform(char x) {
+        return x;
+    }
+
+    @Override
+    public final double transform(short x) {
+        return x;
+    }
+
+    @Override
     public final double transform(int x) {
         return x;
     }

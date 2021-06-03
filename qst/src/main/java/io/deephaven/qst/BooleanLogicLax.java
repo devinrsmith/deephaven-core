@@ -9,6 +9,22 @@ public abstract class BooleanLogicLax extends BooleanLogicBase {
         return ImmutableBooleanLogicLax.of();
     }
 
+
+    @Override
+    public final boolean transform(byte x) {
+        return x != 0;
+    }
+
+    @Override
+    public final boolean transform(char x) {
+        return x != 0;
+    }
+
+    @Override
+    public final boolean transform(short x) {
+        return x != 0;
+    }
+
     @Override
     public final boolean transform(int x) {
         return x != 0;

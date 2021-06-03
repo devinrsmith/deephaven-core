@@ -10,6 +10,9 @@ public abstract class TypeLogicImpl implements TypeLogic {
     public static TypeLogicImpl strict() {
         return ImmutableTypeLogicImpl.builder()
             .booleanLogic(BooleanLogicStrict.instance())
+            .byteLogic(ByteLogicStrict.instance())
+            .charLogic(CharLogicStrict.instance())
+            .shortLogic(ShortLogicStrict.instance())
             .intLogic(IntLogicStrict.instance())
             .longLogic(LongLogicStrict.instance())
             .floatLogic(FloatLogic.instance())
@@ -21,6 +24,9 @@ public abstract class TypeLogicImpl implements TypeLogic {
     public static TypeLogicImpl lax() {
         return ImmutableTypeLogicImpl.builder()
             .booleanLogic(BooleanLogicLax.instance())
+            .byteLogic(ByteLogicLax.instance())
+            .charLogic(CharLogicLax.instance())
+            .shortLogic(ShortLogicLax.instance())
             .intLogic(IntLogicLax.instance())
             .longLogic(LongLogicLax.instance())
             .floatLogic(FloatLogic.instance())
@@ -30,6 +36,12 @@ public abstract class TypeLogicImpl implements TypeLogic {
     }
 
     public abstract ReturnTypeLogic<Boolean> booleanLogic();
+
+    public abstract ReturnTypeLogic<Byte> byteLogic();
+
+    public abstract ReturnTypeLogic<Character> charLogic();
+
+    public abstract ReturnTypeLogic<Short> shortLogic();
 
     public abstract ReturnTypeLogic<Integer> intLogic();
 
@@ -60,6 +72,24 @@ public abstract class TypeLogicImpl implements TypeLogic {
         public void visit(BooleanType booleanType) {
             //noinspection unchecked
             out = (ReturnTypeLogic<R>) booleanLogic();
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            //noinspection unchecked
+            out = (ReturnTypeLogic<R>) byteLogic();
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            //noinspection unchecked
+            out = (ReturnTypeLogic<R>) charLogic();
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            //noinspection unchecked
+            out = (ReturnTypeLogic<R>) shortLogic();
         }
 
         @Override

@@ -14,6 +14,18 @@ public interface ColumnType<T> {
         return BooleanType.instance();
     }
 
+    static ByteType byteType() {
+        return ByteType.instance();
+    }
+
+    static CharType charType() {
+        return CharType.instance();
+    }
+
+    static ShortType shortType() {
+        return ShortType.instance();
+    }
+
     static IntType intType() {
         return IntType.instance();
     }
@@ -37,6 +49,9 @@ public interface ColumnType<T> {
     static Stream<ColumnType<?>> staticTypes() {
         return Stream.of(
             booleanType(),
+            byteType(),
+            charType(),
+            shortType(),
             intType(),
             longType(),
             floatType(),
@@ -55,6 +70,9 @@ public interface ColumnType<T> {
 
     interface Visitor {
         void visit(BooleanType booleanType);
+        void visit(ByteType byteType);
+        void visit(CharType charType);
+        void visit(ShortType shortType);
         void visit(IntType intType);
         void visit(LongType longType);
         void visit(FloatType floatType);

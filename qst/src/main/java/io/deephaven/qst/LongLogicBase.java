@@ -14,6 +14,12 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
     public abstract long transform(boolean x);
 
+    public abstract long transform(byte x);
+
+    public abstract long transform(char x);
+
+    public abstract long transform(short x);
+
     public abstract long transform(int x);
 
     public abstract long transform(float x);
@@ -40,6 +46,21 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
         @Override
         public void visit(BooleanType booleanType) {
             out = transform(booleanType.castValue(in));
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            out = transform(byteType.castValue(in));
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = transform(charType.castValue(in));
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = transform(shortType.castValue(in));
         }
 
         @Override

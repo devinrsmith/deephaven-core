@@ -15,6 +15,21 @@ public abstract class FloatLogic extends FloatLogicBase {
     }
 
     @Override
+    public final float transform(byte x) {
+        return x;
+    }
+
+    @Override
+    public final float transform(char x) {
+        return x;
+    }
+
+    @Override
+    public final float transform(short x) {
+        return x;
+    }
+
+    @Override
     public final float transform(int x) {
         return x;
     }

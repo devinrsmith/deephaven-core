@@ -15,6 +15,21 @@ public abstract class LongLogicLax extends LongLogicBase {
     }
 
     @Override
+    public final long transform(byte x) {
+        return x;
+    }
+
+    @Override
+    public final long transform(char x) {
+        return x;
+    }
+
+    @Override
+    public final long transform(short x) {
+        return x;
+    }
+
+    @Override
     public final long transform(int x) {
         return x;
     }

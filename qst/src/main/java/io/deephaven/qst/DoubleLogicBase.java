@@ -14,6 +14,12 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
     public abstract double transform(boolean x);
 
+    public abstract double transform(byte x);
+
+    public abstract double transform(char x);
+
+    public abstract double transform(short x);
+
     public abstract double transform(int x);
 
     public abstract double transform(long x);
@@ -40,6 +46,21 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
         @Override
         public void visit(BooleanType booleanType) {
             out = transform(booleanType.castValue(in));
+        }
+
+        @Override
+        public void visit(ByteType byteType) {
+            out = transform(byteType.castValue(in));
+        }
+
+        @Override
+        public void visit(CharType charType) {
+            out = transform(charType.castValue(in));
+        }
+
+        @Override
+        public void visit(ShortType shortType) {
+            out = transform(shortType.castValue(in));
         }
 
         @Override

@@ -24,6 +24,11 @@ public abstract class IntLogicStrict extends IntLogicBase {
     }
 
     @Override
+    public final int transform(float x) {
+        throw new IllegalArgumentException();
+    }
+
+    @Override
     public final int transform(double x) {
         throw new IllegalArgumentException();
     }

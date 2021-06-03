@@ -10,15 +10,6 @@ public abstract class LongType extends ColumnTypeBase<Long> {
         return ImmutableLongType.of();
     }
 
-    LongType() {
-        super(Arrays.asList(long.class, Long.class));
-    }
-
-    @Override
-    public final boolean isValidValue(Long item) {
-        return item == null || item != Long.MIN_VALUE; // todo QueryConstants
-    }
-
     @Override
     public final <V extends Visitor> V walk(V visitor) {
         visitor.visit(this);

@@ -12,6 +12,7 @@ public abstract class TypeLogicImpl implements TypeLogic {
             .booleanLogic(BooleanLogicStrict.instance())
             .intLogic(IntLogicStrict.instance())
             .longLogic(LongLogicStrict.instance())
+            .floatLogic(FloatLogic.instance())
             .doubleLogic(DoubleLogic.instance())
             .stringLogic(StringLogic.instance())
             .build();
@@ -22,6 +23,7 @@ public abstract class TypeLogicImpl implements TypeLogic {
             .booleanLogic(BooleanLogicLax.instance())
             .intLogic(IntLogicLax.instance())
             .longLogic(LongLogicLax.instance())
+            .floatLogic(FloatLogic.instance())
             .doubleLogic(DoubleLogic.instance())
             .stringLogic(StringLogic.instance())
             .build();
@@ -32,6 +34,8 @@ public abstract class TypeLogicImpl implements TypeLogic {
     public abstract ReturnTypeLogic<Integer> intLogic();
 
     public abstract ReturnTypeLogic<Long> longLogic();
+
+    public abstract ReturnTypeLogic<Float> floatLogic();
 
     public abstract ReturnTypeLogic<Double> doubleLogic();
 
@@ -74,6 +78,12 @@ public abstract class TypeLogicImpl implements TypeLogic {
         public void visit(StringType stringType) {
             //noinspection unchecked
             out = (ReturnTypeLogic<R>) stringLogic();
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            //noinspection unchecked
+            out = (ReturnTypeLogic<R>) floatLogic();
         }
 
         @Override

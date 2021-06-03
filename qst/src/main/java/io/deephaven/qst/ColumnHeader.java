@@ -14,16 +14,24 @@ public abstract class ColumnHeader<T> {
         return ImmutableColumnHeader.<T>builder().name(name).type(type).build();
     }
 
+    public static ColumnHeader<Boolean> ofBoolean(String name) {
+        return of(name, ColumnType.booleanType());
+    }
+
     public static ColumnHeader<Integer> ofInt(String name) {
-        return of(name, IntType.instance());
+        return of(name, ColumnType.intType());
+    }
+
+    public static ColumnHeader<Long> ofLong(String name) {
+        return of(name, ColumnType.longType());
     }
 
     public static ColumnHeader<String> ofString(String name) {
-        return of(name, StringType.instance());
+        return of(name, ColumnType.stringType());
     }
 
     public static ColumnHeader<Double> ofDouble(String name) {
-        return of(name, DoubleType.instance());
+        return of(name, ColumnType.doubleType());
     }
 
     public static <A, B> ColumnHeaders2<A, B> of(ColumnHeader<A> a, ColumnHeader<B> b) {

@@ -20,6 +20,11 @@ public abstract class IntLogicLax extends IntLogicBase {
     }
 
     @Override
+    public final int transform(float x) {
+        return (int)x;
+    }
+
+    @Override
     public final int transform(double x) {
         return (int)x;
     }

@@ -20,6 +20,11 @@ public abstract class LongLogicLax extends LongLogicBase {
     }
 
     @Override
+    public final long transform(float x) {
+        return (long)x;
+    }
+
+    @Override
     public final long transform(double x) {
         return (long)x;
     }

@@ -16,6 +16,8 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
     public abstract int transform(long x);
 
+    public abstract int transform(float x);
+
     public abstract int transform(double x);
 
     public abstract int transform(String x);
@@ -53,6 +55,11 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
         @Override
         public void visit(StringType stringType) {
             out = transform(stringType.castValue(in));
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            out = transform(floatType.castValue(in));
         }
 
         @Override

@@ -51,33 +51,33 @@ public class InMemoryTable extends QueryTable {
 
         @Override
         public void visit(BooleanType booleanType) {
-            out = new ImmutableColumnBooleanSource(booleanType.cast(column));
+            out = new ImmutableColumnBooleanSource(Column.cast(booleanType, column));
         }
 
         @Override
         public void visit(IntType intType) {
-            out = new ImmutableColumnIntegerSource(intType.cast(column));
+            out = new ImmutableColumnIntegerSource(Column.cast(intType, column));
         }
 
         @Override
         public void visit(LongType longType) {
-            out = new ImmutableColumnLongSource(longType.cast(column));
+            out = new ImmutableColumnLongSource(Column.cast(longType, column));
         }
 
         @Override
         public void visit(StringType stringType) {
-            out = new ImmutableColumnGenericSource<>(stringType.cast(column), String.class);
+            out = new ImmutableColumnGenericSource<>(Column.cast(stringType, column), String.class);
         }
 
         @Override
         public void visit(DoubleType doubleType) {
-            out = new ImmutableColumnDoubleSource(doubleType.cast(column));
+            out = new ImmutableColumnDoubleSource(Column.cast(doubleType, column));
         }
 
         @Override
         public void visit(GenericType<?> genericType) {
             //noinspection unchecked
-            out = new ImmutableColumnGenericSource(genericType.cast(column), genericType.clazz()); // todo
+            out = new ImmutableColumnGenericSource(Column.cast(genericType, column), genericType.clazz()); // todo
         }
     }
 

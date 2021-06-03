@@ -1,10 +1,27 @@
 package io.deephaven.qst;
 
+import java.util.Iterator;
 import java.util.stream.StreamSupport;
 
 public interface TypeLogic {
 
     <T, R> R transform(ColumnType<R> returnType, ColumnType<T> inputType, T inputValue);
+
+    default <T, R> Iterable<R> transform(ColumnType<R> returnType, ColumnType<T> inputType, Iterable<T> fromValues) {
+        return () -> new Iterator<R>() {
+            private final Iterator<T> it = fromValues.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public R next() {
+                return transform(returnType, inputType, it.next());
+            }
+        };
+    }
 
     default <T> boolean canTransform(ColumnType<?> returnType, ColumnType<T> inputType, T inputValue) {
         try {

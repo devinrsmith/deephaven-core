@@ -18,6 +18,8 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
     public abstract double transform(long x);
 
+    public abstract double transform(float x);
+
     public abstract double transform(String x);
 
     public abstract <T> double transform(GenericType<T> type, T value);
@@ -53,6 +55,11 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
         @Override
         public void visit(StringType stringType) {
             out = transform(stringType.castValue(in));
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            out = transform(floatType.castValue(in));
         }
 
         @Override

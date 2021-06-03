@@ -16,6 +16,8 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
     public abstract long transform(int x);
 
+    public abstract long transform(float x);
+
     public abstract long transform(double x);
 
     public abstract long transform(String x);
@@ -53,6 +55,11 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
         @Override
         public void visit(StringType stringType) {
             out = transform(stringType.castValue(in));
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            out = transform(floatType.castValue(in));
         }
 
         @Override

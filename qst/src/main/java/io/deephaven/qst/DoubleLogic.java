@@ -10,7 +10,7 @@ public abstract class DoubleLogic extends DoubleLogicBase {
     }
 
     @Override
-    public double transform(boolean x) {
+    public final double transform(boolean x) {
         throw new IllegalArgumentException();
     }
 
@@ -21,6 +21,11 @@ public abstract class DoubleLogic extends DoubleLogicBase {
 
     @Override
     public final double transform(long x) {
+        return x;
+    }
+
+    @Override
+    public final double transform(float x) {
         return x;
     }
 

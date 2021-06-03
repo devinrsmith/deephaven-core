@@ -3,48 +3,48 @@ package io.deephaven.qst;
 import io.deephaven.qst.ColumnType.Visitor;
 import java.util.Objects;
 
-abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
+abstract class FloatLogicBase implements ReturnTypeLogic<Float> {
 
     @Override
-    public final <T> Boolean transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Float transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract boolean transform(int x);
+    public abstract float transform(boolean x);
 
-    public abstract boolean transform(long x);
+    public abstract float transform(int x);
 
-    public abstract boolean transform(float x);
+    public abstract float transform(long x);
 
-    public abstract boolean transform(double x);
+    public abstract float transform(double x);
 
-    public abstract boolean transform(String x);
+    public abstract float transform(String x);
 
-    public abstract <T> boolean transform(GenericType<T> type, T value);
+    public abstract <T> float transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Boolean out;
+        private Float out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Boolean getOut() {
+        public Float getOut() {
             return Objects.requireNonNull(out);
         }
 
         @Override
         public void visit(BooleanType booleanType) {
-            out = ColumnType.castValue(booleanType, in);
+            out = transform(booleanType.castValue(in));
         }
 
         @Override
         public void visit(IntType intType) {
-            out = transform(ColumnType.castValue(intType, in));
+            out = transform(intType.castValue(in));
         }
 
         @Override
@@ -59,7 +59,7 @@ abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
 
         @Override
         public void visit(FloatType floatType) {
-            out = transform(floatType.castValue(in));
+            out = floatType.castValue(in);
         }
 
         @Override

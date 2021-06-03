@@ -14,6 +14,7 @@ import io.deephaven.qst.BooleanType;
 import io.deephaven.qst.ColumnHeader;
 import io.deephaven.qst.ColumnType.Visitor;
 import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.FloatType;
 import io.deephaven.qst.GenericType;
 import io.deephaven.qst.IntType;
 import io.deephaven.qst.LongType;
@@ -173,6 +174,11 @@ public class ColumnDefinition<TYPE> extends DefaultColumnDefinition {
         @Override
         public void visit(StringType stringType) {
             out = ofString(in.name());
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            out = ofFloat(in.name());
         }
 
         @Override

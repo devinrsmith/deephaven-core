@@ -20,6 +20,11 @@ public abstract class BooleanLogicStrict extends BooleanLogicBase {
     }
 
     @Override
+    public final boolean transform(float x) {
+        throw new IllegalArgumentException();
+    }
+
+    @Override
     public final boolean transform(double x) {
         throw new IllegalArgumentException();
     }

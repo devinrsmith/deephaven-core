@@ -1,6 +1,8 @@
 package io.deephaven.qst;
 
+import io.deephaven.qst.ColumnType.Visitor;
 import java.util.List;
+import java.util.Objects;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
@@ -43,6 +45,11 @@ public abstract class Column<T> {
         return ImmutableColumn.<T>builder().header(header);
     }
 
+    public static <T> Column<T> cast(@SuppressWarnings("unused") ColumnType<T> type, Column<?> column) {
+        //noinspection unchecked
+        return (Column<T>)column;
+    }
+
     public abstract ColumnHeader<T> header();
 
     @AllowNulls
@@ -67,15 +74,16 @@ public abstract class Column<T> {
     public final <R> Column<R> into(TypeLogic logic, ColumnType<R> intoType) {
         return Column.of(
             ColumnHeader.of(name(), intoType),
-            intoType.transformValues(logic, type(), values()));
+            logic.transform(intoType, type(), values()));
     }
 
     @Check
     final void checkValues() {
         for (T value : values()) {
-            if (!type().isValidValue(value)) {
-                throw new IllegalArgumentException(String.format("Invalid value: %s", value));
+            if (value == null) {
+                continue;
             }
+            type().walk(new CheckValidValue(value));
         }
     }
 
@@ -86,5 +94,57 @@ public abstract class Column<T> {
         }
 
         abstract Builder<T> addValues(T element);
+    }
+
+    private static class CheckValidValue implements Visitor {
+
+        private final Object in;
+
+        CheckValidValue(Object in) {
+            this.in = Objects.requireNonNull(in);
+        }
+
+        @Override
+        public void visit(BooleanType booleanType) {
+
+        }
+
+        @Override
+        public void visit(IntType intType) {
+            if (intType.castValue(in) == Integer.MIN_VALUE) {
+                throw new IllegalArgumentException("Unable to represent Integer.MIN_VALUE with IntType column");
+            }
+        }
+
+        @Override
+        public void visit(LongType longType) {
+            if (longType.castValue(in) == Long.MIN_VALUE) {
+                throw new IllegalArgumentException("Unable to represent Long.MIN_VALUE with LongType column");
+            }
+        }
+
+        @Override
+        public void visit(FloatType floatType) {
+            if (floatType.castValue(in) == -Float.MAX_VALUE) {
+                throw new IllegalArgumentException("Unable to represent -Float.MAX_VALUE with FloatType column");
+            }
+        }
+
+        @Override
+        public void visit(DoubleType doubleType) {
+            if (doubleType.castValue(in) == -Double.MAX_VALUE) {
+                throw new IllegalArgumentException("Unable to represent -Double.MAX_VALUE with DoubleType column");
+            }
+        }
+
+        @Override
+        public void visit(StringType stringType) {
+
+        }
+
+        @Override
+        public void visit(GenericType<?> genericType) {
+
+        }
     }
 }

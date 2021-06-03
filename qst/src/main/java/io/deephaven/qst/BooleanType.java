@@ -1,6 +1,5 @@
 package io.deephaven.qst;
 
-import java.util.Arrays;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false)
@@ -8,15 +7,6 @@ public abstract class BooleanType extends ColumnTypeBase<Boolean> {
 
     public static BooleanType instance() {
         return ImmutableBooleanType.of();
-    }
-
-    BooleanType() {
-        super(Arrays.asList(boolean.class, Boolean.class));
-    }
-
-    @Override
-    public final boolean isValidValue(Boolean item) {
-        return true;
     }
 
     @Override

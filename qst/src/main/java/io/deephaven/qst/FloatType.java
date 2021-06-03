@@ -3,10 +3,10 @@ package io.deephaven.qst;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false)
-public abstract class IntType extends ColumnTypeBase<Integer> {
+public abstract class FloatType extends ColumnTypeBase<Float> {
 
-    public static IntType instance() {
-        return ImmutableIntType.of();
+    public static FloatType instance() {
+        return ImmutableFloatType.of();
     }
 
     @Override
@@ -17,6 +17,6 @@ public abstract class IntType extends ColumnTypeBase<Integer> {
 
     @Override
     public final String toString() {
-        return IntType.class.getName();
+        return FloatType.class.getName();
     }
 }

@@ -1,6 +1,5 @@
 package io.deephaven.qst;
 
-import java.util.Collections;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false)
@@ -8,15 +7,6 @@ public abstract class StringType extends ColumnTypeBase<String> {
 
     public static StringType instance() {
         return ImmutableStringType.of();
-    }
-
-    StringType() {
-        super(Collections.singletonList(String.class));
-    }
-
-    @Override
-    public final boolean isValidValue(String item) {
-        return true;
     }
 
     @Override

@@ -20,6 +20,11 @@ public abstract class LongLogicStrict extends LongLogicBase {
     }
 
     @Override
+    public final long transform(float x) {
+        throw new IllegalArgumentException();
+    }
+
+    @Override
     public final long transform(double x) {
         throw new IllegalArgumentException();
     }

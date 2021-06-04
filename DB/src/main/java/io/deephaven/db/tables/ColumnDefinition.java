@@ -13,7 +13,7 @@ import io.deephaven.db.tables.utils.DBDateTime;
 import io.deephaven.qst.table.column.type.BooleanType;
 import io.deephaven.qst.table.column.type.ByteType;
 import io.deephaven.qst.table.column.type.CharType;
-import io.deephaven.qst.ColumnHeader;
+import io.deephaven.qst.table.column.header.ColumnHeader;
 import io.deephaven.qst.table.column.type.ColumnType.Visitor;
 import io.deephaven.qst.table.column.type.DoubleType;
 import io.deephaven.qst.table.column.type.logic.FloatType;

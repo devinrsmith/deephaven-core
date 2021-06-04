@@ -9,7 +9,6 @@ import io.deephaven.qst.table.column.type.DoubleType;
 import io.deephaven.qst.table.column.type.GenericType;
 import io.deephaven.qst.table.column.type.IntType;
 import io.deephaven.qst.table.column.type.LongType;
-import io.deephaven.qst.ReturnTypeLogic;
 import io.deephaven.qst.table.column.type.ShortType;
 import io.deephaven.qst.table.column.type.StringType;
 import java.util.Objects;

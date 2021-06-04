@@ -1,4 +1,4 @@
-package io.deephaven.qst;
+package io.deephaven.qst.table.column.type.logic;
 
 import io.deephaven.qst.table.column.type.BooleanType;
 import io.deephaven.qst.table.column.type.ByteType;
@@ -11,22 +11,6 @@ import io.deephaven.qst.table.column.type.IntType;
 import io.deephaven.qst.table.column.type.LongType;
 import io.deephaven.qst.table.column.type.ShortType;
 import io.deephaven.qst.table.column.type.StringType;
-import io.deephaven.qst.table.column.type.logic.BooleanLogicLax;
-import io.deephaven.qst.table.column.type.logic.BooleanLogicStrict;
-import io.deephaven.qst.table.column.type.logic.ByteLogicLax;
-import io.deephaven.qst.table.column.type.logic.ByteLogicStrict;
-import io.deephaven.qst.table.column.type.logic.CharLogicLax;
-import io.deephaven.qst.table.column.type.logic.CharLogicStrict;
-import io.deephaven.qst.table.column.type.logic.DoubleLogic;
-import io.deephaven.qst.table.column.type.logic.FloatLogic;
-import io.deephaven.qst.table.column.type.logic.FloatType;
-import io.deephaven.qst.table.column.type.logic.IntLogicLax;
-import io.deephaven.qst.table.column.type.logic.IntLogicStrict;
-import io.deephaven.qst.table.column.type.logic.LongLogicLax;
-import io.deephaven.qst.table.column.type.logic.LongLogicStrict;
-import io.deephaven.qst.table.column.type.logic.ShortLogicLax;
-import io.deephaven.qst.table.column.type.logic.ShortLogicStrict;
-import io.deephaven.qst.table.column.type.logic.StringLogic;
 import java.util.Objects;
 import org.immutables.value.Value.Immutable;
 

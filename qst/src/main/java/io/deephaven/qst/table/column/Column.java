@@ -2,7 +2,7 @@ package io.deephaven.qst.table.column;
 
 import io.deephaven.qst.AllowNulls;
 import io.deephaven.qst.table.NewTable;
-import io.deephaven.qst.TypeLogic;
+import io.deephaven.qst.table.column.type.logic.TypeLogic;
 import io.deephaven.qst.table.column.header.ColumnHeader;
 import io.deephaven.qst.table.column.type.ColumnType;
 import java.util.List;

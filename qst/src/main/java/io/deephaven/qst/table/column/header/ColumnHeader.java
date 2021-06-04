@@ -2,7 +2,7 @@ package io.deephaven.qst.table.column.header;
 
 import io.deephaven.qst.table.NewTableBuildable;
 import io.deephaven.qst.table.TableHeader;
-import io.deephaven.qst.TypeLogic;
+import io.deephaven.qst.table.column.type.logic.TypeLogic;
 import io.deephaven.qst.table.column.Column;
 import io.deephaven.qst.table.column.ColumnBuilder;
 import io.deephaven.qst.table.column.type.ColumnType;

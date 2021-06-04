@@ -1,7 +1,6 @@
 package io.deephaven.qst.table.column.type.logic;
 
 import io.deephaven.qst.table.column.type.ColumnType;
-import io.deephaven.qst.ReturnTypeLogic;
 
 public enum StringLogic implements ReturnTypeLogic<String> {
     INSTANCE;

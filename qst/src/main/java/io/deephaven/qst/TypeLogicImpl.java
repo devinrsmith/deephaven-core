@@ -1,6 +1,16 @@
 package io.deephaven.qst;
 
-import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.column.BooleanType;
+import io.deephaven.qst.column.ByteType;
+import io.deephaven.qst.column.CharType;
+import io.deephaven.qst.column.ColumnType;
+import io.deephaven.qst.column.ColumnType.Visitor;
+import io.deephaven.qst.column.DoubleType;
+import io.deephaven.qst.column.GenericType;
+import io.deephaven.qst.column.IntType;
+import io.deephaven.qst.column.LongType;
+import io.deephaven.qst.column.ShortType;
+import io.deephaven.qst.column.StringType;
 import io.deephaven.qst.logic.BooleanLogicLax;
 import io.deephaven.qst.logic.BooleanLogicStrict;
 import io.deephaven.qst.logic.ByteLogicLax;

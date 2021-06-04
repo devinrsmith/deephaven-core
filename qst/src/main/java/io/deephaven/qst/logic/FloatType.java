@@ -1,6 +1,6 @@
 package io.deephaven.qst.logic;
 
-import io.deephaven.qst.ColumnTypeBase;
+import io.deephaven.qst.column.ColumnTypeBase;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)

@@ -3,6 +3,8 @@ package io.deephaven.qst;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
+import io.deephaven.qst.column.Column;
+import io.deephaven.qst.column.ColumnHeader;
 import org.junit.jupiter.api.Test;
 
 public class NewTableTest {
@@ -35,9 +37,8 @@ public class NewTableTest {
     public void newTableHelperColumnOriented() {
         NewTable expected = ImmutableNewTable.builder()
             .size(3)
-            .addColumns(ImmutableColumn.<Integer>builder()
-                .header(ColumnHeader.ofInt("X"))
-                .addValues(1, null, 3)
+            .addColumns(Column.builder(ColumnHeader.ofInt("X"))
+                .add(1).add(null).add(3)
                 .build())
             .build();
 
@@ -49,14 +50,12 @@ public class NewTableTest {
     @Test
     public void newTableHelperRowOriented() {
 
-        Column<Integer> x = ImmutableColumn.<Integer>builder()
-            .header(ColumnHeader.ofInt("X"))
-            .addValues(1, 2)
+        Column<Integer> x = Column.builder(ColumnHeader.ofInt("X"))
+            .add(1).add(2)
             .build();
 
-        Column<String> y = ImmutableColumn.<String>builder()
-            .header(ColumnHeader.ofString("Y"))
-            .addValues("one", "two")
+        Column<String> y = Column.builder(ColumnHeader.ofString("Y"))
+            .add("one").add("two")
             .build();
 
         NewTable expected = ImmutableNewTable.builder()

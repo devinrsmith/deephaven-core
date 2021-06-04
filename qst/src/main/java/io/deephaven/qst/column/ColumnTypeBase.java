@@ -1,4 +1,4 @@
-package io.deephaven.qst;
+package io.deephaven.qst.column;
 
 public abstract class ColumnTypeBase<T> implements ColumnType<T> {
 

@@ -2,6 +2,7 @@ package io.deephaven.qst;
 
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
+import io.deephaven.qst.column.GenericType;
 import org.junit.jupiter.api.Test;
 
 public class GenericTypeTest {

@@ -1,4 +1,4 @@
-package io.deephaven.qst;
+package io.deephaven.qst.column;
 
 import org.immutables.value.Value.Immutable;
 

@@ -1,12 +1,12 @@
-package io.deephaven.qst;
+package io.deephaven.qst.column;
 
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class LongType extends ColumnTypeBase<Long> {
+public abstract class BooleanType extends ColumnTypeBase<Boolean> {
 
-    public static LongType instance() {
-        return ImmutableLongType.of();
+    public static BooleanType instance() {
+        return ImmutableBooleanType.of();
     }
 
     @Override
@@ -17,6 +17,6 @@ public abstract class LongType extends ColumnTypeBase<Long> {
 
     @Override
     public final String toString() {
-        return LongType.class.getName();
+        return BooleanType.class.getName();
     }
 }

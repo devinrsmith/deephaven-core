@@ -1,15 +1,13 @@
 package io.deephaven.qst;
 
+import io.deephaven.qst.column.ColumnHeader;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
-import org.immutables.value.Value.Style;
 
-@Style(strictBuilder = true)
 @Immutable
 public abstract class TableHeader implements Iterable<ColumnHeader<?>> {
 

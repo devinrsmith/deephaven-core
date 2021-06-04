@@ -1,17 +1,17 @@
 package io.deephaven.qst.logic;
 
-import io.deephaven.qst.BooleanType;
-import io.deephaven.qst.ByteType;
-import io.deephaven.qst.CharType;
-import io.deephaven.qst.ColumnType;
-import io.deephaven.qst.ColumnType.Visitor;
-import io.deephaven.qst.DoubleType;
-import io.deephaven.qst.GenericType;
-import io.deephaven.qst.IntType;
-import io.deephaven.qst.LongType;
+import io.deephaven.qst.column.BooleanType;
+import io.deephaven.qst.column.ByteType;
+import io.deephaven.qst.column.CharType;
+import io.deephaven.qst.column.ColumnType;
+import io.deephaven.qst.column.ColumnType.Visitor;
+import io.deephaven.qst.column.DoubleType;
+import io.deephaven.qst.column.GenericType;
+import io.deephaven.qst.column.IntType;
+import io.deephaven.qst.column.LongType;
 import io.deephaven.qst.ReturnTypeLogic;
-import io.deephaven.qst.ShortType;
-import io.deephaven.qst.StringType;
+import io.deephaven.qst.column.ShortType;
+import io.deephaven.qst.column.StringType;
 import java.util.Objects;
 
 abstract class ShortLogicBase implements ReturnTypeLogic<Short> {

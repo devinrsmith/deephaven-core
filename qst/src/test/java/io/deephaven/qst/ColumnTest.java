@@ -2,15 +2,16 @@ package io.deephaven.qst;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.deephaven.qst.column.Column;
+import io.deephaven.qst.column.ColumnHeader;
 import org.junit.jupiter.api.Test;
 
 public class ColumnTest {
 
     @Test
     public void intHelper() {
-        Column<Integer> expected = ImmutableColumn.<Integer>builder()
-            .header(ColumnHeader.ofInt("AnInt"))
-            .addValues(1, null, 3)
+        Column<Integer> expected = Column.builder(ColumnHeader.ofInt("AnInt"))
+            .add(1).add(null).add(3)
             .build();
 
         Column<Integer> actual = Column.of("AnInt", 1, null, 3);
@@ -20,9 +21,8 @@ public class ColumnTest {
 
     @Test
     public void doubleHelper() {
-        Column<Double> expected = ImmutableColumn.<Double>builder()
-            .header(ColumnHeader.ofDouble("ADouble"))
-            .addValues(1., null, 3.)
+        Column<Double> expected = Column.builder(ColumnHeader.ofDouble("ADouble"))
+            .add(1.).add(null).add(3.)
             .build();
 
         Column<Double> actual = Column.of("ADouble", 1., null, 3.);

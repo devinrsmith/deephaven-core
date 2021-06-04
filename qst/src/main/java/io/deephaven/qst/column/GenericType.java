@@ -1,4 +1,4 @@
-package io.deephaven.qst;
+package io.deephaven.qst.column;
 
 import java.util.Optional;
 import org.immutables.value.Value.Check;

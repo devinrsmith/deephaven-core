@@ -1,5 +1,8 @@
-package io.deephaven.qst;
+package io.deephaven.qst.column;
 
+import io.deephaven.qst.AllowNulls;
+import io.deephaven.qst.NewTable;
+import io.deephaven.qst.TypeLogic;
 import java.util.List;
 import org.immutables.value.Value.Immutable;
 

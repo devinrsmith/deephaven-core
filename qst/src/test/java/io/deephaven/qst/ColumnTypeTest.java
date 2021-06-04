@@ -1,19 +1,20 @@
 package io.deephaven.qst;
 
-import static io.deephaven.qst.ColumnType.booleanType;
-import static io.deephaven.qst.ColumnType.byteType;
-import static io.deephaven.qst.ColumnType.charType;
-import static io.deephaven.qst.ColumnType.doubleType;
-import static io.deephaven.qst.ColumnType.find;
-import static io.deephaven.qst.ColumnType.floatType;
-import static io.deephaven.qst.ColumnType.intType;
-import static io.deephaven.qst.ColumnType.longType;
-import static io.deephaven.qst.ColumnType.ofGeneric;
-import static io.deephaven.qst.ColumnType.shortType;
-import static io.deephaven.qst.ColumnType.staticTypes;
-import static io.deephaven.qst.ColumnType.stringType;
+import static io.deephaven.qst.column.ColumnType.booleanType;
+import static io.deephaven.qst.column.ColumnType.byteType;
+import static io.deephaven.qst.column.ColumnType.charType;
+import static io.deephaven.qst.column.ColumnType.doubleType;
+import static io.deephaven.qst.column.ColumnType.find;
+import static io.deephaven.qst.column.ColumnType.floatType;
+import static io.deephaven.qst.column.ColumnType.intType;
+import static io.deephaven.qst.column.ColumnType.longType;
+import static io.deephaven.qst.column.ColumnType.ofGeneric;
+import static io.deephaven.qst.column.ColumnType.shortType;
+import static io.deephaven.qst.column.ColumnType.staticTypes;
+import static io.deephaven.qst.column.ColumnType.stringType;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.deephaven.qst.column.ColumnType;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;

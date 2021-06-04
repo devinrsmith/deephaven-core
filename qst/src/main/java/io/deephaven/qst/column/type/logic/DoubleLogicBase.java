@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.BooleanType;
 import io.deephaven.qst.column.type.ByteType;
@@ -14,43 +14,43 @@ import io.deephaven.qst.column.type.ShortType;
 import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
-abstract class LongLogicBase implements ReturnTypeLogic<Long> {
+abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
     @Override
-    public final <T> Long transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Double transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract long transform(boolean x);
+    public abstract double transform(boolean x);
 
-    public abstract long transform(byte x);
+    public abstract double transform(byte x);
 
-    public abstract long transform(char x);
+    public abstract double transform(char x);
 
-    public abstract long transform(short x);
+    public abstract double transform(short x);
 
-    public abstract long transform(int x);
+    public abstract double transform(int x);
 
-    public abstract long transform(float x);
+    public abstract double transform(long x);
 
-    public abstract long transform(double x);
+    public abstract double transform(float x);
 
-    public abstract long transform(String x);
+    public abstract double transform(String x);
 
-    public abstract <T> long transform(GenericType<T> type, T value);
+    public abstract <T> double transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Long out;
+        private Double out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Long getOut() {
+        public Double getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -81,7 +81,7 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
         @Override
         public void visit(LongType longType) {
-            out = longType.castValue(in);
+            out = transform(longType.castValue(in));
         }
 
         @Override
@@ -96,7 +96,7 @@ abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
         @Override
         public void visit(DoubleType doubleType) {
-            out = transform(doubleType.castValue(in));
+            out = doubleType.castValue(in);
         }
 
         @Override

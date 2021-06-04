@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.GenericType;
 import org.immutables.value.Value.Immutable;

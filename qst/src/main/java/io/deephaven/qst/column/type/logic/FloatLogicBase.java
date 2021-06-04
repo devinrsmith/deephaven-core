@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.BooleanType;
 import io.deephaven.qst.column.type.ByteType;
@@ -14,43 +14,43 @@ import io.deephaven.qst.column.type.ShortType;
 import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
-abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
+abstract class FloatLogicBase implements ReturnTypeLogic<Float> {
 
     @Override
-    public final <T> Integer transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Float transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract int transform(boolean x);
+    public abstract float transform(boolean x);
 
-    public abstract int transform(byte x);
+    public abstract float transform(byte x);
 
-    public abstract int transform(char x);
+    public abstract float transform(char x);
 
-    public abstract int transform(short x);
+    public abstract float transform(short x);
 
-    public abstract int transform(long x);
+    public abstract float transform(int x);
 
-    public abstract int transform(float x);
+    public abstract float transform(long x);
 
-    public abstract int transform(double x);
+    public abstract float transform(double x);
 
-    public abstract int transform(String x);
+    public abstract float transform(String x);
 
-    public abstract <T> int transform(GenericType<T> type, T value);
+    public abstract <T> float transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Integer out;
+        private Float out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Integer getOut() {
+        public Float getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -76,7 +76,7 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
         @Override
         public void visit(IntType intType) {
-            out = intType.castValue(in);
+            out = transform(intType.castValue(in));
         }
 
         @Override
@@ -91,7 +91,7 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
         @Override
         public void visit(FloatType floatType) {
-            out = transform(floatType.castValue(in));
+            out = floatType.castValue(in);
         }
 
         @Override

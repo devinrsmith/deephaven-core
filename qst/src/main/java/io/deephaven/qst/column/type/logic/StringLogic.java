@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.ColumnType;
 import io.deephaven.qst.ReturnTypeLogic;

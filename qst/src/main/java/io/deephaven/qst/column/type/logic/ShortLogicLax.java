@@ -1,13 +1,13 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.GenericType;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class ShortLogicStrict extends ShortLogicBase {
+public abstract class ShortLogicLax extends ShortLogicBase {
 
-    public static ShortLogicStrict instance() {
-        return ImmutableShortLogicStrict.of();
+    public static ShortLogicLax instance() {
+        return ImmutableShortLogicLax.of();
     }
 
     @Override
@@ -22,41 +22,26 @@ public abstract class ShortLogicStrict extends ShortLogicBase {
 
     @Override
     public final short transform(char x) {
-        if ((short)x != x) {
-            throw new IllegalArgumentException();
-        }
         return (short)x;
     }
 
     @Override
     public final short transform(int x) {
-        if ((short)x != x) {
-            throw new IllegalArgumentException();
-        }
         return (short)x;
     }
 
     @Override
     public final short transform(long x) {
-        if ((short)x != x) {
-            throw new IllegalArgumentException();
-        }
         return (short)x;
     }
 
     @Override
     public final short transform(float x) {
-        if ((short)x != x) {
-            throw new IllegalArgumentException();
-        }
         return (short)x;
     }
 
     @Override
     public final short transform(double x) {
-        if ((short)x != x) {
-            throw new IllegalArgumentException();
-        }
         return (short)x;
     }
 

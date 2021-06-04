@@ -24,7 +24,7 @@ import io.deephaven.qst.column.type.CharType;
 import io.deephaven.qst.column.Column;
 import io.deephaven.qst.column.type.ColumnType.Visitor;
 import io.deephaven.qst.column.type.DoubleType;
-import io.deephaven.qst.logic.FloatType;
+import io.deephaven.qst.column.type.logic.FloatType;
 import io.deephaven.qst.column.type.GenericType;
 import io.deephaven.qst.column.type.IntType;
 import io.deephaven.qst.column.type.LongType;

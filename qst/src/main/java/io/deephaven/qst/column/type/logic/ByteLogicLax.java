@@ -1,13 +1,13 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.GenericType;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class ByteLogicStrict extends ByteLogicBase {
+public abstract class ByteLogicLax extends ByteLogicBase {
 
-    public static ByteLogicStrict instance() {
-        return ImmutableByteLogicStrict.of();
+    public static ByteLogicLax instance() {
+        return ImmutableByteLogicLax.of();
     }
 
     @Override
@@ -17,31 +17,49 @@ public abstract class ByteLogicStrict extends ByteLogicBase {
 
     @Override
     public final byte transform(char x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 
     @Override
     public final byte transform(short x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 
     @Override
     public final byte transform(int x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 
     @Override
     public final byte transform(long x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 
     @Override
     public final byte transform(float x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 
     @Override
     public final byte transform(double x) {
+        if ((byte)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (byte)x;
     }
 

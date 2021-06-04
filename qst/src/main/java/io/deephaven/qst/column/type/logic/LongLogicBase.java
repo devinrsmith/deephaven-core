@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.BooleanType;
 import io.deephaven.qst.column.type.ByteType;
@@ -14,43 +14,43 @@ import io.deephaven.qst.column.type.ShortType;
 import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
-abstract class ByteLogicBase implements ReturnTypeLogic<Byte> {
+abstract class LongLogicBase implements ReturnTypeLogic<Long> {
 
     @Override
-    public final <T> Byte transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Long transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract byte transform(boolean x);
+    public abstract long transform(boolean x);
 
-    public abstract byte transform(char x);
+    public abstract long transform(byte x);
 
-    public abstract byte transform(short x);
+    public abstract long transform(char x);
 
-    public abstract byte transform(int x);
+    public abstract long transform(short x);
 
-    public abstract byte transform(long x);
+    public abstract long transform(int x);
 
-    public abstract byte transform(float x);
+    public abstract long transform(float x);
 
-    public abstract byte transform(double x);
+    public abstract long transform(double x);
 
-    public abstract byte transform(String x);
+    public abstract long transform(String x);
 
-    public abstract <T> byte transform(GenericType<T> type, T value);
+    public abstract <T> long transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Byte out;
+        private Long out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Byte getOut() {
+        public Long getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -61,7 +61,7 @@ abstract class ByteLogicBase implements ReturnTypeLogic<Byte> {
 
         @Override
         public void visit(ByteType byteType) {
-            out = byteType.castValue(in);
+            out = transform(byteType.castValue(in));
         }
 
         @Override
@@ -81,7 +81,7 @@ abstract class ByteLogicBase implements ReturnTypeLogic<Byte> {
 
         @Override
         public void visit(LongType longType) {
-            out = transform(longType.castValue(in));
+            out = longType.castValue(in);
         }
 
         @Override

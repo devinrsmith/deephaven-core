@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.BooleanType;
 import io.deephaven.qst.column.type.ByteType;
@@ -14,69 +14,69 @@ import io.deephaven.qst.column.type.ShortType;
 import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
-abstract class CharLogicBase implements ReturnTypeLogic<Character> {
+abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {
 
     @Override
-    public final <T> Character transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Boolean transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract char transform(boolean x);
+    public abstract boolean transform(byte x);
 
-    public abstract char transform(byte x);
+    public abstract boolean transform(char x);
 
-    public abstract char transform(short x);
+    public abstract boolean transform(short x);
 
-    public abstract char transform(int x);
+    public abstract boolean transform(int x);
 
-    public abstract char transform(long x);
+    public abstract boolean transform(long x);
 
-    public abstract char transform(float x);
+    public abstract boolean transform(float x);
 
-    public abstract char transform(double x);
+    public abstract boolean transform(double x);
 
-    public abstract char transform(String x);
+    public abstract boolean transform(String x);
 
-    public abstract <T> char transform(GenericType<T> type, T value);
+    public abstract <T> boolean transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Character out;
+        private Boolean out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Character getOut() {
+        public Boolean getOut() {
             return Objects.requireNonNull(out);
         }
 
         @Override
         public void visit(BooleanType booleanType) {
-            out = transform(booleanType.castValue(in));
+            out = ColumnType.castValue(booleanType, in);
         }
 
         @Override
         public void visit(ByteType byteType) {
-            out = transform(byteType.castValue(in));
+            out = transform(ColumnType.castValue(byteType, in));
         }
 
         @Override
         public void visit(CharType charType) {
-            out = charType.castValue(in);
+            out = transform(ColumnType.castValue(charType, in));
         }
 
         @Override
         public void visit(ShortType shortType) {
-            out = transform(shortType.castValue(in));
+            out = transform(ColumnType.castValue(shortType, in));
         }
 
         @Override
         public void visit(IntType intType) {
-            out = transform(intType.castValue(in));
+            out = transform(ColumnType.castValue(intType, in));
         }
 
         @Override

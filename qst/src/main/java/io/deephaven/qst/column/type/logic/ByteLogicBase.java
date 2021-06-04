@@ -1,4 +1,4 @@
-package io.deephaven.qst.logic;
+package io.deephaven.qst.column.type.logic;
 
 import io.deephaven.qst.column.type.BooleanType;
 import io.deephaven.qst.column.type.ByteType;
@@ -14,43 +14,43 @@ import io.deephaven.qst.column.type.ShortType;
 import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
-abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
+abstract class ByteLogicBase implements ReturnTypeLogic<Byte> {
 
     @Override
-    public final <T> Double transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Byte transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract double transform(boolean x);
+    public abstract byte transform(boolean x);
 
-    public abstract double transform(byte x);
+    public abstract byte transform(char x);
 
-    public abstract double transform(char x);
+    public abstract byte transform(short x);
 
-    public abstract double transform(short x);
+    public abstract byte transform(int x);
 
-    public abstract double transform(int x);
+    public abstract byte transform(long x);
 
-    public abstract double transform(long x);
+    public abstract byte transform(float x);
 
-    public abstract double transform(float x);
+    public abstract byte transform(double x);
 
-    public abstract double transform(String x);
+    public abstract byte transform(String x);
 
-    public abstract <T> double transform(GenericType<T> type, T value);
+    public abstract <T> byte transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Double out;
+        private Byte out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Double getOut() {
+        public Byte getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -61,7 +61,7 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
         @Override
         public void visit(ByteType byteType) {
-            out = transform(byteType.castValue(in));
+            out = byteType.castValue(in);
         }
 
         @Override
@@ -96,7 +96,7 @@ abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
         @Override
         public void visit(DoubleType doubleType) {
-            out = doubleType.castValue(in);
+            out = transform(doubleType.castValue(in));
         }
 
         @Override

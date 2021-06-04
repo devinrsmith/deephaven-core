@@ -1,4 +1,4 @@
-package io.deephaven.qst.time;
+package io.deephaven.qst.table.time;
 
 import java.time.Duration;
 import java.util.Optional;

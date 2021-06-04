@@ -1,4 +1,4 @@
-package io.deephaven.qst.time;
+package io.deephaven.qst.table.time;
 
 import org.immutables.value.Value.Immutable;
 

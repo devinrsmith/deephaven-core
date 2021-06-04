@@ -7,11 +7,11 @@ package io.deephaven.db.v2.utils;
 import io.deephaven.db.tables.utils.DBDateTime;
 import io.deephaven.db.tables.utils.DBTimeUtils;
 import io.deephaven.db.v2.replay.Replayer;
-import io.deephaven.qst.time.NamedTimeProvider;
-import io.deephaven.qst.time.OffsetTimeProvider;
-import io.deephaven.qst.time.ScaledTimeProvider;
-import io.deephaven.qst.time.SystemTimeProvider;
-import io.deephaven.qst.time.TimeTable;
+import io.deephaven.qst.table.time.NamedTimeProvider;
+import io.deephaven.qst.table.time.OffsetTimeProvider;
+import io.deephaven.qst.table.time.ScaledTimeProvider;
+import io.deephaven.qst.table.time.SystemTimeProvider;
+import io.deephaven.qst.table.time.TimeTable;
 import java.util.Objects;
 
 /**
@@ -25,7 +25,7 @@ public interface TimeProvider {
 
     DBDateTime currentTime();
 
-    class ConvertImpl implements io.deephaven.qst.time.TimeProvider.Visitor {
+    class ConvertImpl implements io.deephaven.qst.table.time.TimeProvider.Visitor {
 
         private TimeTable in;
         private TimeProvider out;

@@ -1,7 +1,7 @@
 package io.deephaven.db.v2.sources.immutable;
 
 import io.deephaven.db.v2.sources.ImmutableColumnSourceGetDefaults;
-import io.deephaven.qst.column.Column;
+import io.deephaven.qst.table.column.Column;
 
 public final class ImmutableColumnGenericSource<T> extends ImmutableColumnSource<T> implements ImmutableColumnSourceGetDefaults.ForObject<T> {
 

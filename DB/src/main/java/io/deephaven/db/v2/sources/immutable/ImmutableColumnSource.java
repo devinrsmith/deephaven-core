@@ -1,7 +1,7 @@
 package io.deephaven.db.v2.sources.immutable;
 
 import io.deephaven.db.v2.sources.AbstractColumnSource;
-import io.deephaven.qst.column.Column;
+import io.deephaven.qst.table.column.Column;
 import java.util.Objects;
 
 public abstract class ImmutableColumnSource<T> extends AbstractColumnSource<T> {

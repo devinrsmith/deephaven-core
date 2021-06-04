@@ -1,6 +1,6 @@
 package io.deephaven.qst;
 
-import io.deephaven.qst.column.type.ColumnType;
+import io.deephaven.qst.table.column.type.ColumnType;
 import java.util.Iterator;
 import java.util.stream.StreamSupport;
 

@@ -2,11 +2,11 @@ package io.deephaven.db.tables.utils;
 
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.v2.InMemoryTable;
-import io.deephaven.qst.column.Column;
+import io.deephaven.qst.table.column.Column;
 import io.deephaven.qst.ColumnHeader;
-import io.deephaven.qst.column.type.ColumnType;
-import io.deephaven.qst.NewTable;
-import io.deephaven.qst.TableHeader;
+import io.deephaven.qst.table.column.type.ColumnType;
+import io.deephaven.qst.table.NewTable;
+import io.deephaven.qst.table.TableHeader;
 import io.deephaven.qst.TypeLogic;
 import io.deephaven.qst.TypeLogicImpl;
 import java.io.File;

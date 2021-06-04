@@ -1,6 +1,6 @@
 package io.deephaven.qst;
 
-import io.deephaven.qst.column.type.ColumnType;
+import io.deephaven.qst.table.column.type.ColumnType;
 
 public interface ReturnTypeLogic<R> {
 

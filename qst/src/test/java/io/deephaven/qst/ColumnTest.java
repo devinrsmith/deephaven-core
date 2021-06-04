@@ -2,8 +2,8 @@ package io.deephaven.qst;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.deephaven.qst.column.Column;
-import io.deephaven.qst.column.header.ColumnHeader;
+import io.deephaven.qst.table.column.Column;
+import io.deephaven.qst.table.column.header.ColumnHeader;
 import org.junit.jupiter.api.Test;
 
 public class ColumnTest {

@@ -3,7 +3,7 @@ package io.deephaven.db.v2.sources.immutable;
 import static io.deephaven.util.QueryConstants.NULL_FLOAT;
 
 import io.deephaven.db.v2.sources.ImmutableColumnSourceGetDefaults;
-import io.deephaven.qst.column.Column;
+import io.deephaven.qst.table.column.Column;
 
 public final class ImmutableColumnFloatSource extends ImmutableColumnSource<Float> implements ImmutableColumnSourceGetDefaults.ForFloat {
 

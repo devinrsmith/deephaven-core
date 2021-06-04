@@ -3,7 +3,7 @@ package io.deephaven.db.v2.sources.immutable;
 import static io.deephaven.util.QueryConstants.NULL_CHAR;
 
 import io.deephaven.db.v2.sources.ImmutableColumnSourceGetDefaults;
-import io.deephaven.qst.column.Column;
+import io.deephaven.qst.table.column.Column;
 
 public final class ImmutableColumnCharSource extends ImmutableColumnSource<Character> implements ImmutableColumnSourceGetDefaults.ForChar {
 

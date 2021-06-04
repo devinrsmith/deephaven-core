@@ -1,6 +1,6 @@
 package io.deephaven.qst.time;
 
-import io.deephaven.qst.TableBase;
+import io.deephaven.qst.table.TableBase;
 import java.time.Duration;
 import java.time.Instant;
 import org.immutables.value.Value.Immutable;

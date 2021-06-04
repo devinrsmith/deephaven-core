@@ -1,8 +1,8 @@
 package io.deephaven.qst;
 
 import io.deephaven.qst.column.Column;
-import io.deephaven.qst.column.ColumnHeader;
-import io.deephaven.qst.column.ColumnHeaders3;
+import io.deephaven.qst.column.header.ColumnHeader;
+import io.deephaven.qst.column.header.ColumnHeaders3;
 
 public class Examples4 {
 

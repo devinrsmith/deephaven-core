@@ -1,7 +1,9 @@
-package io.deephaven.qst.column;
+package io.deephaven.qst.column.header;
 
 import io.deephaven.qst.NewTableBuildable;
 import io.deephaven.qst.TableHeader;
+import io.deephaven.qst.column.Column;
+import io.deephaven.qst.column.ColumnBuilder;
 import io.deephaven.qst.column.type.ColumnType;
 import java.util.stream.Stream;
 import org.immutables.value.Value.Immutable;
@@ -46,16 +48,16 @@ public abstract class ColumnHeaders4<A, B, C, D> {
 
     public class Rows extends NewTableBuildable {
         private final ColumnHeaders3<A, B, C>.Rows others;
-        private final ImmutableColumn.Builder<D> builder;
+        private final ColumnBuilder<D> builder;
 
         Rows() {
             others = others().start();
-            builder = ImmutableColumn.<D>builder().header(headerD());
+            builder = Column.builder(headerD());
         }
 
         public final Rows row(A a, B b, C c, D d) {
             others.row(a, b, c);
-            builder.addValues(d);
+            builder.add(d);
             return this;
         }
 

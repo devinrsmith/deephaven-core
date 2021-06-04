@@ -2,7 +2,7 @@ package io.deephaven.qst;
 
 import io.deephaven.qst.ImmutableTableHeader.Builder;
 import io.deephaven.qst.column.Column;
-import io.deephaven.qst.column.ColumnHeader;
+import io.deephaven.qst.column.header.ColumnHeader;
 import java.util.Iterator;
 import java.util.List;
 import org.immutables.value.Value.Check;

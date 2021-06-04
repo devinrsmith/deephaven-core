@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 import io.deephaven.qst.column.Column;
-import io.deephaven.qst.column.ColumnHeader;
+import io.deephaven.qst.column.header.ColumnHeader;
 import org.junit.jupiter.api.Test;
 
 public class NewTableTest {

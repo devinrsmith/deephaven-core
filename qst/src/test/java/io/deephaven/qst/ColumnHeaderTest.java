@@ -1,13 +1,13 @@
 package io.deephaven.qst;
 
-import static io.deephaven.qst.column.ColumnHeader.ofBoolean;
-import static io.deephaven.qst.column.ColumnHeader.ofByte;
-import static io.deephaven.qst.column.ColumnHeader.ofChar;
-import static io.deephaven.qst.column.ColumnHeader.ofDouble;
-import static io.deephaven.qst.column.ColumnHeader.ofFloat;
-import static io.deephaven.qst.column.ColumnHeader.ofInt;
-import static io.deephaven.qst.column.ColumnHeader.ofLong;
-import static io.deephaven.qst.column.ColumnHeader.ofShort;
+import static io.deephaven.qst.column.header.ColumnHeader.ofBoolean;
+import static io.deephaven.qst.column.header.ColumnHeader.ofByte;
+import static io.deephaven.qst.column.header.ColumnHeader.ofChar;
+import static io.deephaven.qst.column.header.ColumnHeader.ofDouble;
+import static io.deephaven.qst.column.header.ColumnHeader.ofFloat;
+import static io.deephaven.qst.column.header.ColumnHeader.ofInt;
+import static io.deephaven.qst.column.header.ColumnHeader.ofLong;
+import static io.deephaven.qst.column.header.ColumnHeader.ofShort;
 import static io.deephaven.qst.column.type.ColumnType.booleanType;
 import static io.deephaven.qst.column.type.ColumnType.byteType;
 import static io.deephaven.qst.column.type.ColumnType.charType;
@@ -18,7 +18,7 @@ import static io.deephaven.qst.column.type.ColumnType.longType;
 import static io.deephaven.qst.column.type.ColumnType.shortType;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.deephaven.qst.column.ColumnHeader;
+import io.deephaven.qst.column.header.ColumnHeader;
 import org.junit.jupiter.api.Test;
 
 public class ColumnHeaderTest {

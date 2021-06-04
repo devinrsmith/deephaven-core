@@ -3,6 +3,7 @@ package io.deephaven.qst;
 import io.deephaven.qst.ImmutableTableHeader.Builder;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
@@ -69,6 +70,9 @@ public abstract class NewTable extends TableBase {
 
     @Check
     final void checkValidHeader() {
-        header(); // ensure we can build the header
+        // ensure we can build the header
+        if (header().numColumns() != numColumns()) {
+            throw new IllegalArgumentException("All headers must have distinct names");
+        }
     }
 }

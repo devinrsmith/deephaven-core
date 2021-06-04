@@ -2,8 +2,9 @@ package io.deephaven.qst;
 
 import java.util.stream.Stream;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Parameter;
 
-@Immutable
+@Immutable(builder = false, copy = false)
 public abstract class ColumnHeader<T> {
 
     public static <T> ColumnHeader<T> of(String name, Class<T> clazz) {
@@ -11,11 +12,23 @@ public abstract class ColumnHeader<T> {
     }
 
     public static <T> ColumnHeader<T> of(String name, ColumnType<T> type) {
-        return ImmutableColumnHeader.<T>builder().name(name).type(type).build();
+        return ImmutableColumnHeader.of(name, type);
     }
 
     public static ColumnHeader<Boolean> ofBoolean(String name) {
         return of(name, ColumnType.booleanType());
+    }
+
+    public static ColumnHeader<Byte> ofByte(String name) {
+        return of(name, ColumnType.byteType());
+    }
+
+    public static ColumnHeader<Character> ofChar(String name) {
+        return of(name, ColumnType.charType());
+    }
+
+    public static ColumnHeader<Short> ofShort(String name) {
+        return of(name, ColumnType.shortType());
     }
 
     public static ColumnHeader<Integer> ofInt(String name) {
@@ -26,12 +39,16 @@ public abstract class ColumnHeader<T> {
         return of(name, ColumnType.longType());
     }
 
-    public static ColumnHeader<String> ofString(String name) {
-        return of(name, ColumnType.stringType());
+    public static ColumnHeader<Float> ofFloat(String name) {
+        return of(name, ColumnType.floatType());
     }
 
     public static ColumnHeader<Double> ofDouble(String name) {
         return of(name, ColumnType.doubleType());
+    }
+
+    public static ColumnHeader<String> ofString(String name) {
+        return of(name, ColumnType.stringType());
     }
 
     public static <A, B> ColumnHeaders2<A, B> of(ColumnHeader<A> a, ColumnHeader<B> b) {
@@ -50,23 +67,34 @@ public abstract class ColumnHeader<T> {
         return a.header(b).header(c).header(d).header(e);
     }
 
+    @Parameter
     public abstract String name();
 
+    @Parameter
     public abstract ColumnType<T> type();
-
-    public final ColumnHeader<T> headerA() {
-        return this;
-    }
 
     public final <B> ColumnHeaders2<T, B> header(String name, Class<B> clazz) {
         return header(ColumnHeader.of(name, clazz));
     }
 
+    public final <B> ColumnHeaders2<T, B> header(String name, ColumnType<B> type) {
+        return header(ColumnHeader.of(name, type));
+    }
+
     public final <B> ColumnHeaders2<T, B> header(ColumnHeader<B> header) {
-        return ImmutableColumnHeaders2.<T, B>builder()
-          .headerA(this)
-          .headerB(header)
-          .build();
+        return ImmutableColumnHeaders2.of(this, header);
+    }
+
+    public final ColumnHeader<T> headerA() {
+        return this;
+    }
+
+    public final Stream<ColumnHeader<?>> headers() {
+        return Stream.of(headerA());
+    }
+
+    public final TableHeader toTableHeader() {
+        return TableHeader.of(() -> headers().iterator());
     }
 
     public final Column<T> emptyData() {
@@ -82,19 +110,15 @@ public abstract class ColumnHeader<T> {
     }
 
     public final <R> Column<T> withData(TypeLogic typeLogic, ColumnType<R> fromType, Iterable<R> fromData) {
-        final ColumnBuilder<T> builder = withBuilder();
+        final ColumnBuilder<T> builder = columnBuilder();
         for (R fromDatum : fromData) {
             builder.add(typeLogic.transform(type(), fromType, fromDatum));
         }
         return builder.build();
     }
 
-    public final ColumnBuilder<T> withBuilder() {
+    public final ColumnBuilder<T> columnBuilder() {
         return Column.builder(this);
-    }
-
-    public final TableHeader toTableHeader() {
-        return TableHeader.of(headerA());
     }
 
     public final Rows start() {

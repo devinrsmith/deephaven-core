@@ -36,10 +36,7 @@ public class NewTableTest {
         NewTable expected = ImmutableNewTable.builder()
             .size(3)
             .addColumns(ImmutableColumn.<Integer>builder()
-                .header(ImmutableColumnHeader.<Integer>builder()
-                    .name("X")
-                    .type(IntType.instance())
-                    .build())
+                .header(ColumnHeader.ofInt("X"))
                 .addValues(1, null, 3)
                 .build())
             .build();
@@ -53,18 +50,12 @@ public class NewTableTest {
     public void newTableHelperRowOriented() {
 
         Column<Integer> x = ImmutableColumn.<Integer>builder()
-            .header(ImmutableColumnHeader.<Integer>builder()
-                .name("X")
-                .type(IntType.instance())
-                .build())
+            .header(ColumnHeader.ofInt("X"))
             .addValues(1, 2)
             .build();
 
         Column<String> y = ImmutableColumn.<String>builder()
-            .header(ImmutableColumnHeader.<String>builder()
-                .name("Y")
-                .type(StringType.instance())
-                .build())
+            .header(ColumnHeader.ofString("Y"))
             .addValues("one", "two")
             .build();
 

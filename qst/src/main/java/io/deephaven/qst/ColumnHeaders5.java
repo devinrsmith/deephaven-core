@@ -2,32 +2,35 @@ package io.deephaven.qst;
 
 import java.util.stream.Stream;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Parameter;
 
-@Immutable
+@Immutable(builder = false, copy = false)
 public abstract class ColumnHeaders5<A, B, C, D, E> {
 
-    public abstract ColumnHeaders4<A, B, C, D> others();
-
+    @Parameter
     public abstract ColumnHeader<E> headerE();
 
-    public final ColumnHeader<A> headerA() {
-        return others().headerA();
+    @Parameter
+    public abstract ColumnHeaders4<A, B, C, D> others();
+
+    public final <F> ColumnHeaders6<A, B, C, D, E, F> header(String name, Class<F> clazz) {
+        return header(ColumnHeader.of(name, clazz));
     }
 
-    public final ColumnHeader<B> headerB() {
-        return others().headerB();
+    public final <F> ColumnHeaders6<A, B, C, D, E, F> header(String name, ColumnType<F> type) {
+        return header(ColumnHeader.of(name, type));
     }
 
-    public final ColumnHeader<C> headerC() {
-        return others().headerC();
+    public final <F> ColumnHeaders6<A, B, C, D, E, F> header(ColumnHeader<F> header) {
+        return ImmutableColumnHeaders6.of(header, this);
     }
 
-    public final ColumnHeader<D> headerD() {
-        return others().headerD();
+    public final Stream<ColumnHeader<?>> headers() {
+        return Stream.concat(others().headers(), Stream.of(headerE()));
     }
 
     public final TableHeader toTableHeader() {
-        return TableHeader.of(headerA(), headerB(), headerC(), headerD(), headerE());
+        return TableHeader.of(() -> headers().iterator());
     }
 
     public final Rows start() {

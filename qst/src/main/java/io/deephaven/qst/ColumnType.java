@@ -46,6 +46,10 @@ public interface ColumnType<T> {
         return StringType.instance();
     }
 
+    static <T> GenericType<T> ofGeneric(Class<T> clazz) {
+        return GenericType.of(clazz);
+    }
+
     static Stream<ColumnType<?>> staticTypes() {
         return Stream.of(
             booleanType(),

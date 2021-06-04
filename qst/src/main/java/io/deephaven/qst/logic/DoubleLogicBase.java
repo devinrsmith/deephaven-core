@@ -1,45 +1,56 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.BooleanType;
+import io.deephaven.qst.ByteType;
+import io.deephaven.qst.CharType;
+import io.deephaven.qst.ColumnType;
 import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.GenericType;
+import io.deephaven.qst.IntType;
+import io.deephaven.qst.LongType;
+import io.deephaven.qst.ReturnTypeLogic;
+import io.deephaven.qst.ShortType;
+import io.deephaven.qst.StringType;
 import java.util.Objects;
 
-abstract class CharLogicBase implements ReturnTypeLogic<Character> {
+abstract class DoubleLogicBase implements ReturnTypeLogic<Double> {
 
     @Override
-    public final <T> Character transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Double transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract char transform(boolean x);
+    public abstract double transform(boolean x);
 
-    public abstract char transform(byte x);
+    public abstract double transform(byte x);
 
-    public abstract char transform(short x);
+    public abstract double transform(char x);
 
-    public abstract char transform(int x);
+    public abstract double transform(short x);
 
-    public abstract char transform(long x);
+    public abstract double transform(int x);
 
-    public abstract char transform(float x);
+    public abstract double transform(long x);
 
-    public abstract char transform(double x);
+    public abstract double transform(float x);
 
-    public abstract char transform(String x);
+    public abstract double transform(String x);
 
-    public abstract <T> char transform(GenericType<T> type, T value);
+    public abstract <T> double transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Character out;
+        private Double out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Character getOut() {
+        public Double getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -55,7 +66,7 @@ abstract class CharLogicBase implements ReturnTypeLogic<Character> {
 
         @Override
         public void visit(CharType charType) {
-            out = charType.castValue(in);
+            out = transform(charType.castValue(in));
         }
 
         @Override
@@ -85,7 +96,7 @@ abstract class CharLogicBase implements ReturnTypeLogic<Character> {
 
         @Override
         public void visit(DoubleType doubleType) {
-            out = transform(doubleType.castValue(in));
+            out = doubleType.castValue(in);
         }
 
         @Override

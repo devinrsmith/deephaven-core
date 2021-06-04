@@ -1,6 +1,22 @@
 package io.deephaven.qst;
 
 import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.logic.BooleanLogicLax;
+import io.deephaven.qst.logic.BooleanLogicStrict;
+import io.deephaven.qst.logic.ByteLogicLax;
+import io.deephaven.qst.logic.ByteLogicStrict;
+import io.deephaven.qst.logic.CharLogicLax;
+import io.deephaven.qst.logic.CharLogicStrict;
+import io.deephaven.qst.logic.DoubleLogic;
+import io.deephaven.qst.logic.FloatLogic;
+import io.deephaven.qst.logic.FloatType;
+import io.deephaven.qst.logic.IntLogicLax;
+import io.deephaven.qst.logic.IntLogicStrict;
+import io.deephaven.qst.logic.LongLogicLax;
+import io.deephaven.qst.logic.LongLogicStrict;
+import io.deephaven.qst.logic.ShortLogicLax;
+import io.deephaven.qst.logic.ShortLogicStrict;
+import io.deephaven.qst.logic.StringLogic;
 import java.util.Objects;
 import org.immutables.value.Value.Immutable;
 

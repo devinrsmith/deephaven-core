@@ -1,6 +1,17 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.BooleanType;
+import io.deephaven.qst.ByteType;
+import io.deephaven.qst.CharType;
+import io.deephaven.qst.ColumnType;
 import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.GenericType;
+import io.deephaven.qst.IntType;
+import io.deephaven.qst.LongType;
+import io.deephaven.qst.ReturnTypeLogic;
+import io.deephaven.qst.ShortType;
+import io.deephaven.qst.StringType;
 import java.util.Objects;
 
 abstract class FloatLogicBase implements ReturnTypeLogic<Float> {

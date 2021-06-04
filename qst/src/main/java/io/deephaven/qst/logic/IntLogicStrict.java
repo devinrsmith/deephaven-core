@@ -1,5 +1,6 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.GenericType;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)

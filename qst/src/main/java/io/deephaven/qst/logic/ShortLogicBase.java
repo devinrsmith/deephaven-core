@@ -1,45 +1,56 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.BooleanType;
+import io.deephaven.qst.ByteType;
+import io.deephaven.qst.CharType;
+import io.deephaven.qst.ColumnType;
 import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.DoubleType;
+import io.deephaven.qst.GenericType;
+import io.deephaven.qst.IntType;
+import io.deephaven.qst.LongType;
+import io.deephaven.qst.ReturnTypeLogic;
+import io.deephaven.qst.ShortType;
+import io.deephaven.qst.StringType;
 import java.util.Objects;
 
-abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
+abstract class ShortLogicBase implements ReturnTypeLogic<Short> {
 
     @Override
-    public final <T> Integer transform(ColumnType<T> inputType, T inputValue) {
+    public final <T> Short transform(ColumnType<T> inputType, T inputValue) {
         return inputValue == null ?
             null :
             inputType.walk(new Transform(inputValue)).getOut();
     }
 
-    public abstract int transform(boolean x);
+    public abstract short transform(boolean x);
 
-    public abstract int transform(byte x);
+    public abstract short transform(byte x);
 
-    public abstract int transform(char x);
+    public abstract short transform(char x);
 
-    public abstract int transform(short x);
+    public abstract short transform(int x);
 
-    public abstract int transform(long x);
+    public abstract short transform(long x);
 
-    public abstract int transform(float x);
+    public abstract short transform(float x);
 
-    public abstract int transform(double x);
+    public abstract short transform(double x);
 
-    public abstract int transform(String x);
+    public abstract short transform(String x);
 
-    public abstract <T> int transform(GenericType<T> type, T value);
+    public abstract <T> short transform(GenericType<T> type, T value);
 
     class Transform implements Visitor {
 
         private final Object in;
-        private Integer out;
+        private Short out;
 
         public Transform(Object in) {
             this.in = Objects.requireNonNull(in);
         }
 
-        public Integer getOut() {
+        public Short getOut() {
             return Objects.requireNonNull(out);
         }
 
@@ -60,12 +71,12 @@ abstract class IntLogicBase implements ReturnTypeLogic<Integer> {
 
         @Override
         public void visit(ShortType shortType) {
-            out = transform(shortType.castValue(in));
+            out = shortType.castValue(in);
         }
 
         @Override
         public void visit(IntType intType) {
-            out = intType.castValue(in);
+            out = transform(intType.castValue(in));
         }
 
         @Override

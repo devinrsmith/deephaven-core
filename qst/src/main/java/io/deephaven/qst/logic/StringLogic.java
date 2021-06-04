@@ -1,4 +1,7 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
+
+import io.deephaven.qst.ColumnType;
+import io.deephaven.qst.ReturnTypeLogic;
 
 public enum StringLogic implements ReturnTypeLogic<String> {
     INSTANCE;

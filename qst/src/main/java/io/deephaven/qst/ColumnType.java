@@ -1,5 +1,6 @@
 package io.deephaven.qst;
 
+import io.deephaven.qst.logic.FloatType;
 import java.util.stream.Stream;
 
 public interface ColumnType<T> {

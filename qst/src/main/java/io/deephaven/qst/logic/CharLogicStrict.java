@@ -1,12 +1,13 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.GenericType;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class CharLogicLax extends CharLogicBase {
+public abstract class CharLogicStrict extends CharLogicBase {
 
-    public static CharLogicLax instance() {
-        return ImmutableCharLogicLax.of();
+    public static CharLogicStrict instance() {
+        return ImmutableCharLogicStrict.of();
     }
 
     @Override
@@ -26,21 +27,33 @@ public abstract class CharLogicLax extends CharLogicBase {
 
     @Override
     public final char transform(int x) {
+        if ((char)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (char)x;
     }
 
     @Override
     public final char transform(long x) {
+        if ((char)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (char)x;
     }
 
     @Override
     public final char transform(float x) {
+        if ((char)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (char)x;
     }
 
     @Override
     public final char transform(double x) {
+        if ((char)x != x) {
+            throw new IllegalArgumentException();
+        }
         return (char)x;
     }
 

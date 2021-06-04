@@ -1,5 +1,7 @@
 package io.deephaven.db.tables.utils;
 
+import io.deephaven.db.tables.Table;
+import io.deephaven.db.v2.InMemoryTable;
 import io.deephaven.qst.Column;
 import io.deephaven.qst.ColumnHeader;
 import io.deephaven.qst.ColumnType;
@@ -41,42 +43,42 @@ public abstract class CsvSpecs {
         return ImmutableCsvSpecs.builder();
     }
 
-    public static NewTable parse(TableHeader header, String file) throws IOException {
+    public static Table parse(TableHeader header, String file) throws IOException {
         return parse(header, new File(file));
     }
 
-    public static NewTable parse(TableHeader header, File file) throws IOException {
+    public static Table parse(TableHeader header, File file) throws IOException {
         return builder()
             .header(header)
             .file(file)
             .build()
-            .parse();
+            .parseTable();
     }
 
-    public static NewTable parse(TableHeader header, URL url) throws IOException {
+    public static Table parse(TableHeader header, URL url) throws IOException {
         return builder()
             .header(header)
             .url(url)
             .build()
-            .parse();
+            .parseTable();
     }
 
-    public static NewTable parse(String file) throws IOException {
+    public static Table parse(String file) throws IOException {
         return parse(new File(file));
     }
 
-    public static NewTable parse(File file) throws IOException {
+    public static Table parse(File file) throws IOException {
         return builder()
             .file(file)
             .build()
-            .parse();
+            .parseTable();
     }
 
-    public static NewTable parse(URL url) throws IOException {
+    public static Table parse(URL url) throws IOException {
         return builder()
             .url(url)
             .build()
-            .parse();
+            .parseTable();
     }
 
     public abstract Optional<TableHeader> header();
@@ -197,6 +199,10 @@ public abstract class CsvSpecs {
 
             return parse(header, dataRecords);
         }
+    }
+
+    public final Table parseTable() throws IOException {
+        return InMemoryTable.from(parse());
     }
 
     private NewTable parse(TableHeader tableHeader, Iterable<CSVRecord> records) {

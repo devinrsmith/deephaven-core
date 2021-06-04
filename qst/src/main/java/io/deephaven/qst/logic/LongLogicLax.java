@@ -1,12 +1,13 @@
-package io.deephaven.qst;
+package io.deephaven.qst.logic;
 
+import io.deephaven.qst.GenericType;
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class LongLogicStrict extends LongLogicBase {
+public abstract class LongLogicLax extends LongLogicBase {
 
-    public static LongLogicStrict instance() {
-        return ImmutableLongLogicStrict.of();
+    public static LongLogicLax instance() {
+        return ImmutableLongLogicLax.of();
     }
 
     @Override
@@ -36,12 +37,12 @@ public abstract class LongLogicStrict extends LongLogicBase {
 
     @Override
     public final long transform(float x) {
-        throw new IllegalArgumentException();
+        return (long)x;
     }
 
     @Override
     public final long transform(double x) {
-        throw new IllegalArgumentException();
+        return (long)x;
     }
 
     @Override

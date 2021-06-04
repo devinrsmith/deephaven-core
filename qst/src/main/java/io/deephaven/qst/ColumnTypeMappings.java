@@ -1,6 +1,7 @@
 package io.deephaven.qst;
 
 import io.deephaven.qst.ColumnType.Visitor;
+import io.deephaven.qst.logic.FloatType;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;

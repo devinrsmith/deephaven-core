@@ -1,4 +1,4 @@
-package io.deephaven.qst.column;
+package io.deephaven.qst.column.type;
 
 import io.deephaven.qst.logic.FloatType;
 import java.util.stream.Stream;

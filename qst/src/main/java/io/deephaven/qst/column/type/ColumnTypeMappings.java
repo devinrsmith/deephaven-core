@@ -1,6 +1,6 @@
-package io.deephaven.qst.column;
+package io.deephaven.qst.column.type;
 
-import io.deephaven.qst.column.ColumnType.Visitor;
+import io.deephaven.qst.column.type.ColumnType.Visitor;
 import io.deephaven.qst.logic.FloatType;
 import java.util.Collections;
 import java.util.HashMap;

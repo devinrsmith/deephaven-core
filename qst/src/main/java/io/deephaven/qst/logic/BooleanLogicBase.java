@@ -1,17 +1,17 @@
 package io.deephaven.qst.logic;
 
-import io.deephaven.qst.column.BooleanType;
-import io.deephaven.qst.column.ByteType;
-import io.deephaven.qst.column.CharType;
-import io.deephaven.qst.column.ColumnType;
-import io.deephaven.qst.column.ColumnType.Visitor;
-import io.deephaven.qst.column.DoubleType;
-import io.deephaven.qst.column.GenericType;
-import io.deephaven.qst.column.IntType;
-import io.deephaven.qst.column.LongType;
+import io.deephaven.qst.column.type.BooleanType;
+import io.deephaven.qst.column.type.ByteType;
+import io.deephaven.qst.column.type.CharType;
+import io.deephaven.qst.column.type.ColumnType;
+import io.deephaven.qst.column.type.ColumnType.Visitor;
+import io.deephaven.qst.column.type.DoubleType;
+import io.deephaven.qst.column.type.GenericType;
+import io.deephaven.qst.column.type.IntType;
+import io.deephaven.qst.column.type.LongType;
 import io.deephaven.qst.ReturnTypeLogic;
-import io.deephaven.qst.column.ShortType;
-import io.deephaven.qst.column.StringType;
+import io.deephaven.qst.column.type.ShortType;
+import io.deephaven.qst.column.type.StringType;
 import java.util.Objects;
 
 abstract class BooleanLogicBase implements ReturnTypeLogic<Boolean> {

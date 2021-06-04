@@ -1,12 +1,12 @@
-package io.deephaven.qst.column;
+package io.deephaven.qst.column.type;
 
 import org.immutables.value.Value.Immutable;
 
 @Immutable(builder = false, copy = false)
-public abstract class StringType extends ColumnTypeBase<String> {
+public abstract class LongType extends ColumnTypeBase<Long> {
 
-    public static StringType instance() {
-        return ImmutableStringType.of();
+    public static LongType instance() {
+        return ImmutableLongType.of();
     }
 
     @Override
@@ -17,6 +17,6 @@ public abstract class StringType extends ColumnTypeBase<String> {
 
     @Override
     public final String toString() {
-        return StringType.class.getName();
+        return LongType.class.getName();
     }
 }

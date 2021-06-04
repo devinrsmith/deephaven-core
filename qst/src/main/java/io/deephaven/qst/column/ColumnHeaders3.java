@@ -2,6 +2,7 @@ package io.deephaven.qst.column;
 
 import io.deephaven.qst.NewTableBuildable;
 import io.deephaven.qst.TableHeader;
+import io.deephaven.qst.column.type.ColumnType;
 import java.util.stream.Stream;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;

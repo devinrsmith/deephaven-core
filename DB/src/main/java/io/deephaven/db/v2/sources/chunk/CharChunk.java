@@ -15,8 +15,6 @@ import java.nio.CharBuffer;
 
 /**
  * {@link Chunk} implementation for char data.
- *
- * @IncludeAll
  */
 public class CharChunk<ATTR extends Any> extends ChunkBase<ATTR> {
 
@@ -111,6 +109,12 @@ public class CharChunk<ATTR extends Any> extends ChunkBase<ATTR> {
     @Override
     public final boolean isAlias(Chunk chunk) {
         return chunk.isAlias(data);
+    }
+
+    @Override
+    public final <V extends Visitor<ATTR>> V walk(V visitor) {
+        visitor.visit(this);
+        return visitor;
     }
 
     // region ApplyDecoder

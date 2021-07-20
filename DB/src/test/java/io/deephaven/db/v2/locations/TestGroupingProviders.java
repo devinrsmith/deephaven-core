@@ -3,11 +3,10 @@ package io.deephaven.db.v2.locations;
 import io.deephaven.base.FileUtils;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.ColumnDefinition;
-import io.deephaven.db.tables.DefaultColumnDefinition;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.db.tables.libs.QueryLibrary;
-import io.deephaven.db.tables.utils.TableManagementTools;
+import io.deephaven.db.tables.utils.ParquetTools;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.util.file.TrackedFileHandleFactory;
 import io.deephaven.db.v2.NestedPartitionedDiskBackedTable;
@@ -15,6 +14,7 @@ import io.deephaven.db.v2.TstUtils;
 import io.deephaven.db.v2.locations.local.NestedPartitionedLocalTableLocationScanner;
 import io.deephaven.db.v2.locations.local.ReadOnlyLocalTableLocationProvider;
 import io.deephaven.db.v2.locations.util.TableDataRefreshService;
+import io.deephaven.db.v2.parquet.ParquetInstructions;
 import io.deephaven.db.v2.sources.regioned.RegionedTableComponentFactoryImpl;
 import junit.framework.TestCase;
 import org.junit.After;
@@ -44,7 +44,7 @@ public class TestGroupingProviders {
 
     @After
     public void tearDown() throws Exception {
-        QueryLibrary.endQuery();
+        QueryLibrary.resetLibrary();
 
         if (dataDirectory.exists()) {
             TrackedFileHandleFactory.getInstance().closeAll();
@@ -121,9 +121,6 @@ public class TestGroupingProviders {
             ColumnDefinition.ofString("Part").withPartitioning(),
             ColumnDefinition.ofChar("Sym").withGrouping(),
             ColumnDefinition.ofLong("Other"));
-        partitionedDataDefinition.setNamespace("TestNamespace");
-        partitionedDataDefinition.setName("TestTable");
-        partitionedDataDefinition.setStorageType(TableDefinition.STORAGETYPE_NESTEDPARTITIONEDONDISK);
 
         final TableDefinition partitionedMissingDataDefinition;
         if (missingGroups) {
@@ -131,34 +128,30 @@ public class TestGroupingProviders {
                 ColumnDefinition.ofString("Part").withPartitioning(),
                 ColumnDefinition.ofChar("Sym"),
                 ColumnDefinition.ofLong("Other"));
-            partitionedMissingDataDefinition.setNamespace("TestNamespace");
-            partitionedMissingDataDefinition.setName("TestTable");
-            partitionedMissingDataDefinition.setStorageType(TableDefinition.STORAGETYPE_NESTEDPARTITIONEDONDISK);
         } else {
             partitionedMissingDataDefinition = TableDefinition.of(
                 ColumnDefinition.ofString("Part").withPartitioning(),
                 ColumnDefinition.ofLong("Other"));
-            partitionedMissingDataDefinition.setNamespace("TestNamespace");
-            partitionedMissingDataDefinition.setName("TestTable");
-            partitionedMissingDataDefinition.setStorageType(TableDefinition.STORAGETYPE_NESTEDPARTITIONEDONDISK);
         }
 
-        final TableKey tableKey = new TableLookupKey.Immutable(partitionedDataDefinition.getNamespace(), partitionedDataDefinition.getName(), TableType.STANDALONE_SPLAYED);
+        final String namespace = "TestNamespace";
+        final String name = "TestTable";
+        final TableKey tableKey = new TableLookupKey.Immutable(namespace, name, TableType.STANDALONE_SPLAYED);
 
-        TableManagementTools.writeTable(partitions[0], partitionedDataDefinition, new File(dataDirectory, "IP" + File.separator + "0000" + File.separator + tableKey.getTableName()), TableManagementTools.StorageFormat.Parquet);
-        TableManagementTools.writeTable(partitions[1], partitionedDataDefinition, new File(dataDirectory, "IP" + File.separator + "0001" + File.separator + tableKey.getTableName()), TableManagementTools.StorageFormat.Parquet);
-        TableManagementTools.writeTable(partitions[2], partitionedMissingDataDefinition, new File(dataDirectory, "IP" + File.separator + "0002" + File.separator + tableKey.getTableName()), TableManagementTools.StorageFormat.Parquet);
-        TableManagementTools.writeTable(partitions[3], partitionedMissingDataDefinition, new File(dataDirectory, "IP" + File.separator + "0003" + File.separator + tableKey.getTableName()), TableManagementTools.StorageFormat.Parquet);
-        TableManagementTools.writeTables(
+        ParquetTools.writeTable(partitions[0], partitionedDataDefinition, new File(dataDirectory, "IP" + File.separator + "0000" + File.separator + tableKey.getTableName() + ".parquet"));
+        ParquetTools.writeTable(partitions[1], partitionedDataDefinition, new File(dataDirectory, "IP" + File.separator + "0001" + File.separator + tableKey.getTableName() + ".parquet"));
+        ParquetTools.writeTable(partitions[2], partitionedMissingDataDefinition, new File(dataDirectory, "IP" + File.separator + "0002" + File.separator + tableKey.getTableName() + ".parquet"));
+        ParquetTools.writeTable(partitions[3], partitionedMissingDataDefinition, new File(dataDirectory, "IP" + File.separator + "0003" + File.separator + tableKey.getTableName() + ".parquet"));
+        ParquetTools.writeTables(
                 Arrays.copyOfRange(partitions, 4, partitions.length),
                 partitionedDataDefinition,
                 IntStream.range(4, 260)
-                        .mapToObj(pcv -> new File(dataDirectory, "IP" + File.separator + String.format("%04d", pcv) + File.separator + tableKey.getTableName()))
+                        .mapToObj(pcv -> new File(dataDirectory, "IP" + File.separator + String.format("%04d", pcv) + File.separator + tableKey.getTableName() + ".parquet"))
                         .toArray(File[]::new)
         );
         // TODO (deephaven/deephaven-core/issues/321): Re-add this part of the test when the parquet bug is fixed
-//        TableManagementTools.writeTable(TableTools.emptyTable(0).updateView("Sym=NULL_CHAR", "Other=NULL_LONG"), partitionedDataDefinition,
-//                new File(dataDirectory, "IP" + File.separator + "XXXX" + File.separator + tableKey.getTableName()), TableManagementTools.StorageFormat.Parquet);
+        ParquetTools.writeTable(TableTools.emptyTable(0).updateView("Sym=NULL_CHAR", "Other=NULL_LONG"), partitionedDataDefinition,
+                new File(dataDirectory, "IP" + File.separator + "XXXX" + File.separator + tableKey.getTableName() + ".parquet"));
 
         if (!missingGroups) {
             // Put Sym back on for the partitions that dropped it.
@@ -174,7 +167,8 @@ public class TestGroupingProviders {
                         tableKey,
                         new NestedPartitionedLocalTableLocationScanner(dataDirectory),
                         false,
-                        TableDataRefreshService.Null.INSTANCE
+                        TableDataRefreshService.Null.INSTANCE,
+                        ParquetInstructions.EMPTY
                 ),
                 null,
                 Collections.emptySet()

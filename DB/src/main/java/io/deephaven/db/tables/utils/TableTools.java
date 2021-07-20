@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
@@ -45,8 +46,6 @@ import java.util.*;
 /**
  * Tools for working with tables.  This includes methods to examine tables, combine them, convert them to and from CSV files,
  * and create and manipulate columns.
- *
- * @IncludeAll
  */
 @SuppressWarnings("unused")
 public class TableTools {
@@ -527,62 +526,6 @@ public class TableTools {
     /**
      * Writes a DB table out as a CSV.
      *
-     * @param sourcePath path to the table files to be exported
-     * @param destPath   path to the CSV file to be written
-     * @param columns    a list of columns to include in the export
-     * @throws IOException if source files cannot be read or target file cannot be written
-     */
-    @ScriptApi
-    public static void writeCsv(String sourcePath, String destPath, String... columns) throws IOException {
-        writeCsv(sourcePath, destPath, false, columns);
-    }
-
-    /**
-     * Writes a DB table out as a CSV.
-     *
-     * @param sourcePath path to the table files to be exported
-     * @param destPath   path to the CSV file to be written
-     * @param columns    a list of columns to include in the export
-     * @throws IOException if source files cannot be read or target file cannot be written
-     */
-    @ScriptApi
-    public static void writeCsv(String sourcePath, String destPath, boolean nullsAsEmpty, String... columns) throws IOException {
-        writeCsv(sourcePath, destPath, DBTimeZone.TZ_DEFAULT, nullsAsEmpty, columns);
-    }
-
-    /**
-     * Writes a DB table out as a CSV.
-     *
-     * @param sourcePath path to the table files to be exported
-     * @param destPath   path to the CSV file to be written
-     * @param timeZone   a DBTimeZone constant relative to which DBDateTime data should be adjusted
-     * @param columns    a list of columns to include in the export
-     * @throws IOException if source files cannot be read or target file cannot be written
-     */
-    @ScriptApi
-    public static void writeCsv(String sourcePath, String destPath, DBTimeZone timeZone, String... columns) throws IOException {
-        writeCsv(sourcePath, destPath, timeZone, false, columns);
-    }
-
-    /**
-     * Writes a DB table out as a CSV.
-     *
-     * @param sourcePath   path to the table files to be exported
-     * @param destPath     path to the CSV file to be written
-     * @param timeZone     a DBTimeZone constant relative to which DBDateTime data should be adjusted
-     * @param nullsAsEmpty if nulls should be written as blank instead of '(null)'
-     * @param columns      a list of columns to include in the export
-     * @throws IOException if source files cannot be read or target file cannot be written
-     */
-    @ScriptApi
-    public static void writeCsv(String sourcePath, String destPath, DBTimeZone timeZone, boolean nullsAsEmpty, String... columns) throws IOException {
-        Table source = TableManagementTools.readTable(new File(sourcePath));
-        writeCsv(source, destPath, false, timeZone, nullsAsEmpty, columns);
-    }
-
-    /**
-     * Writes a DB table out as a CSV.
-     *
      * @param source     a Deephaven table object to be exported
      * @param destPath   path to the CSV file to be written
      * @param compressed whether to compress (bz2) the file being written
@@ -991,7 +934,8 @@ public class TableTools {
         } else if (data.getClass().getComponentType() == Float.class) {
             return floatCol(name, ArrayUtils.getUnboxedArray((Float[]) data));
         }
-        return new ColumnHolder(name, false, data);
+        //noinspection unchecked
+        return new ColumnHolder(name, data.getClass().getComponentType(), data.getClass().getComponentType().getComponentType(), false, data);
     }
 
     /**
@@ -1002,7 +946,7 @@ public class TableTools {
      * @return a Deephaven ColumnHolder object
      */
     public static ColumnHolder stringCol(String name, String... data) {
-        return new ColumnHolder(name, false, data);
+        return new ColumnHolder(name, String.class, null, false, data);
     }
 
     /**
@@ -1013,7 +957,7 @@ public class TableTools {
      * @return a Deephaven ColumnHolder object
      */
     public static ColumnHolder dateTimeCol(String name, DBDateTime... data) {
-        return new ColumnHolder(name, false, data);
+        return new ColumnHolder(name, DBDateTime.class, null, false, data);
     }
 
     /**
@@ -1102,24 +1046,7 @@ public class TableTools {
      * @return a Deephaven Table with no columns.
      */
     public static Table emptyTable(long size) {
-        Map<String, ColumnSource> map = new LinkedHashMap<>();
-        return new QueryTable(Index.FACTORY.getFlatIndex(size), map);
-    }
-
-    /**
-     * Returns a new, empty Deephaven Table.
-     *
-     * @param size            the number of rows to allocate space for
-     * @param tableDefinition the TableDefinition (column names and properties) to use for the new table
-     * @return a Deephaven Table with columns.
-     */
-    public static Table emptyTable(long size, TableDefinition tableDefinition) {
-        Map<String, ColumnSource> map = new LinkedHashMap<>();
-        for (ColumnDefinition columnDefinition : tableDefinition.getColumns()) {
-            //noinspection unchecked
-            map.put(columnDefinition.getName(), ArrayBackedColumnSource.getMemoryColumnSource(size, columnDefinition.getDataType()));
-        }
-        return new QueryTable(tableDefinition, Index.FACTORY.getFlatIndex(size), map);
+        return new QueryTable(Index.FACTORY.getFlatIndex(size), Collections.emptyMap());
     }
 
     private static <MT extends Map<KT, VT>, KT, VT> MT newMapFromLists(Class<MT> mapClass, List<KT> keys, List<VT> values) {
@@ -1677,5 +1604,30 @@ public class TableTools {
             case Boolean:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    public static String nullTypeAsString(final Class<?> dataType) {
+        if (dataType == int.class) {
+            return "NULL_INT";
+        }
+        if (dataType == long.class) {
+            return "NULL_LONG";
+        }
+        if (dataType == char.class) {
+            return "NULL_CHAR";
+        }
+        if (dataType == double.class) {
+            return "NULL_DOUBLE";
+        }
+        if (dataType == float.class) {
+            return "NULL_FLOAT";
+        }
+        if (dataType == short.class) {
+            return "NULL_SHORT";
+        }
+        if (dataType == byte.class) {
+            return "NULL_BYTE";
+        }
+        return "(" + dataType.getName() + ")" + " null";
     }
 }

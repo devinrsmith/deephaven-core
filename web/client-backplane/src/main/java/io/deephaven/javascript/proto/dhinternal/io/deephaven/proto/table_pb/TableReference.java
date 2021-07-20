@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -19,9 +19,9 @@ public class TableReference {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
     public interface TicketFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static TableReference.ToObjectReturnType.TicketFieldType.GetIdUnionType of(Object o) {
+        static TableReference.ToObjectReturnType.TicketFieldType.GetTicketUnionType of(Object o) {
           return Js.cast(o);
         }
 
@@ -52,21 +52,23 @@ public class TableReference {
       }
 
       @JsProperty
-      TableReference.ToObjectReturnType.TicketFieldType.GetIdUnionType getId();
+      TableReference.ToObjectReturnType.TicketFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(TableReference.ToObjectReturnType.TicketFieldType.GetIdUnionType id);
+      void setTicket(TableReference.ToObjectReturnType.TicketFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js.<TableReference.ToObjectReturnType.TicketFieldType.GetIdUnionType>uncheckedCast(id));
+      default void setTicket(String ticket) {
+        setTicket(
+            Js.<TableReference.ToObjectReturnType.TicketFieldType.GetTicketUnionType>uncheckedCast(
+                ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js.<TableReference.ToObjectReturnType.TicketFieldType.GetIdUnionType>uncheckedCast(id));
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js.<TableReference.ToObjectReturnType.TicketFieldType.GetTicketUnionType>uncheckedCast(
+                ticket));
       }
     }
 
@@ -76,13 +78,13 @@ public class TableReference {
     }
 
     @JsProperty
-    double getBatchoffset();
+    double getBatchOffset();
 
     @JsProperty
     TableReference.ToObjectReturnType.TicketFieldType getTicket();
 
     @JsProperty
-    void setBatchoffset(double batchoffset);
+    void setBatchOffset(double batchOffset);
 
     @JsProperty
     void setTicket(TableReference.ToObjectReturnType.TicketFieldType ticket);
@@ -93,9 +95,9 @@ public class TableReference {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
     public interface TicketFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static TableReference.ToObjectReturnType0.TicketFieldType.GetIdUnionType of(Object o) {
+        static TableReference.ToObjectReturnType0.TicketFieldType.GetTicketUnionType of(Object o) {
           return Js.cast(o);
         }
 
@@ -126,23 +128,23 @@ public class TableReference {
       }
 
       @JsProperty
-      TableReference.ToObjectReturnType0.TicketFieldType.GetIdUnionType getId();
+      TableReference.ToObjectReturnType0.TicketFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(TableReference.ToObjectReturnType0.TicketFieldType.GetIdUnionType id);
+      void setTicket(TableReference.ToObjectReturnType0.TicketFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js.<TableReference.ToObjectReturnType0.TicketFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(String ticket) {
+        setTicket(
+            Js.<TableReference.ToObjectReturnType0.TicketFieldType.GetTicketUnionType>uncheckedCast(
+                ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js.<TableReference.ToObjectReturnType0.TicketFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js.<TableReference.ToObjectReturnType0.TicketFieldType.GetTicketUnionType>uncheckedCast(
+                ticket));
       }
     }
 
@@ -152,13 +154,13 @@ public class TableReference {
     }
 
     @JsProperty
-    double getBatchoffset();
+    double getBatchOffset();
 
     @JsProperty
     TableReference.ToObjectReturnType0.TicketFieldType getTicket();
 
     @JsProperty
-    void setBatchoffset(double batchoffset);
+    void setBatchOffset(double batchOffset);
 
     @JsProperty
     void setTicket(TableReference.ToObjectReturnType0.TicketFieldType ticket);
@@ -174,23 +176,23 @@ public class TableReference {
   public static native TableReference.ToObjectReturnType toObject(
       boolean includeInstance, TableReference msg);
 
-  public native void clearBatchoffset();
+  public native void clearBatchOffset();
 
   public native void clearTicket();
 
-  public native double getBatchoffset();
+  public native int getBatchOffset();
 
   public native int getRefCase();
 
   public native Ticket getTicket();
 
-  public native boolean hasBatchoffset();
+  public native boolean hasBatchOffset();
 
   public native boolean hasTicket();
 
   public native Uint8Array serializeBinary();
 
-  public native void setBatchoffset(double value);
+  public native void setBatchOffset(int value);
 
   public native void setTicket();
 

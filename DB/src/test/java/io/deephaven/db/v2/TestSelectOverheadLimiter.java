@@ -8,17 +8,20 @@ import io.deephaven.db.util.liveness.LivenessScopeStack;
 import io.deephaven.db.util.liveness.SingletonLivenessManager;
 import io.deephaven.db.v2.utils.Index;
 import io.deephaven.db.v2.utils.IndexShiftData;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.SafeCloseable;
 
 import java.util.Random;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.v2.TstUtils.*;
 
+@Category(OutOfBandTest.class)
 public class TestSelectOverheadLimiter extends LiveTableTestCase {
     public void testSelectOverheadLimiter() {
         final QueryTable queryTable = TstUtils.testRefreshingTable(Index.FACTORY.getIndexByRange(0, 100));
         final Table sentinelTable = queryTable.updateView("Sentinel=k");
-        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(new StreamLoggerImpl(), sentinelTable, 3.0));
+        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(sentinelTable, 3.0));
         assertEquals(densified.getIndex(), sentinelTable.getIndex());
         assertTableEquals(sentinelTable, densified);
 
@@ -62,7 +65,7 @@ public class TestSelectOverheadLimiter extends LiveTableTestCase {
     public void testShift() {
         final QueryTable queryTable = TstUtils.testRefreshingTable(Index.FACTORY.getIndexByRange(0, 100));
         final Table sentinelTable = queryTable.updateView("Sentinel=ii");
-        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(new StreamLoggerImpl(), sentinelTable, 3.0));
+        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(sentinelTable, 3.0));
         assertEquals(densified.getIndex(), sentinelTable.getIndex());
         assertTableEquals(sentinelTable, densified);
 
@@ -89,6 +92,7 @@ public class TestSelectOverheadLimiter extends LiveTableTestCase {
         });
     }
 
+    @Category(OutOfBandTest.class)
     public void testByExternal() {
         SelectOverheadLimiter.conversions.set(0);
         int seed;
@@ -117,17 +121,15 @@ public class TestSelectOverheadLimiter extends LiveTableTestCase {
         final Table simpleTable = TableTools.newTable(TableTools.col("Sym", "a"), TableTools.intCol("intCol", 30), TableTools.doubleCol("doubleCol", 40.1)).updateView("K=-2L");
         final Table source = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> TableTools.merge(simpleTable, queryTable.updateView("K=k")).flatten());
 
-        final StreamLoggerImpl log = new StreamLoggerImpl();
-
         final EvalNuggetInterface[] en = new EvalNuggetInterface[]{
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 2.0)), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 2.0).select()), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 4.0)), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 4.5)), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 4.5).select()), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 5.0)), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 10.0).select()), "Sym"),
-                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(log, source.byExternal("Sym").merge(), 10.0).select()), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 2.0)), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 2.0).select()), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 4.0)), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 4.5)), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 4.5).select()), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 5.0)), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 10.0).select()), "Sym"),
+                EvalNugget.Sorted.from(() -> LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(source.byExternal("Sym").merge(), 10.0).select()), "Sym"),
         };
 
         final int steps = 10;
@@ -145,7 +147,7 @@ public class TestSelectOverheadLimiter extends LiveTableTestCase {
         final SafeCloseable scopeCloseable = LivenessScopeStack.open();
 
         final Table sentinelTable = queryTable.updateView("Sentinel=k");
-        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(new StreamLoggerImpl(), sentinelTable, 3.0));
+        final Table densified = LiveTableMonitor.DEFAULT.sharedLock().computeLocked(() -> SelectOverheadLimiter.clampSelectOverhead(sentinelTable, 3.0));
         assertEquals(densified.getIndex(), sentinelTable.getIndex());
         assertTableEquals(sentinelTable, densified);
 

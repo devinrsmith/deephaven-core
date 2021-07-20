@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,11 @@ public class ExecuteCommandRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType of(
+        static ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -48,30 +48,31 @@ public class ExecuteCommandRequest {
       }
 
       @JsOverlay
-      static ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType create() {
+      static ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType getId();
+      ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -84,23 +85,23 @@ public class ExecuteCommandRequest {
     String getCode();
 
     @JsProperty
-    ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType getConsoleid();
+    ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
     void setCode(String code);
 
     @JsProperty
-    void setConsoleid(ExecuteCommandRequest.ToObjectReturnType.ConsoleidFieldType consoleid);
+    void setConsoleId(ExecuteCommandRequest.ToObjectReturnType.ConsoleIdFieldType consoleId);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType of(
+        static ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -127,30 +128,31 @@ public class ExecuteCommandRequest {
       }
 
       @JsOverlay
-      static ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType create() {
+      static ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType getId();
+      ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -163,13 +165,13 @@ public class ExecuteCommandRequest {
     String getCode();
 
     @JsProperty
-    ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType getConsoleid();
+    ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
     void setCode(String code);
 
     @JsProperty
-    void setConsoleid(ExecuteCommandRequest.ToObjectReturnType0.ConsoleidFieldType consoleid);
+    void setConsoleId(ExecuteCommandRequest.ToObjectReturnType0.ConsoleIdFieldType consoleId);
   }
 
   public static native ExecuteCommandRequest deserializeBinary(Uint8Array bytes);
@@ -182,21 +184,21 @@ public class ExecuteCommandRequest {
   public static native ExecuteCommandRequest.ToObjectReturnType toObject(
       boolean includeInstance, ExecuteCommandRequest msg);
 
-  public native void clearConsoleid();
+  public native void clearConsoleId();
 
   public native String getCode();
 
-  public native Ticket getConsoleid();
+  public native Ticket getConsoleId();
 
-  public native boolean hasConsoleid();
+  public native boolean hasConsoleId();
 
   public native Uint8Array serializeBinary();
 
   public native void setCode(String value);
 
-  public native void setConsoleid();
+  public native void setConsoleId();
 
-  public native void setConsoleid(Ticket value);
+  public native void setConsoleId(Ticket value);
 
   public native ExecuteCommandRequest.ToObjectReturnType0 toObject();
 

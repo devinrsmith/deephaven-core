@@ -453,6 +453,50 @@ public class ConsoleService {
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+  public interface GetConsoleTypesType {
+    @JsOverlay
+    static ConsoleService.GetConsoleTypesType create() {
+      return Js.uncheckedCast(JsPropertyMap.of());
+    }
+
+    @JsProperty
+    String getMethodName();
+
+    @JsProperty
+    Object getRequestType();
+
+    @JsProperty
+    Object getResponseType();
+
+    @JsProperty
+    Object getService();
+
+    @JsProperty
+    boolean isRequestStream();
+
+    @JsProperty
+    boolean isResponseStream();
+
+    @JsProperty
+    void setMethodName(String methodName);
+
+    @JsProperty
+    void setRequestStream(boolean requestStream);
+
+    @JsProperty
+    void setRequestType(Object requestType);
+
+    @JsProperty
+    void setResponseStream(boolean responseStream);
+
+    @JsProperty
+    void setResponseType(Object responseType);
+
+    @JsProperty
+    void setService(Object service);
+  }
+
+  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface OpenDocumentType {
     @JsOverlay
     static ConsoleService.OpenDocumentType create() {
@@ -584,18 +628,19 @@ public class ConsoleService {
     void setService(Object service);
   }
 
-  public static ConsoleService.BindTableToVariableType bindTableToVariable;
-  public static ConsoleService.CancelCommandType cancelCommand;
-  public static ConsoleService.ChangeDocumentType changeDocument;
-  public static ConsoleService.CloseDocumentType closeDocument;
-  public static ConsoleService.ExecuteCommandType executeCommand;
-  public static ConsoleService.FetchFigureType fetchFigure;
-  public static ConsoleService.FetchPandasTableType fetchPandasTable;
-  public static ConsoleService.FetchTableType fetchTable;
-  public static ConsoleService.FetchTableMapType fetchTableMap;
-  public static ConsoleService.GetCompletionItemsType getCompletionItems;
-  public static ConsoleService.OpenDocumentType openDocument;
+  public static ConsoleService.BindTableToVariableType BindTableToVariable;
+  public static ConsoleService.CancelCommandType CancelCommand;
+  public static ConsoleService.ChangeDocumentType ChangeDocument;
+  public static ConsoleService.CloseDocumentType CloseDocument;
+  public static ConsoleService.ExecuteCommandType ExecuteCommand;
+  public static ConsoleService.FetchFigureType FetchFigure;
+  public static ConsoleService.FetchPandasTableType FetchPandasTable;
+  public static ConsoleService.FetchTableType FetchTable;
+  public static ConsoleService.FetchTableMapType FetchTableMap;
+  public static ConsoleService.GetCompletionItemsType GetCompletionItems;
+  public static ConsoleService.GetConsoleTypesType GetConsoleTypes;
+  public static ConsoleService.OpenDocumentType OpenDocument;
+  public static ConsoleService.StartConsoleType StartConsole;
+  public static ConsoleService.SubscribeToLogsType SubscribeToLogs;
   public static String serviceName;
-  public static ConsoleService.StartConsoleType startConsole;
-  public static ConsoleService.SubscribeToLogsType subscribeToLogs;
 }

@@ -1,12 +1,13 @@
 package io.deephaven.lang.completion
 
+import io.deephaven.db.util.VariableProvider
 import io.deephaven.io.logger.Logger
+import io.deephaven.proto.backplane.script.grpc.CompletionItem
 import io.deephaven.util.process.ProcessEnvironment
 import io.deephaven.db.tables.Table
 import io.deephaven.db.tables.TableDefinition
 import io.deephaven.db.tables.utils.DBDateTime
 import io.deephaven.lang.parse.CompletionParser
-import io.deephaven.web.shared.ide.lsp.CompletionItem
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -26,7 +27,7 @@ class ColumnExpressionCompletionHandlerTest extends Specification implements Chu
             doc = p.parse(src)
 
             Logger log = ProcessEnvironment.getDefaultLog(CompletionHandler)
-            VariableProvider variables = Mock(VariableProvider) {
+        VariableProvider variables = Mock(VariableProvider) {
                 (0..1) * getVariableNames() >> ['t']
                 (0..1) * getVariableType('t') >> Table
                 (0..1) * getTableDefinition('t') >> new TableDefinition(
@@ -83,7 +84,7 @@ t = t.updateView ( 'D
         ChunkerCompleter completer = new ChunkerCompleter(log, variables)
 
         when: "Cursor is at EOF, table name completion from t is returned"
-        Set<CompletionItem> result = completer.runCompletion(doc, pos)
+        Set<CompletionItem.Builder> result = completer.runCompletion(doc, pos)
         result.removeIf({it.textEdit.text == 'updateView('})
 
 //       t = t.where ( 'D
@@ -121,7 +122,7 @@ t = t.update('A=') .update( 'B=')
         ChunkerCompleter completer = new ChunkerCompleter(log, variables)
 
         when: "Cursor is on first A="
-        Set<CompletionItem> result = completer.runCompletion(doc, 16)
+        Set<CompletionItem.Builder> result = completer.runCompletion(doc, 16)
 
         then: "Expect column names from T are returned"
         println(result)
@@ -157,4 +158,42 @@ t = t.update('A=') .update( 'B=')
         System.clearProperty(ChunkerCompleter.PROP_SUGGEST_STATIC_METHODS)
     }
 
+    def "Completion should infer column structure from newTable invocation"() {
+        setup:
+        System.setProperty(ChunkerCompleter.PROP_SUGGEST_STATIC_METHODS, 'false')
+        CompletionParser p = new CompletionParser()
+        String src = """
+t = newTable(
+  stringCol("strCol", "1", "2", "3"),
+  intCol("intCol", 1, 2, 3)
+)
+t.where('"""
+        doc = p.parse(src)
+
+        Logger log = ProcessEnvironment.getDefaultLog(CompletionHandler)
+        VariableProvider variables = Mock(VariableProvider) {
+            _ * getTableDefinition('t') >> null
+            0 * _
+        }
+
+        ChunkerCompleter completer = new ChunkerCompleter(log, variables)
+
+        when: "Cursor is inside where('"
+        Set<CompletionItem.Builder> result = completer.runCompletion(doc, src.length())
+
+        then: "Expect column names from newTable() are returned"
+        println(result)
+        result.size() == 2
+        doCompletion(src, result.first()) == src + "strCol = "
+        doCompletion(src, result.last()) == src + "intCol = "
+
+        cleanup:
+        System.clearProperty(ChunkerCompleter.PROP_SUGGEST_STATIC_METHODS)
+    }
+    @Override
+    VariableProvider getVariables() {
+        return Mock(VariableProvider) {
+            _ * getVariableNames() >> []
+        }
+    }
 }

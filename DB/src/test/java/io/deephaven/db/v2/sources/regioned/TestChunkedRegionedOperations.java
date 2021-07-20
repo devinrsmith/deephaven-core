@@ -11,7 +11,7 @@ import io.deephaven.db.tables.libs.StringSet;
 import io.deephaven.db.tables.select.QueryScope;
 import io.deephaven.db.tables.utils.DBDateTime;
 import io.deephaven.db.tables.utils.DBTimeUtils;
-import io.deephaven.db.tables.utils.TableManagementTools;
+import io.deephaven.db.tables.utils.ParquetTools;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.util.BooleanUtils;
 import io.deephaven.db.util.file.TrackedFileHandleFactory;
@@ -21,6 +21,7 @@ import io.deephaven.db.v2.TableMap;
 import io.deephaven.db.v2.locations.*;
 import io.deephaven.db.v2.locations.local.*;
 import io.deephaven.db.v2.locations.util.TableDataRefreshService;
+import io.deephaven.db.v2.parquet.ParquetInstructions;
 import io.deephaven.db.v2.select.ReinterpretedColumn;
 import io.deephaven.db.v2.sources.AbstractColumnSource;
 import io.deephaven.db.v2.sources.ColumnSource;
@@ -29,6 +30,7 @@ import io.deephaven.db.v2.sources.chunk.Chunk;
 import io.deephaven.db.v2.sources.chunk.ChunkType;
 import io.deephaven.db.v2.sources.chunk.WritableChunk;
 import io.deephaven.db.v2.utils.OrderedKeys;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.SafeCloseableList;
 import io.deephaven.util.codec.BigIntegerCodec;
 import junit.framework.TestCase;
@@ -45,6 +47,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.v2.TstUtils.assertTableEquals;
 import static org.junit.Assert.assertEquals;
@@ -54,6 +57,7 @@ import static org.junit.Assert.assertTrue;
  * High-level unit tests for {@link RegionedColumnSource} implementations of
  * {@link io.deephaven.db.v2.sources.ColumnSource#fillChunk(ColumnSource.FillContext, WritableChunk, OrderedKeys)}.
  */
+@Category(OutOfBandTest.class)
 public class TestChunkedRegionedOperations {
 
     private static final long TABLE_SIZE = 100_000;
@@ -131,16 +135,16 @@ public class TestChunkedRegionedOperations {
 
     @Before
     public void setUp() throws Exception {
-        originalScope = QueryScope.getDefaultInstance();
+        originalScope = QueryScope.getScope();
         final QueryScope queryScope = new QueryScope.StandaloneImpl();
         Arrays.stream(originalScope.getParams(originalScope.getParamNames())).forEach(p -> queryScope.putParam(p.getName(), p.getValue()));
         queryScope.putParam("nowNanos", DBTimeUtils.currentTime().getNanos());
         queryScope.putParam("letters", IntStream.range('A', 'A' + 64).mapToObj(c -> new String(new char[]{(char) c})).toArray(String[]::new));
         queryScope.putParam("emptySymbolSet", new StringSetArrayWrapper());
         queryScope.putParam("stripeSize", STRIPE_SIZE);
-        QueryScope.setDefaultInstance(queryScope);
+        QueryScope.setScope(queryScope);
 
-        QueryLibrary.startQuery();
+        QueryLibrary.resetLibrary();
         QueryLibrary.importClass(BigInteger.class);
         QueryLibrary.importClass(StringSet.class);
         QueryLibrary.importClass(StringSetArrayWrapper.class);
@@ -160,13 +164,18 @@ public class TestChunkedRegionedOperations {
             ColumnDefinition.ofDouble("D"),
             ColumnDefinition.ofBoolean("Bl"),
             ColumnDefinition.ofString("Sym"),
-            ColumnDefinition.ofString("Str").withVarSizeString(),
+            ColumnDefinition.ofString("Str").withSymbolTable(),
             ColumnDefinition.ofTime("DT"),
             ColumnDefinition.fromGenericType("SymS", StringSet.class),
             ColumnDefinition.fromGenericType("Ser", SimpleSerializable.class),
             ColumnDefinition.fromGenericType("Ext", SimpleExternalizable.class),
-            ColumnDefinition.ofFixedWidthCodec("Fix", BigInteger.class, BigIntegerCodec.class.getName(), "4", new BigIntegerCodec(4).expectedObjectWidth()),
-            ColumnDefinition.ofVariableWidthCodec("Var", BigInteger.class, BigIntegerCodec.class.getName()));
+            ColumnDefinition.fromGenericType("Fix", BigInteger.class),
+            ColumnDefinition.fromGenericType("Var", BigInteger.class)
+        );
+        final ParquetInstructions parquetInstructions = new ParquetInstructions.Builder()
+                .addColumnCodec("Fix", BigIntegerCodec.class.getName(), "4")
+                .addColumnCodec("Var", BigIntegerCodec.class.getName())
+                .build();
 
         final Table inputData = ((QueryTable)TableTools.emptyTable(TABLE_SIZE)
                 .update(
@@ -221,42 +230,38 @@ public class TestChunkedRegionedOperations {
         dataDirectory.deleteOnExit();
 
         final TableDefinition partitionedDataDefinition = new TableDefinition(inputData.getDefinition());
-        partitionedDataDefinition.setNamespace("TestNamespace");
-        partitionedDataDefinition.setName("TestTable");
-        partitionedDataDefinition.setStorageType(TableDefinition.STORAGETYPE_NESTEDPARTITIONEDONDISK);
 
         final TableDefinition partitionedMissingDataDefinition = new TableDefinition(inputData.view("PC", "II").getDefinition());
-        partitionedMissingDataDefinition.setNamespace("TestNamespace");
-        partitionedMissingDataDefinition.setName("TestTable");
-        partitionedMissingDataDefinition.setStorageType(TableDefinition.STORAGETYPE_NESTEDPARTITIONEDONDISK);
 
-        final TableKey tableKey = new TableLookupKey.Immutable(partitionedDataDefinition.getNamespace(), partitionedDataDefinition.getName(), TableType.STANDALONE_SPLAYED);
+        final String namespace = "TestNamespace";
+        final String name = "TestTable";
+        final TableKey tableKey = new TableLookupKey.Immutable(namespace, name, TableType.STANDALONE_SPLAYED);
 
         final List<TableLocationMetadataIndex.TableLocationSnapshot> snapshots = new ArrayList<>();
 
         final TableMap partitionedInputData = inputData.byExternal("PC");
-        TableManagementTools.writeParquetTables(
+        ParquetTools.writeParquetTables(
                 partitionedInputData.values().toArray(Table.ZERO_LENGTH_TABLE_ARRAY),
                 partitionedDataDefinition,
-                CompressionCodecName.SNAPPY,
+                parquetInstructions,
                 Arrays.stream(partitionedInputData.getKeySet())
                         .map(pcv -> {
                             snapshots.add(new TableLocationMetadataIndex.TableLocationSnapshot("IP", "P" + pcv, TableLocation.Format.PARQUET, STRIPE_SIZE, 0L));
-                            return new File(dataDirectory, "IP" + File.separator + "P" + pcv + File.separator + tableKey.getTableName());
+                            return new File(dataDirectory, "IP" + File.separator + "P" + pcv + File.separator + tableKey.getTableName() + ".parquet");
                         })
                         .toArray(File[]::new),
                 CollectionUtil.ZERO_LENGTH_STRING_ARRAY
         );
 
         final TableMap partitionedInputMissingData = inputMissingData.view("PC", "II").byExternal("PC");
-        TableManagementTools.writeParquetTables(
+        ParquetTools.writeParquetTables(
                 partitionedInputMissingData.values().toArray(Table.ZERO_LENGTH_TABLE_ARRAY),
                 partitionedMissingDataDefinition,
-                CompressionCodecName.SNAPPY,
+                parquetInstructions,
                 Arrays.stream(partitionedInputMissingData.getKeySet())
                         .map(pcv -> {
                             snapshots.add(new TableLocationMetadataIndex.TableLocationSnapshot("IP", "P" + pcv, TableLocation.Format.PARQUET, STRIPE_SIZE, 0L));
-                            return new File(dataDirectory, "IP" + File.separator + "P" + pcv + File.separator + tableKey.getTableName());
+                            return new File(dataDirectory, "IP" + File.separator + "P" + pcv + File.separator + tableKey.getTableName() + ".parquet");
                         })
                         .toArray(File[]::new),
                 CollectionUtil.ZERO_LENGTH_STRING_ARRAY
@@ -281,7 +286,8 @@ public class TestChunkedRegionedOperations {
                                 : new NestedPartitionedLocalTableLocationScanner(dataDirectory)
                         ),
                         false,
-                        TableDataRefreshService.Null.INSTANCE
+                        TableDataRefreshService.Null.INSTANCE,
+                        ParquetInstructions.EMPTY
                 ),
                 null,
                 Collections.emptySet()
@@ -301,8 +307,8 @@ public class TestChunkedRegionedOperations {
             actual.releaseCachedResources();
         }
 
-        QueryScope.setDefaultInstance(originalScope);
-        QueryLibrary.endQuery();
+        QueryScope.setScope(originalScope);
+        QueryLibrary.resetLibrary();
 
         if (dataDirectory.exists()) {
             TrackedFileHandleFactory.getInstance().closeAll();
@@ -322,6 +328,7 @@ public class TestChunkedRegionedOperations {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testEqual() {
         assertTableEquals(expected, actual);
     }
@@ -419,46 +426,55 @@ public class TestChunkedRegionedOperations {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testFullTableFullChunks() {
         assertChunkWiseEquals(expected, actual, expected.intSize());
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testFullTableNormalChunks() {
         assertChunkWiseEquals(expected, actual, 4096);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testFullTableSmallChunks() {
         assertChunkWiseEquals(expected, actual, 8);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testHalfDenseTableFullChunks() {
         assertChunkWiseEquals(expected.where("(ii / 100) % 2 == 0"), actual.where("(ii / 100) % 2 == 0"), expected.intSize());
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testHalfDenseTableNormalChunks() {
         assertChunkWiseEquals(expected.where("(ii / 100) % 2 == 0"), actual.where("(ii / 100) % 2 == 0"), 4096);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testHalfDenseTableSmallChunks() {
         assertChunkWiseEquals(expected.where("(ii / 100) % 2 == 0"), actual.where("(ii / 100) % 2 == 0"), 8);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testSparseTableFullChunks() {
         assertChunkWiseEquals(expected.where("ii % 2 == 0"), actual.where("ii % 2 == 0"), expected.intSize());
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testSparseTableNormalChunks() {
         assertChunkWiseEquals(expected.where("ii % 2 == 0"), actual.where("ii % 2 == 0"), 4096);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testSparseTableSmallChunks() {
         assertChunkWiseEquals(expected.where("ii % 2 == 0"), actual.where("ii % 2 == 0"), 8);
     }

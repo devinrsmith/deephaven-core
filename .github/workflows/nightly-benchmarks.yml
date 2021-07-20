@@ -8,6 +8,7 @@ on:
 
 jobs:
   setup:
+    if: ${{ github.repository_owner == 'deephaven' || github.event_name != 'schedule' }}
     runs-on: [benchmark]
     steps:
       - name: Checkout
@@ -22,9 +23,8 @@ jobs:
 
       - name: Setup gradle properties
         run: |
-          mkdir -p $HOME/.gradle
-          cp .github/env/${{ runner.os }}/gradle.properties $HOME/.gradle/gradle.properties
-          echo "org.gradle.java.installations.paths=${{ steps.setup-java.outputs.path }}" >> $HOME/.gradle/gradle.properties
+          cat .github/env/${{ runner.os }}/gradle.properties >> gradle.properties
+          echo "org.gradle.java.installations.paths=${{ steps.setup-java.outputs.path }}" >> gradle.properties
 
       - name: Build
         uses: burrunan/gradle-cache-action@v1
@@ -34,6 +34,7 @@ jobs:
           gradle-version: wrapper
 
   benchmarks:
+    if: ${{ github.repository_owner == 'deephaven' || github.event_name != 'schedule' }}
     needs: setup
     runs-on: [benchmark]
     steps:
@@ -52,6 +53,7 @@ jobs:
           gradle-version: wrapper
 
   archive:
+    if: ${{ github.repository_owner == 'deephaven' || github.event_name != 'schedule' }}
     needs: benchmarks
     runs-on: [benchmark]
     steps:  
@@ -63,6 +65,7 @@ jobs:
           retention-days: 90
 
   publish-metrics:
+    if: ${{ github.repository_owner == 'deephaven' || github.event_name != 'schedule' }}
     needs: benchmarks
     runs-on: [benchmark]
     steps:

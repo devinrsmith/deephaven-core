@@ -18,8 +18,6 @@ import java.nio.LongBuffer;
 
 /**
  * {@link Chunk} implementation for long data.
- *
- * @IncludeAll
  */
 public class LongChunk<ATTR extends Any> extends ChunkBase<ATTR> {
 
@@ -114,6 +112,12 @@ public class LongChunk<ATTR extends Any> extends ChunkBase<ATTR> {
     @Override
     public final boolean isAlias(Chunk chunk) {
         return chunk.isAlias(data);
+    }
+
+    @Override
+    public final <V extends Visitor<ATTR>> V walk(V visitor) {
+        visitor.visit(this);
+        return visitor;
     }
 
     // region ApplyDecoder

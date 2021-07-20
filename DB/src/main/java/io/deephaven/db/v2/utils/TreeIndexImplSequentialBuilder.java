@@ -71,6 +71,9 @@ public class TreeIndexImplSequentialBuilder extends RspBitmapSequentialBuilder {
 
     @Override
     public void appendTreeIndexImpl(final long shiftAmount, final TreeIndexImpl ix, final boolean acquire) {
+        if (ix.ixIsEmpty()) {
+            return;
+        }
         if (!(ix instanceof RspBitmap) || rb == null) {
             ix.ixForEachLongRange((final long start, final long end) -> {
                 appendRange(start + shiftAmount, end + shiftAmount);
@@ -105,7 +108,7 @@ public class TreeIndexImplSequentialBuilder extends RspBitmapSequentialBuilder {
         if (pendingSr == null) {
             if (maxKeyHint != -1) {
                 pendingSr = SortedRanges.makeForKnownRange(pendingStartOnEntry, maxKeyHint, false);
-                pendingSr = pendingSr.appendRange(pendingStartOnEntry, pendingEnd);
+                pendingSr = pendingSr.appendRangeUnsafe(pendingStartOnEntry, pendingEnd);
             } else {
                 pendingSr = SortedRanges.makeSingleRange(pendingStartOnEntry, pendingEnd);
             }

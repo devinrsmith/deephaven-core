@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,11 @@ public class FetchTableMapRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType of(
+        static FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -48,30 +48,31 @@ public class FetchTableMapRequest {
       }
 
       @JsOverlay
-      static FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType create() {
+      static FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType getId();
+      FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -81,20 +82,20 @@ public class FetchTableMapRequest {
     }
 
     @JsProperty
-    FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType getConsoleid();
+    FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    void setConsoleid(FetchTableMapRequest.ToObjectReturnType.ConsoleidFieldType consoleid);
+    void setConsoleId(FetchTableMapRequest.ToObjectReturnType.ConsoleIdFieldType consoleId);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType of(
+        static FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -121,30 +122,31 @@ public class FetchTableMapRequest {
       }
 
       @JsOverlay
-      static FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType create() {
+      static FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType getId();
+      FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -154,10 +156,10 @@ public class FetchTableMapRequest {
     }
 
     @JsProperty
-    FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType getConsoleid();
+    FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    void setConsoleid(FetchTableMapRequest.ToObjectReturnType0.ConsoleidFieldType consoleid);
+    void setConsoleId(FetchTableMapRequest.ToObjectReturnType0.ConsoleIdFieldType consoleId);
   }
 
   public static native FetchTableMapRequest deserializeBinary(Uint8Array bytes);
@@ -170,17 +172,17 @@ public class FetchTableMapRequest {
   public static native FetchTableMapRequest.ToObjectReturnType toObject(
       boolean includeInstance, FetchTableMapRequest msg);
 
-  public native void clearConsoleid();
+  public native void clearConsoleId();
 
-  public native Ticket getConsoleid();
+  public native Ticket getConsoleId();
 
-  public native boolean hasConsoleid();
+  public native boolean hasConsoleId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setConsoleid();
+  public native void setConsoleId();
 
-  public native void setConsoleid(Ticket value);
+  public native void setConsoleId(Ticket value);
 
   public native FetchTableMapRequest.ToObjectReturnType0 toObject();
 

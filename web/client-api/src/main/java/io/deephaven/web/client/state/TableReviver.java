@@ -3,9 +3,9 @@ package io.deephaven.web.client.state;
 import elemental2.core.JsArray;
 import elemental2.core.JsMap;
 import elemental2.dom.CustomEventInit;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.browserheaders.BrowserHeaders;
 import io.deephaven.javascript.proto.dhinternal.grpcweb.grpc.Code;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.BatchTableRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.ExportedTableCreationResponse;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.TableReference;
@@ -113,14 +113,14 @@ public class TableReviver implements HasTableBinding {
             return;
         }
         final BatchTableRequest req = new BatchTableRequest();
-        req.setOpList(ops);
+        req.setOpsList(ops);
         requester.clear();
         JsLog.debug("Sending revivification request", LazyString.of(req));
 
         // TODO core#242 - this isn't tested at all, and mostly doesn't make sense
         ResponseStreamWrapper<ExportedTableCreationResponse> stream = ResponseStreamWrapper.of(connection.tableServiceClient().batch(req, connection.metadata()));
         stream.onData(response -> {
-            TableReference resultid = response.getResultid();
+            TableReference resultid = response.getResultId();
             if (!resultid.hasTicket()) {
                 // thanks for telling us, but we don't at this time have a nice way to indicate this
                 return;
@@ -128,10 +128,10 @@ public class TableReviver implements HasTableBinding {
             Ticket ticket = resultid.getTicket();
 
             if (!response.getSuccess()) {
-                ClientTableState dead = all.remove(new TableTicket(ticket.getId_asU8()));
-                dead.forActiveLifecycles(t -> t.die(response.getErrorinfo()));
+                ClientTableState dead = all.remove(new TableTicket(ticket.getTicket_asU8()));
+                dead.forActiveLifecycles(t -> t.die(response.getErrorInfo()));
             } else {
-                ClientTableState succeeded = all.remove(new TableTicket(ticket.getId_asU8()));
+                ClientTableState succeeded = all.remove(new TableTicket(ticket.getTicket_asU8()));
                 succeeded.setResolution(ClientTableState.ResolutionState.RUNNING);
                 succeeded.forActiveLifecycles(t -> t.revive(succeeded));
 

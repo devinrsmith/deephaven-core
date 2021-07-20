@@ -28,12 +28,10 @@ import org.apache.commons.csv.CSVParser;
 import java.io.*;
 import java.util.*;
 
-import static io.deephaven.db.tables.utils.DBNameValidator.legalizeColumnName;
+import static io.deephaven.db.tables.utils.NameValidator.legalizeColumnName;
 
 /**
  * Utilities for reading and writing CSV files to and from {@link Table}s
- *
- * @IncludeAll
  */
 public class CsvHelpers {
     //  Public so it can be used from user scripts
@@ -474,7 +472,7 @@ public class CsvHelpers {
      *
      * @param is        an InputStream providing access to the CSV data.
      * @param separator a char to use as the delimiter value when parsing the file.
-     * @return an Iris QueryTable object
+     * @return a Deephaven QueryTable object
      * @throws IOException if the InputStream cannot be read
      */
     @ScriptApi
@@ -512,7 +510,7 @@ public class CsvHelpers {
      * Returns a memory table created by importing CSV data. The first row must be column names. Column data types are inferred from the data.
      *
      * @param is an InputStream providing access to the CSV data.
-     * @return an Iris QueryTable object
+     * @return a Deephaven QueryTable object
      * @throws IOException if the InputStream cannot be read
      */
     //  Public for backwards-compatibility for users calling readCsv2
@@ -636,7 +634,7 @@ public class CsvHelpers {
             Map<String, ColumnSource> columnSources = new LinkedHashMap<>();
             for (int ii = 0; ii < columnNames.length; ii++) {
                 lProgress.update(90 + (ii + 1) * 10 / columnNames.length, "Mapping CSV column " + (ii + 1) + " of " + columnNames.length + " to table.");
-                ColumnSource arrayBackedSource = ArrayBackedColumnSource.getMemoryColumnSource(columnData[ii]);
+                ColumnSource arrayBackedSource = ArrayBackedColumnSource.getMemoryColumnSourceUntyped(columnData[ii]);
                 columnSources.put(columnNames[ii], arrayBackedSource);
             }
             lProgress.finish("");

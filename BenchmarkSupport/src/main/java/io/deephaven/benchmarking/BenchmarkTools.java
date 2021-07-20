@@ -243,8 +243,9 @@ public class BenchmarkTools {
         return Configuration.getInstance().getWorkspacePath();
     }
 
-    public static String getDetailLogPrefix(String benchmarkName) {
-        return "Details." + benchmarkName;
+    public static final String DETAIL_LOG_PREFIX = "Details.";
+    public static String getDetailOutputPath(String benchmarkName) {
+        return DETAIL_LOG_PREFIX + benchmarkName;
     }
 
     public static TableDefinition getLogDefinitionWithExtra(List<ColumnDefinition> columnsToAdd) {
@@ -280,7 +281,7 @@ public class BenchmarkTools {
             throw new IllegalStateException("Sparsity must be in the range of 1 through 100");
         }
         Random random = new Random(seed);
-        QueryScope.getDefaultInstance().putParam("__random__", random);
+        QueryScope.getScope().putParam("__random__", random);
         return table.where("__random__.nextInt(100) < " + sparsity).head(size);
     }
 

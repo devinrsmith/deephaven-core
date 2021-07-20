@@ -1,9 +1,12 @@
+/*
+ * Copyright (c) 2016-2021 Deephaven Data Labs and Patent Pending
+ */
+
 package io.deephaven.grpc_api.session;
 
 import io.deephaven.io.logger.Logger;
 import com.google.protobuf.ByteString;
 import com.google.rpc.Code;
-import io.deephaven.util.auth.AuthContext;
 import io.deephaven.grpc_api.auth.AuthContextProvider;
 import io.deephaven.grpc_api.util.GrpcUtil;
 import io.deephaven.internal.log.LoggerFactory;
@@ -13,14 +16,16 @@ import io.deephaven.proto.backplane.grpc.HandshakeRequest;
 import io.deephaven.proto.backplane.grpc.HandshakeResponse;
 import io.deephaven.proto.backplane.grpc.ReleaseResponse;
 import io.deephaven.proto.backplane.grpc.SessionServiceGrpc;
-import io.deephaven.proto.backplane.grpc.Ticket;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import org.apache.arrow.flight.impl.Flight;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -38,7 +43,8 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
     private final AuthContextProvider authProvider;
 
     @Inject()
-    public SessionServiceGrpcImpl(final SessionService service, final AuthContextProvider authProvider) {
+    public SessionServiceGrpcImpl(final SessionService service,
+                                  final AuthContextProvider authProvider) {
         this.service = service;
         this.authProvider = authProvider;
     }
@@ -117,12 +123,14 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
     }
 
     @Override
-    public void release(final Ticket request, final StreamObserver<ReleaseResponse> responseObserver) {
+    public void release(final Flight.Ticket request, final StreamObserver<ReleaseResponse> responseObserver) {
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
-            final SessionState.ExportObject<?> export = service.getCurrentSession().getExport(request);
-            final SessionState.ExportState currState = export.getState();
-            export.release();
-            responseObserver.onNext(ReleaseResponse.newBuilder().setSuccess(currState != SessionState.ExportState.UNKNOWN).build());
+            final SessionState.ExportObject<?> export = service.getCurrentSession().getExportIfExists(request);
+            final ExportNotification.State currState = export != null ? export.getState() : ExportNotification.State.UNKNOWN;
+            if (export != null) {
+                export.release();
+            }
+            responseObserver.onNext(ReleaseResponse.newBuilder().setSuccess(currState != ExportNotification.State.UNKNOWN).build());
             responseObserver.onCompleted();
         });
     }
@@ -130,7 +138,12 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
     @Override
     public void exportNotifications(final ExportNotificationRequest request, final StreamObserver<ExportNotification> responseObserver) {
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
-            service.getCurrentSession().addExportListener(responseObserver);
+            final SessionState session = service.getCurrentSession();
+
+            session.addExportListener(responseObserver);
+            ((ServerCallStreamObserver<ExportNotification>) responseObserver).setOnCancelHandler(() -> {
+                session.removeExportListener(responseObserver);
+            });
         });
     }
 

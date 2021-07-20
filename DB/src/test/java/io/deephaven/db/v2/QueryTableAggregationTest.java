@@ -1,5 +1,6 @@
 package io.deephaven.db.v2;
 
+import io.deephaven.api.Selectable;
 import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.dbarrays.DbArray;
@@ -12,6 +13,8 @@ import io.deephaven.db.tables.utils.DBTimeUtils;
 import io.deephaven.db.tables.utils.SystemicObjectTracker;
 import io.deephaven.db.tables.utils.TableDiff;
 import io.deephaven.db.tables.utils.TableTools;
+import io.deephaven.db.util.liveness.LivenessScope;
+import io.deephaven.db.util.liveness.LivenessScopeStack;
 import io.deephaven.db.v2.QueryTableTestBase.TableComparator;
 import io.deephaven.db.v2.by.*;
 import io.deephaven.db.v2.select.IncrementalReleaseFilter;
@@ -27,6 +30,7 @@ import io.deephaven.db.v2.utils.IndexShiftData;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
 import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.QueryConstants;
+import io.deephaven.util.SafeCloseable;
 import junit.framework.ComparisonFailure;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +56,7 @@ import org.junit.experimental.categories.Category;
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.v2.TstUtils.*;
 
+@Category(OutOfBandTest.class)
 public class QueryTableAggregationTest {
     private JUnit4QueryTableTestBase base = new JUnit4QueryTableTestBase();
 
@@ -125,6 +130,7 @@ public class QueryTableAggregationTest {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testStaticByWithChunksAndAggressiveOverflow() {
         final AggregationControl control = new AggregationControl() {
             @Override
@@ -651,6 +657,7 @@ public class QueryTableAggregationTest {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testFirstByLastByIncremental() {
         final Random random = new Random(0);
 
@@ -1183,6 +1190,7 @@ public class QueryTableAggregationTest {
 
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testSumByStatic() {
         final int[] sizes = {10, 100, 1000};
         for (final int size : sizes) {
@@ -1225,24 +1233,24 @@ public class QueryTableAggregationTest {
 
         final Table result = queryTable.dropColumns("Sym").sumBy();
         final List<String> updates = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.sumFunction(c) + "(" + c + ")").collect(Collectors.toList());
-        final Table updateResult = queryTable.dropColumns("Sym").by().update(updates);
+        final Table updateResult = queryTable.dropColumns("Sym").by().update(Selectable.from(updates));
         assertTableEquals(updateResult, result, TableDiff.DiffItems.DoublesExact);
 
         final Table resultKeyed = queryTable.sumBy("Sym");
         final List<String> updateKeyed = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.sumFunction(c) + "(" + c + ")").collect(Collectors.toList());
-        final Table updateKeyedResult = queryTable.by("Sym").update(updateKeyed);
+        final Table updateKeyedResult = queryTable.by("Sym").update(Selectable.from(updateKeyed));
         assertTableEquals(updateKeyedResult, resultKeyed, TableDiff.DiffItems.DoublesExact);
 
         final Table resultAbs = queryTable.dropColumns("Sym").absSumBy();
         final List<String> updatesAbs = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.absSumFunction(c, c)).collect(Collectors.toList());
-        final Table updateResultAbs = queryTable.dropColumns("Sym").by().update(updatesAbs);
+        final Table updateResultAbs = queryTable.dropColumns("Sym").by().update(Selectable.from(updatesAbs));
         TableTools.show(resultAbs);
         TableTools.show(updateResultAbs);
         assertTableEquals(updateResultAbs, resultAbs, TableDiff.DiffItems.DoublesExact);
 
         final Table resultKeyedAbs = queryTable.absSumBy("Sym");
         final List<String> updateKeyedAbs = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.absSumFunction(c, c) ).collect(Collectors.toList());
-        final Table updateKeyedResultAbs = queryTable.by("Sym").update(updateKeyedAbs);
+        final Table updateKeyedResultAbs = queryTable.by("Sym").update(Selectable.from(updateKeyedAbs));
         assertTableEquals(updateKeyedResultAbs, resultKeyedAbs, TableDiff.DiffItems.DoublesExact);
     }
 
@@ -1289,28 +1297,29 @@ public class QueryTableAggregationTest {
 
         final Table result = queryTable.minBy();
         final List<String> updates = queryTable.getDefinition().getColumnNames().stream().map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.minFunction(c)).collect(Collectors.toList());
-        final Table updateResult = queryTable.by().update(updates);
+        final Table updateResult = queryTable.by().update(Selectable.from(updates));
         assertTableEquals(updateResult, result);
 
         final Table resultKeyed = queryTable.minBy("Sym");
         final List<String> updateKeyed = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.minFunction(c)).collect(Collectors.toList());
-        final Table updateKeyedResult = queryTable.by("Sym").update(updateKeyed);
+        final Table updateKeyedResult = queryTable.by("Sym").update(Selectable.from(updateKeyed));
         assertTableEquals(updateKeyedResult, resultKeyed);
 
         final Table resultMax = queryTable.maxBy();
         final List<String> updatesMax = queryTable.getDefinition().getColumnNames().stream().map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.maxFunction(c)).collect(Collectors.toList());
-        final Table updateResultMax = queryTable.by().update(updatesMax);
+        final Table updateResultMax = queryTable.by().update(Selectable.from(updatesMax));
         TableTools.show(resultMax);
         TableTools.show(updateResultMax);
         assertTableEquals(updateResultMax, resultMax);
 
         final Table resultKeyedMax = queryTable.maxBy("Sym");
         final List<String> updateKeyedMax = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.maxFunction(c) ).collect(Collectors.toList());
-        final Table updateKeyedResultMax = queryTable.by("Sym").update(updateKeyedMax);
+        final Table updateKeyedResultMax = queryTable.by("Sym").update(Selectable.from(updateKeyedMax));
         assertTableEquals(updateKeyedResultMax, resultKeyedMax);
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testAvgByStatic() {
         final int[] sizes = {10, 100, 1000};
         for (final int size : sizes) {
@@ -1348,11 +1357,11 @@ public class QueryTableAggregationTest {
         final Table result = queryTable.dropColumns("Sym").avgBy();
         final List<String> updates = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).flatMap(c -> Stream.of(c + "_Sum=" + QueryTableAggregationTestFormulaStaticMethods.sumFunction(c) + "(" + c + ")", c + "_Count=" + QueryTableAggregationTestFormulaStaticMethods.countFunction(c) + "(" + c + ")", avgExpr(c))).collect(Collectors.toList());
         final List<String> sumsAndCounts = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).flatMap(c -> Stream.of(c + "_Sum", c + "_Count")).collect(Collectors.toList());
-        final Table updateResult = queryTable.dropColumns("Sym").by().update(updates).dropColumns(sumsAndCounts);
+        final Table updateResult = queryTable.dropColumns("Sym").by().update(Selectable.from(updates)).dropColumns(sumsAndCounts);
         assertTableEquals(updateResult, result, TableDiff.DiffItems.DoublesExact);
 
         final Table resultKeyed = queryTable.avgBy("Sym");
-        final Table updateKeyedResult = queryTable.by("Sym").update(updates).dropColumns(sumsAndCounts);
+        final Table updateKeyedResult = queryTable.by("Sym").update(Selectable.from(updates)).dropColumns(sumsAndCounts);
         assertTableEquals(updateKeyedResult, resultKeyed, TableDiff.DiffItems.DoublesExact);
     }
     @Test
@@ -1393,11 +1402,11 @@ public class QueryTableAggregationTest {
 
         final Table result = queryTable.dropColumns("Sym").varBy();
         final List<String> updates = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.varFunction(c)).collect(Collectors.toList());
-        final Table updateResult = queryTable.dropColumns("Sym").by().update(updates);
+        final Table updateResult = queryTable.dropColumns("Sym").by().update(Selectable.from(updates));
         assertTableEquals(updateResult, result, TableDiff.DiffItems.DoublesExact, TableDiff.DiffItems.DoubleFraction);
 
         final Table resultKeyed = queryTable.varBy("Sym");
-        final Table updateKeyedResult = queryTable.by("Sym").update(updates);
+        final Table updateKeyedResult = queryTable.by("Sym").update(Selectable.from(updates));
 
         TableTools.showWithIndex(queryTable.where("Sym=`mjku`"));
         assertTableEquals(updateKeyedResult, resultKeyed, TableDiff.DiffItems.DoublesExact, TableDiff.DiffItems.DoubleFraction);
@@ -1441,11 +1450,11 @@ public class QueryTableAggregationTest {
 
         final Table result = queryTable.dropColumns("Sym").stdBy();
         final List<String> updates = queryTable.getDefinition().getColumnNames().stream().filter(c -> !c.equals("Sym")).map(c -> c + "=" + QueryTableAggregationTestFormulaStaticMethods.stdFunction(c)).collect(Collectors.toList());
-        final Table updateResult = queryTable.dropColumns("Sym").by().update(updates);
+        final Table updateResult = queryTable.dropColumns("Sym").by().update(Selectable.from(updates));
         assertTableEquals(updateResult, result, TableDiff.DiffItems.DoublesExact);
 
         final Table resultKeyed = queryTable.stdBy("Sym");
-        final Table updateKeyedResult = queryTable.by("Sym").update(updates);
+        final Table updateKeyedResult = queryTable.by("Sym").update(Selectable.from(updates));
         assertTableEquals(updateKeyedResult, resultKeyed, TableDiff.DiffItems.DoublesExact);
     }
 
@@ -1480,6 +1489,12 @@ public class QueryTableAggregationTest {
     }
 
     private void testSumByIncremental(final int size, final int seed, boolean grouped, boolean lotsOfStrings) {
+        try (final SafeCloseable ignored = LivenessScopeStack.open(new LivenessScope(true), true)) {
+            doTestSumByIncremental(size, seed, grouped, lotsOfStrings);
+        }
+    }
+
+    private void doTestSumByIncremental(final int size, final int seed, boolean grouped, boolean lotsOfStrings) {
         final Random random = new Random(seed);
         final ColumnInfo[] columnInfo;
         final List<ColumnInfo.ColAttributes> ea = Collections.emptyList();
@@ -2002,6 +2017,7 @@ public class QueryTableAggregationTest {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testWeightedSumByIncremental() {
         final int[] sizes = {10, 50, 200};
         for (int size : sizes) {
@@ -2084,6 +2100,7 @@ public class QueryTableAggregationTest {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testMinMaxByIncremental() {
         final int[] sizes = {10, 50, 200};
         for (final int size : sizes) {
@@ -2953,7 +2970,7 @@ public class QueryTableAggregationTest {
         final Table reversedFlat = table.reverse().flatten().where("Sentinel != 2");
         final Table last = reversedFlat.lastBy();
 
-        final InstrumentedShiftAwareListenerAdapter adapter = new InstrumentedShiftAwareListenerAdapter((DynamicTable)reversedFlat) {
+        final InstrumentedShiftAwareListenerAdapter adapter = new InstrumentedShiftAwareListenerAdapter((DynamicTable)reversedFlat, false) {
             @Override
             public void onUpdate(Update upstream) {
                 System.out.println(upstream);

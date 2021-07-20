@@ -3,7 +3,6 @@ package io.deephaven.db.v2;
 import io.deephaven.base.Pair;
 import io.deephaven.base.SleepUtil;
 import io.deephaven.base.verify.Assert;
-import io.deephaven.io.logger.Logger;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.libs.QueryLibrary;
 import io.deephaven.db.tables.live.LiveTableMonitor;
@@ -12,17 +11,21 @@ import io.deephaven.db.tables.select.QueryScope;
 import io.deephaven.db.tables.select.SelectFilterFactory;
 import io.deephaven.db.tables.utils.TableDiff;
 import io.deephaven.db.tables.utils.TableTools;
+import io.deephaven.db.util.liveness.LivenessScopeStack;
 import io.deephaven.db.v2.by.*;
+import io.deephaven.db.v2.remote.ConstructSnapshot;
 import io.deephaven.db.v2.select.ConditionFilter;
 import io.deephaven.db.v2.select.DisjunctiveFilter;
 import io.deephaven.db.v2.select.DynamicWhereFilter;
-import io.deephaven.db.v2.sources.LogicalClock;
-import io.deephaven.db.v2.remote.ConstructSnapshot;
 import io.deephaven.db.v2.sources.ColumnSource;
+import io.deephaven.db.v2.sources.LogicalClock;
 import io.deephaven.db.v2.utils.ColumnHolder;
 import io.deephaven.db.v2.utils.Index;
+import io.deephaven.db.v2.utils.IndexShiftData;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
 import io.deephaven.gui.table.QuickFilterMode;
+import io.deephaven.test.types.OutOfBandTest;
+import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.ReflexiveUse;
 import junit.framework.TestCase;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -39,12 +42,14 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.v2.TstUtils.*;
 import static io.deephaven.db.v2.by.ComboAggregateFactory.*;
 import static io.deephaven.util.QueryConstants.NULL_INT;
 
+@Category(OutOfBandTest.class)
 public class TestConcurrentInstantiation extends QueryTableTestBase {
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
     private final ExecutorService dualPool = Executors.newFixedThreadPool(2);
@@ -55,7 +60,7 @@ public class TestConcurrentInstantiation extends QueryTableTestBase {
                 col("Parent", NULL_INT, NULL_INT, 1, 1, 2, 3, 5, 5, 3, 2));
         final Table treed = LiveTableMonitor.DEFAULT.exclusiveLock().computeLocked(() -> source.treeTable("Sentinel", "Parent"));
 
-        final Callable<Table> callable = () -> TreeTableFilter.rawFilterTree(Logger.NULL, treed, "Sentinel in 4, 6, 9, 11, 12, 13, 14, 15");
+        final Callable<Table> callable = () -> TreeTableFilter.rawFilterTree(treed, "Sentinel in 4, 6, 9, 11, 12, 13, 14, 15");
 
         LiveTableMonitor.DEFAULT.startCycleForUnitTests();
         final Table rawSorted = pool.submit(callable).get();
@@ -546,7 +551,7 @@ public class TestConcurrentInstantiation extends QueryTableTestBase {
         TestCase.assertEquals(LogicalClock.DEFAULT.currentStep(), rll3.getLastNotificationStep());
     }
 
-
+    @Category(OutOfBandTest.class)
     public void testIterative() {
         final List<Function<Table, Table>> transformations = new ArrayList<>();
         transformations.add(t -> t.updateView("i4=intCol * 4"));
@@ -558,6 +563,7 @@ public class TestConcurrentInstantiation extends QueryTableTestBase {
         testIterative(transformations, 0, new MutableInt(50));
     }
 
+    @Category(OutOfBandTest.class)
     public void testIterativeQuickFilter() {
         final List<Function<Table, Table>> transformations = new ArrayList<>();
         transformations.add(t -> t.where("boolCol2"));
@@ -1488,5 +1494,39 @@ public class TestConcurrentInstantiation extends QueryTableTestBase {
         TstUtils.assertTableEquals(tableStart, snap1);
         TstUtils.assertTableEquals(tableStart, snap2);
         TstUtils.assertTableEquals(tableUpdate, snap3);
+    }
+
+    public void testSnapshotLiveness() {
+        final QueryTable left, right, snap;
+        try (final SafeCloseable ignored = LivenessScopeStack.open()) {
+            right = TstUtils.testRefreshingTable(i(0), c("x", 1));
+            left = TstUtils.testRefreshingTable(i());
+            snap = (QueryTable) left.snapshot(right, true);
+            snap.retainReference();
+        }
+
+        // assert each table is still alive w.r.t. Liveness
+        for (final QueryTable t : new QueryTable[] {left, right, snap}) {
+            t.retainReference();
+            t.dropReference();
+        }
+
+        TstUtils.assertTableEquals(snap, right);
+
+        LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
+            final ShiftAwareListener.Update downstream = new ShiftAwareListener.Update(i(1), i(), i(),
+                    IndexShiftData.EMPTY, ModifiedColumnSet.EMPTY);
+            TstUtils.addToTable(right, downstream.added, c("x", 2));
+            right.notifyListeners(downstream);
+        });
+        TstUtils.assertTableEquals(snap, prevTable(right));
+
+        LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
+            final ShiftAwareListener.Update downstream = new ShiftAwareListener.Update(i(1), i(), i(),
+                    IndexShiftData.EMPTY, ModifiedColumnSet.EMPTY);
+            TstUtils.addToTable(left, downstream.added);
+            left.notifyListeners(downstream);
+        });
+        TstUtils.assertTableEquals(snap, right);
     }
 }

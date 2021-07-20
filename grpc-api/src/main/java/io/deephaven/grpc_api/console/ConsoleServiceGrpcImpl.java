@@ -1,16 +1,24 @@
+/*
+ * Copyright (c) 2016-2021 Deephaven Data Labs and Patent Pending
+ */
+
 package io.deephaven.grpc_api.console;
 
 import com.google.rpc.Code;
 import io.deephaven.configuration.Configuration;
+import io.deephaven.db.plot.FigureWidget;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.remote.preview.ColumnPreviewManager;
 import io.deephaven.db.util.ExportedObjectType;
+import io.deephaven.db.util.NoLanguageDeephavenSession;
 import io.deephaven.db.util.ScriptSession;
+import io.deephaven.db.util.VariableProvider;
 import io.deephaven.db.util.liveness.LivenessArtifact;
-import io.deephaven.db.util.liveness.LivenessReferent;
+import io.deephaven.figures.FigureWidgetTranslator;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.table.TableServiceGrpcImpl;
 import io.deephaven.grpc_api.util.GrpcUtil;
 import io.deephaven.internal.log.LoggerFactory;
@@ -18,37 +26,76 @@ import io.deephaven.io.logger.LogBuffer;
 import io.deephaven.io.logger.LogBufferRecord;
 import io.deephaven.io.logger.LogBufferRecordListener;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.lang.completion.ChunkerCompleter;
+import io.deephaven.lang.completion.CompletionLookups;
+import io.deephaven.lang.generated.ParseException;
+import io.deephaven.lang.parse.LspTools;
+import io.deephaven.lang.parse.ParsedDocument;
+import io.deephaven.lang.parse.api.CompletionParseService;
 import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse;
 import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.script.grpc.*;
-import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.Closeable;
+import java.util.Collection;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.deephaven.grpc_api.util.GrpcUtil.safelyExecute;
 import static io.deephaven.grpc_api.util.GrpcUtil.safelyExecuteLocked;
 
+@Singleton
 public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImplBase {
     private static final Logger log = LoggerFactory.getLogger(ConsoleServiceGrpcImpl.class);
 
-    public static final boolean ALLOW_ADMIN_CONSOLE_ATTACHMENT = Configuration.getInstance().getBooleanWithDefault("ConsoleAttachment.allowAdmins", false);
+    public static final String WORKER_CONSOLE_TYPE = Configuration.getInstance().getStringWithDefault("io.deephaven.console.type", "python");
 
     private final Map<String, Provider<ScriptSession>> scriptTypes;
+    private final TicketRouter ticketRouter;
     private final SessionService sessionService;
     private final LogBuffer logBuffer;
     private final LiveTableMonitor liveTableMonitor;
 
+    private final GlobalSessionProvider globalSessionProvider;
+
     @Inject
-    public ConsoleServiceGrpcImpl(final Map<String, Provider<ScriptSession>> scriptTypes, final SessionService sessionService, final LogBuffer logBuffer, final LiveTableMonitor liveTableMonitor) {
+    public ConsoleServiceGrpcImpl(final Map<String, Provider<ScriptSession>> scriptTypes,
+                                  final TicketRouter ticketRouter,
+                                  final SessionService sessionService,
+                                  final LogBuffer logBuffer,
+                                  final LiveTableMonitor liveTableMonitor,
+                                  final GlobalSessionProvider globalSessionProvider) {
         this.scriptTypes = scriptTypes;
+        this.ticketRouter = ticketRouter;
         this.sessionService = sessionService;
         this.logBuffer = logBuffer;
         this.liveTableMonitor = liveTableMonitor;
+        this.globalSessionProvider = globalSessionProvider;
+
+        if (!scriptTypes.containsKey(WORKER_CONSOLE_TYPE)) {
+            throw new IllegalArgumentException("Console type not found: " + WORKER_CONSOLE_TYPE);
+        }
+    }
+
+    public void initializeGlobalScriptSession() {
+        globalSessionProvider.initializeGlobalScriptSession(scriptTypes.get(WORKER_CONSOLE_TYPE).get());
+    }
+
+    @Override
+    public void getConsoleTypes(final GetConsoleTypesRequest request,
+                                final StreamObserver<GetConsoleTypesResponse> responseObserver) {
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            // TODO (#702): initially show all console types; the first console determines the global console type thereafter
+            responseObserver.onNext(GetConsoleTypesResponse.newBuilder()
+                    .addConsoleTypes(WORKER_CONSOLE_TYPE)
+                    .build());
+            responseObserver.onCompleted();
+        });
     }
 
     @Override
@@ -58,13 +105,24 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
             // TODO auth hook, ensure the user can do this (owner of worker or admin)
 //            session.getAuthContext().requirePrivilege(CreateConsole);
 
+            // TODO (#702): initially global session will be null; set it here if applicable
+
+            final String sessionType = request.getSessionType();
+            if (!scriptTypes.containsKey(sessionType)) {
+                throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, "session type '" + sessionType + "' is not supported");
+            }
+
             session.newExport(request.getResultId())
                     .onError(responseObserver::onError)
                     .submit(() -> {
-                        //ConsoleAttachmentQuery
-                        String sessionType = request.getSessionType();
-
-                        final ScriptSession scriptSession = scriptTypes.get(sessionType).get();
+                        final ScriptSession scriptSession;
+                        if (sessionType.equals(WORKER_CONSOLE_TYPE)) {
+                            scriptSession = globalSessionProvider.getGlobalSession();
+                        } else {
+                            scriptSession = new NoLanguageDeephavenSession(sessionType);
+                            log.error().append("Session type '" + sessionType + "' is disabled. " +
+                                    "Use the More Actions icon to swap to session type '" + WORKER_CONSOLE_TYPE + "'.").endl();
+                        }
 
                         safelyExecute(() -> {
                             responseObserver.onNext(StartConsoleResponse.newBuilder()
@@ -72,6 +130,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                                     .build());
                             responseObserver.onCompleted();
                         });
+
                         return scriptSession;
                     });
         });
@@ -85,10 +144,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
             // TODO auth hook, ensure the user can do this (owner of worker or admin). same rights as creating a console
 //            session.getAuthContext().requirePrivilege(LogBuffer);
 
-            LogBufferStreamAdapter listener = new LogBufferStreamAdapter(request, responseObserver, session::unmanageNonExport);
-            ((ServerCallStreamObserver<LogSubscriptionData>) responseObserver).setOnCancelHandler(listener::destroy);
-            session.manage(listener);
-            logBuffer.subscribe(listener);
+            logBuffer.subscribe(new LogBufferStreamAdapter(session, request, responseObserver));
         });
     }
 
@@ -97,9 +153,9 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
 
-            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            SessionState.ExportObject<ScriptSession> exportedConsole = ticketRouter.resolve(session, request.getConsoleId());
             session.nonExport()
-                    .requireExclusiveLock()
+                    .requiresSerialQueue()
                     .require(exportedConsole)
                     .onError(responseObserver::onError)
                     .submit(() -> {
@@ -135,12 +191,14 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
 
-            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
-            SessionState.ExportObject<Table> exportedTable = session.getExport(request.getTableId());
+            SessionState.ExportObject<ScriptSession> exportedConsole = ticketRouter.resolve(session, request.getConsoleId());
+            SessionState.ExportObject<Table> exportedTable = ticketRouter.resolve(session, request.getTableId());
             session.nonExport()
                     .require(exportedConsole, exportedTable)
                     .submit(() -> {
                         exportedConsole.get().setVariable(request.getVariableName(), exportedTable.get());
+                        responseObserver.onNext(BindTableToVariableResponse.getDefaultInstance());
+                        responseObserver.onCompleted();
                     });
         });
     }
@@ -151,7 +209,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
 
-            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            SessionState.ExportObject<ScriptSession> exportedConsole = ticketRouter.resolve(session, request.getConsoleId());
 
             session.newExport(request.getTableId())
                     .require(exportedConsole)
@@ -182,52 +240,160 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         });
     }
 
-    // TODO fetch other object types
-    @Override
-    public void fetchPandasTable(FetchPandasTableRequest request, StreamObserver<ExportedTableCreationResponse> responseObserver) {
-        super.fetchPandasTable(request, responseObserver);
-    }
-    @Override
-    public void fetchFigure(FetchFigureRequest request, StreamObserver<FetchFigureResponse> responseObserver) {
-        super.fetchFigure(request, responseObserver);
-    }
-    @Override
-    public void fetchTableMap(FetchTableMapRequest request, StreamObserver<FetchTableMapResponse> responseObserver) {
-        super.fetchTableMap(request, responseObserver);
-    }
-
     // TODO(core#101) autocomplete support
     @Override
     public void openDocument(OpenDocumentRequest request, StreamObserver<OpenDocumentResponse> responseObserver) {
-        super.openDocument(request, responseObserver);
+        // when we open a document, we should start a parsing thread that will monitor for changes, and pre-parse document
+        // so we can respond appropriately when client wants completions.
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            final SessionState session = sessionService.getCurrentSession();
+            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            session
+                    .nonExport()
+                    .require(exportedConsole)
+                    .onError(responseObserver::onError)
+                    .submit(()->{
+                        final ScriptSession scriptSession = exportedConsole.get();
+                        final TextDocumentItem doc = request.getTextDocument();
+                        scriptSession.getParser().open(doc.getText(), doc.getUri(), Integer.toString(doc.getVersion()));
+                        safelyExecute(() -> {
+                            responseObserver.onNext(OpenDocumentResponse.getDefaultInstance());
+                            responseObserver.onCompleted();
+                        });
+                    });
+        });
     }
     @Override
     public void changeDocument(ChangeDocumentRequest request, StreamObserver<ChangeDocumentResponse> responseObserver) {
-        super.changeDocument(request, responseObserver);
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            final SessionState session = sessionService.getCurrentSession();
+            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            session
+                .nonExport()
+                .require(exportedConsole)
+                .onError(responseObserver::onError)
+                .submit(()->{
+                    final ScriptSession scriptSession = exportedConsole.get();
+                    final VersionedTextDocumentIdentifier text = request.getTextDocument();
+                    @SuppressWarnings("unchecked")
+                    final CompletionParseService<ParsedDocument, ChangeDocumentRequest.TextDocumentContentChangeEvent, ParseException> parser = scriptSession.getParser();
+                    parser.update(text.getUri(), Integer.toString(text.getVersion()), request.getContentChangesList());
+                    safelyExecute(() -> {
+                        responseObserver.onNext(ChangeDocumentResponse.getDefaultInstance());
+                        responseObserver.onCompleted();
+                    });
+                });
+        });
     }
     @Override
     public void getCompletionItems(GetCompletionItemsRequest request, StreamObserver<GetCompletionItemsResponse> responseObserver) {
-        super.getCompletionItems(request, responseObserver);
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            final SessionState session = sessionService.getCurrentSession();
+
+            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            final ScriptSession scriptSession = exportedConsole.get();
+            session
+                .nonExport()
+                .require(exportedConsole)
+                .onError(responseObserver::onError)
+                .submit(()->{
+
+                    final VersionedTextDocumentIdentifier doc = request.getTextDocument();
+                    final VariableProvider vars = scriptSession.getVariableProvider();
+                    final CompletionLookups h = CompletionLookups.preload(scriptSession);
+                    // The only stateful part of a completer is the CompletionLookups, which are already once-per-session-cached
+                    // so, we'll just create a new completer for each request. No need to hand onto these guys.
+                    final ChunkerCompleter completer = new ChunkerCompleter(log, vars, h);
+                    @SuppressWarnings("unchecked")
+                    final CompletionParseService<ParsedDocument, ChangeDocumentRequest.TextDocumentContentChangeEvent, ParseException> parser = scriptSession.getParser();
+                    final ParsedDocument parsed = parser.finish(doc.getUri());
+                    int offset = LspTools.getOffsetFromPosition(parsed.getSource(), request.getPosition());
+                    final Collection<CompletionItem.Builder> results = completer.runCompletion(parsed, request.getPosition(), offset);
+                    final GetCompletionItemsResponse mangledResults = GetCompletionItemsResponse.newBuilder()
+                            .addAllItems(results.stream().map(
+                                    // insertTextFormat is a default we used to set in constructor;
+                                    // for now, we'll just process the objects before sending back to client
+                                    item -> item.setInsertTextFormat(2).build()
+                            ).collect(Collectors.toSet())).build();
+
+                    safelyExecute(() -> {
+                        responseObserver.onNext(mangledResults);
+                        responseObserver.onCompleted();
+                    });
+                });
+        });
     }
     @Override
     public void closeDocument(CloseDocumentRequest request, StreamObserver<CloseDocumentResponse> responseObserver) {
-        super.closeDocument(request, responseObserver);
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            final SessionState session = sessionService.getCurrentSession();
+            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+            session
+                .nonExport()
+                .require(exportedConsole)
+                .onError(responseObserver::onError)
+                .submit(()-> {
+                    final ScriptSession scriptSession = exportedConsole.get();
+                    scriptSession.getParser().close(request.getTextDocument().getUri());
+                    safelyExecute(() -> {
+                        responseObserver.onNext(CloseDocumentResponse.getDefaultInstance());
+                        responseObserver.onCompleted();
+                    });
+                });
+        });
     }
 
-    private class LogBufferStreamAdapter extends LivenessArtifact implements LogBufferRecordListener {
+    @Override
+    public void fetchFigure(FetchFigureRequest request, StreamObserver<FetchFigureResponse> responseObserver) {
+        GrpcUtil.rpcWrapper(log, responseObserver, () -> {
+            final SessionState session = sessionService.getCurrentSession();
+
+            SessionState.ExportObject<ScriptSession> exportedConsole = session.getExport(request.getConsoleId());
+
+            session.nonExport()
+                    .require(exportedConsole)
+                    .onError(responseObserver::onError)
+                    .submit(() -> {
+                        ScriptSession scriptSession = exportedConsole.get();
+
+                        String figureName = request.getFigureName();
+                        if (!scriptSession.hasVariableName(figureName)) {
+                            throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "No value exists with name " + figureName);
+                        }
+
+                        Object result = scriptSession.unwrapObject(scriptSession.getVariable(figureName));
+                        if (!(result instanceof FigureWidget)) {
+                            throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "Value bound to name " + figureName + " is not a FigureWidget");
+                        }
+                        FigureWidget widget = (FigureWidget) result;
+
+                        FigureDescriptor translated = FigureWidgetTranslator.translate(widget, session);
+
+                        responseObserver.onNext(FetchFigureResponse.newBuilder().setFigureDescriptor(translated).build());
+                        responseObserver.onCompleted();
+                    });
+        });
+    }
+
+    private class LogBufferStreamAdapter implements Closeable, LogBufferRecordListener {
+        private final SessionState session;
         private final LogSubscriptionRequest request;
         private final StreamObserver<LogSubscriptionData> responseObserver;
-        private final Consumer<LivenessReferent> unmanageLambda;
         private boolean isClosed = false;
 
-        public LogBufferStreamAdapter(LogSubscriptionRequest request, StreamObserver<LogSubscriptionData> responseObserver, Consumer<LivenessReferent> unmanageLambda) {
+        public LogBufferStreamAdapter(
+                final SessionState session,
+                final LogSubscriptionRequest request,
+                final StreamObserver<LogSubscriptionData> responseObserver) {
+            this.session = session;
             this.request = request;
             this.responseObserver = responseObserver;
-            this.unmanageLambda = unmanageLambda;
+            session.addOnCloseCallback(this);
+            ((ServerCallStreamObserver<LogSubscriptionData>) responseObserver).setOnCancelHandler(this::tryClose);
         }
 
         @Override
-        protected void destroy() {
+        public void close() {
             synchronized (this) {
                 if (isClosed) {
                     return;
@@ -235,15 +401,20 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                 isClosed = true;
             }
 
-            safelyExecute(() -> unmanageLambda.accept(this));
             safelyExecute(() -> logBuffer.unsubscribe(this));
             safelyExecuteLocked(responseObserver, responseObserver::onCompleted);
+        }
+
+        private void tryClose () {
+            if (session.removeOnCloseCallback(this) != null) {
+                close();
+            }
         }
 
         @Override
         public void record(LogBufferRecord record) {
             // only pass levels the client wants
-            if (request.getLevelCount() != 0 && !request.getLevelList().contains(record.getLevel().getName())) {
+            if (request.getLevelsCount() != 0 && !request.getLevelsList().contains(record.getLevel().getName())) {
                 return;
             }
 
@@ -268,7 +439,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                 }
             } catch (Throwable t) {
                 // we are ignoring exceptions here deliberately, and just shutting down
-                destroy();
+                tryClose();
             }
         }
     }

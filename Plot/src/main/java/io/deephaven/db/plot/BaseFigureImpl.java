@@ -4,10 +4,10 @@
 
 package io.deephaven.db.plot;
 
+import io.deephaven.api.Selectable;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.db.plot.errors.*;
-import io.deephaven.db.plot.themes.Themes;
 import io.deephaven.db.plot.util.functions.FigureImplFunction;
 import io.deephaven.db.plot.util.tables.*;
 import io.deephaven.db.tables.Table;
@@ -28,8 +28,6 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
     private final boolean resizable;
     private final ChartArray charts;
 
-    private Theme theme = Themes.theme();
-    private boolean isDefaultTheme = true;
     private int numCols;
     private int numRows;
     private String title;
@@ -84,8 +82,6 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
         this.resizable = figure.resizable;
         this.updateInterval(figure.updateInterval);
 
-        this.theme = figure.theme;
-        this.isDefaultTheme = figure.isDefaultTheme;
         this.title = figure.title;
         this.titleFont = figure.titleFont;
         this.titleColor = figure.titleColor;
@@ -111,15 +107,6 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
 
     ////////////////////////// internal functionality //////////////////////////
 
-
-    /**
-     * Gets the {@link Theme} of this Figure.
-     *
-     * @return this Figure's theme
-     */
-    public Theme getTheme() {
-        return theme;
-    }
 
     /**
      * Gets the width of this Figure.
@@ -195,8 +182,6 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
         return updateInterval;
     }
 
-    public boolean isDefaultTheme() { return isDefaultTheme; }
-
     /**
      * Gets the table handles associated with this figure.
      *
@@ -225,7 +210,7 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
      *
      * @return table handles associated with this figure.
      */
-    Set<TableMapHandle> getTableMapHandles(){
+    public Set<TableMapHandle> getTableMapHandles(){
         final Set<TableMapHandle> result = new HashSet<>();
 
         for (ChartImpl chart : getCharts().getCharts()) {
@@ -307,21 +292,6 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
     }
 
     ////////////////////////// figure configuration //////////////////////////
-
-
-    @Override
-    public BaseFigureImpl theme(final Theme theme) {
-        this.theme = theme == null ? Themes.theme() : theme;
-        isDefaultTheme = false;
-        return this;
-    }
-
-    @Override
-    public BaseFigureImpl theme(final String theme) {
-        this.theme = theme == null ? Themes.theme() : Themes.theme(theme);
-        isDefaultTheme = false;
-        return this;
-    }
 
     @Override
     public BaseFigureImpl updateInterval(final long updateIntervalMillis) {
@@ -549,7 +519,7 @@ public class BaseFigureImpl implements BaseFigure, PlotExceptionCause {
             final Set<String> cols = colMap.get(table);
             final Set<TableHandle> hs = thMap.get(table);
 
-            final Table t = table.view(cols);
+            final Table t = table.view(Selectable.from(cols));
 
             for (TableHandle h : hs) {
                 h.setTable(t);

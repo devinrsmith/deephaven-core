@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,11 @@ public class StartConsoleRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static StartConsoleRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(
+        static StartConsoleRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -48,30 +48,31 @@ public class StartConsoleRequest {
       }
 
       @JsOverlay
-      static StartConsoleRequest.ToObjectReturnType.ResultidFieldType create() {
+      static StartConsoleRequest.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      StartConsoleRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
+      StartConsoleRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(StartConsoleRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          StartConsoleRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<StartConsoleRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<StartConsoleRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -81,26 +82,26 @@ public class StartConsoleRequest {
     }
 
     @JsProperty
-    StartConsoleRequest.ToObjectReturnType.ResultidFieldType getResultid();
+    StartConsoleRequest.ToObjectReturnType.ResultIdFieldType getResultId();
 
     @JsProperty
-    String getSessiontype();
+    String getSessionType();
 
     @JsProperty
-    void setResultid(StartConsoleRequest.ToObjectReturnType.ResultidFieldType resultid);
+    void setResultId(StartConsoleRequest.ToObjectReturnType.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSessiontype(String sessiontype);
+    void setSessionType(String sessionType);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static StartConsoleRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(
+        static StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -127,30 +128,31 @@ public class StartConsoleRequest {
       }
 
       @JsOverlay
-      static StartConsoleRequest.ToObjectReturnType0.ResultidFieldType create() {
+      static StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      StartConsoleRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(StartConsoleRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<StartConsoleRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<StartConsoleRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -160,16 +162,16 @@ public class StartConsoleRequest {
     }
 
     @JsProperty
-    StartConsoleRequest.ToObjectReturnType0.ResultidFieldType getResultid();
+    StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    String getSessiontype();
+    String getSessionType();
 
     @JsProperty
-    void setResultid(StartConsoleRequest.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(StartConsoleRequest.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSessiontype(String sessiontype);
+    void setSessionType(String sessionType);
   }
 
   public static native StartConsoleRequest deserializeBinary(Uint8Array bytes);
@@ -182,21 +184,21 @@ public class StartConsoleRequest {
   public static native StartConsoleRequest.ToObjectReturnType toObject(
       boolean includeInstance, StartConsoleRequest msg);
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native String getSessiontype();
+  public native String getSessionType();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setSessiontype(String value);
+  public native void setSessionType(String value);
 
   public native StartConsoleRequest.ToObjectReturnType0 toObject();
 

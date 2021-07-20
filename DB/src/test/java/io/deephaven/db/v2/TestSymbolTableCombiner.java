@@ -6,15 +6,19 @@ import io.deephaven.db.v2.sources.IntegerSparseArraySource;
 import io.deephaven.db.v2.sources.regioned.SymbolTableSource;
 import io.deephaven.db.v2.utils.Index;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
+import io.deephaven.test.types.OutOfBandTest;
 import junit.framework.TestCase;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.v2.TstUtils.*;
 
+@Category(OutOfBandTest.class)
 public class TestSymbolTableCombiner extends LiveTableTestCase {
+    @Category(OutOfBandTest.class)
     public void testSymbolTableCombiner() {
         for (int seed = 0; seed < 3; ++seed) {
             testSymbolTableCombiner(seed);
@@ -55,7 +59,7 @@ public class TestSymbolTableCombiner extends LiveTableTestCase {
             assertEquals(expected, uniqueId);
         }
 
-        symbolTable.listenForUpdates(new InstrumentedShiftAwareListenerAdapter("SymbolTableCombiner Adapter", symbolTable) {
+        final ShiftAwareListener symbolTableListener = new InstrumentedShiftAwareListenerAdapter("SymbolTableCombiner Adapter", symbolTable, false) {
             @Override
             public void onUpdate(final Update upstream) {
                 assertIndexEquals(i(), upstream.removed);
@@ -71,7 +75,8 @@ public class TestSymbolTableCombiner extends LiveTableTestCase {
                 TestCase.fail(originalException.getMessage());
                 super.onFailureInternal(originalException, sourceEntry);
             }
-        });
+        };
+        symbolTable.listenForUpdates(symbolTableListener);
 
         for (int step = 0; step < 750; step++) {
             if (LiveTableTestCase.printTableUpdates) {

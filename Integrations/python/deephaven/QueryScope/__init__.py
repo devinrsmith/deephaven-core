@@ -69,22 +69,11 @@ def addParam(name, value):
     
     Note: Java generics information - <T>
     
-    :param name: java.lang.String
-    :param value: T
+    :param name: (java.lang.String) - String name of the parameter to add.
+    :param value: (T) - value to assign to the parameter.
     """
     
     return _java_type_.addParam(name, value)
-
-
-@_passThrough
-def getDefaultInstance():
-    """
-    Retrieve the default QueryScope instance which will be used by static methods.
-    
-    :return: (io.deephaven.db.tables.select.QueryScope) QueryScope
-    """
-    
-    return _java_type_.getDefaultInstance()
 
 
 @_passThrough
@@ -94,7 +83,7 @@ def getParamValue(name):
     
     Note: Java generics information - <T>
     
-    :param name: java.lang.String
+    :param name: (java.lang.String) - parameter name.
     :return: (T) parameter value.
     """
     
@@ -102,13 +91,35 @@ def getParamValue(name):
 
 
 @_passThrough
-def setDefaultInstance(queryScope):
+def getScope():
+    """
+    Retrieve the default QueryScope instance which will be used by static methods.
+    
+    :return: (io.deephaven.db.tables.select.QueryScope) QueryScope
+    """
+    
+    return _java_type_.getScope()
+
+
+@_passThrough
+def setDefaultScope(scope):
+    """
+    Sets the default scope.
+    
+    :param scope: (io.deephaven.db.tables.select.QueryScope) - the script session's query scope
+    """
+    
+    return _java_type_.setDefaultScope(scope)
+
+
+@_passThrough
+def setScope(queryScope):
     """
     Sets the default QueryScope to be used in the current context. By default there is a
      QueryScope.StandaloneImpl created by the static initializer and set as the defaultInstance. The
      method allows the use of a new or separate instance as the default instance for static methods.
     
-    :param queryScope: (io.deephaven.db.tables.select.QueryScope) - QueryScope to set as the new default instance.
+    :param queryScope: (io.deephaven.db.tables.select.QueryScope) - QueryScope to set as the new default instance; null clears the scope.
     """
     
-    return _java_type_.setDefaultInstance(queryScope)
+    return _java_type_.setScope(queryScope)

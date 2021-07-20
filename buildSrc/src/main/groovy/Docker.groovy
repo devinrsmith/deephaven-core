@@ -23,6 +23,8 @@ import org.gradle.util.ConfigureUtil
  */
 @CompileStatic
 class Docker {
+    private static final String LOCAL_BUILD_TAG = 'local-build'
+
     /**
      * Helper method to make sure we rebuild the image if it is out of date. At
      * present, is only applicable if there are tags to set on the image
@@ -65,6 +67,7 @@ class Docker {
      * DSL object to describe a docker task
      */
     static class DockerTaskConfig {
+
         private Action<? super CopySpec> copyIn;
         private Action<? super Sync> copyOut;
         private File dockerfileFile;
@@ -139,6 +142,18 @@ class Docker {
          * as-is.
          */
         List<String> entrypoint;
+
+        /**
+         * Logs are always printed from the build task when it runs, but entrypoint logs are only printed
+         * when it fails. Set this flag to always show logs, even when entrypoint is successful.
+         */
+        boolean showLogsOnSuccess;
+    }
+
+    private static void validateImageName(String imageName) {
+        if (!imageName.endsWith(":${LOCAL_BUILD_TAG}")) {
+            throw new IllegalArgumentException("imageName '${imageName}' is invalid, it must be tagged with '${LOCAL_BUILD_TAG}'")
+        }
     }
 
     /**
@@ -164,10 +179,12 @@ class Docker {
     static TaskProvider<? extends Task> registerDockerTask(Project project, String taskName, Action<? super DockerTaskConfig> action) {
         // create instance, assign defaults
         DockerTaskConfig cfg = new DockerTaskConfig();
-        cfg.imageName = "deephaven/${taskName}"
+        cfg.imageName = "deephaven/${taskName}:${LOCAL_BUILD_TAG}"
 
         // ask for more configuration
-        action.execute(cfg);
+        action.execute(cfg)
+
+        validateImageName(cfg.imageName)
 
         String dockerContainerName = "$taskName-container-${UUID.randomUUID()}"
         String dockerCopyLocation = "${project.buildDir}/$taskName-tmp-copy"
@@ -269,18 +286,39 @@ class Docker {
         TaskProvider<DockerLogsContainer> containerLogs = project.tasks.register("${taskName}LogsContainer", DockerLogsContainer) { logsContainer ->
             logsContainer.with {
                 containerId.set(dockerContainerName)
+                dependsOn containerFinished
                 onlyIf {
-                    cfg.entrypoint && containerFinished.get().exitCode != 0
+                    cfg.entrypoint && (containerFinished.get().exitCode != 0 || cfg.showLogsOnSuccess)
                 }
             }
         }
-        containerFinished.configure { waitCommand -> waitCommand.finalizedBy(containerLogs) }
+
+        if (!cfg.copyOut) {
+            // make a wrap-up task to clean up the task work, wait until things are finished, since we have nothing to copy out
+            return project.tasks.register(taskName) { task ->
+                task.with {
+                    if (cfg.entrypoint) {
+                        dependsOn containerFinished, containerLogs
+                        doLast {
+                            // there was an entrypoint specified, if the command was not successful kill the build once
+                            // we're done copying output
+                            if (containerFinished.get().exitCode != 0) {
+                                throw new GradleException("Command '${cfg.entrypoint.join(' ')}' failed with exit code ${containerFinished.get().exitCode}, check logs for details")
+                            }
+                        }
+                    } else {
+                        dependsOn createContainer
+                    }
+                    finalizedBy removeContainer
+                }
+            }
+        }
 
         // Copy the results from the build out of the container, so the sync task can make it available
         TaskProvider<DockerCopyFileFromContainer> copyGenerated = project.tasks.register("${taskName}CopyGeneratedOutput", DockerCopyFileFromContainer) { copy ->
             copy.with {
                 if (cfg.entrypoint) {
-                    dependsOn containerFinished
+                    dependsOn containerFinished, containerLogs
                 } else {
                     dependsOn createContainer
                 }
@@ -336,6 +374,8 @@ class Docker {
         TaskProvider<DockerBuildImage> makeImage = project.tasks.register(taskName, DockerBuildImage) { buildImage ->
             action.execute(buildImage)
             if (buildImage.images) {
+                buildImage.images.get().forEach { String imageName -> validateImageName(imageName) }
+
                 // apply fix, since tags don't work properly
                 buildImage.outputs.upToDateWhen {
                     isImageUpToDate(buildImage)

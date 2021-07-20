@@ -1,25 +1,28 @@
 package io.deephaven.grpc_api.barrage;
 
-import io.deephaven.configuration.Configuration;
-import io.deephaven.io.logger.Logger;
 import com.google.rpc.Code;
 import com.google.rpc.Status;
-import io.deephaven.db.backplane.util.BarrageProtoUtil;
-import io.deephaven.db.util.liveness.LivenessArtifact;
+import io.deephaven.configuration.Configuration;
+import io.deephaven.db.util.liveness.SingletonLivenessManager;
 import io.deephaven.db.v2.QueryTable;
 import io.deephaven.db.v2.utils.Index;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.util.GrpcUtil;
+import io.deephaven.grpc_api_client.util.BarrageProtoUtil;
 import io.deephaven.internal.log.LoggerFactory;
+import io.deephaven.io.logger.Logger;
 import io.deephaven.proto.backplane.grpc.BarrageServiceGrpc;
 import io.deephaven.proto.backplane.grpc.OutOfBandSubscriptionResponse;
 import io.deephaven.proto.backplane.grpc.SubscriptionRequest;
 import io.grpc.protobuf.StatusProto;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.Closeable;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.BitSet;
@@ -31,6 +34,7 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
 
     private static final Logger log = LoggerFactory.getLogger(BarrageServiceGrpcImpl.class);
 
+    private final TicketRouter ticketRouter;
     private final SessionService sessionService;
     private final BarrageMessageProducer.Operation.Factory<Options, View> operationFactory;
     private final BarrageMessageProducer.Adapter<StreamObserver<InputStream>, StreamObserver<View>> listenerAdapter;
@@ -38,10 +42,12 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
 
     @Inject
     public BarrageServiceGrpcImpl(
+            final TicketRouter ticketRouter,
             final SessionService sessionService,
             final BarrageMessageProducer.Operation.Factory<Options, View> operationFactory,
             final BarrageMessageProducer.Adapter<StreamObserver<InputStream>, StreamObserver<View>> listenerAdapter,
             final BarrageMessageProducer.Adapter<SubscriptionRequest, Options> optionsAdapter) {
+        this.ticketRouter = ticketRouter;
         this.sessionService = sessionService;
         this.operationFactory = operationFactory;
         this.listenerAdapter = listenerAdapter;
@@ -62,7 +68,7 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
             }
 
             final SessionState session = sessionService.getCurrentSession();
-            final SessionState.ExportObject<SubscriptionObserver> subscription = session.getExport(request.getExportId());
+            final SessionState.ExportObject<SubscriptionObserver> subscription = ticketRouter.resolve(session, request.getExportId());
 
             session.nonExport()
                     .require(subscription)
@@ -91,13 +97,6 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
      */
     public void doSubscribeCustom(final SubscriptionRequest request, final StreamObserver<InputStream> responseObserver) {
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
-            if (!request.hasExportId()) {
-                responseObserver.onError(StatusProto.toStatusRuntimeException(Status.newBuilder()
-                        .setCode(Code.INVALID_ARGUMENT.getNumber())
-                        .setMessage("Protocol Version Not Allowed")
-                        .build()));
-            }
-
             final SubscriptionObserver observer = new SubscriptionObserver(sessionService.getCurrentSession(), responseObserver);
             observer.onNext(request);
         });
@@ -109,7 +108,7 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
      * and will not send out-of-order requests (due to out-of-band requests). The client should already anticipate
      * subscription changes may be coalesced by the BarrageMessageProducer.
      */
-    private class SubscriptionObserver extends LivenessArtifact implements StreamObserver<SubscriptionRequest> {
+    private class SubscriptionObserver extends SingletonLivenessManager implements StreamObserver<SubscriptionRequest>, Closeable {
         private final String myPrefix;
         private final SessionState session;
 
@@ -120,11 +119,15 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
 
         private final StreamObserver<View> listener;
 
+        private boolean isClosed = false;
+        private SessionState.ExportObject<SubscriptionObserver> subscriptionExport;
+
         public SubscriptionObserver(final SessionState session, final StreamObserver<InputStream> responseObserver) {
             this.myPrefix = "SubscriptionObserver{" + Integer.toHexString(System.identityHashCode(this)) + "}: ";
             this.session = session;
             this.listener = listenerAdapter.adapt(responseObserver);
-            session.manage(this); // attach the liveness of this subscription to the session
+            this.session.addOnCloseCallback(this);
+            ((ServerCallStreamObserver<InputStream>) responseObserver).setOnCancelHandler(this::tryClose);
         }
 
         @Override
@@ -190,7 +193,7 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
                 return;
             }
 
-            final SessionState.ExportObject<Object> parent = session.getExport(subscriptionRequest.getTicket());
+            final SessionState.ExportObject<Object> parent = ticketRouter.resolve(session, subscriptionRequest.getTicket());
 
             final SessionState.ExportBuilder<SubscriptionObserver> exportBuilder;
             if (subscriptionRequest.hasExportId()) {
@@ -200,11 +203,17 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
             }
 
             log.info().append(myPrefix).append("awaiting parent table").endl();
-            exportBuilder
+            subscriptionExport = exportBuilder
                     .require(parent)
                     .onError(listener::onError)
                     .submit(() -> {
                         synchronized (SubscriptionObserver.this) {
+                            subscriptionExport = null;
+
+                            if (isClosed) {
+                                return null;
+                            }
+
                             final Object export = parent.get();
                             if (export instanceof QueryTable) {
                                 final QueryTable table = (QueryTable) export;
@@ -216,7 +225,7 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
                                 manage(bmp);
                             } else {
                                 listener.onError(GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
-                                        "Ticket (" + subscriptionRequest.getTicket().getId() + ") is not a subscribable table."));
+                                        "Ticket (" + subscriptionRequest.getTicket().getTicket() + ") is not a subscribable table."));
                                 return null;
                             }
 
@@ -248,26 +257,41 @@ public class BarrageServiceGrpcImpl<Options, View> extends BarrageServiceGrpc.Ba
         @Override
         public void onError(final Throwable t) {
             log.error().append(myPrefix).append("unexpected error; force closing subscription: caused by ").append(t).endl();
-            session.unmanageNonExport(this);
-            destroy(); // destroy may not be called via unmanageNonExport if this subscription is also exported
+            tryClose();
         }
 
         @Override
         public void onCompleted() {
             log.error().append(myPrefix).append("client stream closed subscription").endl();
-            session.unmanageNonExport(this);
-            destroy(); // destroy may not be called via unmanageNonExport if this subscription is also exported
+            tryClose();
         }
 
         @Override
-        protected synchronized void destroy() {
-            if (bmp == null) {
-                return;
+        public void close() {
+            synchronized (this) {
+                if (isClosed) {
+                    return;
+                }
+
+                isClosed = true;
             }
 
-            bmp.removeSubscription(listener);
-            unmanage(bmp);
-            bmp = null;
+            if (subscriptionExport != null) {
+                subscriptionExport.cancel();
+                subscriptionExport = null;
+            }
+
+            if (bmp != null) {
+                bmp.removeSubscription(listener);
+                bmp = null;
+            }
+            release();
+        }
+
+        private void tryClose() {
+            if (session.removeOnCloseCallback(this) != null) {
+                close();
+            }
         }
     }
 }

@@ -40,7 +40,6 @@ import io.deephaven.db.v2.utils.*;
 import io.deephaven.util.annotations.TestUseOnly;
 import io.deephaven.util.annotations.VisibleForTesting;
 import io.deephaven.internal.log.LoggerFactory;
-import java.util.Map.Entry;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -57,7 +56,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import scala.reflect.internal.util.TableDef;
 
 import static io.deephaven.db.tables.select.MatchPair.matchString;
 
@@ -102,8 +100,8 @@ public class QueryTable extends BaseTable {
          */
         String getLogPrefix();
 
-        default ShiftAwareSwapListener newSwapListener(final Logger log, final QueryTable queryTable) {
-            return new ShiftAwareSwapListener(log, queryTable);
+        default ShiftAwareSwapListener newSwapListener(final QueryTable queryTable) {
+            return new ShiftAwareSwapListener(queryTable);
         }
 
         /**
@@ -704,10 +702,6 @@ public class QueryTable extends BaseTable {
 
     @Override
     public Table sumBy(SelectColumn... groupByColumns) {
-        // Remove after Genesis updates to 1.20200331 or later
-        if (Configuration.getInstance().getBooleanWithDefault("zeroEmptyFpSumBy", false)) {
-            throw new UnsupportedOperationException("zeroEmptyFpSumBy is not supported in Deephaven versions other than 1.20190607.");
-        }
         return QueryPerformanceRecorder.withNugget("sumBy(" + Arrays.toString(groupByColumns) + ")", sizeForInstrumentation(),
                 () -> by(new SumStateFactory(), groupByColumns));
     }
@@ -972,14 +966,14 @@ public class QueryTable extends BaseTable {
                                     .collect(Collectors.toList());
                             if (swapListener != null) {
                                 final ListenerRecorder recorder = new ListenerRecorder("where(" + Arrays.toString(filters) + ")", QueryTable.this, filteredTable);
-                                final WhereListener whereListener = new WhereListener(log, recorder, dependencies, filteredTable);
+                                final WhereListener whereListener = new WhereListener(recorder, dependencies, filteredTable);
                                 filteredTable.setWhereListener(whereListener);
                                 recorder.setMergedListener(whereListener);
                                 swapListener.setListenerAndResult(recorder, filteredTable);
                                 filteredTable.addParentReference(swapListener);
                                 filteredTable.addParentReference(whereListener);
                             } else if (refreshingFilters) {
-                                final StaticWhereListener whereListener = new StaticWhereListener(log, dependencies, filteredTable);
+                                final StaticWhereListener whereListener = new StaticWhereListener(dependencies, filteredTable);
                                 filteredTable.setWhereListener(whereListener);
                                 filteredTable.addParentReference(whereListener);
                             }
@@ -1585,7 +1579,7 @@ public class QueryTable extends BaseTable {
                 throw new UnsupportedOperationException();
         }
 
-        return AsOfJoinHelper.asOfJoin(log, this, (QueryTable)rightTable, columnsToMatch, columnsToAdd, order, disallowExactMatch);
+        return AsOfJoinHelper.asOfJoin(this, (QueryTable)rightTable, columnsToMatch, columnsToAdd, order, disallowExactMatch);
     }
 
     @Override
@@ -1598,7 +1592,7 @@ public class QueryTable extends BaseTable {
 
         final QueryTable rightTableCoalesced = (QueryTable)rightTable.coalesce();
 
-        return NaturalJoinHelper.naturalJoin(log, this, rightTableCoalesced, columnsToMatch, columnsToAdd, exactMatch);
+        return NaturalJoinHelper.naturalJoin(this, rightTableCoalesced, columnsToMatch, columnsToAdd, exactMatch);
     }
 
     private MatchPair[] createColumnsToAddIfMissing(Table rightTable, MatchPair[] columnsToMatch, MatchPair[] columnsToAdd) {
@@ -1649,7 +1643,7 @@ public class QueryTable extends BaseTable {
         if (USE_CHUNKED_CROSS_JOIN) {
             final QueryTable coalescedRightTable = (QueryTable)rightTableCandidate.coalesce();
             return QueryPerformanceRecorder.withNugget("join(" + matchString(columnsToMatch) + ", " + matchString(realColumnsToAdd) + ", " + numRightBitsToReserve + ")", () ->
-                    CrossJoinHelper.join(log, this, coalescedRightTable, columnsToMatch, realColumnsToAdd, numRightBitsToReserve));
+                    CrossJoinHelper.join(this, coalescedRightTable, columnsToMatch, realColumnsToAdd, numRightBitsToReserve));
         }
 
         final Set<String> columnsToMatchSet = Arrays.stream(columnsToMatch).map(MatchPair::right).collect(Collectors.toCollection(HashSet::new));
@@ -1823,8 +1817,8 @@ public class QueryTable extends BaseTable {
         // but we do only need to listen to one of them; however we are dependent on two of them
         checkInitiateOperation();
 
-        // There are no LazySnapshotTableProviders in the system currently, but at Genesis their multicast distribution
-        // system has tables that implement LazySnapshot provider.
+        // There are no LazySnapshotTableProviders in the system currently, but they may be used for multicast
+        // distribution systems and similar integrations.
 
         // If this table provides a lazy snapshot version, we should use that instead for the snapshot, this allows us
         // to refresh the table only immediately before the snapshot occurs.  Because we know that we are uninterested
@@ -1949,7 +1943,7 @@ public class QueryTable extends BaseTable {
                 final ListenerRecorder leftListenerRecorder = new ListenerRecorder("snapshotIncremental (leftTable)", this, resultTable);
                 listenForUpdates(leftListenerRecorder);
 
-                final SnapshotIncrementalListener listener = new SnapshotIncrementalListener(log, this, resultTable, resultColumns,
+                final SnapshotIncrementalListener listener = new SnapshotIncrementalListener(this, resultTable, resultColumns,
                         rightListenerRecorder, leftListenerRecorder, rightTable, leftColumns);
 
 
@@ -2822,7 +2816,7 @@ public class QueryTable extends BaseTable {
 
             final ShiftAwareSwapListener swapListener;
             if (isRefreshing()) {
-                swapListener = operation.newSwapListener(log, this);
+                swapListener = operation.newSwapListener(this);
                 swapListener.subscribeForUpdates();
             } else {
                 swapListener = null;
@@ -2854,8 +2848,8 @@ public class QueryTable extends BaseTable {
         private final ModifiedColumnSet filterColumns;
         private final ListenerRecorder recorder;
 
-        private WhereListener(Logger log, ListenerRecorder recorder, Collection<NotificationQueue.Dependency> dependencies, FilteredTable result) {
-            super(log, Collections.singleton(recorder), dependencies,"where(" + Arrays.toString(result.filters) + ")", result);
+        private WhereListener(ListenerRecorder recorder, Collection<NotificationQueue.Dependency> dependencies, FilteredTable result) {
+            super(Collections.singleton(recorder), dependencies,"where(" + Arrays.toString(result.filters) + ")", result);
             this.recorder = recorder;
             this.result = result;
             this.currentMapping = result.getIndex();
@@ -2937,8 +2931,8 @@ public class QueryTable extends BaseTable {
     private static class StaticWhereListener extends MergedListener {
         private final FilteredTable result;
 
-        private StaticWhereListener(Logger log, Collection<NotificationQueue.Dependency> dependencies, FilteredTable result) {
-            super(log, Collections.emptyList(), dependencies,"where(" + Arrays.toString(result.filters) + ")", result);
+        private StaticWhereListener(Collection<NotificationQueue.Dependency> dependencies, FilteredTable result) {
+            super(Collections.emptyList(), dependencies,"where(" + Arrays.toString(result.filters) + ")", result);
             this.result = result;
         }
 
@@ -2972,6 +2966,6 @@ public class QueryTable extends BaseTable {
     }
 
     public Table wouldMatch(WouldMatchPair... matchers) {
-        return getResult(new WouldMatchOperation(log, this, matchers));
+        return getResult(new WouldMatchOperation(this, matchers));
     }
 }

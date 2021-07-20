@@ -1,5 +1,6 @@
 package io.deephaven.db.v2;
 
+import io.deephaven.api.Selectable;
 import io.deephaven.base.Function;
 import io.deephaven.base.verify.Require;
 import io.deephaven.datastructures.util.CollectionUtil;
@@ -21,6 +22,7 @@ import io.deephaven.db.v2.by.SortedLastBy;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.PrevColumnSource;
 import io.deephaven.db.v2.utils.Index;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.ReflexiveUse;
 import junit.framework.TestCase;
@@ -37,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.v2.TstUtils.*;
@@ -47,6 +50,7 @@ import static org.junit.Assert.assertArrayEquals;
 /**
  * Test of Tree Tables and rollups.
  */
+@Category(OutOfBandTest.class)
 public class QueryTableTreeTest extends QueryTableTestBase {
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
 
@@ -64,11 +68,11 @@ public class QueryTableTreeTest extends QueryTableTestBase {
 
         final boolean old = QueryTable.setMemoizeResults(true);
         try {
-            testMemoize(tree, t -> TreeTableFilter.rawFilterTree(Logger.NULL, t, "Sym in `AAPL`, `TSLA`"));
-            testMemoize(tree, t -> TreeTableFilter.rawFilterTree(Logger.NULL, t, "Sym in `AAPL`,  `TSLA`", "Sentinel == 500000000"));
-            testNoMemoize(tree, t -> TreeTableFilter.rawFilterTree(Logger.NULL, t, "Sentinel > Sentinel2/4"));
-            testNoMemoize(tree, t -> TreeTableFilter.rawFilterTree(Logger.NULL, t, "Sym in `AAPL`,  `TSLA`"),
-                    t -> TreeTableFilter.rawFilterTree(Logger.NULL, t, "Sym in `AAPL`"));
+            testMemoize(tree, t -> TreeTableFilter.rawFilterTree(t, "Sym in `AAPL`, `TSLA`"));
+            testMemoize(tree, t -> TreeTableFilter.rawFilterTree(t, "Sym in `AAPL`,  `TSLA`", "Sentinel == 500000000"));
+            testNoMemoize(tree, t -> TreeTableFilter.rawFilterTree(t, "Sentinel > Sentinel2/4"));
+            testNoMemoize(tree, t -> TreeTableFilter.rawFilterTree(t, "Sym in `AAPL`,  `TSLA`"),
+                    t -> TreeTableFilter.rawFilterTree(t, "Sym in `AAPL`"));
         } finally {
             QueryTable.setMemoizeResults(old);
         }
@@ -225,14 +229,14 @@ public class QueryTableTreeTest extends QueryTableTestBase {
 
             LiveTableMonitor.DEFAULT.startCycleForUnitTests();
 
-            final Table backwards1 = pool.submit(() -> TreeTableFilter.rawFilterTree(log, treed1, "!isNull(Extra)").sortDescending("Extra")).get();
+            final Table backwards1 = pool.submit(() -> TreeTableFilter.rawFilterTree(treed1, "!isNull(Extra)").sortDescending("Extra")).get();
             final Table backwardsTree1a = pool.submit(() -> backwards1.treeTable("Sentinel", "Parent")).get();
 
             final Table treed4 = pool.submit(doTree::get).get();
 
             TstUtils.addToTable(source, i(12), c("Sentinel", 12), c("Parent", 11), c("Extra", "l"));
 
-            final Table backwards2 = pool.submit(() -> TreeTableFilter.rawFilterTree(log, treed1, "!isNull(Extra)").sortDescending("Extra")).get();
+            final Table backwards2 = pool.submit(() -> TreeTableFilter.rawFilterTree(treed1, "!isNull(Extra)").sortDescending("Extra")).get();
             final Table backwardsTree1b = pool.submit(() -> backwards1.treeTable("Sentinel", "Parent")).get();
             final Table backwardsTree2a = pool.submit(() -> backwards2.treeTable("Sentinel", "Parent")).get();
 
@@ -253,7 +257,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
 
             final Table backwardsTree1c = pool.submit(() -> backwards1.treeTable("Sentinel", "Parent")).get();
             final Table backwardsTree2b = pool.submit(() -> backwards2.treeTable("Sentinel", "Parent")).get();
-            final Table backwards3 = pool.submit(() -> TreeTableFilter.rawFilterTree(log, treed1, "!isNull(Extra)").sortDescending("Extra")).get();
+            final Table backwards3 = pool.submit(() -> TreeTableFilter.rawFilterTree(treed1, "!isNull(Extra)").sortDescending("Extra")).get();
             final Table backwardsTree3 = pool.submit(() -> backwards3.treeTable("Sentinel", "Parent")).get();
 
             final Table root1a = map1.get(null);
@@ -407,7 +411,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
         final String hierarchicalColumnName = getHierarchicalColumnName(treed);
         assertEquals(2, treed.size());
 
-        final Table filtered = TreeTableFilter.filterTree(Logger.NULL, treed, "Sentinel in 6, 11, 14");
+        final Table filtered = TreeTableFilter.filterTree(treed, "Sentinel in 6, 11, 14");
         TableTools.showWithIndex(filtered);
         assertEquals(1, filtered.size());
 
@@ -429,7 +433,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
         assertEquals(2, treed.size());
 
         System.out.println("Filtered.");
-        final Table filtered = TreeTableFilter.filterTree(Logger.NULL, treed, "Sentinel in 6, 11, 14");
+        final Table filtered = TreeTableFilter.filterTree(treed, "Sentinel in 6, 11, 14");
         TableTools.showWithIndex(filtered);
         assertEquals(1, filtered.size());
 
@@ -566,7 +570,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
                     protected Table e() {
                         return LiveTableMonitor.DEFAULT.exclusiveLock().computeLocked(() -> {
                             final Table treed = source.treeTable("Sentinel", "Parent");
-                            return TreeTableFilter.rawFilterTree(Logger.NULL, treed, "Filter in 1");
+                            return TreeTableFilter.rawFilterTree(treed, "Filter in 1");
                         });
                     }
                 },
@@ -953,10 +957,10 @@ public class QueryTableTreeTest extends QueryTableTestBase {
                 new TreeTableEvalNugget(prepared) {
                     @Override
                     protected Table e() {
-                        return TreeTableFilter.filterTree(Logger.NULL, prepared.treeTable("ID", "Parent"), "Sentinel % 2 == 1");
+                        return TreeTableFilter.filterTree(prepared.treeTable("ID", "Parent"), "Sentinel % 2 == 1");
                     }
                 },
-                EvalNugget.from(() -> TreeTableFilter.rawFilterTree(Logger.NULL, prepared.treeTable("ID", "Parent"), "Sentinel % 2 == 1")),
+                EvalNugget.from(() -> TreeTableFilter.rawFilterTree(prepared.treeTable("ID", "Parent"), "Sentinel % 2 == 1")),
         };
 
         final int maxSteps = numSteps.intValue();
@@ -1226,7 +1230,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
             }
         }
 
-        final Table rollupClean = getDiffableTable(rollup).view(viewCols);
+        final Table rollupClean = getDiffableTable(rollup).view(Selectable.from(viewCols));
 
         final String diff = TableTools.diff(fullBy, rollupClean, 10, EnumSet.of(TableDiff.DiffItems.DoublesExact));
 
@@ -1583,6 +1587,7 @@ public class QueryTableTreeTest extends QueryTableTestBase {
         return new io.deephaven.datastructures.util.SmartKey(id, pos.substring(0, liof));
     }
 
+    @Category(OutOfBandTest.class)
     public void testOrderTreeTable() {
         final Random random = new Random(0);
 
@@ -1605,8 +1610,8 @@ public class QueryTableTreeTest extends QueryTableTestBase {
                 .update("treeid=new io.deephaven.datastructures.util.SmartKey(hid, hpos)", "parent=io.deephaven.db.v2.QueryTableTreeTest.getPrefix(hid, hpos)");
 
         final Table ordersTree = orders.treeTable("treeid", "parent");
-        final Table ordersFiltered = TreeTableFilter.filterTree(Logger.NULL, ordersTree, "rand > 0.8");
-        final Table ordersFiltered2 = TreeTableFilter.filterTree(Logger.NULL, ordersTree, "rand > 0.1");
+        final Table ordersFiltered = TreeTableFilter.filterTree(ordersTree, "rand > 0.8");
+        final Table ordersFiltered2 = TreeTableFilter.filterTree(ordersTree, "rand > 0.1");
 
         for (int step = 0; step < 100; ++step) {
             System.out.println("step = " + step);
@@ -1687,8 +1692,8 @@ public class QueryTableTreeTest extends QueryTableTestBase {
             LiveTableMonitor.DEFAULT.completeCycleForUnitTests();
 
             final String hierarchicalColumnName = getHierarchicalColumnName(ordersFiltered);
-            doCompareWithChildrenForTrees("step = " + step, ordersFiltered, TreeTableFilter.filterTree(Logger.NULL, ordersTree, "rand > 0.8"), 0, maxLevel, hierarchicalColumnName, CollectionUtil.ZERO_LENGTH_STRING_ARRAY);
-            doCompareWithChildrenForTrees("step = " + step, ordersFiltered2, TreeTableFilter.filterTree(Logger.NULL, ordersTree, "rand > 0.1"), 0, maxLevel, hierarchicalColumnName, CollectionUtil.ZERO_LENGTH_STRING_ARRAY);
+            doCompareWithChildrenForTrees("step = " + step, ordersFiltered, TreeTableFilter.filterTree(ordersTree, "rand > 0.8"), 0, maxLevel, hierarchicalColumnName, CollectionUtil.ZERO_LENGTH_STRING_ARRAY);
+            doCompareWithChildrenForTrees("step = " + step, ordersFiltered2, TreeTableFilter.filterTree(ordersTree, "rand > 0.1"), 0, maxLevel, hierarchicalColumnName, CollectionUtil.ZERO_LENGTH_STRING_ARRAY);
         }
     }
 

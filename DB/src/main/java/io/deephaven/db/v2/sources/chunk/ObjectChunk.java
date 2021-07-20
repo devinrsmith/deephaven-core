@@ -16,8 +16,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * {@link Chunk} implementation for Object data.
- *
- * @IncludeAll
  */
 public class ObjectChunk<T, ATTR extends Any> extends ChunkBase<ATTR> {
 
@@ -114,6 +112,12 @@ public class ObjectChunk<T, ATTR extends Any> extends ChunkBase<ATTR> {
     @Override
     public final boolean isAlias(Chunk chunk) {
         return chunk.isAlias(data);
+    }
+
+    @Override
+    public final <V extends Visitor<ATTR>> V walk(V visitor) {
+        visitor.visit(this);
+        return visitor;
     }
 
     // region ApplyDecoder

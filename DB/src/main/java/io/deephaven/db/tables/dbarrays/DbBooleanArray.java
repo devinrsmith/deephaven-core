@@ -15,16 +15,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * @IncludeAll
- */
 @Deprecated
 public interface DbBooleanArray extends DbArrayBase {
     Boolean get(long i);
     DbBooleanArray subArray(long fromIndex, long toIndex);
     DbBooleanArray subArrayByPositions(long [] positions);
     Boolean[] toArray();
-    DbArray toDbArray();
 
     @Override
     @FinalDefault

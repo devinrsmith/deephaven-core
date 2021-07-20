@@ -5,6 +5,8 @@ import io.deephaven.db.v2.locations.TableKey;
 import io.deephaven.db.v2.locations.TableLocation;
 import io.deephaven.db.v2.locations.TableLocationKey;
 import io.deephaven.db.v2.locations.util.TableDataRefreshService;
+import io.deephaven.db.v2.parquet.ParquetInstructions;
+import io.deephaven.db.v2.parquet.ParquetTableWriter;
 import io.deephaven.util.Utils;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,49 +15,31 @@ import java.io.File;
 /**
  * Location provider for read-only table locations.
  */
-public class ReadOnlyLocalTableLocationProvider extends LocalTableLocationProvider {
+public class ReadOnlyLocalTableLocationProvider extends LocalTableLocationProviderByScanner {
 
-    private static final String PARQUET_FILE_NAME = "table.parquet";
+    private static final String PARQUET_FILE_EXTENSION = ParquetTableWriter.PARQUET_FILE_EXTENSION;
 
-    private final TableDataRefreshService refreshService;
+    private final ParquetInstructions readInstructions;
 
-    private TableDataRefreshService.CancellableSubscriptionToken subscriptionToken;
-
-    public ReadOnlyLocalTableLocationProvider(@NotNull final TableKey tableKey,
-                                              @NotNull final Scanner scanner,
-                                              final boolean supportsSubscriptions,
-                                              @NotNull final TableDataRefreshService refreshService) {
-        super(tableKey, scanner, supportsSubscriptions);
-        this.refreshService = refreshService;
+    public ReadOnlyLocalTableLocationProvider(
+            @NotNull final TableKey tableKey,
+            @NotNull final Scanner scanner,
+            final boolean supportsSubscriptions,
+            @NotNull final TableDataRefreshService refreshService,
+            @NotNull final ParquetInstructions readInstructions) {
+        super(tableKey, scanner, supportsSubscriptions, refreshService);
+        this.readInstructions = readInstructions;
     }
 
     @Override
     public String getImplementationName() {
-        return "ReadOnlyLocalTableLocationProvider";
+        return ReadOnlyLocalTableLocationProvider.class.getSimpleName();
     }
 
     @Override
     public void refresh() {
         scanner.scanAll(this::handleTableLocationKey);
         setInitialized();
-    }
-
-    @Override
-    protected void activateUnderlyingDataSource() {
-        subscriptionToken = refreshService.scheduleTableLocationProviderRefresh(this);
-    }
-
-    @Override
-    protected void deactivateUnderlyingDataSource() {
-        if (subscriptionToken != null) {
-            subscriptionToken.cancel();
-            subscriptionToken = null;
-        }
-    }
-
-    @Override
-    protected <T> boolean matchSubscriptionToken(final T token) {
-        return token == subscriptionToken;
     }
 
     @Override
@@ -73,14 +57,18 @@ public class ReadOnlyLocalTableLocationProvider extends LocalTableLocationProvid
     }
 
     private TableLocation makeSnapshottedParquetLocation(@NotNull final TableKey tableKey, @NotNull final TableLocationKey tableLocationKey) {
-        return new ReadOnlyParquetTableLocation(tableKey, tableLocationKey, new File(scanner.computeLocationDirectory(tableKey, tableLocationKey), PARQUET_FILE_NAME), false);
+        return new ReadOnlyParquetTableLocation(
+                tableKey,
+                tableLocationKey,
+                new File(scanner.computeLocationBasePath(tableKey, tableLocationKey) + PARQUET_FILE_EXTENSION),
+                false,
+                readInstructions);
     }
 
     private TableLocation makeDataDrivenLocation(@NotNull final TableKey tableKey, @NotNull final TableLocationKey tableLocationKey) {
-        final File directory = scanner.computeLocationDirectory(tableKey, tableLocationKey);
-        final File parquetFile = new File(directory, PARQUET_FILE_NAME);
+        final File parquetFile = new File(scanner.computeLocationBasePath(tableKey, tableLocationKey) + PARQUET_FILE_EXTENSION);
         if (Utils.fileExistsPrivileged(parquetFile)) {
-            return new ReadOnlyParquetTableLocation(tableKey, tableLocationKey, parquetFile, supportsSubscriptions());
+            return new ReadOnlyParquetTableLocation(tableKey, tableLocationKey, parquetFile, supportsSubscriptions(), readInstructions);
         } else {
             throw new UnsupportedOperationException(this + ": Unrecognized data format in location " + tableLocationKey);
         }

@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,12 +17,12 @@ public class ExportedTableUpdateMessage {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ExportidFieldType {
+    public interface ExportIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType.GetIdUnionType of(
-            Object o) {
+        static ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType.GetTicketUnionType
+            of(Object o) {
           return Js.cast(o);
         }
 
@@ -48,30 +48,35 @@ public class ExportedTableUpdateMessage {
       }
 
       @JsOverlay
-      static ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType create() {
+      static ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType.GetIdUnionType getId();
+      ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType.GetTicketUnionType
+          getTicket();
 
       @JsProperty
-      void setId(ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType.GetIdUnionType id);
+      void setTicket(
+          ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType.GetTicketUnionType
+              ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType
+                        .GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType
+                        .GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -81,33 +86,33 @@ public class ExportedTableUpdateMessage {
     }
 
     @JsProperty
-    ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType getExportid();
+    ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType getExportId();
 
     @JsProperty
     String getSize();
 
     @JsProperty
-    String getUpdatefailuremessage();
+    String getUpdateFailureMessage();
 
     @JsProperty
-    void setExportid(ExportedTableUpdateMessage.ToObjectReturnType.ExportidFieldType exportid);
+    void setExportId(ExportedTableUpdateMessage.ToObjectReturnType.ExportIdFieldType exportId);
 
     @JsProperty
     void setSize(String size);
 
     @JsProperty
-    void setUpdatefailuremessage(String updatefailuremessage);
+    void setUpdateFailureMessage(String updateFailureMessage);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ExportidFieldType {
+    public interface ExportIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType.GetIdUnionType of(
-            Object o) {
+        static ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType.GetTicketUnionType
+            of(Object o) {
           return Js.cast(o);
         }
 
@@ -133,31 +138,35 @@ public class ExportedTableUpdateMessage {
       }
 
       @JsOverlay
-      static ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType create() {
+      static ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType.GetIdUnionType getId();
+      ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType.GetTicketUnionType
+          getTicket();
 
       @JsProperty
-      void setId(
-          ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType.GetIdUnionType id);
+      void setTicket(
+          ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType.GetTicketUnionType
+              ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType
+                        .GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType
+                        .GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -167,22 +176,22 @@ public class ExportedTableUpdateMessage {
     }
 
     @JsProperty
-    ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType getExportid();
+    ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType getExportId();
 
     @JsProperty
     String getSize();
 
     @JsProperty
-    String getUpdatefailuremessage();
+    String getUpdateFailureMessage();
 
     @JsProperty
-    void setExportid(ExportedTableUpdateMessage.ToObjectReturnType0.ExportidFieldType exportid);
+    void setExportId(ExportedTableUpdateMessage.ToObjectReturnType0.ExportIdFieldType exportId);
 
     @JsProperty
     void setSize(String size);
 
     @JsProperty
-    void setUpdatefailuremessage(String updatefailuremessage);
+    void setUpdateFailureMessage(String updateFailureMessage);
   }
 
   public static native ExportedTableUpdateMessage deserializeBinary(Uint8Array bytes);
@@ -196,25 +205,25 @@ public class ExportedTableUpdateMessage {
   public static native ExportedTableUpdateMessage.ToObjectReturnType toObject(
       boolean includeInstance, ExportedTableUpdateMessage msg);
 
-  public native void clearExportid();
+  public native void clearExportId();
 
-  public native Ticket getExportid();
+  public native Ticket getExportId();
 
   public native String getSize();
 
-  public native String getUpdatefailuremessage();
+  public native String getUpdateFailureMessage();
 
-  public native boolean hasExportid();
+  public native boolean hasExportId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setExportid();
+  public native void setExportId();
 
-  public native void setExportid(Ticket value);
+  public native void setExportId(Ticket value);
 
   public native void setSize(String value);
 
-  public native void setUpdatefailuremessage(String value);
+  public native void setUpdateFailureMessage(String value);
 
   public native ExportedTableUpdateMessage.ToObjectReturnType0 toObject();
 

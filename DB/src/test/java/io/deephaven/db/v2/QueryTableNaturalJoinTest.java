@@ -13,9 +13,9 @@ import io.deephaven.db.tables.select.MatchPairFactory;
 import io.deephaven.db.tables.utils.*;
 import io.deephaven.db.v2.sources.AbstractColumnSource;
 import io.deephaven.db.v2.sources.ColumnSource;
-import io.deephaven.db.v2.sources.chunk.util.pools.ChunkPoolReleaseTracking;
 import io.deephaven.db.v2.utils.ColumnHolder;
 import io.deephaven.db.v2.utils.Index;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.QueryConstants;
 import junit.framework.TestCase;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -26,12 +26,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.function.BiConsumer;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.v2.TstUtils.*;
 import static io.deephaven.util.QueryConstants.NULL_INT;
 import static java.util.Arrays.asList;
 
+@Category(OutOfBandTest.class)
 public class QueryTableNaturalJoinTest extends QueryTableTestBase {
 
     public void testNaturalJoinRehash() {
@@ -130,6 +132,7 @@ public class QueryTableNaturalJoinTest extends QueryTableTestBase {
         }
     }
 
+    @Category(OutOfBandTest.class)
     public void testNaturalJoinIncremental() {
         setExpectError(false);
 
@@ -245,17 +248,17 @@ public class QueryTableNaturalJoinTest extends QueryTableTestBase {
         final EvalNugget[] en = new EvalNugget[]{
                 new EvalNugget() {
                     public Table e() {
-                        return NaturalJoinHelper.naturalJoin(log, leftTable, rightTable, MatchPairFactory.getExpressions("I1"), MatchPairFactory.getExpressions("LI1=I1","LC1=C1","LC2=C2"), false, control);
+                        return NaturalJoinHelper.naturalJoin(leftTable, rightTable, MatchPairFactory.getExpressions("I1"), MatchPairFactory.getExpressions("LI1=I1","LC1=C1","LC2=C2"), false, control);
                     }
                 },
                 new EvalNugget() {
                     public Table e() {
-                        return NaturalJoinHelper.naturalJoin(log, leftTable, rightTable, MatchPairFactory.getExpressions("C1","I1"), MatchPairFactory.getExpressions("LC2=C2"), false, control);
+                        return NaturalJoinHelper.naturalJoin(leftTable, rightTable, MatchPairFactory.getExpressions("C1","I1"), MatchPairFactory.getExpressions("LC2=C2"), false, control);
                     }
                 },
                 new EvalNugget() {
                     public Table e() {
-                        return NaturalJoinHelper.naturalJoin(log, leftTable, (QueryTable)rightTable.update("Exists=true"), MatchPairFactory.getExpressions("C1","C2","I1"), MatchPairFactory.getExpressions("Exists"), false, control);
+                        return NaturalJoinHelper.naturalJoin(leftTable, (QueryTable)rightTable.update("Exists=true"), MatchPairFactory.getExpressions("C1","C2","I1"), MatchPairFactory.getExpressions("Exists"), false, control);
                     }
                 },
         };
@@ -1291,7 +1294,6 @@ public class QueryTableNaturalJoinTest extends QueryTableTestBase {
         assertEquals(asList(1, 2, 3), asList(pairMatch.getColumn("v").get(0, 3)));
     }
 
-
     public void testSymbolTableJoin() throws IOException {
         diskBackedTestHarness((left, right) -> {
             final Table result = left.naturalJoin(right, "Symbol");
@@ -1307,8 +1309,8 @@ public class QueryTableNaturalJoinTest extends QueryTableTestBase {
         final File rightDirectory = Files.createTempDirectory("QueryTableJoinTest-Right").toFile();
 
         try {
-            final Table leftTable = makeLeftDiskTable(leftDirectory);
-            final Table rightTable = makeRightDiskTable(rightDirectory);
+            final Table leftTable = makeLeftDiskTable(new File(leftDirectory, "Left.parquet"));
+            final Table rightTable = makeRightDiskTable(new File(rightDirectory, "Right.parquet"));
 
             testFunction.accept(leftTable, rightTable);
 
@@ -1321,25 +1323,25 @@ public class QueryTableNaturalJoinTest extends QueryTableTestBase {
     }
 
     @NotNull
-    private Table makeLeftDiskTable(File leftDirectory) throws IOException {
+    private Table makeLeftDiskTable(File leftLocation) throws IOException {
         final TableDefinition leftDefinition = TableDefinition.of(
                 ColumnDefinition.ofString("Symbol"),
                 ColumnDefinition.ofInt("LeftSentinel"));
         final String [] leftSyms = new String[]{"Apple", "Banana", "Cantaloupe", "DragonFruit",
                 "Apple", "Cantaloupe", "Banana", "Banana", "Cantaloupe"};
         final Table leftTable = newTable(stringCol("Symbol", leftSyms)).update("LeftSentinel=i");
-        TableManagementTools.writeTable(leftTable, leftDefinition, leftDirectory, TableManagementTools.StorageFormat.Parquet);
-        return TableManagementTools.readTable(leftDirectory, leftDefinition);
+        ParquetTools.writeTable(leftTable, leftDefinition, leftLocation);
+        return ParquetTools.readTable(leftLocation);
     }
 
     @NotNull
-    private Table makeRightDiskTable(File rightDirectory) throws IOException {
+    private Table makeRightDiskTable(File rightLocation) throws IOException {
         final TableDefinition rightDefinition = TableDefinition.of(
                 ColumnDefinition.ofString("Symbol"),
                 ColumnDefinition.ofInt("RightSentinel"));
         final String [] rightSyms = new String[]{"Elderberry", "Apple", "Banana", "Cantaloupe"};
         final Table rightTable = newTable(stringCol("Symbol", rightSyms)).update("RightSentinel=100+i");
-        TableManagementTools.writeTable(rightTable, rightDefinition, rightDirectory, TableManagementTools.StorageFormat.Parquet);
-        return TableManagementTools.readTable(rightDirectory, rightDefinition);
+        ParquetTools.writeTable(rightTable, rightDefinition, rightLocation);
+        return ParquetTools.readTable(rightLocation);
     }
 }

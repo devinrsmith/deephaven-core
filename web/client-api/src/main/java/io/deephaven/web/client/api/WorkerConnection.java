@@ -5,6 +5,7 @@ import elemental2.core.JsWeakMap;
 import elemental2.core.Uint8Array;
 import elemental2.dom.DomGlobal;
 import elemental2.promise.Promise;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.browserheaders.BrowserHeaders;
 import io.deephaven.javascript.proto.dhinternal.grpcweb.Grpc;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.barrage.flatbuf.barrage_generated.io.deephaven.barrage.flatbuf.BarrageRecordBatch;
@@ -13,18 +14,15 @@ import io.deephaven.javascript.proto.dhinternal.io.deephaven.barrage.flatbuf.mes
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.barrage_pb.BarrageData;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.barrage_pb.SubscriptionRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.barrage_pb_service.BarrageServiceClient;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb.FetchFigureRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb.FetchTableRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb.LogSubscriptionData;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb.LogSubscriptionRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb_service.ConsoleServiceClient;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.HandshakeRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.HandshakeResponse;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb_service.SessionServiceClient;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.EmptyTableRequest;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.MergeTablesRequest;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.TableReference;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.TimeTableRequest;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.*;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb_service.TableServiceClient;
 import io.deephaven.web.client.api.batch.RequestBatcher;
 import io.deephaven.web.client.api.batch.TableConfig;
@@ -480,9 +478,9 @@ public class WorkerConnection {
                     JsLog.debug("performing fetch for ", tableName, " / ", cts, " (" + LazyString.of(cts::getHandle), ",", script, ")");
                     assert script != null : "no global scope support at this time";
                     FetchTableRequest fetch = new FetchTableRequest();
-                    fetch.setConsoleid(script);
-                    fetch.setTablename(tableName);
-                    fetch.setTableid(cts.getHandle().makeTicket());
+                    fetch.setConsoleId(script);
+                    fetch.setTableName(tableName);
+                    fetch.setTableId(cts.getHandle().makeTicket());
                     consoleServiceClient.fetchTable(fetch, metadata, c::apply);
                 }, "fetch table " + tableName
             ).then(cts -> {
@@ -602,12 +600,10 @@ public class WorkerConnection {
     public Promise<JsFigure> getFigure(String figureName, Ticket script) {
         return whenServerReady("get a figure")
                 .then(server -> new JsFigure(this, c -> {
-//                    if (script != null) {
-//                        getServer().fetchScriptFigure(script, figureName, c);
-//                    } else {
-//                        getServer().fetchFigure(figureName, c);
-//                    }
-                    throw new UnsupportedOperationException("getFigure");
+                    FetchFigureRequest request = new FetchFigureRequest();
+                    request.setConsoleId(script);
+                    request.setFigureName(figureName);
+                    consoleServiceClient().fetchFigure(request, metadata(), c::apply);
                 }).refetch());
     }
 
@@ -668,8 +664,8 @@ public class WorkerConnection {
             }
             JsLog.debug("Merging tables: ", LazyString.of(cts.getHandle()), " for ", cts.getHandle().isResolved(), cts.getResolution());
             MergeTablesRequest requestMessage = new MergeTablesRequest();
-            requestMessage.setResultid(cts.getHandle().makeTicket());
-            requestMessage.setSourceidsList(tableHandles);
+            requestMessage.setResultId(cts.getHandle().makeTicket());
+            requestMessage.setSourceIdsList(tableHandles);
             tableServiceClient.mergeTables(requestMessage, metadata, c::apply);
         }, "merging tables").then(cts -> Promise.resolve(new JsTable(this, cts)));
     }
@@ -733,6 +729,18 @@ public class WorkerConnection {
             return myBatcher;
         }
         return batcher;
+    }
+
+    public ClientTableState newStateFromUnsolicitedTable(ExportedTableCreationResponse unsolicitedTable, String fetchSummary) {
+        TableTicket tableTicket = new TableTicket(unsolicitedTable.getResultId().getTicket().getTicket_asU8());
+        JsTableFetch failFetch = (callback, newState, metadata1) -> {
+            throw new IllegalStateException("Cannot reconnect, must recreate the unsolicited table on the server: " + fetchSummary);
+        };
+        return cache.create(tableTicket, handle -> {
+            ClientTableState cts = new ClientTableState(this, handle, failFetch, fetchSummary);
+            cts.applyTableCreationResponse(unsolicitedTable);
+            return cts;
+        });
     }
 
     public ClientTableState newState(JsTableFetch fetcher, String fetchSummary) {
@@ -873,13 +881,13 @@ public class WorkerConnection {
                     request.setViewport(serializeRanges(vps.stream().map(TableSubscriptionRequest::getRows).collect(Collectors.toSet())));
                 }
 //                request.setUpdateintervalms();//TODO core#188 support this, along with other subscription improvements
-                request.setUsedeephavennulls(true);
+                request.setUseDeephavenNulls(true);
 
                 request.setTicket(state.getHandle().makeTicket());
 
                 final Ticket handle = new Ticket();
-                handle.setId(config.newTicket());
-                request.setExportid(handle);
+                handle.setTicket(config.newTicket());
+                request.setExportId(handle);
                 ResponseStreamWrapper<BarrageData> stream = ResponseStreamWrapper.of(barrageApiClient.doSubscribeNoClientStream(request, metadata));
                 stream.onData(data -> {
                     ByteBuffer body = typedArrayToLittleEndianByteBuffer(data.getDataBody_asU8());
@@ -948,7 +956,7 @@ public class WorkerConnection {
             logStream = ResponseStreamWrapper.of(consoleServiceClient.subscribeToLogs(new LogSubscriptionRequest(), metadata));
             logStream.onData(data -> {
                 LogItem logItem = new LogItem();
-                logItem.setLogLevel(data.getLoglevel());
+                logItem.setLogLevel(data.getLogLevel());
                 logItem.setMessage(data.getMessage());
                 logItem.setMicros(data.getMicros());
 
@@ -1022,32 +1030,22 @@ public class WorkerConnection {
         }
     }
 
-    public Promise<JsTable> emptyTable(double size, JsPropertyMap<String> columns) {
-        final String[] columnNames = new String[0];
-        final String[] columnTypes = new String[0];
-        if (columns != null) {
-            columns.forEach(key -> {
-                columnNames[columnNames.length] = key;
-                columnTypes[columnTypes.length] = columns.get(key);
-            });
-        }
+    public Promise<JsTable> emptyTable(double size) {
         return whenServerReady("create emptyTable").then(server -> newState(info, (c, cts, metadata) -> {
             EmptyTableRequest emptyTableRequest = new EmptyTableRequest();
-            emptyTableRequest.setResultid(cts.getHandle().makeTicket());
+            emptyTableRequest.setResultId(cts.getHandle().makeTicket());
             emptyTableRequest.setSize(size + "");
-            emptyTableRequest.setColumnnamesList(columnNames);
-            emptyTableRequest.setColumntypesList(columnTypes);
             tableServiceClient.emptyTable(emptyTableRequest, metadata, c::apply);
-        }, "emptyTable(" + size + ", " + Arrays.toString(columnNames) + "," + Arrays.toString(columnTypes) + ")")).then(cts -> Promise.resolve(new JsTable(this, cts)));
+        }, "emptyTable(" + size + ")")).then(cts -> Promise.resolve(new JsTable(this, cts)));
     }
 
     public Promise<JsTable> timeTable(double periodNanos, DateWrapper startTime) {
         final long startTimeNanos = startTime == null ? -1 : startTime.getWrapped();
         return whenServerReady("create timetable").then(server -> newState(info, (c, cts, metadata) -> {
             TimeTableRequest timeTableRequest = new TimeTableRequest();
-            timeTableRequest.setResultid(cts.getHandle().makeTicket());
-            timeTableRequest.setPeriodnanos(periodNanos + "");
-            timeTableRequest.setStarttimenanos(startTimeNanos + "");
+            timeTableRequest.setResultId(cts.getHandle().makeTicket());
+            timeTableRequest.setPeriodNanos(periodNanos + "");
+            timeTableRequest.setStartTimeNanos(startTimeNanos + "");
             tableServiceClient.timeTable(timeTableRequest, metadata, c::apply);
         }, "create timetable(" + periodNanos + ", " + startTime + ")")).then(cts -> Promise.resolve(new JsTable(this, cts)));
     }

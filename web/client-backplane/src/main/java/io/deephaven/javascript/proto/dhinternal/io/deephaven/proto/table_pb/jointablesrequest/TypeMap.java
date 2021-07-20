@@ -17,39 +17,27 @@ public interface TypeMap {
     return Js.uncheckedCast(JsPropertyMap.of());
   }
 
-  @JsProperty(name = "ASOFJOIN")
-  double getASOFJOIN();
+  @JsProperty(name = "CROSS_JOIN")
+  double getCROSS_JOIN();
 
-  @JsProperty(name = "CROSSJOIN")
-  double getCROSSJOIN();
+  @JsProperty(name = "EXACT_JOIN")
+  double getEXACT_JOIN();
 
-  @JsProperty(name = "EXACTJOIN")
-  double getEXACTJOIN();
+  @JsProperty(name = "LEFT_JOIN")
+  double getLEFT_JOIN();
 
-  @JsProperty(name = "LEFTJOIN")
-  double getLEFTJOIN();
+  @JsProperty(name = "NATURAL_JOIN")
+  double getNATURAL_JOIN();
 
-  @JsProperty(name = "NATURALJOIN")
-  double getNATURALJOIN();
+  @JsProperty(name = "CROSS_JOIN")
+  void setCROSS_JOIN(double CROSS_JOIN);
 
-  @JsProperty(name = "REVERSEASOFJOIN")
-  double getREVERSEASOFJOIN();
+  @JsProperty(name = "EXACT_JOIN")
+  void setEXACT_JOIN(double EXACT_JOIN);
 
-  @JsProperty(name = "ASOFJOIN")
-  void setASOFJOIN(double ASOFJOIN);
+  @JsProperty(name = "LEFT_JOIN")
+  void setLEFT_JOIN(double LEFT_JOIN);
 
-  @JsProperty(name = "CROSSJOIN")
-  void setCROSSJOIN(double CROSSJOIN);
-
-  @JsProperty(name = "EXACTJOIN")
-  void setEXACTJOIN(double EXACTJOIN);
-
-  @JsProperty(name = "LEFTJOIN")
-  void setLEFTJOIN(double LEFTJOIN);
-
-  @JsProperty(name = "NATURALJOIN")
-  void setNATURALJOIN(double NATURALJOIN);
-
-  @JsProperty(name = "REVERSEASOFJOIN")
-  void setREVERSEASOFJOIN(double REVERSEASOFJOIN);
+  @JsProperty(name = "NATURAL_JOIN")
+  void setNATURAL_JOIN(double NATURAL_JOIN);
 }

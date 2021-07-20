@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,12 @@ public class TimeTableRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static TimeTableRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(Object o) {
+        static TimeTableRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
+            Object o) {
           return Js.cast(o);
         }
 
@@ -47,28 +48,31 @@ public class TimeTableRequest {
       }
 
       @JsOverlay
-      static TimeTableRequest.ToObjectReturnType.ResultidFieldType create() {
+      static TimeTableRequest.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      TimeTableRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
+      TimeTableRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(TimeTableRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          TimeTableRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js.<TimeTableRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(String ticket) {
+        setTicket(
+            Js
+                .<TimeTableRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js.<TimeTableRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js
+                .<TimeTableRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -78,32 +82,33 @@ public class TimeTableRequest {
     }
 
     @JsProperty
-    String getPeriodnanos();
+    String getPeriodNanos();
 
     @JsProperty
-    TimeTableRequest.ToObjectReturnType.ResultidFieldType getResultid();
+    TimeTableRequest.ToObjectReturnType.ResultIdFieldType getResultId();
 
     @JsProperty
-    String getStarttimenanos();
+    String getStartTimeNanos();
 
     @JsProperty
-    void setPeriodnanos(String periodnanos);
+    void setPeriodNanos(String periodNanos);
 
     @JsProperty
-    void setResultid(TimeTableRequest.ToObjectReturnType.ResultidFieldType resultid);
+    void setResultId(TimeTableRequest.ToObjectReturnType.ResultIdFieldType resultId);
 
     @JsProperty
-    void setStarttimenanos(String starttimenanos);
+    void setStartTimeNanos(String startTimeNanos);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static TimeTableRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(Object o) {
+        static TimeTableRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
+            Object o) {
           return Js.cast(o);
         }
 
@@ -129,28 +134,31 @@ public class TimeTableRequest {
       }
 
       @JsOverlay
-      static TimeTableRequest.ToObjectReturnType0.ResultidFieldType create() {
+      static TimeTableRequest.ToObjectReturnType0.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      TimeTableRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      TimeTableRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(TimeTableRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          TimeTableRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js.<TimeTableRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(String ticket) {
+        setTicket(
+            Js
+                .<TimeTableRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js.<TimeTableRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>uncheckedCast(
-                id));
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js
+                .<TimeTableRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -160,22 +168,22 @@ public class TimeTableRequest {
     }
 
     @JsProperty
-    String getPeriodnanos();
+    String getPeriodNanos();
 
     @JsProperty
-    TimeTableRequest.ToObjectReturnType0.ResultidFieldType getResultid();
+    TimeTableRequest.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    String getStarttimenanos();
+    String getStartTimeNanos();
 
     @JsProperty
-    void setPeriodnanos(String periodnanos);
+    void setPeriodNanos(String periodNanos);
 
     @JsProperty
-    void setResultid(TimeTableRequest.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(TimeTableRequest.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setStarttimenanos(String starttimenanos);
+    void setStartTimeNanos(String startTimeNanos);
   }
 
   public static native TimeTableRequest deserializeBinary(Uint8Array bytes);
@@ -188,25 +196,25 @@ public class TimeTableRequest {
   public static native TimeTableRequest.ToObjectReturnType toObject(
       boolean includeInstance, TimeTableRequest msg);
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native String getPeriodnanos();
+  public native String getPeriodNanos();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native String getStarttimenanos();
+  public native String getStartTimeNanos();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setPeriodnanos(String value);
+  public native void setPeriodNanos(String value);
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setStarttimenanos(String value);
+  public native void setStartTimeNanos(String value);
 
   public native TimeTableRequest.ToObjectReturnType0 toObject();
 

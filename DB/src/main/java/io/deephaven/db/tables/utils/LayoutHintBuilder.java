@@ -10,8 +10,6 @@ import java.util.stream.Collectors;
 /**
  * The builder class for use in assembling layout hints suitable for use with {@link io.deephaven.db.tables.Table#layoutHints(LayoutHintBuilder)} or
  * {@link io.deephaven.db.tables.Table#layoutHints(String)}.
- *
- * @IncludeAll
  */
 @ScriptApi
 public class LayoutHintBuilder {
@@ -73,8 +71,8 @@ public class LayoutHintBuilder {
 
             final String column = parts[0];
             try {
-                DBNameValidator.validateColumnName(column);
-            } catch(DBNameValidator.InvalidNameException ex) {
+                NameValidator.validateColumnName(column);
+            } catch(NameValidator.InvalidNameException ex) {
                 throw new IllegalArgumentException("AutoFilterData invalid column name", ex);
             }
 

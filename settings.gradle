@@ -12,7 +12,7 @@ String[] mods = [ 'Util', 'Numerics', 'TableLogger', 'DB', 'Plot',
         'CompilerTools', 'Generators',
         'Integrations', 'ModelFarm', 'ClientSupport',
         'BenchmarkSupport', 'DB-test', 'DbTypes', 'DbTypesImpl', 'Parquet',
-        'KafkaIngester', 'grpc-api']
+        'KafkaIngester', 'grpc-api', 'grpc-api-client', 'table-api']
 
         // new web projects; these modules are intended to form a complete, modular web application,
         // with heavy dependency isolation that should enable very fast rebuilds.
@@ -23,6 +23,7 @@ String[] webMods = [
         'web-jupyter-grid', // React Jupyter grid client app
         'web-shared-beans', // shared data types and common interfaces
         'web-client-backplane', // shared data types and common interfaces
+        'open-api-lang-api', // a lightweight module used to avoid diamond problems with :DB
         'open-api-lang-parser', // a javacc generated general-purpose language parser.
         'open-api-lang-tools', // language processing tools that we want to be accessible to many modules
         'open-api-shared-fu', // general purpose tools and dtos for both client and server
@@ -54,6 +55,7 @@ pyMods.each {
 include 'fishconfig-local'
 include 'DHProcess'
 include 'proto:proto-backplane-grpc'
+include 'proto:proto-backplane-grpc-util'
 include 'proto:raw-js-openapi'
 include 'protoc'
 
@@ -103,10 +105,10 @@ include(':grpc-api-server-native')
 project(':grpc-api-server-native').projectDir = file('grpc-api/server/native')
 
 include(':grpc-api-client-simple')
-project(':grpc-api-client-simple').projectDir = file('grpc-api/client/simple')
+project(':grpc-api-client-simple').projectDir = file('grpc-api-client/simple')
 
 include(':grpc-api-client-console')
-project(':grpc-api-client-console').projectDir = file('grpc-api/client/console')
+project(':grpc-api-client-console').projectDir = file('grpc-api-client/console')
 
 include(':classgraph-extension')
 project(':classgraph-extension').projectDir = file('extensions/classgraph')
@@ -130,8 +132,6 @@ include(':DataStructures')
 include(':Configuration')
 
 include(':FishUtil')
-
-include(':DataObjects')
 
 include(':Net')
 

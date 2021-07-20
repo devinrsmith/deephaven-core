@@ -15,6 +15,7 @@ import io.deephaven.db.util.scripts.ScriptPathLoader;
 import io.deephaven.db.util.scripts.ScriptPathLoaderState;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.util.annotations.VisibleForTesting;
 import org.jpy.KeyError;
 import org.jpy.PyDictWrapper;
 import org.jpy.PyObject;
@@ -51,17 +52,26 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
     private final PythonEvaluator evaluator;
     private final PythonScope<?> scope;
 
-    // depend on the GIL instead of local synchronization
-    private final QueryScope queryScope = new QueryScope.UnsynchronizedScriptSessionImpl(this);
-
     /**
      * Create a Python ScriptSession.
      *
      * @param runInitScripts if init scripts should be executed
      * @throws IOException if an IO error occurs running initialization scripts
      */
-    @SuppressWarnings("unused")
     public PythonDeephavenSession(boolean runInitScripts) throws IOException {
+        this(runInitScripts, false);
+    }
+
+    /**
+     * Create a Python ScriptSession.
+     *
+     * @param runInitScripts if init scripts should be executed
+     * @param isDefaultScriptSession true if this is in the default context of a worker jvm
+     * @throws IOException if an IO error occurs running initialization scripts
+     */
+    public PythonDeephavenSession(boolean runInitScripts, boolean isDefaultScriptSession) throws IOException {
+        super(isDefaultScriptSession);
+
         JpyInit.init(log);
         PythonEvaluatorJpy jpy = PythonEvaluatorJpy.withGlobalCopy();
         evaluator = jpy;
@@ -84,9 +94,13 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
             }
         }
 
-        QueryLibrary.setCurrent(queryLibrary);
-        QueryLibrary.importClass(org.jpy.PyObject.class);
-
+        final QueryLibrary currLibrary = QueryLibrary.getLibrary();
+        try {
+            QueryLibrary.setLibrary(queryLibrary);
+            QueryLibrary.importClass(org.jpy.PyObject.class);
+        } finally {
+            QueryLibrary.setLibrary(currLibrary);
+        }
     }
 
     /**
@@ -94,14 +108,18 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
      * scope, such as an IPython kernel session.
      */
     public PythonDeephavenSession(PythonScope<?> scope) {
+        super(false);
+
         this.scope = scope;
         this.evaluator = null;
         this.scriptFinder = null;
     }
 
     @Override
-    public QueryScope getQueryScope() {
-        return queryScope;
+    @VisibleForTesting
+    public QueryScope newQueryScope() {
+        // depend on the GIL instead of local synchronization
+        return new QueryScope.UnsynchronizedScriptSessionImpl(this);
     }
 
     /**
@@ -246,7 +264,7 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
         throw new OperationException("Can not convert pyOjbect=" + pyObject + " to a LiveWidget.");
     }
 
-    private static final String GET_TABLE_ATTRIBUTE = "get_iris_table";
+    private static final String GET_TABLE_ATTRIBUTE = "get_dh_table";
     private static boolean isTable(PyObject value) {
         if ((value != null && value.hasAttribute(GET_TABLE_ATTRIBUTE))) {
             try (final PyObject widget = value.callMethod(GET_TABLE_ATTRIBUTE)) {

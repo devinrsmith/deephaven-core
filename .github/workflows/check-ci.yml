@@ -2,9 +2,9 @@ name: Check CI
 
 on:
   pull_request:
-    branches: [ main, workflow ]
+    branches: [ main ]
   push:
-    branches: [ 'main', 'check/**' ]
+    branches: [ 'main', 'check/**', 'release/v*' ]
     tags: [ 'v*' ]
 
 jobs:
@@ -23,25 +23,27 @@ jobs:
 
       - name: Setup gradle properties
         run: |
-          mkdir -p $HOME/.gradle
-          cp .github/env/${{ runner.os }}/gradle.properties $HOME/.gradle/gradle.properties
-          echo "org.gradle.java.installations.paths=${{ steps.setup-java.outputs.path }}" >> $HOME/.gradle/gradle.properties
+          cat .github/env/${{ runner.os }}/gradle.properties >> gradle.properties
+          echo "org.gradle.java.installations.paths=${{ steps.setup-java.outputs.path }}" >> gradle.properties
 
       - name: Check
         uses: burrunan/gradle-cache-action@v1
         with:
           job-id: checks
           # todo: eventually expand to more
-          arguments: --scan quick
+          arguments: --scan --continue quick
           gradle-version: wrapper
 
-      - name: Check for xml failures
-        run: |
-          ./.github/scripts/fail-on-xml-failures.sh
-        
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
         if: always()
         with:
           name: check-ci-results
           path: '**/build/test-results/*/TEST-*.xml'
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: check-ci-reports
+          path: '**/build/reports/tests/**'

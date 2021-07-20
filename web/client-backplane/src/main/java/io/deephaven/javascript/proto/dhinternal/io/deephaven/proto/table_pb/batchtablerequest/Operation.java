@@ -2,6 +2,7 @@ package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.bat
 
 import elemental2.core.JsArray;
 import elemental2.core.Uint8Array;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.AsOfJoinTablesRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.ComboAggregateRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.DropColumnsRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.EmptyTableRequest;
@@ -11,6 +12,7 @@ import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.Head
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.HeadOrTailRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.JoinTablesRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.MergeTablesRequest;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.RunChartDownsampleRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.SelectDistinctRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.SelectOrUpdateRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.SnapshotTableRequest;
@@ -33,20 +35,74 @@ public class Operation {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ComboaggregateFieldType {
+    public interface AsOfJoinFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType.AsOfJoinFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      double getAsOfMatchRule();
+
+      @JsProperty
+      JsArray<String> getColumnsToAddList();
+
+      @JsProperty
+      JsArray<String> getColumnsToMatchList();
+
+      @JsProperty
+      Object getLeftId();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getRightId();
+
+      @JsProperty
+      void setAsOfMatchRule(double asOfMatchRule);
+
+      @JsProperty
+      void setColumnsToAddList(JsArray<String> columnsToAddList);
+
+      @JsOverlay
+      default void setColumnsToAddList(String[] columnsToAddList) {
+        setColumnsToAddList(Js.<JsArray<String>>uncheckedCast(columnsToAddList));
+      }
+
+      @JsProperty
+      void setColumnsToMatchList(JsArray<String> columnsToMatchList);
+
+      @JsOverlay
+      default void setColumnsToMatchList(String[] columnsToMatchList) {
+        setColumnsToMatchList(Js.<JsArray<String>>uncheckedCast(columnsToMatchList));
+      }
+
+      @JsProperty
+      void setLeftId(Object leftId);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setRightId(Object rightId);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface ComboAggregateFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
       public interface AggregatesListFieldType {
         @JsOverlay
-        static Operation.ToObjectReturnType.ComboaggregateFieldType.AggregatesListFieldType
+        static Operation.ToObjectReturnType.ComboAggregateFieldType.AggregatesListFieldType
             create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        String getColumnname();
+        String getColumnName();
 
         @JsProperty
-        JsArray<String> getMatchpairsList();
+        JsArray<String> getMatchPairsList();
 
         @JsProperty
         double getPercentile();
@@ -55,20 +111,20 @@ public class Operation {
         double getType();
 
         @JsProperty
-        boolean isAvgmedian();
+        boolean isAvgMedian();
 
         @JsProperty
-        void setAvgmedian(boolean avgmedian);
+        void setAvgMedian(boolean avgMedian);
 
         @JsProperty
-        void setColumnname(String columnname);
+        void setColumnName(String columnName);
 
         @JsProperty
-        void setMatchpairsList(JsArray<String> matchpairsList);
+        void setMatchPairsList(JsArray<String> matchPairsList);
 
         @JsOverlay
-        default void setMatchpairsList(String[] matchpairsList) {
-          setMatchpairsList(Js.<JsArray<String>>uncheckedCast(matchpairsList));
+        default void setMatchPairsList(String[] matchPairsList) {
+          setMatchPairsList(Js.<JsArray<String>>uncheckedCast(matchPairsList));
         }
 
         @JsProperty
@@ -79,121 +135,122 @@ public class Operation {
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType.ComboaggregateFieldType create() {
+      static Operation.ToObjectReturnType.ComboAggregateFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<Operation.ToObjectReturnType.ComboaggregateFieldType.AggregatesListFieldType>
+      JsArray<Operation.ToObjectReturnType.ComboAggregateFieldType.AggregatesListFieldType>
           getAggregatesList();
 
       @JsProperty
-      JsArray<String> getGroupbycolumnsList();
+      JsArray<String> getGroupByColumnsList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      boolean isForcecombo();
+      boolean isForceCombo();
 
       @JsOverlay
       default void setAggregatesList(
-          Operation.ToObjectReturnType.ComboaggregateFieldType.AggregatesListFieldType[]
+          Operation.ToObjectReturnType.ComboAggregateFieldType.AggregatesListFieldType[]
               aggregatesList) {
         setAggregatesList(
             Js
                 .<JsArray<
-                        Operation.ToObjectReturnType.ComboaggregateFieldType
+                        Operation.ToObjectReturnType.ComboAggregateFieldType
                             .AggregatesListFieldType>>
                     uncheckedCast(aggregatesList));
       }
 
       @JsProperty
       void setAggregatesList(
-          JsArray<Operation.ToObjectReturnType.ComboaggregateFieldType.AggregatesListFieldType>
+          JsArray<Operation.ToObjectReturnType.ComboAggregateFieldType.AggregatesListFieldType>
               aggregatesList);
 
       @JsProperty
-      void setForcecombo(boolean forcecombo);
+      void setForceCombo(boolean forceCombo);
 
       @JsProperty
-      void setGroupbycolumnsList(JsArray<String> groupbycolumnsList);
+      void setGroupByColumnsList(JsArray<String> groupByColumnsList);
 
       @JsOverlay
-      default void setGroupbycolumnsList(String[] groupbycolumnsList) {
-        setGroupbycolumnsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnsList));
+      default void setGroupByColumnsList(String[] groupByColumnsList) {
+        setGroupByColumnsList(Js.<JsArray<String>>uncheckedCast(groupByColumnsList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface DropcolumnsFieldType {
+    public interface DropColumnsFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface SourceidFieldType {
+      public interface SourceIdFieldType {
         @JsOverlay
-        static Operation.ToObjectReturnType.DropcolumnsFieldType.SourceidFieldType create() {
+        static Operation.ToObjectReturnType.DropColumnsFieldType.SourceIdFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        double getBatchoffset();
+        double getBatchOffset();
 
         @JsProperty
         Object getTicket();
 
         @JsProperty
-        void setBatchoffset(double batchoffset);
+        void setBatchOffset(double batchOffset);
 
         @JsProperty
         void setTicket(Object ticket);
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType.DropcolumnsFieldType create() {
+      static Operation.ToObjectReturnType.DropColumnsFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
+      JsArray<String> getColumnNamesList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Operation.ToObjectReturnType.DropcolumnsFieldType.SourceidFieldType getSourceid();
+      Operation.ToObjectReturnType.DropColumnsFieldType.SourceIdFieldType getSourceId();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
+      void setColumnNamesList(JsArray<String> columnNamesList);
 
       @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
+      default void setColumnNamesList(String[] columnNamesList) {
+        setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(
-          Operation.ToObjectReturnType.DropcolumnsFieldType.SourceidFieldType sourceid);
+      void setSourceId(
+          Operation.ToObjectReturnType.DropColumnsFieldType.SourceIdFieldType sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface EmptytableFieldType {
+    public interface EmptyTableFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface ResultidFieldType {
+      public interface ResultIdFieldType {
         @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-        public interface GetIdUnionType {
+        public interface GetTicketUnionType {
           @JsOverlay
-          static Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType.GetIdUnionType
+          static Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType
+                  .GetTicketUnionType
               of(Object o) {
             return Js.cast(o);
           }
@@ -220,71 +277,51 @@ public class Operation {
         }
 
         @JsOverlay
-        static Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType create() {
+        static Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType.GetIdUnionType getId();
+        Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType.GetTicketUnionType
+            getTicket();
 
         @JsProperty
-        void setId(
-            Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType.GetIdUnionType id);
+        void setTicket(
+            Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType.GetTicketUnionType
+                ticket);
 
         @JsOverlay
-        default void setId(String id) {
-          setId(
+        default void setTicket(String ticket) {
+          setTicket(
               Js
-                  .<Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType
-                          .GetIdUnionType>
-                      uncheckedCast(id));
+                  .<Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType
+                          .GetTicketUnionType>
+                      uncheckedCast(ticket));
         }
 
         @JsOverlay
-        default void setId(Uint8Array id) {
-          setId(
+        default void setTicket(Uint8Array ticket) {
+          setTicket(
               Js
-                  .<Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType
-                          .GetIdUnionType>
-                      uncheckedCast(id));
+                  .<Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType
+                          .GetTicketUnionType>
+                      uncheckedCast(ticket));
         }
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType.EmptytableFieldType create() {
+      static Operation.ToObjectReturnType.EmptyTableFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
-
-      @JsProperty
-      JsArray<String> getColumntypesList();
-
-      @JsProperty
-      Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType getResultid();
+      Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType getResultId();
 
       @JsProperty
       String getSize();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
-
-      @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
-      }
-
-      @JsProperty
-      void setColumntypesList(JsArray<String> columntypesList);
-
-      @JsOverlay
-      default void setColumntypesList(String[] columntypesList) {
-        setColumntypesList(Js.<JsArray<String>>uncheckedCast(columntypesList));
-      }
-
-      @JsProperty
-      void setResultid(Operation.ToObjectReturnType.EmptytableFieldType.ResultidFieldType resultid);
+      void setResultId(Operation.ToObjectReturnType.EmptyTableFieldType.ResultIdFieldType resultId);
 
       @JsProperty
       void setSize(String size);
@@ -294,57 +331,450 @@ public class Operation {
     public interface FilterFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
       public interface FiltersListFieldType {
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface AndFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.AndFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getFiltersList();
+
+          @JsProperty
+          void setFiltersList(JsArray<Object> filtersList);
+
+          @JsOverlay
+          default void setFiltersList(Object[] filtersList) {
+            setFiltersList(Js.<JsArray<Object>>uncheckedCast(filtersList));
+          }
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface CompareFieldType {
+          @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+          public interface LhsFieldType {
+            @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+            public interface LiteralFieldType {
+              @JsOverlay
+              static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType
+                      .CompareFieldType.LhsFieldType.LiteralFieldType
+                  create() {
+                return Js.uncheckedCast(JsPropertyMap.of());
+              }
+
+              @JsProperty
+              double getDoubleValue();
+
+              @JsProperty
+              String getLongValue();
+
+              @JsProperty
+              String getNanoTimeValue();
+
+              @JsProperty
+              String getStringValue();
+
+              @JsProperty
+              boolean isBoolValue();
+
+              @JsProperty
+              void setBoolValue(boolean boolValue);
+
+              @JsProperty
+              void setDoubleValue(double doubleValue);
+
+              @JsProperty
+              void setLongValue(String longValue);
+
+              @JsProperty
+              void setNanoTimeValue(String nanoTimeValue);
+
+              @JsProperty
+              void setStringValue(String stringValue);
+            }
+
+            @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+            public interface ReferenceFieldType {
+              @JsOverlay
+              static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType
+                      .CompareFieldType.LhsFieldType.ReferenceFieldType
+                  create() {
+                return Js.uncheckedCast(JsPropertyMap.of());
+              }
+
+              @JsProperty
+              String getColumnName();
+
+              @JsProperty
+              void setColumnName(String columnName);
+            }
+
+            @JsOverlay
+            static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType
+                    .CompareFieldType.LhsFieldType
+                create() {
+              return Js.uncheckedCast(JsPropertyMap.of());
+            }
+
+            @JsProperty
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                    .LhsFieldType.LiteralFieldType
+                getLiteral();
+
+            @JsProperty
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                    .LhsFieldType.ReferenceFieldType
+                getReference();
+
+            @JsProperty
+            void setLiteral(
+                Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                        .LhsFieldType.LiteralFieldType
+                    literal);
+
+            @JsProperty
+            void setReference(
+                Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                        .LhsFieldType.ReferenceFieldType
+                    reference);
+          }
+
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                  .LhsFieldType
+              getLhs();
+
+          @JsProperty
+          double getOperation();
+
+          @JsProperty
+          Object getRhs();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setLhs(
+              Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                      .LhsFieldType
+                  lhs);
+
+          @JsProperty
+          void setOperation(double operation);
+
+          @JsProperty
+          void setRhs(Object rhs);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface ContainsFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.ContainsFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          String getSearchString();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setReference(Object reference);
+
+          @JsProperty
+          void setSearchString(String searchString);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface InvokeFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.InvokeFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getArgumentsList();
+
+          @JsProperty
+          String getMethod();
+
+          @JsProperty
+          Object getTarget();
+
+          @JsProperty
+          void setArgumentsList(JsArray<Object> argumentsList);
+
+          @JsOverlay
+          default void setArgumentsList(Object[] argumentsList) {
+            setArgumentsList(Js.<JsArray<Object>>uncheckedCast(argumentsList));
+          }
+
+          @JsProperty
+          void setMethod(String method);
+
+          @JsProperty
+          void setTarget(Object target);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface IsNullFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.IsNullFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          void setReference(Object reference);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface MatchesFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.MatchesFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          String getRegex();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setReference(Object reference);
+
+          @JsProperty
+          void setRegex(String regex);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface NotFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.NotFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          Object getFilter();
+
+          @JsProperty
+          void setFilter(Object filter);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface OrFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.OrFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getFiltersList();
+
+          @JsProperty
+          void setFiltersList(JsArray<Object> filtersList);
+
+          @JsOverlay
+          default void setFiltersList(Object[] filtersList) {
+            setFiltersList(Js.<JsArray<Object>>uncheckedCast(filtersList));
+          }
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface Pb_inFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.Pb_inFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getCandidatesList();
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getTarget();
+
+          @JsProperty
+          void setCandidatesList(JsArray<Object> candidatesList);
+
+          @JsOverlay
+          default void setCandidatesList(Object[] candidatesList) {
+            setCandidatesList(Js.<JsArray<Object>>uncheckedCast(candidatesList));
+          }
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setTarget(Object target);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface SearchFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.SearchFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getOptionalReferencesList();
+
+          @JsProperty
+          String getSearchString();
+
+          @JsProperty
+          void setOptionalReferencesList(JsArray<Object> optionalReferencesList);
+
+          @JsOverlay
+          default void setOptionalReferencesList(Object[] optionalReferencesList) {
+            setOptionalReferencesList(Js.<JsArray<Object>>uncheckedCast(optionalReferencesList));
+          }
+
+          @JsProperty
+          void setSearchString(String searchString);
+        }
+
         @JsOverlay
         static Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        JsArray<Object> getChildrenList();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.AndFieldType getAnd();
 
         @JsProperty
-        double getDoublevalue();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+            getCompare();
 
         @JsProperty
-        double getFilterop();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.ContainsFieldType
+            getContains();
 
         @JsProperty
-        double getLongvalue();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.InvokeFieldType
+            getInvoke();
 
         @JsProperty
-        double getNanotimevalue();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.IsNullFieldType
+            getIsNull();
 
         @JsProperty
-        String getStringvalue();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.MatchesFieldType
+            getMatches();
 
         @JsProperty
-        boolean isBoolvalue();
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.NotFieldType getNot();
 
         @JsProperty
-        void setBoolvalue(boolean boolvalue);
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.OrFieldType getOr();
 
         @JsProperty
-        void setChildrenList(JsArray<Object> childrenList);
-
-        @JsOverlay
-        default void setChildrenList(Object[] childrenList) {
-          setChildrenList(Js.<JsArray<Object>>uncheckedCast(childrenList));
-        }
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.Pb_inFieldType getPb_in();
 
         @JsProperty
-        void setDoublevalue(double doublevalue);
+        Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.SearchFieldType
+            getSearch();
 
         @JsProperty
-        void setFilterop(double filterop);
+        void setAnd(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.AndFieldType and);
 
         @JsProperty
-        void setLongvalue(double longvalue);
+        void setCompare(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.CompareFieldType
+                compare);
 
         @JsProperty
-        void setNanotimevalue(double nanotimevalue);
+        void setContains(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.ContainsFieldType
+                contains);
 
         @JsProperty
-        void setStringvalue(String stringvalue);
+        void setInvoke(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.InvokeFieldType
+                invoke);
+
+        @JsProperty
+        void setIsNull(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.IsNullFieldType
+                isNull);
+
+        @JsProperty
+        void setMatches(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.MatchesFieldType
+                matches);
+
+        @JsProperty
+        void setNot(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.NotFieldType not);
+
+        @JsProperty
+        void setOr(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.OrFieldType or);
+
+        @JsProperty
+        void setPb_in(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.Pb_inFieldType pb_in);
+
+        @JsProperty
+        void setSearch(
+            Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType.SearchFieldType
+                search);
       }
 
       @JsOverlay
@@ -356,10 +786,10 @@ public class Operation {
       JsArray<Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType> getFiltersList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsOverlay
       default void setFiltersList(
@@ -375,10 +805,10 @@ public class Operation {
           JsArray<Operation.ToObjectReturnType.FilterFieldType.FiltersListFieldType> filtersList);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -389,16 +819,53 @@ public class Operation {
       }
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface HeadByFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType.HeadByFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      JsArray<String> getGroupByColumnSpecsList();
+
+      @JsProperty
+      String getNumRows();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getSourceId();
+
+      @JsProperty
+      void setGroupByColumnSpecsList(JsArray<String> groupByColumnSpecsList);
+
+      @JsOverlay
+      default void setGroupByColumnSpecsList(String[] groupByColumnSpecsList) {
+        setGroupByColumnSpecsList(Js.<JsArray<String>>uncheckedCast(groupByColumnSpecsList));
+      }
+
+      @JsProperty
+      void setNumRows(String numRows);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -409,59 +876,22 @@ public class Operation {
       }
 
       @JsProperty
-      String getNumrows();
+      String getNumRows();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setNumrows(String numrows);
+      void setNumRows(String numRows);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
-    }
-
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface HeadbyFieldType {
-      @JsOverlay
-      static Operation.ToObjectReturnType.HeadbyFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      JsArray<String> getGroupbycolumnspecsList();
-
-      @JsProperty
-      String getNumrows();
-
-      @JsProperty
-      Object getResultid();
-
-      @JsProperty
-      Object getSourceid();
-
-      @JsProperty
-      void setGroupbycolumnspecsList(JsArray<String> groupbycolumnspecsList);
-
-      @JsOverlay
-      default void setGroupbycolumnspecsList(String[] groupbycolumnspecsList) {
-        setGroupbycolumnspecsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnspecsList));
-      }
-
-      @JsProperty
-      void setNumrows(String numrows);
-
-      @JsProperty
-      void setResultid(Object resultid);
-
-      @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -472,50 +902,50 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnstoaddList();
+      JsArray<String> getColumnsToAddList();
 
       @JsProperty
-      JsArray<String> getColumnstomatchList();
+      JsArray<String> getColumnsToMatchList();
 
       @JsProperty
-      double getJointype();
+      double getJoinType();
 
       @JsProperty
-      Object getLeftid();
+      Object getLeftId();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getRightid();
+      Object getRightId();
 
       @JsProperty
-      void setColumnstoaddList(JsArray<String> columnstoaddList);
+      void setColumnsToAddList(JsArray<String> columnsToAddList);
 
       @JsOverlay
-      default void setColumnstoaddList(String[] columnstoaddList) {
-        setColumnstoaddList(Js.<JsArray<String>>uncheckedCast(columnstoaddList));
+      default void setColumnsToAddList(String[] columnsToAddList) {
+        setColumnsToAddList(Js.<JsArray<String>>uncheckedCast(columnsToAddList));
       }
 
       @JsProperty
-      void setColumnstomatchList(JsArray<String> columnstomatchList);
+      void setColumnsToMatchList(JsArray<String> columnsToMatchList);
 
       @JsOverlay
-      default void setColumnstomatchList(String[] columnstomatchList) {
-        setColumnstomatchList(Js.<JsArray<String>>uncheckedCast(columnstomatchList));
+      default void setColumnsToMatchList(String[] columnsToMatchList) {
+        setColumnsToMatchList(Js.<JsArray<String>>uncheckedCast(columnsToMatchList));
       }
 
       @JsProperty
-      void setJointype(double jointype);
+      void setJoinType(double joinType);
 
       @JsProperty
-      void setLeftid(Object leftid);
+      void setLeftId(Object leftId);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setRightid(Object rightid);
+      void setRightId(Object rightId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -526,58 +956,129 @@ public class Operation {
       }
 
       @JsProperty
-      String getKeycolumn();
+      String getKeyColumn();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      JsArray<Object> getSourceidsList();
+      JsArray<Object> getSourceIdsList();
 
       @JsProperty
-      void setKeycolumn(String keycolumn);
+      void setKeyColumn(String keyColumn);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceidsList(JsArray<Object> sourceidsList);
+      void setSourceIdsList(JsArray<Object> sourceIdsList);
 
       @JsOverlay
-      default void setSourceidsList(Object[] sourceidsList) {
-        setSourceidsList(Js.<JsArray<Object>>uncheckedCast(sourceidsList));
+      default void setSourceIdsList(Object[] sourceIdsList) {
+        setSourceIdsList(Js.<JsArray<Object>>uncheckedCast(sourceIdsList));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SelectdistinctFieldType {
+    public interface RunChartDownsampleFieldType {
+      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+      public interface ZoomRangeFieldType {
+        @JsOverlay
+        static Operation.ToObjectReturnType.RunChartDownsampleFieldType.ZoomRangeFieldType
+            create() {
+          return Js.uncheckedCast(JsPropertyMap.of());
+        }
+
+        @JsProperty
+        String getMaxDateNanos();
+
+        @JsProperty
+        String getMinDateNanos();
+
+        @JsProperty
+        void setMaxDateNanos(String maxDateNanos);
+
+        @JsProperty
+        void setMinDateNanos(String minDateNanos);
+      }
+
       @JsOverlay
-      static Operation.ToObjectReturnType.SelectdistinctFieldType create() {
+      static Operation.ToObjectReturnType.RunChartDownsampleFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
+      double getPixelCount();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
+      String getXColumnName();
+
+      @JsProperty
+      JsArray<String> getYColumnNamesList();
+
+      @JsProperty
+      Operation.ToObjectReturnType.RunChartDownsampleFieldType.ZoomRangeFieldType getZoomRange();
+
+      @JsProperty
+      void setPixelCount(double pixelCount);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
+
+      @JsProperty
+      void setXColumnName(String xColumnName);
+
+      @JsProperty
+      void setYColumnNamesList(JsArray<String> yColumnNamesList);
 
       @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
+      default void setYColumnNamesList(String[] yColumnNamesList) {
+        setYColumnNamesList(Js.<JsArray<String>>uncheckedCast(yColumnNamesList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setZoomRange(
+          Operation.ToObjectReturnType.RunChartDownsampleFieldType.ZoomRangeFieldType zoomRange);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface SelectDistinctFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType.SelectDistinctFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      JsArray<String> getColumnNamesList();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getSourceId();
+
+      @JsProperty
+      void setColumnNamesList(JsArray<String> columnNamesList);
+
+      @JsOverlay
+      default void setColumnNamesList(String[] columnNamesList) {
+        setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
+      }
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -588,38 +1089,38 @@ public class Operation {
       }
 
       @JsProperty
-      Object getLeftid();
+      Object getLeftId();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getRightid();
+      Object getRightId();
 
       @JsProperty
-      JsArray<String> getStampcolumnsList();
+      JsArray<String> getStampColumnsList();
 
       @JsProperty
-      boolean isDoinitialsnapshot();
+      boolean isDoInitialSnapshot();
 
       @JsProperty
-      void setDoinitialsnapshot(boolean doinitialsnapshot);
+      void setDoInitialSnapshot(boolean doInitialSnapshot);
 
       @JsProperty
-      void setLeftid(Object leftid);
+      void setLeftId(Object leftId);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setRightid(Object rightid);
+      void setRightId(Object rightId);
 
       @JsProperty
-      void setStampcolumnsList(JsArray<String> stampcolumnsList);
+      void setStampColumnsList(JsArray<String> stampColumnsList);
 
       @JsOverlay
-      default void setStampcolumnsList(String[] stampcolumnsList) {
-        setStampcolumnsList(Js.<JsArray<String>>uncheckedCast(stampcolumnsList));
+      default void setStampColumnsList(String[] stampColumnsList) {
+        setStampColumnsList(Js.<JsArray<String>>uncheckedCast(stampColumnsList));
       }
     }
 
@@ -633,22 +1134,22 @@ public class Operation {
         }
 
         @JsProperty
-        String getColumnname();
+        String getColumnName();
 
         @JsProperty
         double getDirection();
 
         @JsProperty
-        boolean isIsabsolute();
+        boolean isIsAbsolute();
 
         @JsProperty
-        void setColumnname(String columnname);
+        void setColumnName(String columnName);
 
         @JsProperty
         void setDirection(double direction);
 
         @JsProperty
-        void setIsabsolute(boolean isabsolute);
+        void setIsAbsolute(boolean isAbsolute);
       }
 
       @JsOverlay
@@ -657,16 +1158,16 @@ public class Operation {
       }
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
       JsArray<Operation.ToObjectReturnType.SortFieldType.SortsListFieldType> getSortsList();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
       void setSortsList(
@@ -682,33 +1183,33 @@ public class Operation {
       }
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TimetableFieldType {
+    public interface TimeTableFieldType {
       @JsOverlay
-      static Operation.ToObjectReturnType.TimetableFieldType create() {
+      static Operation.ToObjectReturnType.TimeTableFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      String getPeriodnanos();
+      String getPeriodNanos();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      String getStarttimenanos();
+      String getStartTimeNanos();
 
       @JsProperty
-      void setPeriodnanos(String periodnanos);
+      void setPeriodNanos(String periodNanos);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setStarttimenanos(String starttimenanos);
+      void setStartTimeNanos(String startTimeNanos);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -719,64 +1220,64 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnstoungroupList();
+      JsArray<String> getColumnsToUngroupList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      boolean isNullfill();
+      boolean isNullFill();
 
       @JsProperty
-      void setColumnstoungroupList(JsArray<String> columnstoungroupList);
+      void setColumnsToUngroupList(JsArray<String> columnsToUngroupList);
 
       @JsOverlay
-      default void setColumnstoungroupList(String[] columnstoungroupList) {
-        setColumnstoungroupList(Js.<JsArray<String>>uncheckedCast(columnstoungroupList));
+      default void setColumnsToUngroupList(String[] columnsToUngroupList) {
+        setColumnsToUngroupList(Js.<JsArray<String>>uncheckedCast(columnsToUngroupList));
       }
 
       @JsProperty
-      void setNullfill(boolean nullfill);
+      void setNullFill(boolean nullFill);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface UnstructuredfilterFieldType {
+    public interface UnstructuredFilterFieldType {
       @JsOverlay
-      static Operation.ToObjectReturnType.UnstructuredfilterFieldType create() {
+      static Operation.ToObjectReturnType.UnstructuredFilterFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getFilterList();
+      JsArray<String> getFiltersList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setFilterList(JsArray<String> filterList);
+      void setFiltersList(JsArray<String> filtersList);
 
       @JsOverlay
-      default void setFilterList(String[] filterList) {
-        setFilterList(Js.<JsArray<String>>uncheckedCast(filterList));
+      default void setFiltersList(String[] filtersList) {
+        setFiltersList(Js.<JsArray<String>>uncheckedCast(filtersList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -787,27 +1288,27 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnspecsList();
+      JsArray<String> getColumnSpecsList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setColumnspecsList(JsArray<String> columnspecsList);
+      void setColumnSpecsList(JsArray<String> columnSpecsList);
 
       @JsOverlay
-      default void setColumnspecsList(String[] columnspecsList) {
-        setColumnspecsList(Js.<JsArray<String>>uncheckedCast(columnspecsList));
+      default void setColumnSpecsList(String[] columnSpecsList) {
+        setColumnSpecsList(Js.<JsArray<String>>uncheckedCast(columnSpecsList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsOverlay
@@ -816,13 +1317,16 @@ public class Operation {
     }
 
     @JsProperty
-    Operation.ToObjectReturnType.ComboaggregateFieldType getComboaggregate();
+    Operation.ToObjectReturnType.AsOfJoinFieldType getAsOfJoin();
 
     @JsProperty
-    Operation.ToObjectReturnType.DropcolumnsFieldType getDropcolumns();
+    Operation.ToObjectReturnType.ComboAggregateFieldType getComboAggregate();
 
     @JsProperty
-    Operation.ToObjectReturnType.EmptytableFieldType getEmptytable();
+    Operation.ToObjectReturnType.DropColumnsFieldType getDropColumns();
+
+    @JsProperty
+    Operation.ToObjectReturnType.EmptyTableFieldType getEmptyTable();
 
     @JsProperty
     Operation.ToObjectReturnType.FilterFieldType getFilter();
@@ -834,22 +1338,25 @@ public class Operation {
     Operation.ToObjectReturnType.HeadFieldType getHead();
 
     @JsProperty
-    Operation.ToObjectReturnType.HeadbyFieldType getHeadby();
+    Operation.ToObjectReturnType.HeadByFieldType getHeadBy();
 
     @JsProperty
     Operation.ToObjectReturnType.JoinFieldType getJoin();
 
     @JsProperty
-    Object getLazyupdate();
+    Object getLazyUpdate();
 
     @JsProperty
     Operation.ToObjectReturnType.MergeFieldType getMerge();
 
     @JsProperty
+    Operation.ToObjectReturnType.RunChartDownsampleFieldType getRunChartDownsample();
+
+    @JsProperty
     Object getSelect();
 
     @JsProperty
-    Operation.ToObjectReturnType.SelectdistinctFieldType getSelectdistinct();
+    Operation.ToObjectReturnType.SelectDistinctFieldType getSelectDistinct();
 
     @JsProperty
     Operation.ToObjectReturnType.SnapshotFieldType getSnapshot();
@@ -861,34 +1368,37 @@ public class Operation {
     Object getTail();
 
     @JsProperty
-    Object getTailby();
+    Object getTailBy();
 
     @JsProperty
-    Operation.ToObjectReturnType.TimetableFieldType getTimetable();
+    Operation.ToObjectReturnType.TimeTableFieldType getTimeTable();
 
     @JsProperty
     Operation.ToObjectReturnType.UngroupFieldType getUngroup();
 
     @JsProperty
-    Operation.ToObjectReturnType.UnstructuredfilterFieldType getUnstructuredfilter();
+    Operation.ToObjectReturnType.UnstructuredFilterFieldType getUnstructuredFilter();
 
     @JsProperty
     Operation.ToObjectReturnType.UpdateFieldType getUpdate();
 
     @JsProperty
-    Object getUpdateview();
+    Object getUpdateView();
 
     @JsProperty
     Object getView();
 
     @JsProperty
-    void setComboaggregate(Operation.ToObjectReturnType.ComboaggregateFieldType comboaggregate);
+    void setAsOfJoin(Operation.ToObjectReturnType.AsOfJoinFieldType asOfJoin);
 
     @JsProperty
-    void setDropcolumns(Operation.ToObjectReturnType.DropcolumnsFieldType dropcolumns);
+    void setComboAggregate(Operation.ToObjectReturnType.ComboAggregateFieldType comboAggregate);
 
     @JsProperty
-    void setEmptytable(Operation.ToObjectReturnType.EmptytableFieldType emptytable);
+    void setDropColumns(Operation.ToObjectReturnType.DropColumnsFieldType dropColumns);
+
+    @JsProperty
+    void setEmptyTable(Operation.ToObjectReturnType.EmptyTableFieldType emptyTable);
 
     @JsProperty
     void setFilter(Operation.ToObjectReturnType.FilterFieldType filter);
@@ -900,22 +1410,26 @@ public class Operation {
     void setHead(Operation.ToObjectReturnType.HeadFieldType head);
 
     @JsProperty
-    void setHeadby(Operation.ToObjectReturnType.HeadbyFieldType headby);
+    void setHeadBy(Operation.ToObjectReturnType.HeadByFieldType headBy);
 
     @JsProperty
     void setJoin(Operation.ToObjectReturnType.JoinFieldType join);
 
     @JsProperty
-    void setLazyupdate(Object lazyupdate);
+    void setLazyUpdate(Object lazyUpdate);
 
     @JsProperty
     void setMerge(Operation.ToObjectReturnType.MergeFieldType merge);
 
     @JsProperty
+    void setRunChartDownsample(
+        Operation.ToObjectReturnType.RunChartDownsampleFieldType runChartDownsample);
+
+    @JsProperty
     void setSelect(Object select);
 
     @JsProperty
-    void setSelectdistinct(Operation.ToObjectReturnType.SelectdistinctFieldType selectdistinct);
+    void setSelectDistinct(Operation.ToObjectReturnType.SelectDistinctFieldType selectDistinct);
 
     @JsProperty
     void setSnapshot(Operation.ToObjectReturnType.SnapshotFieldType snapshot);
@@ -927,23 +1441,23 @@ public class Operation {
     void setTail(Object tail);
 
     @JsProperty
-    void setTailby(Object tailby);
+    void setTailBy(Object tailBy);
 
     @JsProperty
-    void setTimetable(Operation.ToObjectReturnType.TimetableFieldType timetable);
+    void setTimeTable(Operation.ToObjectReturnType.TimeTableFieldType timeTable);
 
     @JsProperty
     void setUngroup(Operation.ToObjectReturnType.UngroupFieldType ungroup);
 
     @JsProperty
-    void setUnstructuredfilter(
-        Operation.ToObjectReturnType.UnstructuredfilterFieldType unstructuredfilter);
+    void setUnstructuredFilter(
+        Operation.ToObjectReturnType.UnstructuredFilterFieldType unstructuredFilter);
 
     @JsProperty
     void setUpdate(Operation.ToObjectReturnType.UpdateFieldType update);
 
     @JsProperty
-    void setUpdateview(Object updateview);
+    void setUpdateView(Object updateView);
 
     @JsProperty
     void setView(Object view);
@@ -952,20 +1466,74 @@ public class Operation {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ComboaggregateFieldType {
+    public interface AsOfJoinFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType0.AsOfJoinFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      double getAsOfMatchRule();
+
+      @JsProperty
+      JsArray<String> getColumnsToAddList();
+
+      @JsProperty
+      JsArray<String> getColumnsToMatchList();
+
+      @JsProperty
+      Object getLeftId();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getRightId();
+
+      @JsProperty
+      void setAsOfMatchRule(double asOfMatchRule);
+
+      @JsProperty
+      void setColumnsToAddList(JsArray<String> columnsToAddList);
+
+      @JsOverlay
+      default void setColumnsToAddList(String[] columnsToAddList) {
+        setColumnsToAddList(Js.<JsArray<String>>uncheckedCast(columnsToAddList));
+      }
+
+      @JsProperty
+      void setColumnsToMatchList(JsArray<String> columnsToMatchList);
+
+      @JsOverlay
+      default void setColumnsToMatchList(String[] columnsToMatchList) {
+        setColumnsToMatchList(Js.<JsArray<String>>uncheckedCast(columnsToMatchList));
+      }
+
+      @JsProperty
+      void setLeftId(Object leftId);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setRightId(Object rightId);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface ComboAggregateFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
       public interface AggregatesListFieldType {
         @JsOverlay
-        static Operation.ToObjectReturnType0.ComboaggregateFieldType.AggregatesListFieldType
+        static Operation.ToObjectReturnType0.ComboAggregateFieldType.AggregatesListFieldType
             create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        String getColumnname();
+        String getColumnName();
 
         @JsProperty
-        JsArray<String> getMatchpairsList();
+        JsArray<String> getMatchPairsList();
 
         @JsProperty
         double getPercentile();
@@ -974,20 +1542,20 @@ public class Operation {
         double getType();
 
         @JsProperty
-        boolean isAvgmedian();
+        boolean isAvgMedian();
 
         @JsProperty
-        void setAvgmedian(boolean avgmedian);
+        void setAvgMedian(boolean avgMedian);
 
         @JsProperty
-        void setColumnname(String columnname);
+        void setColumnName(String columnName);
 
         @JsProperty
-        void setMatchpairsList(JsArray<String> matchpairsList);
+        void setMatchPairsList(JsArray<String> matchPairsList);
 
         @JsOverlay
-        default void setMatchpairsList(String[] matchpairsList) {
-          setMatchpairsList(Js.<JsArray<String>>uncheckedCast(matchpairsList));
+        default void setMatchPairsList(String[] matchPairsList) {
+          setMatchPairsList(Js.<JsArray<String>>uncheckedCast(matchPairsList));
         }
 
         @JsProperty
@@ -998,121 +1566,122 @@ public class Operation {
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType0.ComboaggregateFieldType create() {
+      static Operation.ToObjectReturnType0.ComboAggregateFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<Operation.ToObjectReturnType0.ComboaggregateFieldType.AggregatesListFieldType>
+      JsArray<Operation.ToObjectReturnType0.ComboAggregateFieldType.AggregatesListFieldType>
           getAggregatesList();
 
       @JsProperty
-      JsArray<String> getGroupbycolumnsList();
+      JsArray<String> getGroupByColumnsList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      boolean isForcecombo();
+      boolean isForceCombo();
 
       @JsOverlay
       default void setAggregatesList(
-          Operation.ToObjectReturnType0.ComboaggregateFieldType.AggregatesListFieldType[]
+          Operation.ToObjectReturnType0.ComboAggregateFieldType.AggregatesListFieldType[]
               aggregatesList) {
         setAggregatesList(
             Js
                 .<JsArray<
-                        Operation.ToObjectReturnType0.ComboaggregateFieldType
+                        Operation.ToObjectReturnType0.ComboAggregateFieldType
                             .AggregatesListFieldType>>
                     uncheckedCast(aggregatesList));
       }
 
       @JsProperty
       void setAggregatesList(
-          JsArray<Operation.ToObjectReturnType0.ComboaggregateFieldType.AggregatesListFieldType>
+          JsArray<Operation.ToObjectReturnType0.ComboAggregateFieldType.AggregatesListFieldType>
               aggregatesList);
 
       @JsProperty
-      void setForcecombo(boolean forcecombo);
+      void setForceCombo(boolean forceCombo);
 
       @JsProperty
-      void setGroupbycolumnsList(JsArray<String> groupbycolumnsList);
+      void setGroupByColumnsList(JsArray<String> groupByColumnsList);
 
       @JsOverlay
-      default void setGroupbycolumnsList(String[] groupbycolumnsList) {
-        setGroupbycolumnsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnsList));
+      default void setGroupByColumnsList(String[] groupByColumnsList) {
+        setGroupByColumnsList(Js.<JsArray<String>>uncheckedCast(groupByColumnsList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface DropcolumnsFieldType {
+    public interface DropColumnsFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface SourceidFieldType {
+      public interface SourceIdFieldType {
         @JsOverlay
-        static Operation.ToObjectReturnType0.DropcolumnsFieldType.SourceidFieldType create() {
+        static Operation.ToObjectReturnType0.DropColumnsFieldType.SourceIdFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        double getBatchoffset();
+        double getBatchOffset();
 
         @JsProperty
         Object getTicket();
 
         @JsProperty
-        void setBatchoffset(double batchoffset);
+        void setBatchOffset(double batchOffset);
 
         @JsProperty
         void setTicket(Object ticket);
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType0.DropcolumnsFieldType create() {
+      static Operation.ToObjectReturnType0.DropColumnsFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
+      JsArray<String> getColumnNamesList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Operation.ToObjectReturnType0.DropcolumnsFieldType.SourceidFieldType getSourceid();
+      Operation.ToObjectReturnType0.DropColumnsFieldType.SourceIdFieldType getSourceId();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
+      void setColumnNamesList(JsArray<String> columnNamesList);
 
       @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
+      default void setColumnNamesList(String[] columnNamesList) {
+        setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(
-          Operation.ToObjectReturnType0.DropcolumnsFieldType.SourceidFieldType sourceid);
+      void setSourceId(
+          Operation.ToObjectReturnType0.DropColumnsFieldType.SourceIdFieldType sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface EmptytableFieldType {
+    public interface EmptyTableFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface ResultidFieldType {
+      public interface ResultIdFieldType {
         @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-        public interface GetIdUnionType {
+        public interface GetTicketUnionType {
           @JsOverlay
-          static Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType.GetIdUnionType
+          static Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType
+                  .GetTicketUnionType
               of(Object o) {
             return Js.cast(o);
           }
@@ -1139,72 +1708,52 @@ public class Operation {
         }
 
         @JsOverlay
-        static Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType create() {
+        static Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType.GetIdUnionType getId();
+        Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType.GetTicketUnionType
+            getTicket();
 
         @JsProperty
-        void setId(
-            Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType.GetIdUnionType id);
+        void setTicket(
+            Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType.GetTicketUnionType
+                ticket);
 
         @JsOverlay
-        default void setId(String id) {
-          setId(
+        default void setTicket(String ticket) {
+          setTicket(
               Js
-                  .<Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType
-                          .GetIdUnionType>
-                      uncheckedCast(id));
+                  .<Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType
+                          .GetTicketUnionType>
+                      uncheckedCast(ticket));
         }
 
         @JsOverlay
-        default void setId(Uint8Array id) {
-          setId(
+        default void setTicket(Uint8Array ticket) {
+          setTicket(
               Js
-                  .<Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType
-                          .GetIdUnionType>
-                      uncheckedCast(id));
+                  .<Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType
+                          .GetTicketUnionType>
+                      uncheckedCast(ticket));
         }
       }
 
       @JsOverlay
-      static Operation.ToObjectReturnType0.EmptytableFieldType create() {
+      static Operation.ToObjectReturnType0.EmptyTableFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
-
-      @JsProperty
-      JsArray<String> getColumntypesList();
-
-      @JsProperty
-      Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType getResultid();
+      Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType getResultId();
 
       @JsProperty
       String getSize();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
-
-      @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
-      }
-
-      @JsProperty
-      void setColumntypesList(JsArray<String> columntypesList);
-
-      @JsOverlay
-      default void setColumntypesList(String[] columntypesList) {
-        setColumntypesList(Js.<JsArray<String>>uncheckedCast(columntypesList));
-      }
-
-      @JsProperty
-      void setResultid(
-          Operation.ToObjectReturnType0.EmptytableFieldType.ResultidFieldType resultid);
+      void setResultId(
+          Operation.ToObjectReturnType0.EmptyTableFieldType.ResultIdFieldType resultId);
 
       @JsProperty
       void setSize(String size);
@@ -1214,57 +1763,453 @@ public class Operation {
     public interface FilterFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
       public interface FiltersListFieldType {
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface AndFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.AndFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getFiltersList();
+
+          @JsProperty
+          void setFiltersList(JsArray<Object> filtersList);
+
+          @JsOverlay
+          default void setFiltersList(Object[] filtersList) {
+            setFiltersList(Js.<JsArray<Object>>uncheckedCast(filtersList));
+          }
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface CompareFieldType {
+          @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+          public interface LhsFieldType {
+            @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+            public interface LiteralFieldType {
+              @JsOverlay
+              static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType
+                      .CompareFieldType.LhsFieldType.LiteralFieldType
+                  create() {
+                return Js.uncheckedCast(JsPropertyMap.of());
+              }
+
+              @JsProperty
+              double getDoubleValue();
+
+              @JsProperty
+              String getLongValue();
+
+              @JsProperty
+              String getNanoTimeValue();
+
+              @JsProperty
+              String getStringValue();
+
+              @JsProperty
+              boolean isBoolValue();
+
+              @JsProperty
+              void setBoolValue(boolean boolValue);
+
+              @JsProperty
+              void setDoubleValue(double doubleValue);
+
+              @JsProperty
+              void setLongValue(String longValue);
+
+              @JsProperty
+              void setNanoTimeValue(String nanoTimeValue);
+
+              @JsProperty
+              void setStringValue(String stringValue);
+            }
+
+            @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+            public interface ReferenceFieldType {
+              @JsOverlay
+              static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType
+                      .CompareFieldType.LhsFieldType.ReferenceFieldType
+                  create() {
+                return Js.uncheckedCast(JsPropertyMap.of());
+              }
+
+              @JsProperty
+              String getColumnName();
+
+              @JsProperty
+              void setColumnName(String columnName);
+            }
+
+            @JsOverlay
+            static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType
+                    .CompareFieldType.LhsFieldType
+                create() {
+              return Js.uncheckedCast(JsPropertyMap.of());
+            }
+
+            @JsProperty
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                    .LhsFieldType.LiteralFieldType
+                getLiteral();
+
+            @JsProperty
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                    .LhsFieldType.ReferenceFieldType
+                getReference();
+
+            @JsProperty
+            void setLiteral(
+                Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                        .LhsFieldType.LiteralFieldType
+                    literal);
+
+            @JsProperty
+            void setReference(
+                Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                        .LhsFieldType.ReferenceFieldType
+                    reference);
+          }
+
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                  .LhsFieldType
+              getLhs();
+
+          @JsProperty
+          double getOperation();
+
+          @JsProperty
+          Object getRhs();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setLhs(
+              Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                      .LhsFieldType
+                  lhs);
+
+          @JsProperty
+          void setOperation(double operation);
+
+          @JsProperty
+          void setRhs(Object rhs);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface ContainsFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType
+                  .ContainsFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          String getSearchString();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setReference(Object reference);
+
+          @JsProperty
+          void setSearchString(String searchString);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface InvokeFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.InvokeFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getArgumentsList();
+
+          @JsProperty
+          String getMethod();
+
+          @JsProperty
+          Object getTarget();
+
+          @JsProperty
+          void setArgumentsList(JsArray<Object> argumentsList);
+
+          @JsOverlay
+          default void setArgumentsList(Object[] argumentsList) {
+            setArgumentsList(Js.<JsArray<Object>>uncheckedCast(argumentsList));
+          }
+
+          @JsProperty
+          void setMethod(String method);
+
+          @JsProperty
+          void setTarget(Object target);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface IsNullFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.IsNullFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          void setReference(Object reference);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface MatchesFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.MatchesFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getReference();
+
+          @JsProperty
+          String getRegex();
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setReference(Object reference);
+
+          @JsProperty
+          void setRegex(String regex);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface NotFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.NotFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          Object getFilter();
+
+          @JsProperty
+          void setFilter(Object filter);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface OrFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.OrFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getFiltersList();
+
+          @JsProperty
+          void setFiltersList(JsArray<Object> filtersList);
+
+          @JsOverlay
+          default void setFiltersList(Object[] filtersList) {
+            setFiltersList(Js.<JsArray<Object>>uncheckedCast(filtersList));
+          }
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface Pb_inFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.Pb_inFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getCandidatesList();
+
+          @JsProperty
+          double getCaseSensitivity();
+
+          @JsProperty
+          double getMatchType();
+
+          @JsProperty
+          Object getTarget();
+
+          @JsProperty
+          void setCandidatesList(JsArray<Object> candidatesList);
+
+          @JsOverlay
+          default void setCandidatesList(Object[] candidatesList) {
+            setCandidatesList(Js.<JsArray<Object>>uncheckedCast(candidatesList));
+          }
+
+          @JsProperty
+          void setCaseSensitivity(double caseSensitivity);
+
+          @JsProperty
+          void setMatchType(double matchType);
+
+          @JsProperty
+          void setTarget(Object target);
+        }
+
+        @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+        public interface SearchFieldType {
+          @JsOverlay
+          static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.SearchFieldType
+              create() {
+            return Js.uncheckedCast(JsPropertyMap.of());
+          }
+
+          @JsProperty
+          JsArray<Object> getOptionalReferencesList();
+
+          @JsProperty
+          String getSearchString();
+
+          @JsProperty
+          void setOptionalReferencesList(JsArray<Object> optionalReferencesList);
+
+          @JsOverlay
+          default void setOptionalReferencesList(Object[] optionalReferencesList) {
+            setOptionalReferencesList(Js.<JsArray<Object>>uncheckedCast(optionalReferencesList));
+          }
+
+          @JsProperty
+          void setSearchString(String searchString);
+        }
+
         @JsOverlay
         static Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType create() {
           return Js.uncheckedCast(JsPropertyMap.of());
         }
 
         @JsProperty
-        JsArray<Object> getChildrenList();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.AndFieldType getAnd();
 
         @JsProperty
-        double getDoublevalue();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+            getCompare();
 
         @JsProperty
-        double getFilterop();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.ContainsFieldType
+            getContains();
 
         @JsProperty
-        double getLongvalue();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.InvokeFieldType
+            getInvoke();
 
         @JsProperty
-        double getNanotimevalue();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.IsNullFieldType
+            getIsNull();
 
         @JsProperty
-        String getStringvalue();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.MatchesFieldType
+            getMatches();
 
         @JsProperty
-        boolean isBoolvalue();
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.NotFieldType getNot();
 
         @JsProperty
-        void setBoolvalue(boolean boolvalue);
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.OrFieldType getOr();
 
         @JsProperty
-        void setChildrenList(JsArray<Object> childrenList);
-
-        @JsOverlay
-        default void setChildrenList(Object[] childrenList) {
-          setChildrenList(Js.<JsArray<Object>>uncheckedCast(childrenList));
-        }
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.Pb_inFieldType
+            getPb_in();
 
         @JsProperty
-        void setDoublevalue(double doublevalue);
+        Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.SearchFieldType
+            getSearch();
 
         @JsProperty
-        void setFilterop(double filterop);
+        void setAnd(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.AndFieldType and);
 
         @JsProperty
-        void setLongvalue(double longvalue);
+        void setCompare(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.CompareFieldType
+                compare);
 
         @JsProperty
-        void setNanotimevalue(double nanotimevalue);
+        void setContains(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.ContainsFieldType
+                contains);
 
         @JsProperty
-        void setStringvalue(String stringvalue);
+        void setInvoke(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.InvokeFieldType
+                invoke);
+
+        @JsProperty
+        void setIsNull(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.IsNullFieldType
+                isNull);
+
+        @JsProperty
+        void setMatches(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.MatchesFieldType
+                matches);
+
+        @JsProperty
+        void setNot(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.NotFieldType not);
+
+        @JsProperty
+        void setOr(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.OrFieldType or);
+
+        @JsProperty
+        void setPb_in(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.Pb_inFieldType
+                pb_in);
+
+        @JsProperty
+        void setSearch(
+            Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType.SearchFieldType
+                search);
       }
 
       @JsOverlay
@@ -1276,10 +2221,10 @@ public class Operation {
       JsArray<Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType> getFiltersList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsOverlay
       default void setFiltersList(
@@ -1295,10 +2240,10 @@ public class Operation {
           JsArray<Operation.ToObjectReturnType0.FilterFieldType.FiltersListFieldType> filtersList);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1309,16 +2254,53 @@ public class Operation {
       }
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface HeadByFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType0.HeadByFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      JsArray<String> getGroupByColumnSpecsList();
+
+      @JsProperty
+      String getNumRows();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getSourceId();
+
+      @JsProperty
+      void setGroupByColumnSpecsList(JsArray<String> groupByColumnSpecsList);
+
+      @JsOverlay
+      default void setGroupByColumnSpecsList(String[] groupByColumnSpecsList) {
+        setGroupByColumnSpecsList(Js.<JsArray<String>>uncheckedCast(groupByColumnSpecsList));
+      }
+
+      @JsProperty
+      void setNumRows(String numRows);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1329,59 +2311,22 @@ public class Operation {
       }
 
       @JsProperty
-      String getNumrows();
+      String getNumRows();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setNumrows(String numrows);
+      void setNumRows(String numRows);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
-    }
-
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface HeadbyFieldType {
-      @JsOverlay
-      static Operation.ToObjectReturnType0.HeadbyFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      JsArray<String> getGroupbycolumnspecsList();
-
-      @JsProperty
-      String getNumrows();
-
-      @JsProperty
-      Object getResultid();
-
-      @JsProperty
-      Object getSourceid();
-
-      @JsProperty
-      void setGroupbycolumnspecsList(JsArray<String> groupbycolumnspecsList);
-
-      @JsOverlay
-      default void setGroupbycolumnspecsList(String[] groupbycolumnspecsList) {
-        setGroupbycolumnspecsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnspecsList));
-      }
-
-      @JsProperty
-      void setNumrows(String numrows);
-
-      @JsProperty
-      void setResultid(Object resultid);
-
-      @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1392,50 +2337,50 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnstoaddList();
+      JsArray<String> getColumnsToAddList();
 
       @JsProperty
-      JsArray<String> getColumnstomatchList();
+      JsArray<String> getColumnsToMatchList();
 
       @JsProperty
-      double getJointype();
+      double getJoinType();
 
       @JsProperty
-      Object getLeftid();
+      Object getLeftId();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getRightid();
+      Object getRightId();
 
       @JsProperty
-      void setColumnstoaddList(JsArray<String> columnstoaddList);
+      void setColumnsToAddList(JsArray<String> columnsToAddList);
 
       @JsOverlay
-      default void setColumnstoaddList(String[] columnstoaddList) {
-        setColumnstoaddList(Js.<JsArray<String>>uncheckedCast(columnstoaddList));
+      default void setColumnsToAddList(String[] columnsToAddList) {
+        setColumnsToAddList(Js.<JsArray<String>>uncheckedCast(columnsToAddList));
       }
 
       @JsProperty
-      void setColumnstomatchList(JsArray<String> columnstomatchList);
+      void setColumnsToMatchList(JsArray<String> columnsToMatchList);
 
       @JsOverlay
-      default void setColumnstomatchList(String[] columnstomatchList) {
-        setColumnstomatchList(Js.<JsArray<String>>uncheckedCast(columnstomatchList));
+      default void setColumnsToMatchList(String[] columnsToMatchList) {
+        setColumnsToMatchList(Js.<JsArray<String>>uncheckedCast(columnsToMatchList));
       }
 
       @JsProperty
-      void setJointype(double jointype);
+      void setJoinType(double joinType);
 
       @JsProperty
-      void setLeftid(Object leftid);
+      void setLeftId(Object leftId);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setRightid(Object rightid);
+      void setRightId(Object rightId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1446,58 +2391,129 @@ public class Operation {
       }
 
       @JsProperty
-      String getKeycolumn();
+      String getKeyColumn();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      JsArray<Object> getSourceidsList();
+      JsArray<Object> getSourceIdsList();
 
       @JsProperty
-      void setKeycolumn(String keycolumn);
+      void setKeyColumn(String keyColumn);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceidsList(JsArray<Object> sourceidsList);
+      void setSourceIdsList(JsArray<Object> sourceIdsList);
 
       @JsOverlay
-      default void setSourceidsList(Object[] sourceidsList) {
-        setSourceidsList(Js.<JsArray<Object>>uncheckedCast(sourceidsList));
+      default void setSourceIdsList(Object[] sourceIdsList) {
+        setSourceIdsList(Js.<JsArray<Object>>uncheckedCast(sourceIdsList));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SelectdistinctFieldType {
+    public interface RunChartDownsampleFieldType {
+      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+      public interface ZoomRangeFieldType {
+        @JsOverlay
+        static Operation.ToObjectReturnType0.RunChartDownsampleFieldType.ZoomRangeFieldType
+            create() {
+          return Js.uncheckedCast(JsPropertyMap.of());
+        }
+
+        @JsProperty
+        String getMaxDateNanos();
+
+        @JsProperty
+        String getMinDateNanos();
+
+        @JsProperty
+        void setMaxDateNanos(String maxDateNanos);
+
+        @JsProperty
+        void setMinDateNanos(String minDateNanos);
+      }
+
       @JsOverlay
-      static Operation.ToObjectReturnType0.SelectdistinctFieldType create() {
+      static Operation.ToObjectReturnType0.RunChartDownsampleFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getColumnnamesList();
+      double getPixelCount();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setColumnnamesList(JsArray<String> columnnamesList);
+      String getXColumnName();
+
+      @JsProperty
+      JsArray<String> getYColumnNamesList();
+
+      @JsProperty
+      Operation.ToObjectReturnType0.RunChartDownsampleFieldType.ZoomRangeFieldType getZoomRange();
+
+      @JsProperty
+      void setPixelCount(double pixelCount);
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
+
+      @JsProperty
+      void setXColumnName(String xColumnName);
+
+      @JsProperty
+      void setYColumnNamesList(JsArray<String> yColumnNamesList);
 
       @JsOverlay
-      default void setColumnnamesList(String[] columnnamesList) {
-        setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
+      default void setYColumnNamesList(String[] yColumnNamesList) {
+        setYColumnNamesList(Js.<JsArray<String>>uncheckedCast(yColumnNamesList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setZoomRange(
+          Operation.ToObjectReturnType0.RunChartDownsampleFieldType.ZoomRangeFieldType zoomRange);
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface SelectDistinctFieldType {
+      @JsOverlay
+      static Operation.ToObjectReturnType0.SelectDistinctFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      JsArray<String> getColumnNamesList();
+
+      @JsProperty
+      Object getResultId();
+
+      @JsProperty
+      Object getSourceId();
+
+      @JsProperty
+      void setColumnNamesList(JsArray<String> columnNamesList);
+
+      @JsOverlay
+      default void setColumnNamesList(String[] columnNamesList) {
+        setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
+      }
+
+      @JsProperty
+      void setResultId(Object resultId);
+
+      @JsProperty
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1508,38 +2524,38 @@ public class Operation {
       }
 
       @JsProperty
-      Object getLeftid();
+      Object getLeftId();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getRightid();
+      Object getRightId();
 
       @JsProperty
-      JsArray<String> getStampcolumnsList();
+      JsArray<String> getStampColumnsList();
 
       @JsProperty
-      boolean isDoinitialsnapshot();
+      boolean isDoInitialSnapshot();
 
       @JsProperty
-      void setDoinitialsnapshot(boolean doinitialsnapshot);
+      void setDoInitialSnapshot(boolean doInitialSnapshot);
 
       @JsProperty
-      void setLeftid(Object leftid);
+      void setLeftId(Object leftId);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setRightid(Object rightid);
+      void setRightId(Object rightId);
 
       @JsProperty
-      void setStampcolumnsList(JsArray<String> stampcolumnsList);
+      void setStampColumnsList(JsArray<String> stampColumnsList);
 
       @JsOverlay
-      default void setStampcolumnsList(String[] stampcolumnsList) {
-        setStampcolumnsList(Js.<JsArray<String>>uncheckedCast(stampcolumnsList));
+      default void setStampColumnsList(String[] stampColumnsList) {
+        setStampColumnsList(Js.<JsArray<String>>uncheckedCast(stampColumnsList));
       }
     }
 
@@ -1553,22 +2569,22 @@ public class Operation {
         }
 
         @JsProperty
-        String getColumnname();
+        String getColumnName();
 
         @JsProperty
         double getDirection();
 
         @JsProperty
-        boolean isIsabsolute();
+        boolean isIsAbsolute();
 
         @JsProperty
-        void setColumnname(String columnname);
+        void setColumnName(String columnName);
 
         @JsProperty
         void setDirection(double direction);
 
         @JsProperty
-        void setIsabsolute(boolean isabsolute);
+        void setIsAbsolute(boolean isAbsolute);
       }
 
       @JsOverlay
@@ -1577,16 +2593,16 @@ public class Operation {
       }
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
       JsArray<Operation.ToObjectReturnType0.SortFieldType.SortsListFieldType> getSortsList();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
       void setSortsList(
@@ -1602,33 +2618,33 @@ public class Operation {
       }
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TimetableFieldType {
+    public interface TimeTableFieldType {
       @JsOverlay
-      static Operation.ToObjectReturnType0.TimetableFieldType create() {
+      static Operation.ToObjectReturnType0.TimeTableFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      String getPeriodnanos();
+      String getPeriodNanos();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      String getStarttimenanos();
+      String getStartTimeNanos();
 
       @JsProperty
-      void setPeriodnanos(String periodnanos);
+      void setPeriodNanos(String periodNanos);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setStarttimenanos(String starttimenanos);
+      void setStartTimeNanos(String startTimeNanos);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1639,64 +2655,64 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnstoungroupList();
+      JsArray<String> getColumnsToUngroupList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      boolean isNullfill();
+      boolean isNullFill();
 
       @JsProperty
-      void setColumnstoungroupList(JsArray<String> columnstoungroupList);
+      void setColumnsToUngroupList(JsArray<String> columnsToUngroupList);
 
       @JsOverlay
-      default void setColumnstoungroupList(String[] columnstoungroupList) {
-        setColumnstoungroupList(Js.<JsArray<String>>uncheckedCast(columnstoungroupList));
+      default void setColumnsToUngroupList(String[] columnsToUngroupList) {
+        setColumnsToUngroupList(Js.<JsArray<String>>uncheckedCast(columnsToUngroupList));
       }
 
       @JsProperty
-      void setNullfill(boolean nullfill);
+      void setNullFill(boolean nullFill);
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface UnstructuredfilterFieldType {
+    public interface UnstructuredFilterFieldType {
       @JsOverlay
-      static Operation.ToObjectReturnType0.UnstructuredfilterFieldType create() {
+      static Operation.ToObjectReturnType0.UnstructuredFilterFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      JsArray<String> getFilterList();
+      JsArray<String> getFiltersList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setFilterList(JsArray<String> filterList);
+      void setFiltersList(JsArray<String> filtersList);
 
       @JsOverlay
-      default void setFilterList(String[] filterList) {
-        setFilterList(Js.<JsArray<String>>uncheckedCast(filterList));
+      default void setFiltersList(String[] filtersList) {
+        setFiltersList(Js.<JsArray<String>>uncheckedCast(filtersList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -1707,27 +2723,27 @@ public class Operation {
       }
 
       @JsProperty
-      JsArray<String> getColumnspecsList();
+      JsArray<String> getColumnSpecsList();
 
       @JsProperty
-      Object getResultid();
+      Object getResultId();
 
       @JsProperty
-      Object getSourceid();
+      Object getSourceId();
 
       @JsProperty
-      void setColumnspecsList(JsArray<String> columnspecsList);
+      void setColumnSpecsList(JsArray<String> columnSpecsList);
 
       @JsOverlay
-      default void setColumnspecsList(String[] columnspecsList) {
-        setColumnspecsList(Js.<JsArray<String>>uncheckedCast(columnspecsList));
+      default void setColumnSpecsList(String[] columnSpecsList) {
+        setColumnSpecsList(Js.<JsArray<String>>uncheckedCast(columnSpecsList));
       }
 
       @JsProperty
-      void setResultid(Object resultid);
+      void setResultId(Object resultId);
 
       @JsProperty
-      void setSourceid(Object sourceid);
+      void setSourceId(Object sourceId);
     }
 
     @JsOverlay
@@ -1736,13 +2752,16 @@ public class Operation {
     }
 
     @JsProperty
-    Operation.ToObjectReturnType0.ComboaggregateFieldType getComboaggregate();
+    Operation.ToObjectReturnType0.AsOfJoinFieldType getAsOfJoin();
 
     @JsProperty
-    Operation.ToObjectReturnType0.DropcolumnsFieldType getDropcolumns();
+    Operation.ToObjectReturnType0.ComboAggregateFieldType getComboAggregate();
 
     @JsProperty
-    Operation.ToObjectReturnType0.EmptytableFieldType getEmptytable();
+    Operation.ToObjectReturnType0.DropColumnsFieldType getDropColumns();
+
+    @JsProperty
+    Operation.ToObjectReturnType0.EmptyTableFieldType getEmptyTable();
 
     @JsProperty
     Operation.ToObjectReturnType0.FilterFieldType getFilter();
@@ -1754,22 +2773,25 @@ public class Operation {
     Operation.ToObjectReturnType0.HeadFieldType getHead();
 
     @JsProperty
-    Operation.ToObjectReturnType0.HeadbyFieldType getHeadby();
+    Operation.ToObjectReturnType0.HeadByFieldType getHeadBy();
 
     @JsProperty
     Operation.ToObjectReturnType0.JoinFieldType getJoin();
 
     @JsProperty
-    Object getLazyupdate();
+    Object getLazyUpdate();
 
     @JsProperty
     Operation.ToObjectReturnType0.MergeFieldType getMerge();
 
     @JsProperty
+    Operation.ToObjectReturnType0.RunChartDownsampleFieldType getRunChartDownsample();
+
+    @JsProperty
     Object getSelect();
 
     @JsProperty
-    Operation.ToObjectReturnType0.SelectdistinctFieldType getSelectdistinct();
+    Operation.ToObjectReturnType0.SelectDistinctFieldType getSelectDistinct();
 
     @JsProperty
     Operation.ToObjectReturnType0.SnapshotFieldType getSnapshot();
@@ -1781,34 +2803,37 @@ public class Operation {
     Object getTail();
 
     @JsProperty
-    Object getTailby();
+    Object getTailBy();
 
     @JsProperty
-    Operation.ToObjectReturnType0.TimetableFieldType getTimetable();
+    Operation.ToObjectReturnType0.TimeTableFieldType getTimeTable();
 
     @JsProperty
     Operation.ToObjectReturnType0.UngroupFieldType getUngroup();
 
     @JsProperty
-    Operation.ToObjectReturnType0.UnstructuredfilterFieldType getUnstructuredfilter();
+    Operation.ToObjectReturnType0.UnstructuredFilterFieldType getUnstructuredFilter();
 
     @JsProperty
     Operation.ToObjectReturnType0.UpdateFieldType getUpdate();
 
     @JsProperty
-    Object getUpdateview();
+    Object getUpdateView();
 
     @JsProperty
     Object getView();
 
     @JsProperty
-    void setComboaggregate(Operation.ToObjectReturnType0.ComboaggregateFieldType comboaggregate);
+    void setAsOfJoin(Operation.ToObjectReturnType0.AsOfJoinFieldType asOfJoin);
 
     @JsProperty
-    void setDropcolumns(Operation.ToObjectReturnType0.DropcolumnsFieldType dropcolumns);
+    void setComboAggregate(Operation.ToObjectReturnType0.ComboAggregateFieldType comboAggregate);
 
     @JsProperty
-    void setEmptytable(Operation.ToObjectReturnType0.EmptytableFieldType emptytable);
+    void setDropColumns(Operation.ToObjectReturnType0.DropColumnsFieldType dropColumns);
+
+    @JsProperty
+    void setEmptyTable(Operation.ToObjectReturnType0.EmptyTableFieldType emptyTable);
 
     @JsProperty
     void setFilter(Operation.ToObjectReturnType0.FilterFieldType filter);
@@ -1820,22 +2845,26 @@ public class Operation {
     void setHead(Operation.ToObjectReturnType0.HeadFieldType head);
 
     @JsProperty
-    void setHeadby(Operation.ToObjectReturnType0.HeadbyFieldType headby);
+    void setHeadBy(Operation.ToObjectReturnType0.HeadByFieldType headBy);
 
     @JsProperty
     void setJoin(Operation.ToObjectReturnType0.JoinFieldType join);
 
     @JsProperty
-    void setLazyupdate(Object lazyupdate);
+    void setLazyUpdate(Object lazyUpdate);
 
     @JsProperty
     void setMerge(Operation.ToObjectReturnType0.MergeFieldType merge);
 
     @JsProperty
+    void setRunChartDownsample(
+        Operation.ToObjectReturnType0.RunChartDownsampleFieldType runChartDownsample);
+
+    @JsProperty
     void setSelect(Object select);
 
     @JsProperty
-    void setSelectdistinct(Operation.ToObjectReturnType0.SelectdistinctFieldType selectdistinct);
+    void setSelectDistinct(Operation.ToObjectReturnType0.SelectDistinctFieldType selectDistinct);
 
     @JsProperty
     void setSnapshot(Operation.ToObjectReturnType0.SnapshotFieldType snapshot);
@@ -1847,23 +2876,23 @@ public class Operation {
     void setTail(Object tail);
 
     @JsProperty
-    void setTailby(Object tailby);
+    void setTailBy(Object tailBy);
 
     @JsProperty
-    void setTimetable(Operation.ToObjectReturnType0.TimetableFieldType timetable);
+    void setTimeTable(Operation.ToObjectReturnType0.TimeTableFieldType timeTable);
 
     @JsProperty
     void setUngroup(Operation.ToObjectReturnType0.UngroupFieldType ungroup);
 
     @JsProperty
-    void setUnstructuredfilter(
-        Operation.ToObjectReturnType0.UnstructuredfilterFieldType unstructuredfilter);
+    void setUnstructuredFilter(
+        Operation.ToObjectReturnType0.UnstructuredFilterFieldType unstructuredFilter);
 
     @JsProperty
     void setUpdate(Operation.ToObjectReturnType0.UpdateFieldType update);
 
     @JsProperty
-    void setUpdateview(Object updateview);
+    void setUpdateView(Object updateView);
 
     @JsProperty
     void setView(Object view);
@@ -1878,11 +2907,13 @@ public class Operation {
   public static native Operation.ToObjectReturnType toObject(
       boolean includeInstance, Operation msg);
 
-  public native void clearComboaggregate();
+  public native void clearAsOfJoin();
 
-  public native void clearDropcolumns();
+  public native void clearComboAggregate();
 
-  public native void clearEmptytable();
+  public native void clearDropColumns();
+
+  public native void clearEmptyTable();
 
   public native void clearFilter();
 
@@ -1890,17 +2921,19 @@ public class Operation {
 
   public native void clearHead();
 
-  public native void clearHeadby();
+  public native void clearHeadBy();
 
   public native void clearJoin();
 
-  public native void clearLazyupdate();
+  public native void clearLazyUpdate();
 
   public native void clearMerge();
 
+  public native void clearRunChartDownsample();
+
   public native void clearSelect();
 
-  public native void clearSelectdistinct();
+  public native void clearSelectDistinct();
 
   public native void clearSnapshot();
 
@@ -1908,25 +2941,27 @@ public class Operation {
 
   public native void clearTail();
 
-  public native void clearTailby();
+  public native void clearTailBy();
 
-  public native void clearTimetable();
+  public native void clearTimeTable();
 
   public native void clearUngroup();
 
-  public native void clearUnstructuredfilter();
+  public native void clearUnstructuredFilter();
 
   public native void clearUpdate();
 
-  public native void clearUpdateview();
+  public native void clearUpdateView();
 
   public native void clearView();
 
-  public native ComboAggregateRequest getComboaggregate();
+  public native AsOfJoinTablesRequest getAsOfJoin();
 
-  public native DropColumnsRequest getDropcolumns();
+  public native ComboAggregateRequest getComboAggregate();
 
-  public native EmptyTableRequest getEmptytable();
+  public native DropColumnsRequest getDropColumns();
+
+  public native EmptyTableRequest getEmptyTable();
 
   public native FilterTableRequest getFilter();
 
@@ -1934,19 +2969,21 @@ public class Operation {
 
   public native HeadOrTailRequest getHead();
 
-  public native HeadOrTailByRequest getHeadby();
+  public native HeadOrTailByRequest getHeadBy();
 
   public native JoinTablesRequest getJoin();
 
-  public native SelectOrUpdateRequest getLazyupdate();
+  public native SelectOrUpdateRequest getLazyUpdate();
 
   public native MergeTablesRequest getMerge();
 
   public native int getOpCase();
 
+  public native RunChartDownsampleRequest getRunChartDownsample();
+
   public native SelectOrUpdateRequest getSelect();
 
-  public native SelectDistinctRequest getSelectdistinct();
+  public native SelectDistinctRequest getSelectDistinct();
 
   public native SnapshotTableRequest getSnapshot();
 
@@ -1954,25 +2991,27 @@ public class Operation {
 
   public native HeadOrTailRequest getTail();
 
-  public native HeadOrTailByRequest getTailby();
+  public native HeadOrTailByRequest getTailBy();
 
-  public native TimeTableRequest getTimetable();
+  public native TimeTableRequest getTimeTable();
 
   public native UngroupRequest getUngroup();
 
-  public native UnstructuredFilterTableRequest getUnstructuredfilter();
+  public native UnstructuredFilterTableRequest getUnstructuredFilter();
 
   public native SelectOrUpdateRequest getUpdate();
 
-  public native SelectOrUpdateRequest getUpdateview();
+  public native SelectOrUpdateRequest getUpdateView();
 
   public native SelectOrUpdateRequest getView();
 
-  public native boolean hasComboaggregate();
+  public native boolean hasAsOfJoin();
 
-  public native boolean hasDropcolumns();
+  public native boolean hasComboAggregate();
 
-  public native boolean hasEmptytable();
+  public native boolean hasDropColumns();
+
+  public native boolean hasEmptyTable();
 
   public native boolean hasFilter();
 
@@ -1980,17 +3019,19 @@ public class Operation {
 
   public native boolean hasHead();
 
-  public native boolean hasHeadby();
+  public native boolean hasHeadBy();
 
   public native boolean hasJoin();
 
-  public native boolean hasLazyupdate();
+  public native boolean hasLazyUpdate();
 
   public native boolean hasMerge();
 
+  public native boolean hasRunChartDownsample();
+
   public native boolean hasSelect();
 
-  public native boolean hasSelectdistinct();
+  public native boolean hasSelectDistinct();
 
   public native boolean hasSnapshot();
 
@@ -1998,33 +3039,37 @@ public class Operation {
 
   public native boolean hasTail();
 
-  public native boolean hasTailby();
+  public native boolean hasTailBy();
 
-  public native boolean hasTimetable();
+  public native boolean hasTimeTable();
 
   public native boolean hasUngroup();
 
-  public native boolean hasUnstructuredfilter();
+  public native boolean hasUnstructuredFilter();
 
   public native boolean hasUpdate();
 
-  public native boolean hasUpdateview();
+  public native boolean hasUpdateView();
 
   public native boolean hasView();
 
   public native Uint8Array serializeBinary();
 
-  public native void setComboaggregate();
+  public native void setAsOfJoin();
 
-  public native void setComboaggregate(ComboAggregateRequest value);
+  public native void setAsOfJoin(AsOfJoinTablesRequest value);
 
-  public native void setDropcolumns();
+  public native void setComboAggregate();
 
-  public native void setDropcolumns(DropColumnsRequest value);
+  public native void setComboAggregate(ComboAggregateRequest value);
 
-  public native void setEmptytable();
+  public native void setDropColumns();
 
-  public native void setEmptytable(EmptyTableRequest value);
+  public native void setDropColumns(DropColumnsRequest value);
+
+  public native void setEmptyTable();
+
+  public native void setEmptyTable(EmptyTableRequest value);
 
   public native void setFilter();
 
@@ -2038,29 +3083,33 @@ public class Operation {
 
   public native void setHead(HeadOrTailRequest value);
 
-  public native void setHeadby();
+  public native void setHeadBy();
 
-  public native void setHeadby(HeadOrTailByRequest value);
+  public native void setHeadBy(HeadOrTailByRequest value);
 
   public native void setJoin();
 
   public native void setJoin(JoinTablesRequest value);
 
-  public native void setLazyupdate();
+  public native void setLazyUpdate();
 
-  public native void setLazyupdate(SelectOrUpdateRequest value);
+  public native void setLazyUpdate(SelectOrUpdateRequest value);
 
   public native void setMerge();
 
   public native void setMerge(MergeTablesRequest value);
 
+  public native void setRunChartDownsample();
+
+  public native void setRunChartDownsample(RunChartDownsampleRequest value);
+
   public native void setSelect();
 
   public native void setSelect(SelectOrUpdateRequest value);
 
-  public native void setSelectdistinct();
+  public native void setSelectDistinct();
 
-  public native void setSelectdistinct(SelectDistinctRequest value);
+  public native void setSelectDistinct(SelectDistinctRequest value);
 
   public native void setSnapshot();
 
@@ -2074,29 +3123,29 @@ public class Operation {
 
   public native void setTail(HeadOrTailRequest value);
 
-  public native void setTailby();
+  public native void setTailBy();
 
-  public native void setTailby(HeadOrTailByRequest value);
+  public native void setTailBy(HeadOrTailByRequest value);
 
-  public native void setTimetable();
+  public native void setTimeTable();
 
-  public native void setTimetable(TimeTableRequest value);
+  public native void setTimeTable(TimeTableRequest value);
 
   public native void setUngroup();
 
   public native void setUngroup(UngroupRequest value);
 
-  public native void setUnstructuredfilter();
+  public native void setUnstructuredFilter();
 
-  public native void setUnstructuredfilter(UnstructuredFilterTableRequest value);
+  public native void setUnstructuredFilter(UnstructuredFilterTableRequest value);
 
   public native void setUpdate();
 
   public native void setUpdate(SelectOrUpdateRequest value);
 
-  public native void setUpdateview();
+  public native void setUpdateView();
 
-  public native void setUpdateview(SelectOrUpdateRequest value);
+  public native void setUpdateView(SelectOrUpdateRequest value);
 
   public native void setView();
 

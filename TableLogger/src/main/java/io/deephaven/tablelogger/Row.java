@@ -10,8 +10,6 @@ import java.io.IOException;
 
 /**
  * Interface for writing out values in a row.
- *
- * @IncludeAll
  */
 public interface Row {
     /**
@@ -64,9 +62,7 @@ public interface Row {
     /**
      *  Per-row transaction flags.
      *
-     *  In Iris, a transaction is a group of rows that must be made visible to applications entirely, or not at all.
-     *
-     *  @IncludeAll
+     *  In Deephaven, a transaction is a group of rows that must be made visible to applications entirely, or not at all.
      */
     enum Flags {
         /** This row does not start or stop a transaction. */

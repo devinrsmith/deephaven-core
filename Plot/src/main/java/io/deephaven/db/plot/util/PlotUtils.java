@@ -16,8 +16,10 @@ import io.deephaven.db.plot.util.tables.TableHandle;
 import io.deephaven.db.tables.DataColumn;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.TableDefinition;
+import io.deephaven.db.tables.select.MatchPair;
 import io.deephaven.db.tables.select.QueryScope;
 import io.deephaven.db.tables.utils.DBDateTime;
+import io.deephaven.gui.color.ColorPaletteArray;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.v2.BaseTable;
@@ -48,6 +50,9 @@ public class PlotUtils {
 
     private PlotUtils() {
     }
+
+    /** Instances of ColorPaletteArray have some state, so this is kept privat. */
+    private static final ColorPaletteArray MATPLOT_COLORS = new ColorPaletteArray(ColorPaletteArray.Palette.MATPLOTLIB);
 
     private static final Random rng = new Random();
 
@@ -92,9 +97,13 @@ public class PlotUtils {
      * @param color index
      * @return color of the {@code chart} at the index {@code color}
      */
+    @Deprecated
     public static Paint intToColor(final ChartImpl chart, final Integer color) {
-        Require.neqNull(chart, "chart");
-        return color == null || color == NULL_INT || color < 0 ? null : chart.theme().getSeriesColor(color);
+        return intToColor(color);
+    }
+
+    public static Paint intToColor(final Integer color) {
+        return color == null || color == NULL_INT || color < 0 ? null : MATPLOT_COLORS.get(color);
     }
 
     /**
@@ -746,7 +755,7 @@ public class PlotUtils {
     }
 
     public static ComboAggregateFactory createCategoryComboAgg(ComboBy agg) {
-        return AggCombo(Agg(new KeyOnlyFirstOrLastByStateFactory(CategoryDataSeries.CAT_SERIES_ORDER_COLUMN, AggType.First)), agg);
+        return AggCombo(Agg(new KeyOnlyFirstOrLastByStateFactory(CategoryDataSeries.CAT_SERIES_ORDER_COLUMN, AggType.First), MatchPair.ZERO_LENGTH_MATCH_PAIR_ARRAY), agg);
     }
 
     public static List<Condition> getColumnConditions(final Table arg, final String column) {

@@ -2,14 +2,18 @@ package io.deephaven.web.client.api;
 
 import elemental2.core.Global;
 import elemental2.core.JsArray;
+import elemental2.core.JsObject;
 import elemental2.core.JsString;
 import elemental2.dom.CustomEventInit;
 import elemental2.dom.DomGlobal;
 import elemental2.promise.IThenable.ThenOnFulfilledCallbackFn;
 import elemental2.promise.Promise;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.AsOfJoinTablesRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.JoinTablesRequest;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.RunChartDownsampleRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.SelectDistinctRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.SnapshotTableRequest;
+import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.runchartdownsamplerequest.ZoomRange;
 import io.deephaven.web.client.api.batch.RequestBatcher;
 import io.deephaven.web.client.api.filter.FilterCondition;
 import io.deephaven.web.client.api.input.JsInputTable;
@@ -742,7 +746,13 @@ public class JsTable extends HasEventHandling implements HasTableBinding, HasLif
     @JsMethod
     public Promise<JsTable> freeze() {
         return workerConnection.newState((c, state, metadata) -> {
-            workerConnection.tableServiceClient().snapshot(new SnapshotTableRequest(), metadata, c::apply);
+            SnapshotTableRequest request = new SnapshotTableRequest();
+            request.setLeftId(null);// explicit null to signal that we are just freezing this table
+            request.setRightId(state().getHandle().makeTableReference());
+            request.setResultId(state.getHandle().makeTicket());
+            request.setDoInitialSnapshot(true);
+            request.setStampColumnsList(new String[0]);
+            workerConnection.tableServiceClient().snapshot(request, metadata, c::apply);
         }, "freeze").refetch(this, workerConnection.metadata()).then(state -> Promise.resolve(new JsTable(workerConnection, state)));
     }
 
@@ -765,28 +775,51 @@ public class JsTable extends HasEventHandling implements HasTableBinding, HasLif
         }
         final String fetchSummary = "snapshot(" + rightHandSide + ", " + doInitialSnapshot + ", " + Arrays.toString(stampColumns) + ")";
         return workerConnection.newState((c, state, metadata) -> {
-            workerConnection.tableServiceClient().snapshot(new SnapshotTableRequest(), metadata, c::apply);
+            SnapshotTableRequest request = new SnapshotTableRequest();
+            request.setLeftId(state().getHandle().makeTableReference());
+            request.setRightId(rightHandSide.state().getHandle().makeTableReference());
+            request.setResultId(state.getHandle().makeTicket());
+            request.setDoInitialSnapshot(realDoInitialSnapshot);
+            request.setStampColumnsList(realStampColums);
+
+            workerConnection.tableServiceClient().snapshot(request, metadata, c::apply);
         }, fetchSummary).refetch(this, workerConnection.metadata()).then(state -> Promise.resolve(new JsTable(workerConnection, state)));
     }
 
     @JsMethod
-    public Promise<JsTable> join(String joinType, JsTable rightTable, JsArray<String> columnsToMatch, @JsOptional JsArray<String> columnsToAdd) {
+    public Promise<JsTable> join(String joinType, JsTable rightTable, JsArray<String> columnsToMatch, @JsOptional JsArray<String> columnsToAdd, @JsOptional String asOfMatchRule) {
         if (rightTable.workerConnection != workerConnection) {
             throw new IllegalStateException("Table argument passed to join is not from the same worker as current table");
         }
-//        JoinDescriptor descriptor = new JoinDescriptor(
-//                JoinDescriptor.JoinType.valueOf(joinType),
-//                state().getHandle(),
-//                rightTable.state().getHandle(),
-//                columnsToMatch.asList().toArray(new String[0]),
-//                columnsToAdd == null ? new String[0] : columnsToAdd.asList().toArray(new String[0])
-//        );
-        // columns can be column names or match expressions, deferring validation to the server
+        final JsTableFetch joinFetch;
+        if (joinType.equals("AJ") || joinType.equals("RAJ")) {
+            joinFetch = (c, state, metadata) -> {
+                AsOfJoinTablesRequest request = new AsOfJoinTablesRequest();
+                request.setLeftId(state().getHandle().makeTableReference());
+                request.setRightId(rightTable.state().getHandle().makeTableReference());
+                request.setResultId(state.getHandle().makeTicket());
+                request.setColumnsToMatchList(columnsToMatch);
+                request.setColumnsToAddList(columnsToAdd);
+                if (asOfMatchRule != null) {
+                    request.setAsOfMatchRule(Js.asPropertyMap(AsOfJoinTablesRequest.MatchRule).getAny(asOfMatchRule).asDouble());
+                }
+                workerConnection.tableServiceClient().asOfJoinTables(request, metadata, c::apply);
+            };
 
-        return workerConnection.newState((c, state, metadata) -> {
-            workerConnection.tableServiceClient().joinTables(new JoinTablesRequest(), metadata, c::apply);
-
-        }, "join(" + joinType + ", " + rightTable + ", " + columnsToMatch + ", " + columnsToAdd + ")").refetch(this, workerConnection.metadata()).then(state -> Promise.resolve(new JsTable(workerConnection, state)));
+        } else if (Js.asPropertyMap(JoinTablesRequest.Type).has(joinType)){
+            joinFetch = (c, state, metadata) -> {
+                JoinTablesRequest request = new JoinTablesRequest();
+                request.setJoinType(Js.asPropertyMap(JoinTablesRequest.Type).getAny(joinType).asDouble());
+                request.setLeftId(state().getHandle().makeTableReference());
+                request.setRightId(rightTable.state().getHandle().makeTableReference());
+                request.setResultId(state.getHandle().makeTicket());
+                request.setColumnsToMatchList(columnsToMatch);
+                request.setColumnsToAddList(columnsToAdd);
+            };
+        } else {
+            throw new IllegalArgumentException("Unsupported join type " + joinType);
+        }
+        return workerConnection.newState(joinFetch, "join(" + joinType + ", " + rightTable + ", " + columnsToMatch + ", " + columnsToAdd + "," + asOfMatchRule + ")").refetch(this, workerConnection.metadata()).then(state -> Promise.resolve(new JsTable(workerConnection, state)));
     }
 
     @JsMethod
@@ -843,16 +876,19 @@ public class JsTable extends HasEventHandling implements HasTableBinding, HasLif
         JsLog.info("downsample", zoomRange, pixelCount, xCol, yCols);
         final String fetchSummary = "downsample(" + Arrays.toString(zoomRange) + ", " + pixelCount + ", " + xCol + ", " + Arrays.toString(yCols) + ")";
         return workerConnection.newState((c, state, metadata) -> {
-//            workerConnection.getServer().downsampleTable(
-//                    state().getHandle(),
-//                    state.getHandle(),
-//                    xCol,
-//                    yCols,
-//                    pixelCount,
-//                    zoomRange == null ? null : new long[] { zoomRange[0].getWrapped(), zoomRange[1].getWrapped() },
-//                    c
-//            );
-            throw new UnsupportedOperationException("downsample");
+            RunChartDownsampleRequest downsampleRequest = new RunChartDownsampleRequest();
+            downsampleRequest.setPixelCount(pixelCount);
+            if (zoomRange != null) {
+                ZoomRange zoom = new ZoomRange();
+                zoom.setMinDateNanos(Long.toString(zoomRange[0].getWrapped()));
+                zoom.setMaxDateNanos(Long.toString(zoomRange[1].getWrapped()));
+                downsampleRequest.setZoomRange(zoom);
+            }
+            downsampleRequest.setXColumnName(xCol);
+            downsampleRequest.setYColumnNamesList(yCols);
+            downsampleRequest.setSourceId(state().getHandle().makeTableReference());
+            downsampleRequest.setResultId(state.getHandle().makeTicket());
+            workerConnection.tableServiceClient().runChartDownsample(downsampleRequest, workerConnection.metadata(), c::apply);
         }, fetchSummary).refetch(this, workerConnection.metadata()).then(state -> Promise.resolve(new JsTable(workerConnection, state)));
     }
 

@@ -5,7 +5,7 @@ import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.dbarrays.DbArray;
 import io.deephaven.db.tables.select.SelectColumnFactory;
-import io.deephaven.db.tables.utils.DBNameValidator;
+import io.deephaven.db.tables.utils.NameValidator;
 import io.deephaven.db.v2.QueryTable;
 import io.deephaven.db.v2.select.SelectColumn;
 import com.tdunning.math.stats.TDigest;
@@ -46,8 +46,6 @@ import java.util.List;
  * {@link #accumulateDigests} function to produce a single digest that represents all of the constituent digests.  The
  * amount of error introduced is related to the compression factor that you have selected for the digests.  Once you
  * have a combined digest object, you can call the quantile or other functions to extract the desired percentile.</p>
- *
- * @IncludeAll
  */
 public class ApproximatePercentile {
     public static double DEFAULT_COMPRESSION = Configuration.getInstance().getDoubleWithDefault("ApproximatePercentile.defaultCompression", 100.0);
@@ -110,8 +108,6 @@ public class ApproximatePercentile {
 
     /**
      * A builder class for an approximate percentile definition to be used with {@link #approximatePercentiles}.
-     *
-     * @IncludeAll
      */
     public static class PercentileDefinition {
         private final static PercentileDefinition[] ZERO_LENGTH_PERCENTILE_DEFINITION_ARRAY = new PercentileDefinition[0];
@@ -156,7 +152,7 @@ public class ApproximatePercentile {
          */
         public PercentileDefinition add(double percentile, String resultName) {
             percentiles.add(percentile);
-            resultNames.add(DBNameValidator.validateColumnName(resultName));
+            resultNames.add(NameValidator.validateColumnName(resultName));
             return this;
         }
 

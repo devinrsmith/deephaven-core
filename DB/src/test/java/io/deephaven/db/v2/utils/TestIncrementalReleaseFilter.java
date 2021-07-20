@@ -4,6 +4,7 @@
 
 package io.deephaven.db.v2.utils;
 
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.clock.RealTimeClock;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.live.LiveTableMonitor;
@@ -11,9 +12,13 @@ import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.v2.LiveTableTestCase;
 import io.deephaven.db.v2.select.AutoTuningIncrementalReleaseFilter;
 import io.deephaven.db.v2.select.IncrementalReleaseFilter;
+import org.junit.experimental.categories.Category;
 
-import static io.deephaven.db.v2.TstUtils.getTable;
-import static io.deephaven.db.v2.TstUtils.initColumnInfos;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static io.deephaven.db.v2.TstUtils.assertTableEquals;
 
 public class TestIncrementalReleaseFilter extends LiveTableTestCase {
     public void testSimple() {
@@ -34,6 +39,28 @@ public class TestIncrementalReleaseFilter extends LiveTableTestCase {
         }
     }
 
+    public void testBigTable() {
+        final Table sourcePart = TableTools.emptyTable(1_000_000_000L);
+        final List<Table> sourceParts = IntStream.range(0, 20).mapToObj(x -> sourcePart).collect(Collectors.toList());
+        final Table source = TableTools.merge(sourceParts);
+        TableTools.show(source);
+
+        final IncrementalReleaseFilter incrementalReleaseFilter = new IncrementalReleaseFilter(2, 10_000_000);
+        final Table filtered = source.where(incrementalReleaseFilter);
+        final Table flattened = filtered.flatten();
+
+        assertEquals(2, filtered.size());
+
+        int cycles = 0;
+        while (filtered.size() < source.size()) {
+            LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(incrementalReleaseFilter::refresh);
+            cycles++;
+        }
+        assertTableEquals(source, filtered);
+        assertTableEquals(flattened, filtered);
+        System.out.println("Cycles: " + cycles);
+    }
+
     static public <T> T sleepValue(long duration, T retVal) {
         final Object blech = new Object();
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
@@ -48,6 +75,7 @@ public class TestIncrementalReleaseFilter extends LiveTableTestCase {
         return retVal;
     }
 
+    @Category(OutOfBandTest.class)
     public void testAutoTune() {
         final int cycles50 = testAutoTuneCycle(50);
         final int cycles100 = testAutoTuneCycle(100);

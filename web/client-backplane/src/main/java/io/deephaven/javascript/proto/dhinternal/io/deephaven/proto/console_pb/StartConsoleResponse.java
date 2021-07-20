@@ -2,7 +2,7 @@ package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.JsArray;
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -18,11 +18,11 @@ public class StartConsoleResponse {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static StartConsoleResponse.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(
+        static StartConsoleResponse.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -49,30 +49,31 @@ public class StartConsoleResponse {
       }
 
       @JsOverlay
-      static StartConsoleResponse.ToObjectReturnType.ResultidFieldType create() {
+      static StartConsoleResponse.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      StartConsoleResponse.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
+      StartConsoleResponse.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(StartConsoleResponse.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          StartConsoleResponse.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<StartConsoleResponse.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleResponse.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<StartConsoleResponse.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleResponse.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -82,42 +83,42 @@ public class StartConsoleResponse {
     }
 
     @JsProperty
-    StartConsoleResponse.ToObjectReturnType.ResultidFieldType getResultid();
+    StartConsoleResponse.ToObjectReturnType.ResultIdFieldType getResultId();
 
     @JsProperty
-    JsArray<String> getTablenamesList();
+    JsArray<String> getTableNamesList();
 
     @JsProperty
-    JsArray<String> getWidgetnamesList();
+    JsArray<String> getWidgetNamesList();
 
     @JsProperty
-    void setResultid(StartConsoleResponse.ToObjectReturnType.ResultidFieldType resultid);
+    void setResultId(StartConsoleResponse.ToObjectReturnType.ResultIdFieldType resultId);
 
     @JsProperty
-    void setTablenamesList(JsArray<String> tablenamesList);
+    void setTableNamesList(JsArray<String> tableNamesList);
 
     @JsOverlay
-    default void setTablenamesList(String[] tablenamesList) {
-      setTablenamesList(Js.<JsArray<String>>uncheckedCast(tablenamesList));
+    default void setTableNamesList(String[] tableNamesList) {
+      setTableNamesList(Js.<JsArray<String>>uncheckedCast(tableNamesList));
     }
 
     @JsProperty
-    void setWidgetnamesList(JsArray<String> widgetnamesList);
+    void setWidgetNamesList(JsArray<String> widgetNamesList);
 
     @JsOverlay
-    default void setWidgetnamesList(String[] widgetnamesList) {
-      setWidgetnamesList(Js.<JsArray<String>>uncheckedCast(widgetnamesList));
+    default void setWidgetNamesList(String[] widgetNamesList) {
+      setWidgetNamesList(Js.<JsArray<String>>uncheckedCast(widgetNamesList));
     }
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static StartConsoleResponse.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(
+        static StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -144,30 +145,31 @@ public class StartConsoleResponse {
       }
 
       @JsOverlay
-      static StartConsoleResponse.ToObjectReturnType0.ResultidFieldType create() {
+      static StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      StartConsoleResponse.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(StartConsoleResponse.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<StartConsoleResponse.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<StartConsoleResponse.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
@@ -177,31 +179,31 @@ public class StartConsoleResponse {
     }
 
     @JsProperty
-    StartConsoleResponse.ToObjectReturnType0.ResultidFieldType getResultid();
+    StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    JsArray<String> getTablenamesList();
+    JsArray<String> getTableNamesList();
 
     @JsProperty
-    JsArray<String> getWidgetnamesList();
+    JsArray<String> getWidgetNamesList();
 
     @JsProperty
-    void setResultid(StartConsoleResponse.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(StartConsoleResponse.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setTablenamesList(JsArray<String> tablenamesList);
+    void setTableNamesList(JsArray<String> tableNamesList);
 
     @JsOverlay
-    default void setTablenamesList(String[] tablenamesList) {
-      setTablenamesList(Js.<JsArray<String>>uncheckedCast(tablenamesList));
+    default void setTableNamesList(String[] tableNamesList) {
+      setTableNamesList(Js.<JsArray<String>>uncheckedCast(tableNamesList));
     }
 
     @JsProperty
-    void setWidgetnamesList(JsArray<String> widgetnamesList);
+    void setWidgetNamesList(JsArray<String> widgetNamesList);
 
     @JsOverlay
-    default void setWidgetnamesList(String[] widgetnamesList) {
-      setWidgetnamesList(Js.<JsArray<String>>uncheckedCast(widgetnamesList));
+    default void setWidgetNamesList(String[] widgetNamesList) {
+      setWidgetNamesList(Js.<JsArray<String>>uncheckedCast(widgetNamesList));
     }
   }
 
@@ -215,46 +217,46 @@ public class StartConsoleResponse {
   public static native StartConsoleResponse.ToObjectReturnType toObject(
       boolean includeInstance, StartConsoleResponse msg);
 
-  public native String addTablenames(String value, double index);
+  public native String addTableNames(String value, double index);
 
-  public native String addTablenames(String value);
+  public native String addTableNames(String value);
 
-  public native String addWidgetnames(String value, double index);
+  public native String addWidgetNames(String value, double index);
 
-  public native String addWidgetnames(String value);
+  public native String addWidgetNames(String value);
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native void clearTablenamesList();
+  public native void clearTableNamesList();
 
-  public native void clearWidgetnamesList();
+  public native void clearWidgetNamesList();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native JsArray<String> getTablenamesList();
+  public native JsArray<String> getTableNamesList();
 
-  public native JsArray<String> getWidgetnamesList();
+  public native JsArray<String> getWidgetNamesList();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setTablenamesList(JsArray<String> value);
+  public native void setTableNamesList(JsArray<String> value);
 
   @JsOverlay
-  public final void setTablenamesList(String[] value) {
-    setTablenamesList(Js.<JsArray<String>>uncheckedCast(value));
+  public final void setTableNamesList(String[] value) {
+    setTableNamesList(Js.<JsArray<String>>uncheckedCast(value));
   }
 
-  public native void setWidgetnamesList(JsArray<String> value);
+  public native void setWidgetNamesList(JsArray<String> value);
 
   @JsOverlay
-  public final void setWidgetnamesList(String[] value) {
-    setWidgetnamesList(Js.<JsArray<String>>uncheckedCast(value));
+  public final void setWidgetNamesList(String[] value) {
+    setWidgetNamesList(Js.<JsArray<String>>uncheckedCast(value));
   }
 
   public native StartConsoleResponse.ToObjectReturnType0 toObject();

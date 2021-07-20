@@ -25,6 +25,18 @@ import java.util.concurrent.TimeUnit
 allprojects {
     repositories {
         mavenCentral()
+        maven {
+            url 'https://jitpack.io'
+            content {
+                includeGroup 'com.github.rdblue'
+            }
+        }
+        maven {
+            url 'https://maven.twttr.com'
+            content {
+                includeGroup 'com.hadoop.gplcompression'
+            }
+        }
     }
 }
 
@@ -55,7 +67,7 @@ idea {
 }
 
 ext.versionSource = versionSource
-ext.globalVersion = "0.1.0"
+ext.globalVersion = "0.3.0"
 
 // To set fishlibVersion, go to project-local gradle.properties file
 // (or, use the gradle.properties in $USER_HOME/.gradle for a global override)
@@ -118,10 +130,10 @@ allprojects*.tasks*.withType(JavaCompile)*.configureEach {
 
 subprojects {
     Project p ->
-    p.group = 'iris'
+    p.group = 'dh'
     p.version = globalVersion
     p.plugins.apply('io.deephaven.java-conventions')
-    License.createFrom(p).register(p)
+    License.createFrom(p).register()
 }
 
 
@@ -184,7 +196,6 @@ configure modsRegular,
         new File("$rootDir/tmp/workspace".toString()).mkdirs()
         new File("$rootDir/tmp/logs".toString()).mkdirs()
 
-        // TODO fix / move flaky tests so we can make ignoreFailures false again
         ignoreFailures = TestTools.allowFailure project
         if (ignoreFailures) {
             // begin dirty trick to ensure you can re-run failed tests.
@@ -328,18 +339,23 @@ apply plugin: 'io.deephaven.java-conventions'
 String javaDocOverviewLocation = 'build/docs/overview.html'
 tasks.register 'allJavadoc', Javadoc, {
     Javadoc jdoc ->
+        jdoc.javadocTool = javaToolchains.javadocToolFor{it ->
+            // Javadoc version >=11 is needed for search
+            // Javadoc version >12 is needed to avoid javadoc bugs in linking with modules
+            languageVersion = JavaLanguageVersion.of(15)
+        }
         jdoc.inputs.file javaDocOverviewLocation
         jdoc.options.encoding = 'UTF-8'
-        jdoc.options.docletpath = [new File("$rootDir/buildSrc/build/classes/java/compat")]
-        jdoc.options.doclet = 'io.deephaven.javadoc.IncludeDoclet'
-        jdoc.options.tags = ['Include:a:', 'Exclude:a:', 'IncludeAll:a:', 'apiNote', 'implNote']
+        jdoc.options.tags = ['apiNote', 'implNote']
         // include a note on the front Javadoc page telling us what version the Javadoc was generated from.
         jdoc.options.overview = new File("$rootDir", javaDocOverviewLocation)
-        jdoc.options.links = ['https://docs.oracle.com/javase/8/docs/api/']
+        // Link to javadoc 11 API, because it is closer to java 8, which we actually use to build and run
+        jdoc.options.links = ['https://docs.oracle.com/en/java/javase/11/docs/api/']
+        jdoc.options.addStringOption('Xdoclint:none', '-quiet')
 
         //add to as javadoc gets completed
         String [] exportedProjects = [
-                ':DB', ':Util', ':ModelFarm', ':Numerics', ':Plot', ':KafkaIngester', ':grpc-api'
+                ':DataStructures', ':DB', ':Util', ':ModelFarm', ':Numerics', ':Plot', ':KafkaIngester', ':grpc-api'
         ]
         jdoc.source = exportedProjects.collect { Java.sourceSet(project(it)).allJava }
         jdoc.classpath = files(exportedProjects.collect { project(it).sourceSets.main.compileClasspath })
@@ -417,7 +433,6 @@ tasks.register('smoke') {
 }
 
 ext {
-    // expose this so illumon-db can read it in easily
     depAnnotations = 'com.intellij:annotations:5.1'
     depAllocation = 'com.google.code.java-allocation-instrumenter:java-allocation-instrumenter:2.0'
     depAnt = 'ant:ant:1.6.5'

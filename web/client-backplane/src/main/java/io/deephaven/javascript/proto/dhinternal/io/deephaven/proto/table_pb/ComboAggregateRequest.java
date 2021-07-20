@@ -2,7 +2,7 @@ package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.JsArray;
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.comboaggregaterequest.AggTypeMap;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.comboaggregaterequest.Aggregate;
 import jsinterop.annotations.JsOverlay;
@@ -27,10 +27,10 @@ public class ComboAggregateRequest {
       }
 
       @JsProperty
-      String getColumnname();
+      String getColumnName();
 
       @JsProperty
-      JsArray<String> getMatchpairsList();
+      JsArray<String> getMatchPairsList();
 
       @JsProperty
       double getPercentile();
@@ -39,20 +39,20 @@ public class ComboAggregateRequest {
       double getType();
 
       @JsProperty
-      boolean isAvgmedian();
+      boolean isAvgMedian();
 
       @JsProperty
-      void setAvgmedian(boolean avgmedian);
+      void setAvgMedian(boolean avgMedian);
 
       @JsProperty
-      void setColumnname(String columnname);
+      void setColumnName(String columnName);
 
       @JsProperty
-      void setMatchpairsList(JsArray<String> matchpairsList);
+      void setMatchPairsList(JsArray<String> matchPairsList);
 
       @JsOverlay
-      default void setMatchpairsList(String[] matchpairsList) {
-        setMatchpairsList(Js.<JsArray<String>>uncheckedCast(matchpairsList));
+      default void setMatchPairsList(String[] matchPairsList) {
+        setMatchPairsList(Js.<JsArray<String>>uncheckedCast(matchPairsList));
       }
 
       @JsProperty
@@ -63,11 +63,11 @@ public class ComboAggregateRequest {
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ComboAggregateRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(
+        static ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -94,48 +94,49 @@ public class ComboAggregateRequest {
       }
 
       @JsOverlay
-      static ComboAggregateRequest.ToObjectReturnType.ResultidFieldType create() {
+      static ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ComboAggregateRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
+      ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(ComboAggregateRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ComboAggregateRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ComboAggregateRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidFieldType {
+    public interface SourceIdFieldType {
       @JsOverlay
-      static ComboAggregateRequest.ToObjectReturnType.SourceidFieldType create() {
+      static ComboAggregateRequest.ToObjectReturnType.SourceIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      double getBatchoffset();
+      double getBatchOffset();
 
       @JsProperty
       Object getTicket();
 
       @JsProperty
-      void setBatchoffset(double batchoffset);
+      void setBatchOffset(double batchOffset);
 
       @JsProperty
       void setTicket(Object ticket);
@@ -150,16 +151,16 @@ public class ComboAggregateRequest {
     JsArray<ComboAggregateRequest.ToObjectReturnType.AggregatesListFieldType> getAggregatesList();
 
     @JsProperty
-    JsArray<String> getGroupbycolumnsList();
+    JsArray<String> getGroupByColumnsList();
 
     @JsProperty
-    ComboAggregateRequest.ToObjectReturnType.ResultidFieldType getResultid();
+    ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType getResultId();
 
     @JsProperty
-    ComboAggregateRequest.ToObjectReturnType.SourceidFieldType getSourceid();
+    ComboAggregateRequest.ToObjectReturnType.SourceIdFieldType getSourceId();
 
     @JsProperty
-    boolean isForcecombo();
+    boolean isForceCombo();
 
     @JsOverlay
     default void setAggregatesList(
@@ -175,21 +176,21 @@ public class ComboAggregateRequest {
         JsArray<ComboAggregateRequest.ToObjectReturnType.AggregatesListFieldType> aggregatesList);
 
     @JsProperty
-    void setForcecombo(boolean forcecombo);
+    void setForceCombo(boolean forceCombo);
 
     @JsProperty
-    void setGroupbycolumnsList(JsArray<String> groupbycolumnsList);
+    void setGroupByColumnsList(JsArray<String> groupByColumnsList);
 
     @JsOverlay
-    default void setGroupbycolumnsList(String[] groupbycolumnsList) {
-      setGroupbycolumnsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnsList));
+    default void setGroupByColumnsList(String[] groupByColumnsList) {
+      setGroupByColumnsList(Js.<JsArray<String>>uncheckedCast(groupByColumnsList));
     }
 
     @JsProperty
-    void setResultid(ComboAggregateRequest.ToObjectReturnType.ResultidFieldType resultid);
+    void setResultId(ComboAggregateRequest.ToObjectReturnType.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSourceid(ComboAggregateRequest.ToObjectReturnType.SourceidFieldType sourceid);
+    void setSourceId(ComboAggregateRequest.ToObjectReturnType.SourceIdFieldType sourceId);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
@@ -202,10 +203,10 @@ public class ComboAggregateRequest {
       }
 
       @JsProperty
-      String getColumnname();
+      String getColumnName();
 
       @JsProperty
-      JsArray<String> getMatchpairsList();
+      JsArray<String> getMatchPairsList();
 
       @JsProperty
       double getPercentile();
@@ -214,20 +215,20 @@ public class ComboAggregateRequest {
       double getType();
 
       @JsProperty
-      boolean isAvgmedian();
+      boolean isAvgMedian();
 
       @JsProperty
-      void setAvgmedian(boolean avgmedian);
+      void setAvgMedian(boolean avgMedian);
 
       @JsProperty
-      void setColumnname(String columnname);
+      void setColumnName(String columnName);
 
       @JsProperty
-      void setMatchpairsList(JsArray<String> matchpairsList);
+      void setMatchPairsList(JsArray<String> matchPairsList);
 
       @JsOverlay
-      default void setMatchpairsList(String[] matchpairsList) {
-        setMatchpairsList(Js.<JsArray<String>>uncheckedCast(matchpairsList));
+      default void setMatchPairsList(String[] matchPairsList) {
+        setMatchPairsList(Js.<JsArray<String>>uncheckedCast(matchPairsList));
       }
 
       @JsProperty
@@ -238,11 +239,11 @@ public class ComboAggregateRequest {
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(
+        static ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -269,48 +270,49 @@ public class ComboAggregateRequest {
       }
 
       @JsOverlay
-      static ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType create() {
+      static ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidFieldType {
+    public interface SourceIdFieldType {
       @JsOverlay
-      static ComboAggregateRequest.ToObjectReturnType0.SourceidFieldType create() {
+      static ComboAggregateRequest.ToObjectReturnType0.SourceIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      double getBatchoffset();
+      double getBatchOffset();
 
       @JsProperty
       Object getTicket();
 
       @JsProperty
-      void setBatchoffset(double batchoffset);
+      void setBatchOffset(double batchOffset);
 
       @JsProperty
       void setTicket(Object ticket);
@@ -325,16 +327,16 @@ public class ComboAggregateRequest {
     JsArray<ComboAggregateRequest.ToObjectReturnType0.AggregatesListFieldType> getAggregatesList();
 
     @JsProperty
-    JsArray<String> getGroupbycolumnsList();
+    JsArray<String> getGroupByColumnsList();
 
     @JsProperty
-    ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType getResultid();
+    ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    ComboAggregateRequest.ToObjectReturnType0.SourceidFieldType getSourceid();
+    ComboAggregateRequest.ToObjectReturnType0.SourceIdFieldType getSourceId();
 
     @JsProperty
-    boolean isForcecombo();
+    boolean isForceCombo();
 
     @JsOverlay
     default void setAggregatesList(
@@ -350,21 +352,21 @@ public class ComboAggregateRequest {
         JsArray<ComboAggregateRequest.ToObjectReturnType0.AggregatesListFieldType> aggregatesList);
 
     @JsProperty
-    void setForcecombo(boolean forcecombo);
+    void setForceCombo(boolean forceCombo);
 
     @JsProperty
-    void setGroupbycolumnsList(JsArray<String> groupbycolumnsList);
+    void setGroupByColumnsList(JsArray<String> groupByColumnsList);
 
     @JsOverlay
-    default void setGroupbycolumnsList(String[] groupbycolumnsList) {
-      setGroupbycolumnsList(Js.<JsArray<String>>uncheckedCast(groupbycolumnsList));
+    default void setGroupByColumnsList(String[] groupByColumnsList) {
+      setGroupByColumnsList(Js.<JsArray<String>>uncheckedCast(groupByColumnsList));
     }
 
     @JsProperty
-    void setResultid(ComboAggregateRequest.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(ComboAggregateRequest.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSourceid(ComboAggregateRequest.ToObjectReturnType0.SourceidFieldType sourceid);
+    void setSourceId(ComboAggregateRequest.ToObjectReturnType0.SourceIdFieldType sourceId);
   }
 
   public static AggTypeMap AggType;
@@ -385,31 +387,31 @@ public class ComboAggregateRequest {
 
   public native Aggregate addAggregates(Aggregate value);
 
-  public native String addGroupbycolumns(String value, double index);
+  public native String addGroupByColumns(String value, double index);
 
-  public native String addGroupbycolumns(String value);
+  public native String addGroupByColumns(String value);
 
   public native void clearAggregatesList();
 
-  public native void clearGroupbycolumnsList();
+  public native void clearGroupByColumnsList();
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native void clearSourceid();
+  public native void clearSourceId();
 
   public native JsArray<Aggregate> getAggregatesList();
 
-  public native boolean getForcecombo();
+  public native boolean getForceCombo();
 
-  public native JsArray<String> getGroupbycolumnsList();
+  public native JsArray<String> getGroupByColumnsList();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native TableReference getSourceid();
+  public native TableReference getSourceId();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
-  public native boolean hasSourceid();
+  public native boolean hasSourceId();
 
   public native Uint8Array serializeBinary();
 
@@ -420,22 +422,22 @@ public class ComboAggregateRequest {
 
   public native void setAggregatesList(JsArray<Aggregate> value);
 
-  public native void setForcecombo(boolean value);
+  public native void setForceCombo(boolean value);
 
-  public native void setGroupbycolumnsList(JsArray<String> value);
+  public native void setGroupByColumnsList(JsArray<String> value);
 
   @JsOverlay
-  public final void setGroupbycolumnsList(String[] value) {
-    setGroupbycolumnsList(Js.<JsArray<String>>uncheckedCast(value));
+  public final void setGroupByColumnsList(String[] value) {
+    setGroupByColumnsList(Js.<JsArray<String>>uncheckedCast(value));
   }
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setSourceid();
+  public native void setSourceId();
 
-  public native void setSourceid(TableReference value);
+  public native void setSourceId(TableReference value);
 
   public native ComboAggregateRequest.ToObjectReturnType0 toObject();
 

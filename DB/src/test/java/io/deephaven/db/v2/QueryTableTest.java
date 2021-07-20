@@ -9,7 +9,6 @@ import io.deephaven.base.Pair;
 import io.deephaven.base.verify.AssertionFailure;
 import io.deephaven.datastructures.util.CollectionUtil;
 import com.google.common.primitives.Ints;
-import io.deephaven.compilertools.CompilerTools;
 import io.deephaven.db.tables.ColumnDefinition;
 import io.deephaven.db.tables.DataColumn;
 import io.deephaven.db.tables.Table;
@@ -29,10 +28,12 @@ import io.deephaven.db.v2.select.*;
 import io.deephaven.db.v2.sources.AbstractColumnSource;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.LogicalClock;
+import io.deephaven.db.v2.utils.BarrageMessage;
 import io.deephaven.db.v2.utils.ColumnHolder;
 import io.deephaven.db.v2.utils.Index;
 import io.deephaven.db.v2.utils.IndexShiftData;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.UncheckedDeephavenException;
@@ -53,6 +54,7 @@ import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.v2.TstUtils.*;
@@ -67,6 +69,7 @@ import static io.deephaven.db.v2.by.ComboAggregateFactory.*;
  * See also {@link QueryTableAggregationTest}, {@link QueryTableJoinTest}, {@link QueryTableSelectUpdateTest},
  * {@link QueryTableFlattenTest}, and {@link QueryTableSortTest}.
  */
+@Category(OutOfBandTest.class)
 public class QueryTableTest extends QueryTableTestBase {
     public void testStupidCast(){
         QueryTable table = TstUtils.testRefreshingTable(i(2, 4, 6));
@@ -335,7 +338,7 @@ public class QueryTableTest extends QueryTableTestBase {
     }
 
     public void testView() {
-        QueryScope.setDefaultInstance(new QueryScope.StandaloneImpl());
+        QueryScope.setScope(new QueryScope.StandaloneImpl());
         QueryScope.addParam("indexMinEdge",2.0);
         QueryScope.addParam("IsIndex",true);
         QueryScope.addParam("MEF",1.0);
@@ -354,7 +357,8 @@ public class QueryTableTest extends QueryTableTestBase {
 
         final QueryTable table1 = TstUtils.testRefreshingTable(i(2, 4, 6), c("x", 1, 2, 3), c("y", 'a', 'b', 'c'));
         final QueryTable table2 = (QueryTable) table1.updateView("z = x", "x = z + 1", "t = x - 3");
-        table2.listenForUpdates(new ListenerWithGlobals(table2));
+        final Listener table2Listener = new ListenerWithGlobals(table2);
+        table2.listenForUpdates(table2Listener);
 
         LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
             addToTable(table1, i(7, 9), c("x", 4, 5), c("y", 'd', 'e'));
@@ -405,7 +409,8 @@ public class QueryTableTest extends QueryTableTestBase {
 
         final QueryTable table3 = TstUtils.testRefreshingTable(i(2, 4, 6), c("x", 1, 2, 3), c("y", 'a', 'b', 'c'));
         final QueryTable table4 = (QueryTable)table3.view("z = x", "x = z + 1", "t = x - 3");
-        table4.listenForUpdates(new ListenerWithGlobals(table4));
+        final Listener table4Listener = new ListenerWithGlobals(table4);
+        table4.listenForUpdates(table4Listener);
 
         LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
             addToTable(table3, i(7, 9), c("x", 4, 5), c("y", 'd', 'e'));
@@ -687,6 +692,7 @@ public class QueryTableTest extends QueryTableTestBase {
         }
     }
 
+    @Category(OutOfBandTest.class)
     public void testStringContainsFilter() {
         Function<String, SelectFilter> filter = ConditionFilter::createConditionFilter;
         final Random random = new Random(0);
@@ -766,6 +772,7 @@ public class QueryTableTest extends QueryTableTestBase {
         assertTableEquals(TableTools.newTable(intCol("IV", 1, 2, 4, 6)), geq1.dropColumns("LV"));
     }
 
+    @Category(OutOfBandTest.class)
     public void testDoubleRangeFilter() {
         Function<String, SelectFilter> filter = ConditionFilter::createConditionFilter;
         final Random random = new Random(0);
@@ -799,6 +806,7 @@ public class QueryTableTest extends QueryTableTestBase {
         }
     }
 
+    @Category(OutOfBandTest.class)
     public void testDateTimeRangeFilter() {
         Function<String, SelectFilter> filter = ConditionFilter::createConditionFilter;
         final Random random = new Random(0);
@@ -982,8 +990,9 @@ public class QueryTableTest extends QueryTableTestBase {
     public void testReverseClipping() {
         final QueryTable table = testRefreshingTable(i(1), c("Sentinel", 1));
 
-        final SimpleShiftAwareListener listener = new SimpleShiftAwareListener(table);
-        ((QueryTable)table.reverse()).listenForUpdates(listener);
+        final QueryTable reverseTable = (QueryTable)table.reverse();
+        final SimpleShiftAwareListener listener = new SimpleShiftAwareListener(reverseTable);
+        reverseTable.listenForUpdates(listener);
 
         LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
             ShiftAwareListener.Update downstream = new ShiftAwareListener.Update();
@@ -1668,7 +1677,7 @@ public class QueryTableTest extends QueryTableTestBase {
         final QueryTable snapshot = (QueryTable)left.snapshotIncremental(right, true);
         final TableUpdateValidator validator = TableUpdateValidator.make(snapshot);
         final QueryTable validatorTable = validator.getResultTable();
-        validatorTable.listenForUpdates(new InstrumentedShiftAwareListenerAdapter(validatorTable) {
+        final ShiftAwareListener validatorTableListener = new InstrumentedShiftAwareListenerAdapter(validatorTable, false) {
             @Override
             public void onUpdate(Update upstream) {}
 
@@ -1676,7 +1685,8 @@ public class QueryTableTest extends QueryTableTestBase {
             public void onFailureInternal(Throwable originalException, UpdatePerformanceTracker.Entry sourceEntry) {
                 TestCase.fail(originalException.getMessage());
             }
-        });
+        };
+        validatorTable.listenForUpdates(validatorTableListener);
 
         System.out.println("Initial table:");
         show(snapshot);
@@ -2135,7 +2145,17 @@ public class QueryTableTest extends QueryTableTestBase {
         assertEquals(Arrays.asList(1, 1, 1, 1, 1, 1, 1, 1, 1), Arrays.asList(t1.getColumn("X").get(0, 9)));
         assertEquals(Arrays.asList(4, 4, 4, 5, 5, 5, 6, 6, 6), Arrays.asList(t1.getColumn("Z").get(0, 9)));
         assertEquals(Arrays.asList("a","b","c","a","b","c","a","b","c"),Arrays.asList(t1.getColumn("Y").get(0,9)));
+    }
 
+    public void testUngroupConstructSnapshotOfBoxedNull() {
+        final Table t = testRefreshingTable(i(0)).update("X = new Integer[]{null, 2, 3}", "Z = new Integer[]{4, 5, null}");
+        final Table ungrouped = t.ungroup();
+
+        try (final BarrageMessage snap = ConstructSnapshot.constructBackplaneSnapshot(this, (BaseTable)ungrouped)) {
+            assertEquals(snap.rowsAdded, i(0, 1, 2));
+            assertEquals(snap.addColumnData[0].data.asIntChunk().get(0), io.deephaven.util.QueryConstants.NULL_INT);
+            assertEquals(snap.addColumnData[1].data.asIntChunk().get(2), io.deephaven.util.QueryConstants.NULL_INT);
+        }
     }
 
     public void testUngroupableColumnSources() {
@@ -2218,7 +2238,7 @@ public class QueryTableTest extends QueryTableTestBase {
             // This is too big, we should fail
             LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
                 final long bigIndex = 1L << 55;
-                addToTable(table, i(bigIndex), intCol("X", 3), new ColumnHolder("Y", String[].class, (String[]) new String[]{"f"}));
+                addToTable(table, i(bigIndex), intCol("X", 3), new ColumnHolder<>("Y", String[].class, String.class, false, new String[]{"f"}));
                 table.notifyListeners(i(bigIndex), i(), i());
             });
             showWithIndex(t1);
@@ -2248,7 +2268,7 @@ public class QueryTableTest extends QueryTableTestBase {
 
             final TableUpdateValidator validator = TableUpdateValidator.make(t1);
             final QueryTable validatorTable = validator.getResultTable();
-            validatorTable.listenForUpdates(new InstrumentedShiftAwareListenerAdapter(validatorTable) {
+            final ShiftAwareListener validatorTableListener = new InstrumentedShiftAwareListenerAdapter(validatorTable, false) {
                 @Override
                 public void onUpdate(Update upstream) {}
 
@@ -2256,11 +2276,12 @@ public class QueryTableTest extends QueryTableTestBase {
                 public void onFailureInternal(Throwable originalException, UpdatePerformanceTracker.Entry sourceEntry) {
                     TestCase.fail(originalException.getMessage());
                 }
-            });
+            };
+            validatorTable.listenForUpdates(validatorTableListener);
 
             // This is too big, we should fail
             LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
-                addToTable(table, i(9), c("X", 3), new ColumnHolder("Y", String[].class, new String[]{"f", "g", "h", "i", "j", "k"}));
+                addToTable(table, i(9), c("X", 3), new ColumnHolder<>("Y", String[].class, String.class, false, new String[]{"f", "g", "h", "i", "j", "k"}));
                 table.notifyListeners(i(9), i(), i());
             });
             showWithIndex(t1);
@@ -2284,7 +2305,7 @@ public class QueryTableTest extends QueryTableTestBase {
         }
     }
 
-
+    @Category(OutOfBandTest.class)
     public void testUngroupIncremental() throws ParseException {
         testUngroupIncremental(100, false);
         testUngroupIncremental(100, true);
@@ -2669,9 +2690,11 @@ public class QueryTableTest extends QueryTableTestBase {
         QueryScope.addParam("booleans", booleans);
 
         final Table source = emptyTable(10).updateView("Sentinel=i", "Symbol=syms[i % syms.length]", "Timestamp=baseTime+dateOffset[i]*3600L*1000000000L", "Truthiness=booleans[i]").by("Symbol").ungroup();
+        testDirectory.mkdirs();
+        final File dest = new File(testDirectory, "Table.parquet");
         try {
-            TableManagementTools.writeTable(source, definition, testDirectory, TableManagementTools.StorageFormat.Parquet);
-            final Table table = TableManagementTools.readTable(testDirectory, definition);
+            ParquetTools.writeTable(source, definition, dest);
+            final Table table = ParquetTools.readTable(dest);
             testFunction.accept(table);
             table.close();
         } finally {
@@ -2860,5 +2883,31 @@ public class QueryTableTest extends QueryTableTestBase {
         listener.close(); // we typically grab and ref-count this for testing
 
         Assert.assertNull(update.added);
+    }
+
+    public void testRegressionIssue544() {
+        // The expression that fails in the console is:
+        // x = merge(newTable(byteCol("Q", (byte)0)), timeTable("00:00:01").view("Q=(byte)(i%2)"))
+        //    .tail(1)
+        //    .view("Q=Q*i")
+        //    .sumBy()
+        //
+        // The exception we were getting was: java.lang.IllegalArgumentException: keys argument has elements not in the index
+        //
+        final Table t0 = newTable(byteCol("Q", (byte) 0));
+        final QueryTable t1 = TstUtils.testRefreshingTable(i(), intCol("T"));
+        final Table t2 = t1.view("Q=(byte)(i%2)");
+        final Table result = merge(t0, t2).tail(1).view("Q=Q*i").sumBy();
+        int i = 1;
+        for (int step = 0; step < 2; ++step) {
+            final int key = i++;
+            LiveTableMonitor.DEFAULT.runWithinUnitTestCycle(() -> {
+                final Index addIndex = i(key);
+                addToTable(t1, addIndex, intCol("T", key));
+                t1.notifyListeners(addIndex, i(), i());
+                TableTools.show(result);
+            });
+        }
+        assertEquals(0, getUpdateErrors().size());
     }
 }

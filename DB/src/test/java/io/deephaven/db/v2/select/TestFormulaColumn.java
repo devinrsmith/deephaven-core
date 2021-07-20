@@ -9,7 +9,6 @@ import io.deephaven.base.verify.AssertionFailure;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.compilertools.CompilerTools;
 import io.deephaven.db.tables.ColumnDefinition;
-import io.deephaven.db.tables.DefaultColumnDefinition;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.lang.DBLanguageFunctionUtil;
 import io.deephaven.db.tables.lang.DBLanguageParser.QueryLanguageParseException;
@@ -17,11 +16,13 @@ import io.deephaven.db.tables.libs.QueryLibrary;
 import io.deephaven.db.tables.select.QueryScope;
 import io.deephaven.db.tables.utils.*;
 import io.deephaven.db.v2.utils.codegen.TypeAnalyzer;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -37,6 +38,7 @@ import static junit.framework.TestCase.*;
  */
 @SuppressWarnings("SameParameterValue")
 @RunWith(Parameterized.class)
+@Category(OutOfBandTest.class)
 public class TestFormulaColumn {
 
     private static final boolean ENABLE_COMPILER_TOOLS_LOGGING = Configuration.getInstance().getBooleanForClassWithDefault(TestFormulaColumn.class, "CompilerTools.logEnabled", false);
@@ -75,7 +77,7 @@ public class TestFormulaColumn {
     public void tearDown() throws Exception {
         CompilerTools.setLogEnabled(compilerToolsLogEnabledInitial);
 
-        QueryLibrary.resetCurrent();
+        QueryLibrary.resetLibrary();
         DhFormulaColumn.useKernelFormulasProperty = kernelFormulasSavedValue;
     }
 
@@ -236,8 +238,8 @@ public class TestFormulaColumn {
             result = Arrays.asList("varargTest1", "varargTest2", "varargTest3");
             checkPrimitive(row, expression, result);
 
-            expression = "io.deephaven.db.tables.DefaultColumnDefinition.COLUMNTYPE_NORMAL";
-            result = DefaultColumnDefinition.COLUMNTYPE_NORMAL;
+            expression = "io.deephaven.db.tables.ColumnDefinition.COLUMNTYPE_NORMAL";
+            result = ColumnDefinition.COLUMNTYPE_NORMAL;
             checkPrimitive(row, expression, result);
 
             expression = "CountDownLatch.class"; // (testing a package import)
@@ -393,6 +395,7 @@ public class TestFormulaColumn {
      * Test casts among all primitive types.
      */
     @Test
+    @Category(OutOfBandTest.class)
     public void testPrimitiveCasts() {
         final List<Class> primitiveTypes = new ArrayList<>(io.deephaven.util.type.TypeUtils.PRIMITIVE_TYPES);
 
@@ -441,6 +444,7 @@ public class TestFormulaColumn {
      * Test unboxing conversions, including null pointers and boxed nulls
      */
     @Test
+    @Category(OutOfBandTest.class)
     public void testUnboxingCasts() {
         final List<Class> boxedTypes = new ArrayList<>(io.deephaven.util.type.TypeUtils.BOXED_TYPES);
         final List<Class> primitiveTypes = new ArrayList<>(io.deephaven.util.type.TypeUtils.PRIMITIVE_TYPES);

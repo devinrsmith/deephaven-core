@@ -6,7 +6,6 @@ package io.deephaven.db.tables.lang;
 
 import io.deephaven.base.Pair;
 import io.deephaven.base.verify.Require;
-import io.deephaven.dataobjects.DataObjectColumnSetManager;
 import io.deephaven.base.testing.BaseArrayTestCase;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.dbarrays.*;
@@ -19,6 +18,7 @@ import groovy.lang.Closure;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 
 import java.awt.*;
 import java.util.*;
@@ -28,21 +28,21 @@ import static io.deephaven.db.tables.lang.DBLanguageParser.isWideningPrimitiveCo
 
 @SuppressWarnings("InstantiatingObjectToGetClassObject")
 public class TestDBLanguageParser extends BaseArrayTestCase {
-    static {
-        DataObjectColumnSetManager.getInstance();  //takes a while so lets do it here...
-    }
 
-    private final HashSet<Package> packageImports = new HashSet<>();
-    private final HashSet<Class> classImports = new HashSet<>();
-    private final HashSet<Class> staticImports = new HashSet<>();
+    private HashSet<Package> packageImports;
+    private HashSet<Class> classImports;
+    private HashSet<Class> staticImports;
+    private HashMap<String, Class> variables;
+    private HashMap<String, Class[]> variableParameterizedTypes;
 
-    private final HashMap<String, Class> variables = new HashMap<>();
-    private final HashMap<String, Class[]> variableParameterizedTypes = new HashMap<>();
-
-    public TestDBLanguageParser(){
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        packageImports = new HashSet<>();
         packageImports.add(Package.getPackage("java.lang"));
         packageImports.add(Package.getPackage("io.deephaven.db.tables"));
 
+        classImports = new HashSet<>();
         classImports.add(Color.class);
         classImports.add(ArrayUtils.class);
         classImports.add(HashSet.class);
@@ -52,11 +52,13 @@ public class TestDBLanguageParser extends BaseArrayTestCase {
         classImports.add(DBLanguageParserDummyEnum.class);
         classImports.add(DBLanguageParserDummyInterface.class);
 
+        staticImports = new HashSet<>();
         staticImports.add(DBLanguageFunctionUtil.class);
         staticImports.add(Math.class);
         staticImports.add(QueryConstants.class);
         staticImports.add(TestDBLanguageParser.class);
 
+        variables = new HashMap<>();
         variables.put("myByte", byte.class);
         variables.put("myShort", short.class);
         variables.put("myChar", char.class);
@@ -108,6 +110,7 @@ public class TestDBLanguageParser extends BaseArrayTestCase {
         variables.put("ExampleQuantity4", double.class);
         variables.put("ExampleStr", String.class);
 
+        variableParameterizedTypes = new HashMap<>();
         variableParameterizedTypes.put("myHashMap", new Class[]{Integer.class, Double.class});
         variableParameterizedTypes.put("myDBArray", new Class[]{Double.class});
     }
@@ -1037,12 +1040,12 @@ public class TestDBLanguageParser extends BaseArrayTestCase {
         resultExpression="java.util.Arrays.asList(5)";
         check(expression, resultExpression, List.class, new String[]{});
 
-        expression="io.deephaven.db.tables.DefaultColumnDefinition.COLUMNTYPE_NORMAL";
-        resultExpression="io.deephaven.db.tables.DefaultColumnDefinition.COLUMNTYPE_NORMAL";
+        expression="io.deephaven.db.tables.ColumnDefinition.COLUMNTYPE_NORMAL";
+        resultExpression="io.deephaven.db.tables.ColumnDefinition.COLUMNTYPE_NORMAL";
         check(expression, resultExpression, int.class, new String[]{});
 
-        expression="DefaultColumnDefinition.COLUMNTYPE_NORMAL";
-        resultExpression="DefaultColumnDefinition.COLUMNTYPE_NORMAL";
+        expression="ColumnDefinition.COLUMNTYPE_NORMAL";
+        resultExpression="ColumnDefinition.COLUMNTYPE_NORMAL";
         check(expression, resultExpression, int.class, new String[]{});
 
         expression="Color.BLUE";

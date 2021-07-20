@@ -19,8 +19,6 @@ import java.nio.ByteBuffer;
 
 /**
  * {@link Chunk} implementation for byte data.
- *
- * @IncludeAll
  */
 public class ByteChunk<ATTR extends Any> extends ChunkBase<ATTR> {
 
@@ -115,6 +113,12 @@ public class ByteChunk<ATTR extends Any> extends ChunkBase<ATTR> {
     @Override
     public final boolean isAlias(Chunk chunk) {
         return chunk.isAlias(data);
+    }
+
+    @Override
+    public final <V extends Visitor<ATTR>> V walk(V visitor) {
+        visitor.visit(this);
+        return visitor;
     }
 
     // region ApplyDecoder

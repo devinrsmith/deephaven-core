@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 /**
  * Local table location scanner that can handle two-level partitioning.
  */
-public class NestedPartitionedLocalTableLocationScanner implements LocalTableLocationProvider.Scanner {
+public class NestedPartitionedLocalTableLocationScanner implements LocalTableLocationProviderByScanner.Scanner {
 
     private static final ThreadLocal<TableLocationLookupKey.Reusable> reusableLocationKey = ThreadLocal.withInitial(TableLocationLookupKey.Reusable::new);
 
@@ -80,10 +80,10 @@ public class NestedPartitionedLocalTableLocationScanner implements LocalTableLoc
     }
 
     @Override
-    public File computeLocationDirectory(@NotNull final TableKey tableKey, @NotNull final TableLocationKey locationKey) {
-        return new File(tableRootDirectory,
-                locationKey.getInternalPartition().toString()
-                        + File.separatorChar + locationKey.getColumnPartition().toString()
-                        + File.separatorChar + tableKey.getTableName().toString());
+    public String computeLocationBasePath(@NotNull final TableKey tableKey, @NotNull final TableLocationKey locationKey) {
+        return tableRootDirectory.getAbsolutePath()
+                + File.separatorChar + locationKey.getInternalPartition().toString()
+                + File.separatorChar + locationKey.getColumnPartition().toString()
+                + File.separatorChar + tableKey.getTableName().toString();
     }
 }

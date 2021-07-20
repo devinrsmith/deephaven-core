@@ -8,7 +8,7 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.db.tables.ColumnDefinition;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.select.MatchPair;
-import io.deephaven.db.tables.utils.DBNameValidator;
+import io.deephaven.db.tables.utils.NameValidator;
 import io.deephaven.db.v2.NoSuchColumnException;
 import io.deephaven.db.v2.sources.ColumnSource;
 import io.deephaven.db.v2.sources.PrevColumnSource;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-// TODO (AB): Comment the heck out of this...
+// TODO: Comment the heck out of this...
 public class MultiSourceFunctionalColumn<D> implements SelectColumn {
     private final List<String> sourceNames;
     private ColumnSource<?>[] sourceColumns;
@@ -54,10 +54,10 @@ public class MultiSourceFunctionalColumn<D> implements SelectColumn {
                                        @NotNull Class componentType,
                                        @NotNull BiFunction<Long, ColumnSource[], D> function) {
         this.sourceNames = sourceNames.stream()
-                .map(DBNameValidator::validateColumnName)
+                .map(NameValidator::validateColumnName)
                 .collect(Collectors.toList());
 
-        this.destName = DBNameValidator.validateColumnName(destName);
+        this.destName = NameValidator.validateColumnName(destName);
         this.destDataType = Require.neqNull(destDataType, "destDataType");
         this.componentType = Require.neqNull(componentType, "componentType");
         this.function = function;

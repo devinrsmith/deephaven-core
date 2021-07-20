@@ -4,10 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Exception class thrown when incorrect usage of a {@link LivenessReferent} is detected.
- *
- * @IncludeAll
  */
-class LivenessStateException extends IllegalStateException {
+public class LivenessStateException extends IllegalStateException {
 
     LivenessStateException(@NotNull final String message) {
         super(message);

@@ -23,6 +23,7 @@ import io.deephaven.db.v2.sources.UnionRedirection;
 import io.deephaven.db.v2.sources.chunk.*;
 import io.deephaven.db.v2.utils.Index;
 import io.deephaven.db.v2.utils.IndexShiftData;
+import io.deephaven.test.types.OutOfBandTest;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.ReflexiveUse;
 
@@ -38,12 +39,14 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntUnaryOperator;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.*;
 import static io.deephaven.db.tables.utils.WhereClause.whereClause;
 import static io.deephaven.db.v2.TstUtils.*;
 import static java.util.Arrays.asList;
 
+@Category(OutOfBandTest.class)
 public class QueryTableWhereTest extends QueryTableTestBase {
 
     @Test
@@ -58,7 +61,8 @@ public class QueryTableWhereTest extends QueryTableTestBase {
         assertEquals("", diff(table.where(filter.apply("(y-'a') = 2")),
                 testRefreshingTable(i(2), c("x", 3), c("y", 'c')), 10));
         final QueryTable whereResult = (QueryTable) table.where(filter.apply("x%2 == 1"));
-        whereResult.listenForUpdates(new ListenerWithGlobals(whereResult));
+        final Listener whereResultListener = new ListenerWithGlobals(whereResult);
+        whereResult.listenForUpdates(whereResultListener);
         assertEquals("", diff(whereResult,
                 testRefreshingTable(i(2, 6), c("x", 1, 3), c("y", 'a', 'c')), 10));
 
@@ -139,7 +143,8 @@ public class QueryTableWhereTest extends QueryTableTestBase {
                 testRefreshingTable(i(2), c("x", 3), c("y", 'c')), 10));
 
         final QueryTable whereResult = (QueryTable) table.whereOneOf(whereClause("x%2 == 1"));
-        whereResult.listenForUpdates(new ListenerWithGlobals(whereResult));
+        final Listener whereResultListener = new ListenerWithGlobals(whereResult);
+        whereResult.listenForUpdates(whereResultListener);
         assertEquals("", diff(whereResult,
                 testRefreshingTable(i(2, 6), c("x", 1, 3), c("y", 'a', 'c')), 10));
 
@@ -204,7 +209,8 @@ public class QueryTableWhereTest extends QueryTableTestBase {
                 testRefreshingTable(i(2), c("x", 3), c("y", 'c')), 10));
 
         final QueryTable whereResult = (QueryTable) table.whereOneOf(whereClause("x%2 == 1"), whereClause("y=='f'"));
-        whereResult.listenForUpdates(new ListenerWithGlobals(whereResult));
+        final Listener whereResultListener = new ListenerWithGlobals(whereResult);
+        whereResult.listenForUpdates(whereResultListener);
         assertEquals("", diff(whereResult,
                 testRefreshingTable(i(2, 6, 8), c("x", 1, 3, 4), c("y", 'a', 'c', 'f')), 10));
 
@@ -395,6 +401,7 @@ public class QueryTableWhereTest extends QueryTableTestBase {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testWhereDynamicInIncremental() {
         final ColumnInfo[] setInfo;
         final ColumnInfo[] filteredInfo;
@@ -558,6 +565,7 @@ public class QueryTableWhereTest extends QueryTableTestBase {
     }
 
     @Test
+    @Category(OutOfBandTest.class)
     public void testWhereOneOfIncremental() {
 
         final ColumnInfo[] filteredInfo;
@@ -882,6 +890,7 @@ public class QueryTableWhereTest extends QueryTableTestBase {
         return table;
     }
 
+    @Category(OutOfBandTest.class)
     public void testComparableBinarySearch() {
         final Random random = new Random(0);
 

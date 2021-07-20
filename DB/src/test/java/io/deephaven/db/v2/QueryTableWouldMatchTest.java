@@ -5,14 +5,17 @@ import io.deephaven.db.tables.select.MatchPair;
 import io.deephaven.db.tables.select.WouldMatchPair;
 import io.deephaven.db.v2.select.DynamicWhereFilter;
 import io.deephaven.db.v2.sources.chunk.util.pools.ChunkPoolReleaseTracking;
+import io.deephaven.test.types.OutOfBandTest;
 import junit.framework.TestCase;
 
 import java.util.Arrays;
 import java.util.Random;
+import org.junit.experimental.categories.Category;
 
 import static io.deephaven.db.tables.utils.TableTools.show;
 import static io.deephaven.db.v2.TstUtils.*;
 
+@Category(OutOfBandTest.class)
 public class QueryTableWouldMatchTest extends QueryTableTestBase {
 
     public void testMatch() {
@@ -22,7 +25,8 @@ public class QueryTableWouldMatchTest extends QueryTableTestBase {
               c("Bool",  true,  false,      true,  true, false,    false));
 
         final QueryTable t1Matched = (QueryTable)t1.wouldMatch("HasAnE=Text.contains(`e`)", "isGt3=Number > 3", "Compound=Bool || Text.length() < 5");
-        t1Matched.listenForUpdates(new ListenerWithGlobals(t1Matched));
+        final Listener t1MatchedListener = new ListenerWithGlobals(t1Matched);
+        t1Matched.listenForUpdates(t1MatchedListener);
 
         show(t1Matched);
         assertEquals(Arrays.asList(true , false,  true, false, false, true) , Arrays.asList(t1Matched.getColumn("HasAnE").get(0,6)));
@@ -184,6 +188,7 @@ public class QueryTableWouldMatchTest extends QueryTableTestBase {
         }
     }
 
+    @Category(OutOfBandTest.class)
     public void testMatchDynamicIterative() {
         final ColumnInfo[] symSetInfo;
         final ColumnInfo[] numSetInfo;

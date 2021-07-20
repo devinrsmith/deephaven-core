@@ -65,9 +65,9 @@ public abstract class AbstractFormulaColumn implements FormulaColumn {
      * @param formulaString the formula string to be parsed by the DBLanguageParser
      * @param useKernelFormulas
      */
-    AbstractFormulaColumn(String columnName, String formulaString, boolean useKernelFormulas) {
+    protected AbstractFormulaColumn(String columnName, String formulaString, boolean useKernelFormulas) {
         this.formulaString = Require.neqNull(formulaString, "formulaString");
-        this.columnName = DBNameValidator.validateColumnName(columnName);
+        this.columnName = NameValidator.validateColumnName(columnName);
         this.useKernelFormulas = useKernelFormulas;
     }
 
@@ -97,7 +97,7 @@ public abstract class AbstractFormulaColumn implements FormulaColumn {
 
     protected void applyUsedVariables(Map<String, ColumnDefinition> columnDefinitionMap, Set<String> variablesUsed) {
         final Map<String, Param> possibleParams = new HashMap<>();
-        final QueryScope queryScope = QueryScope.getDefaultInstance();
+        final QueryScope queryScope = QueryScope.getScope();
         for (Param param : queryScope.getParams(queryScope.getParamNames())) {
             possibleParams.put(param.getName(), param);
         }

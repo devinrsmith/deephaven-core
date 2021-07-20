@@ -2,7 +2,7 @@ package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.JsArray;
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -18,124 +18,11 @@ public class MergeTablesRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static MergeTablesRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(Object o) {
-          return Js.cast(o);
-        }
-
-        @JsOverlay
-        default String asString() {
-          return Js.asString(this);
-        }
-
-        @JsOverlay
-        default Uint8Array asUint8Array() {
-          return Js.cast(this);
-        }
-
-        @JsOverlay
-        default boolean isString() {
-          return (Object) this instanceof String;
-        }
-
-        @JsOverlay
-        default boolean isUint8Array() {
-          return (Object) this instanceof Uint8Array;
-        }
-      }
-
-      @JsOverlay
-      static MergeTablesRequest.ToObjectReturnType.ResultidFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      MergeTablesRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
-
-      @JsProperty
-      void setId(MergeTablesRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
-
-      @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js
-                .<MergeTablesRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
-      }
-
-      @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js
-                .<MergeTablesRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
-      }
-    }
-
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidsListFieldType {
-      @JsOverlay
-      static MergeTablesRequest.ToObjectReturnType.SourceidsListFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      double getBatchoffset();
-
-      @JsProperty
-      Object getTicket();
-
-      @JsProperty
-      void setBatchoffset(double batchoffset);
-
-      @JsProperty
-      void setTicket(Object ticket);
-    }
-
-    @JsOverlay
-    static MergeTablesRequest.ToObjectReturnType create() {
-      return Js.uncheckedCast(JsPropertyMap.of());
-    }
-
-    @JsProperty
-    String getKeycolumn();
-
-    @JsProperty
-    MergeTablesRequest.ToObjectReturnType.ResultidFieldType getResultid();
-
-    @JsProperty
-    JsArray<MergeTablesRequest.ToObjectReturnType.SourceidsListFieldType> getSourceidsList();
-
-    @JsProperty
-    void setKeycolumn(String keycolumn);
-
-    @JsProperty
-    void setResultid(MergeTablesRequest.ToObjectReturnType.ResultidFieldType resultid);
-
-    @JsProperty
-    void setSourceidsList(
-        JsArray<MergeTablesRequest.ToObjectReturnType.SourceidsListFieldType> sourceidsList);
-
-    @JsOverlay
-    default void setSourceidsList(
-        MergeTablesRequest.ToObjectReturnType.SourceidsListFieldType[] sourceidsList) {
-      setSourceidsList(
-          Js.<JsArray<MergeTablesRequest.ToObjectReturnType.SourceidsListFieldType>>uncheckedCast(
-              sourceidsList));
-    }
-  }
-
-  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-  public interface ToObjectReturnType0 {
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
-      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
-        @JsOverlay
-        static MergeTablesRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(
+        static MergeTablesRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -162,48 +49,164 @@ public class MergeTablesRequest {
       }
 
       @JsOverlay
-      static MergeTablesRequest.ToObjectReturnType0.ResultidFieldType create() {
+      static MergeTablesRequest.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      MergeTablesRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      MergeTablesRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(MergeTablesRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          MergeTablesRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<MergeTablesRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<MergeTablesRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<MergeTablesRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<MergeTablesRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidsListFieldType {
+    public interface SourceIdsListFieldType {
       @JsOverlay
-      static MergeTablesRequest.ToObjectReturnType0.SourceidsListFieldType create() {
+      static MergeTablesRequest.ToObjectReturnType.SourceIdsListFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      double getBatchoffset();
+      double getBatchOffset();
 
       @JsProperty
       Object getTicket();
 
       @JsProperty
-      void setBatchoffset(double batchoffset);
+      void setBatchOffset(double batchOffset);
+
+      @JsProperty
+      void setTicket(Object ticket);
+    }
+
+    @JsOverlay
+    static MergeTablesRequest.ToObjectReturnType create() {
+      return Js.uncheckedCast(JsPropertyMap.of());
+    }
+
+    @JsProperty
+    String getKeyColumn();
+
+    @JsProperty
+    MergeTablesRequest.ToObjectReturnType.ResultIdFieldType getResultId();
+
+    @JsProperty
+    JsArray<MergeTablesRequest.ToObjectReturnType.SourceIdsListFieldType> getSourceIdsList();
+
+    @JsProperty
+    void setKeyColumn(String keyColumn);
+
+    @JsProperty
+    void setResultId(MergeTablesRequest.ToObjectReturnType.ResultIdFieldType resultId);
+
+    @JsProperty
+    void setSourceIdsList(
+        JsArray<MergeTablesRequest.ToObjectReturnType.SourceIdsListFieldType> sourceIdsList);
+
+    @JsOverlay
+    default void setSourceIdsList(
+        MergeTablesRequest.ToObjectReturnType.SourceIdsListFieldType[] sourceIdsList) {
+      setSourceIdsList(
+          Js.<JsArray<MergeTablesRequest.ToObjectReturnType.SourceIdsListFieldType>>uncheckedCast(
+              sourceIdsList));
+    }
+  }
+
+  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+  public interface ToObjectReturnType0 {
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface ResultIdFieldType {
+      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+      public interface GetTicketUnionType {
+        @JsOverlay
+        static MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
+            Object o) {
+          return Js.cast(o);
+        }
+
+        @JsOverlay
+        default String asString() {
+          return Js.asString(this);
+        }
+
+        @JsOverlay
+        default Uint8Array asUint8Array() {
+          return Js.cast(this);
+        }
+
+        @JsOverlay
+        default boolean isString() {
+          return (Object) this instanceof String;
+        }
+
+        @JsOverlay
+        default boolean isUint8Array() {
+          return (Object) this instanceof Uint8Array;
+        }
+      }
+
+      @JsOverlay
+      static MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
+
+      @JsProperty
+      void setTicket(
+          MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
+
+      @JsOverlay
+      default void setTicket(String ticket) {
+        setTicket(
+            Js
+                .<MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
+      }
+
+      @JsOverlay
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js
+                .<MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
+      }
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface SourceIdsListFieldType {
+      @JsOverlay
+      static MergeTablesRequest.ToObjectReturnType0.SourceIdsListFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      double getBatchOffset();
+
+      @JsProperty
+      Object getTicket();
+
+      @JsProperty
+      void setBatchOffset(double batchOffset);
 
       @JsProperty
       void setTicket(Object ticket);
@@ -215,30 +218,30 @@ public class MergeTablesRequest {
     }
 
     @JsProperty
-    String getKeycolumn();
+    String getKeyColumn();
 
     @JsProperty
-    MergeTablesRequest.ToObjectReturnType0.ResultidFieldType getResultid();
+    MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    JsArray<MergeTablesRequest.ToObjectReturnType0.SourceidsListFieldType> getSourceidsList();
+    JsArray<MergeTablesRequest.ToObjectReturnType0.SourceIdsListFieldType> getSourceIdsList();
 
     @JsProperty
-    void setKeycolumn(String keycolumn);
+    void setKeyColumn(String keyColumn);
 
     @JsProperty
-    void setResultid(MergeTablesRequest.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(MergeTablesRequest.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSourceidsList(
-        JsArray<MergeTablesRequest.ToObjectReturnType0.SourceidsListFieldType> sourceidsList);
+    void setSourceIdsList(
+        JsArray<MergeTablesRequest.ToObjectReturnType0.SourceIdsListFieldType> sourceIdsList);
 
     @JsOverlay
-    default void setSourceidsList(
-        MergeTablesRequest.ToObjectReturnType0.SourceidsListFieldType[] sourceidsList) {
-      setSourceidsList(
-          Js.<JsArray<MergeTablesRequest.ToObjectReturnType0.SourceidsListFieldType>>uncheckedCast(
-              sourceidsList));
+    default void setSourceIdsList(
+        MergeTablesRequest.ToObjectReturnType0.SourceIdsListFieldType[] sourceIdsList) {
+      setSourceIdsList(
+          Js.<JsArray<MergeTablesRequest.ToObjectReturnType0.SourceIdsListFieldType>>uncheckedCast(
+              sourceIdsList));
     }
   }
 
@@ -252,37 +255,37 @@ public class MergeTablesRequest {
   public static native MergeTablesRequest.ToObjectReturnType toObject(
       boolean includeInstance, MergeTablesRequest msg);
 
-  public native TableReference addSourceids();
+  public native TableReference addSourceIds();
 
-  public native TableReference addSourceids(TableReference value, double index);
+  public native TableReference addSourceIds(TableReference value, double index);
 
-  public native TableReference addSourceids(TableReference value);
+  public native TableReference addSourceIds(TableReference value);
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native void clearSourceidsList();
+  public native void clearSourceIdsList();
 
-  public native String getKeycolumn();
+  public native String getKeyColumn();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native JsArray<TableReference> getSourceidsList();
+  public native JsArray<TableReference> getSourceIdsList();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setKeycolumn(String value);
+  public native void setKeyColumn(String value);
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setSourceidsList(JsArray<TableReference> value);
+  public native void setSourceIdsList(JsArray<TableReference> value);
 
   @JsOverlay
-  public final void setSourceidsList(TableReference[] value) {
-    setSourceidsList(Js.<JsArray<TableReference>>uncheckedCast(value));
+  public final void setSourceIdsList(TableReference[] value) {
+    setSourceIdsList(Js.<JsArray<TableReference>>uncheckedCast(value));
   }
 
   public native MergeTablesRequest.ToObjectReturnType0 toObject();

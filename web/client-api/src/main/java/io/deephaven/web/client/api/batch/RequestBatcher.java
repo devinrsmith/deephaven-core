@@ -4,8 +4,8 @@ import elemental2.dom.CustomEventInit;
 import elemental2.dom.DomGlobal;
 import elemental2.promise.Promise;
 import elemental2.promise.Promise.PromiseExecutorCallbackFn.RejectCallbackFn;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.grpcweb.grpc.Code;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.BatchTableRequest;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.ExportedTableCreationResponse;
 import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb.TableReference;
@@ -56,7 +56,7 @@ public class RequestBatcher {
     public BatchTableRequest buildRequest() {
         createOps();
         final BatchTableRequest request = new BatchTableRequest();
-        request.setOpList(builder.serializable());
+        request.setOpsList(builder.serializable());
         return request;
     }
 
@@ -194,7 +194,7 @@ public class RequestBatcher {
             }
             onSend.clear();
             sent = true;
-            if (request.getOpList().length == 0) {
+            if (request.getOpsList().length == 0) {
                 // Since this is an empty request, there are no "interested" tables as we normally would define them,
                 // so we can only operate on the root table object
                 // No server call needed - we need to examine the "before" state and fire events based on that.
@@ -237,17 +237,17 @@ public class RequestBatcher {
             ResponseStreamWrapper<ExportedTableCreationResponse> batchStream = ResponseStreamWrapper.of(connection.tableServiceClient().batch(request, connection.metadata()));
             batchStream.onData(response -> {
                 DomGlobal.console.log("onData", this, request.toObject(), response.toObject());
-                TableReference resultid = response.getResultid();
+                TableReference resultid = response.getResultId();
                 if (!resultid.hasTicket()) {
                     // thanks for telling us, but we don't at this time have a nice way to indicate this
                     return;
                 }
                 Ticket ticket = resultid.getTicket();
                 if (!response.getSuccess()) {
-                    String fail = response.getErrorinfo();
+                    String fail = response.getErrorInfo();
 
                     // any table which has that state active should fire a failed event
-                    ClientTableState state = allStates().filter(cts -> cts.getHandle().makeTicket().getId_asB64().equals(ticket.getId_asB64())).first();
+                    ClientTableState state = allStates().filter(cts -> cts.getHandle().makeTicket().getTicket_asB64().equals(ticket.getTicket_asB64())).first();
                     state.getHandle().setState(TableTicket.State.FAILED);
                     for (JsTable table : allInterestedTables().filter(t -> t.state() == state)) {
                         // fire the failed event
@@ -261,7 +261,7 @@ public class RequestBatcher {
                 }
 
                 // any table which has that state active should fire a failed event
-                ClientTableState state = allStates().filter(cts -> cts.getHandle().makeTicket().getId_asB64().equals(ticket.getId_asB64())).first();
+                ClientTableState state = allStates().filter(cts -> cts.getHandle().makeTicket().getTicket_asB64().equals(ticket.getTicket_asB64())).first();
 //                state.getHandle().setState(TableTicket.State.EXPORTED);
                 for (JsTable table : allInterestedTables().filter(t -> t.state() == state)) {
                     // check what state it was in previously to use for firing an event

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  *<br> =====================================================================================================================
  *<br>
- *<br> Building block for Iris DB file-based tables, with helper methods for discovering locations and their sizes.
+ *<br> Building block for Deephaven file-based tables, with helper methods for discovering locations and their sizes.
  *<br>
  *<br> ================================================= INTERFACE =========================================================
  *<br>
@@ -56,8 +56,6 @@ import org.jetbrains.annotations.NotNull;
  *<br> Future work may allow more fields from TableLocationKey or TableLocationState to be accessed as columns.
  *<br>
  *<br> =====================================================================================================================
- *
- * @IncludeAll
  */
 public interface TableLocation<CLT extends ColumnLocation> extends TableLocationKey, TableLocationState {
 

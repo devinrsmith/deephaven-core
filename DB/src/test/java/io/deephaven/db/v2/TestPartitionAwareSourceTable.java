@@ -8,7 +8,6 @@ import io.deephaven.base.Pair;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.db.tables.ColumnDefinition;
-import io.deephaven.db.tables.DefaultColumnDefinition;
 import io.deephaven.db.tables.DataColumn;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.TableDefinition;
@@ -126,7 +125,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
         listener = mock(ShiftAwareListener.class);
 
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(with(true), with(equal(TABLE_DEFINITION.getColumns())));
+            oneOf(componentFactory).createColumnSourceManager(with(true), with(ColumnToCodecMappings.EMPTY), with(equal(TABLE_DEFINITION.getColumns())));
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
         }});
@@ -404,7 +403,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
         // Test 1: Drop a column
         // Setup the table
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(with(true), with(equal(includedColumns1)));
+            oneOf(componentFactory).createColumnSourceManager(with(true), with(ColumnToCodecMappings.EMPTY), with(equal(includedColumns1)));
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
         }});
@@ -424,7 +423,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
             will(returnValue(Index.FACTORY.getEmptyIndex()));
             oneOf(columnSourceManager).getColumnSources();
             will(returnValue(
-                    Arrays.stream(includedColumns1).collect(Collectors.toMap(DefaultColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
+                    Arrays.stream(includedColumns1).collect(Collectors.toMap(ColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
         }});
         assertEquals(NUM_COLUMNS - 1, dropColumnsResult1.getColumnSources().size());
         assertIsSatisfied();
@@ -440,7 +439,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
                 DOUBLE_COLUMN_DEFINITION
         };
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(with(true), with(equal(includedColumns2)));
+            oneOf(componentFactory).createColumnSourceManager(with(true), with(ColumnToCodecMappings.EMPTY), with(equal(includedColumns2)));
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
         }});
@@ -460,7 +459,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
             will(returnValue(Index.FACTORY.getEmptyIndex()));
             oneOf(columnSourceManager).getColumnSources();
             will(returnValue(
-                    Arrays.stream(includedColumns2).collect(Collectors.toMap(DefaultColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
+                    Arrays.stream(includedColumns2).collect(Collectors.toMap(ColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
         }});
         assertEquals(NUM_COLUMNS - 2, dropColumnsResult2.getColumnSources().size());
         assertIsSatisfied();
@@ -485,7 +484,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
                 PARTITIONING_COLUMN_DEFINITION,
         };
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(with(true), with(equal(includedColumns3)));
+            oneOf(componentFactory).createColumnSourceManager(with(true), with(ColumnToCodecMappings.EMPTY), with(equal(includedColumns3)));
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
         }});
@@ -505,7 +504,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
             will(returnValue(Index.FACTORY.getEmptyIndex()));
             oneOf(columnSourceManager).getColumnSources();
             will(returnValue(
-                    Arrays.stream(includedColumns3).collect(Collectors.toMap(DefaultColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
+                    Arrays.stream(includedColumns3).collect(Collectors.toMap(ColumnDefinition::getName, cd -> dataTypeToColumnSource.get(cd.getDataType()), Assert::neverInvoked, LinkedHashMap::new))));
         }});
         assertEquals(NUM_COLUMNS - 4, viewResult1.getColumnSources().size());
         assertIsSatisfied();
@@ -563,7 +562,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
     public void testWhereDate() {
         doInitializeCheck(tableLocations, makePassingLocations(5), false, false);
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(true, TABLE_DEFINITION.getColumns());
+            oneOf(componentFactory).createColumnSourceManager(true, ColumnToCodecMappings.EMPTY, TABLE_DEFINITION.getColumns());
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
         }});
@@ -613,7 +612,7 @@ public class TestPartitionAwareSourceTable extends LiveTableTestCase {
     public void testWhereDateSize() {
         doInitializeCheck(tableLocations, makePassingLocations(5), false, false);
         checking(new Expectations() {{
-            oneOf(componentFactory).createColumnSourceManager(true, TABLE_DEFINITION.getColumns());
+            oneOf(componentFactory).createColumnSourceManager(true, ColumnToCodecMappings.EMPTY, TABLE_DEFINITION.getColumns());
             will(returnValue(columnSourceManager));
             oneOf(columnSourceManager).disableGrouping();
             allowing(columnSources[3]).getInt(with(any(long.class)));

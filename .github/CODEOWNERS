@@ -9,4 +9,12 @@
 # security implications.
 #
 # See https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-/.github/workflows/ @devinrsmith
+/.github/workflows/ @devinrsmith @jcferretti @JamesXNelson
+
+CODE_OF_CONDUCT.md @chipkent
+CONTRIBUTING.md @chipkent
+LICENSE.md @chipkent
+NOTICE.md @chipkent
+README.md @chipkent @rcaudy
+TRIAGE.md @chipkent
+/licenses @chipkent

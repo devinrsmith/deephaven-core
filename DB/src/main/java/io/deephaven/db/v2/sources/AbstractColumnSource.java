@@ -38,9 +38,6 @@ import java.util.stream.Collectors;
 
 import static io.deephaven.db.v2.sources.ArrayBackedColumnSource.USE_RANGES_AVERAGE_RUN_LENGTH;
 
-/**
- * @IncludeAll
- */
 public abstract class AbstractColumnSource<T> implements ColumnSource<T>, Serializable {
 
     private static final long serialVersionUID = 8003280177657671273L;
@@ -54,7 +51,7 @@ public abstract class AbstractColumnSource<T> implements ColumnSource<T>, Serial
         this(type, Object.class);
     }
 
-    public AbstractColumnSource(@NotNull final Class<T> type, @Nullable final Class elementType) {
+    public AbstractColumnSource(@NotNull final Class<T> type, @Nullable final Class<?> elementType) {
         final Class unboxedType = TypeUtils.getUnboxedType(type);
         //noinspection unchecked
         this.type = (unboxedType != null && type != Boolean.class && type != boolean.class ? unboxedType : type);

@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,11 @@ public class OpenDocumentRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType of(
+        static OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -48,42 +48,43 @@ public class OpenDocumentRequest {
       }
 
       @JsOverlay
-      static OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType create() {
+      static OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType getId();
+      OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TextdocumentFieldType {
+    public interface TextDocumentFieldType {
       @JsOverlay
-      static OpenDocumentRequest.ToObjectReturnType.TextdocumentFieldType create() {
+      static OpenDocumentRequest.ToObjectReturnType.TextDocumentFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      String getLanguageid();
+      String getLanguageId();
 
       @JsProperty
       String getText();
@@ -95,7 +96,7 @@ public class OpenDocumentRequest {
       double getVersion();
 
       @JsProperty
-      void setLanguageid(String languageid);
+      void setLanguageId(String languageId);
 
       @JsProperty
       void setText(String text);
@@ -113,26 +114,26 @@ public class OpenDocumentRequest {
     }
 
     @JsProperty
-    OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType getConsoleid();
+    OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    OpenDocumentRequest.ToObjectReturnType.TextdocumentFieldType getTextdocument();
+    OpenDocumentRequest.ToObjectReturnType.TextDocumentFieldType getTextDocument();
 
     @JsProperty
-    void setConsoleid(OpenDocumentRequest.ToObjectReturnType.ConsoleidFieldType consoleid);
+    void setConsoleId(OpenDocumentRequest.ToObjectReturnType.ConsoleIdFieldType consoleId);
 
     @JsProperty
-    void setTextdocument(OpenDocumentRequest.ToObjectReturnType.TextdocumentFieldType textdocument);
+    void setTextDocument(OpenDocumentRequest.ToObjectReturnType.TextDocumentFieldType textDocument);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType of(
+        static OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -159,42 +160,43 @@ public class OpenDocumentRequest {
       }
 
       @JsOverlay
-      static OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType create() {
+      static OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType getId();
+      OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TextdocumentFieldType {
+    public interface TextDocumentFieldType {
       @JsOverlay
-      static OpenDocumentRequest.ToObjectReturnType0.TextdocumentFieldType create() {
+      static OpenDocumentRequest.ToObjectReturnType0.TextDocumentFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      String getLanguageid();
+      String getLanguageId();
 
       @JsProperty
       String getText();
@@ -206,7 +208,7 @@ public class OpenDocumentRequest {
       double getVersion();
 
       @JsProperty
-      void setLanguageid(String languageid);
+      void setLanguageId(String languageId);
 
       @JsProperty
       void setText(String text);
@@ -224,17 +226,17 @@ public class OpenDocumentRequest {
     }
 
     @JsProperty
-    OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType getConsoleid();
+    OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    OpenDocumentRequest.ToObjectReturnType0.TextdocumentFieldType getTextdocument();
+    OpenDocumentRequest.ToObjectReturnType0.TextDocumentFieldType getTextDocument();
 
     @JsProperty
-    void setConsoleid(OpenDocumentRequest.ToObjectReturnType0.ConsoleidFieldType consoleid);
+    void setConsoleId(OpenDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType consoleId);
 
     @JsProperty
-    void setTextdocument(
-        OpenDocumentRequest.ToObjectReturnType0.TextdocumentFieldType textdocument);
+    void setTextDocument(
+        OpenDocumentRequest.ToObjectReturnType0.TextDocumentFieldType textDocument);
   }
 
   public static native OpenDocumentRequest deserializeBinary(Uint8Array bytes);
@@ -247,27 +249,27 @@ public class OpenDocumentRequest {
   public static native OpenDocumentRequest.ToObjectReturnType toObject(
       boolean includeInstance, OpenDocumentRequest msg);
 
-  public native void clearConsoleid();
+  public native void clearConsoleId();
 
-  public native void clearTextdocument();
+  public native void clearTextDocument();
 
-  public native Ticket getConsoleid();
+  public native Ticket getConsoleId();
 
-  public native TextDocumentItem getTextdocument();
+  public native TextDocumentItem getTextDocument();
 
-  public native boolean hasConsoleid();
+  public native boolean hasConsoleId();
 
-  public native boolean hasTextdocument();
+  public native boolean hasTextDocument();
 
   public native Uint8Array serializeBinary();
 
-  public native void setConsoleid();
+  public native void setConsoleId();
 
-  public native void setConsoleid(Ticket value);
+  public native void setConsoleId(Ticket value);
 
-  public native void setTextdocument();
+  public native void setTextDocument();
 
-  public native void setTextdocument(TextDocumentItem value);
+  public native void setTextDocument(TextDocumentItem value);
 
   public native OpenDocumentRequest.ToObjectReturnType0 toObject();
 

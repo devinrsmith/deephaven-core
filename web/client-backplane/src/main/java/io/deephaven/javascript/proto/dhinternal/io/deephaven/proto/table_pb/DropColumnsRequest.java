@@ -2,7 +2,7 @@ package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.table_pb;
 
 import elemental2.core.JsArray;
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -18,120 +18,11 @@ public class DropColumnsRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
+    public interface ResultIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static DropColumnsRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType of(Object o) {
-          return Js.cast(o);
-        }
-
-        @JsOverlay
-        default String asString() {
-          return Js.asString(this);
-        }
-
-        @JsOverlay
-        default Uint8Array asUint8Array() {
-          return Js.cast(this);
-        }
-
-        @JsOverlay
-        default boolean isString() {
-          return (Object) this instanceof String;
-        }
-
-        @JsOverlay
-        default boolean isUint8Array() {
-          return (Object) this instanceof Uint8Array;
-        }
-      }
-
-      @JsOverlay
-      static DropColumnsRequest.ToObjectReturnType.ResultidFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      DropColumnsRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType getId();
-
-      @JsProperty
-      void setId(DropColumnsRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType id);
-
-      @JsOverlay
-      default void setId(String id) {
-        setId(
-            Js
-                .<DropColumnsRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
-      }
-
-      @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
-            Js
-                .<DropColumnsRequest.ToObjectReturnType.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
-      }
-    }
-
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidFieldType {
-      @JsOverlay
-      static DropColumnsRequest.ToObjectReturnType.SourceidFieldType create() {
-        return Js.uncheckedCast(JsPropertyMap.of());
-      }
-
-      @JsProperty
-      double getBatchoffset();
-
-      @JsProperty
-      Object getTicket();
-
-      @JsProperty
-      void setBatchoffset(double batchoffset);
-
-      @JsProperty
-      void setTicket(Object ticket);
-    }
-
-    @JsOverlay
-    static DropColumnsRequest.ToObjectReturnType create() {
-      return Js.uncheckedCast(JsPropertyMap.of());
-    }
-
-    @JsProperty
-    JsArray<String> getColumnnamesList();
-
-    @JsProperty
-    DropColumnsRequest.ToObjectReturnType.ResultidFieldType getResultid();
-
-    @JsProperty
-    DropColumnsRequest.ToObjectReturnType.SourceidFieldType getSourceid();
-
-    @JsProperty
-    void setColumnnamesList(JsArray<String> columnnamesList);
-
-    @JsOverlay
-    default void setColumnnamesList(String[] columnnamesList) {
-      setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
-    }
-
-    @JsProperty
-    void setResultid(DropColumnsRequest.ToObjectReturnType.ResultidFieldType resultid);
-
-    @JsProperty
-    void setSourceid(DropColumnsRequest.ToObjectReturnType.SourceidFieldType sourceid);
-  }
-
-  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-  public interface ToObjectReturnType0 {
-    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ResultidFieldType {
-      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
-        @JsOverlay
-        static DropColumnsRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType of(
+        static DropColumnsRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -158,48 +49,160 @@ public class DropColumnsRequest {
       }
 
       @JsOverlay
-      static DropColumnsRequest.ToObjectReturnType0.ResultidFieldType create() {
+      static DropColumnsRequest.ToObjectReturnType.ResultIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      DropColumnsRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType getId();
+      DropColumnsRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(DropColumnsRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType id);
+      void setTicket(
+          DropColumnsRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<DropColumnsRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<DropColumnsRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<DropColumnsRequest.ToObjectReturnType0.ResultidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<DropColumnsRequest.ToObjectReturnType.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface SourceidFieldType {
+    public interface SourceIdFieldType {
       @JsOverlay
-      static DropColumnsRequest.ToObjectReturnType0.SourceidFieldType create() {
+      static DropColumnsRequest.ToObjectReturnType.SourceIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      double getBatchoffset();
+      double getBatchOffset();
 
       @JsProperty
       Object getTicket();
 
       @JsProperty
-      void setBatchoffset(double batchoffset);
+      void setBatchOffset(double batchOffset);
+
+      @JsProperty
+      void setTicket(Object ticket);
+    }
+
+    @JsOverlay
+    static DropColumnsRequest.ToObjectReturnType create() {
+      return Js.uncheckedCast(JsPropertyMap.of());
+    }
+
+    @JsProperty
+    JsArray<String> getColumnNamesList();
+
+    @JsProperty
+    DropColumnsRequest.ToObjectReturnType.ResultIdFieldType getResultId();
+
+    @JsProperty
+    DropColumnsRequest.ToObjectReturnType.SourceIdFieldType getSourceId();
+
+    @JsProperty
+    void setColumnNamesList(JsArray<String> columnNamesList);
+
+    @JsOverlay
+    default void setColumnNamesList(String[] columnNamesList) {
+      setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
+    }
+
+    @JsProperty
+    void setResultId(DropColumnsRequest.ToObjectReturnType.ResultIdFieldType resultId);
+
+    @JsProperty
+    void setSourceId(DropColumnsRequest.ToObjectReturnType.SourceIdFieldType sourceId);
+  }
+
+  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+  public interface ToObjectReturnType0 {
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface ResultIdFieldType {
+      @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+      public interface GetTicketUnionType {
+        @JsOverlay
+        static DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType of(
+            Object o) {
+          return Js.cast(o);
+        }
+
+        @JsOverlay
+        default String asString() {
+          return Js.asString(this);
+        }
+
+        @JsOverlay
+        default Uint8Array asUint8Array() {
+          return Js.cast(this);
+        }
+
+        @JsOverlay
+        default boolean isString() {
+          return (Object) this instanceof String;
+        }
+
+        @JsOverlay
+        default boolean isUint8Array() {
+          return (Object) this instanceof Uint8Array;
+        }
+      }
+
+      @JsOverlay
+      static DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType getTicket();
+
+      @JsProperty
+      void setTicket(
+          DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType ticket);
+
+      @JsOverlay
+      default void setTicket(String ticket) {
+        setTicket(
+            Js
+                .<DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
+      }
+
+      @JsOverlay
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
+            Js
+                .<DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
+      }
+    }
+
+    @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+    public interface SourceIdFieldType {
+      @JsOverlay
+      static DropColumnsRequest.ToObjectReturnType0.SourceIdFieldType create() {
+        return Js.uncheckedCast(JsPropertyMap.of());
+      }
+
+      @JsProperty
+      double getBatchOffset();
+
+      @JsProperty
+      Object getTicket();
+
+      @JsProperty
+      void setBatchOffset(double batchOffset);
 
       @JsProperty
       void setTicket(Object ticket);
@@ -211,27 +214,27 @@ public class DropColumnsRequest {
     }
 
     @JsProperty
-    JsArray<String> getColumnnamesList();
+    JsArray<String> getColumnNamesList();
 
     @JsProperty
-    DropColumnsRequest.ToObjectReturnType0.ResultidFieldType getResultid();
+    DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType getResultId();
 
     @JsProperty
-    DropColumnsRequest.ToObjectReturnType0.SourceidFieldType getSourceid();
+    DropColumnsRequest.ToObjectReturnType0.SourceIdFieldType getSourceId();
 
     @JsProperty
-    void setColumnnamesList(JsArray<String> columnnamesList);
+    void setColumnNamesList(JsArray<String> columnNamesList);
 
     @JsOverlay
-    default void setColumnnamesList(String[] columnnamesList) {
-      setColumnnamesList(Js.<JsArray<String>>uncheckedCast(columnnamesList));
+    default void setColumnNamesList(String[] columnNamesList) {
+      setColumnNamesList(Js.<JsArray<String>>uncheckedCast(columnNamesList));
     }
 
     @JsProperty
-    void setResultid(DropColumnsRequest.ToObjectReturnType0.ResultidFieldType resultid);
+    void setResultId(DropColumnsRequest.ToObjectReturnType0.ResultIdFieldType resultId);
 
     @JsProperty
-    void setSourceid(DropColumnsRequest.ToObjectReturnType0.SourceidFieldType sourceid);
+    void setSourceId(DropColumnsRequest.ToObjectReturnType0.SourceIdFieldType sourceId);
   }
 
   public static native DropColumnsRequest deserializeBinary(Uint8Array bytes);
@@ -244,42 +247,42 @@ public class DropColumnsRequest {
   public static native DropColumnsRequest.ToObjectReturnType toObject(
       boolean includeInstance, DropColumnsRequest msg);
 
-  public native String addColumnnames(String value, double index);
+  public native String addColumnNames(String value, double index);
 
-  public native String addColumnnames(String value);
+  public native String addColumnNames(String value);
 
-  public native void clearColumnnamesList();
+  public native void clearColumnNamesList();
 
-  public native void clearResultid();
+  public native void clearResultId();
 
-  public native void clearSourceid();
+  public native void clearSourceId();
 
-  public native JsArray<String> getColumnnamesList();
+  public native JsArray<String> getColumnNamesList();
 
-  public native Ticket getResultid();
+  public native Ticket getResultId();
 
-  public native TableReference getSourceid();
+  public native TableReference getSourceId();
 
-  public native boolean hasResultid();
+  public native boolean hasResultId();
 
-  public native boolean hasSourceid();
+  public native boolean hasSourceId();
 
   public native Uint8Array serializeBinary();
 
-  public native void setColumnnamesList(JsArray<String> value);
+  public native void setColumnNamesList(JsArray<String> value);
 
   @JsOverlay
-  public final void setColumnnamesList(String[] value) {
-    setColumnnamesList(Js.<JsArray<String>>uncheckedCast(value));
+  public final void setColumnNamesList(String[] value) {
+    setColumnNamesList(Js.<JsArray<String>>uncheckedCast(value));
   }
 
-  public native void setResultid();
+  public native void setResultId();
 
-  public native void setResultid(Ticket value);
+  public native void setResultId(Ticket value);
 
-  public native void setSourceid();
+  public native void setSourceId();
 
-  public native void setSourceid(TableReference value);
+  public native void setSourceId(TableReference value);
 
   public native DropColumnsRequest.ToObjectReturnType0 toObject();
 

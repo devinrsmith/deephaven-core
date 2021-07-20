@@ -8,7 +8,8 @@ import io.deephaven.base.StringUtils;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
 import io.deephaven.configuration.Configuration;
-import io.deephaven.db.util.PythonScopeJpyImpl;
+import io.deephaven.db.tables.select.Param;
+import io.deephaven.db.tables.select.QueryScope;
 import io.deephaven.util.type.TypeUtils;
 import com.github.javaparser.ExpressionParser;
 import com.github.javaparser.ast.*;
@@ -34,6 +35,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.deephaven.db.util.PythonScopeJpyImpl.*;
 
 public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLanguageParser.VisitArgs> {
 
@@ -356,15 +359,16 @@ public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLangu
         final ArrayList<Method> acceptableMethods = new ArrayList<>();
 
         if (scope==null){
-            for (final Class classImport : staticImports){
-                for (Method method : classImport.getDeclaredMethods()){
+            for (final Class classImport : staticImports) {
+                for (Method method : classImport.getDeclaredMethods()) {
                     possiblyAddExecutable(acceptableMethods, method, methodName, paramTypes, parameterizedTypes);
                 }
             }
-            // for Python func call syntax without the explicit 'call' keyword, check if it is defined in Query scope
+            // for Python function/Groovy closure call syntax without the explicit 'call' keyword, check if it is defined in Query scope
             if (acceptableMethods.size() == 0) {
-                if ( variables.get(methodName) == PythonScopeJpyImpl.CallableWrapper.class) {
-                    for (Method method : PythonScopeJpyImpl.CallableWrapper.class.getDeclaredMethods()) {
+                final Class methodClass = variables.get(methodName);
+                if (methodClass != null && isPotentialImplicitCall(methodClass)) {
+                    for (Method method : methodClass.getMethods()) {
                         possiblyAddExecutable(acceptableMethods, method, "call", paramTypes, parameterizedTypes);
                     }
                 }
@@ -376,7 +380,7 @@ public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLangu
         else{
             if (scope == org.jpy.PyObject.class) {
                 // This is a Python method call, assume it exists and wrap in PythonScopeJpyImpl.CallableWrapper
-                for (Method method : PythonScopeJpyImpl.CallableWrapper.class.getDeclaredMethods()) {
+                for (Method method : CallableWrapper.class.getDeclaredMethods()) {
                     possiblyAddExecutable(acceptableMethods, method, "call", paramTypes, parameterizedTypes);
                 }
             } else {
@@ -404,6 +408,10 @@ public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLangu
         }
 
         return bestMethod;
+    }
+
+    private static boolean isPotentialImplicitCall(Class methodClass) {
+        return CallableWrapper.class.isAssignableFrom(methodClass) || methodClass == groovy.lang.Closure.class;
     }
 
     private Class getMethodReturnType(Class scope, String methodName, Class paramTypes[], Class parameterizedTypes[][]){
@@ -1523,10 +1531,15 @@ public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLangu
 
         //now do some parameter conversions...
 
+        Class methodClass = variables.get(n.getName());
+        if (methodClass == NumbaCallableWrapper.class) {
+            checkPyNumbaVectorizedFunc(n, expressions, expressionTypes);
+        }
+
         expressions=convertParameters(method, argumentTypes, expressionTypes, parameterizedTypes, expressions);
 
-        if (method.getDeclaringClass() == PythonScopeJpyImpl.CallableWrapper.class) {
-            if (scope == null) { // python func call
+        if (isPotentialImplicitCall(method.getDeclaringClass())) {
+            if (scope == null) { // python func call or Groovy closure call
                /*  python func call
                     1. the func is defined at the main module level and already wrapped in CallableWrapper
                     2. the func will be called via CallableWrapper.call() method
@@ -1560,6 +1573,40 @@ public final class DBLanguageParser extends GenericVisitorAdapter<Class, DBLangu
         }
 
         return calculateMethodReturnTypeUsingGenerics(method, expressionTypes, parameterizedTypes);
+    }
+
+    private void checkPyNumbaVectorizedFunc(MethodCallExpr n, Expression[] expressions, Class[] expressionTypes) {
+        // numba vectorized functions return arrays of primitive types. This will break the generated expression
+        // evaluation code that expects singular values. This check makes sure that numba vectorized functions must be
+        // used alone (or with cast only) as the entire expression.
+        if (n.getParentNode() != null && (n.getParentNode().getClass() != CastExpr.class || n.getParentNode().getParentNode() != null)) {
+            throw new RuntimeException("Numba vectorized function can't be used in an expression.");
+        }
+
+        final QueryScope queryScope = QueryScope.getScope();
+        for (Param param : queryScope.getParams(queryScope.getParamNames())) {
+            if (param.getName().equals(n.getName())) {
+                NumbaCallableWrapper numbaCallableWrapper = (NumbaCallableWrapper) param.getValue();
+                List<Class> params = numbaCallableWrapper.getParamTypes();
+                if (params.size() != expressions.length) {
+                    throw new RuntimeException("Numba vectorized function argument count mismatch: " + params.size() + " vs." + expressions.length);
+                }
+                for (int i = 0; i < expressions.length; i++) {
+                    if (!(expressions[i] instanceof NameExpr)) {
+                        throw new RuntimeException("Numba vectorized function arguments can only be columns.");
+                    }
+                    if (!isSafelyCoerceable(expressionTypes[i], params.get(i))) {
+                        throw new RuntimeException("Numba vectorized function argument type mismatch: " + expressionTypes[i].getSimpleName() + " -> " + params.get(i).getSimpleName());
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isSafelyCoerceable(Class expressionType, Class aClass) {
+        // TODO, numba does appear to check for type coercing at runtime, though no explicit rules exist.
+        // GH-709 is filed to address this at some point in the future.
+        return true;
     }
 
     public Class visit(ExpressionStmt n, VisitArgs printer) {

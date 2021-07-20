@@ -34,7 +34,7 @@ import static io.deephaven.db.v2.select.FormulaTestUtil.*;
 import static org.jpy.PyLib.getMainGlobals;
 import static org.junit.Assert.fail;
 
-@Ignore
+@Ignore// TODO (deephaven-core#734)
 public class TestConditionFilter extends PythonTest {
     static {
         if (ProcessEnvironment.tryGet() == null) {
@@ -280,10 +280,10 @@ public class TestConditionFilter extends PythonTest {
 
     @Test
     public void testLoadNumpyTwice() {
-        Assert.assertNotNull(PyModule.importModule("numba"));
+        Assert.assertNotNull(PyModule.importModule("deephaven/numba"));
         Assert.assertNotNull(PyModule.importModule("numpy"));
         Assert.assertNotNull(PyModule.importModule("deephaven.lang.vectorize_simple"));
-        Assert.assertNotNull(PyModule.importModule("numba"));
+        Assert.assertNotNull(PyModule.importModule("deephaven/numba"));
         Assert.assertNotNull(PyModule.importModule("numpy"));
         Assert.assertNotNull(PyModule.importModule("deephaven.lang.vectorize_simple"));
     }
@@ -378,12 +378,12 @@ public class TestConditionFilter extends PythonTest {
             validate(expression, keepIndex, dropIndex, FormulaParserConfiguration.Deephaven);
         }
         if (testPython) {
-            QueryScope currentScope = QueryScope.getDefaultInstance();
+            QueryScope currentScope = QueryScope.getScope();
             try {
                 if (pythonScope == null) {
                     pythonScope = new PythonDeephavenSession(new PythonScopeJpyImpl(
-                            getMainGlobals().asDict())).getQueryScope();
-                    QueryScope.setDefaultInstance(pythonScope);
+                            getMainGlobals().asDict())).newQueryScope();
+                    QueryScope.setScope(pythonScope);
                 }
                 for (Param param : currentScope.getParams(currentScope.getParamNames())) {
                     pythonScope.putParam(param.getName(),param.getValue());
@@ -391,7 +391,7 @@ public class TestConditionFilter extends PythonTest {
                 expression = expression.replaceAll("true", "True").replaceAll("false", "False");
                 validate(expression, keepIndex, dropIndex, FormulaParserConfiguration.Numba);
             } finally {
-                QueryScope.setDefaultInstance(currentScope);
+                QueryScope.setScope(currentScope);
             }
         }
 
@@ -436,12 +436,6 @@ public class TestConditionFilter extends PythonTest {
 
     private Index initCheck(String expression, FormulaParserConfiguration parser) {
         final SelectFilter conditionFilter = ConditionFilter.createConditionFilter(expression, parser);
-        conditionFilter.init(testDataTable.getDefinition());
-        return conditionFilter.filter(testDataTable.getIndex().clone(), testDataTable.getIndex(), testDataTable, false);
-    }
-
-    private Index initV3PythonCheck(String expression) {
-        PythonVectorFilter conditionFilter = new PythonVectorFilter(expression.replaceAll(" = ", " == "));
         conditionFilter.init(testDataTable.getDefinition());
         return conditionFilter.filter(testDataTable.getIndex().clone(), testDataTable.getIndex(), testDataTable, false);
     }

@@ -1,11 +1,9 @@
 import io.deephaven.tools.Tools
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.api.tasks.testing.logging.TestLogging
 
 configurations {
-    compile.extendsFrom irisDb
+    compile.extendsFrom dhDb
 
-    testCompile.extendsFrom irisDbTest, mxj, fishIoTest
+    testCompile.extendsFrom dhDbTest, mxj, fishIoTest
 
     testRuntime.extendsFrom fishDataGenerator
 
@@ -54,12 +52,12 @@ dependencies {
             project(':deephaven-jpy-ext'),
             project(':Parquet'),
             project(':DHProcess'),
-            project(':proto:proto-backplane-grpc'),
+            project(':proto:proto-backplane-grpc-util'),
             project(':log-factory'),
+            project(':open-api-lang-api'),
             project(':Container'),
+            project(':table-api'),
             "org.flywaydb:flyway-core:5.2.4",
-            'org.apache.arrow:arrow-vector:1.0.1',
-            'io.deephaven.barrage:barrage-format:0.1.1',
             'com.github.f4b6a3:uuid-creator:3.6.0'
 
     compileOnly 'javax.inject:javax.inject:1'
@@ -155,7 +153,7 @@ def createMainExecTask = {
     })
 }
 
-def createIrisTestExecTask = {
+def createDeephavenTestExecTask = {
     taskName, mainClass -> tasks.create(taskName, JavaExec, { JavaExec task ->
         new File("$rootDir/tmp/workspace").mkdirs()
         new File("$rootDir/tmp/logs").mkdirs()
@@ -177,17 +175,17 @@ def createIrisTestExecTask = {
     })
 }
 
-createIrisTestExecTask('sortKernelBenchmark', 'io.deephaven.db.v2.sort.SortKernelBenchmark')
-createIrisTestExecTask('partitionKernelBenchmark', 'io.deephaven.db.v2.sort.PartitionKernelBenchmark')
-createIrisTestExecTask('columnSourceFillBenchmark', 'io.deephaven.db.v2.sources.ColumnSourceFillBenchmark')
-createIrisTestExecTask('naturalJoinBenchmark', 'io.deephaven.benchmark.db.NaturalJoinBenchmark')
-createIrisTestExecTask('ajBenchmark', 'io.deephaven.benchmark.db.AjBenchmark')
-createIrisTestExecTask('matchFilterBenchmark', 'io.deephaven.benchmark.db.MatchFilterBenchmark')
-createIrisTestExecTask('rcsBenchmark', 'io.deephaven.benchmark.db.RegionedColumnSourceBenchmark')
-createIrisTestExecTask('byBenchmark', 'io.deephaven.benchmark.db.ByBenchmark')
-createIrisTestExecTask('sumByBenchmark', 'io.deephaven.benchmark.db.SumByBenchmark')
-createIrisTestExecTask('percentileByBenchmark', 'io.deephaven.benchmark.db.PercentileByBenchmark')
-createIrisTestExecTask('lastByBenchmark', 'io.deephaven.benchmark.db.LastByBenchmark')
+createDeephavenTestExecTask('sortKernelBenchmark', 'io.deephaven.db.v2.sort.SortKernelBenchmark')
+createDeephavenTestExecTask('partitionKernelBenchmark', 'io.deephaven.db.v2.sort.PartitionKernelBenchmark')
+createDeephavenTestExecTask('columnSourceFillBenchmark', 'io.deephaven.db.v2.sources.ColumnSourceFillBenchmark')
+createDeephavenTestExecTask('naturalJoinBenchmark', 'io.deephaven.benchmark.db.NaturalJoinBenchmark')
+createDeephavenTestExecTask('ajBenchmark', 'io.deephaven.benchmark.db.AjBenchmark')
+createDeephavenTestExecTask('matchFilterBenchmark', 'io.deephaven.benchmark.db.MatchFilterBenchmark')
+createDeephavenTestExecTask('rcsBenchmark', 'io.deephaven.benchmark.db.RegionedColumnSourceBenchmark')
+createDeephavenTestExecTask('byBenchmark', 'io.deephaven.benchmark.db.ByBenchmark')
+createDeephavenTestExecTask('sumByBenchmark', 'io.deephaven.benchmark.db.SumByBenchmark')
+createDeephavenTestExecTask('percentileByBenchmark', 'io.deephaven.benchmark.db.PercentileByBenchmark')
+createDeephavenTestExecTask('lastByBenchmark', 'io.deephaven.benchmark.db.LastByBenchmark')
 
 createTestExecTask('replicateTuples', 'io.deephaven.db.v2.tuples.TupleSourceCodeGenerator')
 createTestExecTask('replicateSortKernelTests', 'io.deephaven.db.v2.sort.timsort.ReplicateSortKernelTests')
@@ -199,7 +197,7 @@ createMainExecTask('replicateHashing', 'io.deephaven.db.v2.hashing.ReplicateHash
 createMainExecTask('replicateStampKernel', 'io.deephaven.db.v2.join.stamp.ReplicateStampKernel')
 createMainExecTask('replicateDupCompactKernel', 'io.deephaven.db.v2.join.dupcompact.ReplicateDupCompactKernel')
 createMainExecTask('replicateDupExpandKernel', 'io.deephaven.db.v2.join.dupexpand.ReplicateDupExpandKernel');
-createIrisTestExecTask('replicateHashTable', 'io.deephaven.db.v2.ReplicateHashTable')
+createDeephavenTestExecTask('replicateHashTable', 'io.deephaven.db.v2.ReplicateHashTable')
 createMainExecTask('replicateColumnChunkPageStores', 'io.deephaven.db.v2.locations.parquet.ReplicateColumnChunkPageStores')
 createMainExecTask('replicateReverseKernel', 'io.deephaven.db.v2.utils.reverse.ReplicateReverseKernel')
 createMainExecTask('replicateSegmentedSortedArray', 'io.deephaven.db.v2.ssa.ReplicateSegmentedSortedArray')
@@ -215,7 +213,6 @@ createMainExecTask('replicateDbArrayColumnWrappers', 'io.deephaven.db.v2.dbarray
 createMainExecTask('replicateCopyKernel', 'io.deephaven.db.v2.utils.copy.ReplicateCopyKernel')
 createMainExecTask('replicateOperators', 'io.deephaven.db.v2.by.ReplicateOperators')
 createMainExecTask('replicateFreezeBy', 'io.deephaven.db.v2.utils.freezeby.ReplicateFreezeBy')
-createMainExecTask('replicateBarrageUtils', 'io.deephaven.db.backplane.barrage.chunk.ReplicateBarrageUtils')
 
 task replicate {
     dependsOn 'replicateTuples'
@@ -242,7 +239,6 @@ task replicate {
     dependsOn 'replicateCopyKernel'
     dependsOn 'replicateOperators'
     dependsOn 'replicateFreezeBy'
-    dependsOn 'replicateBarrageUtils'
 }
 
 test {
@@ -262,18 +258,20 @@ test {
 // Adds a custom testParallel task which is allowed to run tests in parallel.
 // Add @Category(ParallelTest.class) to have your tests run in parallel
 // Note: Supports JUnit4 or greater only (you use @Test annotations to mark test methods).
-// testParallel: parallel, not a db test, not isolated
-TestTools.addDbTest(project, 'Parallel', true)
+
+// The Parallel tests are now functionally equivalent to the Serial test logic
+// TODO (deephaven-core#643): Fix "leaking" parallel tests
+TestTools.addDbTest(project, 'Parallel', false, false, true)
 // testSerial: non-parallel, not a db test, isolated
 TestTools.addDbTest(project, 'Serial', false, false, true)
 // testOutOfBand: non-parallel, not a db test, not isolated
 TestTools.addDbTest(project, 'OutOfBand', false, false, false)
 
+// The configuration of this with respect to the build environment isn't very tight.
+// Ideally, the build environment would be able to configure this as appropriate.
 tasks.testParallel.maxHeapSize = '6g'
 tasks.testSerial.maxHeapSize = '6g'
 tasks.testOutOfBand.maxHeapSize = '6g'
 tasks.test.maxHeapSize = '6g'
-// consider giving all our tests a mountain of RAM:
-// tasks.withType(Test)*.maxHeapSize = '12g'
 
 Tools.applyAnnotationProcessorPathHacks(project, true)

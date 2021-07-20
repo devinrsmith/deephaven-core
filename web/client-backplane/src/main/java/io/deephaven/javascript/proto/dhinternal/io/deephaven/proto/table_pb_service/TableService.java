@@ -13,6 +13,50 @@ import jsinterop.base.JsPropertyMap;
     namespace = JsPackage.GLOBAL)
 public class TableService {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+  public interface AsOfJoinTablesType {
+    @JsOverlay
+    static TableService.AsOfJoinTablesType create() {
+      return Js.uncheckedCast(JsPropertyMap.of());
+    }
+
+    @JsProperty
+    String getMethodName();
+
+    @JsProperty
+    Object getRequestType();
+
+    @JsProperty
+    Object getResponseType();
+
+    @JsProperty
+    Object getService();
+
+    @JsProperty
+    boolean isRequestStream();
+
+    @JsProperty
+    boolean isResponseStream();
+
+    @JsProperty
+    void setMethodName(String methodName);
+
+    @JsProperty
+    void setRequestStream(boolean requestStream);
+
+    @JsProperty
+    void setRequestType(Object requestType);
+
+    @JsProperty
+    void setResponseStream(boolean responseStream);
+
+    @JsProperty
+    void setResponseType(Object responseType);
+
+    @JsProperty
+    void setService(Object service);
+  }
+
+  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface BatchType {
     @JsOverlay
     static TableService.BatchType create() {
@@ -500,6 +544,50 @@ public class TableService {
   public interface MergeTablesType {
     @JsOverlay
     static TableService.MergeTablesType create() {
+      return Js.uncheckedCast(JsPropertyMap.of());
+    }
+
+    @JsProperty
+    String getMethodName();
+
+    @JsProperty
+    Object getRequestType();
+
+    @JsProperty
+    Object getResponseType();
+
+    @JsProperty
+    Object getService();
+
+    @JsProperty
+    boolean isRequestStream();
+
+    @JsProperty
+    boolean isResponseStream();
+
+    @JsProperty
+    void setMethodName(String methodName);
+
+    @JsProperty
+    void setRequestStream(boolean requestStream);
+
+    @JsProperty
+    void setRequestType(Object requestType);
+
+    @JsProperty
+    void setResponseStream(boolean responseStream);
+
+    @JsProperty
+    void setResponseType(Object responseType);
+
+    @JsProperty
+    void setService(Object service);
+  }
+
+  @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
+  public interface RunChartDownsampleType {
+    @JsOverlay
+    static TableService.RunChartDownsampleType create() {
       return Js.uncheckedCast(JsPropertyMap.of());
     }
 
@@ -1068,29 +1156,31 @@ public class TableService {
     void setService(Object service);
   }
 
-  public static TableService.BatchType batch;
-  public static TableService.ComboAggregateType comboAggregate;
-  public static TableService.DropColumnsType dropColumns;
-  public static TableService.EmptyTableType emptyTable;
-  public static TableService.ExportedTableUpdatesType exportedTableUpdates;
-  public static TableService.FilterType filter;
-  public static TableService.FlattenType flatten;
-  public static TableService.HeadType head;
-  public static TableService.HeadByType headBy;
-  public static TableService.JoinTablesType joinTables;
-  public static TableService.LazyUpdateType lazyUpdate;
-  public static TableService.MergeTablesType mergeTables;
-  public static TableService.SelectType select;
-  public static TableService.SelectDistinctType selectDistinct;
+  public static TableService.AsOfJoinTablesType AsOfJoinTables;
+  public static TableService.BatchType Batch;
+  public static TableService.ComboAggregateType ComboAggregate;
+  public static TableService.DropColumnsType DropColumns;
+  public static TableService.EmptyTableType EmptyTable;
+  public static TableService.ExportedTableUpdatesType ExportedTableUpdates;
+  public static TableService.FilterType Filter;
+  public static TableService.FlattenType Flatten;
+  public static TableService.HeadType Head;
+  public static TableService.HeadByType HeadBy;
+  public static TableService.JoinTablesType JoinTables;
+  public static TableService.LazyUpdateType LazyUpdate;
+  public static TableService.MergeTablesType MergeTables;
+  public static TableService.RunChartDownsampleType RunChartDownsample;
+  public static TableService.SelectType Select;
+  public static TableService.SelectDistinctType SelectDistinct;
+  public static TableService.SnapshotType Snapshot;
+  public static TableService.SortType Sort;
+  public static TableService.TailType Tail;
+  public static TableService.TailByType TailBy;
+  public static TableService.TimeTableType TimeTable;
+  public static TableService.UngroupType Ungroup;
+  public static TableService.UnstructuredFilterType UnstructuredFilter;
+  public static TableService.UpdateType Update;
+  public static TableService.UpdateViewType UpdateView;
+  public static TableService.ViewType View;
   public static String serviceName;
-  public static TableService.SnapshotType snapshot;
-  public static TableService.SortType sort;
-  public static TableService.TailType tail;
-  public static TableService.TailByType tailBy;
-  public static TableService.TimeTableType timeTable;
-  public static TableService.UngroupType ungroup;
-  public static TableService.UnstructuredFilterType unstructuredFilter;
-  public static TableService.UpdateType update;
-  public static TableService.UpdateViewType updateView;
-  public static TableService.ViewType view;
 }

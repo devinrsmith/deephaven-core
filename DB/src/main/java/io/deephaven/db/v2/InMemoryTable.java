@@ -18,19 +18,20 @@ public class InMemoryTable extends QueryTable {
 
     public InMemoryTable(String columnNames[], Object arrayValues[]) {
         super(Index.FACTORY.getFlatIndex(Array.getLength(arrayValues[0])), createColumnsMap(columnNames, arrayValues));
-        this.definition.setStorageType(TableDefinition.STORAGETYPE_INMEMORY);
     }
 
     public InMemoryTable(TableDefinition definition, final int size) {
         super(Index.FACTORY.getFlatIndex( size ),
-                createColumnsMap(definition.getColumnNames().toArray(new String[definition.getColumnNames().size()]), Arrays.stream(definition.getColumns()).map(x -> Array.newInstance(x.getDataType(), size)).toArray(Object[]::new)));
-        this.definition.setStorageType(TableDefinition.STORAGETYPE_INMEMORY);
+                createColumnsMap(
+                        definition.getColumnNames().toArray(new String[definition.getColumnNames().size()]),
+                        Arrays.stream(definition.getColumns()).map(
+                                x -> Array.newInstance(x.getDataType(), size)).toArray(Object[]::new)));
     }
 
     private static Map<String, ColumnSource> createColumnsMap(String[] columnNames, Object[] arrayValues) {
         Map<String, ColumnSource> map = new LinkedHashMap<>();
         for (int i = 0; i < columnNames.length; i++) {
-            map.put(columnNames[i], ArrayBackedColumnSource.getMemoryColumnSource((arrayValues[i])));
+            map.put(columnNames[i], ArrayBackedColumnSource.getMemoryColumnSourceUntyped((arrayValues[i])));
         }
         return map;
     }

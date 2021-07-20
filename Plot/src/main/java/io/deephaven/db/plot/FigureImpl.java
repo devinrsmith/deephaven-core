@@ -17,7 +17,6 @@ import io.deephaven.db.plot.Chart;
 import io.deephaven.db.plot.Font;
 import io.deephaven.db.plot.PlotStyle;
 import io.deephaven.db.plot.Series;
-import io.deephaven.db.plot.Theme;
 import io.deephaven.db.plot.axisformatters.AxisFormat;
 import io.deephaven.db.plot.axistransformations.AxisTransform;
 import io.deephaven.db.plot.datasets.DataSeries;
@@ -236,17 +235,13 @@ public class FigureImpl implements io.deephaven.db.plot.Figure {
 
 
     /**
-     * Creates a displayable figure that can be used to construct a {@link DisplayableFigureDescriptor}.
+     * Creates a displayable figure that can be sent to the client.
      *
      * @return a displayable version of the figure
      */
     @Override public FigureImpl show() {
         final BaseFigureImpl fc = onDisplay();
         return new FigureWidget(make(fc));
-    }
-
-    @Override public DisplayableFigureDescriptor makeDescriptor() {
-        throw new UnsupportedOperationException("Use show() in order to get a Figure that supports making descriptors");
     }
 
     @Override public  FigureImpl save( java.lang.String saveLocation ) {
@@ -2681,18 +2676,6 @@ public class FigureImpl implements io.deephaven.db.plot.Figure {
         final BaseFigureImpl fc = this.figure.copy();
         final ChartImpl chart = (ChartImpl) chart(fc).span( rowSpan, colSpan);
         return make(chart);
-    }
-
-    @Override public  FigureImpl theme( java.lang.String theme ) {
-        final BaseFigureImpl fc = this.figure.copy();
-        figure(fc).theme( theme);
-        return make(fc);
-    }
-
-    @Override public  FigureImpl theme( io.deephaven.db.plot.Theme theme ) {
-        final BaseFigureImpl fc = this.figure.copy();
-        figure(fc).theme( theme);
-        return make(fc);
     }
 
     @Override public  FigureImpl tickLabelAngle( double angle ) {

@@ -1,7 +1,7 @@
 package io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.console_pb;
 
 import elemental2.core.Uint8Array;
-import io.deephaven.javascript.proto.dhinternal.io.deephaven.proto.session_pb.Ticket;
+import io.deephaven.javascript.proto.dhinternal.arrow.flight.protocol.flight_pb.Ticket;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsProperty;
@@ -17,11 +17,11 @@ public class CloseDocumentRequest {
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType of(
+        static CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -48,37 +48,38 @@ public class CloseDocumentRequest {
       }
 
       @JsOverlay
-      static CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType create() {
+      static CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType getId();
+      CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TextdocumentFieldType {
+    public interface TextDocumentFieldType {
       @JsOverlay
-      static CloseDocumentRequest.ToObjectReturnType.TextdocumentFieldType create() {
+      static CloseDocumentRequest.ToObjectReturnType.TextDocumentFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
@@ -101,27 +102,27 @@ public class CloseDocumentRequest {
     }
 
     @JsProperty
-    CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType getConsoleid();
+    CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    CloseDocumentRequest.ToObjectReturnType.TextdocumentFieldType getTextdocument();
+    CloseDocumentRequest.ToObjectReturnType.TextDocumentFieldType getTextDocument();
 
     @JsProperty
-    void setConsoleid(CloseDocumentRequest.ToObjectReturnType.ConsoleidFieldType consoleid);
+    void setConsoleId(CloseDocumentRequest.ToObjectReturnType.ConsoleIdFieldType consoleId);
 
     @JsProperty
-    void setTextdocument(
-        CloseDocumentRequest.ToObjectReturnType.TextdocumentFieldType textdocument);
+    void setTextDocument(
+        CloseDocumentRequest.ToObjectReturnType.TextDocumentFieldType textDocument);
   }
 
   @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
   public interface ToObjectReturnType0 {
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface ConsoleidFieldType {
+    public interface ConsoleIdFieldType {
       @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-      public interface GetIdUnionType {
+      public interface GetTicketUnionType {
         @JsOverlay
-        static CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType of(
+        static CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType of(
             Object o) {
           return Js.cast(o);
         }
@@ -148,37 +149,38 @@ public class CloseDocumentRequest {
       }
 
       @JsOverlay
-      static CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType create() {
+      static CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
       @JsProperty
-      CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType getId();
+      CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType getTicket();
 
       @JsProperty
-      void setId(CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType id);
+      void setTicket(
+          CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType ticket);
 
       @JsOverlay
-      default void setId(String id) {
-        setId(
+      default void setTicket(String ticket) {
+        setTicket(
             Js
-                .<CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
 
       @JsOverlay
-      default void setId(Uint8Array id) {
-        setId(
+      default void setTicket(Uint8Array ticket) {
+        setTicket(
             Js
-                .<CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType.GetIdUnionType>
-                    uncheckedCast(id));
+                .<CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType.GetTicketUnionType>
+                    uncheckedCast(ticket));
       }
     }
 
     @JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
-    public interface TextdocumentFieldType {
+    public interface TextDocumentFieldType {
       @JsOverlay
-      static CloseDocumentRequest.ToObjectReturnType0.TextdocumentFieldType create() {
+      static CloseDocumentRequest.ToObjectReturnType0.TextDocumentFieldType create() {
         return Js.uncheckedCast(JsPropertyMap.of());
       }
 
@@ -201,17 +203,17 @@ public class CloseDocumentRequest {
     }
 
     @JsProperty
-    CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType getConsoleid();
+    CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType getConsoleId();
 
     @JsProperty
-    CloseDocumentRequest.ToObjectReturnType0.TextdocumentFieldType getTextdocument();
+    CloseDocumentRequest.ToObjectReturnType0.TextDocumentFieldType getTextDocument();
 
     @JsProperty
-    void setConsoleid(CloseDocumentRequest.ToObjectReturnType0.ConsoleidFieldType consoleid);
+    void setConsoleId(CloseDocumentRequest.ToObjectReturnType0.ConsoleIdFieldType consoleId);
 
     @JsProperty
-    void setTextdocument(
-        CloseDocumentRequest.ToObjectReturnType0.TextdocumentFieldType textdocument);
+    void setTextDocument(
+        CloseDocumentRequest.ToObjectReturnType0.TextDocumentFieldType textDocument);
   }
 
   public static native CloseDocumentRequest deserializeBinary(Uint8Array bytes);
@@ -224,27 +226,27 @@ public class CloseDocumentRequest {
   public static native CloseDocumentRequest.ToObjectReturnType toObject(
       boolean includeInstance, CloseDocumentRequest msg);
 
-  public native void clearConsoleid();
+  public native void clearConsoleId();
 
-  public native void clearTextdocument();
+  public native void clearTextDocument();
 
-  public native Ticket getConsoleid();
+  public native Ticket getConsoleId();
 
-  public native VersionedTextDocumentIdentifier getTextdocument();
+  public native VersionedTextDocumentIdentifier getTextDocument();
 
-  public native boolean hasConsoleid();
+  public native boolean hasConsoleId();
 
-  public native boolean hasTextdocument();
+  public native boolean hasTextDocument();
 
   public native Uint8Array serializeBinary();
 
-  public native void setConsoleid();
+  public native void setConsoleId();
 
-  public native void setConsoleid(Ticket value);
+  public native void setConsoleId(Ticket value);
 
-  public native void setTextdocument();
+  public native void setTextDocument();
 
-  public native void setTextdocument(VersionedTextDocumentIdentifier value);
+  public native void setTextDocument(VersionedTextDocumentIdentifier value);
 
   public native CloseDocumentRequest.ToObjectReturnType0 toObject();
 

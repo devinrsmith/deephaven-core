@@ -53,7 +53,9 @@ public class LookupTableNand {
 
         @Override
         public final Table timedBit(Duration duration) {
-            return TableTools.merge(ZERO_BIT, TableTools.timeTable(duration.toNanos()).view("Q=(byte)(i % 2)")).tail(1);
+            return TableTools
+                .merge(ZERO_BIT, TableTools.timeTable(duration.toNanos()).view("Q=(byte)(i % 2)"))
+                .tail(1);
         }
 
         @Override

@@ -1,6 +1,6 @@
 package io.deephaven.logicgate.circuit;
 
-import io.deephaven.db.tables.Table;
+import io.deephaven.qst.table.Table;
 
 /**
  * @see <a href="https://en.wikipedia.org/wiki/Adder_(electronics)">Adder</a>

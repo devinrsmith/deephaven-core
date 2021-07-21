@@ -1,10 +1,7 @@
 package io.deephaven.logicgate
 
 import io.deephaven.db.tables.libs.QueryLibrary
-import io.deephaven.logicgate.Helper
-import io.deephaven.logicgate.LookupTableNand
 import io.deephaven.logicgate.circuit.FullAdder1BitBuilderImpl
-import io.deephaven.logicgate.circuit.SettableBits64
 
 QueryLibrary.importStatic(Helper.class)
 

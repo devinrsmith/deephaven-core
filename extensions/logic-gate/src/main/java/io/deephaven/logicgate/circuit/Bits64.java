@@ -1,6 +1,6 @@
 package io.deephaven.logicgate.circuit;
 
-import io.deephaven.db.tables.Table;
+import io.deephaven.qst.table.Table;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.logicgate.BitBuilder;
 import java.time.Duration;
@@ -43,6 +43,6 @@ public abstract class Bits64 {
     public abstract Bits16 b48();
 
     public final Table merge() {
-        return TableTools.merge(b0().merge(), b16().merge(), b32().merge(), b48().merge());
+        return Table.merge(b0().merge(), b16().merge(), b32().merge(), b48().merge());
     }
 }

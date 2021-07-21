@@ -1,6 +1,6 @@
 package io.deephaven.logicgate;
 
-import io.deephaven.db.tables.Table;
+import io.deephaven.qst.table.Table;
 
 public interface XnorBuilder {
     Table xnor(Table a, Table b);

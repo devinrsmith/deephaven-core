@@ -3,7 +3,6 @@ package io.deephaven.logicgate
 import io.deephaven.db.tables.libs.QueryLibrary
 import io.deephaven.db.tables.utils.TableTools
 import io.deephaven.logicgate.circuit.FullAdder1BitBuilderImpl
-import io.deephaven.logicgate.circuit.SettableBits4
 
 QueryLibrary.importStatic(Helper.class)
 

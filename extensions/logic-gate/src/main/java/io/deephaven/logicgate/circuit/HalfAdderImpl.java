@@ -1,6 +1,6 @@
 package io.deephaven.logicgate.circuit;
 
-import io.deephaven.db.tables.Table;
+import io.deephaven.qst.table.Table;
 import io.deephaven.logicgate.AndBuilder;
 import io.deephaven.logicgate.XorBuilder;
 import org.immutables.value.Value.Immutable;

@@ -1,6 +1,6 @@
 package io.deephaven.logicgate;
 
-import io.deephaven.db.tables.Table;
+import io.deephaven.qst.table.Table;
 import java.time.Duration;
 
 public interface BitBuilder {
@@ -9,7 +9,7 @@ public interface BitBuilder {
     Table one();
     // todo: flipable bit
 
-    SettableBit settable();
+    // SettableBit settable();
 
     Table timedBit(Duration duration);
 }

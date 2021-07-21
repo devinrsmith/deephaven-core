@@ -1,10 +1,9 @@
 package io.deephaven.logicgate;
 
-import io.deephaven.db.tables.Table;
-import io.deephaven.db.tables.utils.TableTools;
-import io.deephaven.db.v2.utils.KeyedArrayBackedMutableTable;
-import java.time.Duration;
+import io.deephaven.qst.table.Table;
 import org.immutables.value.Value.Immutable;
+
+import java.time.Duration;
 
 /**
  * Use a {@link NandBuilder} as the functionally complete set.
@@ -26,11 +25,6 @@ public abstract class NandBasedBuilder implements LogicGateBuilder {
     @Override
     public final Table one() {
         return bitBuilder().one();
-    }
-
-    @Override
-    public final SettableBit settable() {
-        return bitBuilder().settable();
     }
 
     @Override

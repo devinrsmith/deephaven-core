@@ -1,11 +1,11 @@
 package io.deephaven.logicgate.circuit;
 
-import io.deephaven.db.tables.Table;
-import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.logicgate.BitBuilder;
+import io.deephaven.qst.table.Table;
+import org.immutables.value.Value.Immutable;
+
 import java.time.Duration;
 import java.util.Random;
-import org.immutables.value.Value.Immutable;
 
 @Immutable
 public abstract class Bits4 {
@@ -41,6 +41,6 @@ public abstract class Bits4 {
     public abstract Table b3();
 
     public final Table merge() {
-        return TableTools.merge(b0(), b1(), b2(), b3());
+        return Table.merge(b0(), b1(), b2(), b3());
     }
 }

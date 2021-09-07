@@ -112,6 +112,9 @@ project(':grpc-api-client-console').projectDir = file('grpc-api-client/console')
 include(':classgraph-extension')
 project(':classgraph-extension').projectDir = file('extensions/classgraph')
 
+include(':custom-application-extension')
+project(':custom-application-extension').projectDir = file('extensions/custom-application')
+
 include(':suanshu-extension')
 project(':suanshu-extension').projectDir = file('extensions/suanshu')
 

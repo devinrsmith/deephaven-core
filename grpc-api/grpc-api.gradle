@@ -46,6 +46,9 @@ dependencies {
     if ('true' == project.findProperty('extensions.suanshu.enabled')) {
         runtimeOnly project(':suanshu-extension')
     }
+    if ('true' == project.findProperty('extensions.custom-application.enabled')) {
+        runtimeOnly project(':custom-application-extension')
+    }
 
     testCompile TestTools.projectDependency(project, 'DB'),
                 TestTools.projectDependency(project, 'Util')

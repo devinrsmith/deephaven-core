@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 
 public class TableSource {
 
-    private final Env<ByteBuffer> env;
+    //private final Env<ByteBuffer> env;
 
     abstract class IntColumnSource extends AbstractColumnSource<Integer> implements ForInt {
 

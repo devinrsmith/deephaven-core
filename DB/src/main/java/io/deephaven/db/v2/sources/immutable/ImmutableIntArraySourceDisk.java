@@ -37,10 +37,36 @@ import static io.deephaven.util.QueryConstants.NULL_INT;
  */
 public class ImmutableIntArraySourceDisk extends AbstractColumnSource<Integer> implements ImmutableColumnSourceGetDefaults.ForInt {
 
+    public static void write(Path path, int amount) throws IOException {
+        final int numBytes = Math.multiplyExact(amount, 4);
+        try (final FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
+            final MappedByteBuffer map = channel.map(MapMode.READ_WRITE, 0, numBytes);
+            for (int i = 0; i < amount; ++i) {
+                map.putInt(i);
+            }
+            map.force();
+        }
+    }
+
     public static ImmutableIntArraySourceDisk from(Path path) throws IOException {
         try (final FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
             final MappedByteBuffer map = channel.map(MapMode.READ_ONLY, 0, channel.size());
             return new ImmutableIntArraySourceDisk(map);
+        }
+    }
+
+    public static Table table(Path path) throws IOException {
+        try (final FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+            final int numBytes = Math.toIntExact(channel.size());
+            if (numBytes % 4 != 0) {
+                throw new IllegalArgumentException("Is not % 4");
+            }
+            final MappedByteBuffer map = channel.map(MapMode.READ_ONLY, 0, numBytes);
+            final ImmutableIntArraySourceDisk source = new ImmutableIntArraySourceDisk(map);
+
+            final Map<String, ColumnSource<?>> sources = new LinkedHashMap<>();
+            sources.put("X", source);
+            return new QueryTable(Index.FACTORY.getFlatIndex(numBytes / 4), sources);
         }
     }
 

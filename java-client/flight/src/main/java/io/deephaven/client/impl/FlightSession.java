@@ -2,6 +2,7 @@ package io.deephaven.client.impl;
 
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.grpc_api.util.FlightExportTicketHelper;
+import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TicketTable;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.flight.AsyncPutListener;
@@ -14,6 +15,7 @@ import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import java.util.Collections;
@@ -89,6 +91,35 @@ public final class FlightSession implements AutoCloseable {
         } finally {
             // We close our raw ticket, since our reference to it will be properly managed by the session now
             release(ticket);
+        }
+    }
+
+    public TableHandle put(NewTable table, BufferAllocator allocator) throws TableHandleException, InterruptedException {
+        final io.deephaven.proto.backplane.grpc.Ticket ticket = putTicket(table, allocator);
+        try {
+            // By re-binding from the ticket via TicketTable, we are bringing the doPut table into the proper management
+            // structure offered by session.
+            return session.execute(TicketTable.of(ticket.getTicket().toByteArray()));
+        } finally {
+            // We close our raw ticket, since our reference to it will be properly managed by the session now
+            release(ticket);
+        }
+    }
+
+    public io.deephaven.proto.backplane.grpc.Ticket putTicket(NewTable table, BufferAllocator allocator) {
+        final io.deephaven.proto.backplane.grpc.Ticket newTicket = session.newTicket();
+        final VectorSchemaRoot root = NewTableAdapter.of(table, allocator);
+        final ClientStreamListener out =
+                client.startPut(descriptor(newTicket), root, new AsyncPutListener());
+        try {
+            out.putNext();
+            root.clear();
+            out.completed();
+            out.getResult();
+            return newTicket;
+        } catch (Throwable t) {
+            session.release(newTicket);
+            throw t;
         }
     }
 

@@ -95,7 +95,7 @@ task createGetTicketTableScript(type: CreateStartScripts) {
 }
 
 task createDoPutNewScript(type: CreateStartScripts) {
-    mainClassName = 'io.deephaven.client.examples.DoPutNew'
+    mainClassName = 'io.deephaven.client.examples.DoPutNew2'
     applicationName = 'do-put-new'
     outputDir = new File(project.buildDir, name)
     classpath = startScripts.classpath

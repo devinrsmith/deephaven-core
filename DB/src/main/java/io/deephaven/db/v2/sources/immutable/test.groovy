@@ -26,3 +26,22 @@ lmdbChunk500m = ImmutableIntArraySourceDiskLmdbChunk.tableSum(Paths.get("/data/5
 nanoDuration = System.nanoTime() - nanoStart
 nanosPerOpsLmdbChunk500m = nanoDuration / 500000000
 println(nanosPerOpsLmdbChunk500m + " nanos / op (500m lmdb chunk)")
+
+
+
+
+nanoStart = System.nanoTime()
+lmdbChunk500m128 = ImmutableIntArraySourceDiskLmdbChunk.tableSum(500000000, 128)
+println((System.nanoTime() - nanoStart) / 500000000 + " nanos / op (500m lmdb chunk & 128)")
+
+nanoStart = System.nanoTime()
+lmdbChunk500m256 = ImmutableIntArraySourceDiskLmdbChunk.tableSum(500000000, 256)
+println((System.nanoTime() - nanoStart) / 500000000 + " nanos / op (500m lmdb chunk & 256)")
+
+nanoStart = System.nanoTime()
+lmdbChunk500m512 = ImmutableIntArraySourceDiskLmdbChunk.tableSum(500000000, 512)
+println((System.nanoTime() - nanoStart) / 500000000 + " nanos / op (500m lmdb chunk & 512)")
+
+nanoStart = System.nanoTime()
+lmdbChunk500m1024 = ImmutableIntArraySourceDiskLmdbChunk.tableSum(500000000, 1024)
+println((System.nanoTime() - nanoStart) / 500000000 + " nanos / op (500m lmdb chunk & 1024)")

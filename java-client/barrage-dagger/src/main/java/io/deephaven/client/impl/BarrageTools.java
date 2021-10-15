@@ -4,7 +4,6 @@ import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
-import io.deephaven.extensions.barrage.BarrageSubscriptionOptions.ColumnConversionMode;
 import io.deephaven.qst.table.TableHeader;
 import io.deephaven.qst.table.TableSpec;
 import io.grpc.ManagedChannel;

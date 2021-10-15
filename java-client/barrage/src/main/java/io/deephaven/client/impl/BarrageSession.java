@@ -41,11 +41,15 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
         this.interceptedChannel = ClientInterceptors.intercept(channel, new AuthInterceptor());
     }
 
+    private TableHandleManager manager() {
+        return session();
+    }
+
     @Override
     public BarrageSubscription subscribe(
             final TableSpec tableSpec, final BarrageSubscriptionOptions options)
             throws TableHandle.TableHandleException, InterruptedException {
-        try (final TableHandle handle = session().execute(tableSpec)) {
+        try (final TableHandle handle = manager().execute(tableSpec)) {
             return subscribe(handle, options);
         }
     }
@@ -54,7 +58,7 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     public BarrageSubscription subscribe(
             final TableDefinition tableDefinition, final TableSpec tableSpec, final BarrageSubscriptionOptions options)
             throws TableHandle.TableHandleException, InterruptedException {
-        try (final TableHandle handle = session().execute(tableSpec)) {
+        try (final TableHandle handle = manager().execute(tableSpec)) {
             return subscribe(tableDefinition, handle, options);
         }
     }

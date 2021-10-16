@@ -10,6 +10,7 @@ import io.deephaven.qst.TableCreator;
 import io.deephaven.qst.table.TableSpec;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.util.Collections;
 
@@ -17,6 +18,15 @@ import java.util.Collections;
         description = "Canned example 1, sends a table, get the results, and convert to a TSV",
         version = "0.1.0")
 class Example1 extends FlightCannedTableBase {
+
+    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
+            defaultValue = "localhost:10000")
+    String target;
+
+    @Override
+    protected String target() {
+        return target;
+    }
 
     @Override
     protected TableCreationLogic logic() {

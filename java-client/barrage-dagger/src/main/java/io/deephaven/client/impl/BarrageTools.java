@@ -1,5 +1,6 @@
 package io.deephaven.client.impl;
 
+import io.deephaven.DeephavenUri;
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.TableDefinition;
@@ -54,5 +55,17 @@ public class BarrageTools {
                 .build();
         final BarrageSubscription sub = session(target).subscribe(table, options);
         return sub.entireTable();
+    }
+
+    public static Table subscribe(String deephavenUri) throws TableHandleException, InterruptedException {
+        return subscribe(DeephavenUri.of(deephavenUri));
+    }
+
+    private static Table subscribe(DeephavenUri uri) throws TableHandleException, InterruptedException {
+        if (uri.isLocal()) {
+            throw new UnsupportedOperationException("Local is not supported yet");
+        }
+        final String target = uri.host().get() + ":" + uri.port().orElse(10000);
+        return subscribe(target, uri.ticket());
     }
 }

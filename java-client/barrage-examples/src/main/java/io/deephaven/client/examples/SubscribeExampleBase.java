@@ -1,19 +1,15 @@
 package io.deephaven.client.examples;
 
-import io.deephaven.client.impl.BarrageSubscription;
-import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
 import io.deephaven.client.impl.BarrageSession;
+import io.deephaven.client.impl.BarrageSubscription;
 import io.deephaven.client.impl.TableHandle;
 import io.deephaven.client.impl.TableHandleManager;
-import io.deephaven.extensions.barrage.table.BarrageTable;
 import io.deephaven.db.v2.InstrumentedShiftAwareListener;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
+import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
+import io.deephaven.extensions.barrage.table.BarrageTable;
 import io.deephaven.qst.TableCreationLogic;
 import io.deephaven.util.process.ProcessEnvironment;
-/*
- * Copyright (c) 2016-2021 Deephaven Data Labs and Patent Pending
- */
-
 import io.deephaven.util.process.ShutdownManager;
 import picocli.CommandLine;
 

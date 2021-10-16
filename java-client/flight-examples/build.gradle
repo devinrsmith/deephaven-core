@@ -130,6 +130,18 @@ task createDoPutTableScript(type: CreateStartScripts) {
             '-XX:+UseStringDeduplication' ]
 }
 
+task createGetSchemaUriScript(type: CreateStartScripts) {
+    mainClassName = 'io.deephaven.client.examples.GetSchemaUri'
+    applicationName = 'get-schema-uri'
+    outputDir = new File(project.buildDir, name)
+    classpath = startScripts.classpath
+    defaultJvmOpts = [
+            '-server',
+            '-XX:+UseG1GC',
+            '-XX:MaxGCPauseMillis=100',
+            '-XX:+UseStringDeduplication' ]
+}
+
 applicationDistribution.into('bin') {
     from(createGetSchemaScripts)
     from(createGetTsvScripts)
@@ -140,5 +152,6 @@ applicationDistribution.into('bin') {
     from(createDoPutNewScript)
     from(createDoPutSprayScript)
     from(createDoPutTableScript)
+    from(createGetSchemaUriScript)
     fileMode = 0755
 }

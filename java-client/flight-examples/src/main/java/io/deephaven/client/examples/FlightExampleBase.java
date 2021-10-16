@@ -4,7 +4,6 @@ import io.deephaven.client.impl.DaggerDeephavenFlightRoot;
 import io.deephaven.client.impl.FlightSession;
 import io.deephaven.client.impl.FlightSessionFactory;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import picocli.CommandLine.ArgGroup;
@@ -24,10 +23,12 @@ abstract class FlightExampleBase implements Callable<Void> {
 
     protected abstract void execute(FlightSession flight) throws Exception;
 
+    protected abstract String target();
+
     @Override
     public final Void call() throws Exception {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-        ManagedChannel managedChannel = ConnectOptions.open(connectOptions);
+        ManagedChannel managedChannel = ConnectOptions.open(target(), connectOptions);
         Runtime.getRuntime()
                 .addShutdownHook(new Thread(() -> onShutdown(scheduler, managedChannel)));
 

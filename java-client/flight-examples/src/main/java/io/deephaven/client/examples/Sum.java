@@ -15,9 +15,18 @@ import java.util.Collections;
         version = "0.1.0")
 class Sum extends FlightCannedTableBase implements TableCreationLogic {
 
+    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
+            defaultValue = "localhost:10000")
+    String target;
+
     @Option(names = {"-c", "--count"}, description = "The number of sums, defaults to 100000000",
             defaultValue = "100000000")
     long count;
+
+    @Override
+    protected String target() {
+        return target;
+    }
 
     @Override
     protected TableCreationLogic logic() {

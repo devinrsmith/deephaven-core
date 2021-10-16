@@ -6,6 +6,7 @@ import io.deephaven.qst.table.TableSpec;
 import org.apache.arrow.vector.types.pojo.Schema;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.time.Duration;
@@ -14,9 +15,18 @@ import java.time.Duration;
         description = "Get the schema of a QST", version = "0.1.0")
 class GetSchema extends FlightExampleBase {
 
+    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
+            defaultValue = "localhost:10000")
+    String target;
+
     @Parameters(arity = "1", paramLabel = "QST", description = "QST file to send.",
             converter = TableConverter.class)
     TableSpec table;
+
+    @Override
+    protected String target() {
+        return target;
+    }
 
     @Override
     protected void execute(FlightSession flight) throws Exception {

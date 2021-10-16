@@ -11,9 +11,18 @@ import picocli.CommandLine.Option;
         version = "0.1.0")
 class ListTables extends FlightExampleBase {
 
+    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
+            defaultValue = "localhost:10000")
+    String target;
+
     @Option(names = {"-s", "--schema"}, description = "Whether to include schema",
             defaultValue = "false")
     boolean showSchema;
+
+    @Override
+    protected String target() {
+        return target;
+    }
 
     @Override
     protected void execute(FlightSession flight) throws Exception {

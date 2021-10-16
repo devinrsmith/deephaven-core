@@ -8,16 +8,27 @@ import io.deephaven.qst.TableCreationLogic;
 import io.deephaven.qst.table.TicketTable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "subscribe-app-field", mixinStandardHelpOptions = true,
         description = "Request a table from an Application and subscribe over barrage", version = "0.1.0")
 class SubscribeApplicationField extends SubscribeExampleBase {
 
+    @Option(names = {"-t", "--target"}, description = "The host target.",
+            defaultValue = "localhost:10000")
+    String target;
+
     @Parameters(arity = "1", paramLabel = "app", description = "Application id to fetch from.")
     String appId;
+
     @Parameters(arity = "1", paramLabel = "field", description = "Application field name to subscribe to.")
     String fieldName;
+
+    @Override
+    protected String target() {
+        return target;
+    }
 
     @Override
     protected TableCreationLogic logic() {

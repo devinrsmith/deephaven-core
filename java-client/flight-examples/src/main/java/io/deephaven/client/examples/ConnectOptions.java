@@ -6,25 +6,12 @@ import picocli.CommandLine.Option;
 
 public class ConnectOptions {
 
-    private static final String TARGET_DEFAULT = "localhost:10000";
-
-    // https://github.com/remkop/picocli/issues/844
-    public static ConnectOptions defaults() {
-        final ConnectOptions options = new ConnectOptions();
-        options.target = TARGET_DEFAULT;
-        return options;
-    }
-
-    public static ManagedChannel open(ConnectOptions options) {
+    public static ManagedChannel open(String target, ConnectOptions options) {
         if (options == null) {
-            options = defaults();
+            options = new ConnectOptions();
         }
-        return options.open();
+        return options.open(target);
     }
-
-    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
-            defaultValue = TARGET_DEFAULT)
-    String target;
 
     @Option(names = {"-p", "--plaintext"}, description = "The plaintext flag.")
     Boolean plaintext;
@@ -32,7 +19,7 @@ public class ConnectOptions {
     @Option(names = {"-u", "--user-agent"}, description = "The user-agent.")
     String userAgent;
 
-    public ManagedChannel open() {
+    public ManagedChannel open(String target) {
         ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(target);
         if (plaintext == null) {
             if (target.startsWith("localhost:")) {

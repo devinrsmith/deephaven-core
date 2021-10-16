@@ -4,9 +4,9 @@
 
 package io.deephaven.client.examples;
 
-import io.deephaven.client.impl.DaggerDeephavenBarrageRoot;
 import io.deephaven.client.impl.BarrageSession;
 import io.deephaven.client.impl.BarrageSessionFactory;
+import io.deephaven.client.impl.DaggerDeephavenBarrageRoot;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.memory.BufferAllocator;
@@ -20,10 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 abstract class BarrageClientExampleBase implements Callable<Void> {
 
-    @Option(names = {"-t", "--target"}, description = "The host target.",
-            defaultValue = "localhost:10000")
-    String target;
-
     @Option(names = {"-p", "--plaintext"}, description = "Use plaintext.")
     Boolean plaintext;
 
@@ -32,12 +28,11 @@ abstract class BarrageClientExampleBase implements Callable<Void> {
 
     protected abstract void execute(BarrageSession session) throws Exception;
 
-    @Override
-    public final Void call() throws Exception {
-        final BufferAllocator bufferAllocator = new RootAllocator();
-        final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-        final ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(target);
-        if ((plaintext != null && plaintext) || "localhost:10000".equals(target)) {
+    protected abstract String target();
+
+    protected ManagedChannel channel() {
+        final ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(target());
+        if ((plaintext != null && plaintext) || "localhost:10000".equals(target())) {
             channelBuilder.usePlaintext();
         } else {
             channelBuilder.useTransportSecurity();
@@ -45,7 +40,14 @@ abstract class BarrageClientExampleBase implements Callable<Void> {
         if (userAgent != null) {
             channelBuilder.userAgent(userAgent);
         }
-        final ManagedChannel managedChannel = channelBuilder.build();
+        return channelBuilder.build();
+    }
+
+    @Override
+    public final Void call() throws Exception {
+        final BufferAllocator bufferAllocator = new RootAllocator();
+        final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
+        final ManagedChannel managedChannel = channel();
 
         Runtime.getRuntime()
                 .addShutdownHook(new Thread(() -> onShutdown(scheduler, managedChannel)));

@@ -67,11 +67,20 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     @Override
     public BarrageSubscription subscribe(
             final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
-        final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
-        bb.position(bb.position() + 8);
-        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(Schema.deserialize(bb)).tableDef;
-
-        //final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb)).tableDef;
+        final TableDefinition tableDefinition;
+        if (true) {
+            tableDefinition = BarrageUtil.convertArrowSchema(schema(tableHandle)).tableDef;
+        } else if (false) {
+            final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
+            bb.position(bb.position() + 8);
+            tableDefinition = BarrageUtil.convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb)).tableDef;
+        } else if (false) {
+            final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
+            bb.position(bb.position() + 8);
+            tableDefinition = BarrageUtil.convertArrowSchema(Schema.deserialize(bb)).tableDef;
+        } else {
+            throw new IllegalStateException();
+        }
         return subscribe(tableDefinition, tableHandle, options);
     }
 

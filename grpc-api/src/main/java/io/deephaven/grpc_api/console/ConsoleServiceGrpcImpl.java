@@ -5,6 +5,8 @@
 package io.deephaven.grpc_api.console;
 
 import com.google.rpc.Code;
+import io.deephaven.client.impl.BarrageLocalResolver;
+import io.deephaven.client.impl.BarrageLocalResolverInstance;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.db.plot.FigureWidget;
 import io.deephaven.db.tables.Table;
@@ -84,6 +86,18 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
 
     public void initializeGlobalScriptSession() {
         globalSessionProvider.initializeGlobalScriptSession(scriptTypes.get(WORKER_CONSOLE_TYPE).get());
+
+        BarrageLocalResolverInstance.init(new BarrageLocalResolver() {
+            @Override
+            public Table resolveQueryScopeName(String queryScopeName) {
+                return globalSessionProvider.getGlobalSession().getVariable(queryScopeName, null);
+            }
+
+            @Override
+            public Table resolveApplicationField(String applicationId, String fieldName) {
+                return null;
+            }
+        });
     }
 
     @Override

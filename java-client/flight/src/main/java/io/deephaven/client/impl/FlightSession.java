@@ -2,6 +2,7 @@ package io.deephaven.client.impl;
 
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.grpc_api.util.FlightExportTicketHelper;
+import io.deephaven.grpc_api.util.FlightScopeTicketHelper;
 import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TicketTable;
 import io.grpc.ManagedChannel;
@@ -213,7 +214,8 @@ public class FlightSession implements AutoCloseable {
     }
 
     private static FlightDescriptor descriptor(io.deephaven.proto.backplane.grpc.Ticket ticket) {
-        return descriptor(FlightExportTicketHelper.ticketToDescriptor(ticket, "export"));
+        return descriptor(FlightScopeTicketHelper.ticketToDescriptor(ticket, "ticket"));
+        //return descriptor(FlightExportTicketHelper.ticketToDescriptor(ticket, "ticket"));
     }
 
     private static FlightDescriptor descriptor(org.apache.arrow.flight.impl.Flight.FlightDescriptor impl) {

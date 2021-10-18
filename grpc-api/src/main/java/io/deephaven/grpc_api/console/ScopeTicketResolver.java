@@ -14,6 +14,8 @@ import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.grpc_api.session.TicketResolverBase;
 import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.util.FlightScopeTicketHelper;
+import io.deephaven.grpc_api.util.ScopeTicketHelper;
 import io.deephaven.grpc_api.util.TicketRouterHelper;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import org.apache.arrow.flight.impl.Flight;
@@ -29,20 +31,17 @@ import java.util.function.Consumer;
 
 @Singleton
 public class ScopeTicketResolver extends TicketResolverBase {
-    private static final char TICKET_PREFIX = 's';
-    private static final String FLIGHT_DESCRIPTOR_ROUTE = "scope";
-
     private final GlobalSessionProvider globalSessionProvider;
 
     @Inject
     public ScopeTicketResolver(final GlobalSessionProvider globalSessionProvider) {
-        super((byte) TICKET_PREFIX, FLIGHT_DESCRIPTOR_ROUTE);
+        super(ScopeTicketHelper.TICKET_PREFIX, ScopeTicketHelper.FLIGHT_DESCRIPTOR_ROUTE);
         this.globalSessionProvider = globalSessionProvider;
     }
 
     @Override
     public String getLogNameFor(final ByteBuffer ticket, final String logId) {
-        return FLIGHT_DESCRIPTOR_ROUTE + "/" + nameForTicket(ticket, logId);
+        return ScopeTicketHelper.FLIGHT_DESCRIPTOR_ROUTE + "/" + nameForTicket(ticket, logId);
     }
 
     @Override
@@ -150,10 +149,7 @@ public class ScopeTicketResolver extends TicketResolverBase {
      * @return the flight ticket this descriptor represents
      */
     public static Flight.Ticket flightTicketForName(final String name) {
-        final byte[] ticket = (TICKET_PREFIX + "/" + name).getBytes(StandardCharsets.UTF_8);
-        return Flight.Ticket.newBuilder()
-                .setTicket(ByteStringAccess.wrap(ticket))
-                .build();
+        return FlightScopeTicketHelper.scopeIdToFlightTicket(name);
     }
 
     /**
@@ -163,7 +159,7 @@ public class ScopeTicketResolver extends TicketResolverBase {
      * @return the flight ticket this descriptor represents
      */
     public static Ticket ticketForName(final String name) {
-        final byte[] ticket = (TICKET_PREFIX + "/" + name).getBytes(StandardCharsets.UTF_8);
+        final byte[] ticket = (ScopeTicketHelper.TICKET_PREFIX + "/" + name).getBytes(StandardCharsets.UTF_8);
         return Ticket.newBuilder()
                 .setTicket(ByteStringAccess.wrap(ticket))
                 .build();
@@ -178,7 +174,7 @@ public class ScopeTicketResolver extends TicketResolverBase {
     public static Flight.FlightDescriptor descriptorForName(final String name) {
         return Flight.FlightDescriptor.newBuilder()
                 .setType(Flight.FlightDescriptor.DescriptorType.PATH)
-                .addPath(FLIGHT_DESCRIPTOR_ROUTE)
+                .addPath(ScopeTicketHelper.FLIGHT_DESCRIPTOR_ROUTE)
                 .addPath(name)
                 .build();
     }
@@ -195,7 +191,7 @@ public class ScopeTicketResolver extends TicketResolverBase {
             throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
                     "Could not resolve '" + logId + "': no ticket supplied");
         }
-        if (ticket.remaining() < 3 || ticket.get(ticket.position()) != TICKET_PREFIX
+        if (ticket.remaining() < 3 || ticket.get(ticket.position()) != ScopeTicketHelper.TICKET_PREFIX
                 || ticket.get(ticket.position() + 1) != '/') {
             throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
                     "Could not resolve '" + logId + "': found 0x" + byteBufToHex(ticket) + "' (hex)");

@@ -12,6 +12,12 @@
 version: "3.4"
 
 services:
+
+  worker2:
+    extends:
+      file: docker-compose-common.yml
+      service: worker2
+
   grpc-api:
     extends:
       file: docker-compose-common.yml

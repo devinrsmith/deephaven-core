@@ -214,8 +214,12 @@ public class FlightSession implements AutoCloseable {
     }
 
     private static FlightDescriptor descriptor(io.deephaven.proto.backplane.grpc.Ticket ticket) {
-        return descriptor(FlightScopeTicketHelper.ticketToDescriptor(ticket, "ticket"));
-        //return descriptor(FlightExportTicketHelper.ticketToDescriptor(ticket, "ticket"));
+        if (ticket.getTicket().byteAt(0) == 's') {
+            return descriptor(FlightScopeTicketHelper.ticketToDescriptor(ticket, "scope-ticket"));
+        } else if (ticket.getTicket().byteAt(0) == 'e') {
+            return descriptor(FlightExportTicketHelper.ticketToDescriptor(ticket, "export-ticket"));
+        }
+        throw new IllegalStateException();
     }
 
     private static FlightDescriptor descriptor(org.apache.arrow.flight.impl.Flight.FlightDescriptor impl) {

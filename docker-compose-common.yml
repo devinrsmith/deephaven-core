@@ -1,7 +1,7 @@
 version: "3.4"
 
 services:
-  grpc-api:
+  worker2:
     image: deephaven/grpc-api:local-build
 
     environment:
@@ -12,10 +12,24 @@ services:
       # To turn on debug logging, add: -Dlogback.configurationFile=logback-debug.xml
       - JAVA_TOOL_OPTIONS=-Xmx4g -Ddeephaven.session.batch=true -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
 
+    ports:
+      - "8888:8080"
+
+  grpc-api:
+    image: deephaven/grpc-api:local-build
+
+    environment:
+      # https://bugs.openjdk.java.net/browse/JDK-8230305
+      # cgroups v2 resource reservations only work w/ java 15+ ATM, so it's best for our java processes to be explicit
+      # with max memory.
+      #
+      # To turn on debug logging, add: -Dlogback.configurationFile=logback-debug.xml
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Xmx4g -Ddeephaven.session.batch=true -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
+
     expose:
       - '8080'
-#    ports:
-#      - '5005:5005'        # For remote debugging (change if using different port)
+    ports:
+      - '5005:5005'        # For remote debugging (change if using different port)
 
     # Note: using old-style volume mounts, so that the directories get created if they don't exist
     # See https://docs.docker.com/storage/bind-mounts/#differences-between--v-and---mount-behavior

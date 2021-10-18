@@ -4,9 +4,9 @@
 
 package io.deephaven.client.impl;
 
+import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
 import io.deephaven.extensions.barrage.util.BarrageUtil;
-import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.qst.table.TableSpec;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -22,6 +22,7 @@ import org.apache.arrow.flight.FlightGrpcUtilsExtension;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 
 public class BarrageSession extends FlightSession implements BarrageSubscription.Factory {
@@ -66,9 +67,11 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     @Override
     public BarrageSubscription subscribe(
             final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
-        // fetch the schema and convert to table definition
-        final Schema schema = schema(tableHandle);
-        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(schema).tableDef;
+        final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
+        bb.position(bb.position() + 8);
+        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(Schema.deserialize(bb)).tableDef;
+
+        //final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb)).tableDef;
         return subscribe(tableDefinition, tableHandle, options);
     }
 
@@ -77,8 +80,7 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
             final TableDefinition tableDefinition, final TableHandle tableHandle,
             final BarrageSubscriptionOptions options) {
         final TableHandle handleForSubscription = tableHandle.newRef();
-        return new BarrageSubscriptionImpl(this, handleForSubscription.export(), options,
-                tableDefinition, handleForSubscription::close);
+        return new BarrageSubscriptionImpl(this, handleForSubscription, options, tableDefinition);
     }
 
     public Channel channel() {

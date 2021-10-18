@@ -78,6 +78,6 @@ public class BarrageSessions {
 
     private static String resolveTarget(DeephavenUriI uri) {
         // TODO: DNS SRV
-        return uri.host().get() + ":" + uri.port().orElse(10000);
+        return uri.host().get() + ":" + uri.port().orElse(8080);
     }
 }

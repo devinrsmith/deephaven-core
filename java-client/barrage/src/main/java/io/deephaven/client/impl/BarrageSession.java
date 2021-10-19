@@ -69,11 +69,11 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
             final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
 
         // desired, does not work
-        // final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
+        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
 
         // force remote via (HasTicket)
-        final TableDefinition tableDefinition =
-                BarrageUtil.convertArrowSchema(schema((HasTicket) tableHandle)).tableDef;
+        // final TableDefinition tableDefinition =
+        // BarrageUtil.convertArrowSchema(schema((HasTicket) tableHandle)).tableDef;
 
         return subscribe(tableDefinition, tableHandle, options);
     }

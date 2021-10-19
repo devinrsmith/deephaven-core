@@ -313,13 +313,12 @@ public class BarrageUtil {
     }
 
     public static ConvertedArrowSchema convertArrowSchema(final ExportedTableCreationResponse response) {
-        // TODO: use custom deserializer?
-        if (false) {
-            final ByteBuffer bb = response.getSchemaHeader().asReadOnlyByteBuffer();
-            bb.position(bb.position() + 8);
-            return convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb));
-        }
-        return convertArrowSchema(SchemaHelper.schema(response));
+        // Round-about way:
+        // return convertArrowSchema(SchemaHelper.schema(response));
+
+        final ByteBuffer bb = response.getSchemaHeader().asReadOnlyByteBuffer();
+        bb.position(bb.position() + SchemaHelper.offset);
+        return convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb));
     }
 
     public static ConvertedArrowSchema convertArrowSchema(

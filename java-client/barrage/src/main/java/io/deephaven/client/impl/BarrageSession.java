@@ -67,20 +67,14 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     @Override
     public BarrageSubscription subscribe(
             final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
-        final TableDefinition tableDefinition;
-        if (true) {
-            tableDefinition = BarrageUtil.convertArrowSchema(schema(tableHandle)).tableDef;
-        } else if (false) {
-            final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
-            bb.position(bb.position() + 8);
-            tableDefinition = BarrageUtil.convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb)).tableDef;
-        } else if (false) {
-            final ByteBuffer bb = tableHandle.response().getSchemaHeader().asReadOnlyByteBuffer();
-            bb.position(bb.position() + 8);
-            tableDefinition = BarrageUtil.convertArrowSchema(Schema.deserialize(bb)).tableDef;
-        } else {
-            throw new IllegalStateException();
-        }
+
+        // desired, does not work
+        // final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
+
+        // force remote via (HasTicket)
+        final TableDefinition tableDefinition =
+                BarrageUtil.convertArrowSchema(schema((HasTicket) tableHandle)).tableDef;
+
         return subscribe(tableDefinition, tableHandle, options);
     }
 

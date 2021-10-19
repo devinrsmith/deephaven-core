@@ -34,7 +34,8 @@ public class BarrageSessions {
 
     private final BarrageLocalResolver resolver;
 
-    private BarrageSessions(ScheduledExecutorService executor, BufferAllocator allocator, Map<String, BarrageSession> sessions, BarrageLocalResolver resolver) {
+    private BarrageSessions(ScheduledExecutorService executor, BufferAllocator allocator,
+            Map<String, BarrageSession> sessions, BarrageLocalResolver resolver) {
         this.executor = Objects.requireNonNull(executor);
         this.allocator = Objects.requireNonNull(allocator);
         this.sessions = Objects.requireNonNull(sessions);
@@ -62,7 +63,8 @@ public class BarrageSessions {
         return subscribe(uri, BarrageSubscriptionOptions.builder().useDeephavenNulls(true).build());
     }
 
-    public Table subscribe(DeephavenUriI uri, BarrageSubscriptionOptions options) throws TableHandleException, InterruptedException {
+    public Table subscribe(DeephavenUriI uri, BarrageSubscriptionOptions options)
+            throws TableHandleException, InterruptedException {
         if (!uri.host().isPresent()) {
             return DeephavenUriLocal.of(resolver, uri);
         }

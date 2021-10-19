@@ -2,6 +2,8 @@ package io.deephaven.client.impl;
 
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.grpc_api.util.FlightExportTicketHelper;
+import io.deephaven.grpc_api.util.SchemaHelper;
+import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse;
 import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TicketTable;
 import io.grpc.ManagedChannel;
@@ -48,6 +50,20 @@ public class FlightSession implements AutoCloseable {
      */
     public Session session() {
         return session;
+    }
+
+    /**
+     * Create a schema from the existing handle's response.
+     *
+     * <p>
+     * Equivalent to {@code SchemaHelper.schema(handle.response())}.
+     *
+     * @param handle the handle
+     * @return the schema
+     * @see SchemaHelper#schema(ExportedTableCreationResponse)
+     */
+    public Schema schema(TableHandle handle) {
+        return SchemaHelper.schema(handle.response());
     }
 
     /**
@@ -215,9 +231,9 @@ public class FlightSession implements AutoCloseable {
     private static FlightDescriptor descriptor(io.deephaven.proto.backplane.grpc.Ticket ticket) {
 
         /*
-        if (ticket.getTicket().byteAt(0) == 's') {
-            return descriptor(FlightScopeTicketHelper.ticketToDescriptor(ticket, "scope-ticket"));
-        } else */if (ticket.getTicket().byteAt(0) == 'e') {
+         * if (ticket.getTicket().byteAt(0) == 's') { return
+         * descriptor(FlightScopeTicketHelper.ticketToDescriptor(ticket, "scope-ticket")); } else
+         */if (ticket.getTicket().byteAt(0) == 'e') {
             return descriptor(FlightExportTicketHelper.ticketToDescriptor(ticket, "export-ticket"));
         }
         throw new IllegalStateException();

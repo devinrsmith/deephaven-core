@@ -38,7 +38,7 @@ public class DeephavenUriBarrage implements DeephavenUriI.Visitor {
 
     @Override
     public void visit(DeephavenUriProxy proxy) {
-        //out = TicketTable.of(proxy.path().toString());
+        // out = TicketTable.of(proxy.path().toString());
         throw new UnsupportedOperationException("Proxy not supported yet");
     }
 }

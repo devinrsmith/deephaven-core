@@ -21,6 +21,8 @@ import io.deephaven.db.util.config.MutableInputTable;
 import io.deephaven.db.v2.HierarchicalTableInfo;
 import io.deephaven.db.v2.RollupInfo;
 import io.deephaven.db.v2.sources.chunk.ChunkType;
+import io.deephaven.grpc_api.util.SchemaHelper;
+import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse;
 import org.apache.arrow.flatbuf.KeyValue;
 import org.apache.arrow.flatbuf.Message;
 import org.apache.arrow.flatbuf.MetadataVersion;
@@ -308,6 +310,16 @@ public class BarrageUtil {
             Arrays.fill(result.conversionFactors, 1);
         }
         result.conversionFactors[i] = factor;
+    }
+
+    public static ConvertedArrowSchema convertArrowSchema(final ExportedTableCreationResponse response) {
+        // TODO: use custom deserializer?
+        if (false) {
+            final ByteBuffer bb = response.getSchemaHeader().asReadOnlyByteBuffer();
+            bb.position(bb.position() + 8);
+            return convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb));
+        }
+        return convertArrowSchema(SchemaHelper.schema(response));
     }
 
     public static ConvertedArrowSchema convertArrowSchema(

@@ -116,8 +116,11 @@ public interface DeephavenUriI {
 
     interface Visitor {
         void visit(DeephavenUriField field);
+
         void visit(DeephavenUriApplicationField applicationField);
+
         void visit(DeephavenUriQueryScope queryScope);
+
         void visit(DeephavenUriProxy proxy);
     }
 }

@@ -15,7 +15,8 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
     }
 
     public static boolean isMatch(Path path) {
-        return !path.isAbsolute() && path.getNameCount() == 4 && APPLICATION.equals(path.getName(0)) && FIELD.equals(path.getName(2));
+        return !path.isAbsolute() && path.getNameCount() == 4 && APPLICATION.equals(path.getName(0))
+                && FIELD.equals(path.getName(2));
     }
 
     public abstract String applicationId();

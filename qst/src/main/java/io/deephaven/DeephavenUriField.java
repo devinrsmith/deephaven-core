@@ -19,7 +19,7 @@ public abstract class DeephavenUriField extends DeephavenUriBase {
     }
 
     public final String applicationId() {
-        return host().get();
+        return target().orElseThrow(IllegalStateException::new).host();
     }
 
     public abstract String fieldName();
@@ -37,8 +37,8 @@ public abstract class DeephavenUriField extends DeephavenUriBase {
 
     @Check
     final void checkCanUseImplicit() {
-        if (!host().isPresent()) {
-            throw new IllegalArgumentException("Unable to use implicit application field when no host is present");
+        if (!target().isPresent()) {
+            throw new IllegalArgumentException("Unable to use implicit application field when no target is present");
         }
     }
 
@@ -49,9 +49,7 @@ public abstract class DeephavenUriField extends DeephavenUriBase {
 
     public interface Builder {
 
-        Builder host(String host);
-
-        Builder port(int port);
+        Builder target(DeephavenTarget target);
 
         Builder fieldName(String fieldName);
 

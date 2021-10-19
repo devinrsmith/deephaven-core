@@ -44,16 +44,14 @@ public abstract class DeephavenUriProxy extends DeephavenUriBase {
 
     @Check
     final void checkInnerHost() {
-        if (!innerUri().host().isPresent()) {
-            throw new IllegalArgumentException("Inner uri must have host");
+        if (innerUri().isLocal()) {
+            throw new IllegalArgumentException("Inner URI must be remote");
         }
     }
 
     public interface Builder {
 
-        Builder host(String host);
-
-        Builder port(int port);
+        Builder target(DeephavenTarget target);
 
         Builder innerUri(DeephavenUriI innerUri);
 

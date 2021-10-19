@@ -8,13 +8,13 @@ public abstract class DeephavenUriBase implements DeephavenUriI {
 
     @Override
     public final URI toUri() {
-        if (!host().isPresent()) {
-            return URI.create(String.format("%s:///%s", SCHEME, path()));
+        if (isLocal()) {
+            return URI.create(String.format("%s:///%s", DeephavenTarget.LOCAL_SCHEME, path()));
         }
-        if (port().isPresent()) {
-            return URI.create(String.format("%s://%s:%d/%s", SCHEME, host().get(), port().getAsInt(), path()));
-        }
-        return URI.create(String.format("%s://%s/%s", SCHEME, host().get(), path()));
+        return target()
+                .orElseThrow(IllegalStateException::new)
+                .targetUri()
+                .resolve(path().toString());
     }
 
     @Override

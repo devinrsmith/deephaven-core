@@ -32,9 +32,7 @@ public abstract class DeephavenUriQueryScope extends DeephavenUriBase {
 
     public interface Builder {
 
-        Builder host(String host);
-
-        Builder port(int port);
+        Builder target(DeephavenTarget target);
 
         Builder variableName(String variableName);
 

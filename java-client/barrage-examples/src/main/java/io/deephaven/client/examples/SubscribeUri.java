@@ -5,6 +5,7 @@
 package io.deephaven.client.examples;
 
 import io.deephaven.DeephavenUri;
+import io.deephaven.DeephavenUriI;
 import io.deephaven.qst.TableCreationLogic;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -16,11 +17,11 @@ class SubscribeUri extends SubscribeExampleBase {
 
     @Parameters(arity = "1", paramLabel = "URI", description = "URI to subscribe to.",
             converter = DeephavenUriConverter.class)
-    DeephavenUri uri;
+    DeephavenUriI uri;
 
     @Override
     protected String target() {
-        return uri.host().get() + ":" + uri.port().orElse(10000);
+        return uri.host().get() + ":" + uri.port().orElse(8080);
     }
 
     @Override

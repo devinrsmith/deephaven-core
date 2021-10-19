@@ -11,18 +11,18 @@ import java.util.Objects;
 
 public class DeephavenUriLocal implements DeephavenUriI.Visitor {
 
-    public static Table of(BarrageLocalResolver resolver, DeephavenUriI uri) {
-        if (uri.host().isPresent()) {
+    public static Table of(BarrageLocalTableResolver resolver, DeephavenUriI uri) {
+        if (!uri.isLocal()) {
             throw new IllegalArgumentException("Should only be local URIs");
         }
         return uri.walk(new DeephavenUriLocal(resolver)).out();
     }
 
-    private final BarrageLocalResolver resolver;
+    private final BarrageLocalTableResolver resolver;
 
     private Table out;
 
-    private DeephavenUriLocal(BarrageLocalResolver resolver) {
+    private DeephavenUriLocal(BarrageLocalTableResolver resolver) {
         this.resolver = Objects.requireNonNull(resolver);
     }
 

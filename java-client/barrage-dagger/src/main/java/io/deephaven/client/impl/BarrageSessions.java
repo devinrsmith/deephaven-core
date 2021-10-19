@@ -32,10 +32,10 @@ public class BarrageSessions {
 
     private final Map<String, BarrageSession> sessions;
 
-    private final BarrageLocalResolver resolver;
+    private final BarrageLocalTableResolver resolver;
 
     private BarrageSessions(ScheduledExecutorService executor, BufferAllocator allocator,
-            Map<String, BarrageSession> sessions, BarrageLocalResolver resolver) {
+            Map<String, BarrageSession> sessions, BarrageLocalTableResolver resolver) {
         this.executor = Objects.requireNonNull(executor);
         this.allocator = Objects.requireNonNull(allocator);
         this.sessions = Objects.requireNonNull(sessions);
@@ -65,7 +65,7 @@ public class BarrageSessions {
 
     public Table subscribe(DeephavenUriI uri, BarrageSubscriptionOptions options)
             throws TableHandleException, InterruptedException {
-        if (!uri.host().isPresent()) {
+        if (uri.isLocal()) {
             return DeephavenUriLocal.of(resolver, uri);
         }
         final TicketTable ticketTable = DeephavenUriBarrage.of(uri);
@@ -79,6 +79,9 @@ public class BarrageSessions {
     }
 
     private static String resolveTarget(DeephavenUriI uri) {
+        if (!uri.isRemote()) {
+            throw new IllegalArgumentException("Should only resolve targets with remote URIs");
+        }
         // TODO: DNS SRV
         return uri.host().get() + ":" + uri.port().orElse(8080);
     }

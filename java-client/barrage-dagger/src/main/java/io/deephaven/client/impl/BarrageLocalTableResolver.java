@@ -2,7 +2,7 @@ package io.deephaven.client.impl;
 
 import io.deephaven.db.tables.Table;
 
-public interface BarrageLocalResolver {
+public interface BarrageLocalTableResolver {
 
     Table resolveQueryScopeName(String queryScopeName);
 

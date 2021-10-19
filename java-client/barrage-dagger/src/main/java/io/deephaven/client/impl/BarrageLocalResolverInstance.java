@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class BarrageLocalResolverInstance {
 
-    private static BarrageLocalResolver resolver;
+    private static BarrageLocalTableResolver resolver;
 
-    public static void init(BarrageLocalResolver resolver) {
+    public static void init(BarrageLocalTableResolver resolver) {
         synchronized (BarrageLocalResolverInstance.class) {
             if (BarrageLocalResolverInstance.resolver != null) {
                 throw new IllegalStateException("Can only set resolver once");
@@ -15,7 +15,7 @@ public class BarrageLocalResolverInstance {
         }
     }
 
-    public static BarrageLocalResolver get() {
+    public static BarrageLocalTableResolver get() {
         return Objects.requireNonNull(resolver);
     }
 }

@@ -7,6 +7,7 @@ import io.deephaven.db.v2.utils.ProcessMemoryTracker;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
 import io.deephaven.grpc_api.appmode.ApplicationInjector;
 import io.deephaven.grpc_api.appmode.ApplicationServiceGrpcImpl;
+import io.deephaven.grpc_api.appmode.BarrageLocalResolverInjector;
 import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
 import io.deephaven.grpc_api.log.LogInit;
 import io.deephaven.grpc_api.session.SessionService;
@@ -57,6 +58,7 @@ public class DeephavenApiServer {
     private final ConsoleServiceGrpcImpl consoleService;
     private final ApplicationInjector applicationInjector;
     private final ApplicationServiceGrpcImpl applicationService;
+    private final BarrageLocalResolverInjector barrageLocalResolverInjector;
 
     @Inject
     public DeephavenApiServer(
@@ -65,13 +67,15 @@ public class DeephavenApiServer {
             final LogInit logInit,
             final ConsoleServiceGrpcImpl consoleService,
             final ApplicationInjector applicationInjector,
-            final ApplicationServiceGrpcImpl applicationService) {
+            final ApplicationServiceGrpcImpl applicationService,
+            final BarrageLocalResolverInjector barrageLocalResolverInjector) {
         this.server = server;
         this.ltm = ltm;
         this.logInit = logInit;
         this.consoleService = consoleService;
         this.applicationInjector = applicationInjector;
         this.applicationService = applicationService;
+        this.barrageLocalResolverInjector = barrageLocalResolverInjector;
     }
 
     public Server server() {
@@ -99,6 +103,8 @@ public class DeephavenApiServer {
 
         // inject applications before we start the gRPC server
         applicationInjector.run();
+
+        barrageLocalResolverInjector.init();
 
         log.info().append("Starting server...").endl();
         server.start();

@@ -4,11 +4,10 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.OptionalInt;
+
+import static io.deephaven.DeephavenTarget.LOCAL_SCHEME;
 
 public interface DeephavenUriI {
-
-    String SCHEME = "dh";
 
     Path APPLICATION = Paths.get("a");
 
@@ -23,7 +22,7 @@ public interface DeephavenUriI {
     }
 
     static DeephavenUriI from(URI uri) {
-        if (!SCHEME.equals(uri.getScheme())) {
+        if (!LOCAL_SCHEME.equals(uri.getScheme())) {
             throw new IllegalArgumentException(String.format("Invalid Deephaven URI scheme '%s'", uri.getScheme()));
         }
         if (uri.isOpaque()) {
@@ -100,13 +99,19 @@ public interface DeephavenUriI {
         throw new IllegalArgumentException();
     }
 
-    Optional<String> host();
-
-    OptionalInt port();
+    Optional<DeephavenTarget> target();
 
     URI toUri();
 
     Path path();
+
+    default boolean isLocal() {
+        return !target().isPresent();
+    }
+
+    default boolean isRemote() {
+        return target().isPresent();
+    }
 
     <V extends Visitor> V walk(V visitor);
 

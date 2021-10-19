@@ -46,9 +46,7 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
 
     public interface Builder {
 
-        Builder host(String host);
-
-        Builder port(int port);
+        Builder target(DeephavenTarget target);
 
         Builder applicationId(String applicationId);
 

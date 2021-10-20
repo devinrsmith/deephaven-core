@@ -1,28 +1,41 @@
 package io.deephaven.uri;
 
-import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Parameter;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static io.deephaven.uri.LocalFieldUri.FIELD;
 
 /**
- * A Deephaven application field URI.
+ * A local Deephaven application field URI.
  *
  * <p>
- * For example, {@code dh://example.com/a/my_application/f/my_table}.
+ * For example, {@code local:///a/my_application/f/my_table}.
  */
 @Immutable
-@BuildableStyle
-public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
+@SimpleStyle
+public abstract class LocalApplicationUri extends LocalUriBase {
 
-    public static Builder builder() {
-        return ImmutableDeephavenUriApplicationField.builder();
-    }
+    public static final Path APPLICATION = Paths.get("a");
 
     public static boolean isMatch(Path path) {
         return !path.isAbsolute() && path.getNameCount() == 4 && APPLICATION.equals(path.getName(0))
                 && FIELD.equals(path.getName(2));
+    }
+
+    public static LocalApplicationUri of(String applicationId, String fieldName) {
+        return ImmutableLocalApplicationUri.of(applicationId, fieldName);
+    }
+
+    public static LocalApplicationUri of(Path path) {
+        if (!isMatch(path)) {
+            throw new IllegalArgumentException();
+        }
+        return of(path.getName(1).toString(), path.getName(3).toString());
     }
 
     /**
@@ -30,6 +43,7 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
      *
      * @return the application id
      */
+    @Parameter
     public abstract String applicationId();
 
     /**
@@ -37,10 +51,11 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
      *
      * @return the field name
      */
+    @Parameter
     public abstract String fieldName();
 
     @Override
-    public final <V extends Visitor> V walk(V visitor) {
+    public final <V extends LocalUri.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;
     }
@@ -51,7 +66,7 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
      * @return the path.
      */
     @Override
-    public final Path path() {
+    public final Path localPath() {
         return APPLICATION.resolve(applicationId()).resolve(FIELD).resolve(fieldName());
     }
 
@@ -63,23 +78,5 @@ public abstract class DeephavenUriApplicationField extends DeephavenUriBase {
     @Check
     final void checkFieldName() {
         // todo
-    }
-
-    public interface Builder {
-
-        Builder target(DeephavenTarget target);
-
-        Builder applicationId(String applicationId);
-
-        Builder fieldName(String fieldName);
-
-        default Builder parse(Path path) {
-            if (!isMatch(path)) {
-                throw new IllegalArgumentException();
-            }
-            return applicationId(path.getName(1).toString()).fieldName(path.getName(3).toString());
-        }
-
-        DeephavenUriApplicationField build();
     }
 }

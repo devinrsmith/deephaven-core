@@ -6,17 +6,20 @@ import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
 import io.deephaven.qst.table.TableSpec;
 import io.deephaven.qst.table.TicketTable;
 import io.deephaven.uri.DeephavenTarget;
-import io.deephaven.uri.DeephavenUri;
-import io.deephaven.uri.DeephavenUriApplicationField;
-import io.deephaven.uri.DeephavenUriField;
-import io.deephaven.uri.DeephavenUriProxy;
-import io.deephaven.uri.DeephavenUriQueryScope;
+import io.deephaven.uri.LocalApplicationUri;
+import io.deephaven.uri.LocalUri;
+import io.deephaven.uri.LocalFieldUri;
+import io.deephaven.uri.LocalQueryScopeUri;
+import io.deephaven.uri.RemoteUri;
+import io.deephaven.uri.ResolvableUri;
+import io.deephaven.uri.ResolvableUri.Visitor;
 import io.deephaven.uri.TableResolver;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,31 +50,28 @@ public class BarrageTableResolver implements TableResolver {
     }
 
     @Override
-    public boolean canResolve(DeephavenUri uri) {
-        return uri.isRemote();
+    public boolean canResolve(ResolvableUri uri) {
+        return uri.walk(new CanResolve()).out();
     }
 
     @Override
-    public Table resolve(DeephavenUri uri) throws InterruptedException {
+    public Table resolve(ResolvableUri uri) throws InterruptedException {
         try {
-            return subscribe(uri);
+            return subscribe(Resolver.of(uri));
         } catch (TableHandleException e) {
             throw e.asUnchecked();
         }
     }
 
-    public Table subscribe(DeephavenUri uri) throws TableHandleException, InterruptedException {
+    public Table subscribe(RemoteUri uri) throws TableHandleException, InterruptedException {
         return subscribe(uri, OPTIONS);
     }
 
-    public Table subscribe(DeephavenUri uri, BarrageSubscriptionOptions options)
+    public Table subscribe(RemoteUri uri, BarrageSubscriptionOptions options)
             throws TableHandleException, InterruptedException {
-        if (!uri.isRemote()) {
-            throw new IllegalArgumentException("Can only subscribe to Deephaven remote URIs with Barrage");
-        }
-        final DeephavenTarget target = uri.target().orElseThrow(IllegalStateException::new);
-        final TableSpec tableSpec = TableSpecAdapter.of(uri);
-        final BarrageSubscription sub = session(target).subscribe(tableSpec, options);
+        final DeephavenTarget target = uri.target();
+        final TableSpec spec = RemoteResolver.of(uri);
+        final BarrageSubscription sub = session(target).subscribe(spec, options);
         return sub.entireTable();
     }
 
@@ -93,39 +93,133 @@ public class BarrageTableResolver implements TableResolver {
                 .newBarrageSession();
     }
 
-    public static class TableSpecAdapter implements DeephavenUri.Visitor {
+    static class CanResolve implements ResolvableUri.Visitor {
+        private Boolean out;
 
-        public static TableSpec of(DeephavenUri uri) {
-            return uri.walk(new TableSpecAdapter()).out();
+        public boolean out() {
+            return Objects.requireNonNull(out);
         }
 
+        @Override
+        public void visit(LocalUri localUri) {
+            out = false;
+        }
+
+        @Override
+        public void visit(RemoteUri remoteUri) {
+            remoteUri.uri().walk(new Visitor() {
+                @Override
+                public void visit(LocalUri localUri) {
+                    localUri.walk(new LocalUri.Visitor() {
+                        @Override
+                        public void visit(LocalFieldUri fieldUri) {
+                            out = true;
+                        }
+
+                        @Override
+                        public void visit(LocalApplicationUri applicationField) {
+                            out = true;
+                        }
+
+                        @Override
+                        public void visit(LocalQueryScopeUri queryScope) {
+                            out = true;
+                        }
+                    });
+                }
+
+                @Override
+                public void visit(RemoteUri remoteUri) {
+                    out = false; // don't support proxy yet
+                }
+
+                @Override
+                public void visit(URI uri) {
+                    out = false; // don't support generic URI yet
+                }
+            });
+        }
+
+        @Override
+        public void visit(URI uri) {
+            out = false;
+        }
+    }
+
+    static class Resolver implements ResolvableUri.Visitor {
+
+        public static RemoteUri of(ResolvableUri uri) {
+            return uri.walk(new Resolver()).out();
+        }
+
+        private RemoteUri out;
+
+        public RemoteUri out() {
+            return Objects.requireNonNull(out);
+        }
+
+        @Override
+        public void visit(LocalUri localUri) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void visit(RemoteUri remoteUri) {
+            out = remoteUri;
+        }
+
+        @Override
+        public void visit(URI uri) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static class RemoteResolver implements ResolvableUri.Visitor {
+
+        public static TableSpec of(RemoteUri remoteUri) {
+            return remoteUri.uri().walk(new RemoteResolver(remoteUri.target())).out();
+        }
+
+        private final DeephavenTarget target;
         private TableSpec out;
 
-        private TableSpecAdapter() {}
+        public RemoteResolver(DeephavenTarget target) {
+            this.target = Objects.requireNonNull(target);
+        }
 
         public TableSpec out() {
             return Objects.requireNonNull(out);
         }
 
         @Override
-        public void visit(DeephavenUriField field) {
-            out = TicketTable.fromApplicationField(field.applicationId(), field.fieldName());
+        public void visit(LocalUri localUri) {
+            localUri.walk(new LocalUri.Visitor() {
+                @Override
+                public void visit(LocalFieldUri fieldUri) {
+                    out = TicketTable.fromApplicationField(target.host(), fieldUri.fieldName());
+                }
+
+                @Override
+                public void visit(LocalApplicationUri applicationField) {
+                    out = TicketTable.fromApplicationField(applicationField.applicationId(),
+                            applicationField.fieldName());
+                }
+
+                @Override
+                public void visit(LocalQueryScopeUri queryScope) {
+                    out = TicketTable.fromQueryScopeField(queryScope.variableName());
+                }
+            });
         }
 
         @Override
-        public void visit(DeephavenUriApplicationField applicationField) {
-            out = TicketTable.fromApplicationField(applicationField.applicationId(), applicationField.fieldName());
+        public void visit(RemoteUri remoteUri) {
+            throw new UnsupportedOperationException("Proxying not supported yet");
         }
 
         @Override
-        public void visit(DeephavenUriQueryScope queryScope) {
-            out = TicketTable.fromQueryScopeField(queryScope.variableName());
-        }
-
-        @Override
-        public void visit(DeephavenUriProxy proxy) {
-            // out = TicketTable.of(proxy.path().toString());
-            throw new UnsupportedOperationException("Proxy not supported yet");
+        public void visit(URI uri) {
+            throw new UnsupportedOperationException("Remote generic URIs not supported yet");
         }
     }
 }

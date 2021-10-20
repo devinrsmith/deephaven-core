@@ -43,7 +43,7 @@ import io.deephaven.db.v2.utils.TimeProvider;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.io.streams.BzipFileOutputStream;
 import io.deephaven.io.util.NullOutputStream;
-import io.deephaven.uri.DeephavenUri;
+import io.deephaven.uri.ResolvableUri;
 import io.deephaven.uri.TableResolverInstance;
 import io.deephaven.util.annotations.ScriptApi;
 import io.deephaven.util.process.ProcessEnvironment;
@@ -59,6 +59,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.net.URI;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
@@ -1693,13 +1694,5 @@ public class TableTools {
             throw new IllegalArgumentException("Type " + dataTypeStr + " not known", e);
         }
         return dataType;
-    }
-
-    public static Table resolve(String deephavenUri) throws InterruptedException {
-        return resolve(DeephavenUri.of(deephavenUri));
-    }
-
-    public static Table resolve(DeephavenUri uri) throws InterruptedException {
-        return TableResolverInstance.get().resolve(uri);
     }
 }

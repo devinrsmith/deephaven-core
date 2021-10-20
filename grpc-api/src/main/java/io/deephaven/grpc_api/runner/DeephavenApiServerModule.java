@@ -12,7 +12,9 @@ import io.deephaven.grpc_api.barrage.BarrageModule;
 import io.deephaven.grpc_api.console.ConsoleModule;
 import io.deephaven.grpc_api.console.groovy.GroovyConsoleSessionModule;
 import io.deephaven.grpc_api.console.python.PythonConsoleSessionModule;
+import io.deephaven.grpc_api.csv.CsvModule;
 import io.deephaven.grpc_api.log.LogModule;
+import io.deephaven.grpc_api.parquet.ParquetModule;
 import io.deephaven.grpc_api.session.SessionModule;
 import io.deephaven.grpc_api.table.TableModule;
 import io.deephaven.grpc_api.util.Scheduler;
@@ -43,7 +45,9 @@ import java.util.concurrent.TimeUnit;
         ArrowModule.class,
         AuthContextModule.class,
         BarrageModule.class,
+        CsvModule.class,
         LogModule.class,
+        ParquetModule.class,
         SessionModule.class,
         TableModule.class,
         ConsoleModule.class,

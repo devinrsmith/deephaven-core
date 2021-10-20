@@ -4,15 +4,16 @@ import io.deephaven.appmode.ApplicationState;
 import io.deephaven.appmode.Field;
 import io.deephaven.db.tables.Table;
 import io.deephaven.grpc_api.console.GlobalSessionProvider;
-import io.deephaven.uri.DeephavenUri;
-import io.deephaven.uri.DeephavenUri.Visitor;
-import io.deephaven.uri.DeephavenUriApplicationField;
-import io.deephaven.uri.DeephavenUriField;
-import io.deephaven.uri.DeephavenUriProxy;
-import io.deephaven.uri.DeephavenUriQueryScope;
+import io.deephaven.uri.LocalApplicationUri;
+import io.deephaven.uri.LocalFieldUri;
+import io.deephaven.uri.LocalQueryScopeUri;
+import io.deephaven.uri.LocalUri;
+import io.deephaven.uri.RemoteUri;
+import io.deephaven.uri.ResolvableUri;
 import io.deephaven.uri.TableResolver;
 
 import javax.inject.Inject;
+import java.net.URI;
 import java.util.Objects;
 
 public final class LocalTableResolver implements TableResolver {
@@ -27,19 +28,16 @@ public final class LocalTableResolver implements TableResolver {
     }
 
     @Override
-    public boolean canResolve(DeephavenUri uri) {
-        return uri.isLocal() && uri.walk(new CanResolve()).out();
+    public boolean canResolve(ResolvableUri uri) {
+        return uri.walk(new CanResolve()).out();
     }
 
     @Override
-    public Table resolve(DeephavenUri uri) throws InterruptedException {
+    public Table resolve(ResolvableUri uri) {
         return uri.walk(new Resolver()).out();
     }
 
-    public Table resolve(DeephavenUriQueryScope uri) {
-        if (!uri.isLocal()) {
-            throw new IllegalArgumentException("Can only resolve local URIs");
-        }
+    public Table resolve(LocalQueryScopeUri uri) {
         final String variableName = uri.variableName();
         final Object variable = globalSessionProvider.getGlobalSession().getVariable(variableName, null);
         return asTable(variable, "global query scope", variableName);
@@ -50,17 +48,7 @@ public final class LocalTableResolver implements TableResolver {
         // return asTable(field, "global query scope", queryScopeName);
     }
 
-    public Table resolve(DeephavenUriField uri) {
-        if (!uri.isLocal()) {
-            throw new IllegalArgumentException("Can only resolve local URIs");
-        }
-        return app(uri.applicationId(), uri.fieldName());
-    }
-
-    public Table resolve(DeephavenUriApplicationField uri) {
-        if (!uri.isLocal()) {
-            throw new IllegalArgumentException("Can only resolve local URIs");
-        }
+    public Table resolve(LocalApplicationUri uri) {
         return app(uri.applicationId(), uri.fieldName());
     }
 
@@ -84,7 +72,7 @@ public final class LocalTableResolver implements TableResolver {
         return (Table) value;
     }
 
-    private static class CanResolve implements Visitor {
+    private static class CanResolve implements ResolvableUri.Visitor, LocalUri.Visitor {
 
         private Boolean out;
 
@@ -93,27 +81,37 @@ public final class LocalTableResolver implements TableResolver {
         }
 
         @Override
-        public void visit(DeephavenUriField field) {
-            out = true;
+        public void visit(LocalUri localUri) {
+            localUri.walk((LocalUri.Visitor) this);
         }
 
         @Override
-        public void visit(DeephavenUriApplicationField applicationField) {
-            out = true;
-        }
-
-        @Override
-        public void visit(DeephavenUriQueryScope queryScope) {
-            out = true;
-        }
-
-        @Override
-        public void visit(DeephavenUriProxy proxy) {
+        public void visit(RemoteUri remoteUri) {
             out = false;
+        }
+
+        @Override
+        public void visit(URI uri) {
+            out = false;
+        }
+
+        @Override
+        public void visit(LocalFieldUri fieldUri) {
+            out = false; // must be paired w/ application id, or new server logic
+        }
+
+        @Override
+        public void visit(LocalApplicationUri applicationField) {
+            out = true;
+        }
+
+        @Override
+        public void visit(LocalQueryScopeUri queryScope) {
+            out = true;
         }
     }
 
-    private class Resolver implements Visitor {
+    private class Resolver implements ResolvableUri.Visitor, LocalUri.Visitor {
 
         private Table out;
 
@@ -122,23 +120,33 @@ public final class LocalTableResolver implements TableResolver {
         }
 
         @Override
-        public void visit(DeephavenUriField field) {
-            out = resolve(field);
+        public void visit(LocalUri localUri) {
+            localUri.walk((LocalUri.Visitor) this);
         }
 
         @Override
-        public void visit(DeephavenUriApplicationField applicationField) {
+        public void visit(RemoteUri remoteUri) {
+            throw new UnsupportedOperationException(String.format("Unable to resolve '%s'", remoteUri));
+        }
+
+        @Override
+        public void visit(URI uri) {
+            throw new UnsupportedOperationException(String.format("Unable to resolve '%s'", uri));
+        }
+
+        @Override
+        public void visit(LocalFieldUri fieldUri) {
+            throw new UnsupportedOperationException(String.format("Unable to resolve '%s'", fieldUri));
+        }
+
+        @Override
+        public void visit(LocalApplicationUri applicationField) {
             out = resolve(applicationField);
         }
 
         @Override
-        public void visit(DeephavenUriQueryScope queryScope) {
+        public void visit(LocalQueryScopeUri queryScope) {
             out = resolve(queryScope);
-        }
-
-        @Override
-        public void visit(DeephavenUriProxy proxy) {
-            throw new UnsupportedOperationException("Proxy not supported");
         }
     }
 }

@@ -19,7 +19,6 @@ public interface BarrageModule {
         return new RootAllocator();
     }
 
-
     @Provides
     @Singleton
     static ScheduledExecutorService providesScheduler() {

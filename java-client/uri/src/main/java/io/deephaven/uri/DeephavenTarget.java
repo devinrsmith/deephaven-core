@@ -6,28 +6,44 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.OptionalInt;
 
 /**
- * A Deephaven target represents the information necessary to establish a connection to a Deephaven service. There is a
- * one-to-one mapping between a Deephaven target and its valid {@link #toUri() URI}.
+ * A Deephaven target represents the information necessary to establish a connection to a remote Deephaven service.
+ * There is a one-to-one mapping between a Deephaven target and its valid {@link #toUri() URI}.
  *
  * <p>
  * A Deephaven target has a {@link #scheme() scheme}, {@link #host() host}, and optional {@link #port() port}.
  *
  * <p>
- * The scheme must be {@code dh}, for TLS; or {@code dh-plain}, for plaintext.
+ * The scheme must be {@link #TLS_SCHEME dh}, for TLS; or {@link #PLAINTEXT_SCHEME dh-plain}, for plaintext.
  */
 @Immutable
 @BuildableStyle
 public abstract class DeephavenTarget {
 
+    /**
+     * The scheme for TLS, {@code dh}.
+     */
     public static final String TLS_SCHEME = "dh";
 
+    /**
+     * The scheme for plaintext, {@code dh-plain}.
+     */
     public static final String PLAINTEXT_SCHEME = "dh-plain";
 
-    public static final String LOCAL_SCHEME = TLS_SCHEME;
-
+    /**
+     * Returns true if the scheme is valid for a Deephaven target.
+     *
+     * <p>
+     * The valid schemes are {@link #TLS_SCHEME dh} and {@link #PLAINTEXT_SCHEME dh-plain}.
+     *
+     * @param scheme the scheme
+     * @return true iff scheme is valid for Deephaven target
+     *
+     */
     public static boolean isValidScheme(String scheme) {
         return TLS_SCHEME.equals(scheme) || PLAINTEXT_SCHEME.equals(scheme);
     }
@@ -47,6 +63,36 @@ public abstract class DeephavenTarget {
      */
     public static DeephavenTarget of(String targetUri) {
         return of(URI.create(targetUri), true);
+    }
+
+    public static DeephavenTarget parse(Path parts) {
+        if (parts.getNameCount() != 2) {
+            throw new IllegalStateException("Expected 2 parts parts for target");
+        }
+        final String scheme = parts.getName(0).toString();
+        if (!isValidScheme(scheme)) {
+            throw new IllegalArgumentException(String.format("Invalid scheme '%s'", scheme));
+        }
+        final Builder builder = builder();
+        switch (scheme) {
+            case TLS_SCHEME:
+                builder.isTLS(true);
+                break;
+            case PLAINTEXT_SCHEME:
+                builder.isTLS(false);
+                break;
+            default:
+                throw new IllegalStateException(String.format("Unexpected scheme '%s'", scheme));
+        }
+        final String[] authorityParts = parts.getName(1).toString().split(":");
+        if (authorityParts.length != 1 && authorityParts.length != 2) {
+            throw new IllegalArgumentException("Expected 1 or 2 parts for authority");
+        }
+        builder.host(authorityParts[0]);
+        if (authorityParts.length == 2) {
+            builder.port(Integer.parseInt(authorityParts[1]));
+        }
+        return builder.build();
     }
 
     /**
@@ -124,17 +170,21 @@ public abstract class DeephavenTarget {
         return URI.create(toString());
     }
 
+    public final URI toUri(String path) {
+        return URI.create(String.format("%s://%s/%s", scheme(), authority(), path));
+    }
+
     @Default
     public boolean isTLS() {
         return "true".equals(System.getProperty("deephaven.uri.tls", "false"));
     }
 
-    public final String authority() {
-        return port().isPresent() ? String.format("%s:%d", host(), port().getAsInt()) : host();
+    public final Path toParts() {
+        return Paths.get(scheme()).resolve(authority());
     }
 
-    public final URI toUri(String path) {
-        return URI.create(String.format("%s://%s/%s", scheme(), authority(), path));
+    public final String authority() {
+        return port().isPresent() ? String.format("%s:%d", host(), port().getAsInt()) : host();
     }
 
     @Check

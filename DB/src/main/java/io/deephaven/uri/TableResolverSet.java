@@ -14,8 +14,12 @@ public final class TableResolverSet implements TableResolver {
         this.resolvers = Objects.requireNonNull(resolvers);
     }
 
+    public Set<TableResolver> resolvers() {
+        return resolvers;
+    }
+
     @Override
-    public boolean canResolve(DeephavenUri uri) {
+    public boolean canResolve(ResolvableUri uri) {
         for (TableResolver resolver : resolvers) {
             if (resolver.canResolve(uri)) {
                 return true;
@@ -25,7 +29,7 @@ public final class TableResolverSet implements TableResolver {
     }
 
     @Override
-    public Table resolve(DeephavenUri uri) throws InterruptedException {
+    public Table resolve(ResolvableUri uri) throws InterruptedException {
         for (TableResolver resolver : resolvers) {
             if (resolver.canResolve(uri)) {
                 return resolver.resolve(uri);

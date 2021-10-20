@@ -12,6 +12,7 @@ import io.deephaven.grpc_api.log.LogInit;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.uri.TableResolver;
 import io.deephaven.uri.TableResolverInstance;
 import io.deephaven.uri.TableResolverSet;
 import io.deephaven.util.process.ProcessEnvironment;
@@ -105,7 +106,12 @@ public class DeephavenApiServer {
         // inject applications before we start the gRPC server
         applicationInjector.run();
 
-        TableResolverInstance.init(tableResolverSet);
+        {
+            for (TableResolver resolver : tableResolverSet.resolvers()) {
+                log.info().append("Found table resolver ").append(resolver.getClass().toString()).endl();
+            }
+            TableResolverInstance.init(tableResolverSet);
+        }
 
         log.info().append("Starting server...").endl();
         server.start();

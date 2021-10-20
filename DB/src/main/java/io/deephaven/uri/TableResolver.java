@@ -4,7 +4,7 @@ import io.deephaven.db.tables.Table;
 
 public interface TableResolver {
 
-    boolean canResolve(DeephavenUri uri);
+    boolean canResolve(ResolvableUri uri);
 
-    Table resolve(DeephavenUri uri) throws InterruptedException;
+    Table resolve(ResolvableUri uri) throws InterruptedException;
 }

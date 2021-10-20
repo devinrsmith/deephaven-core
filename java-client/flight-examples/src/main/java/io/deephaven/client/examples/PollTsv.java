@@ -25,10 +25,6 @@ class PollTsv extends FlightExampleBase {
         boolean serial;
     }
 
-    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
-            defaultValue = "localhost:10000")
-    String target;
-
     @ArgGroup(exclusive = true)
     Mode mode;
 
@@ -41,11 +37,6 @@ class PollTsv extends FlightExampleBase {
     @Parameters(arity = "1", paramLabel = "QST", description = "QST file to send and get.",
             converter = TableConverter.class)
     TableSpec table;
-
-    @Override
-    protected String target() {
-        return target;
-    }
 
     @Override
     protected void execute(FlightSession flight) throws Exception {

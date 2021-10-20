@@ -1,42 +1,40 @@
 package io.deephaven.client.examples;
 
+import io.deephaven.client.impl.ChannelHelper;
+import io.deephaven.uri.DeephavenTarget;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import picocli.CommandLine.Option;
 
 public class ConnectOptions {
 
-    public static ManagedChannel open(String target, ConnectOptions options) {
+    public static final DeephavenTarget DEFAULT_TARGET = DeephavenTarget.builder()
+            .host("localhost")
+            .port(10000)
+            .isTLS(false)
+            .build();
+
+    public static ManagedChannel open(ConnectOptions options) {
         if (options == null) {
             options = new ConnectOptions();
+            // https://github.com/remkop/picocli/issues/844
+            options.target = DEFAULT_TARGET;
         }
-        return options.open(target);
+        return options.open();
     }
 
-    @Option(names = {"-p", "--plaintext"}, description = "The plaintext flag.")
-    Boolean plaintext;
+    @Option(names = {"-t", "--target"}, description = "The target, defaults to ${DEFAULT-VALUE}",
+            defaultValue = "dh-plain://localhost:10000", converter = DeephavenTargetConverter.class)
+    DeephavenTarget target;
 
     @Option(names = {"-u", "--user-agent"}, description = "The user-agent.")
     String userAgent;
 
-    public ManagedChannel open(String target) {
-        ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(target);
-        if (plaintext == null) {
-            if (target.startsWith("localhost:")) {
-                channelBuilder.usePlaintext();
-            } else {
-                channelBuilder.useTransportSecurity();
-            }
-        } else {
-            if (plaintext) {
-                channelBuilder.usePlaintext();
-            } else {
-                channelBuilder.useTransportSecurity();
-            }
-        }
+    public ManagedChannel open() {
+        final ManagedChannelBuilder<?> builder = ChannelHelper.channelBuilder(target);
         if (userAgent != null) {
-            channelBuilder.userAgent(userAgent);
+            builder.userAgent(userAgent);
         }
-        return channelBuilder.build();
+        return builder.build();
     }
 }

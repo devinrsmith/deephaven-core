@@ -11,7 +11,6 @@ import org.apache.arrow.memory.RootAllocator;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 import java.util.List;
@@ -29,10 +28,6 @@ class DoPutSpray implements Callable<Void> {
     @ArgGroup(exclusive = false, multiplicity = "2..*")
     List<ConnectOptions> connects;
 
-    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
-            defaultValue = "localhost:10000")
-    String target;
-
     @Parameters(arity = "1", paramLabel = "TICKET", description = "The ticket from the first connection.")
     String ticket;
 
@@ -46,14 +41,14 @@ class DoPutSpray implements Callable<Void> {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
         ConnectOptions source = connects.get(0);
 
-        final ManagedChannel sourceChannel = source.open(target);
+        final ManagedChannel sourceChannel = source.open();
         Runtime.getRuntime()
                 .addShutdownHook(new Thread(() -> onShutdown(scheduler, sourceChannel)));
 
         final FlightSession sourceSession = session(bufferAllocator, scheduler, sourceChannel);
         try (final TableHandle sourceHandle = sourceSession.session().execute(TicketTable.of(ticket))) {
             for (ConnectOptions other : connects.subList(1, connects.size())) {
-                final FlightSession destSession = session(bufferAllocator, scheduler, other.open(target));
+                final FlightSession destSession = session(bufferAllocator, scheduler, other.open());
                 try (final FlightStream in = sourceSession.stream(sourceHandle)) {
                     final TableHandle destHandle = destSession.put(in);
                     destSession.session().publish(variableName, destHandle).get();

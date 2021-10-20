@@ -4,9 +4,7 @@
 
 package io.deephaven.client.impl;
 
-import io.deephaven.db.tables.TableDefinition;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
-import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.qst.table.TableSpec;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -20,9 +18,7 @@ import io.grpc.MethodDescriptor;
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightGrpcUtilsExtension;
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.vector.types.pojo.Schema;
 
-import java.nio.ByteBuffer;
 import java.util.Collections;
 
 public class BarrageSession extends FlightSession implements BarrageSubscription.Factory {
@@ -47,8 +43,7 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     }
 
     @Override
-    public BarrageSubscription subscribe(
-            final TableSpec tableSpec, final BarrageSubscriptionOptions options)
+    public BarrageSubscription subscribe(final TableSpec tableSpec, final BarrageSubscriptionOptions options)
             throws TableHandle.TableHandleException, InterruptedException {
         try (final TableHandle handle = manager().execute(tableSpec)) {
             return subscribe(handle, options);
@@ -56,34 +51,8 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     }
 
     @Override
-    public BarrageSubscription subscribe(
-            final TableDefinition tableDefinition, final TableSpec tableSpec, final BarrageSubscriptionOptions options)
-            throws TableHandle.TableHandleException, InterruptedException {
-        try (final TableHandle handle = manager().execute(tableSpec)) {
-            return subscribe(tableDefinition, handle, options);
-        }
-    }
-
-    @Override
-    public BarrageSubscription subscribe(
-            final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
-
-        // desired, does not work
-        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
-
-        // force remote via (HasTicket)
-        // final TableDefinition tableDefinition =
-        // BarrageUtil.convertArrowSchema(schema((HasTicket) tableHandle)).tableDef;
-
-        return subscribe(tableDefinition, tableHandle, options);
-    }
-
-    @Override
-    public BarrageSubscription subscribe(
-            final TableDefinition tableDefinition, final TableHandle tableHandle,
-            final BarrageSubscriptionOptions options) {
-        final TableHandle handleForSubscription = tableHandle.newRef();
-        return new BarrageSubscriptionImpl(this, handleForSubscription, options, tableDefinition);
+    public BarrageSubscription subscribe(final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
+        return new BarrageSubscriptionImpl(this, tableHandle.newRef(), options);
     }
 
     public Channel channel() {

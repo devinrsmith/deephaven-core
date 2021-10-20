@@ -8,24 +8,14 @@ import io.deephaven.qst.TableCreationLogic;
 import io.deephaven.qst.table.TicketTable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "subscribe-qs", mixinStandardHelpOptions = true,
         description = "Request a table from the QueryScope and subscribe over barrage", version = "0.1.0")
 class SubscribeQueryScope extends SubscribeExampleBase {
 
-    @Option(names = {"-t", "--target"}, description = "The host target.",
-            defaultValue = "localhost:10000")
-    String target;
-
     @Parameters(arity = "1", paramLabel = "field", description = "Query scope field name to subscribe to.")
     String fieldName;
-
-    @Override
-    protected String target() {
-        return target;
-    }
 
     @Override
     protected TableCreationLogic logic() {

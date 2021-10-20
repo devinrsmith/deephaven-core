@@ -8,25 +8,15 @@ import io.deephaven.qst.TableCreationLogic;
 import io.deephaven.qst.table.TableSpec;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "subscribe-qst", mixinStandardHelpOptions = true,
         description = "Send a QST, get the results, and subscribe over barrage", version = "0.1.0")
 class SubscribeQST extends SubscribeExampleBase {
 
-    @Option(names = {"-t", "--target"}, description = "The host target.",
-            defaultValue = "localhost:10000")
-    String target;
-
     @Parameters(arity = "1", paramLabel = "QST", description = "QST file to send and get.",
             converter = TableConverter.class)
     TableSpec table;
-
-    @Override
-    protected String target() {
-        return target;
-    }
 
     @Override
     protected TableCreationLogic logic() {

@@ -17,9 +17,6 @@ import java.util.concurrent.ExecutionException;
         description = "Do Put New", version = "0.1.0")
 class DoPutNew extends FlightExampleBase {
 
-    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
-            defaultValue = "localhost:10000")
-    String target;
 
     @Option(names = {"-e", "--efficient"}, description = "Use the more efficient version",
             defaultValue = "false")
@@ -31,11 +28,6 @@ class DoPutNew extends FlightExampleBase {
 
     @Parameters(arity = "1", paramLabel = "VAR", description = "Variable name to publish.")
     String variableName;
-
-    @Override
-    protected String target() {
-        return target;
-    }
 
     @Override
     protected void execute(FlightSession flight) throws Exception {

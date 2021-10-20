@@ -1,4 +1,4 @@
-package io.deephaven;
+package io.deephaven.uri;
 
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Check;
@@ -6,6 +6,12 @@ import org.immutables.value.Value.Immutable;
 
 import java.nio.file.Path;
 
+/**
+ * A Deephaven field URI.
+ *
+ * <p>
+ * For example, {@code dh://example.com/f/my_table}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class DeephavenUriField extends DeephavenUriBase {
@@ -18,10 +24,20 @@ public abstract class DeephavenUriField extends DeephavenUriBase {
         return !path.isAbsolute() && path.getNameCount() == 2 && FIELD.equals(path.getName(0));
     }
 
+    /**
+     * The application id, taken from the target host name.
+     *
+     * @return the application id
+     */
     public final String applicationId() {
         return target().orElseThrow(IllegalStateException::new).host();
     }
 
+    /**
+     * The field name.
+     *
+     * @return the field name
+     */
     public abstract String fieldName();
 
     @Override
@@ -30,6 +46,11 @@ public abstract class DeephavenUriField extends DeephavenUriBase {
         return visitor;
     }
 
+    /**
+     * The path, equivalent to {@code f/${fieldName}}.
+     *
+     * @return the path.
+     */
     @Override
     public final Path path() {
         return FIELD.resolve(fieldName());

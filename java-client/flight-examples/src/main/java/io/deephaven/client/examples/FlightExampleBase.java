@@ -7,7 +7,6 @@ import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Option;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -23,12 +22,10 @@ abstract class FlightExampleBase implements Callable<Void> {
 
     protected abstract void execute(FlightSession flight) throws Exception;
 
-    protected abstract String target();
-
     @Override
     public final Void call() throws Exception {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-        ManagedChannel managedChannel = ConnectOptions.open(target(), connectOptions);
+        ManagedChannel managedChannel = ConnectOptions.open(connectOptions);
         Runtime.getRuntime()
                 .addShutdownHook(new Thread(() -> onShutdown(scheduler, managedChannel)));
 

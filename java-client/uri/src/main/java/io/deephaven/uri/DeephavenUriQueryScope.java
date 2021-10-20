@@ -1,10 +1,16 @@
-package io.deephaven;
+package io.deephaven.uri;
 
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
 import java.nio.file.Path;
 
+/**
+ * A Deephaven scope URI.
+ *
+ * <p>
+ * For example, {@code dh://example.com/s/my_global_table}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class DeephavenUriQueryScope extends DeephavenUriBase {
@@ -17,6 +23,11 @@ public abstract class DeephavenUriQueryScope extends DeephavenUriBase {
         return !path.isAbsolute() && path.getNameCount() == 2 && QUERY_SCOPE.equals(path.getName(0));
     }
 
+    /**
+     * The variable name.
+     *
+     * @return the variable name
+     */
     public abstract String variableName();
 
     @Override
@@ -25,6 +36,11 @@ public abstract class DeephavenUriQueryScope extends DeephavenUriBase {
         return visitor;
     }
 
+    /**
+     * The path, equivalent to {@code s/${variableName}}.
+     *
+     * @return the path
+     */
     @Override
     public final Path path() {
         return QUERY_SCOPE.resolve(variableName());

@@ -4,9 +4,9 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.multibindings.IntoSet;
 import io.deephaven.appmode.ApplicationState;
-import io.deephaven.client.impl.BarrageLocalTableResolver;
 import io.deephaven.db.util.ScriptSession;
 import io.deephaven.grpc_api.session.TicketResolver;
+import io.deephaven.uri.TableResolver;
 import io.grpc.BindableService;
 
 @Module
@@ -29,5 +29,6 @@ public interface AppModeModule {
     ApplicationStates bindApplicationStates(ApplicationTicketResolver resolver);
 
     @Binds
-    BarrageLocalTableResolver bindBarrageLocalTableResolver(BarrageLocalTableResolverImpl impl);
+    @IntoSet
+    TableResolver bindTableResolverLocal(LocalTableResolver impl);
 }

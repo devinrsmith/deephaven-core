@@ -56,20 +56,19 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
     /**
      * Represents a BarrageSubscription.
      *
-     * @param session the deephaven session that this export belongs to
+     * @param session the Deephaven session that this export belongs to
      * @param tableHandle the tableHandle to subscribe to (ownership is transferred to the subscription)
      * @param options the transport level options for this subscription
-     * @param tableDefinition the expected table definition
      */
     public BarrageSubscriptionImpl(
-            final BarrageSession session, final TableHandle tableHandle, final BarrageSubscriptionOptions options,
-            final TableDefinition tableDefinition) {
+            final BarrageSession session, final TableHandle tableHandle, final BarrageSubscriptionOptions options) {
         super(false);
 
         this.logName = ExportTicketHelper.toReadableString(tableHandle.ticket(), "tableHandle.ticket()");
         this.options = options;
         this.tableHandle = tableHandle;
 
+        final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
         resultTable = BarrageTable.make(tableDefinition, false);
         resultTable.addParentReference(this);
 

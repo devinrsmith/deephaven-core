@@ -1,13 +1,13 @@
 package io.deephaven.client.examples;
 
-import io.deephaven.DeephavenUriI;
+import io.deephaven.uri.DeephavenUri;
 import picocli.CommandLine.ITypeConverter;
 
-class DeephavenUriConverter implements ITypeConverter<DeephavenUriI> {
+class DeephavenUriConverter implements ITypeConverter<DeephavenUri> {
 
     @Override
-    public DeephavenUriI convert(String value) {
-        final DeephavenUriI uri = DeephavenUriI.from(value);
+    public DeephavenUri convert(String value) {
+        final DeephavenUri uri = DeephavenUri.of(value);
         if (uri.isLocal()) {
             throw new IllegalArgumentException("Clients aren't able to use local URIs");
         }

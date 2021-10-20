@@ -7,12 +7,13 @@ import io.deephaven.db.v2.utils.ProcessMemoryTracker;
 import io.deephaven.db.v2.utils.UpdatePerformanceTracker;
 import io.deephaven.grpc_api.appmode.ApplicationInjector;
 import io.deephaven.grpc_api.appmode.ApplicationServiceGrpcImpl;
-import io.deephaven.grpc_api.appmode.BarrageLocalResolverInjector;
 import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
 import io.deephaven.grpc_api.log.LogInit;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.uri.TableResolverInstance;
+import io.deephaven.uri.TableResolverSet;
 import io.deephaven.util.process.ProcessEnvironment;
 import io.deephaven.util.process.ShutdownManager;
 import io.grpc.Server;
@@ -58,7 +59,7 @@ public class DeephavenApiServer {
     private final ConsoleServiceGrpcImpl consoleService;
     private final ApplicationInjector applicationInjector;
     private final ApplicationServiceGrpcImpl applicationService;
-    private final BarrageLocalResolverInjector barrageLocalResolverInjector;
+    private final TableResolverSet tableResolverSet;
 
     @Inject
     public DeephavenApiServer(
@@ -68,14 +69,14 @@ public class DeephavenApiServer {
             final ConsoleServiceGrpcImpl consoleService,
             final ApplicationInjector applicationInjector,
             final ApplicationServiceGrpcImpl applicationService,
-            final BarrageLocalResolverInjector barrageLocalResolverInjector) {
+            final TableResolverSet tableResolverSet) {
         this.server = server;
         this.ltm = ltm;
         this.logInit = logInit;
         this.consoleService = consoleService;
         this.applicationInjector = applicationInjector;
         this.applicationService = applicationService;
-        this.barrageLocalResolverInjector = barrageLocalResolverInjector;
+        this.tableResolverSet = tableResolverSet;
     }
 
     public Server server() {
@@ -104,7 +105,7 @@ public class DeephavenApiServer {
         // inject applications before we start the gRPC server
         applicationInjector.run();
 
-        barrageLocalResolverInjector.init();
+        TableResolverInstance.init(tableResolverSet);
 
         log.info().append("Starting server...").endl();
         server.start();

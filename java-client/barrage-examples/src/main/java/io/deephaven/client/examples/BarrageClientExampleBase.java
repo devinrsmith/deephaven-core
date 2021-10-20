@@ -8,10 +8,9 @@ import io.deephaven.client.impl.BarrageSession;
 import io.deephaven.client.impl.BarrageSessionFactory;
 import io.deephaven.client.impl.DaggerDeephavenBarrageRoot;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import picocli.CommandLine.Option;
+import picocli.CommandLine.ArgGroup;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -20,34 +19,16 @@ import java.util.concurrent.TimeUnit;
 
 abstract class BarrageClientExampleBase implements Callable<Void> {
 
-    @Option(names = {"-p", "--plaintext"}, description = "Use plaintext.")
-    Boolean plaintext;
-
-    @Option(names = {"-u", "--user-agent"}, description = "User-agent.")
-    String userAgent;
+    @ArgGroup(exclusive = false)
+    ConnectOptions connectOptions;
 
     protected abstract void execute(BarrageSession session) throws Exception;
-
-    protected abstract String target();
-
-    protected ManagedChannel channel() {
-        final ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(target());
-        if ((plaintext != null && plaintext) || "localhost:10000".equals(target())) {
-            channelBuilder.usePlaintext();
-        } else {
-            channelBuilder.useTransportSecurity();
-        }
-        if (userAgent != null) {
-            channelBuilder.userAgent(userAgent);
-        }
-        return channelBuilder.build();
-    }
 
     @Override
     public final Void call() throws Exception {
         final BufferAllocator bufferAllocator = new RootAllocator();
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-        final ManagedChannel managedChannel = channel();
+        ManagedChannel managedChannel = ConnectOptions.open(connectOptions);
 
         Runtime.getRuntime()
                 .addShutdownHook(new Thread(() -> onShutdown(scheduler, managedChannel)));

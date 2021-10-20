@@ -40,7 +40,16 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -313,12 +322,7 @@ public class BarrageUtil {
     }
 
     public static ConvertedArrowSchema convertArrowSchema(final ExportedTableCreationResponse response) {
-        // Round-about way:
-        // return convertArrowSchema(SchemaHelper.schema(response));
-
-        final ByteBuffer bb = response.getSchemaHeader().asReadOnlyByteBuffer();
-        bb.position(bb.position() + SchemaHelper.offset);
-        return convertArrowSchema(org.apache.arrow.flatbuf.Schema.getRootAsSchema(bb));
+        return convertArrowSchema(SchemaHelper.flatbufSchema(response));
     }
 
     public static ConvertedArrowSchema convertArrowSchema(

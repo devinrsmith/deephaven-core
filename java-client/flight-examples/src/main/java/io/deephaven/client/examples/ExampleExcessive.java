@@ -13,18 +13,9 @@ import picocli.CommandLine.Option;
         version = "0.1.0")
 class ExampleExcessive extends FlightCannedTableBase implements TableCreationLogic {
 
-    @Option(names = {"-t", "--target"}, description = "The host target, default: ${DEFAULT-VALUE}",
-            defaultValue = "localhost:10000")
-    String target;
-
     @Option(names = {"-c", "--count"}, description = "The amount of heads/tails",
             defaultValue = "256")
     long count;
-
-    @Override
-    protected String target() {
-        return target;
-    }
 
     @Override
     protected TableCreationLogic logic() {

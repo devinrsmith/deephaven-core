@@ -13,15 +13,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 @Module
-public class BarrageSessionModule {
+public interface BarrageSessionModule {
     @Provides
-    public static BarrageSession newDeephavenClientSession(
+    static BarrageSession newDeephavenClientSession(
             SessionImpl session, BufferAllocator allocator, ManagedChannel managedChannel) {
         return BarrageSession.of(session, allocator, managedChannel);
     }
 
     @Provides
-    public static CompletableFuture<? extends BarrageSession> newDeephavenClientSessionFuture(
+    static CompletableFuture<? extends BarrageSession> newDeephavenClientSessionFuture(
             CompletableFuture<? extends SessionImpl> sessionFuture, BufferAllocator allocator,
             ManagedChannel managedChannel) {
         return sessionFuture.thenApply((Function<SessionImpl, BarrageSession>) session -> BarrageSession

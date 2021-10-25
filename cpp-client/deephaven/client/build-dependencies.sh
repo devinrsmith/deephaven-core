@@ -16,15 +16,15 @@ export CMAKE_PREFIX_PATH=${PFX}/abseil:${PFX}/cares:${PFX}/flatbuffers:${PFX}/gf
 
 
 cd $MYSRC
-git clone -b v3.18.0 --depth 1 https://github.com/protocolbuffers/protobuf.git
-git clone -b 2021-09-01 --depth 1 https://github.com/google/re2.git
-git clone -b v2.2.2 --depth 1 https://github.com/gflags/gflags.git
-git clone -b 20210324.2 --depth 1 https://github.com/abseil/abseil-cpp.git
-git clone -b v2.0.0 --depth 1 https://github.com/google/flatbuffers.git
-git clone -b cares-1_17_2 --depth 1 https://github.com/c-ares/c-ares.git
-git clone -b v1.2.11 --depth 1 https://github.com/madler/zlib
-git clone -b v1.38.0 --depth 1 https://github.com/grpc/grpc
-wget 'https://www.apache.org/dyn/closer.lua?action=download&filename=arrow/arrow-5.0.0/apache-arrow-5.0.0.tar.gz' -O apache-arrow-5.0.0.tar.gz
+git clone -c advice.detachedHead=false -b v3.18.0 --depth 1 https://github.com/protocolbuffers/protobuf.git
+git clone -c advice.detachedHead=false -b 2021-09-01 --depth 1 https://github.com/google/re2.git
+git clone -c advice.detachedHead=false -b v2.2.2 --depth 1 https://github.com/gflags/gflags.git
+git clone -c advice.detachedHead=false -b 20210324.2 --depth 1 https://github.com/abseil/abseil-cpp.git
+git clone -c advice.detachedHead=false -b v2.0.0 --depth 1 https://github.com/google/flatbuffers.git
+git clone -c advice.detachedHead=false -b cares-1_17_2 --depth 1 https://github.com/c-ares/c-ares.git
+git clone -c advice.detachedHead=false -b v1.2.11 --depth 1 https://github.com/madler/zlib
+git clone -c advice.detachedHead=false -b v1.38.0 --depth 1 https://github.com/grpc/grpc
+wget -q 'https://www.apache.org/dyn/closer.lua?action=download&filename=arrow/arrow-5.0.0/apache-arrow-5.0.0.tar.gz' -O apache-arrow-5.0.0.tar.gz
 tar xfz apache-arrow-5.0.0.tar.gz
 mkdir -p ${PFX}
 

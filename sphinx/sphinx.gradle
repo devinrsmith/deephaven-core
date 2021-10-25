@@ -130,7 +130,7 @@ tasks.named('cppClientDocsPrepareDocker').configure {
 }
 
 makePyDocTask('cppExamplesDocs', 'cpp-examples', [
-        ("$rootDir/cpp-examples/doc".toString()):'source',
+        ("$rootDir/cpp-client/cpp-examples/doc".toString()):'source',
         ("$buildDir/cppClientDocs".toString()):'cpp'
 ], "$buildDir/cppExamplesDocs") {
     it.containerDependencies.dependsOn = cppClientDocs

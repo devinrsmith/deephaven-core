@@ -58,7 +58,7 @@ variations in the future.
    ```
 9. Build and run the deephaven example which uses the installed client
    ```
-   cd $MYSRC/deephaven-core/cpp-examples/hello_world
+   cd $MYSRC/deephaven-core/cpp-client/cpp-examples/hello_world
    mkdir build && cd build
    cmake .. && make -j8
    ./hello_world

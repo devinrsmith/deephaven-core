@@ -25,6 +25,7 @@ import io.deephaven.grpc_api.table.ops.TimeTableGrpcImpl;
 import io.deephaven.grpc_api.table.ops.UngroupGrpcImpl;
 import io.deephaven.grpc_api.table.ops.UnstructuredFilterTableGrpcImpl;
 import io.deephaven.grpc_api.table.ops.UpdateOrSelectGrpcImpl;
+import io.deephaven.grpc_api.table.ops.UriTableGrpcImpl;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.grpc.BindableService;
 
@@ -49,6 +50,11 @@ public interface TableModule {
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.TIME_TABLE)
     GrpcTableOperation<?> bindOperationTimeTable(TimeTableGrpcImpl op);
+
+    @Binds
+    @IntoMap
+    @BatchOpCode(BatchTableRequest.Operation.OpCase.URI_TABLE)
+    GrpcTableOperation<?> bindOperationUriTable(UriTableGrpcImpl op);
 
     @Binds
     @IntoMap

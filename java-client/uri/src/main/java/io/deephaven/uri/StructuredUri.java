@@ -11,6 +11,22 @@ import java.net.URI;
  */
 public interface StructuredUri {
 
+    static StructuredUri of(URI uri) {
+        if (ApplicationUri.isWellFormed(uri)) {
+            return ApplicationUri.of(uri);
+        }
+        if (FieldUri.isWellFormed(uri)) {
+            return FieldUri.of(uri);
+        }
+        if (QueryScopeUri.isWellFormed(uri)) {
+            return QueryScopeUri.of(uri);
+        }
+        if (RemoteUri.isWellFormed(uri)) {
+            return RemoteUri.of(uri);
+        }
+        return CustomUri.of(uri);
+    }
+
     /**
      * The URI.
      *

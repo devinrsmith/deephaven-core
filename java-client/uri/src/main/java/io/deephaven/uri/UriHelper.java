@@ -16,6 +16,17 @@ public class UriHelper {
     }
 
     /**
+     * A URI is a "Deephaven local" when the scheme is {@value DeephavenUri#LOCAL_SCHEME}, the {@link URI#getPath()
+     * path} starts with {@code "/"}, and there are no other URI components.
+     *
+     * @param uri the uri
+     * @return true if {@code uri} is a "Deephaven Local"
+     */
+    public static boolean isDeephavenLocal(URI uri) {
+        return DeephavenUri.LOCAL_SCHEME.equals(uri.getScheme()) && isLocalPath(uri);
+    }
+
+    /**
      * A URI is a "local path" when the only components are {@link URI#getScheme() scheme} and {@link URI#getPath()
      * path}; and path starts with {@code "/"}.
      *

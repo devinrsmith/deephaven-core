@@ -17,6 +17,21 @@ services:
       file: docker-compose-common.yml
       service: grpc-api
 
+  w2:
+    extends:
+      file: docker-compose-common.yml
+      service: grpc-api
+
+  w3:
+    extends:
+      file: docker-compose-common.yml
+      service: grpc-api
+
+  w4:
+    extends:
+      file: docker-compose-common.yml
+      service: grpc-api
+
   web:
     extends:
       file: docker-compose-common.yml

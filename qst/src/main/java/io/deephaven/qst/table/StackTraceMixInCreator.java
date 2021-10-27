@@ -63,6 +63,12 @@ public final class StackTraceMixInCreator<TOPS extends TableOperations<TOPS, TAB
     }
 
     @Override
+    public synchronized StackTraceMixIn<TOPS, TABLE> of(UriTable uriTable) {
+        TOPS tops = toOps.of(creator.of(uriTable));
+        return map.computeIfAbsent(tops, this::mixin);
+    }
+
+    @Override
     public synchronized StackTraceMixIn<TOPS, TABLE> of(TicketTable ticketTable) {
         TOPS tops = toOps.of(creator.of(ticketTable));
         return map.computeIfAbsent(tops, this::mixin);

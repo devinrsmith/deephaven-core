@@ -48,6 +48,11 @@ service TableService {
   rpc TimeTable(TimeTableRequest) returns (ExportedTableCreationResponse) {}
 
   /*
+   * Create a table from the the given URI.
+   */
+  rpc UriTable(UriTableRequest) returns (ExportedTableCreationResponse) {}
+
+  /*
    * Drop columns from the parent table.
    */
   rpc DropColumns(DropColumnsRequest) returns (ExportedTableCreationResponse) {}
@@ -268,6 +273,11 @@ message TimeTableRequest {
   Ticket result_id = 1;
   sint64 start_time_nanos = 2 [jstype=JS_STRING];
   sint64 period_nanos = 3 [jstype=JS_STRING];
+}
+
+message UriTableRequest {
+  Ticket result_id = 1;
+  string uri = 2; // todo: break out into components
 }
 
 message SelectOrUpdateRequest {
@@ -614,6 +624,7 @@ message BatchTableRequest {
       FetchTableRequest fetch_table = 28;
       FetchPandasTableRequest fetch_pandas_table = 29;
       ApplyPreviewColumnsRequest apply_preview_columns = 30;
+      UriTableRequest uri_table = 31;
     }
   }
 }

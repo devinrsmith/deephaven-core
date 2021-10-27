@@ -104,6 +104,8 @@ public interface TableSpec extends TableOperations<TableSpec, TableSpec>, Serial
 
         void visit(TimeTable timeTable);
 
+        void visit(UriTable uriTable);
+
         void visit(MergeTable mergeTable);
 
         void visit(HeadTable headTable);

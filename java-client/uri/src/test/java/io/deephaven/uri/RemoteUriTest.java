@@ -14,6 +14,8 @@ public class RemoteUriTest {
             .host("host")
             .build();
 
+    private static final DeephavenTarget PLAIN = DeephavenTarget.builder().isSecure(false).host("host").build();
+
     private static final DeephavenTarget TARGET_PORT = DeephavenTarget.builder()
             .isSecure(true)
             .host("host")
@@ -61,6 +63,22 @@ public class RemoteUriTest {
     void queryScope() {
         check("dh://host/scope/variable", QUERY.target(TARGET));
     }
+
+    @Test
+    void plainApplicationField() {
+        check("dh+plain://host/app/appId/field/fieldName", LOCAL_APP.target(PLAIN));
+    }
+
+    @Test
+    void plainField() {
+        check("dh+plain://host/field/fieldName", FIELD.target(PLAIN));
+    }
+
+    @Test
+    void plainQueryScope() {
+        check("dh+plain://host/scope/variable", QUERY.target(PLAIN));
+    }
+
 
     @Test
     void applicationFieldPort() {

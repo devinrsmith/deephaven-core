@@ -29,14 +29,8 @@ public abstract class FieldUri extends DeephavenUriBase {
         return ImmutableFieldUri.of(fieldName);
     }
 
-    public static boolean isValidScheme(String scheme) {
-        return DeephavenUri.LOCAL_SCHEME.equals(scheme);
-    }
-
     public static boolean isWellFormed(URI uri) {
-        return isValidScheme(uri.getScheme())
-                && UriHelper.isLocalPath(uri)
-                && PATH_PATTERN.matcher(uri.getPath()).matches();
+        return UriHelper.isDeephavenLocal(uri) && PATH_PATTERN.matcher(uri.getPath()).matches();
     }
 
     /**
@@ -49,7 +43,11 @@ public abstract class FieldUri extends DeephavenUriBase {
         if (!isWellFormed(uri)) {
             throw new IllegalArgumentException(String.format("Invalid field URI '%s'", uri));
         }
-        final Matcher matcher = PATH_PATTERN.matcher(uri.getPath());
+        return fromPath(uri.getPath());
+    }
+
+    private static FieldUri fromPath(String path) {
+        final Matcher matcher = PATH_PATTERN.matcher(path);
         if (!matcher.matches()) {
             throw new IllegalStateException();
         }
@@ -79,6 +77,27 @@ public abstract class FieldUri extends DeephavenUriBase {
     final void checkFieldName() {
         if (!UriHelper.isUriSafe(fieldName())) {
             throw new IllegalArgumentException(String.format("Invalid field name '%s'", fieldName()));
+        }
+    }
+
+    static class Remote {
+
+        static boolean isWellFormed(URI uri) {
+            return RemoteUri.isValidScheme(uri.getScheme())
+                    && UriHelper.isRemotePath(uri)
+                    && PATH_PATTERN.matcher(uri.getPath()).matches();
+        }
+
+        static RemoteUri of(URI uri) {
+            if (!isWellFormed(uri)) {
+                throw new IllegalArgumentException();
+            }
+            final DeephavenTarget target = DeephavenTarget.from(uri);
+            return fromPath(uri.getPath()).target(target);
+        }
+
+        static String toString(DeephavenTarget target, FieldUri fieldUri) {
+            return String.format("%s/%s/%s", target, ApplicationUri.FIELD, fieldUri.fieldName());
         }
     }
 }

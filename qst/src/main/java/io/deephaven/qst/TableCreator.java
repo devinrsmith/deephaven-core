@@ -7,7 +7,9 @@ import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TableSpec;
 import io.deephaven.qst.table.TicketTable;
 import io.deephaven.qst.table.TimeTable;
+import io.deephaven.qst.table.UriTable;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -77,6 +79,14 @@ public interface TableCreator<TABLE> {
      * @return the time table
      */
     TABLE of(TimeTable timeTable);
+
+    /**
+     * Creates a URI table.
+     *
+     * @param uriTable the uri table specifications
+     * @return the URI table
+     */
+    TABLE of(UriTable uriTable);
 
     /**
      * Creates a ticket table.
@@ -149,6 +159,14 @@ public interface TableCreator<TABLE> {
      */
     default TABLE timeTable(Duration interval, Instant startTime) {
         return of(TimeTable.of(interval, startTime));
+    }
+
+    default TABLE uri(String uri) {
+        return of(UriTable.of(URI.create(uri)));
+    }
+
+    default TABLE uri(URI uri) {
+        return of(UriTable.of(uri));
     }
 
     // Note: there isn't a good way to deal with generic vararg pollution. The annotation

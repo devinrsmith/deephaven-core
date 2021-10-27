@@ -8,14 +8,10 @@ import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.db.tables.Table;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
 import io.deephaven.qst.table.TableSpec;
-import io.deephaven.qst.table.TicketTable;
-import io.deephaven.uri.ApplicationUri;
 import io.deephaven.uri.DeephavenTarget;
 import io.deephaven.uri.DeephavenUri;
-import io.deephaven.uri.FieldUri;
-import io.deephaven.uri.QueryScopeUri;
 import io.deephaven.uri.RemoteUri;
-import io.deephaven.uri.StructuredUri.Visitor;
+import io.deephaven.uri.RemoteUriAdapter;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 
@@ -102,7 +98,7 @@ public final class BarrageTableResolver implements UriResolver {
      */
     public Table subscribe(RemoteUri remoteUri) throws InterruptedException, TableHandleException {
         final DeephavenTarget target = remoteUri.target();
-        final TableSpec table = RemoteResolver.of(remoteUri);
+        final TableSpec table = RemoteUriAdapter.of(remoteUri);
         return subscribe(target, table, OPTIONS);
     }
 
@@ -150,50 +146,4 @@ public final class BarrageTableResolver implements UriResolver {
                 .newBarrageSession();
     }
 
-    static class RemoteResolver implements Visitor {
-
-        public static TableSpec of(RemoteUri remoteUri) {
-            return remoteUri.uri().walk(new RemoteResolver(remoteUri.target())).out();
-        }
-
-        private final DeephavenTarget target;
-        private TableSpec out;
-
-        public RemoteResolver(DeephavenTarget target) {
-            this.target = Objects.requireNonNull(target);
-        }
-
-        public TableSpec out() {
-            return Objects.requireNonNull(out);
-        }
-
-        @Override
-        public void visit(FieldUri fieldUri) {
-            out = TicketTable.fromApplicationField(target.host(), fieldUri.fieldName());
-        }
-
-        @Override
-        public void visit(ApplicationUri applicationField) {
-            out = TicketTable.fromApplicationField(applicationField.applicationId(), applicationField.fieldName());
-        }
-
-        @Override
-        public void visit(QueryScopeUri queryScope) {
-            out = TicketTable.fromQueryScopeField(queryScope.variableName());
-        }
-
-        @Override
-        public void visit(RemoteUri remoteUri) {
-            // TODO(deephaven-core#1483): Support resolve URI via gRPC / QST
-            throw new UnsupportedOperationException(
-                    "Proxying not supported yet, see https://github.com/deephaven/deephaven-core/issues/1483");
-        }
-
-        @Override
-        public void visit(URI customUri) {
-            // TODO(deephaven-core#1483): Support resolve URI via gRPC / QST
-            throw new UnsupportedOperationException(
-                    "Remote custom URIs not supported yet, see https://github.com/deephaven/deephaven-core/issues/1483");
-        }
-    }
 }

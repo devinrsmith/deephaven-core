@@ -150,6 +150,11 @@ public class ParentsVisitor implements Visitor {
     }
 
     @Override
+    public void visit(UriTable uriTable) {
+        out = none();
+    }
+
+    @Override
     public void visit(MergeTable mergeTable) {
         out = mergeTable.tables().stream();
     }

@@ -4,8 +4,12 @@ import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A remote Deephaven URI represents a structured link for resolving remote Deephaven resources. Is composed of a
@@ -29,10 +33,10 @@ public abstract class RemoteUri extends DeephavenUriBase {
     }
 
     public static boolean isWellFormed(URI uri) {
-        return RemoteApplicationUri.isWellFormed(uri)
-                || RemoteFieldUri.isWellFormed(uri)
-                || RemoteQueryScopeUri.isWellFormed(uri)
-                || RemoteProxiedUri.isWellFormed(uri);
+        return ApplicationUri.Remote.isWellFormed(uri)
+                || FieldUri.Remote.isWellFormed(uri)
+                || QueryScopeUri.Remote.isWellFormed(uri)
+                || Proxy.isWellFormed(uri);
     }
 
     /**
@@ -52,17 +56,17 @@ public abstract class RemoteUri extends DeephavenUriBase {
      * @return the remote URI
      */
     public static RemoteUri of(URI uri) {
-        if (RemoteApplicationUri.isWellFormed(uri)) {
-            return RemoteApplicationUri.of(uri);
+        if (ApplicationUri.Remote.isWellFormed(uri)) {
+            return ApplicationUri.Remote.of(uri);
         }
-        if (RemoteFieldUri.isWellFormed(uri)) {
-            return RemoteFieldUri.of(uri);
+        if (FieldUri.Remote.isWellFormed(uri)) {
+            return FieldUri.Remote.of(uri);
         }
-        if (RemoteQueryScopeUri.isWellFormed(uri)) {
-            return RemoteQueryScopeUri.of(uri);
+        if (QueryScopeUri.Remote.isWellFormed(uri)) {
+            return QueryScopeUri.Remote.of(uri);
         }
-        if (RemoteProxiedUri.isWellFormed(uri)) {
-            return RemoteProxiedUri.of(uri);
+        if (Proxy.isWellFormed(uri)) {
+            return Proxy.of(uri);
         }
         throw new IllegalArgumentException(String.format("Invalid remote Deephaven URI '%s'", uri));
     }
@@ -103,27 +107,65 @@ public abstract class RemoteUri extends DeephavenUriBase {
 
         @Override
         public void visit(QueryScopeUri queryScopeUri) {
-            out = RemoteQueryScopeUri.toString(target(), queryScopeUri);
+            out = QueryScopeUri.Remote.toString(target(), queryScopeUri);
         }
 
         @Override
         public void visit(ApplicationUri applicationUri) {
-            out = RemoteApplicationUri.toString(target(), applicationUri);
+            out = ApplicationUri.Remote.toString(target(), applicationUri);
         }
 
         @Override
         public void visit(FieldUri fieldUri) {
-            out = RemoteFieldUri.toString(target(), fieldUri);
+            out = FieldUri.Remote.toString(target(), fieldUri);
         }
 
         @Override
         public void visit(RemoteUri remoteUri) {
-            out = RemoteProxiedUri.toString(target(), remoteUri);
+            out = Proxy.toString(target(), remoteUri);
         }
 
         @Override
         public void visit(URI customUri) {
-            out = RemoteProxiedUri.toString(target(), customUri);
+            out = Proxy.toString(target(), customUri);
+        }
+    }
+
+    static class Proxy {
+
+        static final Pattern QUERY_PATTERN = Pattern.compile("^uri=(.+)$");
+
+        static boolean isWellFormed(URI uri) {
+            return isValidScheme(uri.getScheme())
+                    && UriHelper.isRemoteQuery(uri)
+                    && QUERY_PATTERN.matcher(uri.getQuery()).matches();
+        }
+
+        static RemoteUri of(URI uri) {
+            if (!isWellFormed(uri)) {
+                throw new IllegalArgumentException();
+            }
+            final Matcher matcher = QUERY_PATTERN.matcher(uri.getQuery());
+            if (!matcher.matches()) {
+                throw new IllegalStateException();
+            }
+            final URI innerUri = URI.create(matcher.group(1));
+            return RemoteUri.isWellFormed(innerUri) ? RemoteUri.of(DeephavenTarget.from(uri), RemoteUri.of(innerUri))
+                    : RemoteUri.of(DeephavenTarget.from(uri), CustomUri.of(innerUri));
+        }
+
+        static String toString(DeephavenTarget target, RemoteUri uri) {
+            return String.format("%s?uri=%s", target, uri);
+        }
+
+        static String toString(DeephavenTarget target, URI uri) {
+            final String encoded;
+            try {
+                encoded = URLEncoder.encode(uri.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            return String.format("%s?uri=%s", target, encoded);
         }
     }
 }

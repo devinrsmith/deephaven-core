@@ -21,6 +21,7 @@ import io.deephaven.qst.table.TicketTable;
 import io.deephaven.qst.table.TimeTable;
 import io.deephaven.qst.table.UpdateTable;
 import io.deephaven.qst.table.UpdateViewTable;
+import io.deephaven.qst.table.UriTable;
 import io.deephaven.qst.table.ViewTable;
 import io.deephaven.qst.table.WhereTable;
 
@@ -62,6 +63,11 @@ public class LabelBuilder extends TableVisitorGeneric {
     @Override
     public void visit(TimeTable timeTable) {
         sb.append("time(").append(timeTable.interval()).append(')');
+    }
+
+    @Override
+    public void visit(UriTable uriTable) {
+        sb.append("resolve('").append(uriTable.uri().toString()).append("')");
     }
 
     @Override

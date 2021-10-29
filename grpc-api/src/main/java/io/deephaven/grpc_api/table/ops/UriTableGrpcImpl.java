@@ -51,7 +51,7 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
         validateRequest(request);
         Object object;
         try {
-            object = uriResolvers.resolve(URI.create(request.getUri()));
+            object = uriResolvers.resolveSafely(URI.create(request.getUri()));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null; // todo

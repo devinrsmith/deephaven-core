@@ -17,11 +17,14 @@ import java.util.stream.Collectors;
 public final class UriResolvers {
 
     private final Set<UriResolver> resolvers;
+    private final UriResolversConfig config;
+
     private final Map<String, Set<UriResolver>> map;
 
     @Inject
-    public UriResolvers(Set<UriResolver> resolvers) {
+    public UriResolvers(Set<UriResolver> resolvers, UriResolversConfig config) {
         this.resolvers = Objects.requireNonNull(resolvers);
+        this.config = Objects.requireNonNull(config);
         map = new HashMap<>();
         for (UriResolver resolver : resolvers) {
             for (String scheme : resolver.schemes()) {
@@ -64,5 +67,17 @@ public final class UriResolvers {
 
     public Object resolve(URI uri) throws InterruptedException {
         return resolver(uri).resolve(uri);
+    }
+
+    public Object resolveSafely(URI uri) throws InterruptedException {
+        if (!config.isEnabled()) {
+            throw new UnsupportedOperationException(String.format("Deephaven URI resolvers are not enabled. %s", config.helpEnable()));
+        }
+        final UriResolver resolver = resolver(uri);
+        final Class<? extends UriResolver> clazz = resolver.getClass();
+        if (!config.isEnabled(clazz)) {
+            throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s", clazz, config.helpEnable(clazz)));
+        }
+        return resolver.resolve(uri);
     }
 }

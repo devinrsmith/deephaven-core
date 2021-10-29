@@ -14,7 +14,7 @@ import io.deephaven.grpc_api.barrage.BarrageClientModule;
  * @see CsvTableResolver
  * @see ParquetTableResolver
  */
-@Module(includes = {BarrageClientModule.class})
+@Module(includes = {BarrageClientModule.class, UriResolversPropertyConfig.SelfModule.class})
 public interface UriModule {
 
     @Binds

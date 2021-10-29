@@ -70,6 +70,12 @@ public final class BarrageTableResolver implements UriResolver {
     }
 
     @Override
+    public boolean isSafe() {
+        // TODO: should this be false?
+        return true;
+    }
+
+    @Override
     public Set<String> schemes() {
         return SCHEMES;
     }

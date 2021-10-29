@@ -1,19 +1,10 @@
 package io.deephaven.grpc_api.uri;
 
-import dagger.Binds;
-import dagger.Module;
-
 import javax.inject.Inject;
 
 import static io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
 
 public final class UriResolversPropertyConfig implements UriResolversConfig {
-
-    @Module
-    public interface SelfModule {
-        @Binds
-        UriResolversConfig bindConfig(UriResolversPropertyConfig config);
-    }
 
     public static final String GLOBAL_ENABLED_KEY = "deephaven.resolvers.enabled";
 
@@ -29,8 +20,8 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
     }
 
     @Override
-    public boolean isEnabled(Class<? extends UriResolver> clazz) {
-        final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(clazz));
+    public boolean isEnabled(UriResolver resolver) {
+        final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
         final String enabled = System.getProperty(propertyKey, null);
         if ("true".equals(enabled)) {
             // If explicitly set to "true"
@@ -44,8 +35,8 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
             // When the remote console is enabled, no additional security concerns
             return true;
         }
-        // Otherwise, fall back on safe defaults
-        return getDefaultEnabled(clazz);
+        // Otherwise, fall back on resolver default
+        return resolver.isSafe();
     }
 
     @Override
@@ -54,8 +45,8 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
     }
 
     @Override
-    public String helpEnable(Class<? extends UriResolver> clazz) {
-        final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(clazz));
+    public String helpEnable(UriResolver resolver) {
+        final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
         return String.format("To enable, set system property '%s' to 'true'.", propertyKey);
     }
 
@@ -66,12 +57,5 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
             return name.substring(dhClassPrefix.length());
         }
         return name;
-    }
-
-    private static boolean getDefaultEnabled(Class<? extends UriResolver> clazz) {
-        return clazz.equals(ApplicationResolver.class)
-                || clazz.equals(QueryScopeResolver.class)
-                || clazz.equals(BarrageTableResolver.class);
-        // TODO: should BarrageTableResolver be disabled by default?
     }
 }

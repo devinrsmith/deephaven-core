@@ -40,6 +40,11 @@ public final class ParquetTableResolver implements UriResolver {
     public ParquetTableResolver() {}
 
     @Override
+    public boolean isSafe() {
+        return false;
+    }
+
+    @Override
     public Set<String> schemes() {
         return SCHEMES;
     }

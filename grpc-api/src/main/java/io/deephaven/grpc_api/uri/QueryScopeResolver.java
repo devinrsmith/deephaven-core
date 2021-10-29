@@ -32,6 +32,11 @@ public final class QueryScopeResolver implements UriResolver {
     }
 
     @Override
+    public boolean isSafe() {
+        return true;
+    }
+
+    @Override
     public Set<String> schemes() {
         return Collections.singleton(DeephavenUri.LOCAL_SCHEME);
     }

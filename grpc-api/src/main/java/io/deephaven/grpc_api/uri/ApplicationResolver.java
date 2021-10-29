@@ -34,6 +34,11 @@ public final class ApplicationResolver implements UriResolver {
     }
 
     @Override
+    public boolean isSafe() {
+        return true;
+    }
+
+    @Override
     public Set<String> schemes() {
         return Collections.singleton(DeephavenUri.LOCAL_SCHEME);
     }

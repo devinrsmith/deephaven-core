@@ -74,9 +74,8 @@ public final class UriResolvers {
             throw new UnsupportedOperationException(String.format("Deephaven URI resolvers are not enabled. %s", config.helpEnable()));
         }
         final UriResolver resolver = resolver(uri);
-        final Class<? extends UriResolver> clazz = resolver.getClass();
-        if (!config.isEnabled(clazz)) {
-            throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s", clazz, config.helpEnable(clazz)));
+        if (!config.isEnabled(resolver)) {
+            throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s", resolver.getClass(), config.helpEnable(resolver)));
         }
         return resolver.resolve(uri);
     }

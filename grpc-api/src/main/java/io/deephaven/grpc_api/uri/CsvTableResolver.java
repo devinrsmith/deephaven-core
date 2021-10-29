@@ -36,6 +36,11 @@ public final class CsvTableResolver implements UriResolver {
     public CsvTableResolver() {}
 
     @Override
+    public boolean isSafe() {
+        return false;
+    }
+
+    @Override
     public Set<String> schemes() {
         return SCHEMES;
     }

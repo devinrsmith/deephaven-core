@@ -47,20 +47,13 @@ public final class UriResolversPropertyConfig implements Config {
     }
 
     /**
-     * A three step process:
-     *
-     * <p>
-     * 1. Looks up the property key format {@value SPECIFIC_KEY_FORMAT}, applied against the simplified class name for
+     * Looks up the property key format {@value SPECIFIC_KEY_FORMAT}, applied against the simplified class name for
      * {@code resolver}. The simplified class name is the class name with the prefix {@value SIMPLIFY_PREFIX} stripped
      * if present. If the property value is explicitly set to {@value TRUE}, then return {@code true}; if explicitly set
      * to anything else, then return {@code false}.
      *
      * <p>
-     * 2. Next, looks at the value of {@link ConsoleServiceGrpcImpl#REMOTE_CONSOLE_DISABLED}. If the value is
-     * {@code false} (ie, the remote console is <b>enabled</b>), return {@code true}.
-     *
-     * <p>
-     * 3. Otherwise, returns the value of {@link UriResolver#isSafe()} from {@code resolver}.
+     * Otherwise, returns the value of {@link UriResolver#isSafe()} from {@code resolver}.
      *
      * @param resolver the resolver
      * @return {@code true} if enabled
@@ -76,13 +69,8 @@ public final class UriResolversPropertyConfig implements Config {
             // If explicitly set to anything else
             return false;
         }
-        // No explicit property set
-        if (!REMOTE_CONSOLE_DISABLED) {
-            // When the remote console is enabled, no additional security concerns
-            return true;
-        }
         // Otherwise, fall back on resolver default
-        return resolver.isSafe();
+        //return resolver.isSafe(); // todo get rid of this
     }
 
     @Override

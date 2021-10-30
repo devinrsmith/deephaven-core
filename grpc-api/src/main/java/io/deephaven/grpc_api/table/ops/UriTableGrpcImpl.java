@@ -3,13 +3,12 @@ package io.deephaven.grpc_api.table.ops;
 import com.google.rpc.Code;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
-import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
 import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.grpc_api.uri.UriResolvers;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.UriTableRequest;
-import io.deephaven.uri.DeephavenUri;
 import io.deephaven.uri.UriHelper;
 import io.grpc.StatusRuntimeException;
 
@@ -49,9 +48,14 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
     public Table create(final UriTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 0);
         validateRequest(request);
+
+        // TODO: check user auth if has access to console
+        final boolean resolveSafely = ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
+        final URI uri = URI.create(request.getUri());
+
         Object object;
         try {
-            object = uriResolvers.resolveSafely(URI.create(request.getUri()));
+            object = resolveSafely ? uriResolvers.resolveSafely(uri) : uriResolvers.resolve(uri);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null; // todo

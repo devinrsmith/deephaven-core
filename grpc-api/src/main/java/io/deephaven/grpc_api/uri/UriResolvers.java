@@ -86,6 +86,10 @@ public final class UriResolvers {
      * @return the resolved object
      */
     public Object resolveSafely(URI uri) throws InterruptedException {
+        return resolverCheckConfig(uri).resolveSafely(uri);
+    }
+
+    private UriResolver resolverCheckConfig(URI uri) {
         if (!config.isEnabled()) {
             throw new UnsupportedOperationException(
                     String.format("Deephaven URI resolvers are not enabled. %s", config.helpEnable()));
@@ -95,11 +99,12 @@ public final class UriResolvers {
             throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s",
                     resolver.getClass(), config.helpEnable(resolver)));
         }
-        return resolver.resolveSafely(uri);
+        return resolver;
     }
 
     /**
-     * The configuration for {@link UriResolvers}.
+     * The configuration for {@link UriResolvers}. Useful as a general configuration for any resolver. Resolver-specific
+     * configuration
      */
     public interface Config {
 

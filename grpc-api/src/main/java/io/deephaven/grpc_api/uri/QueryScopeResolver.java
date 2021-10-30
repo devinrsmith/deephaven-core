@@ -18,7 +18,7 @@ import java.util.Set;
  *
  * @see QueryScopeUri query scope URI format
  */
-public final class QueryScopeResolver implements UriResolver {
+public final class QueryScopeResolver extends UriResolverSafeBase {
 
     public static QueryScopeResolver get() {
         return UriResolversInstance.get().find(QueryScopeResolver.class).get();
@@ -29,11 +29,6 @@ public final class QueryScopeResolver implements UriResolver {
     @Inject
     public QueryScopeResolver(GlobalSessionProvider globalSessionProvider) {
         this.globalSessionProvider = Objects.requireNonNull(globalSessionProvider);
-    }
-
-    @Override
-    public boolean isSafe() {
-        return true;
     }
 
     @Override

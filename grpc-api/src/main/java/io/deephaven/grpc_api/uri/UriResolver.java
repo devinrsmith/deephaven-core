@@ -19,10 +19,16 @@ public interface UriResolver {
     Set<String> schemes();
 
     /**
-     * Returns true if the resolver can {@link #resolve(URI) resolve} the {@code uri}.
+     * Returns {@code true} if {@code this} could be expected to {@link #resolve(URI)} the {@code uri}. A {@code uri}
+     * that generally matches the pattern, but would actually throw an error during {@link #resolve(URI)}, can return
+     * {@code true} here, if the expectation is that a more tailored error message will be thrown during
+     * {@link #resolve(URI)}.
+     *
+     * <p>
+     * Resolvability does <b>not</b> take into account safety concerns.
      *
      * @param uri the uri
-     * @return true if this resolver can resolve uri
+     * @return {@code true} if this resolver expects to be able to resolve {@code uri}
      */
     boolean isResolvable(URI uri);
 
@@ -31,7 +37,14 @@ public interface UriResolver {
      *
      * @param uri the URI
      * @return the object
-     * @throws InterruptedException if the current thread is interrupted
      */
     Object resolve(URI uri) throws InterruptedException;
+
+    /**
+     * Resolve {@code uri} into an object, safely, according to the conditions set for {@code this} specific resolver.
+     *
+     * @param uri the URI
+     * @return the object
+     */
+    Object resolveSafely(URI uri) throws InterruptedException;
 }

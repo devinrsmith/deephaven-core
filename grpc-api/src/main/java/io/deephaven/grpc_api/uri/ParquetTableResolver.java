@@ -61,4 +61,9 @@ public final class ParquetTableResolver implements UriResolver {
         }
         return ParquetTools.readTable(uri.getPath());
     }
+
+    @Override
+    public Object resolveSafely(URI uri) throws InterruptedException {
+        return resolve(uri);
+    }
 }

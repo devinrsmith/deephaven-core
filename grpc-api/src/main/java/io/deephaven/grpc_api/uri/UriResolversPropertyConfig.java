@@ -1,29 +1,75 @@
 package io.deephaven.grpc_api.uri;
 
+import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
+import io.deephaven.grpc_api.uri.UriResolvers.Config;
+
 import javax.inject.Inject;
 
 import static io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
 
-public final class UriResolversPropertyConfig implements UriResolversConfig {
+/**
+ *
+ */
+public final class UriResolversPropertyConfig implements Config {
 
+    /**
+     * The global property key.
+     */
     public static final String GLOBAL_ENABLED_KEY = "deephaven.resolvers.enabled";
 
+    /**
+     * The individual property key format. Must apply the class name with {@link String#format(String, Object...)}.
+     */
     public static final String SPECIFIC_KEY_FORMAT = "deephaven.resolver.%s.enabled";
 
-    @Inject
-    public UriResolversPropertyConfig() {
-    }
+    /**
+     * The true value.
+     */
+    public static final String TRUE = "true";
 
+    /**
+     * The prefix.
+     */
+    public static final String SIMPLIFY_PREFIX = "io.deephaven.grpc_api.uri.";
+
+    @Inject
+    public UriResolversPropertyConfig() {}
+
+    /**
+     * Looks up the property key {@value GLOBAL_ENABLED_KEY}, {@code true} when equal to {@value TRUE} or the property
+     * is not set.
+     *
+     * @return {@code true} if URI resolvers is enabled, {@code true} by default
+     */
     @Override
     public boolean isEnabled() {
-        return "true".equals(System.getProperty(GLOBAL_ENABLED_KEY, "true"));
+        return TRUE.equals(System.getProperty(GLOBAL_ENABLED_KEY, TRUE));
     }
 
+    /**
+     * A three step process:
+     *
+     * <p>
+     * 1. Looks up the property key format {@value SPECIFIC_KEY_FORMAT}, applied against the simplified class name for
+     * {@code resolver}. The simplified class name is the class name with the prefix {@value SIMPLIFY_PREFIX} stripped
+     * if present. If the property value is explicitly set to {@value TRUE}, then return {@code true}; if explicitly set
+     * to anything else, then return {@code false}.
+     *
+     * <p>
+     * 2. Next, looks at the value of {@link ConsoleServiceGrpcImpl#REMOTE_CONSOLE_DISABLED}. If the value is
+     * {@code false} (ie, the remote console is <b>enabled</b>), return {@code true}.
+     *
+     * <p>
+     * 3. Otherwise, returns the value of {@link UriResolver#isSafe()} from {@code resolver}.
+     *
+     * @param resolver the resolver
+     * @return {@code true} if enabled
+     */
     @Override
     public boolean isEnabled(UriResolver resolver) {
         final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
         final String enabled = System.getProperty(propertyKey, null);
-        if ("true".equals(enabled)) {
+        if (TRUE.equals(enabled)) {
             // If explicitly set to "true"
             return true;
         } else if (enabled != null) {
@@ -41,7 +87,8 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
 
     @Override
     public String helpEnable() {
-        return String.format("To enable, set system property '%s' to 'true' (or, remove 'false' entry)", GLOBAL_ENABLED_KEY);
+        return String.format("To enable, set system property '%s' to 'true' (or, remove 'false' entry)",
+                GLOBAL_ENABLED_KEY);
     }
 
     @Override
@@ -52,9 +99,8 @@ public final class UriResolversPropertyConfig implements UriResolversConfig {
 
     private static String simplifyName(Class<? extends UriResolver> clazz) {
         final String name = clazz.getName();
-        final String dhClassPrefix = "io.deephaven.grpc_api.uri.";
-        if (name.startsWith(dhClassPrefix)) {
-            return name.substring(dhClassPrefix.length());
+        if (name.startsWith(SIMPLIFY_PREFIX)) {
+            return name.substring(SIMPLIFY_PREFIX.length());
         }
         return name;
     }

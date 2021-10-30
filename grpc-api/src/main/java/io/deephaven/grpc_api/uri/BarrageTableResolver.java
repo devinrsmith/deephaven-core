@@ -96,6 +96,11 @@ public final class BarrageTableResolver implements UriResolver {
         }
     }
 
+    @Override
+    public Object resolveSafely(URI uri) throws InterruptedException {
+        return resolve(uri);
+    }
+
     /**
      * Create a full-subscription to the remote URI. Uses {@link #OPTIONS}.
      *

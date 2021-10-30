@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 public final class UriResolvers {
 
     private final Set<UriResolver> resolvers;
-    private final UriResolversConfig config;
+    private final Config config;
 
     private final Map<String, Set<UriResolver>> map;
 
     @Inject
-    public UriResolvers(Set<UriResolver> resolvers, UriResolversConfig config) {
+    public UriResolvers(Set<UriResolver> resolvers, Config config) {
         this.resolvers = Objects.requireNonNull(resolvers);
         this.config = Objects.requireNonNull(config);
         map = new HashMap<>();
@@ -69,14 +69,67 @@ public final class UriResolvers {
         return resolver(uri).resolve(uri);
     }
 
+    /**
+     * Resolve the URI in a safe manner according to the general {@link Config configuration}.
+     *
+     * <p>
+     * If {@link Config#isEnabled()} is {@code false}, no URIs can be resolved.
+     *
+     * <p>
+     * If {@link Config#isEnabled(UriResolver)} is {@code false} for the resolver of {@code uri}, the URI can't be
+     * resolved.
+     *
+     * <p>
+     * Returns {@link UriResolver#resolveSafely(URI)} for the resolver of {@code uri}.
+     *
+     * @param uri the URI
+     * @return the resolved object
+     */
     public Object resolveSafely(URI uri) throws InterruptedException {
         if (!config.isEnabled()) {
-            throw new UnsupportedOperationException(String.format("Deephaven URI resolvers are not enabled. %s", config.helpEnable()));
+            throw new UnsupportedOperationException(
+                    String.format("Deephaven URI resolvers are not enabled. %s", config.helpEnable()));
         }
         final UriResolver resolver = resolver(uri);
         if (!config.isEnabled(resolver)) {
-            throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s", resolver.getClass(), config.helpEnable(resolver)));
+            throw new UnsupportedOperationException(String.format("Deephaven URI resolver '%s' is not enabled. %s",
+                    resolver.getClass(), config.helpEnable(resolver)));
         }
-        return resolver.resolve(uri);
+        return resolver.resolveSafely(uri);
+    }
+
+    /**
+     * The configuration for {@link UriResolvers}.
+     */
+    public interface Config {
+
+        /**
+         *
+         * @return {@code true} if resolvers are enabled
+         */
+        boolean isEnabled();
+
+        /**
+         *
+         * @param resolver the resolver
+         * @return {@code true} if {@code resolver} is enabled
+         */
+        boolean isEnabled(UriResolver resolver);
+
+        /**
+         * A helper message to aid in enabling resolvers, {@link #isEnabled()}.
+         *
+         * @return the help message
+         */
+        String helpEnable();
+
+        /**
+         * A helper message to aid in enabling a specific resolvers, {@link #isEnabled(UriResolver)} for
+         * {@code resolver}.
+         *
+         * @param resolver the resolver
+         * @return the help message
+         */
+        String helpEnable(UriResolver resolver);
     }
 }

@@ -5,6 +5,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
+import io.deephaven.grpc_api.uri.UriResolvers.Config;
 import io.deephaven.grpc_api.uri.UriResolversModule.BaseResolvers;
 import io.deephaven.grpc_api.uri.UriResolversModule.PropertyConfigModule;
 import io.deephaven.grpc_api.uri.UriResolversModule.ServiceLoaderResolvers;
@@ -25,7 +26,8 @@ import java.util.Set;
 })
 public interface UriResolversModule {
     /**
-     * Installs the {@link UriResolver URI resolvers} based on {@link ServiceLoader#load(Class)} for 3rd-party extensions.
+     * Installs the {@link UriResolver URI resolvers} based on {@link ServiceLoader#load(Class)} for 3rd-party
+     * extensions.
      */
     @Module
     interface ServiceLoaderResolvers {
@@ -71,11 +73,11 @@ public interface UriResolversModule {
     }
 
     /**
-     * Binds {@link UriResolversPropertyConfig} as {@link UriResolversConfig}.
+     * Binds {@link UriResolversPropertyConfig} as {@link Config}.
      */
     @Module
     interface PropertyConfigModule {
         @Binds
-        UriResolversConfig bindConfig(UriResolversPropertyConfig config);
+        Config bindConfig(UriResolversPropertyConfig config);
     }
 }

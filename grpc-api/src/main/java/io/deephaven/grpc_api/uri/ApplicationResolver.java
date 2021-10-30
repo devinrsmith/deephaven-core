@@ -20,7 +20,7 @@ import java.util.Set;
  *
  * @see ApplicationUri application URI format
  */
-public final class ApplicationResolver implements UriResolver {
+public final class ApplicationResolver extends UriResolverSafeBase {
 
     public static ApplicationResolver get() {
         return UriResolversInstance.get().find(ApplicationResolver.class).get();
@@ -31,11 +31,6 @@ public final class ApplicationResolver implements UriResolver {
     @Inject
     public ApplicationResolver(ApplicationStates states) {
         this.states = Objects.requireNonNull(states);
-    }
-
-    @Override
-    public boolean isSafe() {
-        return true;
     }
 
     @Override

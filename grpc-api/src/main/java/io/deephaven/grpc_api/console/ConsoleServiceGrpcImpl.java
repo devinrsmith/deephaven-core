@@ -53,8 +53,14 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
 
     public static final String WORKER_CONSOLE_TYPE =
             Configuration.getInstance().getStringWithDefault("deephaven.console.type", "python");
+
+    public static final String DEEPHAVEN_CONSOLE_DISABLE_KEY = "deephaven.console.disable";
+
+    /**
+     * Looks up the property key {@value DEEPHAVEN_CONSOLE_DISABLE_KEY}. {@code false} if no property is set.
+     */
     public static final boolean REMOTE_CONSOLE_DISABLED =
-            Configuration.getInstance().getBooleanWithDefault("deephaven.console.disable", false);
+            Configuration.getInstance().getBooleanWithDefault(DEEPHAVEN_CONSOLE_DISABLE_KEY, false);
 
     private final Map<String, Provider<ScriptSession>> scriptTypes;
     private final TicketRouter ticketRouter;

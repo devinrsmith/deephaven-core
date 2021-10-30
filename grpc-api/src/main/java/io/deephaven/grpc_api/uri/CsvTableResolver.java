@@ -59,6 +59,11 @@ public final class CsvTableResolver implements UriResolver {
         }
     }
 
+    @Override
+    public Object resolveSafely(URI uri) {
+        return resolve(uri);
+    }
+
     public Table read(URI uri) throws IOException {
         return CsvHelpers.readCsv(csvString(uri));
     }

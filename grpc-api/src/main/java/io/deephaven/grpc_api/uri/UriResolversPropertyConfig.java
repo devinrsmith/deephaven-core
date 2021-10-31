@@ -1,14 +1,23 @@
 package io.deephaven.grpc_api.uri;
 
-import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
 import io.deephaven.grpc_api.uri.UriResolvers.Config;
 
 import javax.inject.Inject;
 
-import static io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
-
 /**
+ * An enabled-by-default system property based configuration layer for {@link UriResolvers}.
  *
+ * <p>
+ * All resolvers can be disabled by setting the system property {@value GLOBAL_ENABLED_KEY} to {@value FALSE}; see
+ * {@link #isEnabled()}.
+ *
+ * <p>
+ * A specific resolver can be disabled by setting the system property {@value SPECIFIC_KEY_FORMAT} to {@value FALSE}
+ * with the appropriate class name; see {@link #isEnabled(UriResolver)}.
+ *
+ * <p>
+ * A {@link UriResolver} which has security concerns should have its own configuration layer with a disabled-by-default
+ * attitude.
  */
 public final class UriResolversPropertyConfig implements Config {
 
@@ -23,12 +32,17 @@ public final class UriResolversPropertyConfig implements Config {
     public static final String SPECIFIC_KEY_FORMAT = "deephaven.resolver.%s.enabled";
 
     /**
-     * The true value.
+     * The {@code true} value.
      */
     public static final String TRUE = "true";
 
     /**
-     * The prefix.
+     * The {@code false} value.
+     */
+    public static final String FALSE = "false";
+
+    /**
+     * The prefix to simplify class names.
      */
     public static final String SIMPLIFY_PREFIX = "io.deephaven.grpc_api.uri.";
 
@@ -49,40 +63,32 @@ public final class UriResolversPropertyConfig implements Config {
     /**
      * Looks up the property key format {@value SPECIFIC_KEY_FORMAT}, applied against the simplified class name for
      * {@code resolver}. The simplified class name is the class name with the prefix {@value SIMPLIFY_PREFIX} stripped
-     * if present. If the property value is explicitly set to {@value TRUE}, then return {@code true}; if explicitly set
-     * to anything else, then return {@code false}.
-     *
-     * <p>
-     * Otherwise, returns the value of {@link UriResolver#isSafe()} from {@code resolver}.
+     * if present. Returns {@code true} when the value is equal to {@value TRUE} or the property is not set.
      *
      * @param resolver the resolver
      * @return {@code true} if enabled
      */
     @Override
     public boolean isEnabled(UriResolver resolver) {
-        final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
-        final String enabled = System.getProperty(propertyKey, null);
-        if (TRUE.equals(enabled)) {
-            // If explicitly set to "true"
-            return true;
-        } else if (enabled != null) {
-            // If explicitly set to anything else
-            return false;
-        }
-        // Otherwise, fall back on resolver default
-        //return resolver.isSafe(); // todo get rid of this
+        return TRUE.equals(System.getProperty(propertyKey(resolver.getClass()), TRUE));
     }
 
     @Override
     public String helpEnable() {
-        return String.format("To enable, set system property '%s' to 'true' (or, remove 'false' entry)",
+        return String.format("To enable, set system property '%s' to 'true' (or, remove the 'false' entry).",
                 GLOBAL_ENABLED_KEY);
     }
 
     @Override
     public String helpEnable(UriResolver resolver) {
         final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
-        return String.format("To enable, set system property '%s' to 'true'.", propertyKey);
+        return String.format("To enable, set system property '%s' to 'true' (or, remove the 'false' entry).",
+                propertyKey);
+    }
+
+
+    public static String propertyKey(Class<? extends UriResolver> clazz) {
+        return String.format(SPECIFIC_KEY_FORMAT, simplifyName(clazz));
     }
 
     private static String simplifyName(Class<? extends UriResolver> clazz) {

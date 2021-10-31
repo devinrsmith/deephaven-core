@@ -10,7 +10,7 @@ services:
       # with max memory.
       #
       # To turn on debug logging, add: -Dlogback.configurationFile=logback-debug.xml
-      - JAVA_TOOL_OPTIONS=-Xmx4g -Ddeephaven.resolvers.enabled=false -Ddeephaven.resolver.ParquetTableResolver.enabled=true -Ddeephaven.console.disable=true -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
+      - JAVA_TOOL_OPTIONS=-Xmx4g -Ddeephaven.resolver.ParquetTableResolver.enabled=true -Ddeephaven.console.disable=true -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
 
     expose:
       - '8080'

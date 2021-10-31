@@ -53,6 +53,8 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
         final boolean resolveSafely = ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
         final URI uri = URI.create(request.getUri());
 
+        // TODO: pass user auth info along resolveSafely path?
+
         Object object;
         try {
             object = resolveSafely ? uriResolvers.resolveSafely(uri) : uriResolvers.resolve(uri);

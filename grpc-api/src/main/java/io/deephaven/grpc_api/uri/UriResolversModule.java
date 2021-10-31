@@ -73,11 +73,25 @@ public interface UriResolversModule {
     }
 
     /**
-     * Binds {@link UriResolversPropertyConfig} as {@link Config}.
+     * Binds property-based configurations.
+     *
+     * @see UriResolversPropertyConfig
+     * @see BarrageTableResolverPropertyConfig
+     * @see CsvTableResolverPropertyConfig
+     * @see ParquetTableResolverPropertyConfig
      */
     @Module
     interface PropertyConfigModule {
         @Binds
         Config bindConfig(UriResolversPropertyConfig config);
+
+        @Binds
+        BarrageTableResolver.Config bindBarrageTableResolverConfig(BarrageTableResolverPropertyConfig config);
+
+        @Binds
+        CsvTableResolver.Config bindCsvTableResolverConfig(CsvTableResolverPropertyConfig config);
+
+        @Binds
+        ParquetTableResolver.Config bindParquetTableResolverConfig(ParquetTableResolverPropertyConfig config);
     }
 }

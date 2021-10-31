@@ -76,8 +76,8 @@ public final class UriResolvers {
      * If {@link Config#isEnabled()} is {@code false}, no URIs can be resolved.
      *
      * <p>
-     * If {@link Config#isEnabled(UriResolver)} is {@code false} for the resolver of {@code uri}, the URI can't be
-     * resolved.
+     * If {@link Config#isEnabled(UriResolver)} is {@code false} for the resolver of {@code uri}, no URIs can be
+     * resolved for that resolver.
      *
      * <p>
      * Returns {@link UriResolver#resolveSafely(URI)} for the resolver of {@code uri}.
@@ -103,8 +103,8 @@ public final class UriResolvers {
     }
 
     /**
-     * The configuration for {@link UriResolvers}. Useful as a general configuration for any resolver. Resolver-specific
-     * configuration
+     * The configuration for {@link UriResolvers}. Useful as a general configuration layer for all resolvers. More
+     * specific configuration will be based on the specific {@link UriResolver} implementation.
      */
     public interface Config {
 

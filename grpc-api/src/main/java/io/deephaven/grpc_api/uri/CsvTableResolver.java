@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -32,12 +33,11 @@ public final class CsvTableResolver implements UriResolver {
         return UriResolversInstance.get().find(CsvTableResolver.class).get();
     }
 
-    @Inject
-    public CsvTableResolver() {}
+    private final Config config;
 
-    @Override
-    public boolean isSafe() {
-        return false;
+    @Inject
+    public CsvTableResolver(Config config) {
+        this.config = Objects.requireNonNull(config);
     }
 
     @Override
@@ -61,7 +61,19 @@ public final class CsvTableResolver implements UriResolver {
 
     @Override
     public Object resolveSafely(URI uri) {
-        return resolve(uri);
+        if (!config.isEnabled()) {
+            throw new UnsupportedOperationException(
+                    String.format("CSV table resolver is disabled. %s", config.helpEnable()));
+        }
+        if (!config.isEnabled(uri)) {
+            throw new UnsupportedOperationException(
+                    String.format("CSV table resolver is disable for URI '%s'. %s", uri, config.helpEnable(uri)));
+        }
+        try {
+            return read(uri);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public Table read(URI uri) throws IOException {
@@ -96,5 +108,16 @@ public final class CsvTableResolver implements UriResolver {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    public interface Config {
+
+        boolean isEnabled();
+
+        boolean isEnabled(URI uri);
+
+        String helpEnable();
+
+        String helpEnable(URI uri);
     }
 }

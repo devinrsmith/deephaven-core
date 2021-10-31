@@ -58,21 +58,19 @@ public final class BarrageTableResolver implements UriResolver {
 
     private final BufferAllocator allocator;
 
+    private final Config config;
+
     private final Map<DeephavenTarget, BarrageSession> sessions;
 
     @Inject
     public BarrageTableResolver(
-            BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor, BufferAllocator allocator) {
+            BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor, BufferAllocator allocator,
+            Config config) {
         this.builder = Objects.requireNonNull(builder);
         this.executor = Objects.requireNonNull(executor);
         this.allocator = Objects.requireNonNull(allocator);
+        this.config = Objects.requireNonNull(config);
         this.sessions = new ConcurrentHashMap<>();
-    }
-
-    @Override
-    public boolean isSafe() {
-        // TODO: should this be false?
-        return true;
     }
 
     @Override
@@ -98,7 +96,20 @@ public final class BarrageTableResolver implements UriResolver {
 
     @Override
     public Object resolveSafely(URI uri) throws InterruptedException {
-        return resolve(uri);
+        if (!config.isEnabled()) {
+            throw new UnsupportedOperationException(
+                    String.format("Barrage table resolver is disabled. %s", config.helpEnable()));
+        }
+        final RemoteUri remoteUri = RemoteUri.of(uri);
+        if (!config.isEnabled(remoteUri)) {
+            throw new UnsupportedOperationException(String.format("Barrage table resolver is disable for URI '%s'. %s",
+                    uri, config.helpEnable(remoteUri)));
+        }
+        try {
+            return subscribe(remoteUri);
+        } catch (TableHandleException e) {
+            throw e.asUnchecked();
+        }
     }
 
     /**
@@ -155,6 +166,17 @@ public final class BarrageTableResolver implements UriResolver {
                 .scheduler(executor)
                 .build()
                 .newBarrageSession();
+    }
+
+    public interface Config {
+
+        boolean isEnabled();
+
+        boolean isEnabled(RemoteUri uri);
+
+        String helpEnable();
+
+        String helpEnable(RemoteUri uri);
     }
 
 }

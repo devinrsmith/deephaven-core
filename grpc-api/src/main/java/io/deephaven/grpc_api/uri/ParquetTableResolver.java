@@ -7,6 +7,7 @@ import io.deephaven.uri.UriHelper;
 import javax.inject.Inject;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -36,12 +37,11 @@ public final class ParquetTableResolver implements UriResolver {
         return UriResolversInstance.get().find(ParquetTableResolver.class).get();
     }
 
-    @Inject
-    public ParquetTableResolver() {}
+    private final Config config;
 
-    @Override
-    public boolean isSafe() {
-        return false;
+    @Inject
+    public ParquetTableResolver(Config config) {
+        this.config = Objects.requireNonNull(config);
     }
 
     @Override
@@ -55,7 +55,7 @@ public final class ParquetTableResolver implements UriResolver {
     }
 
     @Override
-    public Table resolve(URI uri) throws InterruptedException {
+    public Table resolve(URI uri) {
         if (!isWellFormed(uri)) {
             throw new IllegalArgumentException(String.format("Invalid parquet URI '%s'", uri));
         }
@@ -63,7 +63,26 @@ public final class ParquetTableResolver implements UriResolver {
     }
 
     @Override
-    public Object resolveSafely(URI uri) throws InterruptedException {
-        return resolve(uri);
+    public Object resolveSafely(URI uri) {
+        if (!config.isEnabled()) {
+            throw new UnsupportedOperationException(
+                    String.format("Parquet table resolver is disabled. %s", config.helpEnable()));
+        }
+        if (!config.isEnabled(uri)) {
+            throw new UnsupportedOperationException(
+                    String.format("Parquet table resolver is disable for URI '%s'. %s", uri, config.helpEnable(uri)));
+        }
+        return ParquetTools.readTable(uri.getPath());
+    }
+
+    public interface Config {
+
+        boolean isEnabled();
+
+        boolean isEnabled(URI uri);
+
+        String helpEnable();
+
+        String helpEnable(URI uri);
     }
 }

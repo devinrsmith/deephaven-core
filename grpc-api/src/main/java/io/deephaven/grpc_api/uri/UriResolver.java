@@ -8,9 +8,6 @@ import java.util.Set;
  */
 public interface UriResolver {
 
-    // todo get rid of
-    //boolean isSafe();
-
     /**
      * The supported schemes.
      *

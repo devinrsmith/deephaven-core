@@ -187,7 +187,6 @@ TaskProvider<Task> generatePyDoc = Docker.registerDockerTask(project, "generateP
                       '''
     }
 
-    parentContainers = [project(':deephaven-jpy').tasks.findByName("buildDockerForRuntime")]// deephaven/java-and-python
     imageName = 'deephaven/pydocs:local-build'
     copyOut {
         into("$devRoot/Integrations/python/deephaven")

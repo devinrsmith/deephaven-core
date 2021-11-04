@@ -30,18 +30,10 @@ project(':deephaven-jpy') {
     }
     into 'build/docker'
   }
-  Docker.registerDockerImage(project, 'buildDockerForRuntime') {
-    dependsOn prepareDocker
-    buildArgs.put('DEEPHAVEN_VERSION', "${project.version}")
-    images.add('deephaven/java-and-python:local-build')
-    target.set('runtime_reqs')
-  }
 
   Docker.registerDockerImage(project, 'buildDockerForWheel') {
     dependsOn prepareDocker
     buildArgs.put('DEEPHAVEN_VERSION', "${project.version}")
     images.add('deephaven/deephaven-jpy-wheel:local-build')
-
-    target.set('build')
   }
 }

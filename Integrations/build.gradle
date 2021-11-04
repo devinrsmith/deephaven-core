@@ -90,19 +90,17 @@ def buildPyWheel = { String taskName, String imgName, String sourcePath ->
     }
 }
 
-def buildDockerForWheel=buildPyWheel('buildDockerForWheel', 'deephaven/deephaven-wheel', 'python')
-def buildDockerForWheel2=buildPyWheel('buildDockerForWheel2', 'deephaven/deephaven2-wheel', '../pyintegration')
+def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
+def deephavenWheel = buildPyWheel('buildDockerForWheel', 'deephaven/deephaven-wheel', 'python')
+def deephaven2Wheel = buildPyWheel('buildDockerForWheel2', 'deephaven/deephaven2-wheel', '../pyintegration')
 
 def runtimeBaseContext = layout.projectDirectory.dir('src/main/runtime-base')
 
 Docker.registerDockerImage(project, 'buildDeephavenPython') {
-    def dhJpyTasks = project(':deephaven-jpy').tasks
-    inputs.files dhJpyTasks.getByName('buildDockerForWheel').outputs.files,
-            buildDockerForWheel.get().outputs.files,
-            buildDockerForWheel2.get().outputs.files
-
+    inputs.files deephavenJpyWheel.outputs.files,
+            deephavenWheel.get().outputs.files,
+            deephaven2Wheel.get().outputs.files
     inputDir.set runtimeBaseContext
-
     images.add('deephaven/runtime-base:local-build')
 }
 

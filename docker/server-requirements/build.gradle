@@ -1,28 +1,40 @@
 import com.bmuschko.gradle.docker.tasks.image.DockerInspectImage
+import com.bmuschko.gradle.docker.tasks.image.DockerPullImage
 
 plugins {
     id 'com.bmuschko.docker-remote-api'
 }
 
-def baseImage = project.property('deephaven.server-requirements.baseImage')
+String baseImage = project.property('deephaven.server-requirements.baseImage')
+def baseImageIdFile = project.layout.buildDirectory.file(baseImage)
 
-def baseImageIdFile = project.layout.buildDirectory.file('imageId')
-def writeImageIdFile = project.tasks.register('writeImageId', DockerInspectImage) {
+def pullImage = project.tasks.register('pullImage', DockerPullImage) {
+    image.set baseImage
+    //platform.set 'linux/amd64'
+    onlyIf {
+        !baseImageIdFile.get().asFile.exists()
+    }
+}
+
+def writeBaseImageId = project.tasks.register('writeImageId', DockerInspectImage) {
+    dependsOn pullImage
     imageId.set baseImage
+    outputs.files baseImageIdFile
+    outputs.upToDateWhen { false }
     onNext { message ->
         baseImageIdFile.get().asFile.text = message.id
     }
     onError { exception ->
         if (!exception.message.contains('No such image'))
             throw exception
-        baseImageIdFile.get().asFile.delete()
+        throw exception
     }
 }
 
-def buildDocker = Docker.registerDoc kerImage(project, 'buildDocker') {
-    dependsOn writeImageIdFile
-    inputs.files baseImageIdFile
+def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
     inputDir.set project.layout.projectDirectory.dir('src/main/docker')
+
+    inputs.files writeBaseImageId.get().outputs.files
     buildArgs.put('BASE', baseImage)
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')

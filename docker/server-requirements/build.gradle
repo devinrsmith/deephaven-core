@@ -8,33 +8,51 @@ plugins {
 String baseImage = project.property('deephaven.server-requirements.baseImage')
 def baseImageIdFile = project.layout.buildDirectory.file(baseImage)
 
-def pullImage = project.tasks.register('pullImage', DockerPullImage) {
-    image.set baseImage
-    //platform.set 'linux/amd64'
-    onlyIf {
-        !baseImageIdFile.get().asFile.exists()
-    }
-}
-
-def writeBaseImageId = project.tasks.register('writeImageId', DockerInspectImage) {
-    dependsOn pullImage
+def checkImageId = project.tasks.register('checkImageId', DockerInspectImage) {
     imageId.set baseImage
-    outputs.files baseImageIdFile
     outputs.upToDateWhen { false }
+    // Will create the parent directories either way
+    outputs.files baseImageIdFile
     onNext { message ->
         baseImageIdFile.get().asFile.text = message.id
     }
     onError { exception ->
         if (!exception.message.contains('No such image'))
             throw exception
-        throw exception
+        baseImageIdFile.get().asFile.delete()
+    }
+}
+
+def pullImage = project.tasks.register('pullImage', DockerPullImage) {
+    dependsOn checkImageId
+    onlyIf {
+        !baseImageIdFile.get().asFile.exists()
+    }
+    image.set baseImage
+    //platform.set 'linux/amd64'
+}
+
+def recheckImageId = project.tasks.register('recheckImageId', DockerInspectImage) {
+    dependsOn pullImage
+    onlyIf {
+        !pullImage.get().state.skipped
+    }
+    imageId.set baseImage
+    onNext { message ->
+        baseImageIdFile.get().asFile.text = message.id
+    }
+    onError { exception ->
+        if (!exception.message.contains('No such image'))
+            throw exception
+        throw new RuntimeException("Expected image to exist after '${pullImage.get().name}' task...")
     }
 }
 
 def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
-    inputDir.set project.layout.projectDirectory.dir('src/main/docker')
+    dependsOn recheckImageId
+    inputs.files baseImageIdFile
 
-    inputs.files writeBaseImageId.get().outputs.files
+    inputDir.set project.layout.projectDirectory.dir('src/main/docker')
     buildArgs.put('BASE', baseImage)
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')

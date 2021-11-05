@@ -1,15 +1,32 @@
+import com.bmuschko.gradle.docker.tasks.image.DockerInspectImage
+
 plugins {
     id 'com.bmuschko.docker-remote-api'
 }
 
 def baseImage = project.property('deephaven.server-requirements.baseImage')
 
-// todo: invalidate if the local image sha changes
+def baseImageIdFile = project.layout.buildDirectory.file('imageId')
+def writeImageIdFile = project.tasks.register('writeImageId', DockerInspectImage) {
+    imageId.set baseImage
+    onNext { message ->
+        baseImageIdFile.get().asFile.text = message.id
+    }
+    onError { exception ->
+        if (!exception.message.contains('No such image'))
+            throw exception
+        baseImageIdFile.get().asFile.delete()
+    }
+}
 
-Docker.registerDockerImage(project, 'buildDocker') {
+def buildDocker = Docker.registerDoc kerImage(project, 'buildDocker') {
+    dependsOn writeImageIdFile
+    inputs.files baseImageIdFile
     inputDir.set project.layout.projectDirectory.dir('src/main/docker')
     buildArgs.put('BASE', baseImage)
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')
     images.add('deephaven/server-requirements:local-build')
 }
+
+assemble.dependsOn buildDocker

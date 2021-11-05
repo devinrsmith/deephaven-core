@@ -56,7 +56,7 @@ def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
     buildArgs.put('BASE', baseImage)
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')
-    images.add('deephaven/server-requirements:local-build')
+    images.add("deephaven/${project.name}:local-build")
 }
 
 assemble.dependsOn buildDocker

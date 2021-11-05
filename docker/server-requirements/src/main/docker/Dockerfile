@@ -1,8 +1,10 @@
-ARG BASE=ghcr.io/devinrsmith/java-python
+ARG BASE
 FROM $BASE as install
 COPY install.sh install.sh
 ARG TARGETARCH
-RUN ./install.sh
+RUN set -eux; \
+    ./install.sh; \
+    rm ./install.sh
 
 FROM $BASE
 COPY --from=install / /

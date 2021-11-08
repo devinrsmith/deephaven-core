@@ -21,6 +21,23 @@ def deephavenWheel = project(':Integrations').tasks.getByName('buildDockerForWhe
 def deephaven2Wheel = project(':Integrations').tasks.getByName('buildDockerForWheel2')
 def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
 
+def useBase = project.property('deephaven.server.useBase') == 'true'
+
+enum PullMode {
+    // When doing local development against own images
+    never,
+
+    // When wanted to grab the latest from
+    always,
+    cached
+}
+
+def pullMode = project.hasProperty('deephaven.server.pullMode') ?
+    PullMode.valueOf((String)project.property('deephaven.server.pullMode')) :
+    project.gradle.startParameter.offline ?
+        PullMode.never :
+        PullMode.cached
+
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     it.from (commonDir) {
         into 'common'
@@ -35,35 +52,36 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
 
 def startTime = Instant.ofEpochMilli(project.gradle.services.get(BuildRequestMetaData.class).getStartTime())
 def startTimeHour = startTime.truncatedTo(ChronoUnit.HOURS)
-def skipPull = project.hasProperty('deephaven.skip-pull') ?
-        project.property('deephaven.skip-pull') == 'true' : false
 
 def pullImage = { String name, String imageName ->
     project.tasks.register(name, DockerPullImage) {
         onlyIf {
-            !project.gradle.startParameter.offline && !skipPull
+            pullMode != PullMode.never
         }
         image.set imageName
         inputs.property 'startTimeHour', startTimeHour
-        outputs.files project.layout.buildDirectory.file("${imageName}.pulled") // fake output, so we can cache task
+        if (pullMode == PullMode.cached) {
+            // fake output, so we can cache task
+            outputs.files project.layout.buildDirectory.file("${imageName}.pulled")
+        }
         //platform.set 'linux/amd64'
     }
 }
 
 def checkImage = { Object pullImageTask, String name, String imageName, String propertyName ->
     project.tasks.register(name, DockerInspectImage) {
-        def checkImageFile = project.layout.buildDirectory.file(imageName)
+        def checkImageFile = project.layout.buildDirectory.file("inspect/${imageName}")
         outputs.files checkImageFile
         outputs.upToDateWhen { false }
         dependsOn pullImageTask
         imageId.set imageName
         onNext { message ->
-            checkImageFile.get().asFile.text = "${propertyName}=${message.repoDigests.get(0)}"
+            checkImageFile.get().asFile.text = message.repoDigests.isEmpty() ? imageName : message.repoDigests.get(0)
         }
     }
 }
 
-def buildImage = { TaskProvider<? extends Task> checkImageTask, String name, String baseImage, String outImage ->
+def buildImage = { TaskProvider<? extends Task> checkImageTask, String name, String imageName, String outImage ->
     Docker.registerDockerImage(project, name) {
         dependsOn prepareDocker
         inputs.files deephavenJpyWheel.outputs.files
@@ -73,29 +91,43 @@ def buildImage = { TaskProvider<? extends Task> checkImageTask, String name, Str
         inputDir.set dockerContext
         // TODO: we don't have to explicitly set this if we use buildx
         buildArgs.put('TARGETARCH', 'amd64')
-        buildArgs.put('BASE', baseImage)
+        buildArgs.put('BASE', imageName)
         images.add(outImage)
     }
 }
 
-def baseImagePropertyName = { String type ->
-    "deephaven.server${type}.baseImage"
+def basePropertyName = { String type ->
+    "deephaven.server${type}.base"
+}
+
+def specificPropertyName = { String type ->
+    "deephaven.server${type}.specific"
 }
 
 def buildImageType = { String type ->
-    def propertyName = baseImagePropertyName(type)
-    def baseImage = project.property(propertyName) as String
-    def pullImageTask = pullImage("pullImage${type}", baseImage)
-    def checkImageTask = checkImage(pullImageTask, "checkImage${type}", baseImage, propertyName)
-    return buildImage(checkImageTask, "buildImage${type}", baseImage, "deephaven/server${type}:local-build")
+    def propertyName = useBase ? basePropertyName(type) : specificPropertyName(type)
+    def imageName = project.property(propertyName) as String
+    def pullImageTask = pullImage("pullImage${type}", imageName)
+    def checkImageTask = checkImage(pullImageTask, "checkImage${type}", imageName, propertyName)
+    return buildImage(checkImageTask, "buildImage${type}", imageName, "deephaven/server${type}:local-build")
 }
 
 def types = [ '', '-nltk', '-pytorch', '-sklearn', '-tensorflow' ]
 
 def builds = types.collect { buildImageType(it) }
 
-project.tasks.register('stampProperties') {
-    def checkTasks = types.collect {project.tasks.getByName("checkImage${it}") }
-}
-
 assemble.dependsOn builds
+
+if (useBase) {
+    project.tasks.register('stampSpecific') { task ->
+        def inputFiles = types.collectEntries { [(it): project.tasks.getByName("checkImage${it}").outputs.files] } as Map<String, FileCollection>
+        def outputFile = project.layout.buildDirectory.file('stamped.properties')
+        inputs.files inputFiles.values()
+        outputs.files outputFile
+        doLast {
+            def images = inputFiles.keySet().collect { type -> "${basePropertyName(type)}=${project.property(basePropertyName(type))}" }.join('\n')
+            def digests = inputFiles.collect { e -> "${specificPropertyName(e.key)}=${e.value.singleFile.text}" }.join('\n')
+            outputFile.get().asFile.text = images + '\n\n' + digests
+        }
+    }
+}

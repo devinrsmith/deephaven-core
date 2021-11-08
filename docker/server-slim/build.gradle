@@ -4,11 +4,13 @@ plugins {
 
 evaluationDependsOn ':grpc-api-server-native'
 
-def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
+def baseImage = project.property('deephaven.server-slim.baseImage')
+def outImage = project.property('deephaven.server-slim.outImage')
 
 def dockerContext = project.layout.buildDirectory.dir('context')
-
 def commonDir = rootProject.layout.projectDirectory.dir('docker/common')
+
+def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
 
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     it.from (commonDir) {
@@ -27,7 +29,8 @@ def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
     inputDir.set dockerContext
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')
-    images.add("deephaven/${project.name}:local-build")
+    buildArgs.put('BASE', baseImage)
+    images.add(outImage)
 }
 
 assemble.dependsOn buildDocker

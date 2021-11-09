@@ -14,6 +14,8 @@ dependencies {
     exclude group: 'org.slf4j', module: 'slf4j-simple'
   }
 
+  runtimeOnly project(':extensions-devin-resolver')
+
   runtimeOnly project(':log-to-slf4j')
   Classpaths.inheritSlf4j(project, 'jcl-over-slf4j', 'runtimeOnly')
   runtimeOnly project(':logback-print-stream-globals')

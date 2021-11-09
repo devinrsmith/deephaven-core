@@ -1,15 +1,10 @@
-package io.deephaven.grpc_api.uri;
+package com.devinrsmith;
 
-import io.deephaven.db.tables.Table;
-import io.deephaven.qst.array.IntArray;
-import io.deephaven.qst.column.Column;
-import io.deephaven.qst.table.NewTable;
-import io.deephaven.qst.table.TableSpec;
+import io.deephaven.grpc_api.uri.UriResolver;
 
 import javax.inject.Inject;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +42,7 @@ public class DevinResolver implements UriResolver {
     }
 
     @Override
-    public Object resolve(URI uri) throws InterruptedException {
+    public Object resolve(URI uri) {
         if (!EXPECTED_PATH.equals(uri.getPath())) {
             throw new IllegalStateException();
         }
@@ -57,16 +52,9 @@ public class DevinResolver implements UriResolver {
         }
         final List<Integer> fooGroup = Stream.of(matcher.group(1).split(",")).map(DevinResolver::map).collect(Collectors.toList());
         final List<Integer> barGroup = Stream.of(matcher.group(2).split(",")).map(DevinResolver::map).collect(Collectors.toList());
-        return fooBar(fooGroup, barGroup);
-    }
 
-    public static Table fooBar(Collection<Integer> fooGroup, Collection<Integer> barGroup) {
-        final TableSpec foo = NewTable.of(Column.of("Foo", IntArray.of(fooGroup)));
-        final TableSpec bar = NewTable.of(Column.of("Bar", IntArray.of(barGroup)));
-        final TableSpec results = foo
-                .join(bar, "")
-                .updateView("Add=Foo+Bar", "Mult=Foo*Bar");
-        return Table.of(results);
+        // DevinResolver encapsulates URI format for calling FooBarLogic.fooBar
+        return FooBarLogic.fooBar(fooGroup, barGroup);
     }
 
     private static Integer map(String input) {
@@ -74,7 +62,7 @@ public class DevinResolver implements UriResolver {
     }
 
     @Override
-    public Object resolveSafely(URI uri) throws InterruptedException {
+    public Object resolveSafely(URI uri) {
         return resolve(uri);
     }
 }

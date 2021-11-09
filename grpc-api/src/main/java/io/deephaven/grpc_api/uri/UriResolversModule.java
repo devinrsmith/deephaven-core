@@ -70,10 +70,6 @@ public interface UriResolversModule {
         @Binds
         @IntoSet
         UriResolver bindParquetResolver(ParquetTableResolver resolver);
-
-        @Binds
-        @IntoSet
-        UriResolver bindDevinResolver(DevinResolver resolver);
     }
 
     /**

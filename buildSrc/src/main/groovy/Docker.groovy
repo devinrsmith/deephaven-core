@@ -1,12 +1,6 @@
-import com.bmuschko.gradle.docker.tasks.container.DockerCopyFileFromContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerWaitContainer
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.bmuschko.gradle.docker.tasks.image.DockerRemoveImage
-import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+import com.github.dockerjava.api.command.InspectImageResponse
 import com.github.dockerjava.api.exception.DockerException
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
@@ -14,9 +8,14 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.CopySpec
+import org.gradle.api.internal.GradleInternal
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.initialization.BuildRequestMetaData
 import org.gradle.util.ConfigureUtil
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * Tools to make some common tasks in docker easier to use in gradle
@@ -441,5 +440,63 @@ class Docker {
         project.tasks.findByName('clean').dependsOn removeImage
 
         return makeImage;
+    }
+
+    enum PullMode {
+        never,
+        always,
+        cached
+    }
+
+    static PullMode pullMode(Project project) {
+        project.hasProperty('deephaven.docker.pullMode') ?
+                PullMode.valueOf((String)project.property('deephaven.docker.pullMode')) :
+                project.gradle.startParameter.offline ?
+                        PullMode.never :
+                        project.gradle.startParameter.refreshDependencies ?
+                                PullMode.always :
+                                PullMode.cached
+    }
+
+    static TaskProvider<? extends DockerPullImage> registerPullImage(Project project, String taskName, String imageName) {
+        project.tasks.register(taskName, DockerPullImage) { pull ->
+            def pullMode = pullMode(project)
+            pull.onlyIf {
+                pullMode != PullMode.never
+            }
+            pull.image.set imageName
+            pull.inputs.property 'day', Instant.ofEpochMilli(((GradleInternal)project.gradle).services.get(BuildRequestMetaData.class).getStartTime()).truncatedTo(ChronoUnit.DAYS)
+            if (pullMode == PullMode.cached) {
+                // fake output, so we can cache task
+                pull.outputs.files project.layout.buildDirectory.file("pulled/${imageName}.${taskName}.txt")
+            }
+            //platform.set 'linux/amd64'
+        }
+    }
+
+    static TaskProvider<? extends DockerInspectImage> registerCheckImage(Project project, String taskName, String imageName, Object... dependencies) {
+        project.tasks.register(taskName, DockerInspectImage) { inspect ->
+            def checkImageFile = project.layout.buildDirectory.file("inspect/${imageName}.${taskName}.txt")
+            inspect.dependsOn(dependencies)
+            inspect.outputs.files checkImageFile
+            inspect.outputs.upToDateWhen { false }
+            inspect.imageId.set imageName
+            inspect.onNext { InspectImageResponse message ->
+                checkImageFile.get().asFile.text = message.repoDigests.isEmpty() ? imageName : message.repoDigests.get(0)
+            }
+        }
+    }
+
+    static TaskProvider<? extends DockerInspectImage> registerPullAndCheckImage(Project project, String suffix, String imageName) {
+        TaskProvider<? extends DockerPullImage> pullTask = registerPullImage(project, "pullImage${suffix}", imageName)
+        TaskProvider<? extends DockerInspectImage> checkTask = registerCheckImage(project, "checkImage${suffix}", imageName, pullTask)
+        project.tasks.register("showImage${suffix}") {task ->
+            def inspect = checkTask.get()
+            task.inputs.files inspect.outputs.files
+            task.doLast {
+                inspect.outputs.files.each { file -> println "Image (input): ${imageName}\nImage (output): ${file.text}" }
+            }
+        }
+        return checkTask
     }
 }

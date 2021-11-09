@@ -4,7 +4,7 @@ plugins {
 
 evaluationDependsOn ':grpc-api-server-native'
 
-def baseImage = project.property('deephaven.server-slim.baseImage')
+def baseImage = project.property('deephaven.server-slim.base')
 def outImage = project.property('deephaven.server-slim.outImage')
 
 def dockerContext = project.layout.buildDirectory.dir('context')
@@ -24,9 +24,12 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     it.into dockerContext
 }
 
+def checkImage = Docker.registerPullAndCheckImage(project, '', baseImage)
+
 def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
     dependsOn prepareDocker
     inputDir.set dockerContext
+    inputs.files checkImage.get().outputs.files
     // TODO: we don't have to explicitly set this if we use buildx
     buildArgs.put('TARGETARCH', 'amd64')
     buildArgs.put('BASE', baseImage)
@@ -34,3 +37,9 @@ def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
 }
 
 assemble.dependsOn buildDocker
+
+// To print out the latest:
+// ./gradlew -q server-slim:showBaseImages -Pdeephaven.docker.pullMode=always
+project.tasks.register('showBaseImages') {
+    it.dependsOn project.tasks.findAll { task -> task.name.startsWith('showImage') }
+}

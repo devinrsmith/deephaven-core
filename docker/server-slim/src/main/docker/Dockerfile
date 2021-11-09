@@ -1,4 +1,3 @@
-# deephaven.server-slim.baseImage
 ARG BASE
 
 FROM $BASE as install

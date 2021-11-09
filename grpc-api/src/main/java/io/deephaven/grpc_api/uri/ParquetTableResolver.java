@@ -59,7 +59,7 @@ public final class ParquetTableResolver implements UriResolver {
         if (!isWellFormed(uri)) {
             throw new IllegalArgumentException(String.format("Invalid parquet URI '%s'", uri));
         }
-        return ParquetTools.readTable(uri.getPath());
+        return ParquetTools.readTable(uri.getPath()).coalesce(); // todo otherwise "is not a subscribable table"
     }
 
     @Override

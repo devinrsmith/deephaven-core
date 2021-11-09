@@ -80,8 +80,6 @@ public final class BarrageTableResolver implements UriResolver {
 
     @Override
     public boolean isResolvable(URI uri) {
-        // Note: we are lying right now when we say this supports remote proxied uri - but we are doing that so callers
-        // can get a more specific exception with a link to the issue number.
         return RemoteUri.isWellFormed(uri);
     }
 

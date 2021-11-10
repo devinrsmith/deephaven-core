@@ -1,0 +1,61 @@
+plugins {
+    id 'com.bmuschko.docker-remote-api'
+}
+
+def imagesDir = project.layout.projectDirectory.dir('images')
+
+def pulls = []
+def checks = []
+def verifies = []
+
+imagesDir.asFileTree.each { File file ->
+    def imageName = imagesDir.asFile.relativePath(file)
+    def sanitizedName = imageName.replace(':', '-').replace('/', '-')
+    def imageId = file.text
+
+    def pullImage = Docker.registerPullImage(project, "pullImage-${sanitizedName}", imageName)
+    def checkImage = Docker.registerCheckImage(project, "checkImage-${sanitizedName}", imageName)
+    checkImage.configure {
+        mustRunAfter pullImage
+    }
+    def verifyImage = project.tasks.register("verifyImage-${sanitizedName}") {verify ->
+        verify.inputs.files checkImage.get().outputs.files
+        verify.inputs.property 'expectedImageId', imageId
+        verify.doLast {
+            def actual = checkImage.get().outputs.files.singleFile.text
+            if (imageId != actual) {
+                throw new IllegalStateException("The image ID for '${imageName}' is out of date. From the registry: '${actual}'")
+            }
+        }
+    }
+
+    pulls += pullImage
+    checks += checkImage
+    verifies += verifyImage
+}
+
+project.tasks.register('pullImages') {
+    dependsOn pulls
+}
+
+project.tasks.register('verifyImages') {
+    dependsOn verifies
+}
+
+project.tasks.register('createPatch', Sync) {sync ->
+    sync.dependsOn checks
+
+    // TODO: this is *incorrect*
+    sync.from imagesDir
+
+    // We want this task to have a from dependency on the output of every single check
+    // But it's fails with: Caused by: org.gradle.api.InvalidUserDataException: Cannot convert URL 'java:latest' to a file.
+    // checks.each { c ->
+    //    sync.from c.get().outputs
+    // }
+
+    sync.into 'build/images.patch'
+    sync.doLast {
+        println "To finish, you must manually move the files: rm -r docker/registry/images && mv docker/registry/build/images.patch docker/registry/images"
+    }
+}

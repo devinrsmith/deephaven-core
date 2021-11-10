@@ -476,7 +476,20 @@ class Docker {
 
     static TaskProvider<? extends DockerInspectImage> registerCheckImage(Project project, String taskName, String imageName, Object... dependencies) {
         project.tasks.register(taskName, DockerInspectImage) { inspect ->
-            def checkImageFile = project.layout.buildDirectory.file("inspect/${imageName}.${taskName}.txt")
+            def checkImageFile = project.layout.buildDirectory.file("inspect/${imageName}")
+            inspect.dependsOn(dependencies)
+            inspect.outputs.files checkImageFile
+            inspect.outputs.upToDateWhen { false }
+            inspect.imageId.set imageName
+            inspect.onNext { InspectImageResponse message ->
+                checkImageFile.get().asFile.text = message.repoDigests.isEmpty() ? imageName : message.repoDigests.get(0)
+            }
+        }
+    }
+
+    static TaskProvider<? extends DockerInspectImage> registerVerifyImage(Project project, String taskName, String imageName, String expectedId, Object... dependencies) {
+        project.tasks.register(taskName, DockerInspectImage) { inspect ->
+            def checkImageFile = project.layout.buildDirectory.file("inspect/${imageName}")
             inspect.dependsOn(dependencies)
             inspect.outputs.files checkImageFile
             inspect.outputs.upToDateWhen { false }
@@ -498,6 +511,14 @@ class Docker {
             }
         }
         return checkTask
+    }
+
+    static String lookupImageId(Project project, String imageName) {
+        File file = project.project(':docker-registry').layout.projectDirectory.file("images/${imageName}").asFile
+        if (!file.exists()) {
+            throw new IllegalStateException("docker-registry file for image '${imageName}' does not exist")
+        }
+        return file.text
     }
 
     static TaskProvider<? extends Task> buildPyWheel(Project project, String taskName, String imgName, String sourcePath) {

@@ -189,6 +189,9 @@ project(':server-slim').projectDir = file('docker/server-slim')
 include(':run-in-docker')
 project(':run-in-docker').projectDir = file('docker/run-in-docker')
 
+include(':docker-registry')
+project(':docker-registry').projectDir = file('docker/registry')
+
 // Apply "vanity naming" (look for .gradle files matching ProjectName/ProjectName.gradle)
 File root = settings.rootDir
 mods.each {

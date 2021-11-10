@@ -44,9 +44,9 @@ def buildImage = { String name, String imageName, String outImage, TaskProvider<
 }
 
 def buildImageType = { String type ->
-    def imageName = project.property("deephaven.server${type}.base") as String
-    def checkImageTask = Docker.registerPullAndCheckImage(project, type, imageName)
-    return buildImage("buildImage${type}", imageName, "deephaven/server${type}:local-build", checkImageTask)
+    def imageId = Docker.lookupImageId(project, project.property("deephaven.server${type}.base"))
+    def checkImageTask = Docker.registerPullAndCheckImage(project, type, imageId)
+    return buildImage("buildImage${type}", imageId, "deephaven/server${type}:local-build", checkImageTask)
 }
 
 def types = [ '', '-nltk', '-pytorch', '-sklearn', '-tensorflow' ]

@@ -7,6 +7,8 @@ plugins {
 
 def dockerLicenses = License.createFrom(project).syncDockerLicense().get()
 
+def base = Docker.lookupImageId(project, 'docker.io/envoyproxy/envoy:v1.17.1')
+
 task prepareDocker(type: Sync) {
     from 'Dockerfile'
     from ('contents') {
@@ -20,5 +22,6 @@ task prepareDocker(type: Sync) {
 
 task buildDocker(type: DockerBuildImage) {
     dependsOn prepareDocker
+    buildArgs.put('BASE', base)
     images.add('deephaven/envoy:local-build')
 }

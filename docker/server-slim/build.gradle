@@ -4,7 +4,7 @@ plugins {
 
 evaluationDependsOn ':grpc-api-server-native'
 
-def baseImage = project.property('deephaven.server-slim.base')
+def baseImage = Docker.lookupImageId(project, project.property('deephaven.server-slim.base'))
 def outImage = project.property('deephaven.server-slim.outImage')
 
 def dockerContext = project.layout.buildDirectory.dir('context')

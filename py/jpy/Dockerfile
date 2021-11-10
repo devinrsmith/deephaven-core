@@ -1,4 +1,5 @@
-FROM ghcr.io/devinrsmith/java-python-devel
+ARG BASE
+FROM $BASE
 WORKDIR /usr/src/app
 COPY . .
 ARG DEEPHAVEN_VERSION

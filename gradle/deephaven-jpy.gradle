@@ -34,6 +34,7 @@ project(':deephaven-jpy') {
   Docker.registerDockerImage(project, 'buildDockerForWheel') {
     dependsOn prepareDocker
     buildArgs.put('DEEPHAVEN_VERSION', "${project.version}")
+    buildArgs.put('BASE', Docker.lookupImageId(project, 'ghcr.io/devinrsmith/java-python-devel:latest'))
     images.add('deephaven/deephaven-jpy-wheel:local-build')
   }
 }

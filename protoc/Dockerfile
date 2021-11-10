@@ -1,5 +1,6 @@
 # Basing our image on node, so we can easily install and invoke ts-protoc-gen protoc plugin
-FROM docker.io/library/node:14.18.1
+ARG BASE
+FROM $BASE
 
 WORKDIR /usr/src/app
 

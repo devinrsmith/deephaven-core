@@ -12,5 +12,6 @@ task prepareDocker(type: Sync) {
 
 Docker.registerDockerImage(project, 'buildDocker') {
     dependsOn prepareDocker
+    buildArgs.put('BASE', Docker.lookupImageId(project, 'docker.io/library/node:14'))
     images.add('deephaven/protoc:local-build')
 }

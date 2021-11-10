@@ -29,8 +29,8 @@ Docker.registerDockerTask(project, 'webpackSources') {
         from ('Dockerfile')
         from ('../package.json')
         from ('../package-lock.json')
-
     }
+    buildArgs = [ BASE: Docker.lookupImageId(project, 'docker.io/library/node:14') ]
     imageName = 'deephaven/js-out:local-build'
     containerOutPath = '/usr/src/app/raw-js-openapi/build/js-out'
     copyOut {

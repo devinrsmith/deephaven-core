@@ -1,4 +1,5 @@
-FROM docker.io/library/node:14.18.1 AS node
+ARG BASE
+FROM $BASE AS node
 WORKDIR /usr/src/app
 
 FROM node as build

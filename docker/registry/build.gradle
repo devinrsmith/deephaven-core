@@ -46,7 +46,7 @@ project.tasks.register('createPatch', Sync) {sync ->
     sync.dependsOn checks
 
     // TODO: this is *incorrect*
-    sync.from imagesDir
+    sync.from project.layout.buildDirectory.dir('inspect')
 
     // We want this task to have a from dependency on the output of every single check
     // But it's fails with: Caused by: org.gradle.api.InvalidUserDataException: Cannot convert URL 'java:latest' to a file.

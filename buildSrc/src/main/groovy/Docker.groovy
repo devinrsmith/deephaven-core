@@ -453,6 +453,33 @@ class Docker {
         return makeImage;
     }
 
+    static TaskProvider<? extends Task> buildPyWheel(Project project, String taskName, String imgName, String sourcePath) {
+        return registerDockerTask(project, taskName) { DockerTaskConfig config ->
+            config.copyIn { Sync sync ->
+                sync.from(sourcePath) { CopySpec copySpec ->
+                    copySpec.into 'src'
+                }
+            }
+            config.imageName = "${imgName}:local-build"
+            config.dockerfile { Dockerfile action ->
+                // set up the container, env vars - things that aren't likely to change
+                action.from 'docker.io/library/python:3.7.10 as sources'
+                action.arg 'DEEPHAVEN_VERSION'
+                action.environmentVariable 'DEEPHAVEN_VERSION', project.version.toString()
+                action.workingDir '/usr/src/app'
+                action.copyFile '/src', '.'
+                action.from 'sources as build'
+                action.runCommand '''set -eux; \\
+                      test -n "${DEEPHAVEN_VERSION}";\\
+                      python setup.py bdist_wheel'''
+            }
+            config.containerOutPath='/usr/src/app/dist'
+            config.copyOut { Sync sync ->
+                sync.into "build/wheel${taskName}"
+            }
+        }
+    }
+
     static TaskProvider<? extends DockerPullImage> registerPullImage(Project project, String taskName, String imageName) {
         project.tasks.register(taskName, DockerPullImage) { pull ->
             pull.image.set imageName
@@ -505,33 +532,5 @@ class Docker {
             throw new IllegalStateException("docker-registry file for image '${imageName}' does not exist")
         }
         return file.text
-    }
-
-    static TaskProvider<? extends Task> buildPyWheel(Project project, String taskName, String imgName, String sourcePath) {
-        return registerDockerTask(project, taskName) { DockerTaskConfig config ->
-            def sourceImageId = lookupImageId(project, 'docker.io/library/python:3.7')
-            config.copyIn { Sync sync ->
-                sync.from(sourcePath) { CopySpec copySpec ->
-                    copySpec.into 'src'
-                }
-            }
-            config.imageName = "${imgName}:local-build"
-            config.dockerfile { Dockerfile action ->
-                // set up the container, env vars - things that aren't likely to change
-                action.from "${sourceImageId} as sources"
-                action.arg 'DEEPHAVEN_VERSION'
-                action.environmentVariable 'DEEPHAVEN_VERSION', project.version.toString()
-                action.workingDir '/usr/src/app'
-                action.copyFile '/src', '.'
-                action.from 'sources as build'
-                action.runCommand '''set -eux; \\
-                      test -n "${DEEPHAVEN_VERSION}";\\
-                      python setup.py bdist_wheel'''
-            }
-            config.containerOutPath='/usr/src/app/dist'
-            config.copyOut { Sync sync ->
-                sync.into "build/wheel${taskName}"
-            }
-        }
     }
 }

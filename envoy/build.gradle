@@ -5,23 +5,23 @@ plugins {
     id 'com.bmuschko.docker-remote-api'
 }
 
-def dockerLicenses = License.createFrom(project).syncDockerLicense().get()
+def dockerLicenses = License.createFrom(project).syncDockerLicense()
 
-def base = Docker.lookupImageId(project, 'docker.io/envoyproxy/envoy:v1.17.1')
-
-task prepareDocker(type: Sync) {
+def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     from 'Dockerfile'
     from ('contents') {
         into 'contents'
     }
-    from (dockerLicenses.outputs) {
+    from (dockerLicenses.get().outputs) {
         into 'contents'
     }
     into 'build/docker'
 }
 
-task buildDocker(type: DockerBuildImage) {
-    dependsOn prepareDocker
-    buildArgs.put('BASE', base)
+def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
+    inputs.files prepareDocker.get().outputs.files
+    buildArgs.put('BASE', Docker.lookupImageId(project, 'docker.io/envoyproxy/envoy:v1.17.1'))
     images.add('deephaven/envoy:local-build')
 }
+
+assemble.dependsOn buildDocker

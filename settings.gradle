@@ -177,6 +177,12 @@ include(':application-mode')
 include(':util-immutables')
 project(':util-immutables').projectDir = file('Util/util-immutables')
 
+include(':deephaven-wheel')
+project(':deephaven-wheel').projectDir = file('py/deephaven-wheel')
+
+include(':deephaven2-wheel')
+project(':deephaven2-wheel').projectDir = file('py/deephaven2-wheel')
+
 include(':server-requirements')
 project(':server-requirements').projectDir = file('docker/server-requirements')
 

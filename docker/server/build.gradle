@@ -5,18 +5,17 @@ plugins {
 }
 
 evaluationDependsOn ':deephaven-jpy'
-evaluationDependsOn ':Integrations'
+evaluationDependsOn ':deephaven-wheel'
+evaluationDependsOn ':deephaven2-wheel'
 evaluationDependsOn ':grpc-api-server-native'
 
 def dockerContext = project.layout.buildDirectory.dir('context')
 def commonDir = rootProject.layout.projectDirectory.dir('docker/common')
 
-def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
-def deephavenWheel = project(':Integrations').tasks.getByName('buildDockerForWheel')
-def deephaven2Wheel = project(':Integrations').tasks.getByName('buildDockerForWheel2')
-def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
-
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    // server.tar
+    def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
+
     it.from (commonDir) {
         into 'common'
     }
@@ -30,6 +29,15 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
 
 def buildImage = { String name, String imageId, String outImage ->
     Docker.registerDockerImage(project, name) {
+        // deephaven-jpy.whl
+        def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
+
+        // deephaven.whl
+        def deephavenWheel = project(':deephaven-wheel').tasks.getByName('buildWheel')
+
+        // deephaven2.whl
+        def deephaven2Wheel = project(':deephaven2-wheel').tasks.getByName('buildWheel')
+
         dependsOn prepareDocker
         inputs.files deephavenJpyWheel.outputs.files
         inputs.files deephavenWheel.outputs.files

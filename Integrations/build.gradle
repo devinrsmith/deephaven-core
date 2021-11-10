@@ -6,6 +6,8 @@ plugins {
 }
 
 evaluationDependsOn ':deephaven-jpy'
+evaluationDependsOn ':deephaven-wheel'
+evaluationDependsOn ':deephaven2-wheel'
 
 configurations {
     compile.extendsFrom dhIntegrations
@@ -63,17 +65,24 @@ idea {
         }
 }
 
-def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
-def deephavenWheel = Docker.buildPyWheel(project, 'buildDockerForWheel', 'deephaven/deephaven-wheel', 'python')
-def deephaven2Wheel = Docker.buildPyWheel(project, 'buildDockerForWheel2', 'deephaven/deephaven2-wheel', '../pyintegration')
-
 def runtimeBaseContext = layout.projectDirectory.dir('src/main/runtime-base')
 
 Docker.registerDockerImage(project, 'buildDeephavenPython') {
+    // deephaven-jpy.whl
+    def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
+
+    // deephaven.whl
+    def deephavenWheel = project(':deephaven-wheel').tasks.getByName('buildWheel')
+
+    // deephaven2.whl
+    def deephaven2Wheel = project(':deephaven2-wheel').tasks.getByName('buildWheel')
+
     inputs.files deephavenJpyWheel.outputs.files,
-            deephavenWheel.get().outputs.files,
-            deephaven2Wheel.get().outputs.files
+            deephavenWheel.outputs.files,
+            deephaven2Wheel.outputs.files
+
     inputDir.set runtimeBaseContext
+
     images.add('deephaven/runtime-base:local-build')
 }
 

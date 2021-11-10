@@ -26,7 +26,7 @@ tasks.getByName('build').dependsOn(Docker.registerDockerTask(project, 'buildPyCl
         }
     }
     dockerfile {
-        from('docker.io/library/python:3.7.10')
+        from(Docker.lookupImageId(project, 'docker.io/library/python:3.7'))
         copyFile('project', '/project')
         workingDir('/project')
         runCommand('python3 setup.py bdist_wheel')
@@ -94,7 +94,7 @@ tasks.getByName('check').dependsOn(Docker.registerDockerTask(project, 'testPyCli
     containerDependencies.finalizedBy = stopDeephavenGrpcApi
     network = dockerNetworkName
     dockerfile {
-        from('docker.io/library/python:3.7.10')
+        from(Docker.lookupImageId(project, 'docker.io/library/python:3.7'))
         runCommand '''set -eux; \\
                       pip3 install unittest-xml-reporting==3.0.4 pyarrow==5.0.0 protobuf==3.17.3 grpcio==1.39.0 bitstring==3.1.9 pandas==1.2.5;\\
                       mkdir -p /out/report'''

@@ -498,6 +498,7 @@ class Docker {
 
     static TaskProvider<? extends Task> buildPyWheel(Project project, String taskName, String imgName, String sourcePath) {
         return registerDockerTask(project, taskName) { DockerTaskConfig config ->
+            def sourceImageId = lookupImageId(project, 'docker.io/library/python:3.7')
             config.copyIn { Sync sync ->
                 sync.from(sourcePath) { CopySpec copySpec ->
                     copySpec.into 'src'
@@ -506,7 +507,7 @@ class Docker {
             config.imageName = "${imgName}:local-build"
             config.dockerfile { Dockerfile action ->
                 // set up the container, env vars - things that aren't likely to change
-                action.from 'docker.io/library/python:3.7.10 as sources'
+                action.from "${sourceImageId} as sources"
                 action.arg 'DEEPHAVEN_VERSION'
                 action.environmentVariable 'DEEPHAVEN_VERSION', project.version.toString()
                 action.workingDir '/usr/src/app'

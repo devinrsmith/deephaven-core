@@ -1,8 +1,9 @@
+ARG BASE
 FROM deephaven/dhide:local-build as dhide
 
 FROM deephaven/js-out:local-build as js-out
 
-FROM docker.io/library/nginx:1.19.7
+FROM $BASE
 
 # these installs are necessary to enable webdav class 2
 # https://github.com/arut/nginx-dav-ext-module

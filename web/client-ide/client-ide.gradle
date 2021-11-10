@@ -26,6 +26,8 @@ Task gwtc = tasks.getByName('gwtCompile')
 
 def dockerLicenses = License.createFrom(project).syncDockerLicense().get()
 
+def base = Docker.lookupImageId(project, 'docker.io/library/nginx:1.19')
+
 task prepareDocker(type: Sync) {
     // Note: GH actions currently prepares docker via gradle, but does its own building via
     // a native GH action. As such, we need to make sure that the prepare also invokes the
@@ -49,6 +51,7 @@ task prepareDocker(type: Sync) {
 Docker.registerDockerImage(project, 'buildDocker') {
     inputs.files([prepareDocker, dhide, jsOut].each { t -> t.outputs.files })
     //buildArgs.put('DEEPHAVEN_VERSION', "${project.version}")
+    buildArgs.put('BASE', base)
     images.add('deephaven/web:local-build')
 }
 

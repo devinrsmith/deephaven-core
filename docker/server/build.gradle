@@ -28,25 +28,23 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     it.into dockerContext
 }
 
-def buildImage = { String name, String imageName, String outImage, TaskProvider<? extends Task> checkImageTask ->
+def buildImage = { String name, String imageId, String outImage ->
     Docker.registerDockerImage(project, name) {
         dependsOn prepareDocker
         inputs.files deephavenJpyWheel.outputs.files
         inputs.files deephavenWheel.outputs.files
         inputs.files deephaven2Wheel.outputs.files
-        inputs.files checkImageTask.get().outputs.files
         inputDir.set dockerContext
         // TODO: we don't have to explicitly set this if we use buildx
         buildArgs.put('TARGETARCH', 'amd64')
-        buildArgs.put('BASE', imageName)
+        buildArgs.put('BASE', imageId)
         images.add(outImage)
     } as TaskProvider<? extends DockerBuildImage>
 }
 
 def buildImageType = { String type ->
     def imageId = Docker.lookupImageId(project, project.property("deephaven.server${type}.base"))
-    def checkImageTask = Docker.registerPullAndCheckImage(project, type, imageId)
-    return buildImage("buildImage${type}", imageId, "deephaven/server${type}:local-build", checkImageTask)
+    return buildImage("buildImage${type}", imageId, "deephaven/server${type}:local-build")
 }
 
 def types = [ '', '-nltk', '-pytorch', '-sklearn', '-tensorflow' ]
@@ -54,9 +52,3 @@ def types = [ '', '-nltk', '-pytorch', '-sklearn', '-tensorflow' ]
 def builds = types.collect { buildImageType(it) }
 
 assemble.dependsOn builds
-
-// To print out the latest:
-// ./gradlew -q server:showBaseImages -Pdeephaven.docker.pullMode=always
-project.tasks.register('showBaseImages') {
-    it.dependsOn project.tasks.findAll { task -> task.name.startsWith('showImage') }
-}

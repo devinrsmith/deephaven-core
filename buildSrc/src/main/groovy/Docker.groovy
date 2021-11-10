@@ -442,34 +442,9 @@ class Docker {
         return makeImage;
     }
 
-    enum PullMode {
-        never,
-        always,
-        cached
-    }
-
-    static PullMode pullMode(Project project) {
-        project.hasProperty('deephaven.docker.pullMode') ?
-                PullMode.valueOf((String)project.property('deephaven.docker.pullMode')) :
-                project.gradle.startParameter.offline ?
-                        PullMode.never :
-                        project.gradle.startParameter.refreshDependencies ?
-                                PullMode.always :
-                                PullMode.cached
-    }
-
     static TaskProvider<? extends DockerPullImage> registerPullImage(Project project, String taskName, String imageName) {
         project.tasks.register(taskName, DockerPullImage) { pull ->
-            def pullMode = pullMode(project)
-            pull.onlyIf {
-                pullMode != PullMode.never
-            }
             pull.image.set imageName
-            pull.inputs.property 'day', Instant.ofEpochMilli(((GradleInternal)project.gradle).services.get(BuildRequestMetaData.class).getStartTime()).truncatedTo(ChronoUnit.DAYS)
-            if (pullMode == PullMode.cached) {
-                // fake output, so we can cache task
-                pull.outputs.files project.layout.buildDirectory.file("pulled/${imageName}.${taskName}.txt")
-            }
             //platform.set 'linux/amd64'
         }
     }

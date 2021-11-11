@@ -16,25 +16,27 @@ project(':deephaven-jpy') {
    * If you know what you are doing, it should be done as a git subtree pull.
    * After an update to the py/jpy subtree, you should update the deephavenJpyGoldenSha property
    */
-  task checkSubtree(type: Exec) {
-    workingDir = rootDir
-    commandLine 'git', 'diff', '--quiet', '--exit-code', deephavenJpyGoldenSha, 'py/jpy'
+  project.tasks.register('checkSubtree', Exec) {exec ->
+    exec.workingDir = rootDir
+    exec.commandLine 'git', 'diff', '--quiet', '--exit-code', deephavenJpyGoldenSha, 'py/jpy'
   }
 
   // For OSS, we need to currently move fast, and will prefer to make edits directly in py/jpy.
   // These can be backported to jpy proper in the future if necessary.
 
-  task prepareDocker(type: Sync) {
-    from(project.projectDir) {
-      exclude 'build'
+  Docker.registerDockerTask(project, 'buildDockerForWheel') {
+    copyIn {
+      from(project.projectDir) {
+        exclude 'build'
+      }
     }
-    into 'build/docker'
-  }
-
-  Docker.registerDockerImage(project, 'buildDockerForWheel') {
-    dependsOn prepareDocker
-    buildArgs.put('DEEPHAVEN_VERSION', "${project.version}")
-    buildArgs.put('BASE', Docker.lookupImageId(project, 'ghcr.io/devinrsmith/java-python-devel:latest'))
-    images.add('deephaven/deephaven-jpy-wheel:local-build')
+    buildArgs = [
+            DEEPHAVEN_VERSION: "${project.version}",
+            BASE: Docker.lookupImageId(project, 'ghcr.io/devinrsmith/java-python-devel:latest') ]
+    imageName = 'deephaven/deephaven-jpy-wheel:local-build'
+    containerOutPath = '/usr/src/app/dist'
+    copyOut {
+      into 'build/wheel'
+    }
   }
 }

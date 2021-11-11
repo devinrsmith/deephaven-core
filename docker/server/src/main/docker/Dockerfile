@@ -1,6 +1,4 @@
 ARG BASE
-
-FROM deephaven/deephaven-jpy-wheel:local-build as deephaven-jpy-wheel
 FROM $BASE as install
 
 COPY common/ common/
@@ -9,10 +7,10 @@ RUN set -eux; \
     ./common/server-requirements.sh; \
     rm -r ./common
 
-COPY --from=deephaven-jpy-wheel /usr/src/app/dist /deephaven-jpy
+COPY deephaven-jpy-wheel/ /deephaven-jpy-wheel
 RUN set -eux; \
-    python3 -m pip install -q --no-cache-dir /deephaven-jpy/*.whl; \
-    rm -r /deephaven-jpy
+    python3 -m pip install -q --no-cache-dir /deephaven-jpy-wheel/*.whl; \
+    rm -r /deephaven-jpy-wheel
 
 COPY deephaven-wheel/ /deephaven-wheel
 RUN set -eux; \

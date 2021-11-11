@@ -13,6 +13,9 @@ def dockerContext = project.layout.buildDirectory.dir('context')
 def commonDir = rootProject.layout.projectDirectory.dir('docker/common')
 
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    // deephaven-jpy.whl
+    def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
+
     // deephaven.whl
     def deephavenWheel = project(':deephaven-wheel').tasks.getByName('buildWheel')
 
@@ -24,6 +27,9 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
 
     it.from (commonDir) {
         into 'common'
+    }
+    it.from (deephavenJpyWheel.outputs.files) {
+        into 'deephaven-jpy-wheel'
     }
     it.from (deephavenWheel.outputs.files) {
         into 'deephaven-wheel'
@@ -41,12 +47,7 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
 
 def buildImage = { String name, String imageId, String outImage ->
     Docker.registerDockerImage(project, name) {
-
-        // deephaven-jpy.whl
-        def deephavenJpyWheel = project(':deephaven-jpy').tasks.getByName('buildDockerForWheel')
-
         dependsOn prepareDocker
-        inputs.files deephavenJpyWheel.outputs.files
         inputDir.set dockerContext
         // TODO: we don't have to explicitly set this if we use buildx
         buildArgs.put('TARGETARCH', 'amd64')

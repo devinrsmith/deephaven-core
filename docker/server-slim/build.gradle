@@ -10,9 +10,9 @@ def outImage = project.property('deephaven.server-slim.outImage')
 def dockerContext = project.layout.buildDirectory.dir('context')
 def commonDir = rootProject.layout.projectDirectory.dir('docker/common')
 
-def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
-
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    def grpcApiTar = project(':grpc-api-server-native').tasks.getByName('distTar')
+
     it.from (commonDir) {
         into 'common'
     }

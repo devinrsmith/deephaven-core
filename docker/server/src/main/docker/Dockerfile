@@ -1,8 +1,6 @@
 ARG BASE
 
 FROM deephaven/deephaven-jpy-wheel:local-build as deephaven-jpy-wheel
-FROM deephaven/deephaven-wheel:local-build as deephaven-wheel
-FROM deephaven/deephaven2-wheel:local-build as deephaven2-wheel
 FROM $BASE as install
 
 COPY common/ common/
@@ -11,20 +9,20 @@ RUN set -eux; \
     ./common/server-requirements.sh; \
     rm -r ./common
 
-COPY --from=deephaven-jpy-wheel /usr/src/app/dist /wheels
+COPY --from=deephaven-jpy-wheel /usr/src/app/dist /deephaven-jpy
 RUN set -eux; \
-    python3 -m pip install -q --no-cache-dir /wheels/*.whl; \
-    rm -rf /wheels
+    python3 -m pip install -q --no-cache-dir /deephaven-jpy/*.whl; \
+    rm -r /deephaven-jpy
 
-COPY --from=deephaven-wheel /usr/src/app/dist /wheels
+COPY deephaven-wheel/ /deephaven-wheel
 RUN set -eux; \
-    python3 -m pip install -q --no-cache-dir /wheels/*.whl; \
-    rm -rf /wheels
+    python3 -m pip install -q --no-cache-dir /deephaven-wheel/*.whl; \
+    rm -r /deephaven-wheel
 
-COPY --from=deephaven2-wheel /usr/src/app/dist /wheels
+COPY deephaven2-wheel/ /deephaven2-wheel
 RUN set -eux; \
-    python3 -m pip install -q --no-cache-dir /wheels/*.whl; \
-    rm -rf /wheels
+    python3 -m pip install -q --no-cache-dir /deephaven2-wheel/*.whl; \
+    rm -r /deephaven2-wheel
 
 ADD server/server.tar /opt/deephaven
 

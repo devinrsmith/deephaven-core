@@ -463,16 +463,16 @@ class Docker {
             config.imageName = "${imgName}:local-build"
             config.dockerfile { Dockerfile action ->
                 // set up the container, env vars - things that aren't likely to change
-                action.from 'docker.io/library/python:3.7.10 as sources'
-                action.arg 'DEEPHAVEN_VERSION'
-                action.environmentVariable 'DEEPHAVEN_VERSION', project.version.toString()
+                action.from "${lookupImageId(project, 'docker.io/library/python:3.7')} as sources"
                 action.workingDir '/usr/src/app'
                 action.copyFile '/src', '.'
                 action.from 'sources as build'
+                action.arg 'DEEPHAVEN_VERSION'
                 action.runCommand '''set -eux; \\
                       test -n "${DEEPHAVEN_VERSION}";\\
                       python setup.py bdist_wheel'''
             }
+            config.buildArgs = [ DEEPHAVEN_VERSION: project.version.toString() ]
             config.containerOutPath='/usr/src/app/dist'
             config.copyOut { Sync sync ->
                 sync.into "build/wheel${taskName}"

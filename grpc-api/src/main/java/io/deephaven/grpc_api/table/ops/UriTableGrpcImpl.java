@@ -38,7 +38,7 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT,
                     String.format("Not a URI '%s'", request.getUri()));
         }
-        if (UriHelper.isDeephavenLocal(uri)) {
+        if (!UriHelper.isValidViaApi(uri)) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, String.format(
                     "Deephaven local URIs should be resolved via more appropriate APIs '%s'", request.getUri()));
         }
@@ -47,6 +47,8 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
     @Override
     public Table create(final UriTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 0);
+
+        // https://github.com/deephaven/deephaven-core/issues/1496
         validateRequest(request);
 
         // TODO: check user auth if has access to console

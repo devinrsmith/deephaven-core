@@ -15,15 +15,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DevinResolver implements UriResolver {
-    public static final Set<String> SCHEMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("dh", "dh+plain")));
+    public static final Set<String> SCHEMES =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("dh", "dh+plain")));
 
     public static final String EXPECTED_PATH = "/devin";
 
     public static final Pattern QUERY_PATTERN = Pattern.compile("^foo=(.+)&bar=(.+)$");
 
     @Inject
-    public DevinResolver() {
-    }
+    public DevinResolver() {}
 
     @Override
     public Set<String> schemes() {
@@ -50,8 +50,10 @@ public class DevinResolver implements UriResolver {
         if (!matcher.matches()) {
             throw new IllegalStateException();
         }
-        final List<Integer> fooGroup = Stream.of(matcher.group(1).split(",")).map(DevinResolver::map).collect(Collectors.toList());
-        final List<Integer> barGroup = Stream.of(matcher.group(2).split(",")).map(DevinResolver::map).collect(Collectors.toList());
+        final List<Integer> fooGroup =
+                Stream.of(matcher.group(1).split(",")).map(DevinResolver::map).collect(Collectors.toList());
+        final List<Integer> barGroup =
+                Stream.of(matcher.group(2).split(",")).map(DevinResolver::map).collect(Collectors.toList());
 
         // DevinResolver encapsulates URI format for calling FooBarLogic.fooBar
         return FooBarLogic.fooBar(fooGroup, barGroup);

@@ -15,6 +15,12 @@ public class UriHelper {
         return part.equals(encoded);
     }
 
+    public static boolean isValidViaApi(URI uri) {
+        return !(QueryScopeUri.isWellFormed(uri)
+                || ApplicationUri.isWellFormed(uri)
+                || FieldUri.isWellFormed(uri));
+    }
+
     /**
      * A URI is a "Deephaven local" when the scheme is {@value DeephavenUri#LOCAL_SCHEME}, the {@link URI#getPath()
      * path} starts with {@code "/"}, and there are no other URI components.

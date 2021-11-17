@@ -54,7 +54,6 @@ import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyExecute;
@@ -279,27 +278,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
                     .collect(Collectors.toList());
 
             // step 2: resolve dependencies
-            final Function<TableReference, SessionState.ExportObject<Table>> resolver = ref -> {
-                // operations are allowed to return null for optional dependencies
-                if (ref == null) {
-                    return null;
-                }
-
-                switch (ref.getRefCase()) {
-                    case TICKET:
-                        return ticketRouter.resolve(session, ref.getTicket(), "sourceId");
-                    case BATCH_OFFSET:
-                        final int offset = ref.getBatchOffset();
-                        if (offset < 0 || offset >= exportBuilders.size()) {
-                            throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT,
-                                    "invalid table reference: " + ref);
-                        }
-                        return exportBuilders.get(offset).exportBuilder.getExport();
-                    default:
-                        throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "invalid table reference: " + ref);
-                }
-            };
-            exportBuilders.forEach(export -> export.resolveDependencies(resolver));
+            exportBuilders.forEach(export -> export.resolveDependencies(session, exportBuilders));
 
             // step 3: check for cyclical dependencies; this is our only opportunity to check non-export cycles
             // TODO: check for cycles
@@ -423,8 +402,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
             final TableReference resultRef = TableReference.newBuilder().setTicket(resultId).build();
 
             final List<SessionState.ExportObject<Table>> dependencies = operation.getTableReferences(request).stream()
-                    .map(TableReference::getTicket)
-                    .map((ticket) -> ticketRouter.<Table>resolve(session, ticket, "sourceId"))
+                    .map(ref -> resolveOneShotReference(session, ref))
                     .collect(Collectors.toList());
 
             session.newExport(resultId, "resultId")
@@ -439,6 +417,28 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
                         return result;
                     });
         });
+    }
+
+    private SessionState.ExportObject<Table> resolveOneShotReference(SessionState session, TableReference ref) {
+        if (!ref.hasTicket()) {
+            throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, "One-shot operations must use ticket references");
+        }
+        return ticketRouter.resolve(session, ref.getTicket(), "sourceId");
+    }
+
+    private SessionState.ExportObject<Table> resolveBatchReference(SessionState session, List<BatchExportBuilder> exportBuilders, TableReference ref) {
+        switch (ref.getRefCase()) {
+            case TICKET:
+                return ticketRouter.resolve(session, ref.getTicket(), "sourceId");
+            case BATCH_OFFSET:
+                final int offset = ref.getBatchOffset();
+                if (offset < 0 || offset >= exportBuilders.size()) {
+                    throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "invalid table reference: " + ref);
+                }
+                return exportBuilders.get(offset).exportBuilder.getExport();
+            default:
+                throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "invalid table reference: " + ref);
+        }
     }
 
     private class BatchExportBuilder {
@@ -458,9 +458,9 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
             auth = session.getAuthContext();
         }
 
-        void resolveDependencies(final Function<TableReference, SessionState.ExportObject<Table>> resolveReference) {
+        void resolveDependencies(SessionState session, List<BatchExportBuilder> exportBuilders) {
             dependencies = operation.getTableReferences(request).stream()
-                    .map(resolveReference)
+                    .map(ref -> resolveBatchReference(session, exportBuilders, ref))
                     .collect(Collectors.toList());
             exportBuilder.require(dependencies);
         }

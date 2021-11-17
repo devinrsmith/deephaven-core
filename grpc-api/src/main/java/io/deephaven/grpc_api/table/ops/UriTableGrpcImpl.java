@@ -5,11 +5,12 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
-import io.deephaven.grpc_api.session.SessionState;
-import io.deephaven.grpc_api.uri.UriResolvers;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
+import io.deephaven.grpc_api.uri.UriRouter;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.UriTableRequest;
 import io.deephaven.uri.UriHelper;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -21,16 +22,16 @@ import java.util.Objects;
 @Singleton
 public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> {
 
-    private final UriResolvers uriResolvers;
+    private final UriRouter uriRouter;
 
     @Inject()
-    public UriTableGrpcImpl(final UriResolvers uriResolvers) {
+    public UriTableGrpcImpl(final UriRouter uriRouter) {
         super(BatchTableRequest.Operation::getUriTable, UriTableRequest::getResultId);
-        this.uriResolvers = Objects.requireNonNull(uriResolvers);
+        this.uriRouter = Objects.requireNonNull(uriRouter);
     }
 
     @Override
-    public void validateRequest(final UriTableRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final UriTableRequest request) throws StatusRuntimeException {
         final URI uri;
         try {
             uri = URI.create(request.getUri());
@@ -45,11 +46,11 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
     }
 
     @Override
-    public Table create(final UriTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final UriTableRequest request, final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 0);
 
         // https://github.com/deephaven/deephaven-core/issues/1496
-        validateRequest(request);
+        validateRequest(auth, request);
 
         // TODO: check user auth if has access to console
         final boolean resolveSafely = ConsoleServiceGrpcImpl.REMOTE_CONSOLE_DISABLED;
@@ -59,7 +60,7 @@ public final class UriTableGrpcImpl extends GrpcTableOperation<UriTableRequest> 
 
         Object object;
         try {
-            object = resolveSafely ? uriResolvers.resolveSafely(uri) : uriResolvers.resolve(uri);
+            object = resolveSafely ? uriRouter.resolveSafely(auth, uri) : uriRouter.resolve(uri);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null; // todo

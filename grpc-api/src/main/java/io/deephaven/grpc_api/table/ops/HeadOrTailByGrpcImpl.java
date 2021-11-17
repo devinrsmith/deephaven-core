@@ -7,11 +7,12 @@ import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.select.SelectColumnFactory;
 import io.deephaven.db.v2.select.SelectColumn;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.table.validation.ColumnExpressionValidator;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.HeadOrTailByRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -38,7 +39,7 @@ public abstract class HeadOrTailByGrpcImpl extends GrpcTableOperation<HeadOrTail
     }
 
     @Override
-    public void validateRequest(final HeadOrTailByRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final HeadOrTailByRequest request) throws StatusRuntimeException {
         final long nRows = request.getNumRows();
         if (nRows < 0) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "numRows must be >= 0 (found: " + nRows + ")");
@@ -46,7 +47,8 @@ public abstract class HeadOrTailByGrpcImpl extends GrpcTableOperation<HeadOrTail
     }
 
     @Override
-    public Table create(final HeadOrTailByRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final HeadOrTailByRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table parent = sourceTables.get(0).get();

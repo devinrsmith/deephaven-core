@@ -1,5 +1,7 @@
 package io.deephaven.grpc_api.uri;
 
+import io.deephaven.util.auth.AuthContext;
+
 import java.net.URI;
 import java.util.Set;
 
@@ -43,5 +45,5 @@ public interface UriResolver {
      * @param uri the URI
      * @return the object
      */
-    Object resolveSafely(URI uri) throws InterruptedException;
+    Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException;
 }

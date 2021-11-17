@@ -1,13 +1,13 @@
 package io.deephaven.uri;
 
 import io.deephaven.grpc_api.uri.UriResolver;
-import io.deephaven.grpc_api.uri.UriResolversInstance;
+import io.deephaven.grpc_api.uri.UriRouterInstance;
 
 import java.net.URI;
 
 /**
  * The top-level entrypoint for resolving {@link URI URIs} into {@link Object objects}. Uses the global URI resolvers
- * instance from {@link UriResolversInstance#get()}.
+ * instance from {@link UriRouterInstance#get()}.
  *
  * <p>
  * The exact logic will depend on which {@link UriResolver URI resolvers} are installed.
@@ -33,6 +33,6 @@ public class ResolveTools {
      * @return the object
      */
     public static Object resolve(URI uri) throws InterruptedException {
-        return UriResolversInstance.get().resolve(uri);
+        return UriRouterInstance.get().resolve(uri);
     }
 }

@@ -2,9 +2,10 @@ package io.deephaven.grpc_api.table.ops;
 
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.FlattenRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -17,7 +18,7 @@ public class FlattenTableGrpcImpl extends GrpcTableOperation<FlattenRequest> {
     }
 
     @Override
-    public Table create(FlattenRequest request, List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, FlattenRequest request, List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table parent = sourceTables.get(0).get();

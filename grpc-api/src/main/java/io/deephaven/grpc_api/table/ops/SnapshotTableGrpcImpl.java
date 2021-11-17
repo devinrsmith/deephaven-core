@@ -7,11 +7,12 @@ import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.select.SelectColumnFactory;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.db.v2.select.SelectColumn;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.util.FunctionalInterfaces;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.grpc_api.table.validation.ColumnExpressionValidator;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.SnapshotTableRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,7 +40,8 @@ public class SnapshotTableGrpcImpl extends GrpcTableOperation<SnapshotTableReque
     }
 
     @Override
-    public Table create(final SnapshotTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final SnapshotTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         final Table lhs;
         final Table rhs;
         if (sourceTables.size() == 1) {

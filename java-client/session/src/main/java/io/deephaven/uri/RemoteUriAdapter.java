@@ -2,7 +2,6 @@ package io.deephaven.uri;
 
 import io.deephaven.qst.table.TableSpec;
 import io.deephaven.qst.table.TicketTable;
-import io.deephaven.qst.table.UriTable;
 import io.deephaven.uri.StructuredUri.Visitor;
 
 import java.net.URI;
@@ -44,11 +43,11 @@ public final class RemoteUriAdapter implements Visitor {
     @Override
     public void visit(RemoteUri remoteUri) {
         // todo: consider a stronger type? Target + Uri
-        out = UriTable.of(remoteUri.toURI());
+        out = TicketTable.fromUri(remoteUri.toURI());
     }
 
     @Override
     public void visit(URI customUri) {
-        out = UriTable.of(customUri);
+        out = TicketTable.fromUri(customUri);
     }
 }

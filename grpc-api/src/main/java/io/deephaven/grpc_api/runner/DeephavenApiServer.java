@@ -11,10 +11,10 @@ import io.deephaven.grpc_api.console.ConsoleServiceGrpcImpl;
 import io.deephaven.grpc_api.log.LogInit;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.grpc_api.uri.UriResolver;
-import io.deephaven.grpc_api.uri.UriResolvers;
+import io.deephaven.grpc_api.uri.UriRouter;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
-import io.deephaven.grpc_api.uri.UriResolversInstance;
+import io.deephaven.grpc_api.uri.UriRouterInstance;
 import io.deephaven.util.process.ProcessEnvironment;
 import io.deephaven.util.process.ShutdownManager;
 import io.grpc.Server;
@@ -60,7 +60,7 @@ public class DeephavenApiServer {
     private final ConsoleServiceGrpcImpl consoleService;
     private final ApplicationInjector applicationInjector;
     private final ApplicationServiceGrpcImpl applicationService;
-    private final UriResolvers uriResolvers;
+    private final UriRouter uriRouter;
 
     @Inject
     public DeephavenApiServer(
@@ -70,14 +70,14 @@ public class DeephavenApiServer {
             final ConsoleServiceGrpcImpl consoleService,
             final ApplicationInjector applicationInjector,
             final ApplicationServiceGrpcImpl applicationService,
-            final UriResolvers uriResolvers) {
+            final UriRouter uriRouter) {
         this.server = server;
         this.ltm = ltm;
         this.logInit = logInit;
         this.consoleService = consoleService;
         this.applicationInjector = applicationInjector;
         this.applicationService = applicationService;
-        this.uriResolvers = uriResolvers;
+        this.uriRouter = uriRouter;
     }
 
     public Server server() {
@@ -107,10 +107,10 @@ public class DeephavenApiServer {
         applicationInjector.run();
 
         {
-            for (UriResolver resolver : uriResolvers.resolvers()) {
+            for (UriResolver resolver : uriRouter.resolvers()) {
                 log.info().append("Found table resolver ").append(resolver.getClass().toString()).endl();
             }
-            UriResolversInstance.init(uriResolvers);
+            UriRouterInstance.init(uriRouter);
         }
 
         log.info().append("Starting server...").endl();

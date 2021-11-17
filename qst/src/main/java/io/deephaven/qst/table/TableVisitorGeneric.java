@@ -20,11 +20,6 @@ public abstract class TableVisitorGeneric implements TableSpec.Visitor {
     }
 
     @Override
-    public void visit(UriTable uriTable) {
-        accept(uriTable);
-    }
-
-    @Override
     public void visit(MergeTable mergeTable) {
         accept(mergeTable);
     }

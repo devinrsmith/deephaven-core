@@ -1,6 +1,6 @@
 package com.devinrsmith;
 
-import io.deephaven.grpc_api.uri.UriResolver;
+import io.deephaven.grpc_api.uri.UriResolverSafeBase;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DevinResolver implements UriResolver {
+public class DevinResolver extends UriResolverSafeBase {
     public static final Set<String> SCHEMES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("dh", "dh+plain")));
 
@@ -61,10 +61,5 @@ public class DevinResolver implements UriResolver {
 
     private static Integer map(String input) {
         return input == null || input.isEmpty() ? null : Integer.parseInt(input);
-    }
-
-    @Override
-    public Object resolveSafely(URI uri) {
-        return resolve(uri);
     }
 }

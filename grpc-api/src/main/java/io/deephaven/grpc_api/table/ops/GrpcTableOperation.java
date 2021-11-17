@@ -2,9 +2,11 @@ package io.deephaven.grpc_api.table.ops;
 
 import io.deephaven.db.tables.Table;
 import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.grpc.Ticket;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import java.util.Collections;
@@ -70,21 +72,25 @@ public abstract class GrpcTableOperation<T> {
     /**
      * This method validates preconditions of the request.
      * 
+     *
+     * @param auth
      * @param request the original request from the user
      * @throws StatusRuntimeException on the first failed precondition
      */
-    public void validateRequest(final T request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final T request) throws StatusRuntimeException {
         // many operations cannot do validation without the parent tables being resolved first
     }
 
     /**
      * This actually performs the operation. It will typically be performed after the
      * 
+     *
+     * @param auth
      * @param request the original request from the user
      * @param sourceTables the source tables that this operation may or may not need
      * @return the resulting table
      */
-    abstract public Table create(T request, List<SessionState.ExportObject<Table>> sourceTables);
+    abstract public Table create(AuthContext auth, T request, List<ExportObject<Table>> sourceTables);
 
     /**
      * Extract the specific request object from the batch operation.

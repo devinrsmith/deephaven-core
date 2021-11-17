@@ -6,11 +6,12 @@ import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.utils.DBTimeUtils;
 import io.deephaven.db.v2.TimeTable;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.util.Scheduler;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.TimeTableRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -31,7 +32,7 @@ public class TimeTableGrpcImpl extends GrpcTableOperation<TimeTableRequest> {
     }
 
     @Override
-    public void validateRequest(final TimeTableRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final TimeTableRequest request) throws StatusRuntimeException {
         final long periodNanos = request.getPeriodNanos();
         if (periodNanos <= 0) {
             throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
@@ -40,7 +41,8 @@ public class TimeTableGrpcImpl extends GrpcTableOperation<TimeTableRequest> {
     }
 
     @Override
-    public Table create(final TimeTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final TimeTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 0);
         final long startTime = request.getStartTimeNanos();
         final long periodValue = request.getPeriodNanos();

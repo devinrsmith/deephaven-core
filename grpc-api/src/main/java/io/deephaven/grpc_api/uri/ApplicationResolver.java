@@ -23,7 +23,7 @@ import java.util.Set;
 public final class ApplicationResolver extends UriResolverSafeBase {
 
     public static ApplicationResolver get() {
-        return UriResolversInstance.get().find(ApplicationResolver.class).get();
+        return UriRouterInstance.get().find(ApplicationResolver.class).get();
     }
 
     private final ApplicationStates states;

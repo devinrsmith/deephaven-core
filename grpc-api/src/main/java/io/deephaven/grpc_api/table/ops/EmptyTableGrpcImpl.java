@@ -4,10 +4,11 @@ import com.google.rpc.Code;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.TableTools;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.EmptyTableRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -23,14 +24,15 @@ public class EmptyTableGrpcImpl extends GrpcTableOperation<EmptyTableRequest> {
     }
 
     @Override
-    public void validateRequest(final EmptyTableRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final EmptyTableRequest request) throws StatusRuntimeException {
         if (request.getSize() < 0) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "Size must be greater than zero");
         }
     }
 
     @Override
-    public Table create(final EmptyTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final EmptyTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 0);
 
         return TableTools.emptyTable(request.getSize());

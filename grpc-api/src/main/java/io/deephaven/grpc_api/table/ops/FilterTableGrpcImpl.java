@@ -3,10 +3,10 @@ package io.deephaven.grpc_api.table.ops;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.v2.select.SelectFilter;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.table.ops.filter.*;
 import io.deephaven.proto.backplane.grpc.*;
-import org.apache.commons.text.StringEscapeUtils;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -22,7 +22,8 @@ public class FilterTableGrpcImpl extends GrpcTableOperation<FilterTableRequest> 
     }
 
     @Override
-    public Table create(final FilterTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final FilterTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
         Table sourceTable = sourceTables.get(0).get();
 

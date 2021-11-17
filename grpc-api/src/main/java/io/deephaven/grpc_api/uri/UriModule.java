@@ -8,10 +8,12 @@ import io.deephaven.grpc_api.barrage.BarrageClientModule;
  *
  * @see BarrageClientModule
  * @see UriResolversModule
+ * @see UriTicketResolverModule
  */
 @Module(includes = {
         BarrageClientModule.class,
-        UriResolversModule.class
+        UriResolversModule.class,
+        UriTicketResolverModule.class
 })
 public interface UriModule {
 

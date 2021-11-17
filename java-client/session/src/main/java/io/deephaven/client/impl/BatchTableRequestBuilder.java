@@ -77,7 +77,6 @@ import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.grpc.TimeTableRequest;
 import io.deephaven.proto.backplane.grpc.UnstructuredFilterTableRequest;
-import io.deephaven.proto.backplane.grpc.UriTableRequest;
 import io.deephaven.qst.table.AggregationTable;
 import io.deephaven.qst.table.AsOfJoinTable;
 import io.deephaven.qst.table.ByTable;
@@ -89,7 +88,6 @@ import io.deephaven.qst.table.LeftJoinTable;
 import io.deephaven.qst.table.MergeTable;
 import io.deephaven.qst.table.NaturalJoinTable;
 import io.deephaven.qst.table.NewTable;
-import io.deephaven.qst.table.ParentsVisitor;
 import io.deephaven.qst.table.ReverseAsOfJoinTable;
 import io.deephaven.qst.table.ReverseTable;
 import io.deephaven.qst.table.SelectTable;
@@ -104,7 +102,6 @@ import io.deephaven.qst.table.TimeProviderSystem;
 import io.deephaven.qst.table.TimeTable;
 import io.deephaven.qst.table.UpdateTable;
 import io.deephaven.qst.table.UpdateViewTable;
-import io.deephaven.qst.table.UriTable;
 import io.deephaven.qst.table.ViewTable;
 import io.deephaven.qst.table.WhereInTable;
 import io.deephaven.qst.table.WhereNotInTable;
@@ -185,12 +182,6 @@ class BatchTableRequestBuilder {
         public void visit(NewTable newTable) {
             throw new UnsupportedOperationException(
                     "TODO(deephaven-core#992): TableService implementation of NewTable, https://github.com/deephaven/deephaven-core/issues/992");
-        }
-
-        @Override
-        public void visit(UriTable uriTable) {
-            out = op(Builder::setUriTable,
-                    UriTableRequest.newBuilder().setResultId(ticket).setUri(uriTable.uri().toString()));
         }
 
         @Override

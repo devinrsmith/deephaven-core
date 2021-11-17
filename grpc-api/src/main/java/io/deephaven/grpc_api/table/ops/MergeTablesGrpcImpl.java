@@ -7,8 +7,10 @@ import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.utils.TableTools;
 import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.MergeTablesRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -29,14 +31,15 @@ public class MergeTablesGrpcImpl extends GrpcTableOperation<MergeTablesRequest> 
     }
 
     @Override
-    public void validateRequest(final MergeTablesRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final MergeTablesRequest request) throws StatusRuntimeException {
         if (request.getSourceIdsList().isEmpty()) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "Cannot merge zero source tables.");
         }
     }
 
     @Override
-    public Table create(final MergeTablesRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final MergeTablesRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.gt(sourceTables.size(), "sourceTables.size()", 0);
 
         final String keyColumn = request.getKeyColumn();

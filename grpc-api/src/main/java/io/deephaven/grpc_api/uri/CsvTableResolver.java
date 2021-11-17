@@ -2,6 +2,7 @@ package io.deephaven.grpc_api.uri;
 
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.CsvHelpers;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public final class CsvTableResolver implements UriResolver {
             Arrays.asList("csv+http", "http+csv", "csv+https", "https+csv", "csv+file", "file+csv", "csv")));
 
     public static CsvTableResolver get() {
-        return UriResolversInstance.get().find(CsvTableResolver.class).get();
+        return UriRouterInstance.get().find(CsvTableResolver.class).get();
     }
 
     private final Config config;
@@ -60,14 +61,14 @@ public final class CsvTableResolver implements UriResolver {
     }
 
     @Override
-    public Object resolveSafely(URI uri) {
-        if (!config.isEnabled()) {
+    public Object resolveSafely(AuthContext auth, URI uri) {
+        if (!config.isEnabled(auth)) {
             throw new UnsupportedOperationException(
-                    String.format("CSV table resolver is disabled. %s", config.helpEnable()));
+                    String.format("CSV table resolver is disabled. %s", config.helpEnable(auth)));
         }
-        if (!config.isEnabled(uri)) {
+        if (!config.isEnabled(auth, uri)) {
             throw new UnsupportedOperationException(
-                    String.format("CSV table resolver is disable for URI '%s'. %s", uri, config.helpEnable(uri)));
+                    String.format("CSV table resolver is disable for URI '%s'. %s", uri, config.helpEnable(auth, uri)));
         }
         try {
             return read(uri);
@@ -112,12 +113,12 @@ public final class CsvTableResolver implements UriResolver {
 
     public interface Config {
 
-        boolean isEnabled();
+        boolean isEnabled(AuthContext auth);
 
-        boolean isEnabled(URI uri);
+        boolean isEnabled(AuthContext auth, URI uri);
 
-        String helpEnable();
+        String helpEnable(AuthContext auth);
 
-        String helpEnable(URI uri);
+        String helpEnable(AuthContext auth, URI uri);
     }
 }

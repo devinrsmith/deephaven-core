@@ -4,10 +4,11 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.v2.select.SelectFilter;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.table.validation.ColumnExpressionValidator;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.UnstructuredFilterTableRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -23,8 +24,8 @@ public class UnstructuredFilterTableGrpcImpl extends GrpcTableOperation<Unstruct
     }
 
     @Override
-    public Table create(final UnstructuredFilterTableRequest request,
-            final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final UnstructuredFilterTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table parent = sourceTables.get(0).get();

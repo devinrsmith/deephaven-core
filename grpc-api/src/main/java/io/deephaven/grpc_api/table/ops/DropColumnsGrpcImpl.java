@@ -2,9 +2,10 @@ package io.deephaven.grpc_api.table.ops;
 
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.DropColumnsRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,7 +21,8 @@ public class DropColumnsGrpcImpl extends GrpcTableOperation<DropColumnsRequest> 
     }
 
     @Override
-    public Table create(final DropColumnsRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final DropColumnsRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
         return sourceTables.get(0).get().dropColumns(request.getColumnNamesList());
     }

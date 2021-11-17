@@ -3,6 +3,7 @@ package io.deephaven.grpc_api.uri;
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.ParquetTools;
 import io.deephaven.uri.UriHelper;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -34,7 +35,7 @@ public final class ParquetTableResolver implements UriResolver {
     }
 
     public static ParquetTableResolver get() {
-        return UriResolversInstance.get().find(ParquetTableResolver.class).get();
+        return UriRouterInstance.get().find(ParquetTableResolver.class).get();
     }
 
     private final Config config;
@@ -63,26 +64,27 @@ public final class ParquetTableResolver implements UriResolver {
     }
 
     @Override
-    public Object resolveSafely(URI uri) {
-        if (!config.isEnabled()) {
+    public Object resolveSafely(AuthContext auth, URI uri) {
+        if (!config.isEnabled(auth)) {
             throw new UnsupportedOperationException(
-                    String.format("Parquet table resolver is disabled. %s", config.helpEnable()));
+                    String.format("Parquet table resolver is disabled. %s", config.helpEnable(auth)));
         }
-        if (!config.isEnabled(uri)) {
+        if (!config.isEnabled(auth, uri)) {
             throw new UnsupportedOperationException(
-                    String.format("Parquet table resolver is disable for URI '%s'. %s", uri, config.helpEnable(uri)));
+                    String.format("Parquet table resolver is disable for URI '%s'. %s", uri,
+                            config.helpEnable(auth, uri)));
         }
         return ParquetTools.readTable(uri.getPath());
     }
 
     public interface Config {
 
-        boolean isEnabled();
+        boolean isEnabled(AuthContext auth);
 
-        boolean isEnabled(URI uri);
+        boolean isEnabled(AuthContext auth, URI uri);
 
-        String helpEnable();
+        String helpEnable(AuthContext auth);
 
-        String helpEnable(URI uri);
+        String helpEnable(AuthContext auth, URI uri);
     }
 }

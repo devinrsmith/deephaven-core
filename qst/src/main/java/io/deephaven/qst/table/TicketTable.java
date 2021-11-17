@@ -5,6 +5,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -54,6 +55,10 @@ public abstract class TicketTable extends TableBase {
      */
     public static TicketTable fromApplicationField(String applicationId, String fieldName) {
         return of("a/" + applicationId + "/f/" + fieldName);
+    }
+
+    public static TicketTable fromUri(URI uri) {
+        return of("u/" + uri);
     }
 
     /**

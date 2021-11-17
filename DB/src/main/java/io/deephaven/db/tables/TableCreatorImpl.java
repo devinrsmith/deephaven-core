@@ -12,11 +12,8 @@ import io.deephaven.qst.table.TicketTable;
 import io.deephaven.qst.table.TimeProvider;
 import io.deephaven.qst.table.TimeProviderSystem;
 import io.deephaven.qst.table.TimeTable;
-import io.deephaven.qst.table.UriTable;
 
-import java.util.Collection;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -43,12 +40,6 @@ enum TableCreatorImpl implements TableCreator<Table> {
                 .of(timeTable.timeProvider());
         final DBDateTime firstTime = timeTable.startTime().map(DBDateTime::of).orElse(null);
         return TableTools.timeTable(provider, firstTime, timeTable.interval().toNanos());
-    }
-
-    @Override
-    public Table of(UriTable uriTable) {
-        throw new UnsupportedOperationException("Uri tables can't be referenced in a static context;" +
-                "no access to UriResolversInstance - see deephaven-core#1172 for more details");
     }
 
     @Override

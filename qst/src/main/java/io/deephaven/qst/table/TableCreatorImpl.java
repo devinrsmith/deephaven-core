@@ -30,11 +30,6 @@ public enum TableCreatorImpl implements TableCreator<TableSpec> {
     }
 
     @Override
-    public final TableSpec of(UriTable uriTable) {
-        return uriTable;
-    }
-
-    @Override
     public final TableSpec of(TicketTable ticketTable) {
         return ticketTable;
     }

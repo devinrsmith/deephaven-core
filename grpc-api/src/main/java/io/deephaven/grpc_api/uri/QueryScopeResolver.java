@@ -21,7 +21,7 @@ import java.util.Set;
 public final class QueryScopeResolver extends UriResolverSafeBase {
 
     public static QueryScopeResolver get() {
-        return UriResolversInstance.get().find(QueryScopeResolver.class).get();
+        return UriRouterInstance.get().find(QueryScopeResolver.class).get();
     }
 
     private final GlobalSessionProvider globalSessionProvider;

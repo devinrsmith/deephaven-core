@@ -3,10 +3,11 @@ package io.deephaven.grpc_api.table.ops;
 import io.deephaven.base.verify.Assert;
 import com.google.rpc.Code;
 import io.deephaven.db.tables.Table;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -23,8 +24,8 @@ public class SelectDistinctGrpcImpl extends GrpcTableOperation<SelectDistinctReq
     }
 
     @Override
-    public Table create(final SelectDistinctRequest request,
-            final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final SelectDistinctRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table parent = sourceTables.get(0).get();

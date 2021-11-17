@@ -10,10 +10,7 @@ import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TableSpec;
 import io.deephaven.qst.table.TicketTable;
 import io.deephaven.qst.table.TimeTable;
-import io.deephaven.qst.table.UriTable;
 
-import java.net.URI;
-import java.util.Collection;
 import java.util.Objects;
 
 public abstract class TableHandleManagerBase implements TableHandleManager {
@@ -45,11 +42,6 @@ public abstract class TableHandleManagerBase implements TableHandleManager {
     @Override
     public final TableHandle of(TimeTable timeTable) {
         return handle(timeTable);
-    }
-
-    @Override
-    public final TableHandle of(UriTable uriTable) {
-        return handle(uriTable);
     }
 
     @Override

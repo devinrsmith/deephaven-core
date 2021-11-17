@@ -27,7 +27,6 @@ import io.deephaven.qst.table.TicketTable;
 import io.deephaven.qst.table.TimeTable;
 import io.deephaven.qst.table.UpdateTable;
 import io.deephaven.qst.table.UpdateViewTable;
-import io.deephaven.qst.table.UriTable;
 import io.deephaven.qst.table.ViewTable;
 import io.deephaven.qst.table.WhereInTable;
 import io.deephaven.qst.table.WhereNotInTable;
@@ -112,11 +111,6 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
     @Override
     public void visit(TimeTable timeTable) {
         addTable(timeTable, tableCreation.of(timeTable));
-    }
-
-    @Override
-    public void visit(UriTable uriTable) {
-        addTable(uriTable, tableCreation.of(uriTable));
     }
 
     @Override

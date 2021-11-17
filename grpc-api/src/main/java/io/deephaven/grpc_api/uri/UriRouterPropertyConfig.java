@@ -1,11 +1,12 @@
 package io.deephaven.grpc_api.uri;
 
-import io.deephaven.grpc_api.uri.UriResolvers.Config;
+import io.deephaven.grpc_api.uri.UriRouter.Config;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 
 /**
- * An enabled-by-default system property based configuration layer for {@link UriResolvers}.
+ * An enabled-by-default system property based configuration layer for {@link UriRouter}.
  *
  * <p>
  * All resolvers can be disabled by setting the system property {@value GLOBAL_ENABLED_KEY} to {@value FALSE}; see
@@ -19,17 +20,17 @@ import javax.inject.Inject;
  * A {@link UriResolver} which has security concerns should have its own configuration layer with a disabled-by-default
  * attitude.
  */
-public final class UriResolversPropertyConfig implements Config {
+public final class UriRouterPropertyConfig implements Config {
 
     /**
      * The global property key.
      */
-    public static final String GLOBAL_ENABLED_KEY = "deephaven.resolvers.enabled";
+    public static final String GLOBAL_ENABLED_KEY = "deephaven.uri-router.enabled";
 
     /**
      * The individual property key format. Must apply the class name with {@link String#format(String, Object...)}.
      */
-    public static final String SPECIFIC_KEY_FORMAT = "deephaven.resolver.%s.enabled";
+    public static final String SPECIFIC_KEY_FORMAT = "deephaven.uri-router.%s.enabled";
 
     /**
      * The {@code true} value.
@@ -47,7 +48,7 @@ public final class UriResolversPropertyConfig implements Config {
     public static final String SIMPLIFY_PREFIX = "io.deephaven.grpc_api.uri.";
 
     @Inject
-    public UriResolversPropertyConfig() {}
+    public UriRouterPropertyConfig() {}
 
     /**
      * Looks up the property key {@value GLOBAL_ENABLED_KEY}, {@code true} when equal to {@value TRUE} or the property
@@ -56,7 +57,7 @@ public final class UriResolversPropertyConfig implements Config {
      * @return {@code true} if URI resolvers is enabled, {@code true} by default
      */
     @Override
-    public boolean isEnabled() {
+    public boolean isEnabled(AuthContext auth) {
         return TRUE.equals(System.getProperty(GLOBAL_ENABLED_KEY, TRUE));
     }
 
@@ -69,18 +70,18 @@ public final class UriResolversPropertyConfig implements Config {
      * @return {@code true} if enabled
      */
     @Override
-    public boolean isEnabled(UriResolver resolver) {
+    public boolean isEnabled(AuthContext auth, UriResolver resolver) {
         return TRUE.equals(System.getProperty(propertyKey(resolver.getClass()), TRUE));
     }
 
     @Override
-    public String helpEnable() {
+    public String helpEnable(AuthContext auth) {
         return String.format("To enable, set system property '%s' to 'true' (or, remove the 'false' entry).",
                 GLOBAL_ENABLED_KEY);
     }
 
     @Override
-    public String helpEnable(UriResolver resolver) {
+    public String helpEnable(AuthContext auth, UriResolver resolver) {
         final String propertyKey = String.format(SPECIFIC_KEY_FORMAT, simplifyName(resolver.getClass()));
         return String.format("To enable, set system property '%s' to 'true' (or, remove the 'false' entry).",
                 propertyKey);

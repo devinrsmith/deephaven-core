@@ -34,7 +34,7 @@ abstract class FlightCannedTableBase extends FlightExampleBase {
         final long start = System.nanoTime();
         final long end;
         try (final TableHandle handle = manager.executeLogic(logic())) {
-            Thread.sleep(1000);
+            // Thread.sleep(1000);
             try (
                     final FlightStream stream = flight.stream(handle)) {
                 System.out.println(stream.getSchema());

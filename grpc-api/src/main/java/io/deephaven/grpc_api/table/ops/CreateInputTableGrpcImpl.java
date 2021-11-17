@@ -8,10 +8,11 @@ import io.deephaven.db.v2.utils.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.db.v2.utils.KeyedArrayBackedMutableTable;
 import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.util.SchemaHelper;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.CreateInputTableRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 import org.apache.arrow.flatbuf.Schema;
 
@@ -37,7 +38,7 @@ public class CreateInputTableGrpcImpl extends GrpcTableOperation<CreateInputTabl
     }
 
     @Override
-    public void validateRequest(CreateInputTableRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, CreateInputTableRequest request) throws StatusRuntimeException {
         // ensure we have one of either schema or source table (protobuf will ensure we don't have both)
         if (!request.hasSchema() && !request.hasSourceTableId()) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT,
@@ -52,7 +53,7 @@ public class CreateInputTableGrpcImpl extends GrpcTableOperation<CreateInputTabl
     }
 
     @Override
-    public Table create(CreateInputTableRequest request, List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, CreateInputTableRequest request, List<ExportObject<Table>> sourceTables) {
         TableDefinition tableDefinitionFromSchema;
 
         if (request.hasSchema()) {

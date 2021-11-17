@@ -8,8 +8,8 @@ import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.live.LiveTableMonitor;
 import io.deephaven.db.tables.select.MatchPair;
 import io.deephaven.db.tables.select.MatchPairFactory;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.AsOfJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.CrossJoinTablesRequest;
@@ -17,6 +17,7 @@ import io.deephaven.proto.backplane.grpc.ExactJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.LeftJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.NaturalJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.Ticket;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -50,7 +51,7 @@ public abstract class JoinTablesGrpcImpl<T> extends GrpcTableOperation<T> {
     }
 
     @Override
-    public void validateRequest(final T request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, final T request) throws StatusRuntimeException {
         try {
             MatchPairFactory.getExpressions(getColMatchList.apply(request));
             MatchPairFactory.getExpressions(getColAddList.apply(request));
@@ -61,7 +62,7 @@ public abstract class JoinTablesGrpcImpl<T> extends GrpcTableOperation<T> {
     }
 
     @Override
-    public Table create(final T request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final T request, final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 2);
 
         final MatchPair[] columnsToMatch;
@@ -103,8 +104,9 @@ public abstract class JoinTablesGrpcImpl<T> extends GrpcTableOperation<T> {
         }
 
         @Override
-        public void validateRequest(final AsOfJoinTablesRequest request) throws StatusRuntimeException {
-            super.validateRequest(request);
+        public void validateRequest(AuthContext auth, final AsOfJoinTablesRequest request)
+                throws StatusRuntimeException {
+            super.validateRequest(auth, request);
 
             if (request.getAsOfMatchRule() == AsOfJoinTablesRequest.MatchRule.UNRECOGNIZED) {
                 throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "Unrecognized as-of match rule");

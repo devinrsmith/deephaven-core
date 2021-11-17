@@ -8,11 +8,12 @@ import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.select.SelectColumnFactory;
 import io.deephaven.db.v2.by.ComboAggregateFactory;
 import io.deephaven.db.v2.select.SelectColumn;
-import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.grpc_api.table.validation.ColumnExpressionValidator;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.ComboAggregateRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.StatusRuntimeException;
 
 import javax.inject.Inject;
@@ -33,7 +34,7 @@ public class ComboAggregateGrpcImpl extends GrpcTableOperation<ComboAggregateReq
     }
 
     @Override
-    public void validateRequest(ComboAggregateRequest request) throws StatusRuntimeException {
+    public void validateRequest(AuthContext auth, ComboAggregateRequest request) throws StatusRuntimeException {
         if (request.getAggregatesCount() == 0) {
             throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT,
                     "ComboAggregateRequest incorrectly has zero aggregates provided");
@@ -98,8 +99,8 @@ public class ComboAggregateGrpcImpl extends GrpcTableOperation<ComboAggregateReq
     }
 
     @Override
-    public Table create(final ComboAggregateRequest request,
-            final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final ComboAggregateRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table parent = sourceTables.get(0).get();

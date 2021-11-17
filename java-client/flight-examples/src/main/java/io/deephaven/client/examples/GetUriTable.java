@@ -2,7 +2,6 @@ package io.deephaven.client.examples;
 
 import io.deephaven.client.impl.FlightSession;
 import io.deephaven.qst.TableCreationLogic;
-import io.deephaven.qst.table.UriTable;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.uri.RemoteUriAdapter;
 import io.deephaven.uri.StructuredUri;

@@ -46,6 +46,7 @@ import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.grpc.TimeTableRequest;
 import io.deephaven.proto.backplane.grpc.UngroupRequest;
 import io.deephaven.proto.backplane.grpc.UnstructuredFilterTableRequest;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
@@ -410,12 +411,14 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
             final GrpcTableOperation<T> operation = getOp(op);
-            operation.validateRequest(request);
+            operation.validateRequest(session.getAuthContext(), request);
 
             final Ticket resultId = operation.getResultTicket(request);
             if (resultId.getTicket().isEmpty()) {
                 throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, "No result ticket supplied");
             }
+
+            // TODO: coalesce our ACL story wrt operations here
 
             final TableReference resultRef = TableReference.newBuilder().setTicket(resultId).build();
 
@@ -428,7 +431,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
                     .require(dependencies)
                     .onError(responseObserver)
                     .submit(() -> {
-                        final Table result = operation.create(request, dependencies);
+                        final Table result = operation.create(session.getAuthContext(), request, dependencies);
                         safelyExecute(() -> {
                             responseObserver.onNext(buildTableCreationResponse(resultRef, result));
                             responseObserver.onCompleted();
@@ -442,6 +445,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         final GrpcTableOperation<Object> operation;
         final Object request;
         final SessionState.ExportBuilder<Table> exportBuilder;
+        final AuthContext auth;
 
         List<SessionState.ExportObject<Table>> dependencies;
 
@@ -451,6 +455,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
             final Ticket resultId = operation.getResultTicket(request);
             exportBuilder =
                     resultId.getTicket().isEmpty() ? session.nonExport() : session.newExport(resultId, "resultId");
+            auth = session.getAuthContext();
         }
 
         void resolveDependencies(final Function<TableReference, SessionState.ExportObject<Table>> resolveReference) {
@@ -461,7 +466,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         }
 
         Table doExport() {
-            return operation.create(request, dependencies);
+            return operation.create(auth, request, dependencies);
         }
     }
 }

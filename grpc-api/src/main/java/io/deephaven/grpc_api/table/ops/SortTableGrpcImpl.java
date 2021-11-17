@@ -6,11 +6,12 @@ import io.deephaven.base.verify.Assert;
 import com.google.rpc.Code;
 import io.deephaven.db.tables.SortPair;
 import io.deephaven.db.tables.Table;
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.SortDescriptor;
 import io.deephaven.proto.backplane.grpc.SortTableRequest;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,7 +27,8 @@ public class SortTableGrpcImpl extends GrpcTableOperation<SortTableRequest> {
     }
 
     @Override
-    public Table create(final SortTableRequest request, final List<SessionState.ExportObject<Table>> sourceTables) {
+    public Table create(AuthContext auth, final SortTableRequest request,
+            final List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
 
         final Table original = sourceTables.get(0).get();

@@ -5,7 +5,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
-import io.deephaven.grpc_api.uri.UriResolvers.Config;
+import io.deephaven.grpc_api.uri.UriRouter.Config;
 import io.deephaven.grpc_api.uri.UriResolversModule.BaseResolvers;
 import io.deephaven.grpc_api.uri.UriResolversModule.PropertyConfigModule;
 import io.deephaven.grpc_api.uri.UriResolversModule.ServiceLoaderResolvers;
@@ -75,7 +75,7 @@ public interface UriResolversModule {
     /**
      * Binds property-based configurations.
      *
-     * @see UriResolversPropertyConfig
+     * @see UriRouterPropertyConfig
      * @see BarrageTableResolverPropertyConfig
      * @see CsvTableResolverPropertyConfig
      * @see ParquetTableResolverPropertyConfig
@@ -83,7 +83,7 @@ public interface UriResolversModule {
     @Module
     interface PropertyConfigModule {
         @Binds
-        Config bindConfig(UriResolversPropertyConfig config);
+        Config bindConfig(UriRouterPropertyConfig config);
 
         @Binds
         BarrageTableResolver.Config bindBarrageTableResolverConfig(BarrageTableResolverPropertyConfig config);

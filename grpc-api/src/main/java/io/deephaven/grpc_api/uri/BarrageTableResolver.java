@@ -12,6 +12,7 @@ import io.deephaven.uri.DeephavenTarget;
 import io.deephaven.uri.DeephavenUri;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.uri.RemoteUriAdapter;
+import io.deephaven.util.auth.AuthContext;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 
@@ -49,7 +50,7 @@ public final class BarrageTableResolver implements UriResolver {
             new HashSet<>(Arrays.asList(DeephavenUri.SECURE_SCHEME, DeephavenUri.PLAINTEXT_SCHEME)));
 
     public static BarrageTableResolver get() {
-        return UriResolversInstance.get().find(BarrageTableResolver.class).get();
+        return UriRouterInstance.get().find(BarrageTableResolver.class).get();
     }
 
     private final BarrageSessionFactoryBuilder builder;
@@ -93,15 +94,15 @@ public final class BarrageTableResolver implements UriResolver {
     }
 
     @Override
-    public Object resolveSafely(URI uri) throws InterruptedException {
-        if (!config.isEnabled()) {
+    public Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
+        if (!config.isEnabled(auth)) {
             throw new UnsupportedOperationException(
-                    String.format("Barrage table resolver is disabled. %s", config.helpEnable()));
+                    String.format("Barrage table resolver is disabled. %s", config.helpEnable(auth)));
         }
         final RemoteUri remoteUri = RemoteUri.of(uri);
-        if (!config.isEnabled(remoteUri)) {
+        if (!config.isEnabled(auth, remoteUri)) {
             throw new UnsupportedOperationException(String.format("Barrage table resolver is disable for URI '%s'. %s",
-                    uri, config.helpEnable(remoteUri)));
+                    uri, config.helpEnable(auth, remoteUri)));
         }
         try {
             return subscribe(remoteUri);
@@ -168,13 +169,13 @@ public final class BarrageTableResolver implements UriResolver {
 
     public interface Config {
 
-        boolean isEnabled();
+        boolean isEnabled(AuthContext auth);
 
-        boolean isEnabled(RemoteUri uri);
+        boolean isEnabled(AuthContext auth, RemoteUri uri);
 
-        String helpEnable();
+        String helpEnable(AuthContext auth);
 
-        String helpEnable(RemoteUri uri);
+        String helpEnable(AuthContext auth, RemoteUri uri);
     }
 
 }

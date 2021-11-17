@@ -1,6 +1,5 @@
 package io.deephaven.grpc_api.uri;
 
-import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;

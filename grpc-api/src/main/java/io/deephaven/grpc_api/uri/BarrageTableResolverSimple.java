@@ -10,7 +10,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public final class BarrageTableResolverSimple extends BarrageTableResolver {
 
-    public static final String BARRAGE_TABLE_RESOLVER_ENABLED_KEY = "deephaven.uri-router.BarrageTableResolver.enabled";
+    public static final String BARRAGE_TABLE_RESOLVER_ENABLED_KEY =
+            UriRouterPropertyConfig.propertyKey(BarrageTableResolver.class);
 
     /**
      * The {@code true} value.
@@ -26,16 +27,11 @@ public final class BarrageTableResolverSimple extends BarrageTableResolver {
     public BarrageTableResolverSimple(BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor,
             BufferAllocator allocator) {
         super(builder, executor, allocator);
-        final String expected = UriRouterPropertyConfig.propertyKey(BarrageTableResolver.class);
-        if (!BARRAGE_TABLE_RESOLVER_ENABLED_KEY.equals(expected)) {
-            throw new IllegalStateException(String.format("The GLOBAL_KEY constant '%s' should be updated to '%s'",
-                    BARRAGE_TABLE_RESOLVER_ENABLED_KEY, expected));
-        }
     }
 
     /**
      * {@code true} if {@link AuthContext#isSuperUser()}, otherwise looks up the property key
-     * {@value #BARRAGE_TABLE_RESOLVER_ENABLED_KEY}, {@code true} when equal to {@value #TRUE}; {@code false} otherwise.
+     * {@link #BARRAGE_TABLE_RESOLVER_ENABLED_KEY}, {@code true} when equal to {@value #TRUE}; {@code false} otherwise.
      *
      * @return {@code true} if URI resolvers is enabled, {@code false} by default
      */
@@ -45,7 +41,7 @@ public final class BarrageTableResolverSimple extends BarrageTableResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth, RemoteUri uri) {
+    public boolean isEnabled(AuthContext auth, RemoteUri item) {
         return true;
     }
 
@@ -56,7 +52,7 @@ public final class BarrageTableResolverSimple extends BarrageTableResolver {
     }
 
     @Override
-    public String helpEnable(AuthContext auth, RemoteUri uri) {
+    public String helpEnable(AuthContext auth, RemoteUri item) {
         throw new IllegalStateException();
     }
 }

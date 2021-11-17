@@ -9,14 +9,14 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class QueryScopeResolverBase extends UriResolverDeephaven<QueryScopeUri> {
-    public static QueryScopeResolverBase get() {
-        return UriRouterInstance.get().find(QueryScopeResolverBase.class).get();
+public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> {
+    public static QueryScopeResolver get() {
+        return UriRouterInstance.get().find(QueryScopeResolver.class).get();
     }
 
     private final GlobalSessionProvider globalSessionProvider;
 
-    public QueryScopeResolverBase(GlobalSessionProvider globalSessionProvider) {
+    public QueryScopeResolver(GlobalSessionProvider globalSessionProvider) {
         this.globalSessionProvider = Objects.requireNonNull(globalSessionProvider);
     }
 
@@ -36,8 +36,8 @@ public abstract class QueryScopeResolverBase extends UriResolverDeephaven<QueryS
     }
 
     @Override
-    public final Object resolve(QueryScopeUri uri) throws InterruptedException {
-        return getVariable(uri.variableName());
+    public final Object resolveItem(QueryScopeUri item) throws InterruptedException {
+        return getVariable(item.variableName());
     }
 
     public final Object getVariable(String variableName) {

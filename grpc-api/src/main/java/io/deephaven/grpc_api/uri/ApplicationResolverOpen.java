@@ -18,7 +18,7 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth, ApplicationUri uri) {
+    public boolean isEnabled(AuthContext auth, ApplicationUri item) {
         return true;
     }
 
@@ -28,7 +28,7 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
     }
 
     @Override
-    public String helpEnable(AuthContext auth, ApplicationUri uri) {
+    public String helpEnable(AuthContext auth, ApplicationUri item) {
         throw new IllegalStateException();
     }
 }

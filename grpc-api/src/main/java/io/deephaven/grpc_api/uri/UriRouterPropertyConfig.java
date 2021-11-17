@@ -10,11 +10,11 @@ import javax.inject.Inject;
  *
  * <p>
  * All resolvers can be disabled by setting the system property {@value GLOBAL_ENABLED_KEY} to {@value FALSE}; see
- * {@link #isEnabled()}.
+ * {@link #isEnabled(AuthContext)}.
  *
  * <p>
  * A specific resolver can be disabled by setting the system property {@value SPECIFIC_KEY_FORMAT} to {@value FALSE}
- * with the appropriate class name; see {@link #isEnabled(UriResolver)}.
+ * with the appropriate class name; see {@link #isEnabled(AuthContext, UriResolver)}.
  *
  * <p>
  * A {@link UriResolver} which has security concerns should have its own configuration layer with a disabled-by-default

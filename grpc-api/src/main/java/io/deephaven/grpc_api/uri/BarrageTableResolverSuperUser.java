@@ -22,7 +22,7 @@ public final class BarrageTableResolverSuperUser extends BarrageTableResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth, RemoteUri uri) {
+    public boolean isEnabled(AuthContext auth, RemoteUri item) {
         return true;
     }
 
@@ -32,7 +32,7 @@ public final class BarrageTableResolverSuperUser extends BarrageTableResolver {
     }
 
     @Override
-    public String helpEnable(AuthContext auth, RemoteUri uri) {
+    public String helpEnable(AuthContext auth, RemoteUri item) {
         throw new IllegalStateException();
     }
 }

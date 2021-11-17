@@ -1,16 +1,14 @@
 package io.deephaven.grpc_api.uri;
 
-import io.deephaven.grpc_api.console.GlobalSessionProvider;
-import io.deephaven.uri.QueryScopeUri;
 import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 
-public final class QueryScopeResolverSuperUser extends QueryScopeResolver {
+public final class ParquetTableResolverSuperUser extends ParquetTableResolver {
 
     @Inject
-    public QueryScopeResolverSuperUser(GlobalSessionProvider globalSessionProvider) {
-        super(globalSessionProvider);
+    public ParquetTableResolverSuperUser() {
+
     }
 
     @Override
@@ -19,7 +17,7 @@ public final class QueryScopeResolverSuperUser extends QueryScopeResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth, QueryScopeUri item) {
+    public boolean isEnabled(AuthContext auth, String item) {
         return true;
     }
 
@@ -29,7 +27,7 @@ public final class QueryScopeResolverSuperUser extends QueryScopeResolver {
     }
 
     @Override
-    public String helpEnable(AuthContext auth, QueryScopeUri item) {
+    public String helpEnable(AuthContext auth, String item) {
         throw new IllegalStateException();
     }
 }

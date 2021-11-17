@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class ApplicationResolver extends UriResolverDeephaven<ApplicationUri> {
+public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri> {
 
     public static ApplicationResolver get() {
         return UriRouterInstance.get().find(ApplicationResolver.class).get();
@@ -39,8 +39,8 @@ public abstract class ApplicationResolver extends UriResolverDeephaven<Applicati
     }
 
     @Override
-    public final Object resolve(ApplicationUri uri) throws InterruptedException {
-        final Field<Object> field = getField(uri);
+    public final Object resolveItem(ApplicationUri item) throws InterruptedException {
+        final Field<Object> field = getField(item);
         return field == null ? null : field.value();
     }
 

@@ -1,6 +1,7 @@
 package com.devinrsmith;
 
-import io.deephaven.grpc_api.uri.UriResolverDeephaven;
+import io.deephaven.grpc_api.uri.UriResolverBase;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -14,7 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DevinResolver extends UriResolverDeephaven {
+public final class DevinResolver extends UriResolverBase<URI> {
     public static final Set<String> SCHEMES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("dh", "dh+plain")));
 
@@ -42,7 +43,12 @@ public class DevinResolver extends UriResolverDeephaven {
     }
 
     @Override
-    public Object resolve(URI uri) {
+    public URI adapt(URI uri) {
+        return uri;
+    }
+
+    @Override
+    public Object resolveItem(URI uri) {
         if (!EXPECTED_PATH.equals(uri.getPath())) {
             throw new IllegalStateException();
         }
@@ -61,5 +67,25 @@ public class DevinResolver extends UriResolverDeephaven {
 
     private static Integer map(String input) {
         return input == null || input.isEmpty() ? null : Integer.parseInt(input);
+    }
+
+    @Override
+    public boolean isEnabled(AuthContext auth) {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled(AuthContext auth, URI item) {
+        return true;
+    }
+
+    @Override
+    public String helpEnable(AuthContext auth) {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public String helpEnable(AuthContext auth, URI item) {
+        throw new IllegalStateException();
     }
 }

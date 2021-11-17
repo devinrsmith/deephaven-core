@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class BarrageTableResolver extends UriResolverDeephaven<RemoteUri> {
+public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
 
     public static BarrageTableResolver get() {
         return UriRouterInstance.get().find(BarrageTableResolver.class).get();
@@ -66,9 +66,9 @@ public abstract class BarrageTableResolver extends UriResolverDeephaven<RemoteUr
     }
 
     @Override
-    public final Object resolve(RemoteUri uri) throws InterruptedException {
+    public final Object resolveItem(RemoteUri item) throws InterruptedException {
         try {
-            return subscribe(uri);
+            return subscribe(item);
         } catch (TableHandleException e) {
             throw e.asUnchecked();
         }

@@ -6,7 +6,7 @@ import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 
-public final class QueryScopeResolverOpen extends QueryScopeResolverBase {
+public final class QueryScopeResolverOpen extends QueryScopeResolver {
 
     @Inject
     public QueryScopeResolverOpen(GlobalSessionProvider globalSessionProvider) {
@@ -19,7 +19,7 @@ public final class QueryScopeResolverOpen extends QueryScopeResolverBase {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth, QueryScopeUri uri) {
+    public boolean isEnabled(AuthContext auth, QueryScopeUri item) {
         return true;
     }
 
@@ -29,7 +29,7 @@ public final class QueryScopeResolverOpen extends QueryScopeResolverBase {
     }
 
     @Override
-    public String helpEnable(AuthContext auth, QueryScopeUri uri) {
+    public String helpEnable(AuthContext auth, QueryScopeUri item) {
         throw new IllegalStateException();
     }
 }

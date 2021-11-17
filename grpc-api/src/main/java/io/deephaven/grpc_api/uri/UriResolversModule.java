@@ -5,10 +5,10 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
-import io.deephaven.grpc_api.uri.UriRouter.Config;
 import io.deephaven.grpc_api.uri.UriResolversModule.BaseResolvers;
 import io.deephaven.grpc_api.uri.UriResolversModule.PropertyConfigModule;
 import io.deephaven.grpc_api.uri.UriResolversModule.ServiceLoaderResolvers;
+import io.deephaven.grpc_api.uri.UriRouter.Config;
 
 import java.util.HashSet;
 import java.util.ServiceLoader;
@@ -43,11 +43,11 @@ public interface UriResolversModule {
     /**
      * Installs the base {@link UriResolver URI resolvers}. See each specific resolver for more information.
      *
-     * @see BarrageTableResolverSimple
      * @see QueryScopeResolverOpen
      * @see ApplicationResolverOpen
-     * @see CsvTableResolver
-     * @see ParquetTableResolver
+     * @see BarrageTableResolverSimple
+     * @see CsvTableResolverSimple
+     * @see ParquetTableResolverSimple
      */
     @Module
     interface BaseResolvers {
@@ -65,29 +65,21 @@ public interface UriResolversModule {
 
         @Binds
         @IntoSet
-        UriResolver bindCsvResolver(CsvTableResolver resolver);
+        UriResolver bindCsvResolver(CsvTableResolverSimple resolver);
 
         @Binds
         @IntoSet
-        UriResolver bindParquetResolver(ParquetTableResolver resolver);
+        UriResolver bindParquetResolver(ParquetTableResolverSimple resolver);
     }
 
     /**
      * Binds property-based configurations.
      *
      * @see UriRouterPropertyConfig
-     * @see CsvTableResolverPropertyConfig
-     * @see ParquetTableResolverPropertyConfig
      */
     @Module
     interface PropertyConfigModule {
         @Binds
         Config bindConfig(UriRouterPropertyConfig config);
-
-        @Binds
-        CsvTableResolver.Config bindCsvTableResolverConfig(CsvTableResolverPropertyConfig config);
-
-        @Binds
-        ParquetTableResolver.Config bindParquetTableResolverConfig(ParquetTableResolverPropertyConfig config);
     }
 }

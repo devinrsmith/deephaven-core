@@ -2,9 +2,7 @@ package io.deephaven.grpc_api.uri;
 
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.CsvHelpers;
-import io.deephaven.util.auth.AuthContext;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -12,7 +10,6 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -25,7 +22,7 @@ import java.util.Set;
  * <p>
  * For more advanced use cases, see {@link CsvHelpers}.
  */
-public final class CsvTableResolver implements UriResolver {
+public abstract class CsvTableResolver extends UriResolverBase<String> {
 
     private static final Set<String> SCHEMES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList("csv+http", "http+csv", "csv+https", "https+csv", "csv+file", "file+csv", "csv")));
@@ -34,51 +31,28 @@ public final class CsvTableResolver implements UriResolver {
         return UriRouterInstance.get().find(CsvTableResolver.class).get();
     }
 
-    private final Config config;
-
-    @Inject
-    public CsvTableResolver(Config config) {
-        this.config = Objects.requireNonNull(config);
-    }
-
     @Override
-    public Set<String> schemes() {
+    public final Set<String> schemes() {
         return SCHEMES;
     }
 
     @Override
-    public boolean isResolvable(URI uri) {
+    public final boolean isResolvable(URI uri) {
         return SCHEMES.contains(uri.getScheme());
     }
 
     @Override
-    public Table resolve(URI uri) {
-        try {
-            return read(uri);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public final String adapt(URI uri) {
+        return csvString(uri);
     }
 
     @Override
-    public Object resolveSafely(AuthContext auth, URI uri) {
-        if (!config.isEnabled(auth)) {
-            throw new UnsupportedOperationException(
-                    String.format("CSV table resolver is disabled. %s", config.helpEnable(auth)));
-        }
-        if (!config.isEnabled(auth, uri)) {
-            throw new UnsupportedOperationException(
-                    String.format("CSV table resolver is disable for URI '%s'. %s", uri, config.helpEnable(auth, uri)));
-        }
+    public final Object resolveItem(String item) {
         try {
-            return read(uri);
+            return CsvHelpers.readCsv(item);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    public Table read(URI uri) throws IOException {
-        return CsvHelpers.readCsv(csvString(uri));
     }
 
     private static String csvString(URI uri) {
@@ -109,16 +83,5 @@ public final class CsvTableResolver implements UriResolver {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    public interface Config {
-
-        boolean isEnabled(AuthContext auth);
-
-        boolean isEnabled(AuthContext auth, URI uri);
-
-        String helpEnable(AuthContext auth);
-
-        String helpEnable(AuthContext auth, URI uri);
     }
 }

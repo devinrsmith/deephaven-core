@@ -5,23 +5,13 @@ import io.deephaven.appmode.Field;
 import io.deephaven.grpc_api.appmode.ApplicationStates;
 import io.deephaven.uri.ApplicationUri;
 import io.deephaven.uri.DeephavenUri;
-import io.deephaven.util.auth.AuthContext;
 
-import javax.inject.Inject;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * The application table resolver is able to resolve {@link ApplicationUri application URIs}.
- *
- * <p>
- * For example, {@code dh:///app/my_app/field/my_field}.
- *
- * @see ApplicationUri application URI format
- */
-public final class ApplicationResolver extends UriResolverDeephavenBase<ApplicationUri> {
+public abstract class ApplicationResolver extends UriResolverDeephaven<ApplicationUri> {
 
     public static ApplicationResolver get() {
         return UriRouterInstance.get().find(ApplicationResolver.class).get();
@@ -29,33 +19,36 @@ public final class ApplicationResolver extends UriResolverDeephavenBase<Applicat
 
     private final ApplicationStates states;
 
-    @Inject
-    public ApplicationResolver(ApplicationStates states, Config<ApplicationUri> config) {
-        super(config, ApplicationUri::of);
+    public ApplicationResolver(ApplicationStates states) {
         this.states = Objects.requireNonNull(states);
     }
 
     @Override
-    public Set<String> schemes() {
+    public final Set<String> schemes() {
         return Collections.singleton(DeephavenUri.LOCAL_SCHEME);
     }
 
     @Override
-    public boolean isResolvable(URI uri) {
+    public final boolean isResolvable(URI uri) {
         return ApplicationUri.isWellFormed(uri);
     }
 
     @Override
-    public Object resolve(AuthContext auth, ApplicationUri uri) {
+    public final ApplicationUri adapt(URI uri) {
+        return ApplicationUri.of(uri);
+    }
+
+    @Override
+    public final Object resolve(ApplicationUri uri) throws InterruptedException {
         final Field<Object> field = getField(uri);
         return field == null ? null : field.value();
     }
 
-    public Field<Object> getField(ApplicationUri uri) {
+    public final Field<Object> getField(ApplicationUri uri) {
         return getField(uri.applicationId(), uri.fieldName());
     }
 
-    public Field<Object> getField(String applicationId, String fieldName) {
+    public final Field<Object> getField(String applicationId, String fieldName) {
         final ApplicationState app = states.getApplicationState(applicationId).orElse(null);
         return app == null ? null : app.getField(fieldName);
     }

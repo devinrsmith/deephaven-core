@@ -1,11 +1,14 @@
 package io.deephaven.grpc_api.uri;
 
+import io.deephaven.client.impl.BarrageSessionFactoryBuilder;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.util.auth.AuthContext;
+import org.apache.arrow.memory.BufferAllocator;
 
 import javax.inject.Inject;
+import java.util.concurrent.ScheduledExecutorService;
 
-public class BarrageTableResolverPropertyConfig implements BarrageTableResolver.Config {
+public final class BarrageTableResolverSimple extends BarrageTableResolver {
 
     public static final String BARRAGE_TABLE_RESOLVER_ENABLED_KEY = "deephaven.uri-router.BarrageTableResolver.enabled";
 
@@ -20,7 +23,9 @@ public class BarrageTableResolverPropertyConfig implements BarrageTableResolver.
     public static final String FALSE = "false";
 
     @Inject
-    public BarrageTableResolverPropertyConfig() {
+    public BarrageTableResolverSimple(BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor,
+            BufferAllocator allocator) {
+        super(builder, executor, allocator);
         final String expected = UriRouterPropertyConfig.propertyKey(BarrageTableResolver.class);
         if (!BARRAGE_TABLE_RESOLVER_ENABLED_KEY.equals(expected)) {
             throw new IllegalStateException(String.format("The GLOBAL_KEY constant '%s' should be updated to '%s'",
@@ -29,25 +34,25 @@ public class BarrageTableResolverPropertyConfig implements BarrageTableResolver.
     }
 
     /**
-     * Looks up the property key {@value BARRAGE_TABLE_RESOLVER_ENABLED_KEY}, {@code true} when equal to {@value TRUE};
-     * {@code false} otherwise.
+     * {@code true} if {@link AuthContext#isSuperUser()}, otherwise looks up the property key
+     * {@value #BARRAGE_TABLE_RESOLVER_ENABLED_KEY}, {@code true} when equal to {@value #TRUE}; {@code false} otherwise.
      *
      * @return {@code true} if URI resolvers is enabled, {@code false} by default
      */
     @Override
     public boolean isEnabled(AuthContext auth) {
-        return TRUE.equals(System.getProperty(BARRAGE_TABLE_RESOLVER_ENABLED_KEY, FALSE));
+        return auth.isSuperUser() || TRUE.equals(System.getProperty(BARRAGE_TABLE_RESOLVER_ENABLED_KEY, FALSE));
     }
 
     @Override
     public boolean isEnabled(AuthContext auth, RemoteUri uri) {
-        // TODO: format for allow/deny lists
         return true;
     }
 
     @Override
     public String helpEnable(AuthContext auth) {
-        return String.format("To enable, set system property '%s' to 'true'.", BARRAGE_TABLE_RESOLVER_ENABLED_KEY);
+        return String.format("Enabled for super-users. To enable for all, set system property '%s' to 'true'.",
+                BARRAGE_TABLE_RESOLVER_ENABLED_KEY);
     }
 
     @Override

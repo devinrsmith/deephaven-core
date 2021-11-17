@@ -43,9 +43,9 @@ public interface UriResolversModule {
     /**
      * Installs the base {@link UriResolver URI resolvers}. See each specific resolver for more information.
      *
-     * @see BarrageTableResolver
-     * @see QueryScopeResolver
-     * @see ApplicationResolver
+     * @see BarrageTableResolverSimple
+     * @see QueryScopeResolverOpen
+     * @see ApplicationResolverOpen
      * @see CsvTableResolver
      * @see ParquetTableResolver
      */
@@ -53,15 +53,15 @@ public interface UriResolversModule {
     interface BaseResolvers {
         @Binds
         @IntoSet
-        UriResolver bindQueryScopeResolver(QueryScopeResolver resolver);
+        UriResolver bindQueryScopeResolver(QueryScopeResolverOpen resolver);
 
         @Binds
         @IntoSet
-        UriResolver bindApplicationResolver(ApplicationResolver resolver);
+        UriResolver bindApplicationResolver(ApplicationResolverOpen resolver);
 
         @Binds
         @IntoSet
-        UriResolver bindsBarrageTableResolver(BarrageTableResolver resolver);
+        UriResolver bindsBarrageTableResolver(BarrageTableResolverSimple resolver);
 
         @Binds
         @IntoSet
@@ -76,7 +76,6 @@ public interface UriResolversModule {
      * Binds property-based configurations.
      *
      * @see UriRouterPropertyConfig
-     * @see BarrageTableResolverPropertyConfig
      * @see CsvTableResolverPropertyConfig
      * @see ParquetTableResolverPropertyConfig
      */
@@ -84,9 +83,6 @@ public interface UriResolversModule {
     interface PropertyConfigModule {
         @Binds
         Config bindConfig(UriRouterPropertyConfig config);
-
-        @Binds
-        BarrageTableResolver.Config bindBarrageTableResolverConfig(BarrageTableResolverPropertyConfig config);
 
         @Binds
         CsvTableResolver.Config bindCsvTableResolverConfig(CsvTableResolverPropertyConfig config);

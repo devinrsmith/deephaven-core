@@ -421,12 +421,14 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
 
     private SessionState.ExportObject<Table> resolveOneShotReference(SessionState session, TableReference ref) {
         if (!ref.hasTicket()) {
-            throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, "One-shot operations must use ticket references");
+            throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
+                    "One-shot operations must use ticket references");
         }
         return ticketRouter.resolve(session, ref.getTicket(), "sourceId");
     }
 
-    private SessionState.ExportObject<Table> resolveBatchReference(SessionState session, List<BatchExportBuilder> exportBuilders, TableReference ref) {
+    private SessionState.ExportObject<Table> resolveBatchReference(SessionState session,
+            List<BatchExportBuilder> exportBuilders, TableReference ref) {
         switch (ref.getRefCase()) {
             case TICKET:
                 return ticketRouter.resolve(session, ref.getTicket(), "sourceId");

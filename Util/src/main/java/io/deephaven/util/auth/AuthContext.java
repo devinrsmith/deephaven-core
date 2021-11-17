@@ -21,6 +21,11 @@ public interface AuthContext {
     @NotNull
     String getAuthId();
 
+    @FinalDefault
+    default boolean isSuperUser() {
+        return "SuperUser".equals(getAuthRoleName());
+    }
+
     /**
      * Get a log representation for this auth context.
      *

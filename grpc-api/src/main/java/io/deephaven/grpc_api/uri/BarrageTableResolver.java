@@ -12,46 +12,27 @@ import io.deephaven.uri.DeephavenTarget;
 import io.deephaven.uri.DeephavenUri;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.uri.RemoteUriAdapter;
-import io.deephaven.util.auth.AuthContext;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- * The barrage table resolver is able to resolve {@link RemoteUri remote URIs} into {@link Table tables}.
- *
- * <p>
- * For more advanced use cases, see {@link BarrageSession}.
- *
- * @see RemoteUri remote URI format
- */
-@Singleton
-public final class BarrageTableResolver implements UriResolver {
-
-    /**
-     * The default options, which uses {@link BarrageSubscriptionOptions#useDeephavenNulls()}.
-     */
-    public static final BarrageSubscriptionOptions OPTIONS = BarrageSubscriptionOptions.builder()
-            .useDeephavenNulls(true)
-            .build();
-
-    private static final Set<String> SCHEMES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(DeephavenUri.SECURE_SCHEME, DeephavenUri.PLAINTEXT_SCHEME)));
+public abstract class BarrageTableResolver extends UriResolverDeephaven<RemoteUri> {
 
     public static BarrageTableResolver get() {
         return UriRouterInstance.get().find(BarrageTableResolver.class).get();
     }
+
+    public static final BarrageSubscriptionOptions OPTIONS = BarrageSubscriptionOptions.builder()
+            .useDeephavenNulls(true)
+            .build();
 
     private final BarrageSessionFactoryBuilder builder;
 
@@ -59,53 +40,35 @@ public final class BarrageTableResolver implements UriResolver {
 
     private final BufferAllocator allocator;
 
-    private final Config config;
-
     private final Map<DeephavenTarget, BarrageSession> sessions;
 
-    @Inject
-    public BarrageTableResolver(
-            BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor, BufferAllocator allocator,
-            Config config) {
+    public BarrageTableResolver(BarrageSessionFactoryBuilder builder, ScheduledExecutorService executor,
+            BufferAllocator allocator) {
         this.builder = Objects.requireNonNull(builder);
         this.executor = Objects.requireNonNull(executor);
         this.allocator = Objects.requireNonNull(allocator);
-        this.config = Objects.requireNonNull(config);
         this.sessions = new ConcurrentHashMap<>();
     }
 
     @Override
-    public Set<String> schemes() {
-        return SCHEMES;
+    public final Set<String> schemes() {
+        return Stream.of(DeephavenUri.PLAINTEXT_SCHEME, DeephavenUri.SECURE_SCHEME).collect(Collectors.toSet());
     }
 
     @Override
-    public boolean isResolvable(URI uri) {
+    public final boolean isResolvable(URI uri) {
         return RemoteUri.isWellFormed(uri);
     }
 
     @Override
-    public Table resolve(URI uri) throws InterruptedException {
-        try {
-            return subscribe(RemoteUri.of(uri));
-        } catch (TableHandleException e) {
-            throw e.asUnchecked();
-        }
+    public final RemoteUri adapt(URI uri) {
+        return RemoteUri.of(uri);
     }
 
     @Override
-    public Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
-        if (!config.isEnabled(auth)) {
-            throw new UnsupportedOperationException(
-                    String.format("Barrage table resolver is disabled. %s", config.helpEnable(auth)));
-        }
-        final RemoteUri remoteUri = RemoteUri.of(uri);
-        if (!config.isEnabled(auth, remoteUri)) {
-            throw new UnsupportedOperationException(String.format("Barrage table resolver is disable for URI '%s'. %s",
-                    uri, config.helpEnable(auth, remoteUri)));
-        }
+    public final Object resolve(RemoteUri uri) throws InterruptedException {
         try {
-            return subscribe(remoteUri);
+            return subscribe(uri);
         } catch (TableHandleException e) {
             throw e.asUnchecked();
         }
@@ -117,7 +80,7 @@ public final class BarrageTableResolver implements UriResolver {
      * @param remoteUri the remote URI
      * @return the subscribed table
      */
-    public Table subscribe(RemoteUri remoteUri) throws InterruptedException, TableHandleException {
+    public final Table subscribe(RemoteUri remoteUri) throws InterruptedException, TableHandleException {
         final DeephavenTarget target = remoteUri.target();
         final TableSpec table = RemoteUriAdapter.of(remoteUri);
         return subscribe(target, table, OPTIONS);
@@ -130,7 +93,7 @@ public final class BarrageTableResolver implements UriResolver {
      * @param table the table spec
      * @return the subscribed table
      */
-    public Table subscribe(String targetUri, TableSpec table) throws TableHandleException, InterruptedException {
+    public final Table subscribe(String targetUri, TableSpec table) throws TableHandleException, InterruptedException {
         return subscribe(DeephavenTarget.of(URI.create(targetUri)), table, OPTIONS);
     }
 
@@ -142,7 +105,7 @@ public final class BarrageTableResolver implements UriResolver {
      * @param options the options
      * @return the subscribed table
      */
-    public Table subscribe(DeephavenTarget target, TableSpec table, BarrageSubscriptionOptions options)
+    public final Table subscribe(DeephavenTarget target, TableSpec table, BarrageSubscriptionOptions options)
             throws TableHandleException, InterruptedException {
         final BarrageSession session = session(target);
         final BarrageSubscription sub = session.subscribe(table, options);
@@ -166,16 +129,4 @@ public final class BarrageTableResolver implements UriResolver {
                 .build()
                 .newBarrageSession();
     }
-
-    public interface Config {
-
-        boolean isEnabled(AuthContext auth);
-
-        boolean isEnabled(AuthContext auth, RemoteUri uri);
-
-        String helpEnable(AuthContext auth);
-
-        String helpEnable(AuthContext auth, RemoteUri uri);
-    }
-
 }

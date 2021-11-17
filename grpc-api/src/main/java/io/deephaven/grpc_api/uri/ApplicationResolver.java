@@ -5,6 +5,7 @@ import io.deephaven.appmode.Field;
 import io.deephaven.grpc_api.appmode.ApplicationStates;
 import io.deephaven.uri.ApplicationUri;
 import io.deephaven.uri.DeephavenUri;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -20,7 +21,7 @@ import java.util.Set;
  *
  * @see ApplicationUri application URI format
  */
-public final class ApplicationResolver extends UriResolverSafeBase {
+public final class ApplicationResolver extends UriResolverDeephavenBase<ApplicationUri> {
 
     public static ApplicationResolver get() {
         return UriRouterInstance.get().find(ApplicationResolver.class).get();
@@ -29,7 +30,8 @@ public final class ApplicationResolver extends UriResolverSafeBase {
     private final ApplicationStates states;
 
     @Inject
-    public ApplicationResolver(ApplicationStates states) {
+    public ApplicationResolver(ApplicationStates states, Config<ApplicationUri> config) {
+        super(config, ApplicationUri::of);
         this.states = Objects.requireNonNull(states);
     }
 
@@ -44,16 +46,16 @@ public final class ApplicationResolver extends UriResolverSafeBase {
     }
 
     @Override
-    public Object resolve(URI uri) {
-        final Field<Object> field = resolve(ApplicationUri.of(uri));
+    public Object resolve(AuthContext auth, ApplicationUri uri) {
+        final Field<Object> field = getField(uri);
         return field == null ? null : field.value();
     }
 
-    public Field<Object> resolve(ApplicationUri uri) {
-        return resolve(uri.applicationId(), uri.fieldName());
+    public Field<Object> getField(ApplicationUri uri) {
+        return getField(uri.applicationId(), uri.fieldName());
     }
 
-    public Field<Object> resolve(String applicationId, String fieldName) {
+    public Field<Object> getField(String applicationId, String fieldName) {
         final ApplicationState app = states.getApplicationState(applicationId).orElse(null);
         return app == null ? null : app.getField(fieldName);
     }

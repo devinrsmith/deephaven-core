@@ -1,8 +1,11 @@
 package io.deephaven.grpc_api.uri;
 
+import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.grpc_api.console.GlobalSessionProvider;
 import io.deephaven.uri.DeephavenUri;
 import io.deephaven.uri.QueryScopeUri;
+import io.deephaven.uri.RemoteUri;
+import io.deephaven.util.auth.AuthContext;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -18,7 +21,7 @@ import java.util.Set;
  *
  * @see QueryScopeUri query scope URI format
  */
-public final class QueryScopeResolver extends UriResolverSafeBase {
+public final class QueryScopeResolver implements UriResolver {
 
     public static QueryScopeResolver get() {
         return UriRouterInstance.get().find(QueryScopeResolver.class).get();
@@ -44,6 +47,24 @@ public final class QueryScopeResolver extends UriResolverSafeBase {
     @Override
     public Object resolve(URI uri) {
         return resolve(QueryScopeUri.of(uri));
+    }
+
+    @Override
+    public Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
+        if (!config.isEnabled(auth)) {
+            throw new UnsupportedOperationException(
+                    String.format("Query scope resolver is disabled. %s", config.helpEnable(auth)));
+        }
+        final QueryScopeUri queryScopeUri = QueryScopeUri.of(uri);
+        if (!config.isEnabled(auth, remoteUri)) {
+            throw new UnsupportedOperationException(String.format("Barrage table resolver is disable for URI '%s'. %s",
+                    uri, config.helpEnable(auth, remoteUri)));
+        }
+        try {
+            return subscribe(remoteUri);
+        } catch (TableHandleException e) {
+            throw e.asUnchecked();
+        }
     }
 
     public Object resolve(QueryScopeUri uri) {

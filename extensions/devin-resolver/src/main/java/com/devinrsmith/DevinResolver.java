@@ -1,6 +1,6 @@
 package com.devinrsmith;
 
-import io.deephaven.grpc_api.uri.UriResolverSafeBase;
+import io.deephaven.grpc_api.uri.UriResolverDeephavenBase;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DevinResolver extends UriResolverSafeBase {
+public class DevinResolver extends UriResolverDeephavenBase {
     public static final Set<String> SCHEMES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("dh", "dh+plain")));
 

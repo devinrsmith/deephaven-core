@@ -31,7 +31,7 @@ public final class CsvTableResolverSimple extends CsvTableResolver {
      */
     @Override
     public boolean isEnabled(AuthContext auth) {
-        return auth.isSuperUser() || TRUE.equals(System.getProperty(CSV_TABLE_RESOLVER_ENABLED_KEY, FALSE));
+        return (auth != null && auth.isSuperUser()) || TRUE.equals(System.getProperty(CSV_TABLE_RESOLVER_ENABLED_KEY, FALSE));
     }
 
     @Override

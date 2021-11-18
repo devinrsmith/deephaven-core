@@ -21,6 +21,7 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -180,6 +181,11 @@ public abstract class CsvSpecs {
     @Default
     public boolean hasHeaderRow() {
         return true;
+    }
+
+    @Default
+    public Set<String> nullSentinels() {
+        return Collections.singleton("");
     }
 
     /**

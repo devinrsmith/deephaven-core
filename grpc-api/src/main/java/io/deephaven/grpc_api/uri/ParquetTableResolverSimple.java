@@ -30,7 +30,7 @@ public final class ParquetTableResolverSimple extends ParquetTableResolver {
      */
     @Override
     public boolean isEnabled(AuthContext auth) {
-        return auth.isSuperUser() || TRUE.equals(System.getProperty(PARQUET_TABLE_RESOLVER_ENABLED_KEY, FALSE));
+        return (auth != null && auth.isSuperUser()) || TRUE.equals(System.getProperty(PARQUET_TABLE_RESOLVER_ENABLED_KEY, FALSE));
     }
 
     @Override

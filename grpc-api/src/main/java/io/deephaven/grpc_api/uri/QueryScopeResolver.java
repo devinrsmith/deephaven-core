@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> {
     public static QueryScopeResolver get() {
@@ -48,6 +49,15 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
 
     public final Object getVariable(String variableName) {
         return globalSessionProvider.getGlobalSession().getVariable(variableName);
+    }
+
+    @Override
+    public final <O> Consumer<O> publishTarget(QueryScopeUri item) {
+        return value -> publish(item, value);
+    }
+
+    private <O> void publish(QueryScopeUri item, O value) {
+        globalSessionProvider.getGlobalSession().setVariable(item.variableName(), value);
     }
 
     @Override

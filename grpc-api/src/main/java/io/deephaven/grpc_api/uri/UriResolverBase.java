@@ -5,6 +5,8 @@ import io.deephaven.util.auth.AuthContext;
 import java.net.URI;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * An opinionated structuring to implementing {@link UriResolver} in a safe manner.
@@ -29,6 +31,10 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     public abstract void forAllItems(BiConsumer<T, Object> consumer);
 
+    public <O> Consumer<O> publishTarget(T item) {
+        throw new UnsupportedOperationException("Does not support publish");
+    }
+
     @Override
     public final Object resolve(URI uri) throws InterruptedException {
         return resolveItem(adaptToItem(uri));
@@ -36,7 +42,6 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     @Override
     public final Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
-        Objects.requireNonNull(auth);
         if (!isEnabled(auth)) {
             throw new UnsupportedOperationException(String.format("Resolver is not enabled. %s", helpEnable(auth)));
         }
@@ -46,6 +51,19 @@ public abstract class UriResolverBase<T> implements UriResolver {
                     String.format("Resolver is not enabled for URI '%s'. %s", uri, helpEnable(auth, item)));
         }
         return resolveItem(item);
+    }
+
+    @Override
+    public final <O> Consumer<O> publishTarget(AuthContext auth, URI uri) {
+        // todo: separate auth for write vs read
+        if (!isEnabled(auth)) {
+            throw new UnsupportedOperationException(String.format("Resolver is not enabled. %s", helpEnable(auth)));
+        }
+        final T item = adaptToItem(uri);
+        if (!isEnabled(auth, item)) {
+            throw new UnsupportedOperationException(String.format("Resolver is not enabled for URI '%s'. %s", uri, helpEnable(auth, item)));
+        }
+        return publishTarget(item);
     }
 
     @Override

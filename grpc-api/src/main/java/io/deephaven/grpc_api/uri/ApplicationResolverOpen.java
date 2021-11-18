@@ -19,7 +19,7 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
 
     @Override
     public boolean isEnabled(AuthContext auth, ApplicationUri item) {
-        return true;
+        return !item.fieldName().startsWith("__");
     }
 
     @Override
@@ -29,6 +29,6 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
 
     @Override
     public String helpEnable(AuthContext auth, ApplicationUri item) {
-        throw new IllegalStateException();
+        return "Unable to resolve field names that start with '__'.";
     }
 }

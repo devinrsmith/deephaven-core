@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -89,6 +90,10 @@ public final class UriRouter {
      */
     public Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
         return resolverCheckConfig(auth, uri).resolveSafely(auth, uri);
+    }
+
+    public <O> Consumer<O> publishTarget(AuthContext auth, URI uri) {
+        return resolverCheckConfig(auth, uri).publishTarget(auth, uri);
     }
 
     private UriResolver resolverCheckConfig(AuthContext auth, URI uri) {

@@ -1,5 +1,6 @@
 package io.deephaven.client.impl;
 
+import com.google.protobuf.ByteString;
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.grpc_api.util.FlightExportTicketHelper;
 import io.deephaven.grpc_api.util.SchemaHelper;
@@ -20,6 +21,7 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.Schema;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -162,6 +164,24 @@ public class FlightSession implements AutoCloseable {
             return newTicket;
         } catch (Throwable t) {
             session.release(newTicket);
+            throw t;
+        }
+    }
+
+    public io.deephaven.proto.backplane.grpc.Ticket putTicket(String scope, NewTable table, BufferAllocator allocator) {
+        final io.deephaven.proto.backplane.grpc.Ticket newTicket = io.deephaven.proto.backplane.grpc.Ticket.newBuilder().setTicket(ByteString.copyFrom(String.format("u/dh:///scope/%s", scope), StandardCharsets.UTF_8)).build();
+        final VectorSchemaRoot root = VectorSchemaRootAdapter.of(table, allocator);
+        final FlightDescriptor descriptor = FlightDescriptor.path("uri", String.format("dh:///scope/%s", scope));
+        final ClientStreamListener out =
+                client.startPut(descriptor, root, new AsyncPutListener());
+        try {
+            out.putNext();
+            root.clear();
+            out.completed();
+            out.getResult();
+            return newTicket;
+        } catch (Throwable t) {
+            //session.release(newTicket);
             throw t;
         }
     }

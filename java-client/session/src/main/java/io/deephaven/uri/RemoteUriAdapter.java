@@ -27,17 +27,21 @@ public final class RemoteUriAdapter implements Visitor {
 
     @Override
     public void visit(FieldUri fieldUri) {
-        out = TicketTable.fromApplicationField(target.host(), fieldUri.fieldName());
+        //out = TicketTable.fromApplicationField(target.host(), fieldUri.fieldName());
+        out = TicketTable.of(String.format("u/dh:///app/%s/field/%s", target.host(), fieldUri.fieldName()));
     }
 
     @Override
     public void visit(ApplicationUri applicationField) {
-        out = TicketTable.fromApplicationField(applicationField.applicationId(), applicationField.fieldName());
+        //out = TicketTable.fromApplicationField(applicationField.applicationId(), applicationField.fieldName());
+        out = TicketTable.of(String.format("u/dh:///app/%s/field/%s", applicationField.applicationId(), applicationField.fieldName()));
     }
 
     @Override
     public void visit(QueryScopeUri queryScope) {
-        out = TicketTable.fromQueryScopeField(queryScope.variableName());
+        //out = TicketTable.fromQueryScopeField(queryScope.variableName());
+
+        out = TicketTable.of(String.format("u/dh:///scope/%s", queryScope.variableName()));
     }
 
     @Override

@@ -18,7 +18,7 @@ public final class BarrageTableResolverSuperUser extends BarrageTableResolver {
 
     @Override
     public boolean isEnabled(AuthContext auth) {
-        return auth.isSuperUser();
+        return auth != null && auth.isSuperUser();
     }
 
     @Override

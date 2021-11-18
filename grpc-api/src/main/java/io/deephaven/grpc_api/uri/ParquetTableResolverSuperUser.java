@@ -13,7 +13,7 @@ public final class ParquetTableResolverSuperUser extends ParquetTableResolver {
 
     @Override
     public boolean isEnabled(AuthContext auth) {
-        return auth.isSuperUser();
+        return auth != null && auth.isSuperUser();
     }
 
     @Override

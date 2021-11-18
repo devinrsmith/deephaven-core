@@ -4,20 +4,16 @@ import com.google.protobuf.ByteStringAccess;
 import com.google.rpc.Code;
 import io.deephaven.base.string.EncodingInfo;
 import io.deephaven.db.tables.Table;
-import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportBuilder;
 import io.deephaven.grpc_api.session.TicketResolverBase;
 import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.util.Exceptions;
 import io.deephaven.grpc_api.util.TicketRouterHelper;
 import io.deephaven.proto.backplane.grpc.Ticket;
-import io.deephaven.uri.RemoteUri;
 import io.deephaven.util.auth.AuthContext;
 import org.apache.arrow.flight.impl.Flight;
-import org.apache.arrow.flight.impl.Flight.FlightDescriptor;
-import org.apache.arrow.flight.impl.Flight.FlightDescriptor.DescriptorType;
-import org.apache.arrow.flight.impl.Flight.FlightInfo;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -27,10 +23,9 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class UriTicketResolver extends TicketResolverBase {
+public final class UriTicketResolver extends TicketResolverBase {
 
     private static final char TICKET_PREFIX = 'u';
 
@@ -81,24 +76,38 @@ public class UriTicketResolver extends TicketResolverBase {
         if (value instanceof Table) {
             info = TicketRouter.getFlightInfo((Table) value, descriptor, flightTicketForUri(uri));
         } else {
-            throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND,
-                    "Could not resolve URI for '" + logId + "': field '" + getLogNameFor(uri) + "' is not a flight");
+            throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND, "Could not resolve URI for '" + logId + "': field '" + getLogNameFor(uri) + "' is not a flight");
         }
         return SessionState.wrapAsExport(info);
     }
 
     @Override
     public <T> SessionState.ExportBuilder<T> publish(
-            SessionState session, ByteBuffer ticket, final String logId) {
-        throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
-                "Could not publish URI for '" + logId + "': URI tickets cannot be published to");
+            final SessionState session, final ByteBuffer ticket, final String logId) {
+        return publish(session, uriFor(ticket, logId));
     }
 
     @Override
     public <T> SessionState.ExportBuilder<T> publish(
             final SessionState session, final Flight.FlightDescriptor descriptor, final String logId) {
-        throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
-                "Could not publish URI for '" + logId + "': URI flight descriptors cannot be published to");
+        return publish(session, uriFor(descriptor, logId));
+    }
+
+    private <O> ExportBuilder<O> publish(SessionState session, URI uri) {
+        final Consumer<O> target;
+        try {
+            target = uriRouter.publishTarget(session.getAuthContext(), uri);
+        } catch (UnsupportedOperationException e) {
+            throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, e.getMessage());
+        }
+        final ExportBuilder<O> resultBuilder = session.nonExport();
+        final SessionState.ExportObject<O> resultExport = resultBuilder.getExport();
+        final ExportBuilder<O> publishTask = session.nonExport();
+        publishTask
+                .requiresSerialQueue()
+                .require(resultExport)
+                .submit(() -> target.accept(resultExport.get()));
+        return resultBuilder;
     }
 
     @Override

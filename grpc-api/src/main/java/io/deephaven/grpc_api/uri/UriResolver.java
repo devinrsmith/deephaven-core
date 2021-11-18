@@ -5,6 +5,7 @@ import io.deephaven.util.auth.AuthContext;
 import java.net.URI;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * A URI resolver resolves {@link URI URIs} into {@link Object objects}.
@@ -48,6 +49,16 @@ public interface UriResolver {
      * @return the object
      */
     Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException;
+
+    /**
+     *
+     * @param auth
+     * @param uri
+     * @param <O>
+     * @return
+     * @throws UnsupportedOperationException ...
+     */
+    <O> Consumer<O> publishTarget(AuthContext auth, URI uri) throws UnsupportedOperationException;
 
     void forAllUris(BiConsumer<URI, Object> consumer);
 

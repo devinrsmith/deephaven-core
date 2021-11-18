@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,8 +44,13 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public URI adapt(URI uri) {
+    public URI adaptToItem(URI uri) {
         return uri;
+    }
+
+    @Override
+    public URI adaptToUri(URI item) {
+        return item;
     }
 
     @Override
@@ -63,6 +69,11 @@ public final class DevinResolver extends UriResolverBase<URI> {
 
         // DevinResolver encapsulates URI format for calling FooBarLogic.fooBar
         return FooBarLogic.fooBar(fooGroup, barGroup);
+    }
+
+    @Override
+    public void forAllItems(BiConsumer<URI, Object> consumer) {
+
     }
 
     private static Integer map(String input) {

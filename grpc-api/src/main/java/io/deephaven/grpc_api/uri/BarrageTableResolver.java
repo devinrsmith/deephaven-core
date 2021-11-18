@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,8 +62,13 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
     }
 
     @Override
-    public final RemoteUri adapt(URI uri) {
+    public final RemoteUri adaptToItem(URI uri) {
         return RemoteUri.of(uri);
+    }
+
+    @Override
+    public final URI adaptToUri(RemoteUri item) {
+        return item.toURI();
     }
 
     @Override
@@ -72,6 +78,11 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
         } catch (TableHandleException e) {
             throw e.asUnchecked();
         }
+    }
+
+    @Override
+    public void forAllItems(BiConsumer<RemoteUri, Object> consumer) {
+
     }
 
     /**

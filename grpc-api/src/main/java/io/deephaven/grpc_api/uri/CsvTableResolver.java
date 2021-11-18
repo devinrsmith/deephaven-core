@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * The csv table resolver is able to resolve CSV for schemes {@code csv+http}, {@code http+csv}, {@code csv+https},
@@ -42,8 +43,13 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final String adapt(URI uri) {
+    public final String adaptToItem(URI uri) {
         return csvString(uri);
+    }
+
+    @Override
+    public final URI adaptToUri(String item) {
+        return URI.create(item);
     }
 
     @Override
@@ -53,6 +59,11 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public void forAllItems(BiConsumer<String, Object> consumer) {
+
     }
 
     private static String csvString(URI uri) {

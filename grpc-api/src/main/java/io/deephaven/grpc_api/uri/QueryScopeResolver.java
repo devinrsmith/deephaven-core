@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> {
     public static QueryScopeResolver get() {
@@ -31,16 +32,27 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
     }
 
     @Override
-    public final QueryScopeUri adapt(URI uri) {
+    public final QueryScopeUri adaptToItem(URI uri) {
         return QueryScopeUri.of(uri);
     }
 
     @Override
-    public final Object resolveItem(QueryScopeUri item) throws InterruptedException {
+    public final URI adaptToUri(QueryScopeUri item) {
+        return item.toURI();
+    }
+
+    @Override
+    public final Object resolveItem(QueryScopeUri item) {
         return getVariable(item.variableName());
     }
 
     public final Object getVariable(String variableName) {
         return globalSessionProvider.getGlobalSession().getVariable(variableName);
+    }
+
+    @Override
+    public final void forAllItems(BiConsumer<QueryScopeUri, Object> consumer) {
+        globalSessionProvider.getGlobalSession().getVariables()
+                .forEach((variableName, item) -> consumer.accept(QueryScopeUri.of(variableName), item));
     }
 }

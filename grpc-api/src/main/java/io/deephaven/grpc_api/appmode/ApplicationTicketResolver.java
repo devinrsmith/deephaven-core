@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Singleton
@@ -146,6 +147,15 @@ public class ApplicationTicketResolver extends TicketResolverBase implements App
                 }
             });
         });
+    }
+
+    @Override
+    public void forEach(BiConsumer<ApplicationState, Field<?>> consumer) {
+        for (ApplicationState app : applicationMap.values()) {
+            for (Field<?> field : app.listFields()) {
+                consumer.accept(app, field);
+            }
+        }
     }
 
     /**

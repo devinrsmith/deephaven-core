@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri> {
 
@@ -34,14 +35,25 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
     }
 
     @Override
-    public final ApplicationUri adapt(URI uri) {
+    public final ApplicationUri adaptToItem(URI uri) {
         return ApplicationUri.of(uri);
     }
 
     @Override
-    public final Object resolveItem(ApplicationUri item) throws InterruptedException {
+    public final URI adaptToUri(ApplicationUri item) {
+        return item.toURI();
+    }
+
+    @Override
+    public final Object resolveItem(ApplicationUri item) {
         final Field<Object> field = getField(item);
         return field == null ? null : field.value();
+    }
+
+    @Override
+    public final void forAllItems(BiConsumer<ApplicationUri, Object> consumer) {
+        states.forEach((applicationState, field) -> consumer
+                .accept(ApplicationUri.of(applicationState.id(), field.name()), field.value()));
     }
 
     public final Field<Object> getField(ApplicationUri uri) {

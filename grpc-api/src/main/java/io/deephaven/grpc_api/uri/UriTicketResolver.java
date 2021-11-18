@@ -4,6 +4,7 @@ import com.google.protobuf.ByteStringAccess;
 import com.google.rpc.Code;
 import io.deephaven.base.string.EncodingInfo;
 import io.deephaven.db.tables.Table;
+import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.grpc_api.session.SessionState;
 import io.deephaven.grpc_api.session.TicketResolverBase;
@@ -11,8 +12,12 @@ import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.util.Exceptions;
 import io.deephaven.grpc_api.util.TicketRouterHelper;
 import io.deephaven.proto.backplane.grpc.Ticket;
+import io.deephaven.uri.RemoteUri;
 import io.deephaven.util.auth.AuthContext;
 import org.apache.arrow.flight.impl.Flight;
+import org.apache.arrow.flight.impl.Flight.FlightDescriptor;
+import org.apache.arrow.flight.impl.Flight.FlightDescriptor.DescriptorType;
+import org.apache.arrow.flight.impl.Flight.FlightInfo;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -22,6 +27,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class UriTicketResolver extends TicketResolverBase {
@@ -106,7 +112,15 @@ public class UriTicketResolver extends TicketResolverBase {
 
     @Override
     public void forAllFlightInfo(@Nullable SessionState session, Consumer<Flight.FlightInfo> visitor) {
-
+        final AuthContext auth = session == null ? null : session.getAuthContext();
+        for (UriResolver resolver : uriRouter.resolvers()) {
+            resolver.forAllUrisSafely(auth, (uri, value) -> {
+                if (!(value instanceof Table)) {
+                    return;
+                }
+                visitor.accept(TicketRouter.getFlightInfo((Table) value, descriptorForUri(uri), flightTicketForUri(uri)));
+            });
+        }
     }
 
     /**

@@ -43,7 +43,7 @@ public final class UriRouter {
     public <T extends UriResolver> Optional<T> find(Class<T> clazz) {
         return resolvers()
                 .stream()
-                .filter(t -> clazz.equals(t.getClass()))
+                .filter(clazz::isInstance)
                 .map(clazz::cast)
                 .findFirst();
     }
@@ -124,14 +124,14 @@ public final class UriRouter {
         boolean isEnabled(AuthContext auth, UriResolver resolver);
 
         /**
-         * A helper message to aid in enabling resolvers, {@link #isEnabled()}.
+         * A helper message to aid in enabling resolvers, {@link #isEnabled(AuthContext)}.
          *
          * @return the help message
          */
         String helpEnable(AuthContext auth);
 
         /**
-         * A helper message to aid in enabling a specific resolvers, {@link #isEnabled(UriResolver)} for
+         * A helper message to aid in enabling a specific resolvers, {@link #isEnabled(AuthContext, UriResolver)} for
          * {@code resolver}.
          *
          * @param resolver the resolver

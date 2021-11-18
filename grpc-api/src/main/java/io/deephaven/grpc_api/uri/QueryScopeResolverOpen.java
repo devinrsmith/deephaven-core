@@ -20,7 +20,7 @@ public final class QueryScopeResolverOpen extends QueryScopeResolver {
 
     @Override
     public boolean isEnabled(AuthContext auth, QueryScopeUri item) {
-        return true;
+        return !item.variableName().startsWith("__");
     }
 
     @Override
@@ -30,6 +30,6 @@ public final class QueryScopeResolverOpen extends QueryScopeResolver {
 
     @Override
     public String helpEnable(AuthContext auth, QueryScopeUri item) {
-        throw new IllegalStateException();
+        return "Unable to resolve variables that start with '__'.";
     }
 }

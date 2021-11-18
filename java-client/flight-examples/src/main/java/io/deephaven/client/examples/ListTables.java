@@ -19,7 +19,7 @@ class ListTables extends FlightExampleBase {
     protected void execute(FlightSession flight) throws Exception {
         for (FlightInfo flightInfo : flight.list()) {
             if (showSchema) {
-                StringBuilder sb = new StringBuilder(flightInfo.getDescriptor().toString())
+                StringBuilder sb = new StringBuilder(flightInfo.toString())
                         .append(System.lineSeparator());
                 for (Field field : flightInfo.getSchema().getFields()) {
                     sb.append('\t').append(field).append(System.lineSeparator());

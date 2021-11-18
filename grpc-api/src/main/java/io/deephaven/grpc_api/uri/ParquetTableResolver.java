@@ -7,6 +7,7 @@ import io.deephaven.uri.UriHelper;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * The parquet table resolver is able to resolve local parquet files, or directories for the scheme {@value #SCHEME},
@@ -44,12 +45,22 @@ public abstract class ParquetTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final String adapt(URI uri) {
+    public final String adaptToItem(URI uri) {
         return uri.getPath();
     }
 
     @Override
-    public Object resolveItem(String item) {
+    public final URI adaptToUri(String item) {
+        return URI.create(String.format("parquet://%s", item));
+    }
+
+    @Override
+    public final Object resolveItem(String item) {
         return ParquetTools.readTable(item).coalesce(); // todo otherwise "is not a subscribable table"
+    }
+
+    @Override
+    public void forAllItems(BiConsumer<String, Object> consumer) {
+
     }
 }

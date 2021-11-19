@@ -1,14 +1,5 @@
-import com.bmuschko.gradle.docker.tasks.container.DockerCopyFileFromContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerWaitContainer
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.bmuschko.gradle.docker.tasks.image.DockerInspectImage
-import com.bmuschko.gradle.docker.tasks.image.DockerPullImage
-import com.bmuschko.gradle.docker.tasks.image.DockerRemoveImage
-import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
 import com.github.dockerjava.api.command.InspectImageResponse
 import com.github.dockerjava.api.exception.DockerException
 import groovy.transform.CompileStatic
@@ -18,6 +9,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.util.ConfigureUtil
@@ -151,12 +143,22 @@ class Docker {
          * Optional command to run whenever the task is invoked, otherwise the image's contents will be used
          * as-is.
          */
-        List<String> entrypoint;
+        List<String> entrypoint
 
         /**
          * Optional build arguments
          */
-        Map<String, String> buildArgs;
+        Map<String, String> buildArgs
+
+        /**
+         * Optional target
+         */
+        String target
+
+        /**
+         * Optional image id file. Useful when properties parameterize the job in ways not captured by the task name.
+         */
+        RegularFile imageIdFile
 
         /**
          * Logs are always printed from the build task when it runs, but entrypoint logs are only printed
@@ -227,6 +229,10 @@ class Docker {
             throw new IllegalStateException("Cannot specify dockerfile as both path and closure")
         }
 
+        if (!cfg.copyIn) {
+            throw new IllegalStateException("Must specify copyIn. If you don't need to copy any files, you may specify an 'empty' copyIn block.");
+        }
+
         if (cfg.dockerfileAction) {
             dockerfileTask = project.tasks.register("${taskName}Dockerfile", Dockerfile) { dockerfile ->
                 cfg.dockerfileAction.execute(dockerfile)
@@ -261,6 +267,10 @@ class Docker {
                 // is updated
                 inputs.files cfg.parentContainers.each { t -> t.outputs.files }
 
+                if (cfg.imageIdFile) {
+                    imageIdFile.set cfg.imageIdFile
+                }
+
                 // specify tag, if provided
                 if (cfg.imageName) {
                     images.add(cfg.imageName)
@@ -269,6 +279,11 @@ class Docker {
                 // add build arguments, if provided
                 if (cfg.buildArgs) {
                     buildArgs.putAll(cfg.buildArgs)
+                }
+
+                // add target, if provided
+                if (cfg.target) {
+                    target.set(cfg.target)
                 }
             }
         }

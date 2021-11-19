@@ -7,6 +7,8 @@ evaluationDependsOn ':deephaven-jpy'
 evaluationDependsOn ':deephaven-wheel'
 evaluationDependsOn ':deephaven2-wheel'
 
+def runtimeBaseExtras = project.property('deephaven.runtime-base.extras')
+
 def dockerContext = project.layout.buildDirectory.dir('context')
 
 def prepareDocker = project.tasks.register('prepareDocker', Sync) {
@@ -33,17 +35,45 @@ def prepareDocker = project.tasks.register('prepareDocker', Sync) {
     into dockerContext
 }
 
-Docker.registerDockerImage(project, 'buildDocker') {
+def buildImage = Docker.registerDockerImage(project, 'buildImage') {
+    description = "Creates 'deephaven/runtime-base:local-build'."
+
+    imageIdFile.set project.layout.buildDirectory.file(".docker/${runtimeBaseExtras}/buildImage-imageId.txt")
+
     // deephaven/java-and-python:local-build
     def javaAndPython = project(':docker-java-and-python').tasks.getByName('buildDocker')
-
     dependsOn prepareDocker
-
     inputs.files javaAndPython.outputs.files
-
     inputDir.set dockerContext
-
+    buildArgs.put('EXTRA_REQS', "${runtimeBaseExtras}/strict.txt")
+    target = 'runtime-base'
     images.add('deephaven/runtime-base:local-build')
 }
 
-assemble.dependsOn buildDocker
+Docker.registerDockerTask(project, 'freezeDesired') {
+    containerDependencies.dependsOn = prepareDocker
+    copyIn {
+        from dockerContext
+    }
+
+    imageIdFile = project.layout.buildDirectory.file(".docker/${runtimeBaseExtras}/freezeDesired-imageId.txt").get()
+
+    // For the maintenance image, we will let the the wheels and desired requirements file (along with pip manager)
+    // install the versions they see fit, which will likely be the newest images that meet the requirements. This
+    buildArgs = [
+            // Don't pre-install the requirements
+            REQUIREMENTS: 'empty.txt',
+
+            // this allows us to choose the desired (non-strict) extra requirements
+            EXTRA_REQS: "${runtimeBaseExtras}/desired.txt",
+
+            // this allows pip to install from internet
+            NO_INDEX: '']
+    target = 'freeze'
+    containerOutPath = '/tmp/pip'
+    copyOut {
+        into "build/freeze/${runtimeBaseExtras}"
+    }
+}
+
+assemble.dependsOn buildImage

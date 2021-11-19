@@ -101,7 +101,7 @@ docker {
 
 
 // deephaven/runtime-base
-def grpcApiBase = project(':docker-runtime-base').tasks.findByName('buildDocker')
+def grpcApiBase = project(':docker-runtime-base').tasks.findByName('buildImage')
 dockerBuildImage.dependsOn grpcApiBase
 dockerBuildImage.inputs.file grpcApiBase.outputs.files.singleFile
 

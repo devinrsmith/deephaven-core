@@ -81,7 +81,7 @@ def runInDocker = { String name, String sourcePath, List<String> command ->
                 into 'python/configs'
             }
         }
-        parentContainers = [project(':docker-runtime-base').tasks.findByName('buildDocker')] // deephaven/runtime-base
+        parentContainers = [project(':docker-runtime-base').tasks.findByName('buildImage')] // deephaven/runtime-base
 
         imageName = 'deephaven/py-integrations:local-build'
 

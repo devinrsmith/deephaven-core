@@ -39,7 +39,7 @@ TableDataRefreshService.tableLocationsRefreshMillis=10000
 TableDataRefreshService.tableSizeRefreshMillis=1000
 
 Calendar.default=USNYSE
-Calendar.internalPath=<devroot>/configs/calendar
+Calendar.importPath=/default_calendar_imports.txt
 
 Plot.theme.default=LIGHT
 Plot.theme.internalPath=<devroot>/configs/chartthemes
@@ -82,10 +82,6 @@ allocation.stats.enabled=false
 
 ###### RspSequentialBuilder
 RspSequentialBuilder.check=true
-
-# DbTypes default impls
-DbTypes.DbFile.impl=io.deephaven.dbtypes.DbFileImpl$Factory
-DbTypes.DbImage.impl=io.deephaven.dbtypes.DbImageImpl$Factory
 
 # MetricsManager
 MetricsManager.toStdout=true

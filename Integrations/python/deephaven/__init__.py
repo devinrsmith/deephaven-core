@@ -15,8 +15,6 @@ For convenient usage in the python console, the main sub-packages of deephaven h
 
 * MovingAverages imported as mavg
 
-* npy as npy
-
 * Plot imported as plt
 
 * ParquetTools imported as pt
@@ -36,7 +34,7 @@ Additionally, the following methods have been imported into the main deephaven n
 
 * from TableManipulation import ColumnRenderersBuilder, DistinctFormatter,
        DownsampledWhereFilter, DynamicTableWriter, LayoutHintBuilder,  
-       SmartKey, SortPair, TotalsTableBuilder, WindowCheck
+       Replayer, SmartKey, SortPair, TotalsTableBuilder, WindowCheck
 
 For ease of namespace population in a python console, consider::
 
@@ -58,9 +56,9 @@ __all__ = [
     "convertToJavaHashMap",  # from conversion_utils
 
     'ColumnRenderersBuilder', 'DistinctFormatter', 'DownsampledWhereFilter', 'DynamicTableWriter', 
-    'LayoutHintBuilder', 'SmartKey', 'SortPair', 'TotalsTableBuilder', 'WindowCheck',  # from TableManipulation
+    'LayoutHintBuilder', 'Replayer', 'SmartKey', 'SortPair', 'TotalsTableBuilder', 'WindowCheck',  # from TableManipulation
 
-    "cals", "caf", "dbtu", "figw", "mavg", "npy", "plt", "pt", "ttools", "tloggers"  # subpackages with abbreviated names
+    "cals", "caf", "dbtu", "figw", "mavg", "plt", "pt", "ttools", "tloggers"  # subpackages with abbreviated names
 ]
 
 
@@ -86,7 +84,6 @@ from . import Calendars as cals, \
     MovingAverages as mavg, \
     ConsumeKafka as ck, \
     ProduceKafka as pk, \
-    npy, \
     Plot as plt, \
     ParquetTools as pt, \
     TableTools as ttools, \
@@ -116,16 +113,14 @@ def initialize():
     pt._defineSymbols()
     ttools._defineSymbols()
     tloggers._defineSymbols()
-    import deephaven.npy.table2numpy
-    deephaven.npy.table2numpy._defineSymbols()
 
     import deephaven.TableManipulation
     deephaven.TableManipulation._defineSymbols()
     global ColumnRenderersBuilder, DistinctFormatter, DownsampledWhereFilter, DynamicTableWriter, \
-        LayoutHintBuilder, SmartKey, SortPair, TotalsTableBuilder
+        LayoutHintBuilder, Replayer, SmartKey, SortPair, TotalsTableBuilder
     from deephaven.TableManipulation import ColumnRenderersBuilder, DistinctFormatter, \
-        DownsampledWhereFilter, DynamicTableWriter, LayoutHintBuilder, SmartKey, SortPair, \
-        TotalsTableBuilder
+        DownsampledWhereFilter, DynamicTableWriter, LayoutHintBuilder, Replayer, SmartKey, \
+        SortPair, TotalsTableBuilder
 
     WindowCheck._defineSymbols()
 

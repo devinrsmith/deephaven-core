@@ -11,7 +11,7 @@ String[] bins = ['configs', 'test-configs' ]
 String[] mods = [ 'Util', 'Numerics', 'TableLogger', 'DB', 'Plot',
         'CompilerTools', 'Generators',
         'Integrations', 'ModelFarm', 'ClientSupport',
-        'BenchmarkSupport', 'DB-test', 'DbTypes', 'DbTypesImpl', 'Parquet',
+        'BenchmarkSupport', 'DB-test', 'Parquet',
         'Kafka', 'grpc-api', 'table-api', 'qst']
 
         // new web projects; these modules are intended to form a complete, modular web application,
@@ -185,6 +185,17 @@ project(':deephaven-wheel').projectDir = file('py/deephaven-wheel')
 
 include(':deephaven2-wheel')
 project(':deephaven2-wheel').projectDir = file('py/deephaven2-wheel')
+
+include(':docker-java-and-python')
+project(':docker-java-and-python').projectDir = file('docker/java-and-python')
+
+include(':docker-runtime-base')
+project(':docker-runtime-base').projectDir = file('docker/runtime-base')
+
+file("${rootDir}/docker/registry").list().each {name ->
+    include(":docker-${name}")
+    project(":docker-${name}").projectDir = file("${rootDir}/docker/registry/${name}")
+}
 
 // Apply "vanity naming" (look for .gradle files matching ProjectName/ProjectName.gradle)
 File root = settings.rootDir

@@ -9,6 +9,7 @@ import io.deephaven.db.tables.Table;
 import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.grpc_api.session.SessionService;
 import io.deephaven.grpc_api.session.SessionState;
+import io.deephaven.grpc_api.session.SessionState.ExportBuilder;
 import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.table.ops.GrpcTableOperation;
 import io.deephaven.grpc_api.util.ExportTicketHelper;
@@ -46,13 +47,13 @@ import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.grpc.TimeTableRequest;
 import io.deephaven.proto.backplane.grpc.UngroupRequest;
 import io.deephaven.proto.backplane.grpc.UnstructuredFilterTableRequest;
-import io.deephaven.util.auth.AuthContext;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -273,8 +274,8 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
             final SessionState session = sessionService.getCurrentSession();
 
             // step 1: initialize exports
-            final List<BatchExportBuilder> exportBuilders = request.getOpsList().stream()
-                    .map(op -> new BatchExportBuilder(session, op))
+            final List<BatchExportBuilder<?>> exportBuilders = request.getOpsList().stream()
+                    .map(op -> createBatchExportBuilder(session, op))
                     .collect(Collectors.toList());
 
             // step 2: resolve dependencies
@@ -287,15 +288,14 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
             final AtomicInteger remaining = new AtomicInteger(exportBuilders.size());
 
             for (int i = 0; i < exportBuilders.size(); ++i) {
-                final BatchExportBuilder exportBuilder = exportBuilders.get(i);
+                final BatchExportBuilder<?> exportBuilder = exportBuilders.get(i);
                 final int exportId = exportBuilder.exportBuilder.getExportId();
 
                 final TableReference resultId;
                 if (exportId == SessionState.NON_EXPORT_ID) {
                     resultId = TableReference.newBuilder().setBatchOffset(i).build();
                 } else {
-                    resultId = TableReference.newBuilder().setTicket(ExportTicketHelper.wrapExportIdInTicket(exportId))
-                            .build();
+                    resultId = ExportTicketHelper.tableReference(exportId);
                 }
 
                 exportBuilder.exportBuilder.onError((result, errorContext, dependentId) -> {
@@ -390,14 +390,12 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
             final GrpcTableOperation<T> operation = getOp(op);
-            operation.validateRequest(session.getAuthContext(), request);
+            operation.validateRequest(request);
 
             final Ticket resultId = operation.getResultTicket(request);
             if (resultId.getTicket().isEmpty()) {
                 throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, "No result ticket supplied");
             }
-
-            // TODO: coalesce our ACL story wrt operations here
 
             final TableReference resultRef = TableReference.newBuilder().setTicket(resultId).build();
 
@@ -409,7 +407,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
                     .require(dependencies)
                     .onError(responseObserver)
                     .submit(() -> {
-                        final Table result = operation.create(session.getAuthContext(), request, dependencies);
+                        final Table result = operation.create(request, dependencies);
                         safelyExecute(() -> {
                             responseObserver.onNext(buildTableCreationResponse(resultRef, result));
                             responseObserver.onCompleted();
@@ -428,7 +426,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
     }
 
     private SessionState.ExportObject<Table> resolveBatchReference(SessionState session,
-            List<BatchExportBuilder> exportBuilders, TableReference ref) {
+            List<BatchExportBuilder<?>> exportBuilders, TableReference ref) {
         switch (ref.getRefCase()) {
             case TICKET:
                 return ticketRouter.resolve(session, ref.getTicket(), "sourceId");
@@ -443,24 +441,31 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         }
     }
 
-    private class BatchExportBuilder {
-        final GrpcTableOperation<Object> operation;
-        final Object request;
-        final SessionState.ExportBuilder<Table> exportBuilder;
-        final AuthContext auth;
+    private <T> BatchExportBuilder<T> createBatchExportBuilder(SessionState session, BatchTableRequest.Operation op) {
+        final GrpcTableOperation<T> operation = getOp(op.getOpCase());
+        final T request = operation.getRequestFromOperation(op);
+        operation.validateRequest(request);
+
+        final Ticket resultId = operation.getResultTicket(request);
+        final ExportBuilder<Table> exportBuilder =
+                resultId.getTicket().isEmpty() ? session.nonExport() : session.newExport(resultId, "resultId");
+        return new BatchExportBuilder<>(operation, request, exportBuilder);
+    }
+
+    private class BatchExportBuilder<T> {
+        private final GrpcTableOperation<T> operation;
+        private final T request;
+        private final SessionState.ExportBuilder<Table> exportBuilder;
 
         List<SessionState.ExportObject<Table>> dependencies;
 
-        BatchExportBuilder(final SessionState session, final BatchTableRequest.Operation op) {
-            operation = getOp(op.getOpCase()); // get operation from op code
-            request = operation.getRequestFromOperation(op);
-            final Ticket resultId = operation.getResultTicket(request);
-            exportBuilder =
-                    resultId.getTicket().isEmpty() ? session.nonExport() : session.newExport(resultId, "resultId");
-            auth = session.getAuthContext();
+        BatchExportBuilder(GrpcTableOperation<T> operation, T request, ExportBuilder<Table> exportBuilder) {
+            this.operation = Objects.requireNonNull(operation);
+            this.request = Objects.requireNonNull(request);
+            this.exportBuilder = Objects.requireNonNull(exportBuilder);
         }
 
-        void resolveDependencies(SessionState session, List<BatchExportBuilder> exportBuilders) {
+        void resolveDependencies(SessionState session, List<BatchExportBuilder<?>> exportBuilders) {
             dependencies = operation.getTableReferences(request).stream()
                     .map(ref -> resolveBatchReference(session, exportBuilders, ref))
                     .collect(Collectors.toList());
@@ -468,7 +473,7 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         }
 
         Table doExport() {
-            return operation.create(auth, request, dependencies);
+            return operation.create(request, dependencies);
         }
     }
 }

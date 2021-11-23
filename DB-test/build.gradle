@@ -2,7 +2,7 @@ plugins {
   id 'com.bmuschko.docker-remote-api'
 }
 
-evaluationDependsOn ':docker-runtime-base' // runtimeBase
+evaluationDependsOn ':docker-java-and-python'
 
 configurations {
   //compile.extendsFrom dhDb
@@ -58,10 +58,10 @@ tasks.getByName('check').dependsOn Docker.registerDockerTask(project, 'test-in-d
       into 'classes'
     }
   }
-  parentContainers = [project(':docker-runtime-base').tasks.findByName('buildDocker')] // deephaven/runtime-base
+  parentContainers = [project(':docker-java-and-python').tasks.findByName('buildDocker')]
   dockerfile {
-    // base image with default java, python, wheels
-    from 'deephaven/runtime-base:local-build'
+    // base image with default java and python
+    from 'deephaven/java-and-python:local-build'
 
     // set up the project
     copyFile 'project', '/project'

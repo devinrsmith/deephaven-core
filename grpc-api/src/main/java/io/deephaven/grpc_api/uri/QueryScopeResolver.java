@@ -33,7 +33,7 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
     }
 
     @Override
-    public final QueryScopeUri adaptToItem(URI uri) {
+    public final QueryScopeUri adaptToPath(URI uri) {
         return QueryScopeUri.of(uri);
     }
 
@@ -61,7 +61,7 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
     }
 
     @Override
-    public final void forAllItems(BiConsumer<QueryScopeUri, Object> consumer) {
+    public final void forAllPaths(BiConsumer<QueryScopeUri, Object> consumer) {
         globalSessionProvider.getGlobalSession().getVariables()
                 .forEach((variableName, item) -> consumer.accept(QueryScopeUri.of(variableName), item));
     }

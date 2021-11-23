@@ -35,7 +35,7 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
     }
 
     @Override
-    public final ApplicationUri adaptToItem(URI uri) {
+    public final ApplicationUri adaptToPath(URI uri) {
         return ApplicationUri.of(uri);
     }
 
@@ -51,7 +51,7 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
     }
 
     @Override
-    public final void forAllItems(BiConsumer<ApplicationUri, Object> consumer) {
+    public final void forAllPaths(BiConsumer<ApplicationUri, Object> consumer) {
         states.forEach((applicationState, field) -> consumer
                 .accept(ApplicationUri.of(applicationState.id(), field.name()), field.value()));
     }

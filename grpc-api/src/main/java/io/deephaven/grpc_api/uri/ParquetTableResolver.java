@@ -45,7 +45,7 @@ public abstract class ParquetTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final String adaptToItem(URI uri) {
+    public final String adaptToPath(URI uri) {
         return uri.getPath();
     }
 
@@ -60,7 +60,7 @@ public abstract class ParquetTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public void forAllItems(BiConsumer<String, Object> consumer) {
+    public void forAllPaths(BiConsumer<String, Object> consumer) {
 
     }
 }

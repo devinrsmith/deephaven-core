@@ -12,22 +12,13 @@ public final class ParquetTableResolverSuperUser extends ParquetTableResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return auth != null && auth.isSuperUser();
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, String item) {
-        return true;
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        return "Enabled for super-users.";
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, String item) {
-        throw new IllegalStateException();
+    public Authorization<String> authorization(AuthScope<String> scope, AuthContext context) {
+        if (scope.isWrite()) {
+            return Authorization.deny(scope, "The Parquet resolver does not allow publishing");
+        }
+        if (context == null || !context.isSuperUser()) {
+            return Authorization.deny(scope, "The Parquet resolver requires a super-user");
+        }
+        return Authorization.allow(scope);
     }
 }

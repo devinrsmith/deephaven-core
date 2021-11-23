@@ -13,22 +13,17 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, ApplicationUri item) {
-        return !item.fieldName().startsWith("__");
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, ApplicationUri item) {
-        return "Unable to resolve field names that start with '__'.";
+    public Authorization<ApplicationUri> authorization(AuthScope<ApplicationUri> scope, AuthContext context) {
+        if (scope.isWrite()) {
+            return Authorization.deny(scope, "The application resolver does not allow publishing");
+        }
+        if (scope.isGlobal()) {
+            return Authorization.allow(scope);
+        }
+        if (scope.path().orElseThrow().fieldName().startsWith("__")) {
+            return Authorization.deny(scope,
+                    "The application resolver does not resolve private names (starts with '__').");
+        }
+        return Authorization.allow(scope);
     }
 }

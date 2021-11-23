@@ -56,27 +56,27 @@ class DoPutTable extends FlightExampleBase {
     }
 
     /*
-    private void publish(FlightSession flight, HasTicket ticket) throws InterruptedException, ExecutionException {
-        flight.session().publish(variableName, ticket).get();
-    }*/
+     * private void publish(FlightSession flight, HasTicket ticket) throws InterruptedException, ExecutionException {
+     * flight.session().publish(variableName, ticket).get(); }
+     */
 
     private void easy(FlightSession flight) throws Exception {
         flight.putTicket(variableName, newTable(), bufferAllocator);
 
         // This version is "prettier", but uses one extra ticket and round trip
-//        try (final TableHandle destHandle = flight.put(newTable(), bufferAllocator)) {
-//            publish(flight, destHandle);
-//        }
+        // try (final TableHandle destHandle = flight.put(newTable(), bufferAllocator)) {
+        // publish(flight, destHandle);
+        // }
     }
 
     private void moreEfficient(FlightSession flight) throws Exception {
         // This version is more efficient, but requires manual management of a ticket
-//        final Ticket ticket = flight.putTicket(newTable(), bufferAllocator);
-//        try {
-//            publish(flight, () -> ticket);
-//        } finally {
-//            flight.release(ticket);
-//        }
+        // final Ticket ticket = flight.putTicket(newTable(), bufferAllocator);
+        // try {
+        // publish(flight, () -> ticket);
+        // } finally {
+        // flight.release(ticket);
+        // }
     }
 
     public static void main(String[] args) {

@@ -17,22 +17,13 @@ public final class BarrageTableResolverSuperUser extends BarrageTableResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return auth != null && auth.isSuperUser();
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, RemoteUri item) {
-        return true;
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        return "Enabled for super-users.";
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, RemoteUri item) {
-        throw new IllegalStateException();
+    public Authorization<RemoteUri> authorization(AuthScope<RemoteUri> scope, AuthContext context) {
+        if (scope.isWrite()) {
+            return Authorization.deny(scope, "The barrage resolver does not allow publishing");
+        }
+        if (context == null || !context.isSuperUser()) {
+            return Authorization.deny(scope, "The barrage resolver requires a super-user");
+        }
+        return Authorization.allow(scope);
     }
 }

@@ -76,7 +76,8 @@ public final class UriTicketResolver extends TicketResolverBase {
         if (value instanceof Table) {
             info = TicketRouter.getFlightInfo((Table) value, descriptor, flightTicketForUri(uri));
         } else {
-            throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND, "Could not resolve URI for '" + logId + "': field '" + getLogNameFor(uri) + "' is not a flight");
+            throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND,
+                    "Could not resolve URI for '" + logId + "': field '" + getLogNameFor(uri) + "' is not a flight");
         }
         return SessionState.wrapAsExport(info);
     }
@@ -127,7 +128,8 @@ public final class UriTicketResolver extends TicketResolverBase {
                 if (!(value instanceof Table)) {
                     return;
                 }
-                visitor.accept(TicketRouter.getFlightInfo((Table) value, descriptorForUri(uri), flightTicketForUri(uri)));
+                visitor.accept(
+                        TicketRouter.getFlightInfo((Table) value, descriptorForUri(uri), flightTicketForUri(uri)));
             });
         }
     }

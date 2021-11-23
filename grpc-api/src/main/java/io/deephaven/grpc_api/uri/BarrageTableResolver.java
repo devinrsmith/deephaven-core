@@ -62,7 +62,7 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
     }
 
     @Override
-    public final RemoteUri adaptToItem(URI uri) {
+    public final RemoteUri adaptToPath(URI uri) {
         return RemoteUri.of(uri);
     }
 
@@ -81,7 +81,7 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
     }
 
     @Override
-    public void forAllItems(BiConsumer<RemoteUri, Object> consumer) {
+    public void forAllPaths(BiConsumer<RemoteUri, Object> consumer) {
 
     }
 

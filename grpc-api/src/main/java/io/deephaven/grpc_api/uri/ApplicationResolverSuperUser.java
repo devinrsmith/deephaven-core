@@ -13,22 +13,13 @@ public final class ApplicationResolverSuperUser extends ApplicationResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return auth != null && auth.isSuperUser();
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, ApplicationUri item) {
-        return true;
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        return "Enabled for super-users.";
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, ApplicationUri item) {
-        throw new IllegalStateException();
+    public Authorization<ApplicationUri> authorization(AuthScope<ApplicationUri> scope, AuthContext context) {
+        if (scope.isWrite()) {
+            return Authorization.deny(scope, "The application resolver does not allow publishing");
+        }
+        if (context == null || !context.isSuperUser()) {
+            return Authorization.deny(scope, "The application resolver requires a super-user");
+        }
+        return Authorization.allow(scope);
     }
 }

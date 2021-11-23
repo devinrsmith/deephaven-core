@@ -43,7 +43,7 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final String adaptToItem(URI uri) {
+    public final String adaptToPath(URI uri) {
         return csvString(uri);
     }
 
@@ -62,7 +62,7 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public void forAllItems(BiConsumer<String, Object> consumer) {
+    public void forAllPaths(BiConsumer<String, Object> consumer) {
 
     }
 

@@ -14,22 +14,14 @@ public final class QueryScopeResolverOpen extends QueryScopeResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, QueryScopeUri item) {
-        return !item.variableName().startsWith("__");
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, QueryScopeUri item) {
-        return "Unable to resolve variables that start with '__'.";
+    public Authorization<QueryScopeUri> authorization(AuthScope<QueryScopeUri> scope, AuthContext context) {
+        if (scope.isGlobal()) {
+            return Authorization.allow(scope);
+        }
+        if (scope.path().orElseThrow().variableName().startsWith("__")) {
+            return Authorization.deny(scope,
+                    "The query scope resolver does not resolve private names (starts with '__').");
+        }
+        return Authorization.allow(scope);
     }
 }

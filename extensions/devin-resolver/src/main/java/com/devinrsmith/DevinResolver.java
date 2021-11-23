@@ -1,5 +1,7 @@
 package com.devinrsmith;
 
+import io.deephaven.grpc_api.uri.AuthScope;
+import io.deephaven.grpc_api.uri.Authorization;
 import io.deephaven.grpc_api.uri.UriResolverBase;
 import io.deephaven.util.auth.AuthContext;
 
@@ -44,7 +46,7 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public URI adaptToItem(URI uri) {
+    public URI adaptToPath(URI uri) {
         return uri;
     }
 
@@ -72,7 +74,7 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public void forAllItems(BiConsumer<URI, Object> consumer) {
+    public void forAllPaths(BiConsumer<URI, Object> consumer) {
 
     }
 
@@ -81,22 +83,7 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, URI item) {
-        return true;
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, URI item) {
-        throw new IllegalStateException();
+    public Authorization<URI> authorization(AuthScope<URI> scope, AuthContext context) {
+        return Authorization.allow(scope);
     }
 }

@@ -169,7 +169,9 @@ public class FlightSession implements AutoCloseable {
     }
 
     public io.deephaven.proto.backplane.grpc.Ticket putTicket(String scope, NewTable table, BufferAllocator allocator) {
-        final io.deephaven.proto.backplane.grpc.Ticket newTicket = io.deephaven.proto.backplane.grpc.Ticket.newBuilder().setTicket(ByteString.copyFrom(String.format("u/dh:///scope/%s", scope), StandardCharsets.UTF_8)).build();
+        final io.deephaven.proto.backplane.grpc.Ticket newTicket = io.deephaven.proto.backplane.grpc.Ticket.newBuilder()
+                .setTicket(ByteString.copyFrom(String.format("u/dh:///scope/%s", scope), StandardCharsets.UTF_8))
+                .build();
         final VectorSchemaRoot root = VectorSchemaRootAdapter.of(table, allocator);
         final FlightDescriptor descriptor = FlightDescriptor.path("uri", String.format("dh:///scope/%s", scope));
         final ClientStreamListener out =
@@ -181,7 +183,7 @@ public class FlightSession implements AutoCloseable {
             out.getResult();
             return newTicket;
         } catch (Throwable t) {
-            //session.release(newTicket);
+            // session.release(newTicket);
             throw t;
         }
     }

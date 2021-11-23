@@ -14,22 +14,13 @@ public final class QueryScopeResolverSuperUser extends QueryScopeResolver {
     }
 
     @Override
-    public boolean isEnabled(AuthContext auth) {
-        return auth != null && auth.isSuperUser();
-    }
-
-    @Override
-    public boolean isEnabled(AuthContext auth, QueryScopeUri item) {
-        return true;
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth) {
-        return "Enabled for super-users.";
-    }
-
-    @Override
-    public String helpEnable(AuthContext auth, QueryScopeUri item) {
-        throw new IllegalStateException();
+    public Authorization<QueryScopeUri> authorization(AuthScope<QueryScopeUri> scope, AuthContext context) {
+        if (scope.isWrite()) {
+            return Authorization.deny(scope, "The query scope resolver does not allow publishing");
+        }
+        if (context == null || !context.isSuperUser()) {
+            return Authorization.deny(scope, "The query scope resolver requires a super-user");
+        }
+        return Authorization.allow(scope);
     }
 }

@@ -37,7 +37,7 @@ def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
     inputDir.set dockerContext
     inputs.files project.project(':docker-runtime-base').tasks.findByName('buildDocker').outputs.files
     buildArgs.put('DEEPHAVEN_VERSION', project.version)
-    images.add('deephaven/grpc-api:local-build')
+    images.add('deephaven/server:local-build')
 }
 
 assemble.dependsOn buildDocker

@@ -44,7 +44,10 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v3.3.0
         with:
-          images: ghcr.io/${{ github.repository_owner }}/grpc-api
+          images: |
+            ghcr.io/${{ github.repository_owner }}/server
+            # deprecated - use the server image above ^
+            ghcr.io/${{ github.repository_owner }}/grpc-api
           flavor: |
             latest=false
           tags: |
@@ -76,14 +79,13 @@ jobs:
         uses: burrunan/gradle-cache-action@v1
         with:
           job-id: build-grpc-api
-          arguments: --scan docker-server:prepareDocker
+          arguments: --scan docker-server:prepareDocker outputVersion
           gradle-version: wrapper
 
-      - name: Get DEEPHAVEN_VERSION
+      - name: Get Deephaven Version
         id: deephaven_version
         run: |
-          deephaven_version=$(./gradlew -q showVersion)
-          echo "::set-output name=deephaven_version::$deephaven_version"
+          echo "::set-output name=deephaven_version::$(cat build/version)"
 
       # TODO: switch to new GitHub cache backend when available
       # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#github-cache

@@ -413,9 +413,12 @@ tasks.register 'writeJavadocVersion', {
         }
 }
 
-project.tasks.register('showVersion') {task ->
+project.tasks.register('outputVersion') {task ->
+    def versionFile = project.layout.buildDirectory.file('version')
+    task.inputs.property('version', project.version)
+    task.outputs.file(versionFile)
     task.doLast {
-        println project.version
+        versionFile.get().asFile.text = project.version
     }
 }
 

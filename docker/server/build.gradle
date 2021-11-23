@@ -1,0 +1,43 @@
+import io.deephaven.tools.License
+
+plugins {
+    id 'com.bmuschko.docker-remote-api'
+    id 'base'
+}
+
+evaluationDependsOn ':docker-runtime-base'
+evaluationDependsOn ':grpc-api-server-native'
+
+def dockerContext = project.layout.buildDirectory.dir('context')
+
+def dockerLicenses = License.createFrom(project).syncDockerLicense().get()
+
+def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    def distTar = project.project(':grpc-api-server-native').tasks.findByName('distTar')
+
+    // TODO(deephaven-core#1596): Remove extra dependencies for build-ci.yml
+    // Currently, GH build-ci.yml calls dockerCreateDockerfile, and relies on buildx; so we need to
+    // make sure that dockerCreateDockerfile has the proper dependencies.
+    // If we change how our build works in the future (so that gradle is responsible for pushing the
+    // image), we can remove this extra dependency.
+    dependsOn project.project(':docker-runtime-base').tasks.findByName('buildDocker')
+
+    from 'src/main/docker'
+    from(distTar) {
+        into 'distributions'
+    }
+    from(dockerLicenses.outputs) {
+        into 'licenses'
+    }
+    into dockerContext
+}
+
+def buildDocker = Docker.registerDockerImage(project, 'buildDocker') {
+    dependsOn prepareDocker
+    inputDir.set dockerContext
+    inputs.files project.project(':docker-runtime-base').tasks.findByName('buildDocker').outputs.files
+    buildArgs.put('DEEPHAVEN_VERSION', project.version)
+    images.add('deephaven/grpc-api:local-build')
+}
+
+assemble.dependsOn buildDocker

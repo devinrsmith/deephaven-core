@@ -8,11 +8,5 @@
 
 produces
 
-* `grpc-api/server/native/build/distributions/grpc-api-native-<version>.tar`
-* `grpc-api/server/native/build/distributions/grpc-api-native-<version>.zip`
-
-### Run
-
-```shell
-./gradlew grpc-api-server-native:run
-```
+* `grpc-api/server/native/build/distributions/server-<version>.tar`
+* `grpc-api/server/native/build/distributions/server-<version>.zip`

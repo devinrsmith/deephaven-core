@@ -76,7 +76,7 @@ jobs:
         uses: burrunan/gradle-cache-action@v1
         with:
           job-id: build-grpc-api
-          arguments: --scan docker-server:prepareCompose
+          arguments: --scan docker-server:prepareDocker
           gradle-version: wrapper
 
       - name: Get DEEPHAVEN_VERSION

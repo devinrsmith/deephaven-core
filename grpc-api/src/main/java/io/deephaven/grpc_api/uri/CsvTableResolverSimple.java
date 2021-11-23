@@ -23,7 +23,7 @@ public final class CsvTableResolverSimple extends CsvTableResolver {
     public CsvTableResolverSimple() {}
 
     @Override
-    public Authorization<String> authorization(AuthScope<String> scope, AuthContext context) {
+    public Authorization<String> authorization(AuthorizationScope<String> scope, AuthContext context) {
         if (scope.isWrite()) {
             return Authorization.deny(scope, "The CSV resolver does not allow publishing");
         }

@@ -14,7 +14,7 @@ public final class QueryScopeResolverSuperUser extends QueryScopeResolver {
     }
 
     @Override
-    public Authorization<QueryScopeUri> authorization(AuthScope<QueryScopeUri> scope, AuthContext context) {
+    public Authorization<QueryScopeUri> authorization(AuthorizationScope<QueryScopeUri> scope, AuthContext context) {
         if (scope.isWrite()) {
             return Authorization.deny(scope, "The query scope resolver does not allow publishing");
         }

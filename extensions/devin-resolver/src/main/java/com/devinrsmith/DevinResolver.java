@@ -1,6 +1,6 @@
 package com.devinrsmith;
 
-import io.deephaven.grpc_api.uri.AuthScope;
+import io.deephaven.grpc_api.uri.AuthorizationScope;
 import io.deephaven.grpc_api.uri.Authorization;
 import io.deephaven.grpc_api.uri.UriResolverBase;
 import io.deephaven.util.auth.AuthContext;
@@ -83,7 +83,7 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public Authorization<URI> authorization(AuthScope<URI> scope, AuthContext context) {
+    public Authorization<URI> authorization(AuthorizationScope<URI> scope, AuthContext context) {
         return Authorization.allow(scope);
     }
 }

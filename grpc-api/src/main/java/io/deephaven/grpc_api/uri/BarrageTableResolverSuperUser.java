@@ -17,7 +17,7 @@ public final class BarrageTableResolverSuperUser extends BarrageTableResolver {
     }
 
     @Override
-    public Authorization<RemoteUri> authorization(AuthScope<RemoteUri> scope, AuthContext context) {
+    public Authorization<RemoteUri> authorization(AuthorizationScope<RemoteUri> scope, AuthContext context) {
         if (scope.isWrite()) {
             return Authorization.deny(scope, "The barrage resolver does not allow publishing");
         }

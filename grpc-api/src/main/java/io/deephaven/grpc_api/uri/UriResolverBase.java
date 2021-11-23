@@ -17,7 +17,7 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     public abstract URI adaptToUri(T item);
 
-    public abstract Authorization<T> authorization(AuthScope<T> scope, AuthContext context);
+    public abstract Authorization<T> authorization(AuthorizationScope<T> scope, AuthContext context);
 
     public abstract Object resolveItem(T item) throws InterruptedException;
 
@@ -34,17 +34,17 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     @Override
     public final Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException {
-        check(authorization(AuthScope.readGlobal(), auth));
+        check(authorization(AuthorizationScope.readGlobal(), auth));
         final T path = adaptToPath(uri);
-        check(authorization(AuthScope.read(path), auth));
+        check(authorization(AuthorizationScope.read(path), auth));
         return resolveItem(path);
     }
 
     @Override
     public final <O> Consumer<O> publishTarget(AuthContext auth, URI uri) {
-        check(authorization(AuthScope.writeGlobal(), auth));
+        check(authorization(AuthorizationScope.writeGlobal(), auth));
         final T path = adaptToPath(uri);
-        check(authorization(AuthScope.write(path), auth));
+        check(authorization(AuthorizationScope.write(path), auth));
         return publishTarget(path);
     }
 
@@ -55,11 +55,11 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     @Override
     public final void forAllUrisSafely(AuthContext auth, BiConsumer<URI, Object> consumer) {
-        if (!authorization(AuthScope.readGlobal(), auth).isAllowed()) {
+        if (!authorization(AuthorizationScope.readGlobal(), auth).isAllowed()) {
             return;
         }
         forAllPaths((path, obj) -> {
-            if (authorization(AuthScope.read(path), auth).isAllowed()) {
+            if (authorization(AuthorizationScope.read(path), auth).isAllowed()) {
                 consumer.accept(adaptToUri(path), obj);
             }
         });

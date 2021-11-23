@@ -14,7 +14,7 @@ public final class QueryScopeResolverOpen extends QueryScopeResolver {
     }
 
     @Override
-    public Authorization<QueryScopeUri> authorization(AuthScope<QueryScopeUri> scope, AuthContext context) {
+    public Authorization<QueryScopeUri> authorization(AuthorizationScope<QueryScopeUri> scope, AuthContext context) {
         if (scope.isGlobal()) {
             return Authorization.allow(scope);
         }

@@ -13,7 +13,7 @@ public final class ApplicationResolverOpen extends ApplicationResolver {
     }
 
     @Override
-    public Authorization<ApplicationUri> authorization(AuthScope<ApplicationUri> scope, AuthContext context) {
+    public Authorization<ApplicationUri> authorization(AuthorizationScope<ApplicationUri> scope, AuthContext context) {
         if (scope.isWrite()) {
             return Authorization.deny(scope, "The application resolver does not allow publishing");
         }

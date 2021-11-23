@@ -44,9 +44,9 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v3.3.0
         with:
+          # grpc-api deprecated
           images: |
             ghcr.io/${{ github.repository_owner }}/server
-            # deprecated - use the server image above ^
             ghcr.io/${{ github.repository_owner }}/grpc-api
           flavor: |
             latest=false

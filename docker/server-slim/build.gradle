@@ -1,0 +1,27 @@
+plugins {
+    id 'com.bmuschko.docker-remote-api'
+}
+
+evaluationDependsOn ':docker-java'
+evaluationDependsOn ':grpc-api-server-native'
+
+def dockerContext = project.layout.buildDirectory.dir('context')
+
+def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    def distTar = project.project(':grpc-api-server-native').tasks.findByName('distTar')
+    from 'src/main/docker'
+    from(distTar) {
+        into 'distributions'
+    }
+    into dockerContext
+}
+
+def buildImage = Docker.registerDockerImage(project, 'buildImage') {
+    dependsOn prepareDocker
+    inputDir.set dockerContext
+    inputs.files project.project(':docker-java').tasks.findByName('buildDocker').outputs.files
+    buildArgs.put('DEEPHAVEN_VERSION', project.version)
+    images.add('deephaven/server-slim:local-build')
+}
+
+assemble.dependsOn buildImage

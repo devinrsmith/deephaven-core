@@ -5,7 +5,7 @@ plugins {
   id 'com.bmuschko.docker-java-application'
 }
 
-evaluationDependsOn(':docker-runtime-base')
+evaluationDependsOn Docker.serverBaseProject(project)
 
 dependencies {
   implementation(project(':grpc-api')) {
@@ -31,7 +31,7 @@ docker {
   javaApplication {
     mainClassName = 'io.deephaven.grpc_api.runner.Main'
     images = [ "${project.property('grpc-api-docker.imageName')}" ]
-    baseImage = project.property('grpc-api-docker.baseImage')
+    baseImage = Docker.serverBaseImage(project)
     maintainer = 'Devin Smith "devinsmith@deephaven.io"'
     ports = [ 8080 ]
     // ports = [ 8080, 5005 ]  // Add for debugging: change 5005 to match the port set below in the '-agentlib...' line.
@@ -71,12 +71,6 @@ docker {
   dockerCreateDockerfile {
     //volume("/app/resources")
 
-    runCommand('''set -eux;\\
-                  GRPC_HEALTH_PROBE_VERSION=v0.3.1;\\
-                  curl -L -o /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64; \\
-                  chmod +x /bin/grpc_health_probe
-                  ''')
-
     copyFile('licenses/', '/')
 
     volume("/data")
@@ -99,11 +93,9 @@ docker {
   }
 }
 
-
-// deephaven/runtime-base
-def grpcApiBase = project(':docker-runtime-base').tasks.findByName('buildImage')
+def grpcApiBase = Docker.serverBaseTask(project)
 dockerBuildImage.dependsOn grpcApiBase
-dockerBuildImage.inputs.file grpcApiBase.outputs.files.singleFile
+dockerBuildImage.inputs.files grpcApiBase.outputs.files
 
 // TODO(deephaven-core#1596): Remove extra dependencies for build-ci.yml
 // Currently, GH build-ci.yml calls dockerCreateDockerfile, and relies on buildx; so we need to

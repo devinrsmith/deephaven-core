@@ -267,6 +267,7 @@ class Docker {
                 // is updated
                 inputs.files cfg.parentContainers.each { t -> t.outputs.files }
 
+                // use imageIdFile, if provided
                 if (cfg.imageIdFile) {
                     imageIdFile.set cfg.imageIdFile
                 }
@@ -609,5 +610,19 @@ class Docker {
 
     static FileCollection registryFiles(Project project, String name) {
         registryTask(project, name).outputs.files
+    }
+
+    static String serverBaseProject(Project project) {
+        def serverBase = project.property('deephaven.server-base')
+        return ":docker-server-base-${serverBase}"
+    }
+
+    static String serverBaseImage(Project project) {
+        def serverBase = project.property('deephaven.server-base')
+        return "deephaven/server-base-${serverBase}:local-build"
+    }
+
+    static Task serverBaseTask(Project project) {
+        project.project(serverBaseProject(project)).tasks.findByName('buildImage')
     }
 }

@@ -1,0 +1,21 @@
+plugins {
+    id 'com.bmuschko.docker-remote-api'
+}
+
+evaluationDependsOn ':docker-server-base-python'
+
+def dockerContext = project.layout.buildDirectory.dir('context')
+
+def prepareDocker = project.tasks.register('prepareDocker', Sync) {
+    from 'src/main/docker'
+    into dockerContext
+}
+
+def buildImage = Docker.registerDockerImage(project, 'buildImage') {
+    dependsOn prepareDocker
+    inputDir.set dockerContext
+    inputs.files project.project(':docker-server-base-python').tasks.findByName('buildImage').outputs.files
+    images.add('deephaven/server-base-pytorch:local-build')
+}
+
+assemble.dependsOn buildImage

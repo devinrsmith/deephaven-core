@@ -183,11 +183,23 @@ project(':deephaven-wheel').projectDir = file('py/deephaven-wheel')
 include(':deephaven2-wheel')
 project(':deephaven2-wheel').projectDir = file('py/deephaven2-wheel')
 
+include(':docker-java')
+project(':docker-java').projectDir = file('docker/java')
+
+include(':docker-server-slim')
+project(':docker-server-slim').projectDir = file('docker/server-slim')
+
 include(':docker-java-and-python')
 project(':docker-java-and-python').projectDir = file('docker/java-and-python')
 
-include(':docker-runtime-base')
-project(':docker-runtime-base').projectDir = file('docker/runtime-base')
+include(':docker-server-slim')
+project(':docker-server-slim').projectDir = file('docker/server-slim')
+
+include(':docker-server-base-python')
+project(':docker-server-base-python').projectDir = file('docker/server-base-python')
+
+include(':docker-server-pytorch')
+project(':docker-server-pytorch').projectDir = file('docker/server-pytorch')
 
 file("${rootDir}/docker/registry").list().each {name ->
     include(":docker-${name}")

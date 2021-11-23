@@ -1,4 +1,5 @@
-FROM deephaven/java:local-build as python-install
+FROM deephaven/server-slim:local-build as install
+
 RUN set -eux; \
     apt-get -qq update; \
     apt-get -qq -y --no-install-recommends install \
@@ -17,6 +18,12 @@ RUN set -eux; \
 # 4. Uncomment BLOCK 1, and comment out BLOCK 2
 
 # START BLOCK 1
+
+COPY system-requirements.txt system-requirements.txt
+RUN set -eux; \
+    python3 -m pip install --no-cache-dir -r system-requirements.txt; \
+    rm system-requirements.txt
+
 COPY requirements.txt requirements.txt
 RUN set -eux; \
     python3 -m pip install --no-cache-dir -r requirements.txt; \
@@ -30,7 +37,20 @@ RUN set -eux; \
 #    python3 -m pip install --no-cache-dir --upgrade wheel
 # END BLOCK 2
 
-FROM deephaven/java:local-build
-COPY --from=python-install / /
-HEALTHCHECK --interval=3s --retries=3 --timeout=11s CMD /bin/grpc_health_probe -addr=localhost:8080 -connect-timeout=10s || exit 1
-ENTRYPOINT [ "/opt/deephaven/server/bin/start" ]
+COPY deephaven-jpy-wheel/ /deephaven-jpy-wheel
+RUN set -eux; \
+    python3 -m pip install -q --no-index --no-cache-dir /deephaven-jpy-wheel/*.whl; \
+    rm -r /deephaven-jpy-wheel
+
+COPY deephaven-wheel/ /deephaven-wheel
+RUN set -eux; \
+    python3 -m pip install -q --no-index --no-cache-dir /deephaven-wheel/*.whl; \
+    rm -r /deephaven-wheel
+
+COPY deephaven2-wheel/ /deephaven2-wheel
+RUN set -eux; \
+    python3 -m pip install -q --no-index --no-cache-dir /deephaven2-wheel/*.whl; \
+    rm -r /deephaven2-wheel
+
+FROM deephaven/server-slim:local-build
+COPY --from=install / /

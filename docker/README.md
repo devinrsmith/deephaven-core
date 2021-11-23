@@ -4,9 +4,9 @@
 
 The `docker-java-and-python` project produces the image `deephaven/java-and-python:local-build`.
 
-## runtime-base
+## server-base-python
 
-The `docker-runtime-base` project produces the image `deephaven/runtime-base:local-build`.
+The `docker-server-base-python` project produces the image `deephaven/server-base-python:local-build`.
 
 ## Docker Registry
 

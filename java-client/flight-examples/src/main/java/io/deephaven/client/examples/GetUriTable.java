@@ -2,6 +2,7 @@ package io.deephaven.client.examples;
 
 import io.deephaven.client.impl.FlightSession;
 import io.deephaven.qst.TableCreationLogic;
+import io.deephaven.qst.table.EmptyTable;
 import io.deephaven.qst.table.TicketTable;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.uri.RemoteUriAdapter;
@@ -26,6 +27,11 @@ class GetUriTable extends FlightCannedTableBase {
 
     @Override
     protected TableCreationLogic logic() {
+
+        //return TicketTable.fromUri(uri).logic();
+        //return EmptyTable.of(100).view("I=i").head(25).logic();
+        //return TicketTable.fromQueryScopeField("currentTime").head(25).logic();
+
         return TicketTable.fromUri(uri).head(25).logic();
         // return UriTable.of(uri).head(25).logic();
         //return RemoteUriAdapter.of(remoteUri()).head(25).logic();

@@ -45,5 +45,6 @@ abstract class FlightCannedTableBase extends FlightExampleBase {
             }
         }
         System.out.printf("%s duration%n", Duration.ofNanos(end - start));
+        //Thread.sleep(2000000);
     }
 }

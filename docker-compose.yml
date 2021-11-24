@@ -16,11 +16,14 @@ services:
     extends:
       file: docker-compose-common.yml
       service: grpc-api
-
+    ports:
+     - '5005:5005'        # For remote debugging (change if using different port)
   w2:
     extends:
       file: docker-compose-common.yml
       service: grpc-api
+    ports:
+      - '5006:5005'        # For remote debugging (change if using different port)
 
   w3:
     extends:

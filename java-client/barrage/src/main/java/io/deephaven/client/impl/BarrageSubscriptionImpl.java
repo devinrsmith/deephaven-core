@@ -11,6 +11,7 @@ import io.deephaven.barrage.flatbuf.BarrageMessageType;
 import io.deephaven.barrage.flatbuf.BarrageMessageWrapper;
 import io.deephaven.barrage.flatbuf.BarrageSubscriptionRequest;
 import io.deephaven.base.log.LogOutput;
+import io.deephaven.db.v2.utils.BarrageMessage.Listener;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
 import io.deephaven.extensions.barrage.table.BarrageTable;
 import io.deephaven.extensions.barrage.util.BarrageMessageConsumer;
@@ -32,7 +33,9 @@ import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.ClientResponseObserver;
+import io.grpc.stub.StreamObserver;
 import org.apache.arrow.flight.impl.Flight;
+import org.apache.arrow.flight.impl.Flight.FlightData;
 import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,6 +50,7 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
     private final TableHandle tableHandle;
     private final BarrageSubscriptionOptions options;
     private final ClientCall<Flight.FlightData, BarrageMessage> call;
+    private final ClientCallStreamObserver<FlightData> observer;
 
     private BarrageTable resultTable;
 
@@ -78,9 +82,9 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
 
         this.call = session.channel().newCall(subscribeDescriptor, CallOptions.DEFAULT);
 
-        ClientCalls.asyncBidiStreamingCall(call, new ClientResponseObserver<Flight.FlightData, BarrageMessage>() {
+        observer = (ClientCallStreamObserver<FlightData>) ClientCalls.asyncBidiStreamingCall(call, new ClientResponseObserver<FlightData, BarrageMessage>() {
             @Override
-            public void beforeStart(final ClientCallStreamObserver<Flight.FlightData> requestStream) {
+            public void beforeStart(final ClientCallStreamObserver<FlightData> requestStream) {
                 requestStream.disableAutoInboundFlowControl();
             }
 
@@ -90,7 +94,7 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
                     return;
                 }
                 try {
-                    final BarrageMessage.Listener listener = resultTable;
+                    final Listener listener = resultTable;
                     if (!connected || listener == null) {
                         return;
                     }
@@ -106,7 +110,7 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
                         .append(": Error detected in subscription: ")
                         .append(t).endl();
 
-                final BarrageMessage.Listener listener = resultTable;
+                final Listener listener = resultTable;
                 if (!connected || listener == null) {
                     return;
                 }
@@ -120,8 +124,10 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
             }
         });
 
+
+
         // Allow the server to send us all commands when there is sufficient bandwidth:
-        call.request(Integer.MAX_VALUE);
+        observer.request(Integer.MAX_VALUE);
 
         // Although this is a white lie, the call is established
         this.connected = true;
@@ -134,10 +140,14 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
                     this + " is no longer an active subscription and cannot be retained further");
         }
         if (!subscribed) {
+
             // Send the initial subscription:
-            call.sendMessage(Flight.FlightData.newBuilder()
+            observer.onNext(Flight.FlightData.newBuilder()
                     .setAppMetadata(ByteStringAccess.wrap(makeRequestInternal(null, null, options)))
                     .build());
+//            call.sendMessage(Flight.FlightData.newBuilder()
+//                    .setAppMetadata(ByteStringAccess.wrap(makeRequestInternal(null, null, options)))
+//                    .build());
             subscribed = true;
         }
 
@@ -163,7 +173,8 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
         if (!connected) {
             return;
         }
-        call.halfClose();
+        observer.onCompleted();
+        //call.halfClose();
         cleanup();
     }
 

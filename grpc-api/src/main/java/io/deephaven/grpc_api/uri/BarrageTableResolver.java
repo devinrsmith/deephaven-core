@@ -12,6 +12,7 @@ import io.deephaven.uri.DeephavenTarget;
 import io.deephaven.uri.DeephavenUri;
 import io.deephaven.uri.RemoteUri;
 import io.deephaven.uri.RemoteUriAdapter;
+import io.deephaven.uri.StructuredUri;
 import io.grpc.ManagedChannel;
 import org.apache.arrow.memory.BufferAllocator;
 
@@ -22,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,6 +85,11 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
 
     @Override
     public void forAllPaths(BiConsumer<RemoteUri, Object> consumer) {
+
+    }
+
+    @Override
+    public void forPaths(Predicate<RemoteUri> predicate, BiConsumer<RemoteUri, Object> consumer) {
 
     }
 

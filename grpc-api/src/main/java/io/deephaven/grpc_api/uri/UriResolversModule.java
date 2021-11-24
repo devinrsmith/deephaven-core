@@ -61,7 +61,7 @@ public interface UriResolversModule {
 
         @Binds
         @IntoSet
-        UriResolver bindsBarrageTableResolver(BarrageTableResolverSimple resolver);
+        UriResolver bindsBarrageTableResolver(BarrageTableResolverList resolver);
 
         @Binds
         @IntoSet

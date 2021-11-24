@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> {
     public static QueryScopeResolver get() {
@@ -52,8 +53,8 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
     }
 
     @Override
-    public final <O> Consumer<O> publishTarget(QueryScopeUri item) {
-        return value -> publish(item, value);
+    public final <O> Consumer<O> publishTarget(QueryScopeUri path) {
+        return value -> publish(path, value);
     }
 
     private <O> void publish(QueryScopeUri item, O value) {
@@ -62,7 +63,29 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
 
     @Override
     public final void forAllPaths(BiConsumer<QueryScopeUri, Object> consumer) {
-        globalSessionProvider.getGlobalSession().getVariables()
-                .forEach((variableName, item) -> consumer.accept(QueryScopeUri.of(variableName), item));
+        globalSessionProvider.getGlobalSession().getVariables().forEach(new Adapter(null, consumer));
+    }
+
+    @Override
+    public final void forPaths(Predicate<QueryScopeUri> predicate, BiConsumer<QueryScopeUri, Object> consumer) {
+        globalSessionProvider.getGlobalSession().getVariables().forEach(new Adapter(Objects.requireNonNull(predicate), consumer));
+    }
+
+    private static class Adapter implements BiConsumer<String, Object> {
+        private final Predicate<QueryScopeUri> predicate;
+        private final BiConsumer<QueryScopeUri, Object> delegate;
+
+        Adapter(Predicate<QueryScopeUri> predicate, BiConsumer<QueryScopeUri, Object> delegate) {
+            this.predicate = predicate;
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public void accept(String variableName, Object value) {
+            final QueryScopeUri uri = QueryScopeUri.of(variableName);
+            if (predicate == null || predicate.test(uri)) {
+                delegate.accept(uri, value);
+            }
+        }
     }
 }

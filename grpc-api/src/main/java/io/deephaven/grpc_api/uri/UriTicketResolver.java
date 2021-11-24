@@ -11,9 +11,9 @@ import io.deephaven.grpc_api.session.TicketResolverBase;
 import io.deephaven.grpc_api.session.TicketRouter;
 import io.deephaven.grpc_api.util.Exceptions;
 import io.deephaven.grpc_api.util.TicketRouterHelper;
-import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.util.auth.AuthContext;
 import org.apache.arrow.flight.impl.Flight;
+import org.apache.arrow.flight.impl.Flight.FlightInfo;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -23,6 +23,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public final class UriTicketResolver extends TicketResolverBase {
@@ -85,19 +86,19 @@ public final class UriTicketResolver extends TicketResolverBase {
     @Override
     public <T> SessionState.ExportBuilder<T> publish(
             final SessionState session, final ByteBuffer ticket, final String logId) {
-        return publish(session, uriFor(ticket, logId));
+        return publishSafely(session, uriFor(ticket, logId));
     }
 
     @Override
     public <T> SessionState.ExportBuilder<T> publish(
             final SessionState session, final Flight.FlightDescriptor descriptor, final String logId) {
-        return publish(session, uriFor(descriptor, logId));
+        return publishSafely(session, uriFor(descriptor, logId));
     }
 
-    private <O> ExportBuilder<O> publish(SessionState session, URI uri) {
+    private <O> ExportBuilder<O> publishSafely(SessionState session, URI uri) {
         final Consumer<O> target;
         try {
-            target = uriRouter.publishTarget(session.getAuthContext(), uri);
+            target = uriRouter.publishSafely(session.getAuthContext(), uri);
         } catch (UnsupportedOperationException e) {
             throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION, e.getMessage());
         }
@@ -123,29 +124,12 @@ public final class UriTicketResolver extends TicketResolverBase {
     @Override
     public void forAllFlightInfo(@Nullable SessionState session, Consumer<Flight.FlightInfo> visitor) {
         final AuthContext auth = session == null ? null : session.getAuthContext();
+        final Adapter adapter = new Adapter(visitor);
         for (UriResolver resolver : uriRouter.resolvers()) {
-            resolver.forAllUrisSafely(auth, (uri, value) -> {
-                if (!(value instanceof Table)) {
-                    return;
-                }
-                visitor.accept(
-                        TicketRouter.getFlightInfo((Table) value, descriptorForUri(uri), flightTicketForUri(uri)));
-            });
+            resolver.forAllUrisSafely(auth, adapter);
         }
     }
 
-    /**
-     * Convenience method to convert from a {@code uri} to Ticket.
-     *
-     * @param uri the URI
-     * @return the ticket this descriptor represents
-     */
-    public static Ticket ticketForUri(URI uri) {
-        final byte[] ticket = (TICKET_PREFIX + "/" + uri).getBytes(StandardCharsets.UTF_8);
-        return Ticket.newBuilder()
-                .setTicket(ByteStringAccess.wrap(ticket))
-                .build();
-    }
 
     /**
      * Convenience method to convert from a {@code uri} to Flight.Ticket.
@@ -232,6 +216,23 @@ public final class UriTicketResolver extends TicketResolverBase {
         } catch (IllegalArgumentException e) {
             throw GrpcUtil.statusRuntimeException(Code.FAILED_PRECONDITION,
                     "Could not resolve URI for '" + logId + "': path does conform to URI");
+        }
+    }
+
+    private static class Adapter implements BiConsumer<URI, Object> {
+
+        private final Consumer<Flight.FlightInfo> delegate;
+
+        Adapter(Consumer<FlightInfo> delegate) {
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public void accept(URI uri, Object value) {
+            if (!(value instanceof Table)) {
+                return;
+            }
+            delegate.accept(TicketRouter.getFlightInfo((Table) value, descriptorForUri(uri), flightTicketForUri(uri)));
         }
     }
 }

@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 /**
  * The parquet table resolver is able to resolve local parquet files, or directories for the scheme {@value #SCHEME},
@@ -61,6 +62,11 @@ public abstract class ParquetTableResolver extends UriResolverBase<String> {
 
     @Override
     public void forAllPaths(BiConsumer<String, Object> consumer) {
+
+    }
+
+    @Override
+    public void forPaths(Predicate<String> predicate, BiConsumer<String, Object> consumer) {
 
     }
 }

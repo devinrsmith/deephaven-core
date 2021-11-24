@@ -32,6 +32,7 @@ public final class BarrageTableResolverSimple extends BarrageTableResolver {
     @Override
     public Authorization<RemoteUri> authorization(AuthorizationScope<RemoteUri> scope, AuthContext context) {
         if (scope.isWrite()) {
+            // todo: you could potentially proxy writes
             return Authorization.deny(scope, "The barrage resolver does not allow publishing");
         }
         if (context != null && context.isSuperUser()) {

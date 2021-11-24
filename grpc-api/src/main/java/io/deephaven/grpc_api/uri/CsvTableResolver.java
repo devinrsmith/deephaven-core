@@ -2,6 +2,7 @@ package io.deephaven.grpc_api.uri;
 
 import io.deephaven.db.tables.Table;
 import io.deephaven.db.tables.utils.CsvHelpers;
+import io.deephaven.util.auth.AuthContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 /**
  * The csv table resolver is able to resolve CSV for schemes {@code csv+http}, {@code http+csv}, {@code csv+https},
@@ -63,6 +65,11 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
 
     @Override
     public void forAllPaths(BiConsumer<String, Object> consumer) {
+
+    }
+
+    @Override
+    public void forPaths(Predicate<String> predicate, BiConsumer<String, Object> consumer) {
 
     }
 

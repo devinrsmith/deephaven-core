@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * A URI resolver resolves {@link URI URIs} into {@link Object objects}.
@@ -50,17 +51,15 @@ public interface UriResolver {
      */
     Object resolveSafely(AuthContext auth, URI uri) throws InterruptedException;
 
-    /**
-     *
-     * @param auth
-     * @param uri
-     * @param <O>
-     * @return
-     * @throws UnsupportedOperationException ...
-     */
-    <O> Consumer<O> publishTarget(AuthContext auth, URI uri) throws UnsupportedOperationException;
+    <O> Consumer<O> publish(URI uri) throws UnsupportedOperationException;
+
+    <O> Consumer<O> publishSafely(AuthContext auth, URI uri) throws UnsupportedOperationException;
 
     void forAllUris(BiConsumer<URI, Object> consumer);
 
     void forAllUrisSafely(AuthContext auth, BiConsumer<URI, Object> consumer);
+
+    void forUris(Predicate<URI> predicate, BiConsumer<URI, Object> consumer);
+
+    void forUrisSafely(AuthContext auth, Predicate<URI> predicate, BiConsumer<URI, Object> consumer);
 }

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -75,6 +76,11 @@ public final class DevinResolver extends UriResolverBase<URI> {
 
     @Override
     public void forAllPaths(BiConsumer<URI, Object> consumer) {
+
+    }
+
+    @Override
+    public void forPaths(Predicate<URI> predicate, BiConsumer<URI, Object> consumer) {
 
     }
 

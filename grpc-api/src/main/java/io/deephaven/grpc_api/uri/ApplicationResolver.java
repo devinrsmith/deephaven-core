@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri> {
 
@@ -52,8 +53,12 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
 
     @Override
     public final void forAllPaths(BiConsumer<ApplicationUri, Object> consumer) {
-        states.forEach((applicationState, field) -> consumer
-                .accept(ApplicationUri.of(applicationState.id(), field.name()), field.value()));
+        states.forEach(new Adapter(null, consumer));
+    }
+
+    @Override
+    public final void forPaths(Predicate<ApplicationUri> predicate, BiConsumer<ApplicationUri, Object> consumer) {
+        states.forEach(new Adapter(Objects.requireNonNull(predicate), consumer));
     }
 
     public final Field<Object> getField(ApplicationUri uri) {
@@ -63,5 +68,23 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
     public final Field<Object> getField(String applicationId, String fieldName) {
         final ApplicationState app = states.getApplicationState(applicationId).orElse(null);
         return app == null ? null : app.getField(fieldName);
+    }
+
+    private static class Adapter implements BiConsumer<ApplicationState, Field<?>> {
+        private final Predicate<ApplicationUri> predicate;
+        private final BiConsumer<ApplicationUri, Object> delegate;
+
+        Adapter(Predicate<ApplicationUri> predicate, BiConsumer<ApplicationUri, Object> delegate) {
+            this.predicate = predicate;
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public void accept(ApplicationState applicationState, Field<?> field) {
+            final ApplicationUri uri = ApplicationUri.of(applicationState.id(), field.name());
+            if (predicate == null || predicate.test(uri)) {
+                delegate.accept(uri, field.value());
+            }
+        }
     }
 }

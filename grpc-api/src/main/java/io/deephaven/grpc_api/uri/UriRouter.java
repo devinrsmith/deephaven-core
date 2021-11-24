@@ -92,8 +92,8 @@ public final class UriRouter {
         return resolverCheckConfig(auth, uri).resolveSafely(auth, uri);
     }
 
-    public <O> Consumer<O> publishTarget(AuthContext auth, URI uri) {
-        return resolverCheckConfig(auth, uri).publishTarget(auth, uri);
+    public <O> Consumer<O> publishSafely(AuthContext auth, URI uri) {
+        return resolverCheckConfig(auth, uri).publishSafely(auth, uri);
     }
 
     private UriResolver resolverCheckConfig(AuthContext auth, URI uri) {

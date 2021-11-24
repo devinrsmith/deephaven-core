@@ -48,14 +48,14 @@ public abstract class CsvTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final URI adaptToUri(String item) {
-        return URI.create(item);
+    public final URI adaptToUri(String path) {
+        return URI.create(path);
     }
 
     @Override
-    public final Object resolveItem(String item) {
+    public final Object resolvePath(String path) {
         try {
-            return CsvHelpers.readCsv(item);
+            return CsvHelpers.readCsv(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -40,13 +40,13 @@ public abstract class ApplicationResolver extends UriResolverBase<ApplicationUri
     }
 
     @Override
-    public final URI adaptToUri(ApplicationUri item) {
-        return item.toURI();
+    public final URI adaptToUri(ApplicationUri path) {
+        return path.toURI();
     }
 
     @Override
-    public final Object resolveItem(ApplicationUri item) {
-        final Field<Object> field = getField(item);
+    public final Object resolvePath(ApplicationUri path) {
+        final Field<Object> field = getField(path);
         return field == null ? null : field.value();
     }
 

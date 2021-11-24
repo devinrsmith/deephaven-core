@@ -38,13 +38,13 @@ public abstract class QueryScopeResolver extends UriResolverBase<QueryScopeUri> 
     }
 
     @Override
-    public final URI adaptToUri(QueryScopeUri item) {
-        return item.toURI();
+    public final URI adaptToUri(QueryScopeUri path) {
+        return path.toURI();
     }
 
     @Override
-    public final Object resolveItem(QueryScopeUri item) {
-        return getVariable(item.variableName());
+    public final Object resolvePath(QueryScopeUri path) {
+        return getVariable(path.variableName());
     }
 
     public final Object getVariable(String variableName) {

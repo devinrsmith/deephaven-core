@@ -15,11 +15,11 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     public abstract T adaptToPath(URI uri);
 
-    public abstract URI adaptToUri(T item);
+    public abstract URI adaptToUri(T path);
 
     public abstract Authorization<T> authorization(AuthorizationScope<T> scope, AuthContext context);
 
-    public abstract Object resolveItem(T item) throws InterruptedException;
+    public abstract Object resolvePath(T path) throws InterruptedException;
 
     public abstract void forAllPaths(BiConsumer<T, Object> consumer);
 
@@ -29,7 +29,7 @@ public abstract class UriResolverBase<T> implements UriResolver {
 
     @Override
     public final Object resolve(URI uri) throws InterruptedException {
-        return resolveItem(adaptToPath(uri));
+        return resolvePath(adaptToPath(uri));
     }
 
     @Override
@@ -37,7 +37,7 @@ public abstract class UriResolverBase<T> implements UriResolver {
         check(authorization(AuthorizationScope.readGlobal(), auth));
         final T path = adaptToPath(uri);
         check(authorization(AuthorizationScope.read(path), auth));
-        return resolveItem(path);
+        return resolvePath(path);
     }
 
     @Override

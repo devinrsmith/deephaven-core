@@ -16,7 +16,8 @@ public class ScopeTicketHelper {
      * @return the path
      */
     public static List<String> nameToPath(String variableName) {
-        return Arrays.asList(FLIGHT_DESCRIPTOR_ROUTE, variableName);
+        return Arrays.asList("uri", "dh:///scope/" + variableName);
+        //return Arrays.asList(FLIGHT_DESCRIPTOR_ROUTE, variableName);
     }
 
     /**
@@ -26,6 +27,7 @@ public class ScopeTicketHelper {
      * @return the ticket bytes
      */
     public static byte[] nameToBytes(String variableName) {
-        return (TICKET_PREFIX + "/" + variableName).getBytes(StandardCharsets.UTF_8);
+        return ("u/dh:///scope/" + variableName).getBytes(StandardCharsets.UTF_8);
+        //return (TICKET_PREFIX + "/" + variableName).getBytes(StandardCharsets.UTF_8);
     }
 }

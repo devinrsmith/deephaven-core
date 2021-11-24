@@ -43,7 +43,7 @@ public abstract class TicketTable extends TableBase {
      * @return the ticket table
      */
     public static TicketTable fromQueryScopeField(String fieldName) {
-        return of("s/" + fieldName);
+        return of("u/dh:///scope/" + fieldName);
     }
 
     /**

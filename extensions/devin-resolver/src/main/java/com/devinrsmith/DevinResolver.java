@@ -51,16 +51,16 @@ public final class DevinResolver extends UriResolverBase<URI> {
     }
 
     @Override
-    public URI adaptToUri(URI item) {
-        return item;
+    public URI adaptToUri(URI path) {
+        return path;
     }
 
     @Override
-    public Object resolveItem(URI uri) {
-        if (!EXPECTED_PATH.equals(uri.getPath())) {
+    public Object resolvePath(URI path) {
+        if (!EXPECTED_PATH.equals(path.getPath())) {
             throw new IllegalStateException();
         }
-        final Matcher matcher = QUERY_PATTERN.matcher(uri.getQuery());
+        final Matcher matcher = QUERY_PATTERN.matcher(path.getQuery());
         if (!matcher.matches()) {
             throw new IllegalStateException();
         }

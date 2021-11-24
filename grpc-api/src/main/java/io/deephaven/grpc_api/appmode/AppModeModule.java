@@ -14,9 +14,9 @@ public interface AppModeModule {
     @IntoSet
     BindableService bindApplicationServiceImpl(ApplicationServiceGrpcImpl applicationService);
 
-    @Binds
-    @IntoSet
-    TicketResolver bindApplicationTicketResolver(ApplicationTicketResolver resolver);
+//    @Binds
+//    @IntoSet
+//    TicketResolver bindApplicationTicketResolver(ApplicationTicketResolver resolver);
 
     @Binds
     ScriptSession.Listener bindScriptSessionListener(ApplicationServiceGrpcImpl applicationService);

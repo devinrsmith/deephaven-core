@@ -67,14 +67,14 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
     }
 
     @Override
-    public final URI adaptToUri(RemoteUri item) {
-        return item.toURI();
+    public final URI adaptToUri(RemoteUri path) {
+        return path.toURI();
     }
 
     @Override
-    public final Object resolveItem(RemoteUri item) throws InterruptedException {
+    public final Object resolvePath(RemoteUri path) throws InterruptedException {
         try {
-            return subscribe(item);
+            return subscribe(path);
         } catch (TableHandleException e) {
             throw e.asUnchecked();
         }

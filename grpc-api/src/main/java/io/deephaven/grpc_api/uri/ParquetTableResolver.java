@@ -50,13 +50,13 @@ public abstract class ParquetTableResolver extends UriResolverBase<String> {
     }
 
     @Override
-    public final URI adaptToUri(String item) {
-        return URI.create(String.format("parquet://%s", item));
+    public final URI adaptToUri(String path) {
+        return URI.create(String.format("parquet://%s", path));
     }
 
     @Override
-    public final Object resolveItem(String item) {
-        return ParquetTools.readTable(item).coalesce(); // todo otherwise "is not a subscribable table"
+    public final Object resolvePath(String path) {
+        return ParquetTools.readTable(path).coalesce(); // todo otherwise "is not a subscribable table"
     }
 
     @Override

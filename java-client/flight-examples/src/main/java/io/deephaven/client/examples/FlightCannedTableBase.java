@@ -34,14 +34,18 @@ abstract class FlightCannedTableBase extends FlightExampleBase {
         final long start = System.nanoTime();
         final long end;
         try (final TableHandle handle = manager.executeLogic(logic())) {
-            // Thread.sleep(1000);
-            try (
-                    final FlightStream stream = flight.stream(handle)) {
-                System.out.println(stream.getSchema());
-                while (stream.next()) {
-                    System.out.println(stream.getRoot().contentToTSVString());
+
+            Thread.sleep(1000);
+
+            try (final TableHandle head = handle.head(25)) {
+                try (
+                        final FlightStream stream = flight.stream(head)) {
+                    System.out.println(stream.getSchema());
+                    while (stream.next()) {
+                        System.out.println(stream.getRoot().contentToTSVString());
+                    }
+                    end = System.nanoTime();
                 }
-                end = System.nanoTime();
             }
         }
         System.out.printf("%s duration%n", Duration.ofNanos(end - start));

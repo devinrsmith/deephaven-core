@@ -95,6 +95,18 @@ task createExecuteCodeScripts(type: CreateStartScripts) {
             '-XX:+UseStringDeduplication' ]
 }
 
+task createBadExampleScripts(type: CreateStartScripts) {
+    mainClassName = 'io.deephaven.client.examples.BadExample'
+    applicationName = 'bad-example'
+    outputDir = new File(project.buildDir, name)
+    classpath = startScripts.classpath
+    defaultJvmOpts = [
+            '-server',
+            '-XX:+UseG1GC',
+            '-XX:MaxGCPauseMillis=100',
+            '-XX:+UseStringDeduplication' ]
+}
+
 applicationDistribution.into('bin') {
     from(createHammerSessionsScripts)
     from(createPublishTablesScripts)
@@ -102,5 +114,6 @@ applicationDistribution.into('bin') {
     from(createTableManagerScripts)
     from(createExecuteScriptScripts)
     from(createExecuteCodeScripts)
+    from(createBadExampleScripts)
     fileMode = 0755
 }

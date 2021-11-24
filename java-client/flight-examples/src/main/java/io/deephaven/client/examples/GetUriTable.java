@@ -32,7 +32,7 @@ class GetUriTable extends FlightCannedTableBase {
         //return EmptyTable.of(100).view("I=i").head(25).logic();
         //return TicketTable.fromQueryScopeField("currentTime").head(25).logic();
 
-        return TicketTable.fromUri(uri).head(25).logic();
+        return TicketTable.fromUri(uri).logic();
         // return UriTable.of(uri).head(25).logic();
         //return RemoteUriAdapter.of(remoteUri()).head(25).logic();
     }

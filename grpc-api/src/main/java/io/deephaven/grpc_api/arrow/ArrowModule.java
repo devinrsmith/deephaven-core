@@ -42,6 +42,8 @@ public abstract class ArrowModule {
                     }
                 } catch (final IOException ioe) {
                     throw new UncheckedDeephavenException(ioe);
+                } catch (Throwable t) {
+                    throw t;
                 }
             }
 

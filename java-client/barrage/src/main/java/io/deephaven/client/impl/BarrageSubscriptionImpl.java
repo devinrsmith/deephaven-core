@@ -55,7 +55,7 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
     private BarrageTable resultTable;
 
     private boolean subscribed = false;
-    private volatile boolean connected = false;
+    private volatile boolean connected = true;
 
     /**
      * Represents a BarrageSubscription.
@@ -75,6 +75,8 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
         final TableDefinition tableDefinition = BarrageUtil.convertArrowSchema(tableHandle.response()).tableDef;
         resultTable = BarrageTable.make(tableDefinition, false);
         resultTable.addParentReference(this);
+
+        this.retainReference();
 
         final MethodDescriptor<Flight.FlightData, BarrageMessage> subscribeDescriptor =
                 getClientDoExchangeDescriptor(options, resultTable.getWireChunkTypes(), resultTable.getWireTypes(),
@@ -99,6 +101,8 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
                         return;
                     }
                     listener.handleBarrageMessage(barrageMessage);
+                } catch (Throwable e) {
+                    throw e;
                 } finally {
                     barrageMessage.close();
                 }
@@ -129,8 +133,8 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
         // Allow the server to send us all commands when there is sufficient bandwidth:
         observer.request(Integer.MAX_VALUE);
 
-        // Although this is a white lie, the call is established
-        this.connected = true;
+
+        //observer.cancel("", null);
     }
 
     @Override
@@ -145,6 +149,7 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
             observer.onNext(Flight.FlightData.newBuilder()
                     .setAppMetadata(ByteStringAccess.wrap(makeRequestInternal(null, null, options)))
                     .build());
+
 //            call.sendMessage(Flight.FlightData.newBuilder()
 //                    .setAppMetadata(ByteStringAccess.wrap(makeRequestInternal(null, null, options)))
 //                    .build());

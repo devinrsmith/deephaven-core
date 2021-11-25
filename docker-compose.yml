@@ -18,6 +18,8 @@ services:
       service: grpc-api
     ports:
      - '5005:5005'        # For remote debugging (change if using different port)
+     - '8080:8080'
+
   w2:
     extends:
       file: docker-compose-common.yml

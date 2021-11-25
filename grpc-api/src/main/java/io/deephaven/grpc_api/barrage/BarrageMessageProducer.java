@@ -1089,7 +1089,7 @@ public class BarrageMessageProducer<Options, MessageView> extends LivenessArtifa
 
         lastUpdateTime = scheduler.currentTime().getMillis();
         if (DEBUG) {
-            log.info().append(logPrefix).append("Completed Propagation: " + lastUpdateTime);
+            log.info().append(logPrefix).append("Completed Propagation: " + lastUpdateTime).endl();
         }
     }
 

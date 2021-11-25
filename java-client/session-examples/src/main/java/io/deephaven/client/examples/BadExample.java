@@ -17,12 +17,21 @@ class BadExample extends SingleSessionExampleBase {
 
     @Override
     protected void execute(Session session) throws Exception {
+
         try (final TableHandle handle1 = session.execute(TicketTable.of(ticket))) {
             Thread.sleep(1000);
             try (final TableHandle handle2 = handle1.head(25)) {
                 System.out.println(handle2);
             }
         }
+
+//        try (final TableHandle handle1 = session.batch().execute(TicketTable.of(ticket).head(25))) {
+//            System.out.println(handle1);
+////            Thread.sleep(1000);
+////            try (final TableHandle handle2 = handle1.head(25)) {
+////                System.out.println(handle2);
+////            }
+//        }
     }
 
     public static void main(String[] args) {

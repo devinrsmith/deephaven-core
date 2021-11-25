@@ -512,6 +512,8 @@ public class SessionState {
             if (isNonExport()) {
                 retainReference();
             }
+
+            retainReference();
         }
 
         /**
@@ -531,6 +533,8 @@ public class SessionState {
             if (result instanceof LivenessReferent && DynamicNode.notDynamicOrIsRefreshing(result)) {
                 manage((LivenessReferent) result);
             }
+
+            retainReference();
         }
 
         private boolean isNonExport() {
@@ -815,7 +819,14 @@ public class SessionState {
             boolean shouldLog = false;
             int evaluationNumber = -1;
             QueryProcessingResults queryProcessingResults = null;
-            try (final AutoCloseable ignored = LivenessScopeStack.open()) {
+            final SafeCloseable x = LivenessScopeStack.open();
+            final SafeCloseable open = new SafeCloseable() {
+                @Override
+                public void close() {
+                    x.close();
+                }
+            };
+            try (final AutoCloseable ignored = open) {
                 queryProcessingResults = new QueryProcessingResults(
                         QueryPerformanceRecorder.getInstance());
 

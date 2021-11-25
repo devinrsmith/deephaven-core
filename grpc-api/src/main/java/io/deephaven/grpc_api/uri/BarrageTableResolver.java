@@ -131,6 +131,15 @@ public abstract class BarrageTableResolver extends UriResolverBase<RemoteUri> {
         return sub.entireTable();
     }
 
+    public final BarrageSubscription subscription(String uri)
+            throws TableHandleException, InterruptedException {
+        final RemoteUri remoteUri = RemoteUri.of(URI.create(uri));
+        final DeephavenTarget target = remoteUri.target();
+        final TableSpec table = RemoteUriAdapter.of(remoteUri);
+        final BarrageSession session = session(target);
+        return session.subscribe(table, OPTIONS);
+    }
+
     private BarrageSession session(DeephavenTarget target) {
         // TODO (deephaven-core#1482): BarrageTableResolver cleanup
         return sessions.computeIfAbsent(target, this::newSession);

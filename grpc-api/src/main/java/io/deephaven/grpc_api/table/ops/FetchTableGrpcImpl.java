@@ -2,6 +2,7 @@ package io.deephaven.grpc_api.table.ops;
 
 import io.deephaven.base.verify.Assert;
 import io.deephaven.db.tables.Table;
+import io.deephaven.db.util.liveness.LivenessReferent;
 import io.deephaven.grpc_api.session.SessionState.ExportObject;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.FetchTableRequest;
@@ -30,6 +31,20 @@ public class FetchTableGrpcImpl extends GrpcTableOperation<FetchTableRequest> {
     @Override
     public Table create(AuthContext auth, FetchTableRequest request, List<ExportObject<Table>> sourceTables) {
         Assert.eq(sourceTables.size(), "sourceTables.size()", 1);
-        return sourceTables.get(0).get();
+
+        // LTM
+
+
+        final Table table = sourceTables.get(0).get();
+
+        table.retainReference();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        return table;
     }
 }

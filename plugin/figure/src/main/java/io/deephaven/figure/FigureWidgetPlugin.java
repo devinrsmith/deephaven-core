@@ -11,5 +11,7 @@ public final class FigureWidgetPlugin implements Plugin {
     @Override
     public void registerInto(PluginCallback callback) {
         callback.registerObjectType(FigureWidgetType.instance());
+
+        callback.registerApplication(FigureApp.FigureApp);
     }
 }

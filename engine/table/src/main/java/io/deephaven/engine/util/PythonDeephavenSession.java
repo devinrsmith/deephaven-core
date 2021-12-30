@@ -23,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jpy.KeyError;
 import org.jpy.PyDictWrapper;
 import org.jpy.PyInputMode;
-import org.jpy.PyLib.CallableKind;
-import org.jpy.PyModule;
 import org.jpy.PyObject;
 
 import java.io.Closeable;
@@ -90,8 +88,7 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
         PythonEvaluatorJpy jpy = PythonEvaluatorJpy.withGlobalCopy();
         evaluator = jpy;
         scope = jpy.getScope();
-        this.module = (PythonScriptSessionModule) PyModule.importModule("deephaven.server.script_session")
-                .createProxy(CallableKind.FUNCTION, PythonScriptSessionModule.class);
+        this.module = PythonScriptSessionModule.of();
         this.scriptFinder = new ScriptFinder(DEFAULT_SCRIPT_PATH);
 
         /*
@@ -322,11 +319,4 @@ public class PythonDeephavenSession extends AbstractScriptSession implements Scr
         return object;
     }
 
-    interface PythonScriptSessionModule extends Closeable {
-        PyObject create_change_list(PyObject from, PyObject to);
-
-        Object unwrap_to_java_type(PyObject object);
-
-        void close();
-    }
 }

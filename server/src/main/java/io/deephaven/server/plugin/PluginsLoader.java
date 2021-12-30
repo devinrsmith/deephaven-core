@@ -1,12 +1,18 @@
 package io.deephaven.server.plugin;
 
+import io.deephaven.base.log.LogOutput;
+import io.deephaven.base.log.LogOutputAppendable;
+import io.deephaven.engine.util.PythonScriptSessionModule;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.plugin.Plugin;
 import io.deephaven.plugin.PluginCallback;
+import io.deephaven.plugin.application.ApplicationInfo;
+import io.deephaven.plugin.application.ApplicationInfo.Script;
+import io.deephaven.plugin.application.ApplicationInfo.State;
+import io.deephaven.plugin.type.Exporter;
 import io.deephaven.plugin.type.ObjectType;
 import io.deephaven.plugin.type.ObjectTypeBase;
-import io.deephaven.plugin.type.Exporter;
 import io.deephaven.server.console.ConsoleServiceGrpcImpl;
 import org.jpy.PyLib.CallableKind;
 import org.jpy.PyModule;
@@ -28,16 +34,18 @@ public final class PluginsLoader implements PluginCallback {
     }
 
     private static void allPythonRegisterInto(PluginCallback callback) {
-        try (final PythonPluginModule module = PythonPluginModule.of()) {
-            module.all_plugins_register_into(new CallbackAdapter(callback));
+        try (final PythonPluginModule pluginModule = PythonPluginModule.of()) {
+            pluginModule.all_plugins_register_into(new CallbackAdapter(callback));
         }
     }
 
     public final ObjectTypes types;
+    public final ApplicationInfos applications;
 
     @Inject
-    public PluginsLoader(ObjectTypes types) {
+    public PluginsLoader(ObjectTypes types, ApplicationInfos applications) {
         this.types = Objects.requireNonNull(types);
+        this.applications = Objects.requireNonNull(applications);
     }
 
     public void registerAll() {
@@ -48,29 +56,53 @@ public final class PluginsLoader implements PluginCallback {
         if (ConsoleServiceGrpcImpl.isPythonSession()) {
             allPythonRegisterInto(pythonModuleCount);
         }
-        log.info().append("Registered via service loader: ").append(serviceLoaderCount.count).endl();
+        log.info().append("Registered via service loader: ").append(serviceLoaderCount).endl();
         if (ConsoleServiceGrpcImpl.isPythonSession()) {
-            log.info().append("Registered via python module: ").append(pythonModuleCount.count).endl();
+            log.info().append("Registered via python modules: ").append(pythonModuleCount).endl();
         }
     }
 
     @Override
     public void registerObjectType(ObjectType objectType) {
-        log.info().append("Registering plugin object type: ")
+        log.info().append("Registering object type: ")
                 .append(objectType.name()).append(" / ")
                 .append(objectType.toString())
                 .endl();
         types.register(objectType);
     }
 
-    private class Counting implements PluginCallback {
+    @Override
+    public void registerApplication(ApplicationInfo applicationInfo) {
+        log.info().append("Registering application: ")
+                .append(applicationInfo.name()).append(" / ")
+                .append(applicationInfo.id()).append(" / ")
+                .append(applicationInfo.toString())
+                .endl();
+        applications.register(applicationInfo);
+    }
 
-        private int count = 0;
+    private class Counting implements PluginCallback, LogOutputAppendable {
+
+        private int objectTypeCount = 0;
+        private int applicationCount = 0;
 
         @Override
         public void registerObjectType(ObjectType objectType) {
             PluginsLoader.this.registerObjectType(objectType);
-            ++count;
+            ++objectTypeCount;
+        }
+
+        @Override
+        public void registerApplication(ApplicationInfo applicationInfo) {
+            PluginsLoader.this.registerApplication(applicationInfo);
+            ++applicationCount;
+        }
+
+        @Override
+        public LogOutput append(LogOutput logOutput) {
+            return logOutput
+                    .append("objectType=").append(objectTypeCount)
+                    .append(",application=").append(applicationCount);
         }
     }
 
@@ -86,6 +118,40 @@ public final class PluginsLoader implements PluginCallback {
 
         // TODO(deephaven-core#1785): Use more pythonic wrapper for io.deephaven.plugin.type.Exporter
         byte[] to_bytes(Exporter exporter, PyObject object);
+    }
+
+    interface PythonApplication {
+
+        static PythonApplication of(PyObject object) {
+            return (PythonApplication) object.createProxy(CallableKind.FUNCTION, PythonApplication.class);
+        }
+
+        String id();
+
+        String name();
+
+        void initialize_application(PythonApplicationState state);
+    }
+
+    private static final class PythonApplicationState {
+        private final State state;
+        private final PythonScriptSessionModule module;
+
+        public PythonApplicationState(State state, PythonScriptSessionModule module) {
+            this.state = Objects.requireNonNull(state);
+            this.module = Objects.requireNonNull(module);
+        }
+
+        @SuppressWarnings("unused")
+        public void set_field(String name, PyObject object) {
+            // TODO(deephaven-core#1775): multivariate jpy (unwrapped) type conversion into java
+            final Object unwrapped = module.unwrap_to_java_type(object);
+            if (unwrapped != null) {
+                state.setField(name, unwrapped);
+            } else {
+                state.setField(name, object);
+            }
+        }
     }
 
     private static final class Adapter extends ObjectTypeBase {
@@ -144,6 +210,47 @@ public final class PluginsLoader implements PluginCallback {
         @Deprecated
         public void register_custom_type(PyObject module) {
             register_object_type(module);
+        }
+
+        @SuppressWarnings("unused")
+        public void register_application(PyObject module) {
+            final PythonApplication pythonApplication = PythonApplication.of(module);
+            callback.registerApplication(new ApplicationAdapter(pythonApplication));
+        }
+
+        private static class ApplicationAdapter implements ApplicationInfo, Script {
+            private final PythonApplication pythonApplication;
+
+            public ApplicationAdapter(PythonApplication pythonApplication) {
+                this.pythonApplication = Objects.requireNonNull(pythonApplication);
+            }
+
+            @Override
+            public String id() {
+                return pythonApplication.id();
+            }
+
+            @Override
+            public String name() {
+                return pythonApplication.name();
+            }
+
+            @Override
+            public Script script() {
+                return this;
+            }
+
+            @Override
+            public void initializeApplication(State state) {
+                try (final PythonScriptSessionModule module = PythonScriptSessionModule.of()) {
+                    pythonApplication.initialize_application(new PythonApplicationState(state, module));
+                }
+            }
+
+            @Override
+            public String toString() {
+                return pythonApplication.toString();
+            }
         }
     }
 

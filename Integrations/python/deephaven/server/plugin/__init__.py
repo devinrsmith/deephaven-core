@@ -4,7 +4,7 @@ PluginCallback = jpy.get_type('io.deephaven.plugin.PluginCallback')
 Exporter = jpy.get_type('io.deephaven.plugin.type.Exporter')
 
 DEEPHAVEN_PLUGIN_ENTRY_KEY = 'deephaven.plugin'
-DEEPHAVEN_PLUGIN_REGISTER_NAME = 'register_into'
+DEEPHAVEN_PLUGIN_REGISTER_NAME = 'plugin_cls'
 
 def get_plugin_entrypoints(name: str):
     import sys
@@ -22,8 +22,9 @@ def get_plugin_entrypoints(name: str):
 def all_plugins_register_into(callback: PluginCallback):
     callback_adapter = CallbackAdapter(callback)
     for entrypoint in get_plugin_entrypoints(DEEPHAVEN_PLUGIN_REGISTER_NAME):
-        plugin_register_into = entrypoint.load()
-        plugin_register_into(callback_adapter)
+        plugin_cls = entrypoint.load()
+        # TODO: check isinstance PluginABC
+        plugin_cls.register_into(callback_adapter)
 
 # TODO(deephaven-core#1791): CallbackAdapter implements CallbackABC
 class CallbackAdapter:
@@ -32,7 +33,10 @@ class CallbackAdapter:
 
     # TODO(deephaven-core#1791): type hint object_type as ObjectTypeABC
     def register_object_type(self, object_type):
-        self._callback.registerObjectType(ObjectTypeAdapter(object_type))
+        if callable(object_type):
+            self._callback.registerObjectType(ObjectTypeAdapter(object_type()))
+        else:
+            self._callback.registerObjectType(ObjectTypeAdapter(object_type))
 
     def __str__(self):
         return str(self._callback)

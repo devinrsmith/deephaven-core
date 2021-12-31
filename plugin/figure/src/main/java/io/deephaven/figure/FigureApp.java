@@ -12,12 +12,7 @@ public enum FigureApp implements ApplicationInfo {
     }
 
     @Override
-    public Script script() {
-        return new Script() {
-            @Override
-            public void initializeApplication(State state) {
-                state.setField("hello", TableTools.emptyTable(1).view("X=i"));
-            }
-        };
+    public void initializeInto(State state) {
+        state.setField("hello", TableTools.emptyTable(1).view("X=i"));
     }
 }

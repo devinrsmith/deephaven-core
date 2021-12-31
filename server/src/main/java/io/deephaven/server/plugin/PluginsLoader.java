@@ -2,13 +2,11 @@ package io.deephaven.server.plugin;
 
 import io.deephaven.base.log.LogOutput;
 import io.deephaven.base.log.LogOutputAppendable;
-import io.deephaven.engine.util.PythonScriptSessionModule;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.plugin.Plugin;
 import io.deephaven.plugin.PluginCallback;
 import io.deephaven.plugin.application.ApplicationInfo;
-import io.deephaven.plugin.application.ApplicationInfo.Script;
 import io.deephaven.plugin.application.ApplicationInfo.State;
 import io.deephaven.plugin.type.Exporter;
 import io.deephaven.plugin.type.ObjectType;
@@ -120,39 +118,19 @@ public final class PluginsLoader implements PluginCallback {
         byte[] to_bytes(Exporter exporter, PyObject object);
     }
 
-    interface PythonApplication {
 
-        static PythonApplication of(PyObject object) {
-            return (PythonApplication) object.createProxy(CallableKind.FUNCTION, PythonApplication.class);
-        }
-
-        String id();
-
-        String name();
-
-        void initialize_application(PythonApplicationState state);
-    }
-
-    private static final class PythonApplicationState {
-        private final State state;
-        private final PythonScriptSessionModule module;
-
-        public PythonApplicationState(State state, PythonScriptSessionModule module) {
-            this.state = Objects.requireNonNull(state);
-            this.module = Objects.requireNonNull(module);
-        }
-
-        @SuppressWarnings("unused")
-        public void set_field(String name, PyObject object) {
-            // TODO(deephaven-core#1775): multivariate jpy (unwrapped) type conversion into java
-            final Object unwrapped = module.unwrap_to_java_type(object);
-            if (unwrapped != null) {
-                state.setField(name, unwrapped);
-            } else {
-                state.setField(name, object);
-            }
-        }
-    }
+//    interface PythonApplication {
+//
+//        static PythonApplication of(PyObject object) {
+//            return (PythonApplication) object.createProxy(CallableKind.FUNCTION, PythonApplication.class);
+//        }
+//
+//        String id();
+//
+//        String name();
+//
+//        void initialize_application(PyObject state);
+//    }
 
     private static final class Adapter extends ObjectTypeBase {
 
@@ -214,44 +192,52 @@ public final class PluginsLoader implements PluginCallback {
 
         @SuppressWarnings("unused")
         public void register_application(PyObject module) {
-            final PythonApplication pythonApplication = PythonApplication.of(module);
-            callback.registerApplication(new ApplicationAdapter(pythonApplication));
+
+            try (final PyModule m = PyModule.importModule("deephaven.server.app_state")) {
+                final ApplicationInfo proxy = (ApplicationInfo) m.call("ApplicationAdapter", module)
+                        .createProxy(CallableKind.FUNCTION, ApplicationInfo.class);
+                callback.registerApplication(proxy);
+            }
+
+//            final PythonApplication pythonApplication = PythonApplication.of(module);
+//            callback.registerApplication(new ApplicationAdapter(pythonApplication));
         }
 
-        private static class ApplicationAdapter implements ApplicationInfo, Script {
-            private final PythonApplication pythonApplication;
 
-            public ApplicationAdapter(PythonApplication pythonApplication) {
-                this.pythonApplication = Objects.requireNonNull(pythonApplication);
-            }
-
-            @Override
-            public String id() {
-                return pythonApplication.id();
-            }
-
-            @Override
-            public String name() {
-                return pythonApplication.name();
-            }
-
-            @Override
-            public Script script() {
-                return this;
-            }
-
-            @Override
-            public void initializeApplication(State state) {
-                try (final PythonScriptSessionModule module = PythonScriptSessionModule.of()) {
-                    pythonApplication.initialize_application(new PythonApplicationState(state, module));
-                }
-            }
-
-            @Override
-            public String toString() {
-                return pythonApplication.toString();
-            }
-        }
+//        private static class ApplicationAdapter implements ApplicationInfo, Script {
+//            private final PythonApplication pythonApplication;
+//
+//            public ApplicationAdapter(PythonApplication pythonApplication) {
+//                this.pythonApplication = Objects.requireNonNull(pythonApplication);
+//            }
+//
+//            @Override
+//            public String id() {
+//                return pythonApplication.id();
+//            }
+//
+//            @Override
+//            public String name() {
+//                return pythonApplication.name();
+//            }
+//
+//            @Override
+//            public void initializeInto(State state) {
+////                try (final PythonScriptSessionModule module = PythonScriptSessionModule.of()) {
+////                    pythonApplication.initialize_application(new PythonApplicationState(state, module));
+////                }
+//                try (
+//                        final PyModule module = PyModule.importModule("deephaven.server.app_state");
+//                        final PyObject wrapped = module.call("ApplicationState", new PythonApplicationState(state))) {
+//                    pythonApplication.initialize_application(wrapped);
+//                }
+//            }
+//
+//            @Override
+//            public String toString() {
+//                return pythonApplication.toString();
+//            }
+//        }
     }
 
     interface PythonPluginModule extends AutoCloseable {

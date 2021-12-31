@@ -7,13 +7,12 @@ import io.deephaven.appmode.ApplicationState;
 import io.deephaven.appmode.Fields;
 import io.deephaven.appmode.StandardField;
 import io.deephaven.engine.liveness.LivenessScopeStack;
+import io.deephaven.internal.log.LoggerFactory;
+import io.deephaven.io.logger.Logger;
 import io.deephaven.plugin.application.ApplicationInfo;
-import io.deephaven.plugin.application.ApplicationInfo.Script;
 import io.deephaven.plugin.application.ApplicationInfo.State;
 import io.deephaven.plugin.application.ApplicationLookup;
 import io.deephaven.server.console.GlobalSessionProvider;
-import io.deephaven.internal.log.LoggerFactory;
-import io.deephaven.io.logger.Logger;
 import io.deephaven.util.SafeCloseable;
 
 import javax.inject.Inject;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -68,10 +66,10 @@ public class ApplicationInjector {
             final Builder builder = Application.builder()
                     .id(applicationInfo.id())
                     .name(applicationInfo.name());
-            final Script script = applicationInfo.script();
+
             final Fields.Builder fields = Fields.builder();
             try (final SafeCloseable ignored = LivenessScopeStack.open()) {
-                script.initializeApplication(new State() {
+                applicationInfo.initializeInto(new State() {
                     @Override
                     public <T> void setField(String name, T value) {
                         fields.putFields(name, StandardField.of(name, value));

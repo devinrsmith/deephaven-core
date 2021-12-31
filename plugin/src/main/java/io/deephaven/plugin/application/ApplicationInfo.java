@@ -6,11 +6,13 @@ public interface ApplicationInfo {
 
     String name();
 
-    Script script();
+    void initializeInto(State state);
 
-    interface Script {
-        void initializeApplication(State state);
-    }
+//    Script script();
+//
+//    interface Script {
+//        void initializeApplication(State state);
+//    }
 
     interface State {
         <T> void setField(String name, T value);

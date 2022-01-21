@@ -16,6 +16,9 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -87,9 +90,13 @@ public class GrpcUtil {
             return (StatusRuntimeException) err;
         }
 
+        final StringWriter sw = new StringWriter();
+        err.printStackTrace(new PrintWriter(sw));
+        final String messageAndTrace = err.getMessage() + ": " + sw;
+
         final UUID errorId = UUID.randomUUID();
         log.error().append("Internal Error '").append(errorId.toString()).append("' ").append(err).endl();
-        return statusRuntimeException(statusCode, "Details Logged w/ID '" + errorId + "'");
+        return statusRuntimeException(statusCode, "Details Logged w/ID '" + errorId + " [" + messageAndTrace + "]");
     }
 
     public static StatusRuntimeException statusRuntimeException(final Code statusCode, final String details) {

@@ -1,4 +1,5 @@
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerLogsContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
 import com.bmuschko.gradle.docker.tasks.network.DockerCreateNetwork
@@ -8,6 +9,8 @@ import io.deephaven.tools.docker.WaitForHealthyContainer
 plugins {
     id 'com.bmuschko.docker-remote-api'
 }
+
+def pyclientDebug = project.hasProperty('pyclient.debug')
 
 evaluationDependsOn Docker.registryProject('python')
 
@@ -71,8 +74,19 @@ def waitForHealthy = tasks.register('waitForHealthy', WaitForHealthyContainer) {
 
     containerId.set dockerContainerName
 }
+
+def containerLogs = tasks.register('logsContainer', DockerLogsContainer) { logsContainer ->
+    logsContainer.with {
+        containerId.set(dockerContainerName)
+        dependsOn createDeephavenGrpcApi
+        onlyIf {
+            pyclientDebug
+        }
+    }
+}
+
 def stopDeephavenGrpcApi = tasks.register('stopDeephavenGrpcApi', DockerRemoveContainer) {
-    dependsOn createDeephavenGrpcApi
+    dependsOn createDeephavenGrpcApi, containerLogs
     finalizedBy removeDeephavenGrpcApiNetwork
 
     targetContainerId dockerContainerName
@@ -112,4 +126,5 @@ tasks.getByName('check').dependsOn(Docker.registerDockerTask(project, 'testPyCli
     copyOut {
         into layout.buildDirectory.dir('test-results')
     }
+    showLogsOnSuccess = pyclientDebug
 })

@@ -8,13 +8,11 @@ import io.deephaven.plugin.Plugin;
 import io.deephaven.plugin.Registration;
 import io.deephaven.plugin.Registration.Callback;
 import io.deephaven.plugin.type.ObjectType;
-import io.deephaven.server.console.ConsoleServiceGrpcImpl;
-import io.deephaven.server.plugin.java.JavaServiceLoader;
-import io.deephaven.server.plugin.python.PythonModuleLoader;
-import io.deephaven.util.annotations.VisibleForTesting;
+import io.deephaven.server.plugin.python.PythonPluginRegistration;
 
 import javax.inject.Inject;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Provides a {@link #registerAll()} entrypoint for {@link Registration} auto-discovery. Logs auto-discovered details.
@@ -22,35 +20,26 @@ import java.util.Objects;
 public final class PluginsAutoDiscovery {
     private static final Logger log = LoggerFactory.getLogger(PluginsAutoDiscovery.class);
 
+    private final Set<Registration> registrations;
     private final Registration.Callback callback;
 
     @Inject
-    public PluginsAutoDiscovery(Registration.Callback callback) {
+    public PluginsAutoDiscovery(Set<Registration> registrations, Registration.Callback callback) {
+        this.registrations = Objects.requireNonNull(registrations);
         this.callback = Objects.requireNonNull(callback);
     }
 
     /**
      * Registers {@link Registration plugins} via {@link JavaServiceLoader#loadAllAndRegisterInto(Callback)} and
-     * {@link PythonModuleLoader#allRegisterInto(Callback)} (if python is enabled).
+     * {@link PythonPluginRegistration#allRegisterInto(Callback)} (if python is enabled).
      */
     public void registerAll() {
-        registerAll(ConsoleServiceGrpcImpl.isPythonSession());
-    }
-
-    @VisibleForTesting
-    public void registerAll(boolean includePython) {
         log.info().append("Registering plugins...").endl();
-        // TODO(deephaven-core#1810): Use service loader to abstract the different plugin auto-discovery methods
-        final Counting serviceLoaderCount = new Counting();
-        JavaServiceLoader.loadAllAndRegisterInto(serviceLoaderCount);
-        final Counting pythonModuleCount = new Counting();
-        if (includePython) {
-            PythonModuleLoader.allRegisterInto(pythonModuleCount);
+        final Counting counting = new Counting();
+        for (Registration registration : registrations) {
+            registration.registerInto(counting);
         }
-        log.info().append("Registered via service loader: ").append(serviceLoaderCount).endl();
-        if (includePython) {
-            log.info().append("Registered via python modules: ").append(pythonModuleCount).endl();
-        }
+        log.info().append("Registered plugins: ").append(counting).endl();
     }
 
     private class Counting implements Registration.Callback, LogOutputAppendable, Plugin.Visitor<Counting> {

@@ -1,5 +1,6 @@
 package io.deephaven.plugin;
 
+import io.deephaven.plugin.app.App;
 import io.deephaven.plugin.type.ObjectType;
 
 /**
@@ -13,5 +14,6 @@ public interface Plugin {
 
     interface Visitor<T> {
         T visit(ObjectType objectType);
+        T visit(App app);
     }
 }

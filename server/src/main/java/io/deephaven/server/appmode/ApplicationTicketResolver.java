@@ -23,34 +23,20 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @Singleton
-public class ApplicationTicketResolver extends TicketResolverBase implements ApplicationStates {
+public class ApplicationTicketResolver extends TicketResolverBase {
 
-    private final Map<String, ApplicationState> applicationMap = new ConcurrentHashMap<>();
+    private final ApplicationStates states;
 
     @Inject
-    public ApplicationTicketResolver() {
+    public ApplicationTicketResolver(ApplicationStates states) {
         super((byte) ApplicationTicketHelper.TICKET_PREFIX, ApplicationTicketHelper.FLIGHT_DESCRIPTOR_ROUTE);
-    }
-
-    @Override
-    public final Optional<ApplicationState> getApplicationState(String applicationId) {
-        return Optional.ofNullable(applicationMap.get(applicationId));
-    }
-
-    public synchronized void onApplicationLoad(final ApplicationState app) {
-        if (applicationMap.containsKey(app.id())) {
-            if (applicationMap.get(app.id()) != app) {
-                throw new IllegalArgumentException("Duplicate application found for app_id " + app.id());
-            }
-            return;
-        }
-
-        applicationMap.put(app.id(), app);
+        this.states = Objects.requireNonNull(states);
     }
 
     @Override
@@ -133,16 +119,16 @@ public class ApplicationTicketResolver extends TicketResolverBase implements App
 
     @Override
     public void forAllFlightInfo(@Nullable SessionState session, Consumer<Flight.FlightInfo> visitor) {
-        applicationMap.values().forEach(app -> {
-            app.listFields().forEach(field -> {
+        for (ApplicationState app : states.values()) {
+            for (Field<?> field : app.listFields()) {
                 Object value = field.value();
                 if (value instanceof Table) {
                     final Flight.FlightInfo info = TicketRouter.getFlightInfo((Table) value,
                             descriptorForName(app, field.name()), flightTicketForName(app, field.name()));
                     visitor.accept(info);
                 }
-            });
-        });
+            }
+        }
     }
 
     /**
@@ -217,7 +203,7 @@ public class ApplicationTicketResolver extends TicketResolverBase implements App
         final String appId = ticketAsString.substring(endOfRoute + 1, endOfAppId);
         final String fieldName = ticketAsString.substring(endOfFieldSegment + 1);
 
-        final ApplicationState app = applicationMap.get(appId);
+        final ApplicationState app = states.getApplicationState(appId).orElse(null);
         if (app == null) {
             throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND,
                     "Could not resolve '" + logId + "': no application exists with the identifier: " + appId);
@@ -245,7 +231,7 @@ public class ApplicationTicketResolver extends TicketResolverBase implements App
         }
 
         final String appId = descriptor.getPath(1);
-        final ApplicationState app = applicationMap.get(appId);
+        final ApplicationState app = states.getApplicationState(appId).orElse(null);
         if (app == null) {
             throw GrpcUtil.statusRuntimeException(Code.NOT_FOUND,
                     "Could not resolve '" + logId + "': no application exists with the identifier: " + appId);

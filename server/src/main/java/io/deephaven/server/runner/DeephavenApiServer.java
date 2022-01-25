@@ -8,6 +8,7 @@ import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.engine.util.AbstractScriptSession;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.server.appmode.PluginApplicationInjector;
 import io.deephaven.server.plugin.PluginRegistration;
 import io.deephaven.server.appmode.ApplicationInjector;
 import io.deephaven.server.console.ConsoleServiceGrpcImpl;
@@ -38,6 +39,7 @@ public class DeephavenApiServer {
     private final ConsoleServiceGrpcImpl consoleService;
     private final PluginRegistration pluginRegistration;
     private final ApplicationInjector applicationInjector;
+    private final PluginApplicationInjector pluginApp;
     private final UriResolvers uriResolvers;
     private final SessionService sessionService;
 
@@ -49,6 +51,7 @@ public class DeephavenApiServer {
             final ConsoleServiceGrpcImpl consoleService,
             final PluginRegistration pluginRegistration,
             final ApplicationInjector applicationInjector,
+            final PluginApplicationInjector pluginApp,
             final UriResolvers uriResolvers,
             final SessionService sessionService) {
         this.server = server;
@@ -57,6 +60,7 @@ public class DeephavenApiServer {
         this.consoleService = consoleService;
         this.pluginRegistration = pluginRegistration;
         this.applicationInjector = applicationInjector;
+        this.pluginApp = pluginApp;
         this.uriResolvers = uriResolvers;
         this.sessionService = sessionService;
     }
@@ -127,6 +131,7 @@ public class DeephavenApiServer {
 
         // inject applications before we start the gRPC server
         applicationInjector.run();
+        pluginApp.run();
 
         log.info().append("Starting server...").endl();
         server.start();

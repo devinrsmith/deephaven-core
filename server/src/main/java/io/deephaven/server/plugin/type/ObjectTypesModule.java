@@ -2,6 +2,8 @@ package io.deephaven.server.plugin.type;
 
 import dagger.Binds;
 import dagger.Module;
+import dagger.multibindings.IntoSet;
+import io.deephaven.plugin.app.App;
 import io.deephaven.plugin.type.ObjectTypeLookup;
 import io.deephaven.plugin.type.ObjectTypeRegistration;
 
@@ -16,4 +18,8 @@ public interface ObjectTypesModule {
 
     @Binds
     ObjectTypeRegistration bindsCallback(ObjectTypes types);
+
+    @Binds
+    @IntoSet
+    App bindsApplication(ObjectTypesApplication application);
 }

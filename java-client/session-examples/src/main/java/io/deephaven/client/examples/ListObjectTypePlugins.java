@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 
 @Command(name = "fetch-object", mixinStandardHelpOptions = true,
         description = "Fetch object", version = "0.1.0")
-class FetchObject extends SingleSessionExampleBase {
+class ListObjectTypePlugins extends SingleSessionExampleBase {
 
     @Option(names = {"--type"}, required = true, description = "The ticket type.")
     String type;
@@ -40,7 +40,6 @@ class FetchObject extends SingleSessionExampleBase {
     private void show(Session session, String type, HasTicketId ticket)
             throws IOException, ExecutionException, InterruptedException {
         if ("Table".equals(type)) {
-            session.publish("export", ticket);
             System.err.println("Unable to fetchObject for 'Table'");
             return;
         }
@@ -73,7 +72,7 @@ class FetchObject extends SingleSessionExampleBase {
     }
 
     public static void main(String[] args) {
-        int execute = new CommandLine(new FetchObject()).execute(args);
+        int execute = new CommandLine(new ListObjectTypePlugins()).execute(args);
         System.exit(execute);
     }
 }

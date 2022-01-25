@@ -3,6 +3,7 @@ package io.deephaven.plugin;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
+import io.deephaven.plugin.app.AppServiceLoaderModule;
 import io.deephaven.plugin.type.ObjectTypeServiceLoaderModule;
 
 import java.util.ServiceLoader;
@@ -14,9 +15,10 @@ import java.util.stream.Collectors;
  * Provides the {@link ServiceLoader#load(Class)} set for {@link Plugin}.
  *
  * @see PluginModule
+ * @see AppServiceLoaderModule
  * @see ObjectTypeServiceLoaderModule
  */
-@Module(includes = {PluginModule.class, ObjectTypeServiceLoaderModule.class})
+@Module(includes = {PluginModule.class, AppServiceLoaderModule.class, ObjectTypeServiceLoaderModule.class})
 public interface PluginServiceLoaderModule {
 
     @Provides

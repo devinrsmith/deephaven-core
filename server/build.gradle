@@ -50,6 +50,7 @@ dependencies {
     }
 
     runtimeOnly project(':plugin-figure')
+    runtimeOnly project(':plugin-metadata')
 
     Classpaths.inheritGrpcPlatform(project, 'api')
 

@@ -4,5 +4,6 @@ plugins {
 
 dependencies {
     implementation project(':plugin')
+    implementation project(':engine-table')
     Classpaths.inheritAutoService(project)
 }

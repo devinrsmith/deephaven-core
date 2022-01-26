@@ -3,11 +3,9 @@ package io.deephaven.server.appmode;
 import io.deephaven.appmode.ApplicationConfig;
 import io.deephaven.appmode.ApplicationState;
 import io.deephaven.engine.liveness.LivenessScopeStack;
-import io.deephaven.plugin.app.App;
-import io.deephaven.plugin.app.App.Consumer;
-import io.deephaven.server.console.GlobalSessionProvider;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.server.console.GlobalSessionProvider;
 import io.deephaven.util.SafeCloseable;
 
 import javax.inject.Inject;
@@ -82,34 +80,6 @@ public class ApplicationInjector {
             log.info().append("\tfound ").append(numExports).append(" exports").endl();
 
             applications.onApplicationLoad(app);
-        }
-    }
-
-    private void loadPluginApplication(App app) {
-        try (final SafeCloseable ignored = LivenessScopeStack.open()) {
-            final ApplicationState state = new ApplicationState(applicationListener, app.id(), app.name());
-            app.execute(new StateAdapter(state));
-            int numExports = state.listFields().size();
-            log.info().append("\tfound ").append(numExports).append(" exports").endl();
-            applications.onApplicationLoad(state);
-        }
-    }
-
-    private static class StateAdapter implements Consumer {
-        private final ApplicationState state;
-
-        public StateAdapter(ApplicationState state) {
-            this.state = Objects.requireNonNull(state);
-        }
-
-        @Override
-        public void set(String name, Object object) {
-            state.setField(name, object);
-        }
-
-        @Override
-        public void set(String name, Object object, String description) {
-            state.setField(name, object, description);
         }
     }
 }

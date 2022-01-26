@@ -8,6 +8,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.KeyedArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
+import io.deephaven.plugin.app.State;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders2;
 import io.deephaven.qst.column.header.ColumnHeaders4;
@@ -18,7 +19,7 @@ import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Optional;
 
-final class FieldState implements Listener {
+final class FieldState implements Listener, State {
 
     private static final ColumnHeaders2<String, String> KEY_HEADER = ColumnHeader.ofString("Id")
             .header(ColumnHeader.ofString("Field"));
@@ -70,6 +71,12 @@ final class FieldState implements Listener {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public void insertInto(Consumer consumer) {
+        consumer.set("fields", table(),
+                "Application Fields [Id: STRING, Field: STRING, Type: STRING, Description: STRING]");
     }
 
     public Table table() {

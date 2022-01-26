@@ -6,14 +6,13 @@ import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.plugin.app.App;
-import io.deephaven.plugin.app.App.Consumer;
 import io.deephaven.plugin.app.AppLookup;
+import io.deephaven.plugin.app.ConsumerBase;
 import io.deephaven.util.SafeCloseable;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Set;
 
 public class PluginApplicationInjector {
 
@@ -45,17 +44,17 @@ public class PluginApplicationInjector {
     private void loadPluginApplication(App app) {
         try (final SafeCloseable ignored = LivenessScopeStack.open()) {
             final ApplicationState state = new ApplicationState(applicationListener, app.id(), app.name());
-            app.execute(new StateAdapter(state));
+            app.insertInto(new ApplicationStateConsumer(state));
             int numExports = state.listFields().size();
             log.info().append("\tfound ").append(numExports).append(" exports").endl();
             applications.onApplicationLoad(state);
         }
     }
 
-    private static class StateAdapter implements Consumer {
+    private static class ApplicationStateConsumer extends ConsumerBase {
         private final ApplicationState state;
 
-        public StateAdapter(ApplicationState state) {
+        public ApplicationStateConsumer(ApplicationState state) {
             this.state = Objects.requireNonNull(state);
         }
 

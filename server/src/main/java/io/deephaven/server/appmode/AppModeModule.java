@@ -7,7 +7,6 @@ import dagger.multibindings.IntoSet;
 import io.deephaven.appmode.ApplicationState;
 import io.deephaven.engine.util.ScriptSession;
 import io.deephaven.plugin.app.App;
-import io.deephaven.plugin.app.AppStates;
 import io.deephaven.server.session.TicketResolver;
 import io.grpc.BindableService;
 
@@ -43,9 +42,7 @@ public interface AppModeModule {
         return impl.fields();
     }
 
-    @Provides
+    @Binds
     @IntoSet
-    static App providesApplication(AppStateYo plugin) {
-        return new AppStates("io.deephaven.Applications", "todo", plugin);
-    }
+    App providesApplication(ApplicationApp plugin);
 }

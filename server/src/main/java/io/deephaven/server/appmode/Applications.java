@@ -6,6 +6,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
+import io.deephaven.plugin.app.State;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders2;
 
@@ -18,7 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class Applications implements ApplicationStates {
+final class Applications implements ApplicationStates, State {
 
     private static final ColumnHeaders2<String, String> HEADER = ColumnHeader.ofString("Id")
             .header(ColumnHeader.ofString("Name"));
@@ -68,6 +69,11 @@ final class Applications implements ApplicationStates {
     @Override
     public Collection<ApplicationState> values() {
         return Collections.unmodifiableCollection(applicationMap.values());
+    }
+
+    @Override
+    public void insertInto(Consumer consumer) {
+        consumer.set("info", table(), "Application Info [Id: STRING, Name: STRING]");
     }
 
     public Table table() {

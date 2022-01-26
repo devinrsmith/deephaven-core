@@ -2,8 +2,7 @@ package io.deephaven.server.plugin.type;
 
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.InMemoryTable;
-import io.deephaven.plugin.app.App.State;
-import io.deephaven.plugin.app.App.Consumer;
+import io.deephaven.plugin.app.State;
 import io.deephaven.plugin.type.ObjectType;
 import io.deephaven.plugin.type.ObjectTypeClassBase;
 import io.deephaven.plugin.type.ObjectTypeLookup;
@@ -96,8 +95,8 @@ public final class ObjectTypes implements ObjectTypeLookup, ObjectTypeRegistrati
 
     @Override
     public void insertInto(Consumer consumer) {
-        consumer.set("objectTypeNames", objectTypeNames(), "ObjectType names");
-        consumer.set("reservedNames", reservedNames(), "Reserved names");
+        consumer.set("names", objectTypeNames(), "ObjectType names [Name: STRING]");
+        consumer.set("reserved", reservedNames(), "Reserved names [Name: STRING]");
     }
 
     private Table objectTypeNames() {

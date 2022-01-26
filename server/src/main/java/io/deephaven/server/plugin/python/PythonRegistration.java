@@ -14,8 +14,7 @@ import javax.inject.Inject;
 public final class PythonRegistration implements Registration {
 
     @Inject
-    public PythonRegistration() {
-    }
+    public PythonRegistration() {}
 
     @Override
     public void registerInto(Callback callback) {

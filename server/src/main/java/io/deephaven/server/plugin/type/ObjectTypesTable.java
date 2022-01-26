@@ -40,7 +40,8 @@ final class ObjectTypesTable {
     }
 
     public void add(ObjectType objectType) throws IOException {
-        final MutableInputTable inputTable = Objects.requireNonNull((MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE));
+        final MutableInputTable inputTable =
+                Objects.requireNonNull((MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE));
         final NewTable entry = OBJECT_TYPE_HEADER.start(1).row(objectType.name()).newTable();
         inputTable.add(InMemoryTable.from(entry));
     }

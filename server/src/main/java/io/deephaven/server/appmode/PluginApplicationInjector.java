@@ -25,8 +25,8 @@ public class PluginApplicationInjector {
 
     @Inject
     public PluginApplicationInjector(final Applications applications,
-                                     final ApplicationState.Listener applicationListener,
-                                     final AppLookup apps) {
+            final ApplicationState.Listener applicationListener,
+            final AppLookup apps) {
         this.applications = Objects.requireNonNull(applications);
         this.applicationListener = Objects.requireNonNull(applicationListener);
         this.apps = Objects.requireNonNull(apps);

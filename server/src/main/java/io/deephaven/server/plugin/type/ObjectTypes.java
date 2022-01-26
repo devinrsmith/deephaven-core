@@ -96,8 +96,8 @@ public final class ObjectTypes implements ObjectTypeLookup, ObjectTypeRegistrati
 
     @Override
     public void insertInto(Consumer consumer) {
-        consumer.set("objectTypeNames", objectTypeNames());
-        consumer.set("reservedNames", reservedNames());
+        consumer.set("objectTypeNames", objectTypeNames(), "ObjectType names");
+        consumer.set("reservedNames", reservedNames(), "Reserved names");
     }
 
     private Table objectTypeNames() {

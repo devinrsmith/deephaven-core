@@ -14,6 +14,7 @@ public interface Plugin {
 
     interface Visitor<T> {
         T visit(ObjectType objectType);
+
         T visit(App app);
     }
 }

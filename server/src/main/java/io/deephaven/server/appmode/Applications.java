@@ -6,8 +6,6 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
-import io.deephaven.plugin.app.App.State;
-import io.deephaven.plugin.app.App.Consumer;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders2;
 
@@ -20,13 +18,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class Applications implements ApplicationStates, State {
+final class Applications implements ApplicationStates {
 
     private static final ColumnHeaders2<String, String> HEADER = ColumnHeader.ofString("Id")
             .header(ColumnHeader.ofString("Name"));
 
     public static Applications create() {
-        final AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
+        final AppendOnlyArrayBackedMutableTable table =
+                AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         final MutableInputTable inputTable = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
         final Table readOnlyTable = table.copy(false);
         table.copyAttributes(readOnlyTable, x -> !Table.INPUT_TABLE_ATTRIBUTE.equals(x));
@@ -37,7 +36,8 @@ final class Applications implements ApplicationStates, State {
     private final MutableInputTable inputTable;
     private final Table readOnlyTable;
 
-    private Applications(Map<String, ApplicationState> applicationMap, MutableInputTable inputTable, Table readOnlyTable) {
+    private Applications(Map<String, ApplicationState> applicationMap, MutableInputTable inputTable,
+            Table readOnlyTable) {
         this.applicationMap = Objects.requireNonNull(applicationMap);
         this.inputTable = Objects.requireNonNull(inputTable);
         this.readOnlyTable = Objects.requireNonNull(readOnlyTable);
@@ -70,8 +70,7 @@ final class Applications implements ApplicationStates, State {
         return Collections.unmodifiableCollection(applicationMap.values());
     }
 
-    @Override
-    public void insertInto(Consumer consumer) {
-        consumer.set("applications", readOnlyTable);
+    public Table table() {
+        return readOnlyTable;
     }
 }

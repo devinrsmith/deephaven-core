@@ -45,43 +45,41 @@ public final class GcState implements State, NotificationListener {
 
     private final Instant startTime;
 
-    private MutableInputTable eventsInput;
-    private Table events;
+    private final MutableInputTable eventsInput;
+    private final Table events;
 
-    private MutableInputTable beforeInput;
-    private Table before;
+    private final MutableInputTable beforeInput;
+    private final Table before;
 
-    private MutableInputTable afterInput;
-    private Table after;
+    private final MutableInputTable afterInput;
+    private final Table after;
 
     private final Table combined;
 
-    private static void createInputTable(Iterable<ColumnHeader<?>> headers,
-            java.util.function.Consumer<MutableInputTable> c1,
-            java.util.function.Consumer<Table> c2) {
-        final AppendOnlyArrayBackedMutableTable table =
-                AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(headers));
-        MutableInputTable t1 = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
-        Table t2 = table.copy(false);
-        table.copyAttributes(t2, x -> !Table.INPUT_TABLE_ATTRIBUTE.equals(x));
-        c1.accept(t1);
-        c2.accept(t2);
+    private static AppendOnlyArrayBackedMutableTable make(Iterable<ColumnHeader<?>> headers) {
+        return AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(headers));
     }
 
 
     public GcState() {
         startTime = Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
 
-        createInputTable(EVENTS_HEADER, table -> GcState.this.eventsInput = table,
-                table -> GcState.this.events = table);
-        createInputTable(POOL_HEADER, table -> GcState.this.beforeInput = table,
-                table -> GcState.this.before = table);
-        createInputTable(POOL_HEADER, table -> GcState.this.afterInput = table,
-                table -> GcState.this.after = table);
+        final AppendOnlyArrayBackedMutableTable events = make(EVENTS_HEADER);
+        final AppendOnlyArrayBackedMutableTable before = make(POOL_HEADER);
+        final AppendOnlyArrayBackedMutableTable after = make(POOL_HEADER);
 
-        combined = after.view("Id", "Pool", "AfterUsed=Used", "AfterCommitted=Committed")
-                .naturalJoin(before, "Id,Pool", "BeforeUsed=Used,BeforeCommitted=Committed")
-                .naturalJoin(events, "Id");
+        this.eventsInput = events.mutableInputTable();
+        this.events = events.readOnlyCopy();
+
+        this.beforeInput = before.mutableInputTable();
+        this.before = before.readOnlyCopy();
+
+        this.afterInput = after.mutableInputTable();
+        this.after = after.readOnlyCopy();
+
+        combined = this.after.view("Id", "Pool", "AfterUsed=Used", "AfterCommitted=Committed")
+                .naturalJoin(this.before, "Id,Pool", "BeforeUsed=Used,BeforeCommitted=Committed")
+                .naturalJoin(this.events, "Id");
 
         for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
             final NotificationEmitter emitter = (NotificationEmitter) gc;

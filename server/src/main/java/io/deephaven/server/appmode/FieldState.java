@@ -31,10 +31,7 @@ final class FieldState implements Listener, State {
     public static FieldState create(TypeLookup typeLookup) {
         final KeyedArrayBackedMutableTable table = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER),
                 KEY_HEADER.tableHeader().columnNames().toArray(String[]::new));
-        final MutableInputTable inputTable = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
-        final Table readOnly = table.copy(false);
-        table.copyAttributes(readOnly, x -> !Table.INPUT_TABLE_ATTRIBUTE.equals(x));
-        return new FieldState(inputTable, readOnly, typeLookup);
+        return new FieldState(table.mutableInputTable(), table.readOnlyCopy(), typeLookup);
     }
 
     private final MutableInputTable inputTable;

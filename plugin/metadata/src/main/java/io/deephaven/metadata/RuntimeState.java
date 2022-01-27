@@ -92,10 +92,7 @@ public class RuntimeState implements State {
 
         public static LongSingleValue create() {
             final KeyedArrayBackedMutableTable keyed = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER));
-            final MutableInputTable inputTable = (MutableInputTable) keyed.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
-            final Table readOnlyTable = keyed.copy(false);
-            keyed.copyAttributes(readOnlyTable, x -> !Table.INPUT_TABLE_ATTRIBUTE.equals(x));
-            return new LongSingleValue(inputTable, readOnlyTable);
+            return new LongSingleValue(keyed.mutableInputTable(), keyed.readOnlyCopy());
         }
 
         private final MutableInputTable inputTable;

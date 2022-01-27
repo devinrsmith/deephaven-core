@@ -25,12 +25,8 @@ final class Applications implements ApplicationStates, State {
             .header(ColumnHeader.ofString("Name"));
 
     public static Applications create() {
-        final AppendOnlyArrayBackedMutableTable table =
-                AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
-        final MutableInputTable inputTable = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
-        final Table readOnlyTable = table.copy(false);
-        table.copyAttributes(readOnlyTable, x -> !Table.INPUT_TABLE_ATTRIBUTE.equals(x));
-        return new Applications(new ConcurrentHashMap<>(), inputTable, readOnlyTable);
+        final AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
+        return new Applications(new ConcurrentHashMap<>(), table.mutableInputTable(), table.readOnlyCopy());
     }
 
     private final Map<String, ApplicationState> applicationMap;

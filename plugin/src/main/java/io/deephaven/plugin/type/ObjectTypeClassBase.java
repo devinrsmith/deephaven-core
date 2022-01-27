@@ -13,6 +13,15 @@ public abstract class ObjectTypeClassBase<T> extends ObjectTypeBase {
     private final String name;
     private final Class<T> clazz;
 
+    /**
+     * Construct a new instance, with name {@code clazz.getName()}.
+     *
+     * @param clazz the clazz
+     */
+    public ObjectTypeClassBase(Class<T> clazz) {
+        this(clazz.getName(), clazz);
+    }
+
     public ObjectTypeClassBase(String name, Class<T> clazz) {
         this.name = Objects.requireNonNull(name);
         this.clazz = Objects.requireNonNull(clazz);

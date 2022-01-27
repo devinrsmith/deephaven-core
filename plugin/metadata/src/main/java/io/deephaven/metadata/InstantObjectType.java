@@ -14,7 +14,7 @@ import java.time.Instant;
 public final class InstantObjectType extends ObjectTypeClassBase<Instant> {
 
     public InstantObjectType() {
-        super(Instant.class.getName(), Instant.class);
+        super(Instant.class);
     }
 
     @Override

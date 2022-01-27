@@ -2,10 +2,9 @@ package io.deephaven.metadata;
 
 import com.google.auto.service.AutoService;
 import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.impl.InMemoryTable;
+import io.deephaven.engine.util.TableTools;
 import io.deephaven.plugin.type.ObjectType;
 import io.deephaven.plugin.type.ObjectTypeClassBase;
-import io.deephaven.qst.column.Column;
 import io.deephaven.time.DateTime;
 
 import java.io.OutputStream;
@@ -14,7 +13,7 @@ import java.io.OutputStream;
 public final class DateTimeType extends ObjectTypeClassBase<DateTime> {
 
     public DateTimeType() {
-        super(DateTime.class.getName(), DateTime.class);
+        super(DateTime.class);
     }
 
     @Override
@@ -23,7 +22,6 @@ public final class DateTimeType extends ObjectTypeClassBase<DateTime> {
     }
 
     private static Table table(DateTime timestamp) {
-        // todo: do this more efficiently
-        return InMemoryTable.from(Column.of("Timestamp", timestamp.getInstant()).toTable());
+        return TableTools.newTable(TableTools.dateTimeCol("Timestamp", timestamp));
     }
 }

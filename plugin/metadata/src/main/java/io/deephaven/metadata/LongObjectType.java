@@ -10,18 +10,18 @@ import io.deephaven.qst.column.Column;
 import java.io.OutputStream;
 
 @AutoService(ObjectType.class)
-public final class StringObjectType extends ObjectTypeClassBase<String> {
+public final class LongObjectType extends ObjectTypeClassBase<Long> {
 
-    public StringObjectType() {
-        super(String.class);
+    public LongObjectType() {
+        super(Long.class);
     }
 
     @Override
-    public void writeToImpl(Exporter exporter, String value, OutputStream out) {
+    public void writeToImpl(Exporter exporter, Long value, OutputStream out) {
         exporter.reference(table(value), false, true).orElseThrow();
     }
 
-    private static Table table(String value) {
-        return InMemoryTable.from(Column.of("Value", value).toTable());
+    private static Table table(Long x) {
+        return InMemoryTable.from(Column.of("Value", x).toTable());
     }
 }

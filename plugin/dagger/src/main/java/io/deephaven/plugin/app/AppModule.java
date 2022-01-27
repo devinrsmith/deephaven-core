@@ -3,6 +3,7 @@ package io.deephaven.plugin.app;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
+import io.deephaven.plugin.app.StateServiceLoaderModule.StateServiceLoader;
 
 import java.util.Collections;
 import java.util.Set;
@@ -28,6 +29,16 @@ public interface AppModule {
     @Provides
     @ElementsIntoSet
     static Set<App> adaptsStates(Set<State> states) {
-        return states.stream().map(StateAdapter::new).collect(Collectors.toSet());
+        return states.stream()
+                .map(AppModule::adapt)
+                .collect(Collectors.toSet());
+    }
+
+    private static Class<? extends State> type(State state) {
+        return state instanceof StateServiceLoader ? ((StateServiceLoader)state).type() : state.getClass();
+    }
+
+    private static AppImpl adapt(State state) {
+        return new AppImpl(type(state), state);
     }
 }

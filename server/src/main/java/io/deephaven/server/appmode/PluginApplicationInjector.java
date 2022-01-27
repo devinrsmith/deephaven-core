@@ -7,7 +7,7 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.plugin.app.App;
 import io.deephaven.plugin.app.AppLookup;
-import io.deephaven.plugin.app.ConsumerBase;
+import io.deephaven.plugin.app.State.ConsumerBase;
 import io.deephaven.util.SafeCloseable;
 
 import javax.inject.Inject;

@@ -13,12 +13,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides an empty set for {@link Plugin} and adapters into {@link Plugin} from {@link ObjectType}.
+ * Provides an empty set for {@link Plugin plugins}.
+ *
+ * <p>
+ * Adapts {@link App apps} and {@link ObjectType object types} into {@link Plugin plugins}.
  *
  * @see AppModule
  * @see ObjectTypeModule
  */
-@Module(includes = {ObjectTypeModule.class})
+@Module(includes = {AppModule.class, ObjectTypeModule.class})
 public interface PluginModule {
 
     @Provides

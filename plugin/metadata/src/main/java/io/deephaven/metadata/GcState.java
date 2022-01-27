@@ -8,8 +8,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
-import io.deephaven.plugin.app.App;
-import io.deephaven.plugin.app.AppBase;
+import io.deephaven.plugin.app.State;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders6;
 
@@ -26,8 +25,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Map.Entry;
 
-@AutoService(App.class)
-public final class GcApplication extends AppBase implements NotificationListener {
+@AutoService(State.class)
+public final class GcState implements State, NotificationListener {
 
     public static final ColumnHeaders6<String, String, String, Long, Instant, Instant> EVENTS_HEADER =
             ColumnHeader.ofString("Name")
@@ -58,8 +57,8 @@ public final class GcApplication extends AppBase implements NotificationListener
     private final Table combined;
 
     private static void createInputTable(Iterable<ColumnHeader<?>> headers,
-                                         java.util.function.Consumer<MutableInputTable> c1,
-                                         java.util.function.Consumer<Table> c2) {
+            java.util.function.Consumer<MutableInputTable> c1,
+            java.util.function.Consumer<Table> c2) {
         final AppendOnlyArrayBackedMutableTable table =
                 AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(headers));
         MutableInputTable t1 = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
@@ -70,14 +69,15 @@ public final class GcApplication extends AppBase implements NotificationListener
     }
 
 
-    public GcApplication() {
-        super(GcApplication.class.getName(), GcApplication.class.getSimpleName());
-
+    public GcState() {
         startTime = Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
 
-        createInputTable(EVENTS_HEADER, table -> GcApplication.this.eventsInput = table, table -> GcApplication.this.events = table);
-        createInputTable(POOL_HEADER, table -> GcApplication.this.beforeInput = table, table -> GcApplication.this.before = table);
-        createInputTable(POOL_HEADER, table -> GcApplication.this.afterInput = table, table -> GcApplication.this.after = table);
+        createInputTable(EVENTS_HEADER, table -> GcState.this.eventsInput = table,
+                table -> GcState.this.events = table);
+        createInputTable(POOL_HEADER, table -> GcState.this.beforeInput = table,
+                table -> GcState.this.before = table);
+        createInputTable(POOL_HEADER, table -> GcState.this.afterInput = table,
+                table -> GcState.this.after = table);
 
         combined = after.view("Id", "Pool", "AfterUsed=Used", "AfterCommitted=Committed")
                 .naturalJoin(before, "Id,Pool", "BeforeUsed=Used,BeforeCommitted=Committed")
@@ -85,7 +85,7 @@ public final class GcApplication extends AppBase implements NotificationListener
 
         for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
             final NotificationEmitter emitter = (NotificationEmitter) gc;
-            emitter.addNotificationListener(GcApplication.this, null, null);
+            emitter.addNotificationListener(GcState.this, null, null);
         }
     }
 

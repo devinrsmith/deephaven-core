@@ -9,7 +9,13 @@ import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Module(includes = {AppModule.class})
+/**
+ * Provides the {@link ServiceLoader#load(Class)} set for {@link App}.
+ *
+ * @see AppModule
+ * @see StateServiceLoaderModule
+ */
+@Module(includes = {AppModule.class, StateServiceLoaderModule.class})
 public interface AppServiceLoaderModule {
 
     @Provides

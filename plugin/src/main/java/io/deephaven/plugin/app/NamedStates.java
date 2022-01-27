@@ -15,21 +15,15 @@ public class NamedStates implements State {
     }
 
     private final Map<String, State> states;
-    private final String separator;
 
     public NamedStates(Map<String, State> states) {
-        this(states, ".");
-    }
-
-    public NamedStates(Map<String, State> states, String separator) {
         this.states = Objects.requireNonNull(states);
-        this.separator = Objects.requireNonNull(separator);
     }
 
     @Override
     public final void insertInto(Consumer consumer) {
         for (Entry<String, State> e : states.entrySet()) {
-            consumer.setState(e.getKey() + separator, e.getValue());
+            consumer.set(e.getKey(), e.getValue());
         }
     }
 }

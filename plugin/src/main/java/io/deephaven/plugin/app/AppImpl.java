@@ -6,7 +6,7 @@ public class AppImpl extends AppBase {
 
     private final State state;
 
-    public AppImpl(Class<? extends AppImpl> clazz, State state) {
+    public AppImpl(Class<?> clazz, State state) {
         this(clazz.getName(), clazz.getSimpleName(), state);
     }
 
@@ -15,8 +15,17 @@ public class AppImpl extends AppBase {
         this.state = Objects.requireNonNull(state);
     }
 
+    public final State state() {
+        return state;
+    }
+
     @Override
     public final void insertInto(Consumer consumer) {
         state.insertInto(consumer);
+    }
+
+    @Override
+    public String toString() {
+        return "AppImpl(" + id() + "," + state + ")";
     }
 }

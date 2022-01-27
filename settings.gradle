@@ -211,6 +211,9 @@ project(':extensions-classgraph').projectDir = file('extensions/classgraph')
 include(':extensions-suanshu')
 project(':extensions-suanshu').projectDir = file('extensions/suanshu')
 
+include(':extensions-ta4j')
+project(':extensions-ta4j').projectDir = file('extensions/ta4j')
+
 include(':plugin')
 
 include(':plugin-figure')

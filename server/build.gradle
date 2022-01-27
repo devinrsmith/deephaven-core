@@ -40,6 +40,9 @@ dependencies {
     if ('true' == project.findProperty('extensions.suanshu.enabled')) {
         runtimeOnly project(':extensions-suanshu')
     }
+    if ('true' == project.findProperty('extensions.ta4j.enabled')) {
+        runtimeOnly project(':extensions-ta4j')
+    }
 
     api(project(':plugin')) {
         because 'downstream dagger compile, see deephaven-core#1722'

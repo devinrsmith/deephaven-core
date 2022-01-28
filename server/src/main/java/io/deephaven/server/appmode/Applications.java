@@ -1,29 +1,31 @@
 package io.deephaven.server.appmode;
 
 import io.deephaven.appmode.ApplicationState;
-import io.deephaven.plugin.app.StateDelegate;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Singleton
 final class Applications implements ApplicationStates {
 
-    public static Applications create() {
-        return new Applications(new ConcurrentHashMap<>(), ApplicationTable.create());
+    interface Listener {
+        void onApplicationLoad(final ApplicationState app);
     }
 
     private final Map<String, ApplicationState> applicationMap;
-    private final ApplicationTable table;
+    private final Set<Listener> listeners;
 
-    private Applications(Map<String, ApplicationState> applicationMap, ApplicationTable table) {
-        this.applicationMap = Objects.requireNonNull(applicationMap);
-        this.table = Objects.requireNonNull(table);
+    @Inject
+    public Applications(Set<Listener> listeners) {
+        this.applicationMap = new ConcurrentHashMap<>();
+        this.listeners = Objects.requireNonNull(listeners);
     }
 
     public synchronized void onApplicationLoad(final ApplicationState app) {
@@ -34,15 +36,9 @@ final class Applications implements ApplicationStates {
             return;
         }
         applicationMap.put(app.id(), app);
-        try {
-            table.add(app.id(), app.name());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        for (Listener listener : listeners) {
+            listener.onApplicationLoad(app);
         }
-    }
-
-    public ApplicationTable table() {
-        return table;
     }
 
     @Override

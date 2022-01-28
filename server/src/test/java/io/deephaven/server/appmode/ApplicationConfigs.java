@@ -1,11 +1,13 @@
 package io.deephaven.server.appmode;
 
 import io.deephaven.appmode.*;
+import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.util.TableTools;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -68,9 +70,9 @@ public class ApplicationConfigs {
     public static class App04 implements ApplicationState.Factory {
 
         @Override
-        public ApplicationState create(ApplicationState.Listener listener) {
+        public ApplicationState create(Set<Listener> listeners) {
             final CountDownLatch latch = new CountDownLatch(1);
-            final ApplicationState state = new ApplicationState(listener, "", "My Dynamic Application");
+            final ApplicationState state = new ApplicationState(listeners, "", "My Dynamic Application");
             state.setField("initial_field", TableTools.timeTable("00:00:01"));
             final Thread thread = new Thread(() -> {
                 for (int i = 0;; ++i) {

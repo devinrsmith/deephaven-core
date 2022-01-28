@@ -1,6 +1,5 @@
 package io.deephaven.server.plugin.type;
 
-import io.deephaven.plugin.app.State;
 import io.deephaven.plugin.type.ObjectType;
 import io.deephaven.plugin.type.ObjectTypeClassBase;
 import io.deephaven.plugin.type.ObjectTypeLookup;
@@ -9,14 +8,13 @@ import io.deephaven.plugin.type.ObjectTypeRegistration;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.lang.model.SourceVersion;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,19 +26,19 @@ import java.util.Set;
  * these objects have more efficient lookups.
  */
 @Singleton
-public final class ObjectTypes implements ObjectTypeLookup, ObjectTypeRegistration, State {
+public final class ObjectTypes implements ObjectTypeLookup, ObjectTypeRegistration {
 
+    private final Set<Listener> listeners;
     private final Set<String> namesLowercase;
     private final Map<Class<?>, ObjectType> classTypes;
     private final List<ObjectType> otherTypes;
-    private final ObjectTypesTable objectTypesTable;
 
     @Inject
-    public ObjectTypes() {
+    public ObjectTypes(Set<Listener> listeners) {
+        this.listeners = Objects.requireNonNull(listeners);
         namesLowercase = new HashSet<>();
         classTypes = new HashMap<>();
         otherTypes = new ArrayList<>();
-        objectTypesTable = ObjectTypesTable.create();
     }
 
     @Override
@@ -80,16 +78,8 @@ public final class ObjectTypes implements ObjectTypeLookup, ObjectTypeRegistrati
             otherTypes.add(objectType);
         }
         namesLowercase.add(nameLowercase);
-        try {
-            objectTypesTable.add(objectType);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        for (Listener listener : listeners) {
+            listener.onRegistered(objectType);
         }
-    }
-
-    @Override
-    public void insertInto(Consumer consumer) {
-        consumer.set("objectTypes", objectTypesTable);
-        consumer.set("reserved", ReservedTypes.INSTANCE);
     }
 }

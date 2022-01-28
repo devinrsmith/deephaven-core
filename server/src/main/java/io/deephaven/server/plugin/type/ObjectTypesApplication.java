@@ -1,16 +1,16 @@
 package io.deephaven.server.plugin.type;
 
-import io.deephaven.plugin.app.AppImpl;
-import io.deephaven.plugin.app.NamedStates;
+import io.deephaven.plugin.app.ApplicationDelegate;
 
 import javax.inject.Inject;
 
-public final class ObjectTypesApplication extends AppImpl {
+public final class ObjectTypesApplication extends ApplicationDelegate {
 
     @Inject
-    public ObjectTypesApplication(ObjectTypes objectTypes) {
+    public ObjectTypesApplication(ObjectTypesTable objectTypesTable) {
         super(
                 ObjectTypesApplication.class,
-                NamedStates.of("objectType", objectTypes));
+                objectTypesTable,
+                ReservedTypes.INSTANCE);
     }
 }

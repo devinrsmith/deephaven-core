@@ -2,6 +2,7 @@ package io.deephaven.server.appmode;
 
 import io.deephaven.appmode.ApplicationConfig;
 import io.deephaven.appmode.ApplicationState;
+import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class ApplicationInjector {
 
@@ -23,17 +25,17 @@ public class ApplicationInjector {
     private final AppMode appMode;
     private final GlobalSessionProvider globalSessionProvider;
     private final Applications applications;
-    private final ApplicationState.Listener applicationListener;
+    private final Set<Listener> applicationListeners;
 
     @Inject
     public ApplicationInjector(final AppMode appMode,
             final GlobalSessionProvider globalSessionProvider,
             final Applications applications,
-            final ApplicationState.Listener applicationListener) {
+            final Set<ApplicationState.Listener> applicationListeners) {
         this.appMode = appMode;
         this.globalSessionProvider = Objects.requireNonNull(globalSessionProvider);
         this.applications = applications;
-        this.applicationListener = applicationListener;
+        this.applicationListeners = applicationListeners;
     }
 
     public void run() throws IOException, ClassNotFoundException {
@@ -74,7 +76,7 @@ public class ApplicationInjector {
         log.info().append("Starting application '").append(config.toString()).append('\'').endl();
         try (final SafeCloseable ignored = LivenessScopeStack.open()) {
             final ApplicationState app = ApplicationFactory.create(applicationDir, config,
-                    globalSessionProvider.getGlobalSession(), applicationListener);
+                    globalSessionProvider.getGlobalSession(), applicationListeners);
 
             int numExports = app.listFields().size();
             log.info().append("\tfound ").append(numExports).append(" exports").endl();

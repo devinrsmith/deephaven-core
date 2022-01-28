@@ -1,11 +1,13 @@
 package io.deephaven.appmode;
 
 import io.deephaven.annotations.SimpleStyle;
+import io.deephaven.appmode.ApplicationState.Listener;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 import java.util.Properties;
+import java.util.Set;
 
 @Immutable
 @SimpleStyle
@@ -31,7 +33,7 @@ public abstract class DynamicApplication<T extends ApplicationState.Factory> imp
     @Parameter
     public abstract boolean isEnabled();
 
-    public final ApplicationState create(ApplicationState.Listener appStateListener)
+    public final ApplicationState create(Set<Listener> appStateListener)
             throws InstantiationException, IllegalAccessException {
         return clazz().newInstance().create(appStateListener);
     }

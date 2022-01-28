@@ -23,6 +23,6 @@ enum ReservedTypes implements State {
     @Override
     public void insertInto(Consumer consumer) {
         final Table table = InMemoryTable.from(NewTable.of(Column.of(HEADER, RESERVED_TYPE_NAMES_LOWERCASE)));
-        consumer.set("names", table, "Reserved names [Name: STRING]");
+        consumer.set("reservedNames", table, "Reserved names [Name: STRING]");
     }
 }

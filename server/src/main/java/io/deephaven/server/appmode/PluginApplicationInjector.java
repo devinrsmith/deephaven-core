@@ -2,6 +2,7 @@ package io.deephaven.server.appmode;
 
 import io.deephaven.appmode.ApplicationConfig;
 import io.deephaven.appmode.ApplicationState;
+import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
@@ -13,18 +14,19 @@ import io.deephaven.util.SafeCloseable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 
 public class PluginApplicationInjector {
 
     private static final Logger log = LoggerFactory.getLogger(PluginApplicationInjector.class);
 
     private final Applications applications;
-    private final ApplicationState.Listener applicationListener;
+    private final Set<Listener> applicationListener;
     private final AppLookup apps;
 
     @Inject
     public PluginApplicationInjector(final Applications applications,
-            final ApplicationState.Listener applicationListener,
+            final Set<Listener> applicationListener,
             final AppLookup apps) {
         this.applications = Objects.requireNonNull(applications);
         this.applicationListener = Objects.requireNonNull(applicationListener);

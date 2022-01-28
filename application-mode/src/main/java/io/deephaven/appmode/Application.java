@@ -1,7 +1,10 @@
 package io.deephaven.appmode;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.appmode.ApplicationState.Listener;
 import org.immutables.value.Value.Immutable;
+
+import java.util.Set;
 
 @Immutable
 @BuildableStyle
@@ -47,7 +50,7 @@ public abstract class Application {
      */
     public abstract Fields fields();
 
-    public final ApplicationState toState(final ApplicationState.Listener appStateListener) {
+    public final ApplicationState toState(final Set<Listener> appStateListener) {
         final ApplicationState state = new ApplicationState(appStateListener, id(), name());
         state.setFields(fields());
         return state;

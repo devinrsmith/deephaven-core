@@ -14,6 +14,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,7 @@ public class ApplicationTest {
     @Test
     public void app00() {
         ApplicationState app = ApplicationFactory.create(ApplicationConfigs.testAppDir(), ApplicationConfigs.app00(),
-                session, new NoopStateListener());
+                session, Collections.emptySet());
         assertThat(app.name()).isEqualTo("My Class Application");
         assertThat(app.numFieldsExported()).isEqualTo(2);
         assertThat(app.getField("hello").value()).isInstanceOf(Table.class);
@@ -47,7 +48,7 @@ public class ApplicationTest {
     public void app01() throws IOException {
         session = new GroovyDeephavenSession(NoOp.INSTANCE, null, GroovyDeephavenSession.RunScripts.none(), false);
         ApplicationState app = ApplicationFactory.create(ApplicationConfigs.testAppDir(), ApplicationConfigs.app01(),
-                session, new NoopStateListener());
+                session, Collections.emptySet());
         assertThat(app.name()).isEqualTo("My Groovy Application");
         assertThat(app.numFieldsExported()).isEqualTo(2);
         assertThat(app.getField("hello").value()).isInstanceOf(Table.class);
@@ -59,7 +60,7 @@ public class ApplicationTest {
     public void app02() throws IOException, InterruptedException, TimeoutException {
         session = new PythonDeephavenSession(NoOp.INSTANCE, null, false, false);
         ApplicationState app = ApplicationFactory.create(ApplicationConfigs.testAppDir(), ApplicationConfigs.app02(),
-                session, new NoopStateListener());
+                session, Collections.emptySet());
         assertThat(app.name()).isEqualTo("My Python Application");
         assertThat(app.numFieldsExported()).isEqualTo(2);
         assertThat(app.getField("hello").value()).isInstanceOf(Table.class);
@@ -70,7 +71,7 @@ public class ApplicationTest {
     @Ignore("TODO: deephaven-core#1080 support QST application")
     public void app03() {
         ApplicationState app = ApplicationFactory.create(ApplicationConfigs.testAppDir(), ApplicationConfigs.app03(),
-                session, new NoopStateListener());
+                session, Collections.emptySet());
         assertThat(app.name()).isEqualTo("My QST Application");
         assertThat(app.numFieldsExported()).isEqualTo(2);
         assertThat(app.getField("hello").value()).isInstanceOf(Table.class);
@@ -80,19 +81,7 @@ public class ApplicationTest {
     @Test
     public void app04() {
         ApplicationState app = ApplicationFactory.create(ApplicationConfigs.testAppDir(), ApplicationConfigs.app04(),
-                session, new NoopStateListener());
+                session, Collections.emptySet());
         assertThat(app.name()).isEqualTo("My Dynamic Application");
-    }
-
-    private static class NoopStateListener implements ApplicationState.Listener {
-        @Override
-        public void onNewField(ApplicationState app, Field<?> field) {
-            // ignore
-        }
-
-        @Override
-        public void onRemoveField(ApplicationState app, Field<?> field) {
-            // ignore
-        }
     }
 }

@@ -1,49 +1,40 @@
 package io.deephaven.server.plugin.type;
 
-import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.InMemoryTable;
-import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
-import io.deephaven.engine.util.config.MutableInputTable;
 import io.deephaven.plugin.app.State;
 import io.deephaven.plugin.type.ObjectType;
+import io.deephaven.plugin.type.ObjectTypeRegistration;
 import io.deephaven.qst.column.header.ColumnHeader;
-import io.deephaven.qst.table.NewTable;
+import io.deephaven.server.InputTableDescriber;
+import io.deephaven.server.InputTableHelper;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 
-final class ObjectTypesTable implements State {
+final class ObjectTypesTable implements State, ObjectTypeRegistration.Listener {
     private static final ColumnHeader<String> OBJECT_TYPE_HEADER = ColumnHeader.ofString("Name");
 
-    private static AppendOnlyArrayBackedMutableTable make() {
-        return AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(OBJECT_TYPE_HEADER));
-    }
-
     public static ObjectTypesTable create() {
-        final AppendOnlyArrayBackedMutableTable table = make();
-        return new ObjectTypesTable(table.mutableInputTable(), table.readOnlyCopy());
+        return new ObjectTypesTable(InputTableHelper.appendOnly(OBJECT_TYPE_HEADER));
     }
 
-    private final MutableInputTable inputTable;
-    private final Table readOnlyTable;
+    private final InputTableHelper inputTable;
 
-    private ObjectTypesTable(MutableInputTable inputTable, Table readOnlyTable) {
+    private ObjectTypesTable(InputTableHelper inputTable) {
         this.inputTable = Objects.requireNonNull(inputTable);
-        this.readOnlyTable = Objects.requireNonNull(readOnlyTable);
     }
 
-    public void add(ObjectType objectType) throws IOException {
-        final NewTable entry = OBJECT_TYPE_HEADER.start(1).row(objectType.name()).newTable();
-        inputTable.add(InMemoryTable.from(entry));
-    }
-
-    public Table table() {
-        return readOnlyTable;
+    @Override
+    public void onRegistered(ObjectType objectType) {
+        try {
+            inputTable.add(OBJECT_TYPE_HEADER.start(1).row(objectType.name()).newTable());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public void insertInto(Consumer consumer) {
-        consumer.set("names", readOnlyTable, "ObjectType names [Name: STRING]");
+        consumer.set("objectTypes", inputTable.table(), InputTableDescriber.describe(inputTable));
     }
 }

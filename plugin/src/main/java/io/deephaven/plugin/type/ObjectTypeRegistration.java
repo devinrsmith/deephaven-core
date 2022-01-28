@@ -11,4 +11,8 @@ public interface ObjectTypeRegistration {
      * @param objectType the object type
      */
     void register(ObjectType objectType);
+
+    interface Listener {
+        void onRegistered(ObjectType objectType);
+    }
 }

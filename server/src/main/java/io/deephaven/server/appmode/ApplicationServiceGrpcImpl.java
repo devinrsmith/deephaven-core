@@ -27,7 +27,11 @@ import io.grpc.stub.StreamObserver;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.Closeable;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Singleton
 public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.ApplicationServiceImplBase
@@ -56,8 +60,6 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
     /** Which [remaining] fields have we seen? */
     private final Map<AppFieldId, Field<?>> knownFieldMap = new LinkedHashMap<>();
 
-    private final FieldState fields;
-
     @Inject
     public ApplicationServiceGrpcImpl(final AppMode mode,
             final Scheduler scheduler,
@@ -67,11 +69,6 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
         this.scheduler = scheduler;
         this.sessionService = sessionService;
         this.typeLookup = typeLookup;
-        this.fields = FieldState.create(typeLookup);
-    }
-
-    FieldState fields() {
-        return fields;
     }
 
     @Override
@@ -131,8 +128,6 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
             return;
         }
 
-        fields.onRemoveField(app, oldField);
-
         final AppFieldId id = AppFieldId.from(app, oldField.name());
         Field<?> recentlyAdded = addedFields.remove(id);
         if (recentlyAdded != null) {
@@ -150,8 +145,6 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
         if (!mode.hasVisibilityToAppExports()) {
             return;
         }
-
-        fields.onNewField(app, field);
 
         final AppFieldId id = AppFieldId.from(app, field.name());
         final FieldInfo fieldInfo = getFieldInfo(id, field);
@@ -175,6 +168,12 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
         }
 
         schedulePropagationOrClearIncrementalState();
+    }
+
+    @Override
+    public synchronized void onReplaceField(ApplicationState app, Field<?> oldField, Field<?> field) {
+        onRemoveField(app, oldField);
+        onNewField(app, field);
     }
 
     private void schedulePropagationOrClearIncrementalState() {

@@ -4,6 +4,7 @@ import com.google.rpc.Code;
 import io.deephaven.appmode.ApplicationConfig;
 import io.deephaven.appmode.ApplicationContext;
 import io.deephaven.appmode.ApplicationState;
+import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.appmode.DynamicApplication;
 import io.deephaven.appmode.QSTApplication;
 import io.deephaven.appmode.ScriptApplication;
@@ -16,23 +17,24 @@ import io.deephaven.extensions.barrage.util.GrpcUtil;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class ApplicationFactory implements ApplicationConfig.Visitor {
 
     public static ApplicationState create(Path applicationDir, ApplicationConfig config, ScriptSession scriptSession,
-            ApplicationState.Listener appStateListener) {
+            Set<ApplicationState.Listener> appStateListener) {
         return config.walk(new ApplicationFactory(applicationDir, scriptSession, appStateListener)).out();
     }
 
     private final Path applicationDir;
     private final ScriptSession scriptSession;
-    private final ApplicationState.Listener appStateListener;
+    private final Set<Listener> appStateListener;
 
     private ApplicationState out;
 
     private ApplicationFactory(final Path applicationDir,
             final ScriptSession scriptSession,
-            final ApplicationState.Listener appStateListener) {
+            final Set<ApplicationState.Listener> appStateListener) {
         this.applicationDir = Objects.requireNonNull(applicationDir);
         this.scriptSession = scriptSession;
         this.appStateListener = appStateListener;

@@ -6,26 +6,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class ApplicationState {
 
     public interface Factory {
-        ApplicationState create(Listener appStateListener);
+        ApplicationState create(Set<Listener> appStateListeners);
     }
 
     public interface Listener {
         void onNewField(ApplicationState app, Field<?> field);
 
+        void onReplaceField(ApplicationState app, Field<?> oldField, Field<?> field);
+
         void onRemoveField(ApplicationState app, Field<?> field);
     }
 
-    private final Listener listener;
+    private final Set<Listener> listeners;
     private final String id;
     private final String name;
     private final Map<String, Field<?>> fields;
 
-    public ApplicationState(Listener listener, String id, String name) {
-        this.listener = Objects.requireNonNull(listener);
+    public ApplicationState(Set<Listener> listeners, String id, String name) {
+        this.listeners = Objects.requireNonNull(listeners);
         this.id = Objects.requireNonNull(id);
         this.name = Objects.requireNonNull(name);
         this.fields = new HashMap<>();
@@ -48,7 +51,11 @@ public class ApplicationState {
     }
 
     public synchronized void clearFields() {
-        fields.forEach((name, field) -> listener.onRemoveField(this, field));
+        for (Field<?> field : fields.values()) {
+            for (Listener listener : listeners) {
+                listener.onRemoveField(this, field);
+            }
+        }
         fields.clear();
     }
 
@@ -68,9 +75,14 @@ public class ApplicationState {
     public synchronized void setField(Field<?> field) {
         Field<?> oldField = fields.remove(field.name());
         if (oldField != null) {
-            listener.onRemoveField(this, field);
+            for (Listener listener : listeners) {
+                listener.onReplaceField(this, oldField, field);
+            }
+        } else {
+            for (Listener listener : listeners) {
+                listener.onNewField(this, field);
+            }
         }
-        listener.onNewField(this, field);
         fields.put(field.name(), field);
     }
 
@@ -87,7 +99,9 @@ public class ApplicationState {
     public synchronized void removeField(String name) {
         Field<?> field = fields.remove(name);
         if (field != null) {
-            listener.onRemoveField(this, field);
+            for (Listener listener : listeners) {
+                listener.onRemoveField(this, field);
+            }
         }
     }
 

@@ -3,16 +3,18 @@ package io.deephaven.server.appmode;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
 import dagger.multibindings.IntoSet;
 import io.deephaven.appmode.ApplicationState;
 import io.deephaven.engine.util.ScriptSession;
-import io.deephaven.plugin.app.App;
+import io.deephaven.server.appmode.Applications.Listener;
 import io.deephaven.server.session.TicketResolver;
 import io.grpc.BindableService;
 
-import javax.inject.Singleton;
+import java.util.Collections;
+import java.util.Set;
 
-@Module
+@Module(includes = {ApplicationApplicationModule.class})
 public interface AppModeModule {
     @Binds
     @IntoSet
@@ -26,23 +28,15 @@ public interface AppModeModule {
     ScriptSession.Listener bindScriptSessionListener(ApplicationServiceGrpcImpl applicationService);
 
     @Binds
+    @IntoSet
     ApplicationState.Listener bindApplicationStateListener(ApplicationServiceGrpcImpl applicationService);
 
     @Binds
     ApplicationStates bindApplicationStates(Applications applications);
 
     @Provides
-    @Singleton
-    static Applications providesApplications() {
-        return Applications.create();
+    @ElementsIntoSet
+    static Set<Listener> primeApplicationsListener() {
+        return Collections.emptySet();
     }
-
-    @Provides
-    static FieldState providesFields(ApplicationServiceGrpcImpl impl) {
-        return impl.fields();
-    }
-
-    @Binds
-    @IntoSet
-    App providesApplication(ApplicationApp plugin);
 }

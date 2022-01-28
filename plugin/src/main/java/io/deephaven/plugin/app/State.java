@@ -40,7 +40,7 @@ public interface State {
         void set(String prefix, State state);
 
         /**
-         * A helper method equivalent to {@code state.insertInto(this)}.
+         * A helper method equivalent to {@code state.insertInto(this)}. TODO: do we need/want this method?
          *
          * @param state the state
          */

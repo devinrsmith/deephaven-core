@@ -1,6 +1,6 @@
 package io.deephaven.server.appmode;
 
-import io.deephaven.engine.table.Table;
+import io.deephaven.plugin.app.State;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders2;
 import io.deephaven.qst.column.header.ColumnHeaders4;
@@ -10,7 +10,7 @@ import io.deephaven.server.InputTableHelper;
 import java.io.IOException;
 import java.util.Objects;
 
-final class FieldTable {
+final class FieldTable implements State {
 
     private static final ColumnHeaders2<String, String> KEY_HEADER = ColumnHeader.ofString("Id")
             .header(ColumnHeader.ofString("Field"));
@@ -38,11 +38,8 @@ final class FieldTable {
         inputTable.delete(KEY_HEADER.start(1).row(id, field).newTable());
     }
 
-    public String describeTable() {
-        return InputTableDescriber.describe(inputTable);
-    }
-
-    public Table table() {
-        return inputTable.table();
+    @Override
+    public void insertInto(Consumer consumer) {
+        consumer.set("fields", inputTable.table(), InputTableDescriber.describe(inputTable));
     }
 }

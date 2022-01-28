@@ -39,17 +39,21 @@ public class ConsumerTest {
         private boolean set1;
         private boolean set2;
 
+        public MyConsumer() {
+            super(":");
+        }
+
         @Override
         public void set(String name, Object object) {
             assertThat(set1).isFalse();
-            assertThat(name).isEqualTo("a.b.object");
+            assertThat(name).isEqualTo("a:b:object");
             set1 = true;
         }
 
         @Override
         public void set(String name, Object object, String description) {
             assertThat(set2).isFalse();
-            assertThat(name).isEqualTo("a.d.object");
+            assertThat(name).isEqualTo("a:d:object");
             set2 = true;
         }
     }

@@ -9,4 +9,7 @@ public interface App extends Plugin, State {
     String id();
 
     String name();
+
+    @Override
+    void insertInto(Consumer consumer);
 }

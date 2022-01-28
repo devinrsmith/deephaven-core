@@ -37,6 +37,10 @@ public abstract class ColumnHeaders2<T1, T2> implements TableHeader.Buildable {
         return ImmutableColumnHeaders3.of(header, this);
     }
 
+    public final <T3, T4> ColumnHeaders4<T1, T2, T3, T4> header(ColumnHeaders2<T3, T4> header) {
+        return header(header.header1()).header(header.header2());
+    }
+
     public final Rows start(int initialCapacity) {
         return new Rows(initialCapacity);
     }

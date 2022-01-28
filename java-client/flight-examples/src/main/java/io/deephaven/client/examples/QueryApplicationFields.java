@@ -9,7 +9,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "query-app-fields", mixinStandardHelpOptions = true, description = "Query application fields", version = "0.1.0")
+@Command(name = "query-app-fields", mixinStandardHelpOptions = true, description = "Query application fields",
+        version = "0.1.0")
 class QueryApplicationFields extends FlightExampleBase {
 
     @Option(names = {"--app-id"}, required = false, description = "The application id.")

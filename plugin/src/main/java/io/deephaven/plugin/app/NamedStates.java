@@ -1,5 +1,6 @@
 package io.deephaven.plugin.app;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -12,6 +13,10 @@ public class NamedStates implements State {
 
     public static NamedStates of(String name, State... states) {
         return new NamedStates(Map.of(name, new States(states)));
+    }
+
+    public static NamedStates of(Map<String, State> states) {
+        return new NamedStates(new HashMap<>(states));
     }
 
     private final Map<String, State> states;

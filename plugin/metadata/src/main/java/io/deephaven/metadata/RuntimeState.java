@@ -36,13 +36,16 @@ public class RuntimeState implements State {
         consumer.set("pid", runtime.getPid());
         consumer.set("startTime", Instant.ofEpochMilli(runtime.getStartTime()), "The start time of the JVM.");
         if (runtime.isBootClassPathSupported()) {
-            consumer.set("bootClassPath", runtime.getBootClassPath(), "The boot class path that is used by the bootstrap class loader to search for class files.");
+            consumer.set("bootClassPath", runtime.getBootClassPath(),
+                    "The boot class path that is used by the bootstrap class loader to search for class files.");
         }
-        consumer.set("classPath", runtime.getClassPath(), "The Java class path that is used by the system class loader to search for class files.");
+        consumer.set("classPath", runtime.getClassPath(),
+                "The Java class path that is used by the system class loader to search for class files.");
         consumer.set("libraryPath", runtime.getLibraryPath(), "The Java library path.");
         consumer.set("vm", new VMInfo());
         consumer.set("spec", new Spec());
-        consumer.set("inputArguments", runtime.getInputArguments().toArray(String[]::new), "The input arguments passed to the JVM.");
+        consumer.set("inputArguments", runtime.getInputArguments().toArray(String[]::new),
+                "The input arguments passed to the JVM.");
 
         final LongSingleValue uptimeTable = LongSingleValue.create();
         consumer.set("uptimeTable", uptimeTable.table());

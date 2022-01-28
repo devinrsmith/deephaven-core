@@ -9,8 +9,6 @@ public final class ApplicationApp extends AppImpl {
 
     @Inject
     public ApplicationApp(Applications applications, FieldState fields) {
-        super(
-                ApplicationApp.class,
-                NamedStates.of("application", applications, fields));
+        super(ApplicationApp.class, NamedStates.of("test", applications, fields));
     }
 }

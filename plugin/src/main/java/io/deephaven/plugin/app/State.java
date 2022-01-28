@@ -22,7 +22,9 @@ public interface State {
         String separator();
 
         /**
-         * Creates a prefixed consumer, whose set methods are the equivalent of {@code this.set(prefix + separator() + name, object)} or {@code this.set(prefix + separator() + name, object, description)}.
+         * Creates a prefixed consumer, whose set methods are the equivalent of
+         * {@code this.set(prefix + separator() + name, object)} or
+         * {@code this.set(prefix + separator() + name, object, description)}.
          *
          * @param prefix the prefix
          * @return a prefixed consumer
@@ -31,6 +33,7 @@ public interface State {
 
         /**
          * A helper method equivalent to {@code prefix(prefix).set(state)}.
+         * 
          * @param prefix the partial prefix
          * @param state the state
          */
@@ -65,9 +68,19 @@ public interface State {
      */
     abstract class ConsumerBase implements Consumer {
 
+        private final String separator;
+
+        public ConsumerBase() {
+            this(".");
+        }
+
+        public ConsumerBase(String separator) {
+            this.separator = Objects.requireNonNull(separator);
+        }
+
         @Override
-        public String separator() {
-            return ".";
+        public final String separator() {
+            return separator;
         }
 
         @Override
@@ -90,13 +103,9 @@ public interface State {
             private final Consumer delegate;
 
             public PrefixedConsumer(String prefix, Consumer delegate) {
+                super(delegate.separator());
                 this.prefix = Objects.requireNonNull(prefix);
                 this.delegate = Objects.requireNonNull(delegate);
-            }
-
-            @Override
-            public String separator() {
-                return delegate.separator();
             }
 
             @Override

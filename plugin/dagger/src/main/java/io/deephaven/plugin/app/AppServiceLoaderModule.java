@@ -25,7 +25,7 @@ public interface AppServiceLoaderModule {
         return ServiceLoader.load(App.class).stream().map(AppServiceLoader::new).collect(Collectors.toSet());
     }
 
-    final class AppServiceLoader implements App {
+    final class AppServiceLoader extends AppRealBase {
 
         private final Provider<App> provider;
         private final Class<? extends App> type;
@@ -52,11 +52,6 @@ public interface AppServiceLoaderModule {
         @Override
         public void insertInto(Consumer consumer) {
             provider.get().insertInto(consumer);
-        }
-
-        @Override
-        public <T, V extends Visitor<T>> T walk(V visitor) {
-            return visitor.visit(this);
         }
 
         @Override

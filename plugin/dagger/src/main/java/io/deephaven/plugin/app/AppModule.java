@@ -35,7 +35,7 @@ public interface AppModule {
     }
 
     private static Class<? extends State> type(State state) {
-        return state instanceof StateServiceLoader ? ((StateServiceLoader)state).type() : state.getClass();
+        return state instanceof StateServiceLoader ? ((StateServiceLoader) state).type() : state.getClass();
     }
 
     private static AppImpl adapt(State state) {

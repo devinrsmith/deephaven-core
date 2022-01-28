@@ -1,14 +1,7 @@
 package io.deephaven.server.appmode;
 
 import io.deephaven.appmode.ApplicationState;
-import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.InMemoryTable;
-import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
-import io.deephaven.engine.util.config.MutableInputTable;
-import io.deephaven.plugin.app.State;
-import io.deephaven.qst.column.header.ColumnHeader;
-import io.deephaven.qst.column.header.ColumnHeaders2;
+import io.deephaven.plugin.app.StateDelegate;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -19,25 +12,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class Applications implements ApplicationStates, State {
-
-    private static final ColumnHeaders2<String, String> HEADER = ColumnHeader.ofString("Id")
-            .header(ColumnHeader.ofString("Name"));
+final class Applications implements ApplicationStates {
 
     public static Applications create() {
-        final AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
-        return new Applications(new ConcurrentHashMap<>(), table.mutableInputTable(), table.readOnlyCopy());
+        return new Applications(new ConcurrentHashMap<>(), ApplicationTable.create());
     }
 
     private final Map<String, ApplicationState> applicationMap;
-    private final MutableInputTable inputTable;
-    private final Table readOnlyTable;
+    private final ApplicationTable table;
 
-    private Applications(Map<String, ApplicationState> applicationMap, MutableInputTable inputTable,
-            Table readOnlyTable) {
+    private Applications(Map<String, ApplicationState> applicationMap, ApplicationTable table) {
         this.applicationMap = Objects.requireNonNull(applicationMap);
-        this.inputTable = Objects.requireNonNull(inputTable);
-        this.readOnlyTable = Objects.requireNonNull(readOnlyTable);
+        this.table = Objects.requireNonNull(table);
     }
 
     public synchronized void onApplicationLoad(final ApplicationState app) {
@@ -48,13 +34,15 @@ final class Applications implements ApplicationStates, State {
             return;
         }
         applicationMap.put(app.id(), app);
-        final String id = app.id();
-        final String name = app.name();
         try {
-            inputTable.add(InMemoryTable.from(HEADER.start(1).row(id, name).newTable()));
+            table.add(app.id(), app.name());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public ApplicationTable table() {
+        return table;
     }
 
     @Override
@@ -67,12 +55,4 @@ final class Applications implements ApplicationStates, State {
         return Collections.unmodifiableCollection(applicationMap.values());
     }
 
-    @Override
-    public void insertInto(Consumer consumer) {
-        consumer.set("info", table(), "Application Info [Id: STRING, Name: STRING]");
-    }
-
-    public Table table() {
-        return readOnlyTable;
-    }
 }

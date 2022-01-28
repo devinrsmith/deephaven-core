@@ -7,16 +7,18 @@ import io.deephaven.plugin.app.App;
 import io.deephaven.plugin.app.AppBase;
 import io.deephaven.qst.column.Column;
 
+import java.lang.management.ManagementFactory;
 import java.time.Instant;
 
 @AutoService(App.class)
 public final class MyApp extends AppBase {
 
     private final String version = "todo";
-    private final Instant startTime = Instant.now();
+    private final Instant startTime;
 
     public MyApp() {
-        super(MyApp.class.getName(), MyApp.class.getSimpleName());
+        super(MyApp.class);
+        startTime = Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
     }
 
     @Override

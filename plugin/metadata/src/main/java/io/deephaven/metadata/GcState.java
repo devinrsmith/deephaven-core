@@ -60,7 +60,6 @@ public final class GcState implements State, NotificationListener {
         return AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(headers));
     }
 
-
     public GcState() {
         startTime = Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
 

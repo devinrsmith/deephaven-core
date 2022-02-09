@@ -1,0 +1,9 @@
+plugins {
+    id 'java'
+    // uncomment below, will cause `./gradlew foo:javadoc` to break
+    // id 'groovy'
+}
+
+dependencies {
+    compile project(':open-api-lang-parser')
+}

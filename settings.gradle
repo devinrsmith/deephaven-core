@@ -61,6 +61,8 @@ pyMods.each {
         project(":$name").projectDir = file(dir)
 }
 
+include 'foo'
+
 include 'grpc-java:grpc-servlet-jakarta'
 include 'grpc-java:grpc-servlet-websocket-jakarta'
 

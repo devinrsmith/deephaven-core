@@ -18,6 +18,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class TestGroovyDeephavenSession {
 
     private LivenessScope livenessScope;
@@ -75,5 +77,33 @@ public class TestGroovyDeephavenSession {
                     "exception contains helpful error message");
         }
     }
-}
 
+    @Test
+    public void testQueryFormulaScopeObjectReferenceMember() {
+        final String script = "class MyObj {\n" +
+                "    public int foo;\n" +
+                "    MyObj(int foo) {\n" +
+                "        this.foo = foo\n" +
+                "    }\n" +
+                "}\n" +
+                "obj = new MyObj(42)\n" +
+                "result = emptyTable(1).select(\"Foo = obj.foo\")";
+        session.evaluateScript(script);
+        final Table result = fetchTable("result");
+        assertThat(result.getColumnSource("Foo").getInt(0)).isEqualTo(42);
+    }
+
+    @Test
+    public void testQueryFormulaScopeObjectInvokeFunction() {
+        final String script = "class MyObj {\n" +
+                "    public int foo() {\n" +
+                "        return 43\n" +
+                "    }\n" +
+                "}\n" +
+                "obj = new MyObj()\n" +
+                "result = emptyTable(1).select(\"Foo = obj.foo()\")";
+        session.evaluateScript(script);
+        final Table result = fetchTable("result");
+        assertThat(result.getColumnSource("Foo").getInt(0)).isEqualTo(43);
+    }
+}

@@ -1,9 +1,12 @@
 plugins {
     id 'java'
-    // uncomment below, will cause `./gradlew foo:javadoc` to break
-    // id 'groovy'
 }
 
 dependencies {
-    compile project(':open-api-lang-parser')
+    compile 'com.google.jsinterop:base:1.0.0-RC1'
+}
+
+tasks.withType(Javadoc) {
+    // Comment out the following, will cause `./gradlew foo:javadoc` to break
+    options.addStringOption('sourcepath', sourceSets.main.allJava.getSourceDirectories().getAsPath())
 }

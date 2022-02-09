@@ -1,7 +1,10 @@
 package io.deephaven;
 
-import io.deephaven.lang.parse.ParsedDocument;
+import jsinterop.base.Js;
 
+/**
+ * My javadoc
+ */
 public interface Foo {
-    ParsedDocument needThisRef();
+    Js needThisRef();
 }

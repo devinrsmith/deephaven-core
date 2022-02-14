@@ -9,7 +9,10 @@ import io.deephaven.util.text.Indenter;
  */
 public class Formatter {
     /**
-     * Add new lines and indentation to a String produced by {@link TableDataService#toString()}
+     *
+     * {@link TableDataService#toString()}
+     *
+     * Add new lines and indentation to a String produced by {@link TableDataService#toString()}.
      *
      * @param tdsStr the output of {@link TableDataService#toString()}
      * @return the same string with newlines and tabs.

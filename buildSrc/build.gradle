@@ -1,19 +1,11 @@
 plugins {
     id 'groovy'
-    id 'idea'
     id 'groovy-gradle-plugin'
 }
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
-idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
     }
 }
 
@@ -36,5 +28,11 @@ dependencies {
     compile('com.netflix.nebula:gradle-ospackage-plugin:8.3.0')
 
     compile "gradle.plugin.com.jetbrains.python:gradle-python-envs:0.0.30"
+
+    // src/main/groovy/io.deephaven.java-coding-conventions.gradle
+    compile 'com.diffplug.spotless:spotless-plugin-gradle:5.14.2'
+
+    // src/main/groovy/io.deephaven.java-license-conventions.gradle
+    compile 'gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0'
 }
 

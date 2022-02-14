@@ -2,6 +2,10 @@
  * Copyright (c) 2016-2021 Deephaven Data Labs and Patent Pending
  */
 
+plugins {
+    id 'io.deephaven.project.java-public' // todo: what depends on this
+}
+
 configurations {
     testCompile.extendsFrom fishBaseTest
 }

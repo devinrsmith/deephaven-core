@@ -82,17 +82,18 @@ public interface PythonScope<PyObj> {
     }
 
     /**
-     * Equivalent to {@code getValueRaw(name).map(this::convertValue)}.
+     * Equivalent to {@link #getValueRaw(String)}.map({@link #convertValue(PyObj)})
      *
      * @param name the name of the python variable
      * @return the converted object value, or empty
      */
     default Optional<Object> getValue(String name) {
-        return getValueRaw(name).map(this::convertValue);
+        return getValueRaw(name)
+                .map(this::convertValue);
     }
 
     /**
-     * Equivalent to {@code getValue(name).map(clazz::cast)}.
+     * Equivalent to {@link #getValue(String)}.map({@code clazz}.{@link Class#cast(Object)})
      *
      * @param name the name of the python variable
      * @param clazz the class to cast to
@@ -100,11 +101,12 @@ public interface PythonScope<PyObj> {
      * @return the converted casted value, or empty
      */
     default <T> Optional<T> getValue(String name, Class<T> clazz) {
-        return getValue(name).map(clazz::cast);
+        return getValue(name)
+                .map(clazz::cast);
     }
 
     /**
-     * Equivalent to {@code getValue(name).map(x -> (T) x)}.
+     * Equivalent to {@link #getValue(String)}.map(x -> (T)x);
      *
      * @param name the name of the python variable
      * @param <T> the return type
@@ -112,21 +114,23 @@ public interface PythonScope<PyObj> {
      */
     default <T> Optional<T> getValueUnchecked(String name) {
         // noinspection unchecked
-        return getValue(name).map(x -> (T) x);
+        return getValue(name)
+                .map(x -> (T) x);
     }
 
     /**
-     * Equivalent to {@code getKeysRaw().map(this::convertStringKey)}.
+     * Equivalent to {@link #getKeysRaw()}.map({@link #convertStringKey(PyObj)})
      *
      * @return the string keys
      */
     default Stream<String> getKeys() {
-        return getKeysRaw().map(this::convertStringKey);
+        return getKeysRaw()
+                .map(this::convertStringKey);
     }
 
     /**
-     * Equivalent to {@link #getEntriesRaw()}, where the keys have been converted via {@link #convertStringKey(Object)}
-     * and the values via {@link #convertValue(Object)}.
+     * Equivalent to {@link #getEntriesRaw()}, where the keys have been converted via {@link #convertStringKey(PyObj)}
+     * and the values via {@link #convertValue(PyObj)}
      *
      * @return the string keys and converted values
      */
@@ -136,12 +140,13 @@ public interface PythonScope<PyObj> {
     }
 
     /**
-     * Equivalent to {@code getKeys().collect(Collectors.toList())}.
+     * Equivalent to {@link #getKeys()}.collect(someCollector)
      *
      * @return the string keys, as a collection
      */
     default Collection<String> getKeysCollection() {
-        return getKeys().collect(Collectors.toList());
+        return getKeys()
+                .collect(Collectors.toList());
     }
 
     /**

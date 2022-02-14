@@ -23,49 +23,9 @@ def writeJavadocVersion = tasks.register 'writeJavadocVersion', {
         }
 }
 
-// TODO: the following javadoc breaks
 def isJavaPublic = { Project p ->
     return io.deephaven.project.Type.getType(p) == 'java-public'
 }
-
-//def isJavaPublic = { Project p ->
-//    return [
-//            'DataStructures',
-//            'engine-chunk',
-//            'engine-vector',
-//            'engine-time',
-//            'engine-stringset',
-//            'engine-function',
-//            'engine-tuple',
-//            'engine-updategraph',
-//            'engine-rowset',
-//            'engine-api',
-//            'engine-base',
-//            'engine-tuplesource',
-//            'engine-table',
-//            'extensions-csv',
-//            'extensions-kafka',
-//            'extensions-parquet-table',
-//            'plugin',
-//            'plugin-figure',
-//            'Util',
-//            'ModelFarm',
-//            'Numerics',
-//            'Plot',
-//            'server',
-//            'qst',
-//            'table-api',
-//            'uri',
-//            'java-client-session',
-//            'java-client-session-dagger',
-//            'java-client-flight',
-//            'java-client-flight-dagger',
-//            'java-client-barrage',
-//            'java-client-barrage-dagger',
-//            'proto:proto-backplane-grpc',
-//            'proto:proto-backplane-grpc-flight'
-//    ].contains(p.name)
-//}
 
 def allJavadoc = tasks.register 'allJavadoc', Javadoc, {
     Javadoc jdoc ->

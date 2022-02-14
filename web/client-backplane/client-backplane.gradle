@@ -1,5 +1,5 @@
 plugins {
-    id 'io.deephaven.project.java-public' // todo: do we need to publish this jar
+    id 'io.deephaven.project.java-local'
 }
 
 evaluationDependsOn ':proto'

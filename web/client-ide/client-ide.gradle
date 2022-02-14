@@ -1,6 +1,6 @@
 plugins {
     id 'com.bmuschko.docker-remote-api'
-    id 'io.deephaven.project.java-public' // todo: do we need to publish this jar
+    id 'io.deephaven.project.java-local'
 }
 
 evaluationDependsOn Docker.registryProject('nginx-base')

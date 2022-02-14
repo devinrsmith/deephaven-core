@@ -1,7 +1,7 @@
 plugins {
     id 'com.bmuschko.docker-remote-api'
+    id 'io.deephaven.project.java-public'
     id 'com.avast.gradle.docker-compose'
-    id 'io.deephaven.project.java-public' // TODO: what depends on this?
     id 'idea'
 }
 

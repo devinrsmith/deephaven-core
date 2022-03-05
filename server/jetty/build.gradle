@@ -10,6 +10,8 @@ configurations {
 dependencies {
     implementation project(':server')
 
+    implementation project(':engine-function')
+
     Classpaths.inheritDagger(project)
     Classpaths.inheritDagger(project, /* test */ true)
 

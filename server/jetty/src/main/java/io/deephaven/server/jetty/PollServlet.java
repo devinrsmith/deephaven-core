@@ -21,11 +21,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class PollServlet extends HttpServlet {
 
-    private static final ColumnHeaders5<Instant, String, String, String, Long> HEADERS = ColumnHeader.ofInstant("Timestamp")
-            .header(ColumnHeader.ofString("Address"))
-            .header(ColumnHeader.ofString("Id"))
-            .header(ColumnHeader.ofString("UserAgent"))
-            .header(ColumnHeader.ofLong("BestNumber"));
+    private static final ColumnHeaders5<Instant, String, String, String, Long> HEADERS =
+            ColumnHeader.ofInstant("Timestamp")
+                    .header(ColumnHeader.ofString("Address"))
+                    .header(ColumnHeader.ofString("Id"))
+                    .header(ColumnHeader.ofString("UserAgent"))
+                    .header(ColumnHeader.ofLong("BestNumber"));
 
     private static volatile AppendOnlyArrayBackedMutableTable TABLE = null;
 
@@ -41,7 +42,8 @@ public final class PollServlet extends HttpServlet {
         return localT;
     }
 
-    private static void record(Instant timestamp, String remoteAddr, String id, String userAgent, long bestNumber) throws IOException {
+    private static void record(Instant timestamp, String remoteAddr, String id, String userAgent, long bestNumber)
+            throws IOException {
         NewTable newTable = HEADERS.start(1).row(timestamp, remoteAddr, id, userAgent, bestNumber).newTable();
         table().mutableInputTable().add(InMemoryTable.from(newTable));
     }

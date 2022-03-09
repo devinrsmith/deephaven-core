@@ -102,12 +102,71 @@ public final class PollServlet extends HttpServlet {
         Writer htmlWriter = new OutputStreamWriter(response.getOutputStream(), UTF_8);
         htmlWriter.append("<html>");
         htmlWriter.append("\n  <head>");
-        htmlWriter.append("\n    <title>Poll submitted</title>");
+        htmlWriter.append("\n    <title>Poll submitted</title>" +
+                "  <script src='https://cdn.plot.ly/plotly-2.9.0.min.js'></script>\n" +
+                "  <script src='https://crypto.devinrsmith.com/jsapi/dh-internal.js'></script>\n" +
+                "  <script src='https://crypto.devinrsmith.com/jsapi/dh-core.js'></script>");
         htmlWriter.append("\n  </head>");
         htmlWriter.append("\n  <body>");
         htmlWriter.append("\n  Thanks for your poll submission. I agree, the best number is " + num + ".");
         htmlWriter.append("\n  <br><br>");
         htmlWriter.append("\n  <a href=\"/poll\">Back</a>");
+        htmlWriter.append("\n  <br><br>");
+//        htmlWriter.append("\n  <iframe src=\"/iframe/table/?name=poll_results\" height=\"300\" width=\"1280\" frameborder=\"0\"></iframe>");
+        htmlWriter.append("\n  <div id='myDiv'><!-- Plotly chart will be drawn inside this DIV --></div>");
+        htmlWriter.append("\n");
+        htmlWriter.append("<script>\n" +
+                "  var HOST = 'http://localhost:10000';\n" +
+                "var TABLE_NAME = 'poll_results';\n" +
+                "\n" +
+                "var data = \n" +
+                "  {\n" +
+                "    x: [],\n" +
+                "    y: [],\n" +
+                "    type: 'bar'\n" +
+                "  };\n" +
+                "var plotlyData = [data];\n" +
+                "\n" +
+                "\n" +
+                "async function initTable() {\n" +
+                "  console.log('Creating connection');\n" +
+                "  var connection = new dh.IdeConnection(HOST)\n" +
+                "\n" +
+                "  console.log('Creating session');\n" +
+                "  var session = await connection.startSession('python');\n" +
+                "  \n" +
+                "  console.log('Loading table', TABLE_NAME);\n" +
+                "  var table = await session.getObject({ name: TABLE_NAME, type: dh.VariableType.TABLE });\n" +
+                "  \n" +
+                "  console.log('Adding listener'); table.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
+                "    console.log('Table viewport updated, extracting data');\n" +
+                "    // Extract the viewport data\n" +
+                "    const viewportData = event.detail;\n" +
+                "    const { columns } = viewportData;\n" +
+                "    \n" +
+                "    // New axis arrays for storing the data. Just replace the old one\n" +
+                "    data.x = [];\n" +
+                "    data.y = [];\n" +
+                "    for (let r = 0; r < viewportData.rows.length; r += 1) {\n" +
+                "      const row = viewportData.rows[r];\n" +
+                "      // Assumes column[0] is x, column[1] is y\n" +
+                "      // Convert to a string so that if one of the columns is a long wrapper, it gets converted automatically\n" +
+                "      // Could also use value.asNumber(), but this way we don't need to check, and plotly doesn't care if it's a string or a number\n" +
+                "      data.x.push(`${row.get(columns[0])}`);\n" +
+                "      data.y.push(`${row.get(columns[1])}`);\n" +
+                "    }\n" +
+                "    \n" +
+                "    console.log('Viewport data extracted', plotlyData);\n" +
+                "    Plotly.react('myDiv', plotlyData);\n" +
+                "  });\n" +
+                "  \n" +
+                "  table.setViewport(0, table.size);\n" +
+                "}\n" +
+                "\n" +
+                "Plotly.newPlot('myDiv', plotlyData);\n" +
+                "\n" +
+                "initTable();\n" +
+                "</script>");
         htmlWriter.append("\n  </body>");
         htmlWriter.append("\n</html>\n");
         htmlWriter.flush();

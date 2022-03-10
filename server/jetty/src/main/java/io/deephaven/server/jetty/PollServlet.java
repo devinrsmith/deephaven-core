@@ -4,6 +4,7 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
+import io.deephaven.function.LongPrimitives;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders5;
 import io.deephaven.qst.table.NewTable;
@@ -11,11 +12,18 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -31,7 +39,7 @@ public final class PollServlet extends HttpServlet {
     private static volatile AppendOnlyArrayBackedMutableTable TABLE = null;
 
     private static AppendOnlyArrayBackedMutableTable table() {
-        AppendOnlyArrayBackedMutableTable localT = TABLE;
+        AppendOnlyArrayBackedMutableTable localT;
         if ((localT = TABLE) == null) {
             synchronized (PollServlet.class) {
                 if ((localT = TABLE) == null) {
@@ -46,6 +54,10 @@ public final class PollServlet extends HttpServlet {
             throws IOException {
         NewTable newTable = HEADERS.start(1).row(timestamp, remoteAddr, id, userAgent, bestNumber).newTable();
         table().mutableInputTable().add(InMemoryTable.from(newTable));
+        final String out = Stream.of(timestamp.toString(), remoteAddr, id, userAgent, Long.toString(bestNumber))
+                .map(StringEscapeUtils::escapeCsv)
+                .collect(Collectors.joining(","));
+        Files.write(Paths.get("poll.csv"), Collections.singleton(out), UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
     }
 
     public static Table getTable() {
@@ -89,6 +101,10 @@ public final class PollServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
+        if (LongPrimitives.isNull(bestNumber)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
 
         String remoteAddr = req.getRemoteAddr();
         String id = req.getSession().getId();
@@ -112,11 +128,12 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  <br><br>");
         htmlWriter.append("\n  <a href=\"/poll\">Back</a>");
         htmlWriter.append("\n  <br><br>");
-//        htmlWriter.append("\n  <iframe src=\"/iframe/table/?name=poll_results\" height=\"300\" width=\"1280\" frameborder=\"0\"></iframe>");
-        htmlWriter.append("\n  <div id='myDiv'><!-- Plotly chart will be drawn inside this DIV --></div>");
+        htmlWriter.append("\n  <div id='poll_results'><!-- Plotly chart will be drawn inside this DIV --></div>");
+        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"100\" width=\"1280\" frameborder=\"0\"></iframe>");
+        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"800\" width=\"1280\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n");
         htmlWriter.append("<script>\n" +
-                "  var HOST = 'http://localhost:10000';\n" +
+                "var HOST = 'http://localhost:10000';\n" +
                 "var TABLE_NAME = 'poll_results';\n" +
                 "\n" +
                 "var data = \n" +
@@ -133,7 +150,7 @@ public final class PollServlet extends HttpServlet {
                 "  var connection = new dh.IdeConnection(HOST)\n" +
                 "\n" +
                 "  console.log('Creating session');\n" +
-                "  var session = await connection.startSession('python');\n" +
+                "  var session = await connection.startSession('groovy');\n" +
                 "  \n" +
                 "  console.log('Loading table', TABLE_NAME);\n" +
                 "  var table = await session.getObject({ name: TABLE_NAME, type: dh.VariableType.TABLE });\n" +
@@ -157,13 +174,13 @@ public final class PollServlet extends HttpServlet {
                 "    }\n" +
                 "    \n" +
                 "    console.log('Viewport data extracted', plotlyData);\n" +
-                "    Plotly.react('myDiv', plotlyData);\n" +
+                "    Plotly.react('poll_results', plotlyData);\n" +
                 "  });\n" +
                 "  \n" +
                 "  table.setViewport(0, table.size);\n" +
                 "}\n" +
                 "\n" +
-                "Plotly.newPlot('myDiv', plotlyData);\n" +
+                "Plotly.newPlot('poll_results', plotlyData);\n" +
                 "\n" +
                 "initTable();\n" +
                 "</script>");

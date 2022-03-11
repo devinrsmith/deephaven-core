@@ -173,7 +173,7 @@ public final class PollServlet extends HttpServlet {
                 "    }\n" +
                 "    Plotly.react(div_name, plotlyData, layout);\n" +
                 "  });  \n" +
-                "  table.setViewport(0, Number.MAX_SAFE_INTEGER - 1);\n" +
+                "  table.setViewport(0, 100);\n" +
                 "}\n" +
                 "\n" +
                 "async function initBar(session, table_name, div_name, title, height, width) {\n" +
@@ -204,7 +204,7 @@ public final class PollServlet extends HttpServlet {
                 "    }\n" +
                 "    Plotly.react(div_name, plotlyData, layout);\n" +
                 "  });  \n" +
-                "  table.setViewport(0, Number.MAX_SAFE_INTEGER - 1);\n" +
+                "  table.setViewport(0, 100);\n" +
                 "}\n" +
                 "\n" +
                 "async function initGauge(session, table_name, table_max_name, div_name, title, height, width) { \n" +

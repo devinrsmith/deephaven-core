@@ -57,7 +57,7 @@ public final class PollServlet extends HttpServlet {
         final String out = Stream.of(timestamp.toString(), remoteAddr, id, userAgent, Long.toString(bestNumber))
                 .map(StringEscapeUtils::escapeCsv)
                 .collect(Collectors.joining(","));
-        Files.write(Paths.get("poll.csv"), Collections.singleton(out), UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        Files.write(Paths.get(System.getProperty("poll.file", "poll.csv")), Collections.singleton(out), UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
     }
 
     public static Table getTable() {
@@ -67,7 +67,7 @@ public final class PollServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         // todo: is there a way to do this browser / js side?
-        String host = req.getHeader("Host");
+        //String host = req.getHeader("Host");
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.setCharacterEncoding("utf-8");
@@ -82,9 +82,13 @@ public final class PollServlet extends HttpServlet {
                 "  <input type=\"submit\" value=\"Submit\">\n" +
                 "</form>");
         htmlWriter.append("\nNote: \"advanced\" users can also run:");
-        htmlWriter.append("\n<br><br>curl -d 'num=42' '").append(host).append("/poll'");
+        htmlWriter.append("\n<br><br>curl -d 'num=42' '").append(getHost()).append("/poll'");
         htmlWriter.append("\n</body></html>\n");
         htmlWriter.flush();
+    }
+
+    private String getHost() {
+        return System.getProperty("poll.host", "http://localhost:10000");
     }
 
     @Override
@@ -120,8 +124,8 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  <head>");
         htmlWriter.append("\n    <title>Poll submitted</title>" +
                 "  <script src='https://cdn.plot.ly/plotly-2.9.0.min.js'></script>\n" +
-                "  <script src='https://crypto.devinrsmith.com/jsapi/dh-internal.js'></script>\n" +
-                "  <script src='https://crypto.devinrsmith.com/jsapi/dh-core.js'></script>");
+                "  <script src='/jsapi/dh-internal.js'></script>\n" +
+                "  <script src='/jsapi/dh-core.js'></script>");
         htmlWriter.append("\n  </head>");
         htmlWriter.append("\n  <body>");
         htmlWriter.append("\n  Thanks for your poll submission. I agree, the best number is " + num + ".");
@@ -133,7 +137,7 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"800\" width=\"1280\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n");
         htmlWriter.append("<script>\n" +
-                "var HOST = 'http://localhost:10000';\n" +
+                "var HOST = '" + getHost() + "';\n" +
                 "var TABLE_NAME = 'poll_results';\n" +
                 "\n" +
                 "var data = \n" +

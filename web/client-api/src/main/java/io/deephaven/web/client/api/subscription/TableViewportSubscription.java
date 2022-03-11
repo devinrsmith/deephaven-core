@@ -283,7 +283,8 @@ public class TableViewportSubscription extends HasEventHandling {
                                 headers),
                         (nextPayload, headers, c) -> connection.browserFlightServiceClient().nextDoExchange(nextPayload,
                                 headers,
-                                c::apply));
+                                c::apply),
+                        new FlightData());
 
                 Builder doGetRequest = new Builder(1024);
                 double columnsOffset = BarrageSubscriptionRequest.createColumnsVector(doGetRequest,

@@ -947,7 +947,8 @@ public class WorkerConnection {
                     headers -> flightServiceClient.doPut(headers),
                     (firstPayload, headers) -> browserFlightServiceClient.openDoPut(firstPayload, headers),
                     (nextPayload, headers, callback) -> browserFlightServiceClient.nextDoPut(nextPayload, headers,
-                            callback::apply));
+                            callback::apply),
+                    new FlightData());
             stream.send(schemaMessage);
 
             stream.onEnd(status -> {
@@ -1302,7 +1303,8 @@ public class WorkerConnection {
                         headers -> flightServiceClient.doExchange(headers),
                         (firstPayload, headers) -> browserFlightServiceClient.openDoExchange(firstPayload, headers),
                         (nextPayload, headers, c) -> browserFlightServiceClient.nextDoExchange(nextPayload, headers,
-                                c::apply));
+                                c::apply),
+                        new FlightData());
 
                 stream.send(request);
                 stream.onData(new JsConsumer<FlightData>() {

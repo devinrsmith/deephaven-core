@@ -87,7 +87,7 @@ public class IdeSession extends HasEventHandling {
                     (firstPayload, headers) -> connection.consoleServiceClient().openAutoCompleteStream(firstPayload,
                             headers),
                     (nextPayload, headers, c) -> connection.consoleServiceClient().nextAutoCompleteStream(nextPayload,
-                            headers, c::apply));
+                            headers, c::apply), new AutoCompleteRequest());
         };
     }
 

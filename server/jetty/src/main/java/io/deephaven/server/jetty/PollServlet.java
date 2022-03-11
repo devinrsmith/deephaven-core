@@ -136,62 +136,128 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  <br><br>");
         htmlWriter.append("\n  <a href=\"/poll\">Back</a>");
         htmlWriter.append("\n  <br><br>");
-        htmlWriter.append("\n  <div id='poll_results'><!-- Plotly chart will be drawn inside this DIV --></div>");
+        htmlWriter.append("\n \t<div id='poll_results_pie'></div>\n" +
+                "  <div id='poll_results_bar'></div>\n" +
+                "  <div id='poll_gauge'></div>");
         htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"80\" width=\"1000\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"500\" width=\"1280\" frameborder=\"0\"></iframe>");
-        htmlWriter.append("\n");
-        htmlWriter.append("<script>\n" +
-                "var HOST = '" + getHost() + "';\n" +
-                "var TABLE_NAME = 'poll_results';\n" +
-                "\n" +
-                "var data = \n" +
-                "  {\n" +
-                "    x: [],\n" +
-                "    y: [],\n" +
-                "    type: 'bar'\n" +
+        htmlWriter.append("\n<script>");
+        htmlWriter.append("\nasync function initPie(session, table_name, div_name, title, height, width) {\n" +
+                "  var data = \n" +
+                "    {\n" +
+                "      labels: [],\n" +
+                "      values: [],\n" +
+                "      type: 'pie'\n" +
+                "    };\n" +
+                "  var plotlyData = [data];\n" +
+                "  \n" +
+                "  var layout = {\n" +
+                "    title: title,\n" +
+                "    height: height,\n" +
+                "    width: width\n" +
                 "  };\n" +
-                "var plotlyData = [data];\n" +
-                "\n" +
-                "\n" +
-                "async function initTable() {\n" +
-                "  console.log('Creating connection');\n" +
-                "  var connection = new dh.IdeConnection(HOST)\n" +
-                "\n" +
-                "  console.log('Creating session');\n" +
-                "  var session = await connection.startSession('groovy');\n" +
                 "  \n" +
-                "  console.log('Loading table', TABLE_NAME);\n" +
-                "  var table = await session.getObject({ name: TABLE_NAME, type: dh.VariableType.TABLE });\n" +
-                "  \n" +
-                "  console.log('Adding listener'); table.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
-                "    console.log('Table viewport updated, extracting data');\n" +
-                "    // Extract the viewport data\n" +
+                "  Plotly.newPlot(div_name, plotlyData, layout);\n" +
+                "\n" +
+                "  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });\n" +
+                "  table.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
                 "    const viewportData = event.detail;\n" +
                 "    const { columns } = viewportData;\n" +
-                "    \n" +
-                "    // New axis arrays for storing the data. Just replace the old one\n" +
+                "    data.labels = [];\n" +
+                "    data.values = [];\n" +
+                "    for (let r = 0; r < viewportData.rows.length; r += 1) {\n" +
+                "      const row = viewportData.rows[r];\n" +
+                "      data.labels.push(`${row.get(columns[0])}`);\n" +
+                "      data.values.push(`${row.get(columns[1])}`);\n" +
+                "    }\n" +
+                "    Plotly.react(div_name, plotlyData, layout);\n" +
+                "  });  \n" +
+                "  table.setViewport(0, Number.MAX_SAFE_INTEGER - 1);\n" +
+                "}\n" +
+                "\n" +
+                "async function initBar(session, table_name, div_name, title, height, width) {\n" +
+                "  var data = \n" +
+                "    {\n" +
+                "      x: [],\n" +
+                "      y: [],\n" +
+                "      type: 'bar'\n" +
+                "    };\n" +
+                "  var plotlyData = [data];  \n" +
+                "  var layout = {\n" +
+                "    title: title,\n" +
+                "    height: height,\n" +
+                "    width: width\n" +
+                "  };  \n" +
+                "  Plotly.newPlot(div_name, plotlyData, layout);\n" +
+                "\n" +
+                "  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });\n" +
+                "  table.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
+                "    const viewportData = event.detail;\n" +
+                "    const { columns } = viewportData;\n" +
                 "    data.x = [];\n" +
                 "    data.y = [];\n" +
                 "    for (let r = 0; r < viewportData.rows.length; r += 1) {\n" +
                 "      const row = viewportData.rows[r];\n" +
-                "      // Assumes column[0] is x, column[1] is y\n" +
-                "      // Convert to a string so that if one of the columns is a long wrapper, it gets converted automatically\n" +
-                "      // Could also use value.asNumber(), but this way we don't need to check, and plotly doesn't care if it's a string or a number\n" +
                 "      data.x.push(`${row.get(columns[0])}`);\n" +
                 "      data.y.push(`${row.get(columns[1])}`);\n" +
                 "    }\n" +
-                "    \n" +
-                "    console.log('Viewport data extracted', plotlyData);\n" +
-                "    Plotly.react('poll_results', plotlyData);\n" +
-                "  });\n" +
-                "  \n" +
-                "  table.setViewport(0, table.size);\n" +
+                "    Plotly.react(div_name, plotlyData, layout);\n" +
+                "  });  \n" +
+                "  table.setViewport(0, Number.MAX_SAFE_INTEGER - 1);\n" +
                 "}\n" +
                 "\n" +
-                "Plotly.newPlot('poll_results', plotlyData);\n" +
+                "async function initGauge(session, table_name, table_max_name, div_name, title, height, width) { \n" +
+                "  var data =\n" +
+                "    {\n" +
+                "      domain: { x: [0, 1], y: [0, 1] },\n" +
+                "      value: 0,\n" +
+                "      title: { text: title },\n" +
+                "      type: \"indicator\",\n" +
+                "      mode: \"gauge+number\",\n" +
+                "      gauge: { axis: { range: [null, 100] } }\n" +
+                "    };\n" +
+                "  var plotlyData = [data]\n" +
+                "  var layout = { width: width, height: height };\n" +
+                "  Plotly.newPlot(div_name, plotlyData, layout);\n" +
+                "  \n" +
+                "  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });\n" +
+                "  table.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
+                "    const viewportData = event.detail;\n" +
+                "    const { columns } = viewportData;   \n" +
+                "    for (let r = 0; r < viewportData.rows.length; r += 1) {\n" +
+                "      const row = viewportData.rows[r];\n" +
+                "      const val = `${row.get(columns[0])}`;\n" +
+                "      data.value = val;\n" +
+                "    }\n" +
+                "    Plotly.react(div_name, plotlyData, layout);\n" +
+                "  });  \n" +
+                "  table.setViewport(0, 0);\n" +
+                "  \n" +
+                "  var table_max = await session.getObject({ name: table_max_name, type: dh.VariableType.TABLE });\n" +
+                "  table_max.addEventListener(dh.Table.EVENT_UPDATED, event => {\n" +
+                "    const viewportData = event.detail;\n" +
+                "    const { columns } = viewportData;   \n" +
+                "    for (let r = 0; r < viewportData.rows.length; r += 1) {\n" +
+                "      const row = viewportData.rows[r];\n" +
+                "      const val = `${row.get(columns[0])}`;\n" +
+                "      data.gauge = { axis: { range: [null, val] } };\n" +
+                "    }\n" +
+                "    Plotly.react(div_name, plotlyData, layout);\n" +
+                "  });  \n" +
+                "  table_max.setViewport(0, 0);\n" +
+                "}\n" +
                 "\n" +
-                "initTable();\n" +
-                "</script>");
+                "async function init(host) {\n" +
+                "  var connection = new dh.IdeConnection(host) \n" +
+                "  var session = await connection.startSession('groovy');\n" +
+                "  initPie(session, 'poll_results', 'poll_results_pie', 'Poll Results (top 5)', 500, 500);\n" +
+                "  initBar(session, 'poll_results', 'poll_results_bar', 'Poll Results (top 5)', 500, 500);\n" +
+                "  initGauge(session, 'hits_by_min_latest', 'hits_by_min_max', 'poll_gauge', 'Hits this minute', 500, 500);\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "init('" + getHost() + "')\n");
+        htmlWriter.append("\n</script>");
         htmlWriter.append("\n  </body>");
         htmlWriter.append("\n</html>\n");
         htmlWriter.flush();

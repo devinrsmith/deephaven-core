@@ -250,8 +250,8 @@ public final class PollServlet extends HttpServlet {
                 "async function init(host) {\n" +
                 "  var connection = new dh.IdeConnection(host) \n" +
                 "  var session = await connection.startSession('groovy');\n" +
-                "  initPie(session, 'poll_results', 'poll_results_pie', 'Poll Results (top 5)', 500, 500);\n" +
-                "  initBar(session, 'poll_results', 'poll_results_bar', 'Poll Results (top 5)', 500, 500);\n" +
+                "  initPie(session, 'poll_count_top_5', 'poll_results_pie', 'Poll Results (top 5)', 500, 500);\n" +
+                "  initBar(session, 'poll_count_top_5', 'poll_results_bar', 'Poll Results (top 5)', 500, 500);\n" +
                 "  initGauge(session, 'hits_by_min_latest', 'hits_by_min_max', 'poll_gauge', 'Hits this minute', 500, 500);\n" +
                 "}\n" +
                 "\n" +

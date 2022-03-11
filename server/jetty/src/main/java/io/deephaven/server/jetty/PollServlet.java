@@ -135,10 +135,11 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  Thanks for your poll submission. I agree, the best number is " + num + ".");
         htmlWriter.append("\n  <br><br>");
         htmlWriter.append("\n  <a href=\"/poll\">Back</a>");
-        htmlWriter.append("\n  <br><br>");
-        htmlWriter.append("\n \t<div id='poll_results_pie'></div>\n" +
-                "  <div id='poll_results_bar'></div>\n" +
-                "  <div id='poll_gauge'></div>");
+        htmlWriter.append("\n  <br>");
+        htmlWriter.append("\n " +
+                "  <div style=\"display: inline-block;\" id='poll_gauge'></div>\n" +
+                "  <div style=\"display: inline-block;\" id='poll_results_pie'></div>\n" +
+                "  <div style=\"display: inline-block;\" id='poll_results_bar'></div>");
         htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"80\" width=\"1000\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"500\" width=\"1280\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n<script>");
@@ -250,11 +251,10 @@ public final class PollServlet extends HttpServlet {
                 "async function init(host) {\n" +
                 "  var connection = new dh.IdeConnection(host) \n" +
                 "  var session = await connection.startSession('groovy');\n" +
-                "  initPie(session, 'poll_count_top_5', 'poll_results_pie', 'Poll Results (top 5)', 500, 500);\n" +
-                "  initBar(session, 'poll_count_top_5', 'poll_results_bar', 'Poll Results (top 5)', 500, 500);\n" +
-                "  initGauge(session, 'hits_by_min_latest', 'hits_by_min_max', 'poll_gauge', 'Hits this minute', 500, 500);\n" +
-                "}\n" +
-                "\n" +
+                "  initPie(session, 'poll_count_top_10', 'poll_results_pie', 'Poll Results (top 10)', 400, 500);\n" +
+                "  initBar(session, 'poll_count_top_5', 'poll_results_bar', 'Poll Results (top 5)', 400, 800);\n" +
+                "  initGauge(session, 'hits_by_min_latest', 'hits_by_min_max', 'poll_gauge', 'Hits this minute', 400, 400);\n" +
+                "}" +
                 "\n" +
                 "init('" + getHost() + "')\n");
         htmlWriter.append("\n</script>");

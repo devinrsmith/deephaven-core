@@ -32,7 +32,7 @@ public final class PollResultsServlet extends HttpServlet {
                 "  <div style=\"display: inline-block;\" id='poll_results_pie'></div>\n" +
                 "  <div style=\"display: inline-block;\" id='poll_results_bar'></div>\n" +
                 "  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"80\" width=\"1000\" frameborder=\"0\"></iframe>\n" +
-                "  <br><iframe src=\"/iframe/table/?name=poll\" height=\"500\" width=\"1280\" frameborder=\"0\"></iframe>\n" +
+                "  <br><iframe src=\"/iframe/table/?name=poll_public\" height=\"500\" width=\"1280\" frameborder=\"0\"></iframe>\n" +
                 "  <script>\n" +
                 "async function initPie(session, table_name, div_name, title, height, width) {\n" +
                 "  var data = \n" +

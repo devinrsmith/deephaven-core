@@ -26,6 +26,8 @@ poll_csv = readCsv(System.getProperty("poll.file", "poll.csv"), CsvSpecs.builder
 
 poll = merge(poll_csv, PollServlet.getTable())
 
+poll_public = poll.dropColumns("Address")
+
 poll_count = poll.countBy("Count", "BestNumber")
         .sortDescending("Count")
 

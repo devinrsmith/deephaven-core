@@ -58,6 +58,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
         context.addFilter(CacheFilter.class, "/iriside/static/*", EnumSet.noneOf(DispatcherType.class));
 
         context.addServlet(PollServlet.class, "/poll");
+        context.addServlet(PollResultsServlet.class, "/poll_results");
 
         // Always add eTags
         context.setInitParameter("org.eclipse.jetty.servlet.Default.etags", "true");

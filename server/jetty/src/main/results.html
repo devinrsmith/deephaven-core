@@ -1,0 +1,132 @@
+<html>
+<head>
+    <title>Poll Results</title>
+    <script src='https://cdn.plot.ly/plotly-2.9.0.min.js'></script>
+    <script src='/jsapi/dh-internal.js'></script>
+    <script src='/jsapi/dh-core.js'></script>
+</head>
+
+<body>
+<div style="display: inline-block;" id='poll_gauge'></div>
+<div style="display: inline-block;" id='poll_results_pie'></div>
+<div style="display: inline-block;" id='poll_results_bar'></div>
+<br><iframe src="/iframe/table/?name=global_stats" height="80" width="1000" frameborder="0"></iframe>
+<br><iframe src="/iframe/table/?name=poll" height="500" width="1280" frameborder="0"></iframe>
+<script>
+async function initPie(session, table_name, div_name, title, height, width) {
+  var data =
+    {
+      labels: [],
+      values: [],
+      type: 'pie'
+    };
+  var plotlyData = [data];
+
+  var layout = {
+    title: title,
+    height: height,
+    width: width
+  };
+
+  Plotly.newPlot(div_name, plotlyData, layout);
+
+  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });
+  table.addEventListener(dh.Table.EVENT_UPDATED, event => {
+    const viewportData = event.detail;
+    const { columns } = viewportData;
+    data.labels = [];
+    data.values = [];
+    for (let r = 0; r < viewportData.rows.length; r += 1) {
+      const row = viewportData.rows[r];
+      data.labels.push(`${row.get(columns[0])}`);
+      data.values.push(`${row.get(columns[1])}`);
+    }
+    Plotly.react(div_name, plotlyData, layout);
+  });
+  table.setViewport(0, 100);
+}
+
+async function initBar(session, table_name, div_name, title, height, width) {
+  var data =
+    {
+      x: [],
+      y: [],
+      type: 'bar'
+    };
+  var plotlyData = [data];
+  var layout = {
+    title: title,
+    height: height,
+    width: width
+  };
+  Plotly.newPlot(div_name, plotlyData, layout);
+
+  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });
+  table.addEventListener(dh.Table.EVENT_UPDATED, event => {
+    const viewportData = event.detail;
+    const { columns } = viewportData;
+    data.x = [];
+    data.y = [];
+    for (let r = 0; r < viewportData.rows.length; r += 1) {
+      const row = viewportData.rows[r];
+      data.x.push(`${row.get(columns[0])}`);
+      data.y.push(`${row.get(columns[1])}`);
+    }
+    Plotly.react(div_name, plotlyData, layout);
+  });
+  table.setViewport(0, 100);
+}
+
+async function initGauge(session, table_name, table_max_name, div_name, title, height, width) {
+  var data =
+    {
+      domain: { x: [0, 1], y: [0, 1] },
+      value: 0,
+      title: { text: title },
+      type: "indicator",
+      mode: "gauge+number",
+      gauge: { axis: { range: [null, 100] } }
+    };
+  var plotlyData = [data]
+  var layout = { width: width, height: height };
+  Plotly.newPlot(div_name, plotlyData, layout);
+
+  var table = await session.getObject({ name: table_name, type: dh.VariableType.TABLE });
+  table.addEventListener(dh.Table.EVENT_UPDATED, event => {
+    const viewportData = event.detail;
+    const { columns } = viewportData;
+    for (let r = 0; r < viewportData.rows.length; r += 1) {
+      const row = viewportData.rows[r];
+      const val = `${row.get(columns[0])}`;
+      data.value = val;
+    }
+    Plotly.react(div_name, plotlyData, layout);
+  });
+  table.setViewport(0, 0);
+
+  var table_max = await session.getObject({ name: table_max_name, type: dh.VariableType.TABLE });
+  table_max.addEventListener(dh.Table.EVENT_UPDATED, event => {
+    const viewportData = event.detail;
+    const { columns } = viewportData;
+    for (let r = 0; r < viewportData.rows.length; r += 1) {
+      const row = viewportData.rows[r];
+      const val = `${row.get(columns[0])}`;
+      data.gauge = { axis: { range: [null, val] } };
+    }
+    Plotly.react(div_name, plotlyData, layout);
+  });
+  table_max.setViewport(0, 0);
+}
+
+async function init(host) {
+  var connection = new dh.IdeConnection(host)
+  var session = await connection.startSession('groovy');
+  initPie(session, 'poll_count_top_10', 'poll_results_pie', 'Poll Results (top 10)', 400, 500);
+  initBar(session, 'poll_count_top_5', 'poll_results_bar', 'Poll Results (top 5)', 400, 800);
+  initGauge(session, 'hits_by_min_latest', 'hits_by_min_max', 'poll_gauge', 'Hits this minute', 400, 400);
+}
+
+init('https://poll.devinrsmith.com')
+  </script>
+</body>
+</html>

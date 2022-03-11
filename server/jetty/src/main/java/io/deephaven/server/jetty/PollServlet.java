@@ -82,7 +82,7 @@ public final class PollServlet extends HttpServlet {
                 "  <input type=\"submit\" value=\"Submit\">\n" +
                 "</form>");
         htmlWriter.append("\nNote: \"advanced\" users can also run:");
-        htmlWriter.append("\n<br><br>curl -d 'num=42' '").append(getHost()).append("/poll'");
+        htmlWriter.append("\n<br><br>curl -d 'num=42' -b /tmp/cookies.txt -c /tmp/cookies.txt '").append(getHost()).append("/poll'");
         htmlWriter.append("\n</body></html>\n");
         htmlWriter.flush();
     }

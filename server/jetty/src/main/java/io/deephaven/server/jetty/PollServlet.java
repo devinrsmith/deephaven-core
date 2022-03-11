@@ -137,8 +137,8 @@ public final class PollServlet extends HttpServlet {
         htmlWriter.append("\n  <a href=\"/poll\">Back</a>");
         htmlWriter.append("\n  <br><br>");
         htmlWriter.append("\n  <div id='poll_results'><!-- Plotly chart will be drawn inside this DIV --></div>");
-        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"100\" width=\"1280\" frameborder=\"0\"></iframe>");
-        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"800\" width=\"1280\" frameborder=\"0\"></iframe>");
+        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=global_stats\" height=\"80\" width=\"1000\" frameborder=\"0\"></iframe>");
+        htmlWriter.append("\n  <br><iframe src=\"/iframe/table/?name=poll\" height=\"500\" width=\"1280\" frameborder=\"0\"></iframe>");
         htmlWriter.append("\n");
         htmlWriter.append("<script>\n" +
                 "var HOST = '" + getHost() + "';\n" +

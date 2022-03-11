@@ -110,11 +110,15 @@ public final class PollServlet extends HttpServlet {
             return;
         }
 
-        String remoteAddr = req.getRemoteAddr();
+        final String xForwardedFor = req.getHeader("x-forwarded-for");
+
+        final String remoteAddr = req.getRemoteAddr();
+
+
         String id = req.getSession().getId();
         String userAgent = req.getHeader("User-Agent");
 
-        record(Instant.now(), remoteAddr, id, userAgent, bestNumber);
+        record(Instant.now(), xForwardedFor != null ? xForwardedFor : remoteAddr, id, userAgent, bestNumber);
 
         response.setStatus(HttpServletResponse.SC_CREATED);
         response.setCharacterEncoding("utf-8");

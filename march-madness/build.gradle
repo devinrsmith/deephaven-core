@@ -1,0 +1,13 @@
+plugins {
+    id 'io.deephaven.project.register'
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':qst')
+    implementation project(':engine-api')
+    implementation project(':engine-table')
+    implementation project(':extensions-csv')
+
+    Classpaths.inheritImmutables(project)
+}

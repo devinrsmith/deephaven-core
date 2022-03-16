@@ -1,9 +1,17 @@
-Name,Url
-Team 0,todo
-Team 1,todo
-Team 2,todo
-Team 3,todo
-Team 4,todo
-Team 5,todo
-Team 6,todo
-Team 7,todo
+Seed,Name,Url
+1,Team 1,todo
+16,Team 16,todo
+8,Team 8,todo
+9,Team 9,todo
+4,Team 4,todo
+13,Team 13,todo
+5,Team 5,todo
+12,Team 12,todo
+2,Team 2,todo
+15,Team 15,todo
+7,Team 7,todo
+10,Team 10,todo
+3,Team 3,todo
+14,Team 14,todo
+6,Team 6,todo
+11,Team 11,todo

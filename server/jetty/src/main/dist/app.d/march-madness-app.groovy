@@ -1,10 +1,10 @@
 import io.deephaven.march.March
 
-//teams = March.get().teams()
+teams = March.get().teamsTable()
 
-matches = March.get().matches()
+matches = March.get().matchesTable()
 
-votes = March.get().votes()
+votes = March.get().votesTable()
 
 current_round = matches.view("RoundOf").lastBy()
 
@@ -20,5 +20,11 @@ match_results = matches
                 "TeamBCount=nullToValue(TeamBCount, 0)")
         .dropColumns("CurrentRoundOf")
 
-current_winners = match_results
+winners = match_results
         .view("RoundOf", "MatchIndex", "Team=TeamACount>=TeamBCount?TeamA:TeamB", "IsFinal")
+
+locked_winners = winners.where("IsFinal").view("RoundOf", "MatchIndex", "Team")
+
+potential_winners = winners.where("!IsFinal").view("RoundOf", "MatchIndex", "Team")
+
+March.start(potential_winners)

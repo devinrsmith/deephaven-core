@@ -2,6 +2,8 @@ package io.deephaven.march;
 
 import org.immutables.value.Value.Immutable;
 
+import java.util.Set;
+
 @Immutable
 @MarchStyle
 public abstract class Match {
@@ -13,4 +15,17 @@ public abstract class Match {
     public abstract Team teamA();
 
     public abstract Team teamB();
+
+    public final Team getWinner(Set<Integer> winners) {
+        if (winners.contains(teamA().seed())) {
+            if (winners.contains(teamB().seed())) {
+                throw new IllegalStateException("Can't have two winners");
+            }
+            return teamA();
+        }
+        if (winners.contains(teamB().seed())) {
+            return teamB();
+        }
+        throw new IllegalStateException("Must have one winner");
+    }
 }

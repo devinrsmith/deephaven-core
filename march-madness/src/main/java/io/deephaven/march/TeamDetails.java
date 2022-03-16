@@ -12,12 +12,10 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,11 +24,12 @@ import java.util.stream.Collectors;
 
 @Immutable
 @MarchStyle
-public abstract class Teams {
+public abstract class TeamDetails {
 
     private static final CsvSpecs SPECS = CsvSpecs.builder()
             .hasHeaderRow(true)
-            .headers(Arrays.asList("Name", "Url"))
+            .headers(Arrays.asList("Seed", "Name", "Url"))
+            .putParserForName("Seed", Parsers.INT)
             .putParserForName("Name", Parsers.STRING)
             .putParserForName("Url", Parsers.STRING)
             .build();
@@ -52,20 +51,20 @@ public abstract class Teams {
         return out;
     }
 
-    public static Teams of(Path csvPath) throws CsvReaderException, IOException {
-        return of(CsvTools.readCsv(csvPath, SPECS).update("Seed=i"));
+    public static Table readCsv(Path csvPath) throws CsvReaderException {
+        return CsvTools.readCsv(csvPath, SPECS);
     }
 
-    public static Teams of(Table table) {
-        return ImmutableTeams.builder()
+    public static TeamDetails of(Table table) {
+        return ImmutableTeamDetails.builder()
                 .addAllTeams(teams(table))
                 .build();
     }
 
-    public static Teams of(List<Team> teams) {
+    public static TeamDetails of(List<Team> teams) {
         final List<Team> out = new ArrayList<>(teams);
         out.sort(Comparator.comparingInt(Team::seed));
-        return ImmutableTeams.builder().addAllTeams(out).build();
+        return ImmutableTeamDetails.builder().addAllTeams(out).build();
     }
 
     public abstract List<Team> teams();
@@ -82,33 +81,17 @@ public abstract class Teams {
         return Objects.requireNonNull(seedToTeam().get(seed));
     }
 
-    public final Round toSeededRound() {
+    public final Round toRound() {
         final Builder builder = ImmutableRound.builder();
         final List<Team> teams = teams();
         final int L = teams.size();
-        for (int i = 0; i < L / 2; ++i) {
+        for (int i = 0; i < L; i += 2) {
             final Team teamA = teams.get(i);
-            final Team teamB = teams.get(L - i - 1);
+            final Team teamB = teams.get(i + 1);
             builder.addMatches(Match.of(teamA, teamB));
         }
         return builder.build();
     }
-
-//    @Derived
-//    @Auxiliary
-//    public List<Team> teams() {
-//        final int L = table().intSize();
-//        final List<Team> out = new ArrayList<>(L);
-//        final ColumnSource<Integer> seed = table().getColumnSource("Seed", int.class);
-//        final ColumnSource<String> name = table().getColumnSource("Name", String.class);
-//        final ColumnSource<String> url = table().getColumnSource("Url", String.class);
-//        for (int i = 0; i < L; ++i) {
-//            // seed becomes id
-//            out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
-//        }
-//        out.sort(Comparator.comparingInt(Team::seed));
-//        return out;
-//    }
 
     @Derived
     @Auxiliary
@@ -123,22 +106,6 @@ public abstract class Teams {
         }
         if ((size() & (size() - 1)) != 0) {
             throw new IllegalArgumentException("Must have the number of teams be a power of 2");
-        }
-    }
-
-    @Check
-    final void isSorted() {
-        final Iterator<Team> it = teams().iterator();
-        if (!it.hasNext()) {
-            return;
-        }
-        Team current = it.next();
-        while (it.hasNext()) {
-            final Team next = it.next();
-            if (current.seed() >= next.seed()) {
-                throw new IllegalArgumentException("Teams are not sorted by seed");
-            }
-            current = next;
         }
     }
 }

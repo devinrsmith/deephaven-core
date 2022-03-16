@@ -7,14 +7,15 @@ import javax.inject.Named;
 public interface MarchComponent {
 
     @Named("teams")
-    Table teams();
-
-    // @Named("rounds")
-    // Table rounds();
+    Table teamsTable();
 
     @Named("matches")
-    Table matches();
+    Table matchesTable();
 
     @Named("votes")
-    Table votes();
+    Table votesTable();
+
+    TeamDetails teamDetails();
+
+    Matches matches();
 }

@@ -4,7 +4,6 @@ import dagger.Module;
 import dagger.Provides;
 import io.deephaven.csv.util.CsvReaderException;
 import io.deephaven.engine.table.Table;
-import io.deephaven.engine.util.TableTools;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -15,12 +14,15 @@ import java.nio.file.Paths;
 @Module
 public class MarchMadnessModule {
 
+    public static Path dataDir() {
+        return Paths.get(System.getProperty("deephaven.march.dataDir", "march-madness-data"));
+    }
+
     @Provides
     @Singleton
     public static Votes votes() {
-        final Path votesCsv = Paths.get(System.getProperty("deephaven.march.votesCsv", "votes.csv"));
         try {
-            return Votes.of(votesCsv);
+            return Votes.of(dataDir().resolve("votes.csv"));
         } catch (CsvReaderException | IOException e) {
             throw new IllegalStateException(e);
         }
@@ -28,9 +30,9 @@ public class MarchMadnessModule {
 
     @Provides
     @Singleton
-    public static Matches matches(Teams teams) {
+    public static Matches matches() {
         try {
-            return Matches.of(teams);
+            return Matches.of(dataDir());
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -38,13 +40,8 @@ public class MarchMadnessModule {
 
     @Provides
     @Singleton
-    public static Teams teams() {
-        final Path teamsCsv = Paths.get(System.getProperty("deephaven.march.teamsCsv", "teams.csv"));
-        try {
-            return Teams.of(teamsCsv);
-        } catch (CsvReaderException | IOException e) {
-            throw new IllegalStateException(e);
-        }
+    public static TeamDetails teams(@Named("teams") Table teams) {
+        return TeamDetails.of(teams);
     }
 
     @Provides
@@ -61,9 +58,15 @@ public class MarchMadnessModule {
     }
 
     @Provides
+    @Singleton
     @Named("teams")
-    public static Table teamsTable(Teams teams) {
-        return TableTools.emptyTable(1);
+    public static Table teamsTable() {
+        final Path teamsCsv = Paths.get(System.getProperty("deephaven.march.teamsCsv", "teams.csv"));
+        try {
+            return TeamDetails.readCsv(teamsCsv);
+        } catch (CsvReaderException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Provides

@@ -1,5 +1,6 @@
 package io.deephaven.march;
 
+import io.deephaven.march.ImmutableRound.Builder;
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Derived;
@@ -7,9 +8,11 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +37,22 @@ public abstract class Round {
 
     public final int numTeams() {
         return size() * 2;
+    }
+
+    public final Round nextRound(Set<Integer> winners) {
+        if (winners.size() != matches().size()) {
+            throw new IllegalArgumentException();
+        }
+        final Builder next = ImmutableRound.builder();
+        final Iterator<Match> it = matches().iterator();
+        while (it.hasNext()) {
+            final Match match1 = it.next();
+            final Match match2 = it.next();
+            final Team winner1 = match1.getWinner(winners);
+            final Team winner2 = match2.getWinner(winners);
+            next.addMatches(Match.of(winner1, winner2));
+        }
+        return next.build();
     }
 
     @Derived

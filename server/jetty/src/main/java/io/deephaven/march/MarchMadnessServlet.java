@@ -1,8 +1,10 @@
 package io.deephaven.march;
 
 import dagger.Lazy;
+import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.function.IntegerPrimitives;
 import io.deephaven.march.ImmutableVote.Builder;
+import io.deephaven.util.locks.AwareFunctionalLock;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.Cookie;
@@ -93,8 +95,10 @@ public final class MarchMadnessServlet extends HttpServlet {
             builder.userAgent(userAgent);
         }
 
-        final Lock readLock = matches.get().readLock();
-        readLock.lock();
+//        final Lock readLock = matches.get().readLock();
+//        readLock.lock();
+        final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
+        lock.lock();
         try {
             final OptionalInt matchIx = matches.get().isValid(roundOf.getAsInt(), teamId.getAsInt());
             if (matchIx.isEmpty()) {
@@ -103,7 +107,7 @@ public final class MarchMadnessServlet extends HttpServlet {
             }
             votes.get().append(builder.matchIndex(matchIx.getAsInt()).build());
         } finally {
-            readLock.unlock();
+            lock.unlock();
         }
         response.setStatus(HttpServletResponse.SC_CREATED);
         if (setCookie) {

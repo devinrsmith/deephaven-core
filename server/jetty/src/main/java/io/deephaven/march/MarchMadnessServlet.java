@@ -28,21 +28,22 @@ public final class MarchMadnessServlet extends HttpServlet {
     }
 
     public static Table votes() {
-        return INSTANCE.votes.getReadOnlyTable();
+        return INSTANCE.votes.table();
     }
 
-    private final Bracket bracket;
+//    private final Round round;
     private final Votes votes;
 
     @Inject
-    public MarchMadnessServlet(Bracket bracket, Votes votes) {
-        this.bracket = Objects.requireNonNull(bracket);
+    public MarchMadnessServlet(/*Round round,*/ Votes votes) {
+//        this.round = Objects.requireNonNull(round);
         this.votes = Objects.requireNonNull(votes);
         init(this);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
+        String roundOf = req.getParameter("roundOf");
         String teamId = req.getParameter("teamId");
         if (teamId == null) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -59,7 +60,8 @@ public final class MarchMadnessServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        final Team team = bracket.idToTeam().get(parsedTeamId);
+        final Team team = null;
+//        final Team team = round.idToTeam().get(parsedTeamId);
         if (team == null) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
@@ -88,7 +90,7 @@ public final class MarchMadnessServlet extends HttpServlet {
 //        String session = req.getSession().getId();
         String userAgent = req.getHeader("User-Agent");
         final Vote vote = ImmutableVote.builder()
-                .bracket(bracket)
+                .round(null)
                 .team(team)
                 .build();
         // todo: extract 64 bits

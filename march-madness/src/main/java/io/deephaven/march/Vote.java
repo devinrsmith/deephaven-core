@@ -6,17 +6,17 @@ import org.immutables.value.Value.Immutable;
 @Immutable
 @MarchStyle
 public abstract class Vote {
-    public abstract Bracket bracket();
+    public abstract Round round();
 
     public abstract Team team();
 
     public int matchIndex() {
-        return bracket().matchIndex(team());
+        return round().matchIndex(team());
     }
 
     @Check
     final void checkTeam() {
-        if (!bracket().hasTeam(team())) {
+        if (!round().hasTeam(team())) {
             throw new IllegalArgumentException();
         }
     }

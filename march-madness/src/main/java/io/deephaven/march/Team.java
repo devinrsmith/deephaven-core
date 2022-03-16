@@ -6,7 +6,11 @@ import org.immutables.value.Value.Immutable;
 @MarchStyle
 public abstract class Team {
 
-    public abstract int id();
+    public static Team of(int seed, String name, String url) {
+        return ImmutableTeam.builder().seed(seed).name(name).url(url).build();
+    }
+
+    public abstract int seed();
 
     public abstract String name();
 

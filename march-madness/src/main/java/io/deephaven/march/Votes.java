@@ -33,18 +33,18 @@ public final class Votes {
                     .header(ColumnHeader.ofString("Ip"))
                     .header(ColumnHeader.ofLong("Session"))
                     .header(ColumnHeader.ofString("UserAgent"))
-                    .header(ColumnHeader.ofInt("Bracket"))
+                    .header(ColumnHeader.ofInt("RoundOf"))
                     .header(ColumnHeader.ofInt("MatchIndex"))
                     .header(ColumnHeader.ofInt("Team"));
 
     private static final CsvSpecs SPECS = CsvSpecs.builder()
             .hasHeaderRow(false)
-            .headers(Arrays.asList("Timestamp", "Ip", "Session", "UserAgent", "Bracket", "MatchIndex", "Team"))
+            .headers(Arrays.asList("Timestamp", "Ip", "Session", "UserAgent", "RoundOf", "MatchIndex", "Team"))
             .putParserForName("Timestamp", Parsers.DATETIME)
             .putParserForName("Ip", Parsers.STRING)
             .putParserForName("Session", Parsers.LONG)
             .putParserForName("UserAgent", Parsers.STRING)
-            .putParserForName("Bracket", Parsers.INT)
+            .putParserForName("RoundOf", Parsers.INT)
             .putParserForName("MatchIndex", Parsers.INT)
             .putParserForName("Team", Parsers.INT)
             .build();
@@ -59,23 +59,23 @@ public final class Votes {
 
     private final Path csvPath;
     private final MutableInputTable handler;
-    private final Table readOnlyCopy;
+    private final Table readOnlyTable;
 
     public Votes(Path csvPath) {
         this.csvPath = Objects.requireNonNull(csvPath);
-        KeyedArrayBackedMutableTable table = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "Bracket", "Session", "MatchIndex");
+        KeyedArrayBackedMutableTable table = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "RoundOf", "Session", "MatchIndex");
 //        AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
-        handler = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
-        readOnlyCopy = table.readOnlyCopy();
+        handler = table.mutableInputTable();
+        readOnlyTable = table.readOnlyCopy();
     }
 
-    public Table getReadOnlyTable() {
-        return readOnlyCopy;
+    public Table table() {
+        return readOnlyTable;
     }
 
     public void append(Instant timestamp, String ip, long session, String userAgent, Vote vote) throws IOException {
         final Table inMemoryTable = InMemoryTable.from(HEADER.start(1)
-                .row(timestamp, ip, session, userAgent, vote.bracket().id(), vote.matchIndex(), vote.team().id())
+                .row(timestamp, ip, session, userAgent, vote.round().numTeams(), vote.matchIndex(), vote.team().seed())
                 .newTable());
         handler.add(inMemoryTable);
         writeToCsv(timestamp, ip, session, userAgent, vote);
@@ -88,9 +88,9 @@ public final class Votes {
                 ip,
                 Long.toString(session),
                 userAgent,
-                Integer.toString(vote.bracket().id()),
+                Integer.toString(vote.round().numTeams()),
                 Integer.toString(vote.matchIndex()),
-                Integer.toString(vote.team().id()))
+                Integer.toString(vote.team().seed()))
                 .map(StringEscapeUtils::escapeCsv)
                 .collect(Collectors.joining(","));
         Files.write(

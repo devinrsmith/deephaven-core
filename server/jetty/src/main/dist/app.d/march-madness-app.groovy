@@ -2,12 +2,9 @@ import io.deephaven.march.March
 
 teams = March.get().teams()
 
-rounds = March.get().rounds()
+matches = March.get().matches()
 
 votes = March.get().votes()
 
-//votes = MarchMadnessServlet.votes()
+vote_totals = votes.countBy("Count", "RoundOf", "MatchIndex", "Team")
 
-//votes_last_by = votes.lastBy("Bracket", "Session", "MatchIndex")
-
-vote_totals = votes.countBy("Count", "Bracket", "MatchIndex", "Team")

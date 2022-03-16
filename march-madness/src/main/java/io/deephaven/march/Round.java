@@ -16,19 +16,29 @@ import java.util.stream.Stream;
 
 @Immutable
 @MarchStyle
-public abstract class Bracket {
-
-    public abstract int id();
+public abstract class Round {
 
     public abstract List<Match> matches();
 
-    public boolean hasTeam(Team team) {
+    public final boolean hasTeam(Team team) {
         return teamMatchIndex().containsKey(team);
     }
 
-    public int matchIndex(Team team) {
+    public final int matchIndex(Team team) {
         return Objects.requireNonNull(teamMatchIndex().get(team));
     }
+
+    public final int size() {
+        return matches().size();
+    }
+
+    public final int numTeams() {
+        return size() * 2;
+    }
+
+//    public final int index() {
+//        return Integer.numberOfTrailingZeros(numTeams());
+//    }
 
     @Derived
     @Auxiliary
@@ -49,7 +59,7 @@ public abstract class Bracket {
         return Stream.concat(
                 matches().stream().map(Match::teamA),
                 matches().stream().map(Match::teamB))
-                .collect(Collectors.toMap(Team::id, Function.identity()));
+                .collect(Collectors.toMap(Team::seed, Function.identity()));
     }
 
     @Check
@@ -59,6 +69,13 @@ public abstract class Bracket {
                 matches().stream().map(Match::teamB)).distinct().count();
         if (distinctTeams != matches().size() * 2L) {
             throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void checkSize() {
+        if (matches().isEmpty()) {
+            throw new IllegalArgumentException("Can't have an empty round");
         }
     }
 }

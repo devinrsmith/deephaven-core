@@ -53,16 +53,17 @@ def extraJvmArgs = [
         '-XshowSettings:vm',
 ]
 if (hasProperty('groovy')) {
-//    extraJvmArgs += ['-Ddeephaven.console.type=groovy',
-//                     "-Ddeephaven.application.dir=${project.projectDir}/src/main/dist/app.d",
-//                     "-Ddeephaven.march.teamsCsv=${project.projectDir}/src/main/dist/static/teams.csv",
-//                     "-Ddeephaven.march.winnersDir=${project.buildDir}/winners"]
-
+    extraJvmArgs += ['-Ddeephaven.console.type=groovy',
+                     "-Ddeephaven.application.dir=${project.projectDir}/src/main/dist/app.d",
+                     "-Ddeephaven.march.teamsCsv=${project.projectDir}/src/main/dist/static/teams.csv",
+                     "-Ddeephaven.march.dataDir=${project.buildDir}/march-madness"]
+} else if (hasProperty('deploy')) {
     extraJvmArgs += ['-Ddeephaven.console.type=groovy',
                      '-Ddeephaven.application.dir=app.d',
                      '-Ddeephaven.march.teamsCsv=static/teams.csv',
                      '-Ddeephaven.march.winnersDir=winners']
 }
+
 tasks.withType(JavaExec) {
     // This appends to the existing jvm args, so that java-open-nio still takes effect
     jvmArgs extraJvmArgs

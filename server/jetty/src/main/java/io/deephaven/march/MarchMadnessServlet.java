@@ -1,8 +1,10 @@
 package io.deephaven.march;
 
-import io.deephaven.engine.table.Table;
+import dagger.Lazy;
 import io.deephaven.function.IntegerPrimitives;
+import io.deephaven.march.ImmutableVote.Builder;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,59 +17,57 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.Lock;
 
 @Singleton
 public final class MarchMadnessServlet extends HttpServlet {
 
-    public static final String MARCH_MADNESS_ID = "MARCH_MADNESS_ID";
-    private static MarchMadnessServlet INSTANCE;
+    private static final String MARCH_MADNESS_ID = "MARCH_MADNESS_ID";
 
-    public static void init(MarchMadnessServlet x) {
-        INSTANCE = x;
-    }
-
-    public static Table votes() {
-        return INSTANCE.votes.table();
-    }
-
-//    private final Round round;
-    private final Votes votes;
+    private final Lazy<Matches> matches;
+    private final Lazy<Votes> votes;
 
     @Inject
-    public MarchMadnessServlet(/*Round round,*/ Votes votes) {
-//        this.round = Objects.requireNonNull(round);
+    public MarchMadnessServlet(Lazy<Matches> matches, Lazy<Votes> votes) {
+        this.matches = Objects.requireNonNull(matches);
         this.votes = Objects.requireNonNull(votes);
-        init(this);
+    }
+
+    private static OptionalInt parseInt(ServletRequest request, String parameterName) {
+        String value = request.getParameter(parameterName);
+        if (value == null) {
+            return OptionalInt.empty();
+        }
+        final int intValue;
+        try {
+            intValue = Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return OptionalInt.empty();
+        }
+        if (IntegerPrimitives.isNull(intValue)) {
+            return OptionalInt.empty();
+        }
+        return OptionalInt.of(intValue);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        String roundOf = req.getParameter("roundOf");
-        String teamId = req.getParameter("teamId");
-        if (teamId == null) {
+        final OptionalInt roundOf = parseInt(req, "roundOf");
+        if (roundOf.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        int parsedTeamId;
-        try {
-            parsedTeamId = Integer.parseInt(teamId);
-        } catch (NumberFormatException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-        if (IntegerPrimitives.isNull(parsedTeamId)) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-        final Team team = null;
-//        final Team team = round.idToTeam().get(parsedTeamId);
-        if (team == null) {
+        final OptionalInt teamId = parseInt(req, "teamId");
+        if (teamId.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-
+        final String xForwardedFor = req.getHeader("x-forwarded-for");
+        final String userAgent = req.getHeader("User-Agent");
+        final String remoteAddr = req.getRemoteAddr();
         final Cookie[] cookies = req.getCookies();
         final Optional<Cookie> cookie = cookies == null ?
                 Optional.empty() :
@@ -84,17 +84,28 @@ public final class MarchMadnessServlet extends HttpServlet {
             setCookie = true;
         }
 
+        final Builder builder = ImmutableVote.builder()
+                .roundOf(roundOf.getAsInt())
+                .teamId(teamId.getAsInt())
+                .timestamp(Instant.now())
+                .ip(xForwardedFor != null ? xForwardedFor : remoteAddr)
+                .session(marchSession);
+        if (userAgent != null) {
+            builder.userAgent(userAgent);
+        }
 
-        final String xForwardedFor = req.getHeader("x-forwarded-for");
-        final String remoteAddr = req.getRemoteAddr();
-//        String session = req.getSession().getId();
-        String userAgent = req.getHeader("User-Agent");
-        final Vote vote = ImmutableVote.builder()
-                .round(null)
-                .team(team)
-                .build();
-        // todo: extract 64 bits
-        votes.append(Instant.now(), xForwardedFor != null ? xForwardedFor : remoteAddr, marchSession, userAgent, vote);
+        final Lock readLock = matches.get().readLock();
+        readLock.lock();
+        try {
+            final OptionalInt matchIx = matches.get().isValid(roundOf.getAsInt(), teamId.getAsInt());
+            if (matchIx.isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+            votes.get().append(builder.matchIndex(matchIx.getAsInt()).build());
+        } finally {
+            readLock.unlock();
+        }
         response.setStatus(HttpServletResponse.SC_CREATED);
         if (setCookie) {
             response.addCookie(new Cookie(MARCH_MADNESS_ID, Long.toString(marchSession)));

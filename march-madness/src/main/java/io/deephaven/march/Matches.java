@@ -5,13 +5,17 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
-import io.deephaven.march.ImmutableRound.Builder;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders4;
 import io.deephaven.qst.table.NewTable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Matches {
 
@@ -20,38 +24,46 @@ public class Matches {
             .header(ColumnHeader.ofInt("TeamA"))
             .header(ColumnHeader.ofInt("TeamB"));
 
-    private static Round firstRound(Teams teams) {
-        final Builder builder = ImmutableRound.builder();
-        final List<Team> list = teams.teams();
-        final int L = list.size();
-        for (int seedA = 0; seedA < L / 2; ++seedA) {
-            final int seedB = L - seedA - 1;
-            final Team teamA = teams.team(seedA);
-            final Team teamB = teams.team(seedB);
-            builder.addMatches(Match.of(teamA, teamB));
-        }
-        return builder.build();
-    }
-
     public static Matches of(Teams teams) throws IOException {
         final Matches matches = new Matches();
-        matches.startRound(firstRound(teams));
+        final Round firstRound = teams.toSeededRound();
+        final Lock lock = matches.writeLock();
+        lock.lock();
+        try {
+            matches.startRound(firstRound);
+        } finally {
+            lock.unlock();
+        }
         return matches;
     }
 
     private final MutableInputTable handler;
     private final Table readOnlyCopy;
+    private final List<Round> rounds;
+
+    private final ReadWriteLock lock;
 
     private Matches() {
         final AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         this.handler = table.mutableInputTable();
         this.readOnlyCopy = table.readOnlyCopy();
+        this.lock = new ReentrantReadWriteLock(false);
+        this.rounds = new ArrayList<>();
     }
 
     public Table table() {
         return readOnlyCopy;
     }
 
+    public Lock writeLock() {
+        return lock.writeLock();
+    }
+
+    public Lock readLock() {
+        return lock.readLock();
+    }
+
+    // caller must have write lock
     public void startRound(Round round) throws IOException {
         final ColumnHeaders4<Integer, Integer, Integer, Integer>.Rows row = HEADER.start(round.size());
         int matchIx = 0;
@@ -62,5 +74,15 @@ public class Matches {
         final NewTable newTable = row.newTable();
         final Table inMemoryTable = InMemoryTable.from(newTable);
         handler.add(inMemoryTable);
+        rounds.add(round);
+    }
+
+    // caller must have read lock
+    public OptionalInt isValid(int roundOf, int teamId) {
+        final Round latestRound = rounds.get(rounds.size() - 1);
+        if (latestRound.numTeams() == roundOf && latestRound.hasTeam(teamId)) {
+            return OptionalInt.of(latestRound.matchIndex(teamId));
+        }
+        return OptionalInt.empty();
     }
 }

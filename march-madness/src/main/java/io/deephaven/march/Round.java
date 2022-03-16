@@ -20,12 +20,12 @@ public abstract class Round {
 
     public abstract List<Match> matches();
 
-    public final boolean hasTeam(Team team) {
-        return teamMatchIndex().containsKey(team);
+    public final boolean hasTeam(int teamId) {
+        return idToTeam().containsKey(teamId);
     }
 
-    public final int matchIndex(Team team) {
-        return Objects.requireNonNull(teamMatchIndex().get(team));
+    public final int matchIndex(int teamId) {
+        return Objects.requireNonNull(idToIndex().get(teamId));
     }
 
     public final int size() {
@@ -36,18 +36,14 @@ public abstract class Round {
         return size() * 2;
     }
 
-//    public final int index() {
-//        return Integer.numberOfTrailingZeros(numTeams());
-//    }
-
     @Derived
     @Auxiliary
-    public Map<Team, Integer> teamMatchIndex() {
-        final Map<Team, Integer> index = new HashMap<>();
+    public Map<Integer, Integer> idToIndex() {
+        final Map<Integer, Integer> index = new HashMap<>();
         int ix = 0;
         for (Match match : matches()) {
-            index.put(match.teamA(), ix);
-            index.put(match.teamB(), ix);
+            index.put(match.teamA().seed(), ix);
+            index.put(match.teamB().seed(), ix);
             ++ix;
         }
         return Collections.unmodifiableMap(index);

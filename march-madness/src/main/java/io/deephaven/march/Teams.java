@@ -6,7 +6,7 @@ import io.deephaven.csv.parsers.Parsers;
 import io.deephaven.csv.util.CsvReaderException;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
-import io.deephaven.march.ImmutableTeams.Builder;
+import io.deephaven.march.ImmutableRound.Builder;
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Derived;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +52,18 @@ public abstract class Teams {
         return Objects.requireNonNull(seedToTeam().get(seed));
     }
 
+    public final Round toSeededRound() {
+        final Builder builder = ImmutableRound.builder();
+        final List<Team> teams = teams();
+        final int L = teams.size();
+        for (int i = 0; i < L / 2; ++i) {
+            final Team teamA = teams.get(i);
+            final Team teamB = teams.get(L - i - 1);
+            builder.addMatches(Match.of(teamA, teamB));
+        }
+        return builder.build();
+    }
+
     @Derived
     @Auxiliary
     public List<Team> teams() {
@@ -63,6 +76,7 @@ public abstract class Teams {
             // seed becomes id
             out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
         }
+        out.sort(Comparator.comparingInt(Team::seed));
         return out;
     }
 

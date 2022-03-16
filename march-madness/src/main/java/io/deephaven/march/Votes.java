@@ -73,24 +73,24 @@ public final class Votes {
         return readOnlyTable;
     }
 
-    public void append(Instant timestamp, String ip, long session, String userAgent, Vote vote) throws IOException {
+    public void append(Vote vote) throws IOException {
         final Table inMemoryTable = InMemoryTable.from(HEADER.start(1)
-                .row(timestamp, ip, session, userAgent, vote.round().numTeams(), vote.matchIndex(), vote.team().seed())
+                .row(vote.timestamp(), vote.ip(), vote.session(), vote.userAgent().orElse(null), vote.roundOf(), vote.matchIndex(), vote.teamId())
                 .newTable());
         handler.add(inMemoryTable);
-        writeToCsv(timestamp, ip, session, userAgent, vote);
+        writeToCsv(vote);
     }
 
-    private void writeToCsv(Instant timestamp, String ip, long session, String userAgent, Vote vote)
+    private void writeToCsv(Vote vote)
             throws IOException {
         final String csvLine = Stream.of(
-                timestamp.toString(),
-                ip,
-                Long.toString(session),
-                userAgent,
-                Integer.toString(vote.round().numTeams()),
+                vote.timestamp().toString(),
+                vote.ip(),
+                Long.toString(vote.session()),
+                vote.userAgent().orElse(""),
+                Integer.toString(vote.roundOf()),
                 Integer.toString(vote.matchIndex()),
-                Integer.toString(vote.team().seed()))
+                Integer.toString(vote.teamId()))
                 .map(StringEscapeUtils::escapeCsv)
                 .collect(Collectors.joining(","));
         Files.write(

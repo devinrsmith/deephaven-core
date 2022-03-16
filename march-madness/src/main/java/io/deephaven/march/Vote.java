@@ -1,23 +1,25 @@
 package io.deephaven.march;
 
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
+
+import java.time.Instant;
+import java.util.Optional;
 
 @Immutable
 @MarchStyle
 public abstract class Vote {
-    public abstract Round round();
 
-    public abstract Team team();
+    public abstract Instant timestamp();
 
-    public int matchIndex() {
-        return round().matchIndex(team());
-    }
+    public abstract String ip();
 
-    @Check
-    final void checkTeam() {
-        if (!round().hasTeam(team())) {
-            throw new IllegalArgumentException();
-        }
-    }
+    public abstract long session();
+
+    public abstract Optional<String> userAgent();
+
+    public abstract int roundOf();
+
+    public abstract int matchIndex();
+
+    public abstract int teamId();
 }

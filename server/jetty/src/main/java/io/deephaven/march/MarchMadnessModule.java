@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.Provides;
 import io.deephaven.csv.util.CsvReaderException;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.util.TableTools;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -62,7 +63,7 @@ public class MarchMadnessModule {
     @Provides
     @Named("teams")
     public static Table teamsTable(Teams teams) {
-        return teams.table();
+        return TableTools.emptyTable(1);
     }
 
     @Provides

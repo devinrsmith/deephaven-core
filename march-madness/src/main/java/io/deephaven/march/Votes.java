@@ -7,7 +7,7 @@ import io.deephaven.csv.util.CsvReaderException;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
-import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
+import io.deephaven.engine.table.impl.util.KeyedArrayBackedMutableTable;
 import io.deephaven.engine.util.config.MutableInputTable;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders7;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // Votes table
-final class Votes {
+public final class Votes {
 
     private static final ColumnHeaders7<Instant, String, Long, String, Integer, Integer, Integer> HEADER =
             ColumnHeader.ofInstant("Timestamp")
@@ -42,15 +42,19 @@ final class Votes {
             .headers(Arrays.asList("Timestamp", "Ip", "Session", "UserAgent", "Bracket", "MatchIndex", "Team"))
             .putParserForName("Timestamp", Parsers.DATETIME)
             .putParserForName("Ip", Parsers.STRING)
-            .putParserForName("Session", Parsers.STRING)
+            .putParserForName("Session", Parsers.LONG)
             .putParserForName("UserAgent", Parsers.STRING)
             .putParserForName("Bracket", Parsers.INT)
             .putParserForName("MatchIndex", Parsers.INT)
             .putParserForName("Team", Parsers.INT)
             .build();
 
-    public static Table readCsv(Path path) throws CsvReaderException {
-        return CsvTools.readCsv(path, SPECS);
+    public static Votes of(Path csvPath) throws CsvReaderException, IOException {
+        final Votes votes = new Votes(csvPath);
+        if (Files.exists(csvPath)) {
+            votes.handler.add(CsvTools.readCsv(csvPath, SPECS));
+        }
+        return votes;
     }
 
     private final Path csvPath;
@@ -59,7 +63,8 @@ final class Votes {
 
     public Votes(Path csvPath) {
         this.csvPath = Objects.requireNonNull(csvPath);
-        AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
+        KeyedArrayBackedMutableTable table = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "Bracket", "Session", "MatchIndex");
+//        AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         handler = (MutableInputTable) table.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
         readOnlyCopy = table.readOnlyCopy();
     }

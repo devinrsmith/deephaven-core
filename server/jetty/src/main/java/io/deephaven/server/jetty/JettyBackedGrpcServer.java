@@ -1,5 +1,6 @@
 package io.deephaven.server.jetty;
 
+import io.deephaven.march.MarchMadnessServlet;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.servlet.web.websocket.WebSocketServerStream;
 import jakarta.servlet.DispatcherType;
@@ -12,6 +13,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
@@ -33,7 +36,8 @@ public class JettyBackedGrpcServer implements GrpcServer {
     @Inject
     public JettyBackedGrpcServer(
             final @Named("http.port") int port,
-            final GrpcFilter filter) {
+            final GrpcFilter filter,
+            final MarchMadnessServlet marchMadnessServlet) {
         jetty = new Server(port);
         ServerConnector sc = (ServerConnector) jetty.getConnectors()[0];
         HTTP2CServerConnectionFactory factory =
@@ -57,8 +61,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
         context.addFilter(NoCacheFilter.class, "/iriside/*", EnumSet.noneOf(DispatcherType.class));
         context.addFilter(CacheFilter.class, "/iriside/static/*", EnumSet.noneOf(DispatcherType.class));
 
-        context.addServlet(PollServlet.class, "/poll");
-        context.addServlet(PollResultsServlet.class, "/poll_results");
+        context.addServlet(new ServletHolder(marchMadnessServlet), "/vote");
 
         // Always add eTags
         context.setInitParameter("org.eclipse.jetty.servlet.Default.etags", "true");

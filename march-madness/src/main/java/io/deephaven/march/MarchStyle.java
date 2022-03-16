@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
-@Value.Style(visibility = ImplementationVisibility.PACKAGE,
+@Value.Style(visibility = ImplementationVisibility.SAME,
         defaults = @Value.Immutable(copy = false), strictBuilder = true, weakInterning = true, jdkOnly = true)
 public @interface MarchStyle {
 }

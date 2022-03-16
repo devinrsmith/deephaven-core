@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Immutable
@@ -39,6 +41,15 @@ public abstract class Bracket {
             ++ix;
         }
         return Collections.unmodifiableMap(index);
+    }
+
+    @Derived
+    @Auxiliary
+    public Map<Integer, Team> idToTeam() {
+        return Stream.concat(
+                matches().stream().map(Match::teamA),
+                matches().stream().map(Match::teamB))
+                .collect(Collectors.toMap(Team::id, Function.identity()));
     }
 
     @Check

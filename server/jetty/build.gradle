@@ -12,6 +12,8 @@ dependencies {
 
     implementation project(':engine-function')
 
+    implementation project(':march-madness')
+
     Classpaths.inheritDagger(project)
     Classpaths.inheritDagger(project, /* test */ true)
 
@@ -51,7 +53,10 @@ def extraJvmArgs = [
         '-XshowSettings:vm',
 ]
 if (hasProperty('groovy')) {
-    extraJvmArgs += ['-Ddeephaven.console.type=groovy']
+    extraJvmArgs += ['-Ddeephaven.console.type=groovy',
+                     "-Ddeephaven.application.dir=${project.projectDir}/src/main/dist/app.d",
+                     "-Ddeephaven.march.teamsCsv=${project.projectDir}/src/main/dist/static/teams.csv",
+                     "-Ddeephaven.march.roundsCsv=${project.projectDir}/src/main/dist/static/rounds.csv"]
 }
 tasks.withType(JavaExec) {
     // This appends to the existing jvm args, so that java-open-nio still takes effect

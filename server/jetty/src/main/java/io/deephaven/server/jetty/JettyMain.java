@@ -2,6 +2,7 @@ package io.deephaven.server.jetty;
 
 import io.deephaven.base.system.PrintStreamGlobals;
 import io.deephaven.configuration.Configuration;
+import io.deephaven.march.March;
 import io.deephaven.server.runner.Main;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class JettyMain extends Main {
         int schedulerPoolSize = config.getIntegerWithDefault("scheduler.poolSize", 4);
         int maxInboundMessageSize = config.getIntegerWithDefault("grpc.maxInboundMessageSize", 100 * 1024 * 1024);
 
-        DaggerJettyServerComponent
+        final JettyServerComponent component = DaggerJettyServerComponent
                 .builder()
                 .withPort(httpPort)
                 .withSchedulerPoolSize(schedulerPoolSize)
@@ -26,8 +27,8 @@ public class JettyMain extends Main {
                 .withMaxInboundMessageSize(maxInboundMessageSize)
                 .withOut(PrintStreamGlobals.getOut())
                 .withErr(PrintStreamGlobals.getErr())
-                .build()
-                .getServer()
-                .run();
+                .build();
+        March.init(component);
+        component.getServer().run();
     }
 }

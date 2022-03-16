@@ -44,7 +44,8 @@ public class Matches {
     private final ReadWriteLock lock;
 
     private Matches() {
-        final AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
+        final AppendOnlyArrayBackedMutableTable table =
+                AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         this.handler = table.mutableInputTable();
         this.readOnlyCopy = table.readOnlyCopy();
         this.lock = new ReentrantReadWriteLock(false);

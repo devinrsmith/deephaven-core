@@ -69,9 +69,8 @@ public final class MarchMadnessServlet extends HttpServlet {
         final String userAgent = req.getHeader("User-Agent");
         final String remoteAddr = req.getRemoteAddr();
         final Cookie[] cookies = req.getCookies();
-        final Optional<Cookie> cookie = cookies == null ?
-                Optional.empty() :
-                Arrays.stream(cookies)
+        final Optional<Cookie> cookie = cookies == null ? Optional.empty()
+                : Arrays.stream(cookies)
                         .filter(c -> MARCH_MADNESS_ID.equals(c.getName()))
                         .findFirst();
         final long marchSession;

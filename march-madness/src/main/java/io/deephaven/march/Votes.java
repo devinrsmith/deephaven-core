@@ -63,8 +63,10 @@ public final class Votes {
 
     public Votes(Path csvPath) {
         this.csvPath = Objects.requireNonNull(csvPath);
-        KeyedArrayBackedMutableTable table = KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "RoundOf", "Session", "MatchIndex");
-//        AppendOnlyArrayBackedMutableTable table = AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
+        KeyedArrayBackedMutableTable table =
+                KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "RoundOf", "Session", "MatchIndex");
+        // AppendOnlyArrayBackedMutableTable table =
+        // AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         handler = table.mutableInputTable();
         readOnlyTable = table.readOnlyCopy();
     }
@@ -75,7 +77,8 @@ public final class Votes {
 
     public void append(Vote vote) throws IOException {
         final Table inMemoryTable = InMemoryTable.from(HEADER.start(1)
-                .row(vote.timestamp(), vote.ip(), vote.session(), vote.userAgent().orElse(null), vote.roundOf(), vote.matchIndex(), vote.teamId())
+                .row(vote.timestamp(), vote.ip(), vote.session(), vote.userAgent().orElse(null), vote.roundOf(),
+                        vote.matchIndex(), vote.teamId())
                 .newTable());
         handler.add(inMemoryTable);
         writeToCsv(vote);

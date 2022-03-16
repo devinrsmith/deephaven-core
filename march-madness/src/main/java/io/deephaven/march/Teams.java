@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,11 +35,40 @@ public abstract class Teams {
             .putParserForName("Url", Parsers.STRING)
             .build();
 
-    public static Teams of(Path csvPath) throws CsvReaderException, IOException {
-        return ImmutableTeams.builder().table(CsvTools.readCsv(csvPath, SPECS).update("Seed=i")).build();
+    private static List<Team> teams(Table table) {
+        if (table.isRefreshing()) {
+            throw new IllegalArgumentException("Table must not be refreshing");
+        }
+        final int L = table.intSize();
+        final List<Team> out = new ArrayList<>(L);
+        final ColumnSource<Integer> seed = table.getColumnSource("Seed", int.class);
+        final ColumnSource<String> name = table.getColumnSource("Name", String.class);
+        final ColumnSource<String> url = table.getColumnSource("Url", String.class);
+        for (int i = 0; i < L; ++i) {
+            // seed becomes id
+            out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
+        }
+        out.sort(Comparator.comparingInt(Team::seed));
+        return out;
     }
 
-    public abstract Table table();
+    public static Teams of(Path csvPath) throws CsvReaderException, IOException {
+        return of(CsvTools.readCsv(csvPath, SPECS).update("Seed=i"));
+    }
+
+    public static Teams of(Table table) {
+        return ImmutableTeams.builder()
+                .addAllTeams(teams(table))
+                .build();
+    }
+
+    public static Teams of(List<Team> teams) {
+        final List<Team> out = new ArrayList<>(teams);
+        out.sort(Comparator.comparingInt(Team::seed));
+        return ImmutableTeams.builder().addAllTeams(out).build();
+    }
+
+    public abstract List<Team> teams();
 
     public final int size() {
         return teams().size();
@@ -64,33 +94,26 @@ public abstract class Teams {
         return builder.build();
     }
 
-    @Derived
-    @Auxiliary
-    public List<Team> teams() {
-        final int L = table().intSize();
-        final List<Team> out = new ArrayList<>(L);
-        final ColumnSource<Integer> seed = table().getColumnSource("Seed", int.class);
-        final ColumnSource<String> name = table().getColumnSource("Name", String.class);
-        final ColumnSource<String> url = table().getColumnSource("Url", String.class);
-        for (int i = 0; i < L; ++i) {
-            // seed becomes id
-            out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
-        }
-        out.sort(Comparator.comparingInt(Team::seed));
-        return out;
-    }
+//    @Derived
+//    @Auxiliary
+//    public List<Team> teams() {
+//        final int L = table().intSize();
+//        final List<Team> out = new ArrayList<>(L);
+//        final ColumnSource<Integer> seed = table().getColumnSource("Seed", int.class);
+//        final ColumnSource<String> name = table().getColumnSource("Name", String.class);
+//        final ColumnSource<String> url = table().getColumnSource("Url", String.class);
+//        for (int i = 0; i < L; ++i) {
+//            // seed becomes id
+//            out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
+//        }
+//        out.sort(Comparator.comparingInt(Team::seed));
+//        return out;
+//    }
 
     @Derived
     @Auxiliary
     Map<Integer, Team> seedToTeam() {
         return teams().stream().collect(Collectors.toMap(Team::seed, Function.identity()));
-    }
-
-    @Check
-    final void nonRefreshing() {
-        if (table().isRefreshing()) {
-            throw new IllegalArgumentException("Table must be non-refreshing");
-        }
     }
 
     @Check
@@ -100,6 +123,22 @@ public abstract class Teams {
         }
         if ((size() & (size() - 1)) != 0) {
             throw new IllegalArgumentException("Must have the number of teams be a power of 2");
+        }
+    }
+
+    @Check
+    final void isSorted() {
+        final Iterator<Team> it = teams().iterator();
+        if (!it.hasNext()) {
+            return;
+        }
+        Team current = it.next();
+        while (it.hasNext()) {
+            final Team next = it.next();
+            if (current.seed() >= next.seed()) {
+                throw new IllegalArgumentException("Teams are not sorted by seed");
+            }
+            current = next;
         }
     }
 }

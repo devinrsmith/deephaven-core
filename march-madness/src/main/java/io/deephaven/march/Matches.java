@@ -46,14 +46,14 @@ public final class Matches {
     private final List<Round> rounds;
     private final Path winnersDir;
 
-//    private final ReadWriteLock lock;
+    // private final ReadWriteLock lock;
 
     private Matches(Path winnersDir) {
         final AppendOnlyArrayBackedMutableTable table =
                 AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
         this.handler = table.mutableInputTable();
         this.readOnlyCopy = table.readOnlyCopy();
-//        this.lock = new ReentrantReadWriteLock(false);
+        // this.lock = new ReentrantReadWriteLock(false);
         this.rounds = new ArrayList<>();
         this.winnersDir = Objects.requireNonNull(winnersDir);
     }

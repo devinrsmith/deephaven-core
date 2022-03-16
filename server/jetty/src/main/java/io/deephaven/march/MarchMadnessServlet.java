@@ -95,8 +95,8 @@ public final class MarchMadnessServlet extends HttpServlet {
             builder.userAgent(userAgent);
         }
 
-//        final Lock readLock = matches.get().readLock();
-//        readLock.lock();
+        // final Lock readLock = matches.get().readLock();
+        // readLock.lock();
         final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
         lock.lock();
         try {

@@ -1,10 +1,21 @@
 import io.deephaven.march.March
 
+import static io.deephaven.api.agg.spec.AggSpec.sortedLast
+import static io.deephaven.engine.util.TableTools.merge
+
 teams = March.get().teamsTable()
 
 matches = March.get().matchesTable()
 
-votes = March.get().votesTable()
+match_indices = merge(
+        matches.view("RoundOf", "Team=TeamA", "MatchIndex"),
+        matches.view("RoundOf", "Team=TeamB", "MatchIndex"))
+
+votes_pre = March.get().votesTable()
+
+votes = votes_pre
+        .naturalJoin(match_indices, "RoundOf,Team", "MatchIndex")
+        .aggAllBy(sortedLast("Timestamp"), "Session", "RoundOf", "MatchIndex")
 
 current_round = matches.view("RoundOf").lastBy()
 

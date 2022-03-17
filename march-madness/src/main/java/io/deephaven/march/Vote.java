@@ -19,7 +19,5 @@ public abstract class Vote {
 
     public abstract int roundOf();
 
-    public abstract int matchIndex();
-
     public abstract int teamId();
 }

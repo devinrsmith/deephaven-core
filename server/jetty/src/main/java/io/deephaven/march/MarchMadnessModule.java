@@ -15,19 +15,32 @@ import java.nio.file.Paths;
 @Module
 public class MarchMadnessModule {
 
+    public static boolean useBracketOptimalOrder() {
+        return Boolean.parseBoolean(System.getProperty("deephaven.march.useBracketOptimalOrder", "true"));
+    }
+
     public static Path dataDir() {
         return Paths.get(System.getProperty("deephaven.march.dataDir", "march-madness-data"));
     }
 
+    private static Path votesCsv() {
+        return dataDir().resolve("votes.csv");
+    }
+
+    private static Path teamCsv() {
+        return Paths.get(System.getProperty("deephaven.march.teamsCsv", "teams.csv"));
+    }
+
     @Provides
     @Singleton
-    public static Votes votes() {
+    public static Votes votes(UpdateGraphProcessor ugp, Matches matches) {
         try {
-            return Votes.of(dataDir().resolve("votes.csv"));
+            return Votes.of(ugp, matches, votesCsv());
         } catch (CsvReaderException | IOException e) {
             throw new IllegalStateException(e);
         }
     }
+
 
     @Provides
     @Singleton
@@ -62,21 +75,17 @@ public class MarchMadnessModule {
     @Singleton
     @Named("teams")
     public static Table teamsTable() {
-        final Path teamsCsv = Paths.get(System.getProperty("deephaven.march.teamsCsv", "teams.csv"));
         try {
-            return TeamDetails.readCsv(teamsCsv);
+            return TeamDetails.readCsv(teamCsv());
         } catch (CsvReaderException e) {
             throw new IllegalStateException(e);
         }
     }
 
+
     @Provides
     @Named("matches")
     public static Table matchesTable(Matches matches) {
         return matches.table();
-    }
-
-    public static boolean useBracketOptimalOrder() {
-        return Boolean.parseBoolean(System.getProperty("deephaven.march.useBracketOptimalOrder", "true"));
     }
 }

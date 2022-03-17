@@ -61,7 +61,7 @@ public final class Matches {
     }
 
     // caller must have read lock
-    public OptionalInt isValid(int roundOf, int teamId) {
+    OptionalInt isValid(int roundOf, int teamId) {
         final Round latestRound = rounds.get(rounds.size() - 1);
         if (latestRound.numTeams() == roundOf && latestRound.hasTeam(teamId)) {
             return OptionalInt.of(latestRound.matchIndex(teamId));

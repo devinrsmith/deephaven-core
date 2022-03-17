@@ -8,9 +8,11 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.KeyedArrayBackedMutableTable;
+import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.engine.util.config.MutableInputTable;
 import io.deephaven.qst.column.header.ColumnHeader;
-import io.deephaven.qst.column.header.ColumnHeaders7;
+import io.deephaven.qst.column.header.ColumnHeaders6;
+import io.deephaven.util.locks.AwareFunctionalLock;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
@@ -22,49 +24,53 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // Votes table
 public final class Votes {
 
-    private static final ColumnHeaders7<Instant, String, Long, String, Integer, Integer, Integer> HEADER =
+    private static final ColumnHeaders6<Instant, String, Long, String, Integer, Integer> HEADER =
             ColumnHeader.ofInstant("Timestamp")
                     .header(ColumnHeader.ofString("Ip"))
                     .header(ColumnHeader.ofLong("Session"))
                     .header(ColumnHeader.ofString("UserAgent"))
                     .header(ColumnHeader.ofInt("RoundOf"))
-                    .header(ColumnHeader.ofInt("MatchIndex"))
                     .header(ColumnHeader.ofInt("Team"));
 
     private static final CsvSpecs SPECS = CsvSpecs.builder()
             .hasHeaderRow(false)
-            .headers(Arrays.asList("Timestamp", "Ip", "Session", "UserAgent", "RoundOf", "MatchIndex", "Team"))
+            .headers(Arrays.asList("Timestamp", "Ip", "Session", "UserAgent", "RoundOf", "Team"))
             .putParserForName("Timestamp", Parsers.DATETIME)
             .putParserForName("Ip", Parsers.STRING)
             .putParserForName("Session", Parsers.LONG)
             .putParserForName("UserAgent", Parsers.STRING)
             .putParserForName("RoundOf", Parsers.INT)
-            .putParserForName("MatchIndex", Parsers.INT)
             .putParserForName("Team", Parsers.INT)
             .build();
 
-    public static Votes of(Path csvPath) throws CsvReaderException, IOException {
-        final Votes votes = new Votes(csvPath);
+    public static Votes of(UpdateGraphProcessor ugp, Matches matches, Path csvPath)
+            throws CsvReaderException, IOException {
+        final Votes votes = new Votes(ugp, matches, csvPath);
         if (Files.exists(csvPath)) {
             votes.handler.add(CsvTools.readCsv(csvPath, SPECS));
         }
         return votes;
     }
 
+    private final UpdateGraphProcessor ugp;
+    private final Matches matches;
     private final Path csvPath;
     private final MutableInputTable handler;
     private final Table readOnlyTable;
 
-    public Votes(Path csvPath) {
+    public Votes(UpdateGraphProcessor ugp, Matches matches, Path csvPath) {
+        this.ugp = Objects.requireNonNull(ugp);
+        this.matches = Objects.requireNonNull(matches);
         this.csvPath = Objects.requireNonNull(csvPath);
         KeyedArrayBackedMutableTable table =
-                KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "RoundOf", "Session", "MatchIndex");
+                KeyedArrayBackedMutableTable.make(TableDefinition.from(HEADER), "Session", "RoundOf", "Team");
         handler = table.mutableInputTable();
         readOnlyTable = table.readOnlyCopy();
     }
@@ -73,13 +79,30 @@ public final class Votes {
         return readOnlyTable;
     }
 
-    public void append(Vote vote) throws IOException {
-        writeToCsv(vote);
+    public boolean append(Vote vote) throws IOException {
         final Table inMemoryTable = InMemoryTable.from(HEADER.start(1)
-                .row(vote.timestamp(), vote.ip(), vote.session(), vote.userAgent().orElse(null), vote.roundOf(),
-                        vote.matchIndex(), vote.teamId())
+                .row(
+                        vote.timestamp(),
+                        vote.ip(),
+                        vote.session(),
+                        vote.userAgent().orElse(null),
+                        vote.roundOf(),
+                        vote.teamId())
                 .newTable());
-        handler.add(inMemoryTable);
+
+        final AwareFunctionalLock lock = ugp.exclusiveLock();
+        lock.lock();
+        try {
+            final OptionalInt matchIx = matches.isValid(vote.roundOf(), vote.teamId());
+            if (matchIx.isEmpty()) {
+                return false;
+            }
+            writeToCsv(vote);
+            handler.add(inMemoryTable);
+            return true;
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void writeToCsv(Vote vote)
@@ -90,7 +113,6 @@ public final class Votes {
                 Long.toString(vote.session()),
                 vote.userAgent().orElse(""),
                 Integer.toString(vote.roundOf()),
-                Integer.toString(vote.matchIndex()),
                 Integer.toString(vote.teamId()))
                 .map(StringEscapeUtils::escapeCsv)
                 .collect(Collectors.joining(","));

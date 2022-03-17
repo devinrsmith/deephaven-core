@@ -1,10 +1,8 @@
 package io.deephaven.march;
 
 import dagger.Lazy;
-import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.function.IntegerPrimitives;
 import io.deephaven.march.ImmutableVote.Builder;
-import io.deephaven.util.locks.AwareFunctionalLock;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.Cookie;
@@ -31,14 +29,10 @@ public final class MarchMadnessServlet extends HttpServlet {
 
     private static final String MARCH_MADNESS_ID = "MARCH_MADNESS_ID";
 
-    private final UpdateGraphProcessor ugp;
-    private final Lazy<Matches> matches;
     private final Lazy<Votes> votes;
 
     @Inject
-    public MarchMadnessServlet(UpdateGraphProcessor ugp, Lazy<Matches> matches, Lazy<Votes> votes) {
-        this.ugp = Objects.requireNonNull(ugp);
-        this.matches = Objects.requireNonNull(matches);
+    public MarchMadnessServlet(Lazy<Votes> votes) {
         this.votes = Objects.requireNonNull(votes);
     }
 
@@ -105,22 +99,8 @@ public final class MarchMadnessServlet extends HttpServlet {
             builder.userAgent(userAgent);
         }
 
-        boolean mismatched = false;
+        boolean mismatched = votes.get().append(builder.build());
 
-        // final Lock readLock = matches.get().readLock();
-        // readLock.lock();
-        final AwareFunctionalLock lock = ugp.exclusiveLock();
-        lock.lock();
-        VOTE: try {
-            final OptionalInt matchIx = matches.get().isValid(roundOf.getAsInt(), teamId.getAsInt());
-            if (matchIx.isEmpty()) {
-                mismatched = true;
-                break VOTE;
-            }
-            votes.get().append(builder.matchIndex(matchIx.getAsInt()).build());
-        } finally {
-            lock.unlock();
-        }
         if (setCookie) {
             response.addCookie(new Cookie(MARCH_MADNESS_ID, Long.toString(marchSession)));
         }

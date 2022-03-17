@@ -31,11 +31,13 @@ public final class MarchMadnessServlet extends HttpServlet {
 
     private static final String MARCH_MADNESS_ID = "MARCH_MADNESS_ID";
 
+    private final UpdateGraphProcessor ugp;
     private final Lazy<Matches> matches;
     private final Lazy<Votes> votes;
 
     @Inject
-    public MarchMadnessServlet(Lazy<Matches> matches, Lazy<Votes> votes) {
+    public MarchMadnessServlet(UpdateGraphProcessor ugp, Lazy<Matches> matches, Lazy<Votes> votes) {
+        this.ugp = Objects.requireNonNull(ugp);
         this.matches = Objects.requireNonNull(matches);
         this.votes = Objects.requireNonNull(votes);
     }
@@ -78,12 +80,16 @@ public final class MarchMadnessServlet extends HttpServlet {
                 : Arrays.stream(cookies)
                         .filter(c -> MARCH_MADNESS_ID.equals(c.getName()))
                         .findFirst();
-        final long marchSession;
-        final boolean setCookie;
+        long marchSession;
+        boolean setCookie;
         if (cookie.isPresent()) {
-            // TODO handle parsing
-            marchSession = Long.parseLong(cookie.get().getValue());
-            setCookie = false;
+            try {
+                marchSession = Long.parseLong(cookie.get().getValue());
+                setCookie = false;
+            } catch (NumberFormatException e) {
+                marchSession = ThreadLocalRandom.current().nextLong();
+                setCookie = true;
+            }
         } else {
             marchSession = ThreadLocalRandom.current().nextLong();
             setCookie = true;
@@ -103,7 +109,7 @@ public final class MarchMadnessServlet extends HttpServlet {
 
         // final Lock readLock = matches.get().readLock();
         // readLock.lock();
-        final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
+        final AwareFunctionalLock lock = ugp.exclusiveLock();
         lock.lock();
         VOTE: try {
             final OptionalInt matchIx = matches.get().isValid(roundOf.getAsInt(), teamId.getAsInt());

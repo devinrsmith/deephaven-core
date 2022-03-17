@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 public class BracketOrdering {
 
-    // https://oeis.org/A208569
     private static int t(int L, int k) {
         if (k == 1) {
             return 1;
@@ -21,7 +20,9 @@ public class BracketOrdering {
     /**
      * Generates the bracket-optimal 1-based seed ordering for a bracket with {@code n} rounds.
      *
-     * <p>Optimal means that none of the top {@code 2^p} ranked players can meet earlier than the {@code p-th} from last round of the competition.
+     * <p>
+     * Optimal means that none of the top {@code 2^p} ranked players can meet earlier than the {@code p-th} from last
+     * round of the competition.
      *
      * @param n the number of rounds
      * @return the 1-based seed ordering, with {@code 2^n} elements
@@ -35,11 +36,14 @@ public class BracketOrdering {
     /**
      * Generates the bracket-optimal ordering for the seed-ordered {@code items}.
      *
-     * <p>Optimal means that none of the top {@code 2^p} ranked players can meet earlier than the {@code p-th} from last round of the competition.
+     * <p>
+     * Optimal means that none of the top {@code 2^p} ranked players can meet earlier than the {@code p-th} from last
+     * round of the competition.
      *
      * @param items the items in seed-order, must have a power-of-2 size
      * @param <T> the type
      * @return the items in bracket-optimal order
+     * @see <a href="https://oeis.org/A208569">A208569</a>
      */
     public static <T> Stream<T> bracketOptimalOrder(List<T> items) {
         final int L = items.size();

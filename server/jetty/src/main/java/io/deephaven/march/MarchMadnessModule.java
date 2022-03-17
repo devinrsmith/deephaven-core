@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.Provides;
 import io.deephaven.csv.util.CsvReaderException;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -30,9 +31,9 @@ public class MarchMadnessModule {
 
     @Provides
     @Singleton
-    public static Matches matches() {
+    public static Matches matches(UpdateGraphProcessor ugp) {
         try {
-            return Matches.of(dataDir());
+            return Matches.of(ugp, dataDir());
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

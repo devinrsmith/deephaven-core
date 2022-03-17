@@ -91,15 +91,15 @@ public final class Matches {
         }
     }
 
-    public void nextRound(Table potentialWinners) throws IOException {
-        final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
-        lock.lock();
-        try {
-            markWinners(potentialWinners);
-        } finally {
-            lock.unlock();
-        }
-    }
+//    public void nextRound(Table potentialWinners) throws IOException {
+//        final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
+//        lock.lock();
+//        try {
+//            markWinners(potentialWinners);
+//        } finally {
+//            lock.unlock();
+//        }
+//    }
 
     private Optional<Set<Integer>> winnersForRound(Round currentRound) throws CsvReaderException {
         final Path winners = csvPathForWinnersOf(currentRound);
@@ -134,29 +134,29 @@ public final class Matches {
     }
 
     // caller must have write lock
-    private void markWinners(Table potentialWinners) throws IOException {
-        final Round latestRound = rounds.get(rounds.size() - 1);
-        final Table winners = TableTools.emptyTable(1).snapshot(potentialWinners.view("Team"), true);
-        final int L = latestRound.size();
-        if (winners.size() != L) {
-            throw new IllegalStateException("Expected winner size to be the same size as round");
-        }
-        final List<Team> winningTeams = new ArrayList<>(L);
-        final ColumnSource<Integer> teams = winners.getColumnSource("Team");
-        for (int i = 0; i < L; ++i) {
-            final int teamId = teams.getInt(i);
-            final Team winningTeam = latestRound.idToTeam().get(teamId);
-            winningTeams.add(winningTeam);
-        }
-        final TeamDetails nextTeams = TeamDetails.of(winningTeams);
-        final Round nextRound = nextTeams.toRound();
-        final List<String> lines = Stream.concat(
-                Stream.of("Team"),
-                winningTeams.stream().mapToInt(Team::seed).mapToObj(Integer::toString)).collect(Collectors.toList());
-        final Path path = csvPathForWinnersOf(latestRound);
-        Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        startRound(nextRound);
-    }
+//    private void markWinners(Table potentialWinners) throws IOException {
+//        final Round latestRound = rounds.get(rounds.size() - 1);
+//        final Table winners = TableTools.emptyTable(1).snapshot(potentialWinners.view("Team"), true);
+//        final int L = latestRound.size();
+//        if (winners.size() != L) {
+//            throw new IllegalStateException("Expected winner size to be the same size as round");
+//        }
+//        final List<Team> winningTeams = new ArrayList<>(L);
+//        final ColumnSource<Integer> teams = winners.getColumnSource("Team");
+//        for (int i = 0; i < L; ++i) {
+//            final int teamId = teams.getInt(i);
+//            final Team winningTeam = latestRound.idToTeam().get(teamId);
+//            winningTeams.add(winningTeam);
+//        }
+//        final TeamDetails nextTeams = TeamDetails.of(winningTeams);
+//        final Round nextRound = nextTeams.toRound();
+//        final List<String> lines = Stream.concat(
+//                Stream.of("Team"),
+//                winningTeams.stream().mapToInt(Team::seed).mapToObj(Integer::toString)).collect(Collectors.toList());
+//        final Path path = csvPathForWinnersOf(latestRound);
+//        Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+//        startRound(nextRound);
+//    }
 
     private Path csvPathForWinnersOf(Round latestRound) {
         return winnersDir.resolve(String.format("%d.csv", latestRound.numTeams()));

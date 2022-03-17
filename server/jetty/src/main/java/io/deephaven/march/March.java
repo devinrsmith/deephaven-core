@@ -23,7 +23,6 @@ public class March {
     }
 
     public static void start(Table potentialWinners) throws IOException, CsvReaderException {
-
         try {
             Files.createDirectory(MarchMadnessModule.dataDir());
         } catch (FileAlreadyExistsException e) {
@@ -33,6 +32,7 @@ public class March {
         final MarchComponent component = get();
         final Matches matches = component.matches();
         final TeamDetails initialTeams = component.teamDetails();
-        matches.init(initialTeams.toRound());
+
+        matches.init(initialTeams.toFirstRound(MarchMadnessModule.useBracketOptimalOrder()));
     }
 }

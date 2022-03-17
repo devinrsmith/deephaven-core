@@ -74,9 +74,14 @@ public abstract class TeamDetails {
         return Objects.requireNonNull(seedToTeam().get(seed));
     }
 
-    public final Round toRound() {
+    public final Round toFirstRound(boolean useBracketOptimalOrder) {
         final Builder builder = ImmutableRound.builder();
-        final List<Team> teams = teams();
+        final List<Team> teams;
+        if (useBracketOptimalOrder) {
+            teams = BracketOrdering.bracketOptimalOrder(teams()).collect(Collectors.toList());
+        } else {
+            teams = teams();
+        }
         final int L = teams.size();
         for (int i = 0; i < L; i += 2) {
             final Team teamA = teams.get(i);

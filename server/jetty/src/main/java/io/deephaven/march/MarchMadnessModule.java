@@ -74,4 +74,8 @@ public class MarchMadnessModule {
     public static Table matchesTable(Matches matches) {
         return matches.table();
     }
+
+    public static boolean useBracketOptimalOrder() {
+        return Boolean.parseBoolean(System.getProperty("deephaven.march.useBracketOptimalOrder", "true"));
+    }
 }

@@ -99,12 +99,12 @@ public final class MarchMadnessServlet extends HttpServlet {
             builder.userAgent(userAgent);
         }
 
-        boolean mismatched = votes.get().append(builder.build());
+        boolean success = votes.get().append(builder.build());
 
         if (setCookie) {
             response.addCookie(new Cookie(MARCH_MADNESS_ID, Long.toString(marchSession)));
         }
-        if (mismatched) {
+        if (!success) {
             badResponse(response, "Mismatched 'roundOf' and/or 'teamId'");
         } else {
             response.setStatus(HttpServletResponse.SC_CREATED);

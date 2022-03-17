@@ -15,13 +15,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.locks.Lock;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Singleton
 public final class MarchMadnessServlet extends HttpServlet {
@@ -58,12 +61,12 @@ public final class MarchMadnessServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         final OptionalInt roundOf = parseInt(req, "roundOf");
         if (roundOf.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            badResponse(response, "Bad or missing 'roundOf'");
             return;
         }
         final OptionalInt teamId = parseInt(req, "teamId");
         if (teamId.isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            badResponse(response, "Bad or missing 'teamId'");
             return;
         }
 
@@ -78,6 +81,7 @@ public final class MarchMadnessServlet extends HttpServlet {
         final long marchSession;
         final boolean setCookie;
         if (cookie.isPresent()) {
+            // TODO handle parsing
             marchSession = Long.parseLong(cookie.get().getValue());
             setCookie = false;
         } else {
@@ -95,23 +99,38 @@ public final class MarchMadnessServlet extends HttpServlet {
             builder.userAgent(userAgent);
         }
 
+        boolean mismatched = false;
+
         // final Lock readLock = matches.get().readLock();
         // readLock.lock();
         final AwareFunctionalLock lock = UpdateGraphProcessor.DEFAULT.exclusiveLock();
         lock.lock();
-        try {
+        VOTE: try {
             final OptionalInt matchIx = matches.get().isValid(roundOf.getAsInt(), teamId.getAsInt());
             if (matchIx.isEmpty()) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                return;
+                mismatched = true;
+                break VOTE;
             }
             votes.get().append(builder.matchIndex(matchIx.getAsInt()).build());
         } finally {
             lock.unlock();
         }
-        response.setStatus(HttpServletResponse.SC_CREATED);
         if (setCookie) {
             response.addCookie(new Cookie(MARCH_MADNESS_ID, Long.toString(marchSession)));
+        }
+        if (mismatched) {
+            badResponse(response, "Mismatched 'roundOf' and/or 'teamId'");
+        } else {
+            response.setStatus(HttpServletResponse.SC_CREATED);
+        }
+    }
+
+    private static void badResponse(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("text/plain");
+        try (final Writer writer = new OutputStreamWriter(response.getOutputStream(), UTF_8)) {
+            writer.write(message);
         }
     }
 }

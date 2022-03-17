@@ -1,3 +1,4 @@
+import io.deephaven.engine.table.Table
 import io.deephaven.march.March
 
 import static io.deephaven.api.agg.spec.AggSpec.sortedLast
@@ -38,4 +39,8 @@ locked_winners = winners.where("IsFinal").view("RoundOf", "MatchIndex", "Team")
 
 potential_winners = winners.where("!IsFinal").view("RoundOf", "MatchIndex", "Team")
 
-March.start(potential_winners)
+March.start()
+
+start_next_round = {
+    March.get().matches().nextRound(potential_winners)
+}

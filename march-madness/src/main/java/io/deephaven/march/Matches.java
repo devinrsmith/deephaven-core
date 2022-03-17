@@ -8,6 +8,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.updategraph.UpdateGraphProcessor;
+import io.deephaven.engine.util.TableTools;
 import io.deephaven.engine.util.config.MutableInputTable;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders4;
@@ -15,8 +16,10 @@ import io.deephaven.qst.table.NewTable;
 import io.deephaven.util.locks.AwareFunctionalLock;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +27,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Matches {
 
@@ -89,6 +94,16 @@ public final class Matches {
         }
     }
 
+    public void nextRound(Table potentialWinners) throws IOException {
+        final AwareFunctionalLock lock = ugp.exclusiveLock();
+        lock.lock();
+        try {
+            markWinners(potentialWinners);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private Optional<Set<Integer>> winnersForRound(Round currentRound) throws CsvReaderException {
         final Path winners = csvPathForWinnersOf(currentRound);
         if (!Files.exists(winners)) {
@@ -119,6 +134,29 @@ public final class Matches {
         final Table inMemoryTable = InMemoryTable.from(newTable);
         handler.add(inMemoryTable);
         rounds.add(round);
+    }
+
+    // caller must have write lock
+    private void markWinners(Table potentialWinners) throws IOException {
+        final Round latestRound = rounds.get(rounds.size() - 1);
+        final Table winners = TableTools.emptyTable(1).snapshot(potentialWinners.view("Team"), true);
+        final int L = latestRound.size();
+        if (winners.size() != L) {
+            throw new IllegalStateException("Expected winner size to be the same size as round");
+        }
+        final Set<Integer> winningTeams = new HashSet<>(L);
+        final ColumnSource<Integer> teams = winners.getColumnSource("Team");
+        for (int i = 0; i < L; ++i) {
+            final int teamId = teams.getInt(i);
+            winningTeams.add(teamId);
+        }
+        final Round nextRound = latestRound.nextRound(winningTeams);
+        final List<String> lines = Stream.concat(
+                Stream.of("Team"),
+                winningTeams.stream().map(Object::toString)).collect(Collectors.toList());
+        final Path path = csvPathForWinnersOf(latestRound);
+        Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+        startRound(nextRound);
     }
 
     private Path csvPathForWinnersOf(Round latestRound) {

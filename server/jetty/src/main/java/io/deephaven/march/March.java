@@ -1,7 +1,6 @@
 package io.deephaven.march;
 
 import io.deephaven.csv.util.CsvReaderException;
-import io.deephaven.engine.table.Table;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -22,7 +21,7 @@ public class March {
         return component;
     }
 
-    public static void start(Table potentialWinners) throws IOException, CsvReaderException {
+    public static void start() throws IOException, CsvReaderException {
         try {
             Files.createDirectory(MarchMadnessModule.dataDir());
         } catch (FileAlreadyExistsException e) {

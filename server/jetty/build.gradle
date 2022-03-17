@@ -57,11 +57,6 @@ if (hasProperty('groovy')) {
                      "-Ddeephaven.application.dir=${project.projectDir}/src/main/dist/app.d",
                      "-Ddeephaven.march.teamsCsv=${project.projectDir}/src/main/dist/static/teams.csv",
                      "-Ddeephaven.march.dataDir=${project.buildDir}/march-madness"]
-} else if (hasProperty('deploy')) {
-    extraJvmArgs += ['-Ddeephaven.console.type=groovy',
-                     '-Ddeephaven.application.dir=app.d',
-                     '-Ddeephaven.march.teamsCsv=static/teams.csv',
-                     '-Ddeephaven.march.winnersDir=winners']
 }
 
 tasks.withType(JavaExec) {

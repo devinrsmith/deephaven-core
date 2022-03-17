@@ -15,7 +15,6 @@ import org.immutables.value.Value.Immutable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,10 +43,8 @@ public abstract class TeamDetails {
         final ColumnSource<String> name = table.getColumnSource("Name", String.class);
         final ColumnSource<String> url = table.getColumnSource("Url", String.class);
         for (int i = 0; i < L; ++i) {
-            // seed becomes id
             out.add(Team.of(seed.getInt(i), name.get(i), url.get(i)));
         }
-        out.sort(Comparator.comparingInt(Team::seed));
         return out;
     }
 
@@ -56,15 +53,11 @@ public abstract class TeamDetails {
     }
 
     public static TeamDetails of(Table table) {
-        return ImmutableTeamDetails.builder()
-                .addAllTeams(teams(table))
-                .build();
+        return of(teams(table));
     }
 
     public static TeamDetails of(List<Team> teams) {
-        final List<Team> out = new ArrayList<>(teams);
-        out.sort(Comparator.comparingInt(Team::seed));
-        return ImmutableTeamDetails.builder().addAllTeams(out).build();
+        return ImmutableTeamDetails.builder().addAllTeams(teams).build();
     }
 
     public abstract List<Team> teams();

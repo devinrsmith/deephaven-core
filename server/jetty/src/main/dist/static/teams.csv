@@ -1,17 +1,65 @@
 Seed,Name,Url
-1,Team 1,todo
-2,Team 2,todo
-3,Team 3,todo
-4,Team 4,todo
-5,Team 5,todo
-6,Team 6,todo
-7,Team 7,todo
-8,Team 8,todo
-9,Team 9,todo
-10,Team 10,todo
-11,Team 11,todo
-12,Team 12,todo
-13,Team 13,todo
-14,Team 14,todo
-15,Team 15,todo
-16,Team 16,todo
+1,numpy,https://github.com/numpy/numpy
+2,pandas,https://github.com/pandas-dev/pandas
+3,wheel,https://github.com/pypa/wheel
+4,pip,https://github.com/pypa/pip
+5,pyyaml,https://github.com/yaml/pyyaml
+6,requests,https://github.com/psf/requests
+7,protobuf,https://github.com/protocolbuffers/protobuf/tree/master/python
+8,oauthlib,https://github.com/oauthlib/oauthlib
+9,pycparser,https://github.com/eliben/pycparser
+10,pyarrow,https://github.com/apache/arrow/tree/master/python/pyarrow
+11,sqlalchemy,https://github.com/sqlalchemy/sqlalchemy
+12,psutil,https://github.com/giampaolo/psutil
+13,werkzeug,https://github.com/pallets/werkzeug
+14,pillow,https://github.com/python-pillow/Pillow
+15,scipy,https://github.com/scipy/scipy
+16,pytest,https://github.com/pytest-dev/pytest
+17,lxml,https://github.com/lxml/lxml
+18,pluggy,https://github.com/pytest-dev/pluggy
+19,tabulate,https://github.com/astanin/python-tabulate
+20,websocket-client,https://github.com/websocket-client/websocket-client
+21,flask,https://github.com/pallets/flask
+22,jsonschema,https://github.com/Julian/jsonschema
+23,itsdangerous,https://github.com/pallets/itsdangerous
+24,beautifulsoup,https://github.com/waylan/beautifulsoup
+25,scikit-learn,https://github.com/scikit-learn/scikit-learn
+26,docker,https://github.com/docker-library/python
+27,cython,https://github.com/cython/cython
+28,matplotlib,https://github.com/matplotlib/matplotlib
+29,py4j,https://github.com/py4j/py4j
+30,fastapi,https://github.com/tiangolo/fastapi
+31,apache-beam,https://github.com/apache/beam
+32,redis,https://github.com/redis/redis-py
+33,markdown,https://todo
+34,prometheus-client,https://todo
+35,pycodestyle,https://todo
+36,sqlparse,https://todo
+37,pymongo,https://todo
+38,pyodbc,https://todo
+39,pyspark,https://todo
+40,google-cloud-spanner,https://todo
+41,datadog,https://todo
+42,psycopg2,https://todo
+43,pymysql,https://todo
+44,tensorflow,https://todo
+45,tensorboard,https://todo
+46,elasticsearch,https://todo
+47,snowflake-connector-python,https://todo
+48,ipython,https://todo
+49,keras,https://todo
+50,jupyter-client,https://todo
+51,nltk,https://todo
+52,dill,https://todo
+53,seaborn,https://todo
+54,numba,https://todo
+55,statsmodels,https://todo
+56,xgboost,https://todo
+57,torch,https://todo
+58,django,https://todo
+59,plotly,https://todo
+60,selenium,https://todo
+61,pygrok,https://todo
+62,scrapy,https://todo
+63,robotframework,https://todo
+64,bokeh,https://todo

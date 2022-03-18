@@ -30,23 +30,6 @@ public abstract class RoundDetails {
         return CsvTools.readCsv(csvPath, SPECS);
     }
 
-    public static List<RoundDetails> of(Table table) {
-        if (table.isRefreshing()) {
-            throw new IllegalArgumentException("Table must not be refreshing");
-        }
-        final int L = table.intSize();
-        final List<RoundDetails> out = new ArrayList<>(L);
-        final ColumnSource<Integer> roundOf = table.getColumnSource("RoundOf");
-        final ColumnSource<DateTime> endTimestamp = table.getColumnSource("EndTimestamp");
-        for (int i = 0; i < L; ++i) {
-            out.add(ImmutableRoundDetails.builder()
-                    .roundOf(roundOf.getInt(i))
-                    .endTime(endTimestamp.get(i).getInstant())
-                    .build());
-        }
-        return out;
-    }
-
     public abstract int roundOf();
 
     public abstract Instant endTime();

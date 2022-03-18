@@ -19,6 +19,9 @@ public interface MarchComponent {
     @Named("rounds")
     Table roundsTable();
 
+    @Named("round_winners")
+    Table roundWinnersTable();
+
     TeamDetails teamDetails();
 
     Matches matches();

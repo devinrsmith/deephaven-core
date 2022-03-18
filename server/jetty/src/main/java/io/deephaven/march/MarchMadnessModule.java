@@ -11,7 +11,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 @Module
 public class MarchMadnessModule {
@@ -103,5 +102,11 @@ public class MarchMadnessModule {
     @Named("matches")
     public static Table matchesTable(Matches matches) {
         return matches.table();
+    }
+
+    @Provides
+    @Named("round_winners")
+    public static Table roundWinnersTable(Matches matches) {
+        return matches.roundOfWinners();
     }
 }

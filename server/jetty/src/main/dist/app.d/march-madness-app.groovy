@@ -9,6 +9,14 @@ rounds = March.get().roundsTable()
 
 matches = March.get().matchesTable()
 
+round_winners = March.get().roundWinnersTable()
+
+finished_rounds = round_winners.selectDistinct("RoundOf")
+
+last_round = finished_rounds.minBy()
+
+current_round = last_round.view("RoundOf=(int)(RoundOf/2)")
+
 match_indices = merge(
         matches.view("RoundOf", "Team=TeamA", "MatchIndex"),
         matches.view("RoundOf", "Team=TeamB", "MatchIndex"))
@@ -19,19 +27,16 @@ votes = votes_pre
         .naturalJoin(match_indices, "RoundOf,Team", "MatchIndex")
         .aggAllBy(sortedLast("Timestamp"), "Session", "RoundOf", "MatchIndex")
 
-current_round = matches.view("RoundOf").lastBy()
-
 vote_totals = votes.countBy("Count", "RoundOf", "MatchIndex", "Team")
 
 match_results = matches
-        .naturalJoin(current_round, "", "CurrentRoundOf=RoundOf")
+        .naturalJoin(finished_rounds.updateView("IsFinal=true"), "RoundOf", "IsFinal")
         .naturalJoin(vote_totals, "RoundOf,MatchIndex,TeamA=Team", "TeamACount=Count")
         .naturalJoin(vote_totals, "RoundOf,MatchIndex,TeamB=Team", "TeamBCount=Count")
         .updateView(
-                "IsFinal=CurrentRoundOf!=RoundOf",
+                "IsFinal=nullToValue(IsFinal, false)",
                 "TeamACount=nullToValue(TeamACount, 0)",
                 "TeamBCount=nullToValue(TeamBCount, 0)")
-        .dropColumns("CurrentRoundOf")
 
 winners = match_results
         .view("RoundOf", "MatchIndex", "Team=TeamACount>=TeamBCount?TeamA:TeamB", "IsFinal")
@@ -44,4 +49,8 @@ March.start(potential_winners)
 
 //start_next_round = {
 //    March.get().matches().nextRound(potential_winners)
+//}
+
+//end_voting = {
+//    March.get().matches().endVoting(potential_winners)
 //}

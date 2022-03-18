@@ -7,7 +7,6 @@ import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -21,8 +20,6 @@ import java.util.stream.Stream;
 @Immutable
 @MarchStyle
 public abstract class Round {
-
-    public static final Comparator<Round> ROUND_OF_COMPARATOR = Comparator.comparingInt(Round::roundOf);
 
     public abstract List<Match> matches();
 
@@ -42,9 +39,16 @@ public abstract class Round {
         return size() * 2;
     }
 
+    public final boolean isLastRound() {
+        return roundOf() == 2;
+    }
+
     public final Round nextRound(Set<Integer> winners) {
+        if (isLastRound()) {
+            throw new IllegalArgumentException("Can't advance past round-of-2");
+        }
         if (winners.size() != matches().size()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid number of winners");
         }
         final Builder next = ImmutableRound.builder();
         final Iterator<Match> it = matches().iterator();

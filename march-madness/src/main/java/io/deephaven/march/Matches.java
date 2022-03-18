@@ -68,19 +68,19 @@ public final class Matches {
     // caller must have read lock
     OptionalInt isValid(int roundOf, int teamId) {
         final Round latestRound = rounds.get(rounds.size() - 1);
-        if (latestRound.numTeams() == roundOf && latestRound.hasTeam(teamId)) {
+        if (latestRound.roundOf() == roundOf && latestRound.hasTeam(teamId)) {
             return OptionalInt.of(latestRound.matchIndex(teamId));
         }
         return OptionalInt.empty();
     }
 
-    public void init(Round initialRound) throws IOException, CsvReaderException {
+    public Round init(Round initialRound) throws IOException, CsvReaderException {
         final AwareFunctionalLock lock = ugp.exclusiveLock();
         lock.lock();
         try {
             startRound(initialRound);
             Round currentRound = initialRound;
-            while (currentRound.numTeams() > 2) {
+            while (currentRound.roundOf() > 2) {
                 final Optional<Set<Integer>> winners = winnersForRound(currentRound);
                 if (winners.isEmpty()) {
                     break;
@@ -89,16 +89,17 @@ public final class Matches {
                 startRound(nextRound);
                 currentRound = nextRound;
             }
+            return currentRound;
         } finally {
             lock.unlock();
         }
     }
 
-    public void nextRound(Table potentialWinners) throws IOException {
+    public Round nextRound(Table potentialWinners) throws IOException {
         final AwareFunctionalLock lock = ugp.exclusiveLock();
         lock.lock();
         try {
-            markWinners(potentialWinners);
+            return markWinners(potentialWinners);
         } finally {
             lock.unlock();
         }
@@ -127,7 +128,7 @@ public final class Matches {
         final ColumnHeaders4<Integer, Integer, Integer, Integer>.Rows row = HEADER.start(round.size());
         int matchIx = 0;
         for (Match match : round.matches()) {
-            row.row(round.numTeams(), matchIx, match.teamA().seed(), match.teamB().seed());
+            row.row(round.roundOf(), matchIx, match.teamA().seed(), match.teamB().seed());
             ++matchIx;
         }
         final NewTable newTable = row.newTable();
@@ -137,7 +138,7 @@ public final class Matches {
     }
 
     // caller must have write lock
-    private void markWinners(Table potentialWinners) throws IOException {
+    private Round markWinners(Table potentialWinners) throws IOException {
         final Round latestRound = rounds.get(rounds.size() - 1);
         final Table winners = TableTools.emptyTable(1).snapshot(potentialWinners.view("Team"), true);
         final int L = latestRound.size();
@@ -157,9 +158,10 @@ public final class Matches {
         final Path path = csvPathForWinnersOf(latestRound);
         Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         startRound(nextRound);
+        return nextRound;
     }
 
     private Path csvPathForWinnersOf(Round latestRound) {
-        return winnersDir.resolve(String.format("%d.csv", latestRound.numTeams()));
+        return winnersDir.resolve(String.format("%d.csv", latestRound.roundOf()));
     }
 }

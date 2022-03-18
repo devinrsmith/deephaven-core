@@ -1,10 +1,11 @@
-import io.deephaven.engine.table.Table
 import io.deephaven.march.March
 
 import static io.deephaven.api.agg.spec.AggSpec.sortedLast
 import static io.deephaven.engine.util.TableTools.merge
 
 teams = March.get().teamsTable()
+
+rounds = March.get().roundsTable()
 
 matches = March.get().matchesTable()
 
@@ -39,8 +40,8 @@ locked_winners = winners.where("IsFinal").view("RoundOf", "MatchIndex", "Team")
 
 potential_winners = winners.where("!IsFinal").view("RoundOf", "MatchIndex", "Team")
 
-March.start()
+March.start(potential_winners)
 
-start_next_round = {
-    March.get().matches().nextRound(potential_winners)
-}
+//start_next_round = {
+//    March.get().matches().nextRound(potential_winners)
+//}

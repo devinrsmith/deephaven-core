@@ -56,6 +56,7 @@ if (hasProperty('groovy')) {
     extraJvmArgs += ['-Ddeephaven.console.type=groovy',
                      "-Ddeephaven.application.dir=${project.projectDir}/src/main/dist/app.d",
                      "-Ddeephaven.march.teamsCsv=${project.projectDir}/src/main/dist/static/teams.csv",
+                     "-Ddeephaven.march.roundsCsv=${project.projectDir}/src/main/dist/static/rounds.csv",
                      "-Ddeephaven.march.dataDir=${project.buildDir}/march-madness"]
 }
 

@@ -7,6 +7,7 @@ import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +21,8 @@ import java.util.stream.Stream;
 @Immutable
 @MarchStyle
 public abstract class Round {
+
+    public static final Comparator<Round> ROUND_OF_COMPARATOR = Comparator.comparingInt(Round::roundOf);
 
     public abstract List<Match> matches();
 
@@ -35,7 +38,7 @@ public abstract class Round {
         return matches().size();
     }
 
-    public final int numTeams() {
+    public final int roundOf() {
         return size() * 2;
     }
 

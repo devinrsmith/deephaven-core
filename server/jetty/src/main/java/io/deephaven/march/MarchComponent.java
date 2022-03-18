@@ -3,6 +3,7 @@ package io.deephaven.march;
 import io.deephaven.engine.table.Table;
 
 import javax.inject.Named;
+import java.util.concurrent.ScheduledExecutorService;
 
 public interface MarchComponent {
 
@@ -15,7 +16,12 @@ public interface MarchComponent {
     @Named("votes")
     Table votesTable();
 
+    @Named("rounds")
+    Table roundsTable();
+
     TeamDetails teamDetails();
 
     Matches matches();
+
+    ScheduledExecutorService scheduler();
 }

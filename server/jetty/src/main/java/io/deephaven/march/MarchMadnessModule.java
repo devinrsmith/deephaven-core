@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @Module
 public class MarchMadnessModule {
@@ -29,6 +30,32 @@ public class MarchMadnessModule {
 
     private static Path teamCsv() {
         return Paths.get(System.getProperty("deephaven.march.teamsCsv", "teams.csv"));
+    }
+
+    private static Path roundsCsv() {
+        return Paths.get(System.getProperty("deephaven.march.roundsCsv", "rounds.csv"));
+    }
+
+    @Provides
+    @Singleton
+    @Named("teams")
+    public static Table teamsTable() {
+        try {
+            return TeamDetails.readCsv(teamCsv());
+        } catch (CsvReaderException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Provides
+    @Singleton
+    @Named("rounds")
+    public static Table roundsTable() {
+        try {
+            return RoundDetails.readCsv(roundsCsv());
+        } catch (CsvReaderException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Provides
@@ -69,17 +96,6 @@ public class MarchMadnessModule {
     @Named("votes_count")
     public static Table votesCountTable(@Named("votes") Table votes) {
         return votes.countBy("Count", "Round", "MatchIndex", "Team");
-    }
-
-    @Provides
-    @Singleton
-    @Named("teams")
-    public static Table teamsTable() {
-        try {
-            return TeamDetails.readCsv(teamCsv());
-        } catch (CsvReaderException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
 

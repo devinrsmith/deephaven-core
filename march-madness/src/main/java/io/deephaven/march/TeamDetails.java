@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @MarchStyle
 public abstract class TeamDetails {
 
-    private static final CsvSpecs SPECS = CsvSpecs.builder()
+    private static final CsvSpecs SPECS = CsvTools.builder()
             .hasHeaderRow(true)
             .headers(Arrays.asList("Seed", "Name", "Url"))
             .putParserForName("Seed", Parsers.INT)

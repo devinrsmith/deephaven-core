@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +43,9 @@ public final class Matches {
 
     private final UpdateGraphProcessor ugp;
     private final Path winnersDir;
+
     private final RoundOfWinners roundOfWinners;
+    private final CurrentRound currentRound;
 
     private final MutableInputTable handler;
     private final Table readOnlyCopy;
@@ -56,6 +57,7 @@ public final class Matches {
         this.ugp = Objects.requireNonNull(ugp);
         this.winnersDir = Objects.requireNonNull(winnersDir);
         this.roundOfWinners = RoundOfWinners.of();
+        this.currentRound = CurrentRound.of();
 
         final AppendOnlyArrayBackedMutableTable table =
                 AppendOnlyArrayBackedMutableTable.make(TableDefinition.from(HEADER));
@@ -71,6 +73,10 @@ public final class Matches {
 
     public Table roundOfWinners() {
         return roundOfWinners.table();
+    }
+
+    public Table currentRound() {
+        return currentRound.table();
     }
 
     // caller must have read lock
@@ -107,21 +113,11 @@ public final class Matches {
         }
     }
 
-    public Round nextRound(Table potentialWinners) throws IOException {
+    public Optional<Round> nextRound(int expectedRoundOf, Table potentialWinners) throws IOException {
         final AwareFunctionalLock lock = ugp.exclusiveLock();
         lock.lock();
         try {
-            return markWinners(potentialWinners);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void endVoting(Table potentialWinners) throws IOException {
-        final AwareFunctionalLock lock = ugp.exclusiveLock();
-        lock.lock();
-        try {
-            markFinalWinner(potentialWinners);
+            return markWinners(expectedRoundOf, potentialWinners);
         } finally {
             lock.unlock();
         }
@@ -155,39 +151,33 @@ public final class Matches {
         }
         final NewTable newTable = row.newTable();
         final Table inMemoryTable = InMemoryTable.from(newTable);
-
+        currentRound.setRoundOf(round.roundOf());
         handler.add(inMemoryTable);
         rounds.add(round);
     }
 
     // caller must have write lock
-    private Round markWinners(Table potentialWinners) throws IOException {
+    private Optional<Round> markWinners(int expectedRoundOf, Table potentialWinners) throws IOException {
         final Round latestRound = rounds.get(rounds.size() - 1);
+        if (latestRound.roundOf() != expectedRoundOf) {
+            throw new IllegalArgumentException();
+        }
+
         final Set<Integer> winningTeams = getWinners(potentialWinners, latestRound);
-        final Round nextRound = latestRound.nextRound(winningTeams);
         final List<String> lines = Stream.concat(
                 Stream.of("Team"),
                 winningTeams.stream().map(Object::toString)).collect(Collectors.toList());
         final Path path = csvPathForWinnersOf(latestRound);
         Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
         roundOfWinners.setRoundOfWinners(latestRound.roundOf(), winningTeams);
-        startRound(nextRound);
-        return nextRound;
-    }
 
-    // caller must have write lock
-    private void markFinalWinner(Table potentialWinners) throws IOException {
-        final Round latestRound = rounds.get(rounds.size() - 1);
-        final Set<Integer> winners = getWinners(potentialWinners, latestRound);
-        if (winners.size() != 1) {
-            throw new IllegalStateException("Expected 1 winner");
+        if (latestRound.isLastRound()) {
+            return Optional.empty();
         }
-        markFinalWinner(winners.iterator().next());
-    }
 
-    // caller must have write lock
-    private void markFinalWinner(int teamId) throws IOException {
-        roundOfWinners.setRoundOfWinners(2, Collections.singleton(teamId));
+        final Round nextRound = latestRound.nextRound(winningTeams);
+        startRound(nextRound);
+        return Optional.of(nextRound);
     }
 
     private Path csvPathForWinnersOf(Round latestRound) {

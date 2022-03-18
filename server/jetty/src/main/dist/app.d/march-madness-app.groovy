@@ -11,11 +11,11 @@ matches = March.get().matchesTable()
 
 round_winners = March.get().roundWinnersTable()
 
+current_round = March.get().currentRoundTable()
+
 finished_rounds = round_winners.selectDistinct("RoundOf")
 
 last_round = finished_rounds.minBy()
-
-current_round = last_round.view("RoundOf=(int)(RoundOf/2)")
 
 match_indices = merge(
         matches.view("RoundOf", "Team=TeamA", "MatchIndex"),
@@ -41,16 +41,10 @@ match_results = matches
 winners = match_results
         .view("RoundOf", "MatchIndex", "Team=TeamACount>=TeamBCount?TeamA:TeamB", "IsFinal")
 
-locked_winners = winners.where("IsFinal").view("RoundOf", "MatchIndex", "Team")
-
 potential_winners = winners.where("!IsFinal").view("RoundOf", "MatchIndex", "Team")
 
 March.start(potential_winners)
 
 //start_next_round = {
-//    March.get().matches().nextRound(potential_winners)
-//}
-
-//end_voting = {
-//    March.get().matches().endVoting(potential_winners)
+//    March.get().matches().nextRound(32, potential_winners)
 //}

@@ -83,13 +83,12 @@ public class March {
                 final Instant now = Instant.now();
                 final Duration remaining = Duration.between(now, details.endTime());
                 if (remaining.isNegative() || remaining.isZero()) {
-                    if (round.isLastRound()) {
-                        matches.endVoting(potentialWinners);
+                    final Optional<Round> nextRound = matches.nextRound(round.roundOf(), potentialWinners);
+                    if (nextRound.isEmpty()) {
                         return null;
                     }
-                    final Round nextRound = matches.nextRound(potentialWinners);
-                    final RoundDetails roundDetails = allDetails.roundOfToDetails().get(nextRound.roundOf());
-                    final Advancer advancer = new Advancer(nextRound, roundDetails);
+                    final RoundDetails roundDetails = allDetails.roundOfToDetails().get(nextRound.get().roundOf());
+                    final Advancer advancer = new Advancer(nextRound.get(), roundDetails);
                     // todo: don't advance the very last one
                     advancer.scheduleInitial(now);
                     return null;

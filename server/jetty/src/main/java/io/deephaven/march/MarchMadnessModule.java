@@ -109,4 +109,10 @@ public class MarchMadnessModule {
     public static Table roundWinnersTable(Matches matches) {
         return matches.roundOfWinners();
     }
+
+    @Provides
+    @Named("current_round")
+    public static Table currentRoundTable(Matches matches) {
+        return matches.currentRound();
+    }
 }

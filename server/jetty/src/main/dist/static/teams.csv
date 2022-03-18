@@ -24,7 +24,7 @@ Seed,Name,Url
 23,itsdangerous,https://github.com/pallets/itsdangerous
 24,beautifulsoup,https://github.com/waylan/beautifulsoup
 25,scikit-learn,https://github.com/scikit-learn/scikit-learn
-26,docker,https://github.com/docker-library/python
+26,docker,https://github.com/docker/docker-py
 27,cython,https://github.com/cython/cython
 28,matplotlib,https://github.com/matplotlib/matplotlib
 29,py4j,https://github.com/py4j/py4j

@@ -317,6 +317,8 @@ class Docker {
                 dependsOn createContainer
                 targetContainerId dockerContainerName
 
+                onlyIf { false }
+
                 if (cfg.containerDependencies.finalizedBy) {
                     finalizedBy(cfg.containerDependencies.finalizedBy)
                 }

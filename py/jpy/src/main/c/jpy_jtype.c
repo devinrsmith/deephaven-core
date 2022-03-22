@@ -829,6 +829,8 @@ int JType_CreateJavaArray(JNIEnv* jenv, JPy_JType* componentType, PyObject* pyAr
 
 int JType_ConvertPythonToJavaObject(JNIEnv* jenv, JPy_JType* type, PyObject* pyArg, jobject* objectRef, jboolean allowObjectWrapping)
 {
+    JPy_DIAG_PRINT(JPy_DIAG_F_TYPE, "JType_ConvertPythonToJavaObject\n");
+
     // Note: There may be a potential memory leak here.
     // If a new local reference is created in this function and assigned to *objectRef, the reference may escape.
     // If the reference is created for an argument to a JNI call, we already delete the ref (see JMethod_InvokeMethod()).

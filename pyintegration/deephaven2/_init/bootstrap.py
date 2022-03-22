@@ -28,9 +28,11 @@ def build_py_session():
             'verbose': False,
             'propfile': DEFAULT_PROPFILE,
             'java_home': os.environ.get('JDK_HOME', None),
-            'jvm_properties': {'PyObject.cleanup_on_thread': 'false'},
-            'jvm_options': {'-Djava.awt.headless=true',
-                            '-DMetricsManager.enabled=true',
+            'jvm_properties': {
+                'PyObject.cleanup_on_thread': 'false',
+                'java.awt.headless': 'true',
+                'MetricsManager.enabled': 'true'},
+            'jvm_options': {
                             # '-Xms1g',
                             # '-Xmn512m',
                             '-XX:+UseG1GC',

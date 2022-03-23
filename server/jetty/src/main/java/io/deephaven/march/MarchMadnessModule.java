@@ -35,6 +35,10 @@ public class MarchMadnessModule {
         return Paths.get(System.getProperty("deephaven.march.roundsCsv", "rounds.csv"));
     }
 
+    private static Path ipBlocklistCsv() {
+        return Paths.get(System.getProperty("deephaven.march.ipBlocklistCsv", "ip_blocklist.csv"));
+    }
+
     @Provides
     @Singleton
     @Named("teams")
@@ -52,6 +56,17 @@ public class MarchMadnessModule {
     public static Table roundsTable() {
         try {
             return RoundDetails.readCsv(roundsCsv());
+        } catch (CsvReaderException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Provides
+    @Singleton
+    @Named("ip_blocklist")
+    public static Table ipBlocklistTable() {
+        try {
+            return IpBlocklist.readCsv(ipBlocklistCsv());
         } catch (CsvReaderException e) {
             throw new IllegalStateException(e);
         }

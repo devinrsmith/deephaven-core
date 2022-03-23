@@ -9,6 +9,8 @@ rounds = March.get().roundsTable()
 
 matches = March.get().matchesTable()
 
+ip_blocklist = March.get().ipBlocklist()
+
 round_winners = March.get().roundWinnersTable()
 
 current_round = March.get().currentRoundTable()
@@ -24,6 +26,7 @@ match_indices = merge(
 votes_pre = March.get().votesTable()
 
 votes = votes_pre
+        .whereNotIn(ip_blocklist, "Ip")
         .naturalJoin(match_indices, "RoundOf,Team", "MatchIndex")
         .aggAllBy(sortedLast("Timestamp"), "Session", "RoundOf", "MatchIndex")
 

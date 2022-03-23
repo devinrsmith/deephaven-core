@@ -25,6 +25,9 @@ public interface MarchComponent {
     @Named("current_round")
     Table currentRoundTable();
 
+    @Named("ip_blocklist")
+    Table ipBlocklist();
+
     TeamDetails teamDetails();
 
     Matches matches();

@@ -1155,6 +1155,7 @@ JNIEXPORT void JNICALL Java_org_jpy_PyLib_decRefs
 
     jboolean isCopy;
     jlong* buf;
+    jint bufLen;
 
     if (Py_IsInitialized()) {
         JPy_BEGIN_GIL_STATE
@@ -1163,15 +1164,26 @@ JNIEXPORT void JNICALL Java_org_jpy_PyLib_decRefs
         // It is *not* a good idea to use a critical array here, as Py_DECREF may trigger the python
         // object destructor, which can run arbitrary code.
         buf = (*jenv)->GetLongArrayElements(jenv, objIds, &isCopy);
+        bufLen = (*jenv)->GetArrayLength(jenv, objIds);
+
+        JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: %d of %d (actual %d)\n", i, len, bufLen);
+
         for (i = 0; i < len; i++) {
+            JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: start %d\n", i);
             pyObject = (PyObject*) buf[i];
+            JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: start2 pyObject=%p %d\n", pyObject, i);
+            if (pyObject == NULL) {
+                JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: error: %d of %d is NULL\n", i, len);
+            }
             refCount = pyObject->ob_refcnt;
+            JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: start3 refCount=%d %d\n", refCount, i);
             if (refCount <= 0) {
-                JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: error: refCount <= 0: pyObject=%p, refCount=%d\n", pyObject, refCount);
+                JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: error: refCount <= 0: pyObject=%p, refCount=%d, %d of %d\n", pyObject, refCount, i, len);
             } else {
-                JPy_DIAG_PRINT(JPy_DIAG_F_MEM, "Java_org_jpy_PyLib_decRefs: pyObject=%p, refCount=%d, type='%s'\n", pyObject, refCount, Py_TYPE(pyObject)->tp_name);
+                JPy_DIAG_PRINT(JPy_DIAG_F_MEM, "Java_org_jpy_PyLib_decRefs: pyObject=%p, refCount=%d, type='%s', %d of %d\n", pyObject, refCount, Py_TYPE(pyObject)->tp_name, i, len);
                 Py_DECREF(pyObject);
             }
+            JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "Java_org_jpy_PyLib_decRefs: done %d\n", i);
         }
         (*jenv)->ReleaseLongArrayElements(jenv, objIds, buf, JNI_ABORT);
         JPy_END_GIL_STATE

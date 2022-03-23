@@ -537,6 +537,8 @@ int JType_CreateJavaArray(JNIEnv* jenv, JPy_JType* componentType, PyObject* pyAr
     jint index;
     PyObject* pyItem;
 
+    JPy_DIAG_PRINT(JPy_DIAG_F_TYPE, "JType_CreateJavaArray type='%s', componentType='%s', \n", Py_TYPE(pyArg)->tp_name, componentType->javaName);
+
     if (pyArg == Py_None) {
         itemCount = 0;
     } else if (PySequence_Check(pyArg)) {
@@ -809,6 +811,10 @@ int JType_CreateJavaArray(JNIEnv* jenv, JPy_JType* componentType, PyObject* pyAr
                 Py_DECREF(pyItem);
                 return -1;
             }
+
+            // I'm suspicious of PySequence_GetItem against a tuple. If I comment out the following line, things *seem*
+            // to work.
+            
             Py_DECREF(pyItem);
             (*jenv)->SetObjectArrayElement(jenv, arrayRef, index, jItem);
             if ((*jenv)->ExceptionCheck(jenv)) {
@@ -1891,6 +1897,8 @@ int JType_MatchVarArgPyArgAsFPType(const JPy_ParamDescriptor *paramDescriptor, P
 
 int JType_ConvertVarArgPyArgToJObjectArg(JNIEnv* jenv, JPy_ParamDescriptor* paramDescriptor, PyObject* pyArgOrig, int offset, jvalue* value, JPy_ArgDisposer* disposer)
 {
+    JPy_DIAG_PRINT(JPy_DIAG_F_TYPE, "JType_ConvertVarArgPyArgToJObjectArg\n");
+
     Py_ssize_t size = PyTuple_Size(pyArgOrig);
     PyObject *pyArg = PyTuple_GetSlice(pyArgOrig, offset, size);
 
@@ -2015,6 +2023,8 @@ int JType_ConvertVarArgPyArgToJObjectArg(JNIEnv* jenv, JPy_ParamDescriptor* para
             disposer->DisposeArg = paramDescriptor->isMutable ? JType_DisposeWritableBufferArg : JType_DisposeReadOnlyBufferArg;
         } else {
             jobject objectRef;
+            JPy_DIAG_PRINT(JPy_DIAG_F_ALL, "JType_ConvertPyArgToJObjectArg else: name=%s\n", Py_TYPE(pyArg)->tp_name);
+
             if (JType_ConvertPythonToJavaObject(jenv, paramType, pyArg, &objectRef, JNI_FALSE) < 0) {
                 Py_DECREF(pyArg);
                 return -1;

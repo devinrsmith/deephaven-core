@@ -18,7 +18,7 @@ JArrayList = jpy.get_type("java.util.ArrayList")
 
 
 @dataclass
-class CustomClass:
+class TableFactoryCustomClass:
     f1: int
     f2: str
 
@@ -91,8 +91,8 @@ class TableFactoryTestCase(BaseTestCase):
             double_col(name="Double", data=[1.01, -1.01]),
             string_col(name="String", data=["foo", "bar"]),
             datetime_col(name="Datetime", data=[dtypes.DateTime(1), dtypes.DateTime(-1)]),
-            pyobj_col(name="PyObj", data=[CustomClass(1, "1"), CustomClass(-1, "-1")]),
-            pyobj_col(name="PyObj1", data=[[1, 2, 3], CustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj", data=[TableFactoryCustomClass(1, "1"), TableFactoryCustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj1", data=[[1, 2, 3], TableFactoryCustomClass(-1, "-1")]),
             pyobj_col(name="PyObj2", data=[False, 'False']),
             jobj_col(name="JObj", data=[jobj1, jobj2]),
         ]

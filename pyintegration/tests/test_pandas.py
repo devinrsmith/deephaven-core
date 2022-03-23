@@ -18,7 +18,7 @@ from tests.testbase import BaseTestCase
 
 
 @dataclass
-class CustomClass:
+class TestPandasCustomClass:
     f1: int
     f2: str
 
@@ -39,8 +39,8 @@ class PandasTestCase(BaseTestCase):
             double_col(name="Double_", data=[1.01, -1.01]),
             string_col(name="String", data=["foo", "bar"]),
             datetime_col(name="Datetime", data=[dtypes.DateTime(1), dtypes.DateTime(-1)]),
-            pyobj_col(name="PyObj", data=[CustomClass(1, "1"), CustomClass(-1, "-1")]),
-            pyobj_col(name="PyObj1", data=[[1, 2, 3], CustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj", data=[TestPandasCustomClass(1, "1"), TestPandasCustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj1", data=[[1, 2, 3], TestPandasCustomClass(-1, "-1")]),
             pyobj_col(name="PyObj2", data=[False, 'False']),
             jobj_col(name="JObj", data=[j_array_list1, j_array_list2]),
         ]
@@ -149,7 +149,7 @@ class PandasTestCase(BaseTestCase):
             float_col(name="Float_", data=[1.01, np.nan]),
             double_col(name="Double_", data=[1.01, np.nan]),
             datetime_col(name="Datetime", data=[dtypes.DateTime(1), None]),
-            pyobj_col(name="PyObj", data=[CustomClass(1, "1"), None]),
+            pyobj_col(name="PyObj", data=[TestPandasCustomClass(1, "1"), None]),
         ]
         test_table = new_table(cols=input_cols)
         df = to_pandas(test_table)

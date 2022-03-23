@@ -53,7 +53,7 @@ class ColumnTestCase(BaseTestCase):
             _ = datetime_col(name="Datetime", data=[dtypes.DateTime(round(time.time())), False])
 
         with self.assertRaises(DHError) as cm:
-            _ = jobj_col(name="JObj", data=[jobj, CustomClass(-1, "-1")])
+            _ = jobj_col(name="JObj", data=[jobj, TestColumnCustomClass(-1, "-1")])
 
     def test_array_column(self):
         strings = ["Str1", "Str1", "Str2", "Str2"]
@@ -71,7 +71,7 @@ class ColumnTestCase(BaseTestCase):
 
 
 @dataclass
-class CustomClass:
+class TestColumnCustomClass:
     f1: int
     f2: str
 

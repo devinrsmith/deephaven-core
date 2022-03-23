@@ -16,7 +16,7 @@ from deephaven2._jcompat import j_array_list
 
 
 @dataclass
-class CustomClass:
+class TestNumyCustomClass:
     f1: int
     f2: str
 
@@ -37,8 +37,8 @@ class NumpyTestCase(unittest.TestCase):
             double_col(name="Double", data=[1.01, -1.01]),
             string_col(name="String", data=["foo", "bar"]),
             datetime_col(name="Datetime", data=[dtypes.DateTime(1), dtypes.DateTime(-1)]),
-            pyobj_col(name="PyObj", data=[CustomClass(1, "1"), CustomClass(-1, "-1")]),
-            pyobj_col(name="PyObj1", data=[[1, 2, 3], CustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj", data=[TestNumyCustomClass(1, "1"), TestNumyCustomClass(-1, "-1")]),
+            pyobj_col(name="PyObj1", data=[[1, 2, 3], TestNumyCustomClass(-1, "-1")]),
             pyobj_col(name="PyObj2", data=[False, 'False']),
             jobj_col(name="JObj", data=[j_array_list1, j_array_list2]),
         ]
@@ -56,8 +56,8 @@ class NumpyTestCase(unittest.TestCase):
             "Double": np.array([1.01, -1.01]),
             "String": np.array(["foo", "bar"], dtype=np.string_),
             "Datetime": np.array([1, -1], dtype=np.dtype("datetime64[ns]")),
-            "PyObj": np.array([CustomClass(1, "1"), CustomClass(-1, "-1")]),
-            "PyObj1": np.array([[1, 2, 3], CustomClass(-1, "-1")], dtype=np.object_),
+            "PyObj": np.array([TestNumyCustomClass(1, "1"), TestNumyCustomClass(-1, "-1")]),
+            "PyObj1": np.array([[1, 2, 3], TestNumyCustomClass(-1, "-1")], dtype=np.object_),
             "PyObj2": np.array([False, 'False'], dtype=np.object_),
             "JObj": np.array([j_array_list1, j_array_list2]),
         }

@@ -67,16 +67,20 @@ public class ConstructSnapshot {
     /**
      * The maximum number of allowed attempts to construct a snapshot concurrently with {@link UpdateGraphProcessor} run
      * processing. After this many attempts, we fall back and wait until we can block refreshes.
+     *
+     * <p>Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttempts}, otherwise defaults to {@code 2}.
      */
-    private static final int MAX_CONCURRENT_ATTEMPTS =
+    public static final int MAX_CONCURRENT_ATTEMPTS =
             Configuration.getInstance().getIntegerWithDefault("ConstructSnapshot.maxConcurrentAttempts", 2);
 
     /**
      * The maximum duration of an attempt to construct a snapshot concurrently with {@link UpdateGraphProcessor} run
      * processing. If an unsuccessful attempt takes longer than this timeout, we will fall back and wait until we can
      * block refreshes.
+     *
+     * <p>Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttemptDurationMillis}, otherwise defaults to {@code 5000}.
      */
-    private static final int MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS = Configuration.getInstance()
+    public static final int MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS = Configuration.getInstance()
             .getIntegerWithDefault("ConstructSnapshot.maxConcurrentAttemptDurationMillis", 5000);
 
     /**
@@ -1019,7 +1023,7 @@ public class ConstructSnapshot {
 
     /**
      * Invokes the snapshot function in a loop until it succeeds with provably consistent results, or until
-     * {@code MAX_CONCURRENT_ATTEMPTS} or {@code MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS} are exceeded. Falls back to
+     * {@link #MAX_CONCURRENT_ATTEMPTS} or {@link #MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS} are exceeded. Falls back to
      * acquiring a shared UGP lock for a final attempt.
      *
      * @param logPrefix A prefix for our log messages
@@ -1035,7 +1039,7 @@ public class ConstructSnapshot {
 
     /**
      * Invokes the snapshot function in a loop until it succeeds with provably consistent results, or until
-     * {@code MAX_CONCURRENT_ATTEMPTS} or {@code MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS} are exceeded. Falls back to
+     * {@link #MAX_CONCURRENT_ATTEMPTS} or {@link #MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS} are exceeded. Falls back to
      * acquiring a shared UGP lock for a final attempt.
      *
      * @param logPrefix A prefix for our log messages

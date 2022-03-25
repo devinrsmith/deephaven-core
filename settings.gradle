@@ -191,6 +191,9 @@ project(':engine-table').projectDir = file('engine/table')
 include(':engine-benchmark')
 project(':engine-benchmark').projectDir = file('engine/benchmark')
 
+include(':engine-hotspot')
+project(':engine-hotspot').projectDir = file('engine/hotspot')
+
 include(':extensions-csv')
 project(':extensions-csv').projectDir = file('extensions/csv')
 

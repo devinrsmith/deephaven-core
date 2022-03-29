@@ -10,6 +10,7 @@
 package io.deephaven.engine.table.impl.sources;
 
 import io.deephaven.chunk.Chunk;
+import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.impl.OrderedLongSet;
@@ -23,8 +24,7 @@ import static io.deephaven.util.QueryConstants.NULL_DOUBLE;
 
 public final class DoubleArrayRingSource
         extends AbstractColumnSource<Double>
-    // todo ChunkedBackingStoreExposedWritableSource
-    // todo FillUnordered
+    // todo ChunkedBackingStoreExposedWritableSource?
         implements MutableColumnSourceGetDefaults.ForDouble, InMemoryColumnSource {
 
     private final double[] buffer;
@@ -145,6 +145,11 @@ public final class DoubleArrayRingSource
     @Override
     public Chunk<Values> getChunkByFilling(@NotNull GetContext context, @NotNull RowSequence rowSequence) {
         return super.getChunkByFilling(context, rowSequence);
+    }
+
+    @Override
+    public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
+        super.fillChunk(context, destination, rowSequence);
     }
 
     public double getDoubleUnsafe(long index) {

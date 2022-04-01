@@ -6,37 +6,37 @@ import io.deephaven.chunk.attributes.Values;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
-import static io.deephaven.util.QueryConstants.NULL_INT;
+import static io.deephaven.util.QueryConstants.NULL_CHAR;
 
-public final class IntRingChunkSource extends AbstractRingChunkSource<Integer, int[], IntRingChunkSource> {
-    public IntRingChunkSource(int n) {
-        super(int.class, n);
+public final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, char[], CharacterRingChunkSource> {
+    public CharacterRingChunkSource(int n) {
+        super(char.class, n);
     }
 
     @Override
     public ChunkType getChunkType() {
-        return ChunkType.Int;
+        return ChunkType.Char;
     }
 
     @Override
     void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableIntChunk().set(destOffset, ring[ix]);
+        destination.asWritableCharChunk().set(destOffset, ring[ix]);
     }
 
     @Override
-    Integer get(long key) {
-        return TypeUtils.box(getInt(key));
+    Character get(long key) {
+        return TypeUtils.box(getChar(key));
     }
 
     @Override
-    int getInt(long key) {
+    char getChar(long key) {
         if (!containsIndex(key)) {
-            return NULL_INT;
+            return NULL_CHAR;
         }
-        return getIntUnsafe(key);
+        return getCharUnsafe(key);
     }
 
-    public int getIntUnsafe(long key) {
+    public char getCharUnsafe(long key) {
         return ring[keyToRingIndex(key)];
     }
 }

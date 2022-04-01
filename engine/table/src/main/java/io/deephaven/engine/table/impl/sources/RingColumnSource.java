@@ -9,20 +9,26 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public final class RingColumnSource<T, ARRAY>
+public final class RingColumnSource<T, ARRAY, RING extends AbstractRingChunkSource<T, ARRAY, RING>>
         extends AbstractColumnSource<T>
         implements InMemoryColumnSource {
 
-    public static RingColumnSource<Integer, int[]> ofInt(int n) {
+    public static RingColumnSource<Byte, byte[], ByteRingChunkSource> ofByte(int n) {
+        final ByteRingChunkSource ring = new ByteRingChunkSource(n);
+        final ByteRingChunkSource prevRing = new ByteRingChunkSource(n);
+        return new RingColumnSource<>(byte.class, ring, prevRing);
+    }
+
+    public static RingColumnSource<Integer, int[], IntRingChunkSource> ofInt(int n) {
         final IntRingChunkSource ring = new IntRingChunkSource(n);
         final IntRingChunkSource prevRing = new IntRingChunkSource(n);
         return new RingColumnSource<>(int.class, ring, prevRing);
     }
 
-    private final AbstractRingChunkSource<T, ARRAY> ring;
-    private final AbstractRingChunkSource<T, ARRAY> prevRing;
+    private final RING ring;
+    private final RING prevRing;
 
-    public RingColumnSource(@NotNull Class<T> type, AbstractRingChunkSource<T, ARRAY> ring, AbstractRingChunkSource<T, ARRAY> prevRing) {
+    private RingColumnSource(@NotNull Class<T> type, RING ring, RING prevRing) {
         super(type);
         this.ring = Objects.requireNonNull(ring);
         this.prevRing = Objects.requireNonNull(prevRing);
@@ -30,6 +36,10 @@ public final class RingColumnSource<T, ARRAY>
 
     public int n() {
         return ring.n();
+    }
+
+    public void copyCurrentToPrevious() {
+        prevRing.copyFrom(ring);
     }
 
     @Override

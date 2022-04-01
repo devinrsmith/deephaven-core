@@ -10,13 +10,18 @@
 package io.deephaven.engine.table.impl.sources;
 
 import io.deephaven.chunk.Chunk;
+import io.deephaven.chunk.DoubleChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.WritableDoubleChunk;
+import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.impl.OrderedLongSet;
 import io.deephaven.engine.rowset.impl.singlerange.SingleRange;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
+import io.deephaven.engine.table.impl.DefaultGetContext;
 import io.deephaven.engine.table.impl.MutableColumnSourceGetDefaults;
+import io.deephaven.engine.table.impl.sources.chunkcolumnsource.DoubleChunkColumnSource.ChunkGetContext;
 import org.jetbrains.annotations.NotNull;
 
 import static io.deephaven.util.QueryConstants.NULL_DOUBLE;
@@ -28,7 +33,9 @@ public final class DoubleArrayRingSource
         implements MutableColumnSourceGetDefaults.ForDouble, InMemoryColumnSource {
 
     private final double[] buffer;
+    private final double[] prevBuffer;
     private long nextIx;
+    private long prevIx;
 
     public DoubleArrayRingSource(int n) {
         super(double.class);
@@ -36,6 +43,7 @@ public final class DoubleArrayRingSource
             throw new IllegalArgumentException("n must be positive");
         }
         buffer = new double[n];
+        prevBuffer = new double[n];
         nextIx = 0;
     }
 
@@ -48,12 +56,20 @@ public final class DoubleArrayRingSource
         return buffer.length <= nextIx ? buffer.length : (int) nextIx;
     }
 
+    public int prevSize() {
+        return prevBuffer.length <= prevIx ? prevBuffer.length : (int) prevIx;
+    }
+
     /**
      *
      * @return is empty
      */
     public boolean isEmpty() {
         return nextIx == 0;
+    }
+
+    public boolean prevIsEmpty() {
+        return prevIx == 0;
     }
 
     /**
@@ -69,8 +85,21 @@ public final class DoubleArrayRingSource
         return index >= 0 && index >= (nextIx - buffer.length) && index < nextIx;
     }
 
+    public boolean prevContainsIndex(long index) {
+        return index >= 0 && index >= (prevIx - prevBuffer.length) && index < prevIx;
+    }
+
     public OrderedLongSet indices() {
         return isEmpty() ? OrderedLongSet.EMPTY : SingleRange.make(nextIx - size(), nextIx - 1);
+    }
+
+    public OrderedLongSet prevIndices() {
+        return prevIsEmpty() ? OrderedLongSet.EMPTY : SingleRange.make(prevIx - prevSize(), prevIx - 1);
+    }
+
+    public void bringPreviousUpToDate() {
+        System.arraycopy(buffer, 0, prevBuffer, 0, buffer.length);
+        prevIx = nextIx;
     }
 
     public void add(double x) {
@@ -126,10 +155,12 @@ public final class DoubleArrayRingSource
         return getDoubleUnsafe(index);
     }
 
-
     @Override
     public double getPrevDouble(long index) {
-        throw new UnsupportedOperationException();
+        if (!prevContainsIndex(index)) {
+            return NULL_DOUBLE;
+        }
+        return prevGetDoubleUnsafe(index);
     }
 
     @Override
@@ -138,8 +169,28 @@ public final class DoubleArrayRingSource
     }
 
     @Override
-    public Chunk<? extends Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
-        return super.getChunk(context, firstKey, lastKey);
+    public Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
+        final int firstIx = (int) (firstKey % buffer.length);
+        final int lastIx = (int) (lastKey % buffer.length);
+        if (firstIx <= lastIx) {
+            // Easy case, simple view!
+//            return DoubleChunk.chunkWrap(buffer, firstIx, (lastIx - firstIx) + 1);
+            return DefaultGetContext.resetChunkFromArray(context, buffer, firstIx, (lastIx - firstIx) + 1);
+        } else {
+            // Would be awesome if we could have a view of two wrapped DoubleChunks
+            // final DoubleChunk<Any> c1 = DoubleChunk.chunkWrap(buffer, firstIx, buffer.length - firstIx);
+            // final DoubleChunk<Any> c2 = DoubleChunk.chunkWrap(buffer, 0, lastIx + 1);
+            // return view(c1, c2);
+
+            DefaultGetContext.getFillContext(context);
+
+
+            DoubleChunk.makeArray()
+
+            ((ChunkGetContext) context).resettableDoubleChunk;
+
+        }
+
     }
 
     @Override
@@ -149,12 +200,24 @@ public final class DoubleArrayRingSource
 
     @Override
     public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
-        super.fillChunk(context, destination, rowSequence);
+        final WritableDoubleChunk<? super Values> c = destination.asWritableDoubleChunk();
+
+        c.copyFromChunk();
+    }
+
+    @Override
+    public void fillPrevChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
+        super.fillPrevChunk(context, destination, rowSequence);
     }
 
     public double getDoubleUnsafe(long index) {
         final int bufferIx = (int) (index % buffer.length);
         return buffer[bufferIx];
+    }
+
+    public double prevGetDoubleUnsafe(long index) {
+        final int bufferIx = (int) (index % buffer.length);
+        return prevBuffer[bufferIx];
     }
 
     //    public double getDoubleZero(int zeroIx) {

@@ -68,7 +68,8 @@ public class ConstructSnapshot {
      * The maximum number of allowed attempts to construct a snapshot concurrently with {@link UpdateGraphProcessor} run
      * processing. After this many attempts, we fall back and wait until we can block refreshes.
      *
-     * <p>Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttempts}, otherwise defaults to {@code 2}.
+     * <p>
+     * Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttempts}, otherwise defaults to {@code 2}.
      */
     public static final int MAX_CONCURRENT_ATTEMPTS =
             Configuration.getInstance().getIntegerWithDefault("ConstructSnapshot.maxConcurrentAttempts", 2);
@@ -78,7 +79,9 @@ public class ConstructSnapshot {
      * processing. If an unsuccessful attempt takes longer than this timeout, we will fall back and wait until we can
      * block refreshes.
      *
-     * <p>Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttemptDurationMillis}, otherwise defaults to {@code 5000}.
+     * <p>
+     * Taken from the configuration {@code ConstructSnapshot.maxConcurrentAttemptDurationMillis}, otherwise defaults to
+     * {@code 5000}.
      */
     public static final int MAX_CONCURRENT_ATTEMPT_DURATION_MILLIS = Configuration.getInstance()
             .getIntegerWithDefault("ConstructSnapshot.maxConcurrentAttemptDurationMillis", 5000);

@@ -55,12 +55,12 @@ public final class RingColumnSource<T>
     }
 
     public int n() {
-        return ring.n();
+        return ring.capacity();
     }
 
     public void copyCurrentToPrevious() {
-        //noinspection unchecked,rawtypes
-        ((AbstractRingChunkSource) prev).copyFrom(ring);
+        // noinspection unchecked,rawtypes
+        ((AbstractRingChunkSource) prev).replayFrom(ring);
     }
 
     @Override
@@ -74,12 +74,14 @@ public final class RingColumnSource<T>
     }
 
     @Override
-    public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
+    public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination,
+            @NotNull RowSequence rowSequence) {
         ring.fillChunk(context, destination, rowSequence);
     }
 
     @Override
-    public void fillPrevChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
+    public void fillPrevChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination,
+            @NotNull RowSequence rowSequence) {
         prev.fillChunk(context, destination, rowSequence);
     }
 

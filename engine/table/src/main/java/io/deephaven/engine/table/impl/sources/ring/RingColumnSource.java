@@ -1,37 +1,57 @@
-package io.deephaven.engine.table.impl.sources;
+package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
+import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public final class RingColumnSource<T, ARRAY, RING extends AbstractRingChunkSource<T, ARRAY, RING>>
+public final class RingColumnSource<T>
         extends AbstractColumnSource<T>
         implements InMemoryColumnSource {
 
-    public static RingColumnSource<Byte, byte[], ByteRingChunkSource> ofByte(int n) {
-        final ByteRingChunkSource ring = new ByteRingChunkSource(n);
-        final ByteRingChunkSource prevRing = new ByteRingChunkSource(n);
-        return new RingColumnSource<>(byte.class, ring, prevRing);
+    public static RingColumnSource<Byte> ofByte(int n) {
+        return ByteRingChunkSource.columnSource(n);
     }
 
-    public static RingColumnSource<Integer, int[], IntRingChunkSource> ofInt(int n) {
-        final IntRingChunkSource ring = new IntRingChunkSource(n);
-        final IntRingChunkSource prevRing = new IntRingChunkSource(n);
-        return new RingColumnSource<>(int.class, ring, prevRing);
+    public static RingColumnSource<Character> ofCharacter(int n) {
+        return CharacterRingChunkSource.columnSource(n);
     }
 
-    private final RING ring;
-    private final RING prevRing;
+    public static RingColumnSource<Double> ofDouble(int n) {
+        return DoubleRingChunkSource.columnSource(n);
+    }
 
-    private RingColumnSource(@NotNull Class<T> type, RING ring, RING prevRing) {
+    public static RingColumnSource<Float> ofFloat(int n) {
+        return FloatRingChunkSource.columnSource(n);
+    }
+
+    public static RingColumnSource<Integer> ofInteger(int n) {
+        return IntegerRingChunkSource.columnSource(n);
+    }
+
+    public static RingColumnSource<Long> ofLong(int n) {
+        return LongRingChunkSource.columnSource(n);
+    }
+
+    public static RingColumnSource<Short> ofShort(int n) {
+        return ShortRingChunkSource.columnSource(n);
+    }
+
+    private final AbstractRingChunkSource<T, ?, ?> ring;
+    private final AbstractRingChunkSource<T, ?, ?> prev;
+
+    <ARRAY, RING extends AbstractRingChunkSource<T, ARRAY, RING>> RingColumnSource(
+            @NotNull Class<T> type,
+            RING ring,
+            RING prev) {
         super(type);
         this.ring = Objects.requireNonNull(ring);
-        this.prevRing = Objects.requireNonNull(prevRing);
+        this.prev = Objects.requireNonNull(prev);
     }
 
     public int n() {
@@ -39,7 +59,8 @@ public final class RingColumnSource<T, ARRAY, RING extends AbstractRingChunkSour
     }
 
     public void copyCurrentToPrevious() {
-        prevRing.copyFrom(ring);
+        //noinspection unchecked,rawtypes
+        ((AbstractRingChunkSource) prev).copyFrom(ring);
     }
 
     @Override
@@ -59,17 +80,17 @@ public final class RingColumnSource<T, ARRAY, RING extends AbstractRingChunkSour
 
     @Override
     public void fillPrevChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
-        prevRing.fillChunk(context, destination, rowSequence);
+        prev.fillChunk(context, destination, rowSequence);
     }
 
     @Override
     public Chunk<? extends Values> getPrevChunk(@NotNull GetContext context, @NotNull RowSequence rowSequence) {
-        return prevRing.getChunk(context, rowSequence);
+        return prev.getChunk(context, rowSequence);
     }
 
     @Override
     public Chunk<? extends Values> getPrevChunk(@NotNull GetContext context, long firstKey, long lastKey) {
-        return prevRing.getChunk(context, firstKey, lastKey);
+        return prev.getChunk(context, firstKey, lastKey);
     }
 
     @Override
@@ -124,46 +145,46 @@ public final class RingColumnSource<T, ARRAY, RING extends AbstractRingChunkSour
 
     @Override
     public T getPrev(long index) {
-        return prevRing.get(index);
+        return prev.get(index);
     }
 
     @Override
     public Boolean getPrevBoolean(long index) {
-        return prevRing.getBoolean(index);
+        return prev.getBoolean(index);
     }
 
     @Override
     public byte getPrevByte(long index) {
-        return prevRing.getByte(index);
+        return prev.getByte(index);
     }
 
     @Override
     public char getPrevChar(long index) {
-        return prevRing.getChar(index);
+        return prev.getChar(index);
     }
 
     @Override
     public double getPrevDouble(long index) {
-        return prevRing.getDouble(index);
+        return prev.getDouble(index);
     }
 
     @Override
     public float getPrevFloat(long index) {
-        return prevRing.getFloat(index);
+        return prev.getFloat(index);
     }
 
     @Override
     public int getPrevInt(long index) {
-        return prevRing.getInt(index);
+        return prev.getInt(index);
     }
 
     @Override
     public long getPrevLong(long index) {
-        return prevRing.getLong(index);
+        return prev.getLong(index);
     }
 
     @Override
     public short getPrevShort(long index) {
-        return prevRing.getShort(index);
+        return prev.getShort(index);
     }
 }

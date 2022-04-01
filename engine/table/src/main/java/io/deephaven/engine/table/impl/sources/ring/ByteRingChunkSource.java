@@ -1,4 +1,9 @@
-package io.deephaven.engine.table.impl.sources;
+/*
+ * ---------------------------------------------------------------------------------------------------------------------
+ * AUTO-GENERATED CLASS - DO NOT EDIT MANUALLY - for any changes edit CharacterRingChunkSource and regenerate
+ * ---------------------------------------------------------------------------------------------------------------------
+ */
+package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
@@ -6,9 +11,15 @@ import io.deephaven.chunk.attributes.Values;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 import static io.deephaven.util.QueryConstants.NULL_BYTE;
 
-public final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byte[], ByteRingChunkSource> {
+final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byte[], ByteRingChunkSource> {
+    public static RingColumnSource<Byte> columnSource(int n) {
+        return new RingColumnSource<>(byte.class, new ByteRingChunkSource(n), new ByteRingChunkSource(n));
+    }
+
     public ByteRingChunkSource(int n) {
         super(byte.class, n);
     }
@@ -16,6 +27,11 @@ public final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byt
     @Override
     public ChunkType getChunkType() {
         return ChunkType.Byte;
+    }
+
+    @Override
+    void clear() {
+        Arrays.fill(ring, NULL_BYTE);
     }
 
     @Override
@@ -29,14 +45,10 @@ public final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byt
     }
 
     @Override
-    int getInt(long key) {
+    byte getByte(long key) {
         if (!containsIndex(key)) {
             return NULL_BYTE;
         }
-        return getByteUnsafe(key);
-    }
-
-    public int getByteUnsafe(long key) {
         return ring[keyToRingIndex(key)];
     }
 }

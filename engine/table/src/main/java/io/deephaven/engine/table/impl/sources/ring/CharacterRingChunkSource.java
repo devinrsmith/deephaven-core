@@ -1,4 +1,4 @@
-package io.deephaven.engine.table.impl.sources;
+package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
@@ -6,9 +6,15 @@ import io.deephaven.chunk.attributes.Values;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 import static io.deephaven.util.QueryConstants.NULL_CHAR;
 
-public final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, char[], CharacterRingChunkSource> {
+final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, char[], CharacterRingChunkSource> {
+    public static RingColumnSource<Character> columnSource(int n) {
+        return new RingColumnSource<>(char.class, new CharacterRingChunkSource(n), new CharacterRingChunkSource(n));
+    }
+
     public CharacterRingChunkSource(int n) {
         super(char.class, n);
     }
@@ -16,6 +22,11 @@ public final class CharacterRingChunkSource extends AbstractRingChunkSource<Char
     @Override
     public ChunkType getChunkType() {
         return ChunkType.Char;
+    }
+
+    @Override
+    void clear() {
+        Arrays.fill(ring, NULL_CHAR);
     }
 
     @Override
@@ -33,10 +44,6 @@ public final class CharacterRingChunkSource extends AbstractRingChunkSource<Char
         if (!containsIndex(key)) {
             return NULL_CHAR;
         }
-        return getCharUnsafe(key);
-    }
-
-    public char getCharUnsafe(long key) {
         return ring[keyToRingIndex(key)];
     }
 }

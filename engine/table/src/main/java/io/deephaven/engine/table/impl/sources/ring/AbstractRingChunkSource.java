@@ -1,4 +1,4 @@
-package io.deephaven.engine.table.impl.sources;
+package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.WritableChunk;
@@ -17,7 +17,7 @@ import java.util.function.LongConsumer;
 
 import static io.deephaven.engine.table.impl.AbstractColumnSource.USE_RANGES_AVERAGE_RUN_LENGTH;
 
-public abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkSource<T, ARRAY, SELF>> implements DefaultChunkSource<Values> {
+abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkSource<T, ARRAY, SELF>> implements DefaultChunkSource<Values> {
 
     protected final ARRAY ring;
     protected final int n;
@@ -41,20 +41,16 @@ public abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRin
         return nextIx == 0;
     }
 
-    public boolean containsIndex(long key) {
+    public final boolean containsIndex(long key) {
         return key >= 0 && key >= (nextIx - n) && key < nextIx;
     }
 
-    public OrderedLongSet indices() {
+    public final OrderedLongSet indices() {
         return isEmpty() ? OrderedLongSet.EMPTY : SingleRange.make(nextIx - size(), nextIx - 1);
     }
 
-
-
-    public void appendFromChunk(Chunk<?> src, int srcOffset) {
-
-
-
+    public final void appendFromChunk(Chunk<?> src, int srcOffset) {
+        // todo
     }
 
     @Override
@@ -139,18 +135,20 @@ public abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRin
         }
     }
 
-    abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix);
-
-    abstract T get(long key);
-
     final int keyToRingIndex(long key) {
         return (int) (key % n);
     }
 
-    void copyFrom(SELF other) {
+    final void copyFrom(SELF other) {
         //noinspection SuspiciousSystemArraycopy
         System.arraycopy(other.ring, 0, ring, 0, n);
     }
+
+    abstract void clear();
+
+    abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix);
+
+    abstract T get(long key);
 
     Boolean getBoolean(long key) {
         throw new UnsupportedOperationException();

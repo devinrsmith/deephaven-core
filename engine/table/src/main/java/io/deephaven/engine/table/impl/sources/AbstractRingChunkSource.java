@@ -4,37 +4,58 @@ import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
-import io.deephaven.engine.table.impl.AbstractColumnSource;
+import io.deephaven.engine.rowset.impl.OrderedLongSet;
+import io.deephaven.engine.rowset.impl.singlerange.SingleRange;
+import io.deephaven.engine.table.impl.DefaultChunkSource;
 import io.deephaven.engine.table.impl.DefaultGetContext;
 import io.deephaven.util.datastructures.LongRangeConsumer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.function.LongConsumer;
 
-public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T> {
+import static io.deephaven.engine.table.impl.AbstractColumnSource.USE_RANGES_AVERAGE_RUN_LENGTH;
 
-    private final int n;
+public abstract class AbstractRingChunkSource<T, ARRAY> implements DefaultChunkSource<Values> {
 
-    public AbstractRingColumnSource(@NotNull Class<T> type) {
-        super(type);
-    }
+    protected final ARRAY ring;
+    protected final int n;
+    private long nextIx;
 
-    public AbstractRingColumnSource(@NotNull Class<T> type, @Nullable Class<?> elementType) {
-        super(type, elementType);
+    public AbstractRingChunkSource(@NotNull Class<T> componentType, int n) {
+        this.n = n;
+        //noinspection unchecked
+        ring = (ARRAY) Array.newInstance(componentType, n);
     }
 
     public final int n() {
         return n;
     }
 
-    abstract Object ring();
+    public final int size() {
+        return n <= nextIx ? n : (int) nextIx;
+    }
 
-    abstract Object prevRing();
+    public final boolean isEmpty() {
+        return nextIx == 0;
+    }
+
+    public boolean containsIndex(long index) {
+        return index >= 0 && index >= (nextIx - n) && index < nextIx;
+    }
+
+    public OrderedLongSet indices() {
+        return isEmpty() ? OrderedLongSet.EMPTY : SingleRange.make(nextIx - size(), nextIx - 1);
+    }
+
+    public void appendFromChunk(Chunk<? extends ATTR> src, int srcOffset) {
+
+        getChunkType().writableChunkWrap()
+    }
 
     @Override
-    public Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
+    public final Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
         final int firstIx = (int) (firstKey % n);
         final int lastIx = (int) (lastKey % n);
         if (firstIx <= lastIx) {
@@ -42,7 +63,7 @@ public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T
             // More efficient than DefaultGetContext.resetChunkFromArray.
             return DefaultGetContext
                     .getResettableChunk(context)
-                    .resetFromArray(ring(), firstIx, (lastIx - firstIx) + 1);
+                    .resetFromArray(ring, firstIx, (lastIx - firstIx) + 1);
         } else {
             // Would be awesome if we could have a view of two wrapped DoubleChunks
             // final DoubleChunk<Any> c1 = DoubleChunk.chunkWrap(buffer, firstIx, buffer.length - firstIx);
@@ -56,7 +77,7 @@ public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T
     }
 
     @Override
-    public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
+    public final void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination, @NotNull RowSequence rowSequence) {
         if (rowSequence.getAverageRunLengthEstimate() < USE_RANGES_AVERAGE_RUN_LENGTH) {
             final KeyFiller filler = new KeyFiller(destination);
             rowSequence.forAllRowKeys(filler);
@@ -68,7 +89,7 @@ public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T
         }
     }
 
-    private class KeyFiller implements LongConsumer {
+    private final class KeyFiller implements LongConsumer {
         private final WritableChunk<? super Values> destination;
         private int destOffset;
 
@@ -79,21 +100,12 @@ public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T
         @Override
         public void accept(long key) {
             final int ix = (int) (key % n);
-
-
-            /*
-                    final WritableDoubleChunk<? super Values> typedDest = dest.asWritableDoubleChunk();
-        final MutableInt destPos = new MutableInt(0);
-        keys.forAllRowKeys(v -> {
-            typedDest.set(destPos.intValue(), src.getDouble(v));
-            destPos.increment();
-        });
-        typedDest.setSize(destPos.intValue());
-             */
+            fillKey(destination, destOffset, ix);
+            ++destOffset;
         }
     }
 
-    private class RangeFiller implements LongRangeConsumer {
+    private final class RangeFiller implements LongRangeConsumer {
         private final WritableChunk<? super Values> destination;
         private int destOffset;
 
@@ -113,34 +125,50 @@ public abstract class AbstractRingColumnSource<T> extends AbstractColumnSource<T
     private int fillChunk(@NotNull WritableChunk<? super Values> destination, int destOffset, int firstIx, int lastIx) {
         if (firstIx <= lastIx) {
             final int len = (lastIx - firstIx) + 1;
-            destination.copyFromArray(ring(), firstIx, destOffset, len);
+            destination.copyFromArray(ring, firstIx, destOffset, len);
             return len;
         } else {
             final int fill1Length = n - firstIx;
             final int fill2Length = lastIx + 1;
-            destination.copyFromArray(ring(), firstIx, destOffset, fill1Length);
-            destination.copyFromArray(ring(), 0, destOffset + fill1Length, fill2Length);
+            destination.copyFromArray(ring, firstIx, destOffset, fill1Length);
+            destination.copyFromArray(ring, 0, destOffset + fill1Length, fill2Length);
             return fill1Length + fill2Length;
         }
     }
 
-    private Chunk<Values> getContiguous(@NotNull GetContext context, int ix, int len) {
-        // More efficient than DefaultGetContext.resetChunkFromArray.
-        return DefaultGetContext
-                .getResettableChunk(context)
-                .resetFromArray(ring(), ix, len);
+    abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix);
+
+    abstract T get(long key);
+
+    Boolean getBoolean(long key) {
+        throw new UnsupportedOperationException();
     }
 
-    private void _fillChunk(@NotNull GetContext context, @NotNull WritableChunk<? super Values> destination, long firstKey, long lastKey) {
-        final int firstIx = (int) (firstKey % n);
-        final int lastIx = (int) (lastKey % n);
-
+    byte getByte(long key) {
+        throw new UnsupportedOperationException();
     }
 
-    private void _fillChunki(@NotNull GetContext context, @NotNull WritableChunk<? super Values> destination, int firstIx, int lastIx) {
+    char getChar(long key) {
+        throw new UnsupportedOperationException();
+    }
 
+    double getDouble(long key) {
+        throw new UnsupportedOperationException();
+    }
 
+    float getFloat(long key) {
+        throw new UnsupportedOperationException();
+    }
 
+    int getInt(long key) {
+        throw new UnsupportedOperationException();
+    }
 
+    long getLong(long key) {
+        throw new UnsupportedOperationException();
+    }
+
+    short getShort(long key) {
+        throw new UnsupportedOperationException();
     }
 }

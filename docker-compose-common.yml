@@ -21,6 +21,9 @@ services:
       #
       # For jprofiler sessions (if you tweaked the jprofiler version in jprofiler-server/Dockerfile you need to tweak path)
       # - JAVA_TOOL_OPTIONS=-agentpath:/opt/jprofiler13.0/bin/linux-x64/libjprofilerti.so=port=8849,nowait -Xmx4g -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
+      #
+      # For jmxremote / Java Mission Control
+      # - JAVA_TOOL_OPTIONS=-Dcom.sun.management.jmxremote.port=7091 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Xmx1g -Ddeephaven.console.type=${DEEPHAVEN_CONSOLE_TYPE} -Ddeephaven.application.dir=${DEEPHAVEN_APPLICATION_DIR}
 
     expose:
       - '8080'
@@ -30,6 +33,9 @@ services:
 # For jprofiler (change if using different port)
 #    ports:
 #      - '8849:8849'
+# For jmxremote / Java Mission Control (change if using different port)
+#    ports:
+#      - '7091:7091'
 
     # Note: using old-style volume mounts, so that the directories get created if they don't exist
     # See https://docs.docker.com/storage/bind-mounts/#differences-between--v-and---mount-behavior

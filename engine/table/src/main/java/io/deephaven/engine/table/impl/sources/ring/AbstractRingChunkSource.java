@@ -12,7 +12,6 @@ import io.deephaven.util.datastructures.LongRangeConsumer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.function.LongConsumer;
@@ -21,6 +20,7 @@ import static io.deephaven.engine.table.impl.AbstractColumnSource.USE_RANGES_AVE
 
 abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkSource<T, ARRAY, SELF>>
         implements DefaultChunkSource<Values> {
+    // todo: should we extend SupportsContiguousGet? I think the extra layers of default methods may hurt
 
     // todo: should this be a (writable)chunk?
     protected final ARRAY ring;

@@ -35,8 +35,8 @@ final class ShortRingChunkSource extends AbstractRingChunkSource<Short, short[],
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableShortChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableShortChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class ShortRingChunkSource extends AbstractRingChunkSource<Short, short[],
 
     @Override
     short getShort(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_SHORT;
         }
         return ring[keyToRingIndex(key)];

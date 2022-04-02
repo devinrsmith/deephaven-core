@@ -5,14 +5,14 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSequenceFactory;
-import io.deephaven.engine.rowset.impl.OrderedLongSet;
-import io.deephaven.engine.rowset.impl.singlerange.SingleRange;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.impl.DefaultChunkSource;
 import io.deephaven.engine.table.impl.DefaultGetContext;
 import io.deephaven.util.datastructures.LongRangeConsumer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.function.LongConsumer;
@@ -28,121 +28,182 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     long nextKey;
 
     public AbstractRingChunkSource(@NotNull Class<T> componentType, int capacity) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be positive");
+        }
         this.capacity = capacity;
         // noinspection unchecked
         ring = (ARRAY) Array.newInstance(componentType, capacity);
     }
 
+    /**
+     * The maximum size {@code this} ring can hold. Constant.
+     *
+     * @return the capacity
+     */
     public final int capacity() {
         return capacity;
     }
 
+    /**
+     * The size, {@code 0 <= size <= capacity}. The size will never shrink.
+     *
+     * <p>
+     * Logically equivalent to {@code lastKey - firstKey + 1}.
+     *
+     * @return the size
+     */
     public final int size() {
         return capacity <= nextKey ? capacity : (int) nextKey;
     }
 
+    /**
+     * {@code true} if empty, else {@code false}. Once {@code false} is returned, will always return {@code false}.
+     *
+     * <p>
+     * Logically equivalent to {@code size == 0}.
+     *
+     * @return {@code true} if empty
+     */
     public final boolean isEmpty() {
         return nextKey == 0;
     }
 
-    public final boolean containsIndex(long key) {
+    /**
+     * {@code true} if {@code key} is in the index.
+     *
+     * <p>
+     * Logically equivalent to the condition {@code firstKey <= key <= lastKey}.
+     *
+     * @param key the key
+     * @return {@code true} if {@code key} is in the index.
+     * @see #firstKey()
+     * @see #lastKey()
+     */
+    public final boolean containsKey(long key) {
+        // branchless check, probably better than needing to compute size() or firstKey()
         return key >= 0 && key >= (nextKey - capacity) && key < nextKey;
     }
 
-    public final OrderedLongSet indices() {
-        return isEmpty() ? OrderedLongSet.EMPTY : SingleRange.make(nextKey - size(), nextKey - 1);
+    public final boolean containsRange(long firstKey, long lastKey) {
+        return firstKey <= lastKey && firstKey >= 0 && firstKey >= (nextKey - capacity) && lastKey < nextKey;
+    }
+
+    /**
+     * The first key (inclusive). If {@link #isEmpty()}, returns {@code 0}.
+     *
+     * @return the first key
+     * @see #lastKey()
+     */
+    public final long firstKey() {
+        return capacity <= nextKey ? nextKey - capacity : 0;
+    }
+
+    /**
+     * The last key (inclusive). If {@link #isEmpty()}, returns {@code -1}.
+     *
+     * @return the last key
+     * @see #firstKey()
+     */
+    public final long lastKey() {
+        return nextKey - 1;
     }
 
     // todo: if we can get efficient last N, we can implement this w/ RowSequence
+    // not absolutely necessary since we are only filling from a stream table atm
     public final void append(
             ColumnSource<T> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
+        // todo: should we have our own get context?
+
+        if (firstKey < 0) {
+            throw new IllegalArgumentException("todo");
+        }
         if (firstKey > lastKey) {
             throw new IllegalArgumentException("Need at least one element to append");
         }
-        // todo: should we have our own get context?
-        final long logicalSize = lastKey - firstKey + 1;
-        final long keyStart;
+        final long logicalFillSize = lastKey - firstKey + 1;
+        final long physicalStartKey;
         final long modifiedFirstKey;
-        final int copyLen;
-        if (logicalSize <= capacity) {
-            keyStart = nextKey;
+        final int physicalFillSize;
+        if (logicalFillSize <= capacity) {
+            physicalStartKey = nextKey;
             modifiedFirstKey = firstKey;
-            copyLen = (int) logicalSize;
+            physicalFillSize = (int) logicalFillSize;
         } else {
-            // If the logical amount of data to copy is greater than the capacity, we only need to copy the last
-            // capacity elements from the source.
-            final long extraOffset = logicalSize - capacity;
-            keyStart = nextKey + extraOffset;
-            modifiedFirstKey = firstKey + extraOffset;
-            copyLen = capacity;
+            final long skippedElements = logicalFillSize - capacity;
+            physicalStartKey = nextKey + skippedElements;
+            modifiedFirstKey = firstKey + skippedElements;
+            physicalFillSize = capacity;
         }
-        // [0, capacity)
-        final int copy1Start = keyToRingIndex(keyStart);
-        // (0, capacity]
-        final int copy1Max = capacity - copy1Start;
-        // copy1Len + copy2Len = copyLen
-        final int copy1Len = Math.min(copy1Max, copyLen);
-        final int copy2Len = copyLen - copy1Len;
 
-        final long modifiedSecondKey = modifiedFirstKey + copy1Len;
+        // [0, capacity)
+        final int fillIndex1 = keyToRingIndex(physicalStartKey);
+        // (0, capacity]
+        final int fillMax1 = capacity - fillIndex1;
+
+        // fillSize1 + fillSize2 = physicalFillSize
+        final int fillSize1 = Math.min(fillMax1, physicalFillSize);
+        final int fillSize2 = physicalFillSize - fillSize1;
+
+        final long secondKey = modifiedFirstKey + fillSize1;
 
         // todo: why does the factory not use SingleRangeRowSequence
+        // todo: should there be a specialized fillChunk w/ range?
         {
-            final RowSequence seq1 = RowSequenceFactory.forRange(modifiedFirstKey, modifiedSecondKey - 1);
+            final RowSequence seq1 = RowSequenceFactory.forRange(modifiedFirstKey, secondKey - 1);
             final WritableChunk<Values> chunk = DefaultGetContext
                     .getResettableChunk(context)
-                    .resetFromArray(ring, copy1Start, copy1Len);
-            // todo: should there be a specialized fillChunk w/ range?
+                    .resetFromArray(ring, fillIndex1, fillSize1);
             src.fillChunk(fillContext, chunk, seq1);
         }
-        if (copy2Len != 0) {
-            final RowSequence seq2 = RowSequenceFactory.forRange(modifiedSecondKey, lastKey);
+        if (fillSize2 != 0) {
+            final RowSequence seq2 = RowSequenceFactory.forRange(secondKey, lastKey);
             final WritableChunk<Values> chunk = DefaultGetContext
                     .getResettableChunk(context)
-                    .resetFromArray(ring, 0, copy2Len);
+                    .resetFromArray(ring, 0, fillSize2);
             src.fillChunk(fillContext, chunk, seq2);
         }
-
-        // {
-        // final Chunk<? extends Values> chunk1 = src.getChunk(context, modifiedFirstKey, modifiedSecondKey - 1);
-        // chunk1.copyToArray(0, ring, copy1Start, copy1Len);
-        //
-        // final Chunk<? extends Values> chunk2 = src.getChunk(context, modifiedSecondKey, lastKey);
-        // chunk2.copyToArray(0, ring, 0, copy2Len);
-        // }
-
-        nextKey = keyStart + copyLen;
+        nextKey = physicalStartKey + physicalFillSize;
     }
 
     @Override
     public final Chunk<Values> getChunk(@NotNull GetContext context, @NotNull RowSequence rowSequence) {
+        if (rowSequence.isEmpty()) {
+            return getChunkType().getEmptyChunk();
+        }
         if (rowSequence.isContiguous()) {
             return getChunk(context, rowSequence.firstRowKey(), rowSequence.lastRowKey());
-        } else {
-            final WritableChunk<Values> chunk = DefaultGetContext.getWritableChunk(context);
-            fillChunk(DefaultGetContext.getFillContext(context), chunk, rowSequence);
-            return chunk;
         }
+        final WritableChunk<Values> chunk = DefaultGetContext.getWritableChunk(context);
+        fillChunk(DefaultGetContext.getFillContext(context), chunk, rowSequence);
+        return chunk;
     }
 
     @Override
     public final Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
-        final int firstIx = keyToRingIndex(firstKey);
-        final int lastIx = keyToRingIndex(lastKey);
-        if (firstIx <= lastIx) {
+        // This check should not be necessary given precondition on getChunk
+        if (!containsRange(firstKey, lastKey)) {
+            throw new IllegalStateException("getChunk precondition broken, invalid range");
+        }
+        final int firstRingIx = keyToRingIndex(firstKey);
+        final int secondRingIx = keyToRingIndex(lastKey);
+        if (firstRingIx <= secondRingIx) {
             // Easy case, simple view.
-            // More efficient than DefaultGetContext.resetChunkFromArray.
+            // More efficient than DefaultGetContext.resetChunkFromArray since we known ring != null
             return DefaultGetContext
                     .getResettableChunk(context)
-                    .resetFromArray(ring, firstIx, (lastIx - firstIx) + 1);
+                    .resetFromArray(ring, firstRingIx, secondRingIx - firstRingIx + 1);
         } else {
             // Would be awesome if we could have a view of two wrapped DoubleChunks
-            // final DoubleChunk<Any> c1 = DoubleChunk.chunkWrap(buffer, firstIx, buffer.length - firstIx);
-            // final DoubleChunk<Any> c2 = DoubleChunk.chunkWrap(buffer, 0, lastIx + 1);
+            // final DoubleChunk<Any> c1 = DoubleChunk.chunkWrap(buffer, firstRingIx, buffer.length - firstRingIx);
+            // final DoubleChunk<Any> c2 = DoubleChunk.chunkWrap(buffer, 0, secondRingIx + 1);
             // return view(c1, c2);
             final WritableChunk<Values> chunk = DefaultGetContext.getWritableChunk(context);
-            final int len = fillChunkByCopyFromArray(chunk, 0, firstIx, lastIx);
-            chunk.setSize(len);
+            final int size = fillChunkByCopyFromArray(chunk, 0, firstRingIx, secondRingIx);
+            if (size != lastKey - firstKey + 1) {
+                throw new IllegalStateException();
+            }
+            chunk.setSize(size);
             return chunk;
         }
     }
@@ -151,17 +212,17 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     public final void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super Values> destination,
             @NotNull RowSequence rowSequence) {
         if (rowSequence.getAverageRunLengthEstimate() < USE_RANGES_AVERAGE_RUN_LENGTH) {
-            final KeyFiller filler = new KeyFiller(destination);
-            rowSequence.forAllRowKeys(filler);
-            destination.setSize(filler.destOffset);
+            try (final KeyFiller filler = new KeyFiller(destination)) {
+                rowSequence.forAllRowKeys(filler);
+            }
         } else {
-            final RangeFiller filler = new RangeFiller(destination);
-            rowSequence.forAllRowKeyRanges(filler);
-            destination.setSize(filler.destOffset);
+            try (final RangeFiller filler = new RangeFiller(destination)) {
+                rowSequence.forAllRowKeyRanges(filler);
+            }
         }
     }
 
-    private final class KeyFiller implements LongConsumer {
+    private final class KeyFiller implements LongConsumer, Closeable {
         private final WritableChunk<? super Values> destination;
         private int destOffset;
 
@@ -171,13 +232,22 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
 
         @Override
         public void accept(long key) {
-            final int ix = keyToRingIndex(key);
-            fillKey(destination, destOffset, ix);
+            // this check should not be necessary given precondition on fillChunk
+            if (!containsKey(key)) {
+                throw new IllegalStateException("fillChunk precondition broken, invalid range");
+            }
+            final int ringIx = keyToRingIndex(key);
+            fillKey(destination, destOffset, ringIx);
             ++destOffset;
+        }
+
+        @Override
+        public void close() {
+            destination.setSize(destOffset);
         }
     }
 
-    private final class RangeFiller implements LongRangeConsumer {
+    private final class RangeFiller implements LongRangeConsumer, Closeable {
         private final WritableChunk<? super Values> destination;
         private int destOffset;
 
@@ -187,25 +257,37 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
 
         @Override
         public void accept(long firstKey, long lastKey) {
-            final int firstIx = keyToRingIndex(firstKey);
-            final int lastIx = keyToRingIndex(lastKey);
-            final int len = fillChunkByCopyFromArray(destination, destOffset, firstIx, lastIx);
-            destOffset += len;
+            // this check should not be necessary given precondition on fillChunk
+            if (!containsRange(firstKey, lastKey)) {
+                throw new IllegalStateException("fillChunk precondition broken, invalid range");
+            }
+            final int firstRingIx = keyToRingIndex(firstKey);
+            final int lastRingIx = keyToRingIndex(lastKey);
+            final int size = fillChunkByCopyFromArray(destination, destOffset, firstRingIx, lastRingIx);
+            if (size != lastKey - firstKey + 1) {
+                throw new IllegalStateException();
+            }
+            destOffset += size;
+        }
+
+        @Override
+        public void close() {
+            destination.setSize(destOffset);
         }
     }
 
     private int fillChunkByCopyFromArray(@NotNull WritableChunk<? super Values> destination, int destOffset,
-            int firstIx, int lastIx) {
-        if (firstIx <= lastIx) {
-            final int len = (lastIx - firstIx) + 1;
-            destination.copyFromArray(ring, firstIx, destOffset, len);
-            return len;
+            int firstRingIx, int lastRingIx) {
+        if (firstRingIx <= lastRingIx) {
+            final int size = lastRingIx - firstRingIx + 1;
+            destination.copyFromArray(ring, firstRingIx, destOffset, size);
+            return size;
         } else {
-            final int fill1Length = capacity - firstIx;
-            final int fill2Length = lastIx + 1;
-            destination.copyFromArray(ring, firstIx, destOffset, fill1Length);
-            destination.copyFromArray(ring, 0, destOffset + fill1Length, fill2Length);
-            return fill1Length + fill2Length;
+            final int fillSize1 = capacity - firstRingIx;
+            final int fillSize2 = lastRingIx + 1;
+            destination.copyFromArray(ring, firstRingIx, destOffset, fillSize1);
+            destination.copyFromArray(ring, 0, destOffset + fillSize1, fillSize2);
+            return fillSize1 + fillSize2;
         }
     }
 
@@ -214,6 +296,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     }
 
     final void replayFrom(SELF other) {
+        // TODO: we need to be smart when the change is small relative to our capacity
         // final long distance = nextIx - other.nextIx;
         // if (distance < n / 2) {
         // // do something smart
@@ -225,7 +308,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
 
     abstract void clear();
 
-    abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix);
+    abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx);
 
     abstract T get(long key);
 

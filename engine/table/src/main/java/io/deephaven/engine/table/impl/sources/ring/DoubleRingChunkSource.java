@@ -35,8 +35,8 @@ final class DoubleRingChunkSource extends AbstractRingChunkSource<Double, double
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableDoubleChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableDoubleChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class DoubleRingChunkSource extends AbstractRingChunkSource<Double, double
 
     @Override
     double getDouble(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_DOUBLE;
         }
         return ring[keyToRingIndex(key)];

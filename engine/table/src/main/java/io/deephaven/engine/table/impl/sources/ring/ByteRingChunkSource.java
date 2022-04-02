@@ -35,8 +35,8 @@ final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byte[], By
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableByteChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableByteChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class ByteRingChunkSource extends AbstractRingChunkSource<Byte, byte[], By
 
     @Override
     byte getByte(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_BYTE;
         }
         return ring[keyToRingIndex(key)];

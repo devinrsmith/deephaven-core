@@ -35,8 +35,8 @@ final class FloatRingChunkSource extends AbstractRingChunkSource<Float, float[],
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableFloatChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableFloatChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class FloatRingChunkSource extends AbstractRingChunkSource<Float, float[],
 
     @Override
     float getFloat(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_FLOAT;
         }
         return ring[keyToRingIndex(key)];

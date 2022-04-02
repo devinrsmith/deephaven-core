@@ -35,8 +35,8 @@ final class IntegerRingChunkSource extends AbstractRingChunkSource<Integer, int[
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableIntChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableIntChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class IntegerRingChunkSource extends AbstractRingChunkSource<Integer, int[
 
     @Override
     int getInt(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_INT;
         }
         return ring[keyToRingIndex(key)];

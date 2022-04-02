@@ -30,8 +30,8 @@ final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, 
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableCharChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableCharChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -41,7 +41,7 @@ final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, 
 
     @Override
     char getChar(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_CHAR;
         }
         return ring[keyToRingIndex(key)];

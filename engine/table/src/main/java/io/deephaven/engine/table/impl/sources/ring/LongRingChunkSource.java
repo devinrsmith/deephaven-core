@@ -35,8 +35,8 @@ final class LongRingChunkSource extends AbstractRingChunkSource<Long, long[], Lo
     }
 
     @Override
-    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ix) {
-        destination.asWritableLongChunk().set(destOffset, ring[ix]);
+    void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx) {
+        destination.asWritableLongChunk().set(destOffset, ring[ringIx]);
     }
 
     @Override
@@ -46,7 +46,7 @@ final class LongRingChunkSource extends AbstractRingChunkSource<Long, long[], Lo
 
     @Override
     long getLong(long key) {
-        if (!containsIndex(key)) {
+        if (!containsKey(key)) {
             return NULL_LONG;
         }
         return ring[keyToRingIndex(key)];

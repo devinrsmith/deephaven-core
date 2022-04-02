@@ -9,7 +9,6 @@ import io.deephaven.engine.rowset.TrackingWritableRowSet;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
-import io.deephaven.engine.table.impl.InMemoryTable;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.LongArraySource;
@@ -80,7 +79,7 @@ public final class RingColumnSource<T>
         this.prev = Objects.requireNonNull(prev);
     }
 
-    public int n() {
+    public int capacity() {
         return ring.capacity();
     }
 

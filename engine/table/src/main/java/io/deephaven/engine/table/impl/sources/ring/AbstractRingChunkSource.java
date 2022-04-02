@@ -25,7 +25,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     // todo: should this be a (writable)chunk?
     protected final ARRAY ring;
     protected final int capacity;
-    long nextKey;
+    private long nextKey;
 
     public AbstractRingChunkSource(@NotNull Class<T> componentType, int capacity) {
         if (capacity <= 0) {

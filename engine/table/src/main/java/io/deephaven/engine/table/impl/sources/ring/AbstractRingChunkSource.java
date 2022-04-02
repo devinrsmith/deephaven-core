@@ -22,6 +22,7 @@ import static io.deephaven.engine.table.impl.AbstractColumnSource.USE_RANGES_AVE
 abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkSource<T, ARRAY, SELF>>
         implements DefaultChunkSource<Values> {
 
+    // todo: should this be a (writable)chunk?
     protected final ARRAY ring;
     protected final int capacity;
     long nextKey;
@@ -91,6 +92,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
             final WritableChunk<Values> chunk = DefaultGetContext
                     .getResettableChunk(context)
                     .resetFromArray(ring, copy1Start, copy1Len);
+            // todo: should there be a specialized fillChunk w/ range?
             src.fillChunk(fillContext, chunk, seq1);
         }
         if (copy2Len != 0) {

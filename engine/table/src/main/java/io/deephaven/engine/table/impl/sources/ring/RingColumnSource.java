@@ -4,10 +4,18 @@ import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.TrackingWritableRowSet;
+import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
+import io.deephaven.engine.table.impl.InMemoryTable;
+import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
+import io.deephaven.engine.table.impl.sources.LongArraySource;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.Objects;
 
 public final class RingColumnSource<T>
@@ -42,6 +50,24 @@ public final class RingColumnSource<T>
         return ShortRingChunkSource.columnSource(n);
     }
 
+    public static Table example() {
+        LongArraySource src = new LongArraySource();
+        src.ensureCapacity(32);
+        for (long i = 0; i < 32; ++i) {
+            src.set(i, i);
+        }
+
+        FillContext fillContext = src.makeFillContext(4096);
+        GetContext getContext = src.makeGetContext(4096);
+
+        RingColumnSource<Long> dst = RingColumnSource.ofLong(32768);
+        dst.append(src, fillContext, getContext, 0, 31);
+
+        TrackingWritableRowSet rowSet = RowSetFactory.flat(32).toTracking();
+
+        return new QueryTable(rowSet, Collections.singletonMap("R", dst));
+    }
+
     private final AbstractRingChunkSource<T, ?, ?> ring;
     private final AbstractRingChunkSource<T, ?, ?> prev;
 
@@ -61,6 +87,11 @@ public final class RingColumnSource<T>
     public void copyCurrentToPrevious() {
         // noinspection unchecked,rawtypes
         ((AbstractRingChunkSource) prev).replayFrom(ring);
+    }
+
+    public void append(
+            ColumnSource<T> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
+        ring.append(src, fillContext, context, firstKey, lastKey);
     }
 
     @Override

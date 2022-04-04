@@ -5,7 +5,7 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSequenceFactory;
-import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.impl.DefaultChunkSource;
 import io.deephaven.engine.table.impl.DefaultGetContext;
 import io.deephaven.util.datastructures.LongRangeConsumer;
@@ -25,7 +25,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     // todo: should this be a (writable)chunk?
     protected final ARRAY ring;
     protected final int capacity;
-    private long nextKey;
+    long nextKey;
 
     public AbstractRingChunkSource(@NotNull Class<T> componentType, int capacity) {
         if (capacity <= 0) {
@@ -112,7 +112,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     // todo: if we can get efficient last N, we can implement this w/ RowSequence
     // not absolutely necessary since we are only filling from a stream table atm
     public final void append(
-            ColumnSource<T> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
+            ChunkSource<? extends Values> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
         // todo: should we have our own get context?
 
         if (firstKey < 0) {
@@ -295,15 +295,18 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return (int) (key % capacity);
     }
 
-    final void replayFrom(SELF other) {
-        // TODO: we need to be smart when the change is small relative to our capacity
-        // final long distance = nextIx - other.nextIx;
-        // if (distance < n / 2) {
-        // // do something smart
-        // return;
-        // }
-        // noinspection SuspiciousSystemArraycopy
-        System.arraycopy(other.ring, 0, ring, 0, capacity);
+    final void replayFrom(SELF other, FillContext fillContext, GetContext context) {
+        final long logicalFillSize = other.nextKey - nextKey;
+        if (logicalFillSize >= capacity / 2) {
+            // noinspection SuspiciousSystemArraycopy
+            System.arraycopy(other.ring, 0, ring, 0, capacity);
+            nextKey = other.nextKey;
+            return;
+        }
+        append(other, fillContext, context, nextKey, other.nextKey - 1);
+        if (nextKey != other.nextKey) {
+            throw new IllegalStateException();
+        }
     }
 
     abstract void clear();

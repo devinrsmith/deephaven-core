@@ -61,6 +61,8 @@ public final class RingColumnSource<T>
 
         RingColumnSource<Long> dst = RingColumnSource.ofLong(32768);
         dst.append(src, fillContext, getContext, 0, 31);
+        dst.copyCurrentToPrevious(fillContext, getContext);
+        dst.append(src, fillContext, getContext, 0, 31);
 
         TrackingWritableRowSet rowSet = RowSetFactory.flat(32).toTracking();
 
@@ -83,9 +85,9 @@ public final class RingColumnSource<T>
         return ring.capacity();
     }
 
-    public void copyCurrentToPrevious() {
+    public void copyCurrentToPrevious(FillContext fillContext, GetContext context) {
         // noinspection unchecked,rawtypes
-        ((AbstractRingChunkSource) prev).replayFrom(ring);
+        ((AbstractRingChunkSource) prev).replayFrom(ring, fillContext, context);
     }
 
     public void append(

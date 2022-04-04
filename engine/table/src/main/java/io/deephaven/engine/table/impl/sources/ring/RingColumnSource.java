@@ -4,15 +4,30 @@ import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.rowset.TrackingWritableRowSet;
+import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
 import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
+import io.deephaven.engine.table.impl.sources.BooleanArraySource;
+import io.deephaven.engine.table.impl.sources.ByteArraySource;
+import io.deephaven.engine.table.impl.sources.CharacterArraySource;
+import io.deephaven.engine.table.impl.sources.DateTimeArraySource;
+import io.deephaven.engine.table.impl.sources.DoubleArraySource;
+import io.deephaven.engine.table.impl.sources.FloatArraySource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
+import io.deephaven.engine.table.impl.sources.IntegerArraySource;
 import io.deephaven.engine.table.impl.sources.LongArraySource;
+import io.deephaven.engine.table.impl.sources.ObjectArraySource;
+import io.deephaven.engine.table.impl.sources.ShortArraySource;
+import io.deephaven.time.DateTime;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -21,34 +36,59 @@ public final class RingColumnSource<T>
         extends AbstractColumnSource<T>
         implements InMemoryColumnSource {
 
-    public static RingColumnSource<Byte> ofByte(int n) {
-        return ByteRingChunkSource.columnSource(n);
+    public static RingColumnSource<Byte> ofByte(int capacity) {
+        return ByteRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Character> ofCharacter(int n) {
-        return CharacterRingChunkSource.columnSource(n);
+    public static RingColumnSource<Character> ofCharacter(int capacity) {
+        return CharacterRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Double> ofDouble(int n) {
-        return DoubleRingChunkSource.columnSource(n);
+    public static RingColumnSource<Double> ofDouble(int capacity) {
+        return DoubleRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Float> ofFloat(int n) {
-        return FloatRingChunkSource.columnSource(n);
+    public static RingColumnSource<Float> ofFloat(int capacity) {
+        return FloatRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Integer> ofInteger(int n) {
-        return IntegerRingChunkSource.columnSource(n);
+    public static RingColumnSource<Integer> ofInteger(int capacity) {
+        return IntegerRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Long> ofLong(int n) {
-        return LongRingChunkSource.columnSource(n);
+    public static RingColumnSource<Long> ofLong(int capacity) {
+        return LongRingChunkSource.columnSource(capacity);
     }
 
-    public static RingColumnSource<Short> ofShort(int n) {
-        return ShortRingChunkSource.columnSource(n);
+    public static RingColumnSource<Short> ofShort(int capacity) {
+        return ShortRingChunkSource.columnSource(capacity);
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> RingColumnSource<T> of(int capacity, Class<T> dataType, Class<?> componentType) {
+        if (dataType == byte.class || dataType == Byte.class) {
+            return (RingColumnSource<T>) ofByte(capacity);
+        } else if (dataType == char.class || dataType == Character.class) {
+            return (RingColumnSource<T>) ofCharacter(capacity);
+        } else if (dataType == double.class || dataType == Double.class) {
+            return (RingColumnSource<T>) ofDouble(capacity);
+        } else if (dataType == float.class || dataType == Float.class) {
+            return (RingColumnSource<T>) ofFloat(capacity);
+        } else if (dataType == int.class || dataType == Integer.class) {
+            return (RingColumnSource<T>) ofInteger(capacity);
+        } else if (dataType == long.class || dataType == Long.class) {
+            return (RingColumnSource<T>) ofLong(capacity);
+        } else if (dataType == short.class || dataType == Short.class) {
+            return (RingColumnSource<T>) ofShort(capacity);
+        } else if (dataType == boolean.class || dataType == Boolean.class) {
+            throw new UnsupportedOperationException("todo");
+        } else if (dataType == DateTime.class) {
+            throw new UnsupportedOperationException("todo");
+        } else {
+            throw new UnsupportedOperationException("todo");
+        }
+    }
+    
     public static Table example() {
         LongArraySource src = new LongArraySource();
         src.ensureCapacity(32);
@@ -93,6 +133,13 @@ public final class RingColumnSource<T>
     public void append(
             ColumnSource<T> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
         ring.append(src, fillContext, context, firstKey, lastKey);
+    }
+
+    public void updateTracking(WritableRowSet rowSet) {
+        final RowSet currRowSet = ring.rowSet();
+        final RowSet prevRowSet = prev.rowSet();
+        final WritableRowSet intersect = currRowSet.intersect(prevRowSet);
+        rowSet.update(currRowSet.minus(intersect), prevRowSet.minus(intersect));
     }
 
     @Override

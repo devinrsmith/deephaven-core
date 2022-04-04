@@ -64,7 +64,7 @@ public final class RingColumnSource<T>
         dst.copyCurrentToPrevious(fillContext, getContext);
         dst.append(src, fillContext, getContext, 0, 31);
 
-        TrackingWritableRowSet rowSet = RowSetFactory.flat(32).toTracking();
+        TrackingWritableRowSet rowSet = RowSetFactory.flat(64).toTracking();
 
         return new QueryTable(rowSet, Collections.singletonMap("R", dst));
     }

@@ -14,7 +14,6 @@ import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.table.impl.remote.ConstructSnapshot;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
-import io.deephaven.engine.table.impl.sources.ring.ContiguousAddsToRingTableListener;
 import io.deephaven.engine.table.impl.util.ChunkUtils;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -128,31 +127,6 @@ public class StreamTableTools {
                     });
 
             return resultHolder.getValue();
-        });
-    }
-
-    public static Table streamToRingTable(final Table streamTable, final int capacity) {
-        return QueryPerformanceRecorder.withNugget("streamToRingTable", () -> {
-            if (!isStream(streamTable)) {
-                throw new IllegalArgumentException("Input is not a stream table!");
-            }
-
-            final BaseTable baseStreamTable = (BaseTable) streamTable.coalesce();
-
-            final SwapListener swapListener =
-                    baseStreamTable.createSwapListenerIfRefreshing(SwapListener::new);
-            // stream tables must tick
-            Assert.neqNull(swapListener, "swapListener");
-
-            final Table[] results = new Table[1];
-            ConstructSnapshot.callDataSnapshotFunction("streamToRingTable", swapListener.makeSnapshotControl(),
-                    (boolean usePrev, long beforeClockValue) -> {
-                        final Table table = ContiguousAddsToRingTableListener.of(swapListener, streamTable, capacity);
-                        results[0] = table;
-                        return true;
-                    });
-
-            return results[0];
         });
     }
 

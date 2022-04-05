@@ -38,7 +38,7 @@ public class RingChunkSourceTest {
     }
 
     private void append(DoubleRingChunkSource chunk, long firstKey, long lastKey) {
-        final int size = (int)(lastKey - firstKey + 1);
+        final int size = (int) (lastKey - firstKey + 1);
         try (
                 final FillContext fillContext = chunk.makeFillContext(size);
                 final GetContext getContext = chunk.makeGetContext(size)) {

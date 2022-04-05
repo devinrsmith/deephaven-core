@@ -7,21 +7,16 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.RowSetShiftData;
-import io.deephaven.engine.rowset.TrackingWritableRowSet;
-import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.ModifiedColumnSet;
-import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
-import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.TableUpdateImpl;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
-import io.deephaven.engine.table.impl.sources.LongArraySource;
 import io.deephaven.time.DateTime;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
 import java.util.Objects;
 
 public final class RingColumnSource<T>
@@ -80,26 +75,6 @@ public final class RingColumnSource<T>
             throw new UnsupportedOperationException("todo");
         }
     }
-    
-    public static Table example() {
-        LongArraySource src = new LongArraySource();
-        src.ensureCapacity(32);
-        for (long i = 0; i < 32; ++i) {
-            src.set(i, i);
-        }
-
-        FillContext fillContext = src.makeFillContext(4096);
-        GetContext getContext = src.makeGetContext(4096);
-
-        RingColumnSource<Long> dst = RingColumnSource.ofLong(32768);
-        dst.append(src, fillContext, getContext, 0, 31);
-        dst.copyCurrentToPrevious(fillContext, getContext);
-        dst.append(src, fillContext, getContext, 0, 31);
-
-        TrackingWritableRowSet rowSet = RowSetFactory.flat(64).toTracking();
-
-        return new QueryTable(rowSet, Collections.singletonMap("R", dst));
-    }
 
     private final AbstractRingChunkSource<T, ?, ?> ring;
     private final AbstractRingChunkSource<T, ?, ?> prev;
@@ -117,14 +92,17 @@ public final class RingColumnSource<T>
         return ring.capacity();
     }
 
-    public void copyCurrentToPrevious(FillContext fillContext, GetContext context) {
-        // noinspection unchecked,rawtypes
-        ((AbstractRingChunkSource) prev).replayFrom(ring, fillContext, context);
+    public void append(FillContext fillContext, ColumnSource<T> src, RowSet srcKeys) {
+        ring.append(fillContext, src, srcKeys);
     }
 
-    public void append(
-            ColumnSource<T> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
-        ring.append(src, fillContext, context, firstKey, lastKey);
+    public void append(FillContext fillContext, ChunkSource<? extends Values> src, RowSet srcKeys) {
+        ring.append(fillContext, src, srcKeys);
+    }
+
+    public void bringPreviousUpToDate(FillContext fillContext) {
+        // noinspection unchecked,rawtypes
+        ((AbstractRingChunkSource) prev).bringUpToDate(fillContext, ring);
     }
 
     /**
@@ -153,7 +131,8 @@ public final class RingColumnSource<T>
             removed = k1 == k3 ? RowSetFactory.empty() : RowSetFactory.fromRange(k1, k3 - 1);
             added = RowSetFactory.fromRange(k2 + 1, k4);
         }
-        return new TableUpdateImpl(added, removed, RowSetFactory.empty(), RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY);
+        return new TableUpdateImpl(added, removed, RowSetFactory.empty(), RowSetShiftData.EMPTY,
+                ModifiedColumnSet.EMPTY);
     }
 
     @Override

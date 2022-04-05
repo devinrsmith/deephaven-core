@@ -1,11 +1,14 @@
 package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.Chunk;
+import io.deephaven.chunk.ResettableWritableChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
-import io.deephaven.engine.rowset.RowSequenceFactory;
+import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.table.ChunkSource;
+import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.impl.DefaultChunkSource;
 import io.deephaven.engine.table.impl.DefaultGetContext;
 import io.deephaven.util.datastructures.LongRangeConsumer;
@@ -22,10 +25,11 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         implements DefaultChunkSource<Values> {
     // todo: should we extend SupportsContiguousGet? I think the extra layers of default methods may hurt
 
-    // todo: should this be a (writable)chunk?
     protected final ARRAY ring;
     protected final int capacity;
-    long nextKey;
+    long nextRingIx;
+
+    private final ResettableWritableChunk<Values> ringView;
 
     public AbstractRingChunkSource(@NotNull Class<T> componentType, int capacity) {
         if (capacity <= 0) {
@@ -34,6 +38,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         this.capacity = capacity;
         // noinspection unchecked
         ring = (ARRAY) Array.newInstance(componentType, capacity);
+        ringView = getChunkType().makeResettableWritableChunk();
     }
 
     /**
@@ -54,7 +59,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * @return the size
      */
     public final int size() {
-        return capacity <= nextKey ? capacity : (int) nextKey;
+        return capacity <= nextRingIx ? capacity : (int) nextRingIx;
     }
 
     /**
@@ -66,7 +71,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * @return {@code true} if empty
      */
     public final boolean isEmpty() {
-        return nextKey == 0;
+        return nextRingIx == 0;
     }
 
     /**
@@ -82,11 +87,11 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      */
     public final boolean containsKey(long key) {
         // branchless check, probably better than needing to compute size() or firstKey()
-        return key >= 0 && key >= (nextKey - capacity) && key < nextKey;
+        return key >= 0 && key >= (nextRingIx - capacity) && key < nextRingIx;
     }
 
     public final boolean containsRange(long firstKey, long lastKey) {
-        return firstKey <= lastKey && firstKey >= 0 && firstKey >= (nextKey - capacity) && lastKey < nextKey;
+        return firstKey <= lastKey && firstKey >= 0 && firstKey >= (nextRingIx - capacity) && lastKey < nextRingIx;
     }
 
     /**
@@ -96,7 +101,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * @see #lastKey()
      */
     public final long firstKey() {
-        return Math.max(nextKey - capacity, 0);
+        return Math.max(nextRingIx - capacity, 0);
     }
 
     /**
@@ -106,56 +111,58 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * @see #firstKey()
      */
     public final long lastKey() {
-        return nextKey - 1;
+        return nextRingIx - 1;
     }
 
-    // todo: if we can get efficient last N, we can implement this w/ RowSequence
-    // not absolutely necessary since we are only filling from a stream table atm
-    public final void append(
-            ChunkSource<? extends Values> src, FillContext fillContext, GetContext context, long firstKey, long lastKey) {
-        // todo: should we have our own get context?
+    public final void append(FillContext fillContext, ColumnSource<T> src, RowSet srcKeys) {
+        append(fillContext, (ChunkSource<? extends Values>) src, srcKeys);
+    }
 
-        if (firstKey < 0) {
-            throw new IllegalArgumentException("todo");
+    public final void append(FillContext fillContext, ChunkSource<? extends Values> src, RowSet srcKeys) {
+        if (srcKeys.isEmpty()) {
+            return;
         }
-        if (firstKey > lastKey) {
-            throw new IllegalArgumentException("Need at least one element to append");
-        }
-        final long logicalFillSize = lastKey - firstKey + 1;
-        final long physicalStartKey;
-        final long modifiedFirstKey;
+        final long logicalFillSize = srcKeys.size();
+        final RowSet physicalRows;
+        final long physicalStartRingIx;
         final int physicalFillSize;
-        if (logicalFillSize <= capacity) {
-            physicalStartKey = nextKey;
-            modifiedFirstKey = firstKey;
+        final boolean hasSkippedRows = logicalFillSize > capacity;
+        if (!hasSkippedRows) {
+            physicalRows = srcKeys;
+            physicalStartRingIx = nextRingIx;
             physicalFillSize = (int) logicalFillSize;
         } else {
-            final long skippedElements = logicalFillSize - capacity;
-            physicalStartKey = nextKey + skippedElements;
-            modifiedFirstKey = firstKey + skippedElements;
+            final long skipRows = logicalFillSize - capacity;
+            physicalRows = srcKeys.subSetByPositionRange(skipRows, logicalFillSize);
+            physicalStartRingIx = nextRingIx + skipRows;
             physicalFillSize = capacity;
         }
-
-        // [0, capacity)
-        final int fillIndex1 = keyToRingIndex(physicalStartKey);
-        // (0, capacity]
-        final int fillMax1 = capacity - fillIndex1;
-
-        // fillSize1 + fillSize2 = physicalFillSize
-        final int fillSize1 = Math.min(fillMax1, physicalFillSize);
-        final int fillSize2 = physicalFillSize - fillSize1;
-
-        final long secondKey = modifiedFirstKey + fillSize1;
-
-        try (final RowSequence rows = RowSequenceFactory.forRange(modifiedFirstKey, secondKey - 1)) {
-            src.fillChunk(fillContext, ring(context, fillIndex1, fillSize1), rows);
-        }
-        if (fillSize2 != 0) {
-            try (final RowSequence rows = RowSequenceFactory.forRange(secondKey, lastKey)) {
-                src.fillChunk(fillContext, ring(context, 0, fillSize2), rows);
+        try {
+            // [0, capacity)
+            final int fillIndex1 = keyToRingIndex(physicalStartRingIx);
+            // (0, capacity]
+            final int fillMax1 = capacity - fillIndex1;
+            // fillSize1 + fillSize2 = physicalFillSize
+            final int fillSize1 = Math.min(fillMax1, physicalFillSize);
+            final int fillSize2 = physicalFillSize - fillSize1;
+            if (fillSize2 == 0) {
+                src.fillChunk(fillContext, ring(fillIndex1, fillSize1), physicalRows);
+            } else {
+                // might be nice if there was a "split"
+                // (could be more efficient than calling subSetByPositionRange twice)
+                try (final RowSet rows1 = physicalRows.subSetByPositionRange(0, fillSize1)) {
+                    src.fillChunk(fillContext, ring(fillIndex1, fillSize1), rows1);
+                }
+                try (final RowSet rows2 = physicalRows.subSetByPositionRange(fillSize1, fillSize1 + fillSize2)) {
+                    src.fillChunk(fillContext, ring(0, fillSize2), rows2);
+                }
+            }
+        } finally {
+            if (hasSkippedRows) {
+                physicalRows.close();
             }
         }
-        nextKey = physicalStartKey + physicalFillSize;
+        nextRingIx += logicalFillSize;
     }
 
     @Override
@@ -175,13 +182,15 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     public final Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
         // This check should not be necessary given precondition on getChunk
         if (!containsRange(firstKey, lastKey)) {
-            throw new IllegalStateException("getChunk precondition broken, invalid range");
+            throw new IllegalStateException(
+                    String.format("getChunk precondition broken, invalid range. requested=[%d, %d], available=[%d, %d]",
+                            firstKey, lastKey, firstKey(), lastKey()));
         }
         final int firstRingIx = keyToRingIndex(firstKey);
         final int secondRingIx = keyToRingIndex(lastKey);
         if (firstRingIx <= secondRingIx) {
             // Optimization when we can return a contiguous view
-            return ring(context, firstRingIx, secondRingIx - firstRingIx + 1);
+            return ring(firstRingIx, secondRingIx - firstRingIx + 1); // todo: is it bad that this is writable?
         }
         final WritableChunk<Values> chunk = DefaultGetContext.getWritableChunk(context);
         final int size = fillByCopy2(chunk, 0, firstRingIx, secondRingIx);
@@ -218,7 +227,9 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         public void accept(long key) {
             // this check should not be necessary given precondition on fillChunk
             if (!containsKey(key)) {
-                throw new IllegalStateException("fillChunk precondition broken, invalid range");
+                throw new IllegalStateException(
+                        String.format("fillChunk precondition broken, invalid key. requested=%d, available=[%d, %d]",
+                                key, firstKey(), lastKey()));
             }
             final int ringIx = keyToRingIndex(key);
             fillKey(destination, destOffset, ringIx);
@@ -243,7 +254,9 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         public void accept(long firstKey, long lastKey) {
             // this check should not be necessary given precondition on fillChunk
             if (!containsRange(firstKey, lastKey)) {
-                throw new IllegalStateException("fillChunk precondition broken, invalid range");
+                throw new IllegalStateException(String.format(
+                        "fillChunk precondition broken, invalid range. requested=[%d, %d], available=[%d, %d]",
+                        firstKey, lastKey, firstKey(), lastKey()));
             }
             final int firstRingIx = keyToRingIndex(firstKey);
             final int lastRingIx = keyToRingIndex(lastKey);
@@ -260,13 +273,12 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         }
     }
 
-    private WritableChunk<Values> ring(GetContext context, int offset, int capacity) {
-        // More efficient than DefaultGetContext.resetChunkFromArray since we known ring != null
-        // todo: don't use get context, make our own resettable stuff
-        return DefaultGetContext.getResettableChunk(context).resetFromArray(ring, offset, capacity);
+    private WritableChunk<Values> ring(int offset, int length) {
+        return ringView.resetFromArray(ring, offset, length);
     }
 
-    private int fillByCopy(@NotNull WritableChunk<? super Values> destination, int destOffset, int firstRingIx, int lastRingIx) {
+    private int fillByCopy(@NotNull WritableChunk<? super Values> destination, int destOffset, int firstRingIx,
+            int lastRingIx) {
         // Precondition: valid firstRingIx, lastRingIx
         if (firstRingIx <= lastRingIx) {
             // Optimization when we can accomplish with single copy
@@ -277,7 +289,8 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return fillByCopy2(destination, destOffset, firstRingIx, lastRingIx);
     }
 
-    private int fillByCopy2(@NotNull WritableChunk<? super Values> destination, int destOffset, int firstRingIx, int lastRingIx) {
+    private int fillByCopy2(@NotNull WritableChunk<? super Values> destination, int destOffset, int firstRingIx,
+            int lastRingIx) {
         // Precondition: valid firstRingIx, lastRingIx
         // Precondition: firstRingIx > lastRingIx
         final int fillSize1 = capacity - firstRingIx;
@@ -291,18 +304,18 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return (int) (key % capacity);
     }
 
-    final void replayFrom(SELF other, FillContext fillContext, GetContext context) {
+    final void bringUpToDate(FillContext fillContext, SELF current) {
         // We *could* try to be smart and get away with a single copy.
         // append should be relatively efficient though, and at worst will be two copies...
-//        final long logicalFillSize = other.nextKey - nextKey;
-//        if (logicalFillSize >= capacity / 2) {
-//            // noinspection SuspiciousSystemArraycopy
-//            System.arraycopy(other.ring, 0, ring, 0, capacity);
-//            nextKey = other.nextKey;
-//            return;
-//        }
-        append(other, fillContext, context, nextKey, other.nextKey - 1);
-        if (nextKey != other.nextKey) {
+        // final long logicalFillSize = current.nextRingIx - nextRingIx;
+        // if (logicalFillSize >= capacity / 2) {
+        // // noinspection SuspiciousSystemArraycopy
+        // System.arraycopy(current.ring, 0, ring, 0, capacity);
+        // nextRingIx = current.nextRingIx;
+        // return;
+        // }
+        append(fillContext, current, RowSetFactory.fromRange(nextRingIx, current.nextRingIx - 1));
+        if (nextRingIx != current.nextRingIx) {
             throw new IllegalStateException();
         }
     }

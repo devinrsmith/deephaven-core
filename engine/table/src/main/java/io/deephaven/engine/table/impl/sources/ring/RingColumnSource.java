@@ -127,14 +127,33 @@ public final class RingColumnSource<T>
         ring.append(src, fillContext, context, firstKey, lastKey);
     }
 
+    /**
+     *
+     * @return the table update
+     */
     public TableUpdate tableUpdate() {
-        try (final RowSet currRowSet = ring.rowSet();
-             final RowSet prevRowSet = prev.rowSet();
-             final WritableRowSet intersect = currRowSet.intersect(prevRowSet)) {
-            final WritableRowSet added = currRowSet.minus(intersect);
-            final WritableRowSet removed = prevRowSet.minus(intersect);
-            return new TableUpdateImpl(added, removed, RowSetFactory.empty(), RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY);
+        // Precondition: some rows have been added (k4 > k2)
+        final long k1 = prev.firstKey();
+        final long k2 = prev.lastKey();
+        final long k3 = ring.firstKey();
+        final long k4 = ring.lastKey();
+        final RowSet removed;
+        final RowSet added;
+        if (k2 < k3) {
+            // No intersection. Prev may be empty.
+            // Removed: empty or [k1, k2]
+            // Added: [k3, k4]
+            removed = k2 == -1 ? RowSetFactory.empty() : RowSetFactory.fromRange(k1, k2);
+            added = RowSetFactory.fromRange(k3, k4);
+        } else {
+            // Intersection from [k3, k2]. Neither prev nor ring are empty.
+            // k1 <= k3 <= k2 < k4
+            // Removed: empty or [k1, k3)
+            // Added: (k2, k4]
+            removed = k1 == k3 ? RowSetFactory.empty() : RowSetFactory.fromRange(k1, k3 - 1);
+            added = RowSetFactory.fromRange(k2 + 1, k4);
         }
+        return new TableUpdateImpl(added, removed, RowSetFactory.empty(), RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY);
     }
 
     @Override

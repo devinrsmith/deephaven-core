@@ -5,8 +5,6 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSequenceFactory;
-import io.deephaven.engine.rowset.RowSet;
-import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.impl.DefaultChunkSource;
 import io.deephaven.engine.table.impl.DefaultGetContext;
@@ -109,10 +107,6 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      */
     public final long lastKey() {
         return nextKey - 1;
-    }
-
-    public final RowSet rowSet() {
-        return nextKey == 0 ? RowSetFactory.empty() : RowSetFactory.fromRange(firstKey(), lastKey());
     }
 
     // todo: if we can get efficient last N, we can implement this w/ RowSequence

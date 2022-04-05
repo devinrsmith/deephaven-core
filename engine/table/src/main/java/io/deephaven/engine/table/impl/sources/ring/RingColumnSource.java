@@ -6,28 +6,20 @@ import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
-import io.deephaven.engine.rowset.TrackingRowSet;
+import io.deephaven.engine.rowset.RowSetShiftData;
 import io.deephaven.engine.rowset.TrackingWritableRowSet;
 import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.ModifiedColumnSet;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
 import io.deephaven.engine.table.impl.QueryTable;
-import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
-import io.deephaven.engine.table.impl.sources.BooleanArraySource;
-import io.deephaven.engine.table.impl.sources.ByteArraySource;
-import io.deephaven.engine.table.impl.sources.CharacterArraySource;
-import io.deephaven.engine.table.impl.sources.DateTimeArraySource;
-import io.deephaven.engine.table.impl.sources.DoubleArraySource;
-import io.deephaven.engine.table.impl.sources.FloatArraySource;
+import io.deephaven.engine.table.impl.TableUpdateImpl;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
-import io.deephaven.engine.table.impl.sources.IntegerArraySource;
 import io.deephaven.engine.table.impl.sources.LongArraySource;
-import io.deephaven.engine.table.impl.sources.ObjectArraySource;
-import io.deephaven.engine.table.impl.sources.ShortArraySource;
 import io.deephaven.time.DateTime;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -135,11 +127,14 @@ public final class RingColumnSource<T>
         ring.append(src, fillContext, context, firstKey, lastKey);
     }
 
-    public void updateTracking(WritableRowSet rowSet) {
-        final RowSet currRowSet = ring.rowSet();
-        final RowSet prevRowSet = prev.rowSet();
-        final WritableRowSet intersect = currRowSet.intersect(prevRowSet);
-        rowSet.update(currRowSet.minus(intersect), prevRowSet.minus(intersect));
+    public TableUpdate tableUpdate() {
+        try (final RowSet currRowSet = ring.rowSet();
+             final RowSet prevRowSet = prev.rowSet();
+             final WritableRowSet intersect = currRowSet.intersect(prevRowSet)) {
+            final WritableRowSet added = currRowSet.minus(intersect);
+            final WritableRowSet removed = prevRowSet.minus(intersect);
+            return new TableUpdateImpl(added, removed, RowSetFactory.empty(), RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY);
+        }
     }
 
     @Override

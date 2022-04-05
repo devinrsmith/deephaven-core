@@ -268,6 +268,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
 
     private WritableChunk<Values> ring(GetContext context, int offset, int capacity) {
         // More efficient than DefaultGetContext.resetChunkFromArray since we known ring != null
+        // todo: don't use get context, make our own resettable stuff
         return DefaultGetContext.getResettableChunk(context).resetFromArray(ring, offset, capacity);
     }
 

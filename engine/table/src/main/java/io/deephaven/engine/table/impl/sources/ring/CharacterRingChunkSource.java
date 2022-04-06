@@ -15,8 +15,8 @@ final class CharacterRingChunkSource extends AbstractRingChunkSource<Character, 
         return new RingColumnSource<>(char.class, new CharacterRingChunkSource(n), new CharacterRingChunkSource(n));
     }
 
-    public CharacterRingChunkSource(int n) {
-        super(char.class, n);
+    public CharacterRingChunkSource(int capacity) {
+        super(char.class, capacity);
     }
 
     @Override

@@ -3,7 +3,6 @@ package io.deephaven.engine.table.impl.sources.ring;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
-import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.ChunkSource.FillContext;
@@ -13,6 +12,7 @@ import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.impl.BaseTable;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.SwapListener;
+import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.updategraph.UpdateCommitter;
 
 import java.util.Arrays;
@@ -29,26 +29,33 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
     static Table of(SwapListener swapListener, Table parent, int capacity, Init init) {
         final Map<String, ? extends ColumnSource<?>> sourceMap = parent.getColumnSourceMap();
         final int numColumns = sourceMap.size();
-        final Map<String, RingColumnSource<?>> ringMap = new LinkedHashMap<>(numColumns);
+        final Map<String, ColumnSource<?>> resultMap = new LinkedHashMap<>(numColumns);
         final ColumnSource<?>[] sources = new ColumnSource[numColumns];
         final RingColumnSource<?>[] rings = new RingColumnSource[numColumns];
         int ix = 0;
         for (Map.Entry<String, ? extends ColumnSource<?>> e : sourceMap.entrySet()) {
             final String name = e.getKey();
-            final ColumnSource<?> source = e.getValue();
+
+            final ColumnSource<?> original = e.getValue();
+
+            // for the source columns, we would like to read primitives instead of objects in cases where it is possible
+            final ColumnSource<?> source = ReinterpretUtils.maybeConvertToPrimitive(original);
+
+            // for the destination sources, we know they are array backed sources that will actually store primitives
+            // and we can fill efficiently
             final RingColumnSource<?> ring = RingColumnSource.of(capacity, source.getType(), source.getComponentType());
+
+            // Re-interpret back to the original type
+            final ColumnSource<?> output = source == original ? ring : ReinterpretUtils.convertToOriginal(original.getType(), ring);
+
             sources[ix] = source;
             rings[ix] = ring;
-            ringMap.put(name, ring);
+            resultMap.put(name, output);
             ++ix;
         }
-        final QueryTable result = new QueryTable(RowSetFactory.empty().toTracking(), ringMap) {
-            {
-                setRefreshing(true);
-                setFlat();
-                addParentReference(swapListener);
-            }
-        };
+        final QueryTable result = new QueryTable(RowSetFactory.empty().toTracking(), resultMap);
+        result.setRefreshing(true);
+        result.addParentReference(swapListener);
         final AddsToRingsListener listener = new AddsToRingsListener("todo", parent, result, sources, rings);
         listener.init(init);
         swapListener.setListenerAndResult(listener, result);
@@ -97,18 +104,22 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
             return;
         }
         final boolean usePrev = init == Init.FROM_PREVIOUS;
-        final long size;
-        final TrackingRowSet parentRowSet = getParent().getRowSet();
-        try (final RowSet srcKeys = usePrev ? parentRowSet.copyPrev() : parentRowSet.copy()) {
+        try (final RowSet srcKeys = usePrev ? getParent().getRowSet().copyPrev() : getParent().getRowSet().copy()) {
+            if (srcKeys.isEmpty()) {
+                return;
+            }
             for (int i = 0; i < rings.length; ++i) {
                 final ChunkSource<? extends Values> source = usePrev ? sources[i].getPrevSource() : sources[i];
                 // todo: can I use this fill context w/ prev source?
                 rings[i].append(fillContexts[i], source, srcKeys);
-                rings[i].bringPreviousUpToDate(fillContexts[i]);
             }
-            size = srcKeys.size();
         }
-        resultRowSet().insertRange(0, size - 1);
+        final TableUpdate update = rings[0].tableUpdate();
+        if (!update.removed().isEmpty()) {
+            throw new IllegalStateException();
+        }
+        resultRowSet().insert(update.added());
+        bringPreviousUpToDate();
     }
 
     @Override

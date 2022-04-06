@@ -14,6 +14,7 @@ import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
 import io.deephaven.engine.table.impl.TableUpdateImpl;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
+import io.deephaven.engine.table.impl.sources.LongAsDateTimeColumnSource;
 import io.deephaven.time.DateTime;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,6 +52,10 @@ public final class RingColumnSource<T>
         return ShortRingChunkSource.columnSource(capacity);
     }
 
+    public static <T> RingColumnSource<T> ofObject(Class<T> type, int capacity) {
+        return ObjectRingChunkSource.columnSource(type, capacity);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> RingColumnSource<T> of(int capacity, Class<T> dataType, Class<?> componentType) {
         if (dataType == byte.class || dataType == Byte.class) {
@@ -68,11 +73,15 @@ public final class RingColumnSource<T>
         } else if (dataType == short.class || dataType == Short.class) {
             return (RingColumnSource<T>) ofShort(capacity);
         } else if (dataType == boolean.class || dataType == Boolean.class) {
-            throw new UnsupportedOperationException("todo");
+            throw new UnsupportedOperationException("No Boolean chunk source for RingColumnSource - use byte and reinterpret");
         } else if (dataType == DateTime.class) {
-            throw new UnsupportedOperationException("todo");
+            throw new UnsupportedOperationException("No DateTime chunk source for RingColumnSource - use long and reinterpret");
         } else {
-            throw new UnsupportedOperationException("todo");
+            if (componentType != null) {
+                throw new UnsupportedOperationException("todo");
+            } else {
+                return ofObject(dataType, capacity);
+            }
         }
     }
 

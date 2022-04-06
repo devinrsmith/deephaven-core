@@ -12,10 +12,19 @@
 version: "3.4"
 
 services:
+  w2:
+    extends:
+      file: docker-compose-common.yml
+      service: server
+    ports:
+      - '8082:8080'
+
   server:
     extends:
       file: docker-compose-common.yml
       service: server
+    ports:
+      - '8080:8080'
 
   web:
     extends:

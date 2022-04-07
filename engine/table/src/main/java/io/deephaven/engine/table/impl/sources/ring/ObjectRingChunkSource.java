@@ -1,8 +1,3 @@
-/*
- * ---------------------------------------------------------------------------------------------------------------------
- * AUTO-GENERATED CLASS - DO NOT EDIT MANUALLY - for any changes edit CharacterRingChunkSource and regenerate
- * ---------------------------------------------------------------------------------------------------------------------
- */
 package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.chunk.ChunkType;
@@ -12,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
+// todo: this is not being auto-generated ATM
 final class ObjectRingChunkSource<T> extends AbstractRingChunkSource<T, Object[], ObjectRingChunkSource<T>> {
     public static <T> RingColumnSource<T> columnSource(Class<T> type, int capacity) {
         return new RingColumnSource<>(type, new ObjectRingChunkSource<>(type, capacity), new ObjectRingChunkSource<>(type, capacity));

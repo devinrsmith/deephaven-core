@@ -14,7 +14,6 @@ import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.table.impl.remote.ConstructSnapshot;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
-import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.table.impl.util.ChunkUtils;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -129,13 +128,6 @@ public class StreamTableTools {
 
             return resultHolder.getValue();
         });
-    }
-
-    public static Table streamToRingTable(Table streamTable, int capacity, boolean initialize) {
-        if (!isStream(streamTable)) {
-            throw new IllegalArgumentException("Input is not a stream table!");
-        }
-        return RingTableTools.of(streamTable, capacity, initialize);
     }
 
     /**

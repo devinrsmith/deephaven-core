@@ -46,7 +46,8 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
             final RingColumnSource<?> ring = RingColumnSource.of(capacity, source.getType(), source.getComponentType());
 
             // Re-interpret back to the original type
-            final ColumnSource<?> output = source == original ? ring : ReinterpretUtils.convertToOriginal(original.getType(), ring);
+            final ColumnSource<?> output =
+                    source == original ? ring : ReinterpretUtils.convertToOriginal(original.getType(), ring);
 
             sources[ix] = source;
             rings[ix] = ring;
@@ -56,7 +57,8 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
         final QueryTable result = new QueryTable(RowSetFactory.empty().toTracking(), resultMap);
         result.setRefreshing(true);
         result.addParentReference(swapListener);
-        final AddsToRingsListener listener = new AddsToRingsListener("todo", parent, result, sources, rings);
+        final AddsToRingsListener listener =
+                new AddsToRingsListener("AddsToRingsListener", parent, result, sources, rings);
         listener.init(init);
         swapListener.setListenerAndResult(listener, result);
         return result;
@@ -110,7 +112,6 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
             }
             for (int i = 0; i < rings.length; ++i) {
                 final ChunkSource<? extends Values> source = usePrev ? sources[i].getPrevSource() : sources[i];
-                // todo: can I use this fill context w/ prev source?
                 rings[i].append(fillContexts[i], source, srcKeys);
             }
         }
@@ -146,7 +147,6 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
 
     private void bringPreviousUpToDate() {
         for (int i = 0; i < rings.length; i++) {
-            // todo: is this the appropriate fill context to use? (coming from source)
             rings[i].bringPreviousUpToDate(fillContexts[i]);
         }
     }

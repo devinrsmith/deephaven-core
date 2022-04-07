@@ -20,7 +20,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public final class RingColumnSource<T>
+/**
+ * A ring column source.
+ *
+ * @param <T> the item type
+ */
+final class RingColumnSource<T>
         extends AbstractColumnSource<T>
         implements InMemoryColumnSource {
 
@@ -73,9 +78,11 @@ public final class RingColumnSource<T>
         } else if (dataType == short.class || dataType == Short.class) {
             return (RingColumnSource<T>) ofShort(capacity);
         } else if (dataType == boolean.class || dataType == Boolean.class) {
-            throw new UnsupportedOperationException("No Boolean chunk source for RingColumnSource - use byte and reinterpret");
+            throw new UnsupportedOperationException(
+                    "No Boolean chunk source for RingColumnSource - use byte and reinterpret");
         } else if (dataType == DateTime.class) {
-            throw new UnsupportedOperationException("No DateTime chunk source for RingColumnSource - use long and reinterpret");
+            throw new UnsupportedOperationException(
+                    "No DateTime chunk source for RingColumnSource - use long and reinterpret");
         } else {
             if (componentType != null) {
                 throw new UnsupportedOperationException("todo");
@@ -114,10 +121,6 @@ public final class RingColumnSource<T>
         ((AbstractRingChunkSource) prev).bringUpToDate(fillContext, ring);
     }
 
-    /**
-     *
-     * @return the table update
-     */
     public TableUpdate tableUpdate() {
         // Precondition: some rows have been added (k4 > k2)
         final long k1 = prev.firstKey();
@@ -188,7 +191,8 @@ public final class RingColumnSource<T>
 
     @Override
     public Boolean getBoolean(long index) {
-        return ring.getBoolean(index);
+        throw new UnsupportedOperationException(
+                "No Boolean chunk source for RingColumnSource - use byte and reinterpret");
     }
 
     @Override
@@ -233,7 +237,8 @@ public final class RingColumnSource<T>
 
     @Override
     public Boolean getPrevBoolean(long index) {
-        return prev.getBoolean(index);
+        throw new UnsupportedOperationException(
+                "No Boolean chunk source for RingColumnSource - use byte and reinterpret");
     }
 
     @Override

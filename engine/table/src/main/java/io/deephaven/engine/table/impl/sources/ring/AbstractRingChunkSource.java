@@ -21,9 +21,15 @@ import java.util.function.LongConsumer;
 
 import static io.deephaven.engine.table.impl.AbstractColumnSource.USE_RANGES_AVERAGE_RUN_LENGTH;
 
+/**
+ * The base for a ring chunk source. Provides a single contiguous array for ring-buffer operations.
+ *
+ * @param <T> the item type
+ * @param <ARRAY> the array type
+ * @param <SELF> the self type
+ */
 abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkSource<T, ARRAY, SELF>>
         implements DefaultChunkSource<Values> {
-    // todo: should we extend SupportsContiguousGet? I think the extra layers of default methods may hurt
 
     protected final ARRAY ring;
     protected final int capacity;
@@ -90,6 +96,16 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return key >= 0 && key >= (nextRingIx - capacity) && key < nextRingIx;
     }
 
+    /**
+     * {@code true} if {@code [firstKey, lastKey]} is in the index.
+     *
+     * <p>
+     * Equivalent to {@code containsKey(firstKey) && containsKey(lastKey) && firstKey <= lastKey}.
+     *
+     * @param firstKey the first key (inclusive)
+     * @param lastKey the last key (inclusive)
+     * @return true if the [firstKey, lastKey] is in {@code this} range
+     */
     public final boolean containsRange(long firstKey, long lastKey) {
         return firstKey <= lastKey && firstKey >= 0 && firstKey >= (nextRingIx - capacity) && lastKey < nextRingIx;
     }
@@ -114,10 +130,27 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return nextRingIx - 1;
     }
 
+    /**
+     * Equivalent to {@code append(fillContext, (ChunkSource<? extends Values>) src, srcKeys)}.
+     *
+     * @param fillContext the fill context
+     * @param src the source
+     * @param srcKeys the source keys
+     * @see #append(FillContext, ChunkSource, RowSet)
+     */
     public final void append(FillContext fillContext, ColumnSource<T> src, RowSet srcKeys) {
         append(fillContext, (ChunkSource<? extends Values>) src, srcKeys);
     }
 
+    /**
+     * Append the data represented by {@code src} and {@code srcKeys} into {@code this} ring. This method is meant to be
+     * efficient, and will read at most {@link #capacity()} items from the end of {@code src} and {@code srcKeys}. The
+     * {@link #lastKey() lastKey} will increase by {@code srcKeys.size()}.
+     *
+     * @param fillContext the fill context
+     * @param src the source
+     * @param srcKeys the source keys
+     */
     public final void append(FillContext fillContext, ChunkSource<? extends Values> src, RowSet srcKeys) {
         if (srcKeys.isEmpty()) {
             return;
@@ -325,10 +358,6 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     abstract void fillKey(@NotNull WritableChunk<? super Values> destination, int destOffset, int ringIx);
 
     abstract T get(long key);
-
-    Boolean getBoolean(long key) {
-        throw new UnsupportedOperationException();
-    }
 
     byte getByte(long key) {
         throw new UnsupportedOperationException();

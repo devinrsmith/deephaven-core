@@ -30,11 +30,32 @@ public class RingTableToolsTest {
                 "K_long=k",
                 "K_short=(short)k",
                 "K_str=``+k",
-                "K_datetime=new DateTime(k)");
+                "K_datetime=new DateTime(k)",
+                "K_boolean=k%3==0?null:k%3==1");
         for (int capacity = 1; capacity <= 256; ++capacity) {
             final Table tail = k.tail(capacity);
             final Table ring = RingTableTools.of(k, capacity, true);
-            UpdateGraphProcessor.DEFAULT.runWithinUnitTestCycle(() -> TstUtils.assertTableEquals(tail, ring));
+            UpdateGraphProcessor.DEFAULT.runWithinUnitTestCycle(() -> {
+                checkEquals(tail, ring);
+            });
         }
+    }
+
+    private void checkEquals(Table tail, Table ring) {
+        TstUtils.assertTableEquals(tail, ring);
+
+        // dense indices
+        TstUtils.assertTableEquals(tail.where("i%2!=0"), ring.where("i%2!=0"));
+        TstUtils.assertTableEquals(tail.where("i%3!=0"), ring.where("i%3!=0"));
+        TstUtils.assertTableEquals(tail.where("i%5!=0"), ring.where("i%5!=0"));
+        TstUtils.assertTableEquals(tail.where("i%7!=0"), ring.where("i%7!=0"));
+        TstUtils.assertTableEquals(tail.where("i%11!=0"), ring.where("i%11!=0"));
+
+        // sparse indices
+        TstUtils.assertTableEquals(tail.where("i%2==0"), ring.where("i%2==0"));
+        TstUtils.assertTableEquals(tail.where("i%3==0"), ring.where("i%3==0"));
+        TstUtils.assertTableEquals(tail.where("i%5==0"), ring.where("i%5==0"));
+        TstUtils.assertTableEquals(tail.where("i%7==0"), ring.where("i%7==0"));
+        TstUtils.assertTableEquals(tail.where("i%11==0"), ring.where("i%11==0"));
     }
 }

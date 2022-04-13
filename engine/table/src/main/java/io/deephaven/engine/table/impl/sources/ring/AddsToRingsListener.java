@@ -77,7 +77,7 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
 
     private final ColumnSource<?>[] sources;
     private final RingColumnSource<?>[] rings;
-    private final FillContext[] fillContexts;
+//    private final FillContext[] fillContexts;
     private final UpdateCommitter<AddsToRingsListener> prevFlusher;
 
     private AddsToRingsListener(
@@ -104,7 +104,7 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
                 throw new IllegalArgumentException();
             }
         }
-        fillContexts = Arrays.stream(sources).map(s -> s.makeFillContext(capacity)).toArray(FillContext[]::new);
+//        fillContexts = Arrays.stream(sources).map(s -> s.makeFillContext(capacity)).toArray(FillContext[]::new);
         prevFlusher = new UpdateCommitter<>(this, AddsToRingsListener::bringPreviousUpToDate);
     }
 
@@ -124,7 +124,7 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
             }
             for (int i = 0; i < rings.length; ++i) {
                 final ChunkSource<? extends Values> source = usePrev ? sources[i].getPrevSource() : sources[i];
-                rings[i].append(fillContexts[i], source, srcKeys);
+                rings[i].append(source, srcKeys);
             }
         }
         final TableUpdate update = rings[0].tableUpdate();
@@ -149,7 +149,7 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
 
     private void append(RowSet added) {
         for (int i = 0; i < rings.length; ++i) {
-            rings[i].append(fillContexts[i], sources[i], added);
+             rings[i].append(sources[i], added);
         }
         prevFlusher.maybeActivate();
         final TableUpdate update = rings[0].tableUpdate();
@@ -158,8 +158,8 @@ final class AddsToRingsListener extends BaseTable.ListenerImpl {
     }
 
     private void bringPreviousUpToDate() {
-        for (int i = 0; i < rings.length; i++) {
-            rings[i].bringPreviousUpToDate(fillContexts[i]);
+        for (RingColumnSource<?> ring : rings) {
+            ring.bringPreviousUpToDate();
         }
     }
 }

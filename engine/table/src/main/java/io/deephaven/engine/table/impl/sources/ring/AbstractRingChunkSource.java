@@ -3,6 +3,7 @@ package io.deephaven.engine.table.impl.sources.ring;
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.ResettableWritableChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.rowset.RowSequence;
@@ -54,8 +55,6 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     protected final int capacity;
     long nextRingIx;
 
-    private final ResettableWritableChunk<Values> ringView;
-
     public AbstractRingChunkSource(@NotNull Class<T> type, int capacity) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity must be positive");
@@ -63,7 +62,6 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         this.capacity = capacity;
         // noinspection unchecked
         ring = (ARRAY) Array.newInstance(type, capacity);
-        ringView = getChunkType().makeResettableWritableChunk();
     }
 
     /**
@@ -189,7 +187,10 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
             physicalStartRingIx = nextRingIx + skipRows;
             physicalFillSize = capacity;
         }
-        try {
+        // noinspection unused
+        try (
+                final RowSet _physicalRowsToClose = hasSkippedRows ? physicalRows : null;
+                final ResettableWritableChunk<Any> chunk = getChunkType().makeResettableWritableChunk()) {
             // [0, capacity)
             final int fillIndex1 = keyToRingIndex(physicalStartRingIx);
             // (0, capacity]
@@ -198,20 +199,16 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
             final int fillSize1 = Math.min(fillMax1, physicalFillSize);
             final int fillSize2 = physicalFillSize - fillSize1;
             if (fillSize2 == 0) {
-                src.fillChunk(fillContext, ring(fillIndex1, fillSize1), physicalRows);
+                src.fillChunk(fillContext, ring(chunk, fillIndex1, fillSize1), physicalRows);
             } else {
                 // might be nice if there was a "split"
                 // (could be more efficient than calling subSetByPositionRange twice)
                 try (final RowSet rows1 = physicalRows.subSetByPositionRange(0, fillSize1)) {
-                    src.fillChunk(fillContext, ring(fillIndex1, fillSize1), rows1);
+                    src.fillChunk(fillContext, ring(chunk, fillIndex1, fillSize1), rows1);
                 }
                 try (final RowSet rows2 = physicalRows.subSetByPositionRange(fillSize1, fillSize1 + fillSize2)) {
-                    src.fillChunk(fillContext, ring(0, fillSize2), rows2);
+                    src.fillChunk(fillContext, ring(chunk, 0, fillSize2), rows2);
                 }
-            }
-        } finally {
-            if (hasSkippedRows) {
-                physicalRows.close();
             }
         }
         nextRingIx += logicalFillSize;
@@ -231,7 +228,7 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     }
 
     @Override
-    public final Chunk<Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
+    public final Chunk<? extends Values> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
         if (STRICT_KEYS && !containsRange(firstKey, lastKey)) {
             throw new IllegalStateException(
                     String.format("getChunk precondition broken, invalid range. requested=[%d, %d], available=[%d, %d]",
@@ -239,9 +236,11 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         }
         final int firstRingIx = keyToRingIndex(firstKey);
         final int lastRingIx = keyToRingIndex(lastKey);
+
+        // needs to be thread safe
         if (firstRingIx <= lastRingIx) {
             // Optimization when we can return a contiguous view
-            return ring(firstRingIx, lastRingIx - firstRingIx + 1);
+            return ring(DefaultGetContext.getResettableChunk(context), firstRingIx, lastRingIx - firstRingIx + 1);
         }
         final WritableChunk<Values> chunk = DefaultGetContext.getWritableChunk(context);
         try (final Filler filler = filler(chunk)) {
@@ -334,8 +333,8 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         protected abstract void setSize(int size);
     }
 
-    private WritableChunk<Values> ring(int ringIx, int length) {
-        return ringView.resetFromArray(ring, ringIx, length);
+    private WritableChunk<Values> ring(ResettableWritableChunk<? super Values> chunk, int ringIx, int length) {
+        return chunk.resetFromArray(ring, ringIx, length);
     }
 
     /**

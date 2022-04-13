@@ -34,6 +34,32 @@ public class RingTableTools {
         });
     }
 
+    /**
+     * Constructs a "ring" table, where the next-power-of-2 {@code capacity} from the {@code parent} are retained and
+     * re-indexed, with an additional {@link Table#tail(long)} to restructure for {@code capacity}.
+     *
+     * <p>Logically equivalent to {@code of(parent, Integer.highestOneBit(capacity - 1) << 1, initialize).tail(capacity)}.
+     *
+     * <p>This setup may be useful when consumers need to maximize random access fill speed from a ring table.
+     *
+     * @param parent the parent
+     * @param capacity the capacity
+     * @param initialize if the resulting table should source initial data from the snapshot of {@code parent}
+     * @return the ring table
+     * @see #of(Table, int, boolean)
+     */
+    public static Table of2(Table parent, int capacity, boolean initialize) {
+        return QueryPerformanceRecorder.withNugget("RingTableTools.of2", () -> {
+            final int capacityPowerOf2 = Integer.highestOneBit(capacity - 1) << 1;
+            final BaseTable baseTable = (BaseTable) parent.coalesce();
+            final SwapListener swapListener = baseTable.createSwapListenerIfRefreshing(SwapListener::new);
+            final Table tablePowerOf2 =
+                    new RingTableSnapshotFunction(parent, capacityPowerOf2, initialize, swapListener)
+                            .constructResults();
+            return capacityPowerOf2 == capacity ? tablePowerOf2 : tablePowerOf2.tail(capacity);
+        });
+    }
+
     private static class RingTableSnapshotFunction implements SnapshotFunction {
         private final Table parent;
         private final int capacity;

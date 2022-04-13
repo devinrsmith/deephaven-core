@@ -195,8 +195,7 @@ final class RingColumnSource<T>
 
     @Override
     public boolean isImmutable() {
-        // Values for an index don't change from prev -> current
-        return true;
+        return prev == ring; // todo
     }
 
     @Override

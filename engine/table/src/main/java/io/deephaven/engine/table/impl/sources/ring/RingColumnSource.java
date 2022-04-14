@@ -7,6 +7,7 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.RowSetShiftData;
+import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.ModifiedColumnSet;
@@ -136,10 +137,15 @@ final class RingColumnSource<T>
     }
 
     public void bringPreviousUpToDate() {
+        // todo: don't use capacity
         try (FillContext fillContext = ring.makeFillContext(capacity())) {
             // noinspection unchecked,rawtypes
             ((AbstractRingChunkSource) prev).bringUpToDate(fillContext, ring);
         }
+    }
+
+    public WritableRowSet rowSet() {
+        return ring.isEmpty() ? RowSetFactory.empty() : RowSetFactory.fromRange(ring.firstKey(), ring.lastKey());
     }
 
     public TableUpdate tableUpdate() {

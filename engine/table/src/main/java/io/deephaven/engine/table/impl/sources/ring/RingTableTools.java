@@ -14,6 +14,18 @@ import java.util.Objects;
 public class RingTableTools {
 
     /**
+     * Equivalent to {@code of(parent, capacity, true)}.
+     *
+     * @param parent the parent
+     * @param capacity the capacity
+     * @return the ring table
+     * @see #of(Table, int, boolean)
+     **/
+    public static Table of(Table parent, int capacity) {
+        return of(parent, capacity, true);
+    }
+
+    /**
      * Constructs a "ring" table, whereby the latest {@code capacity} rows from the {@code parent} are retained and
      * re-indexed by the resulting ring table. Latest is determined solely by the {@link TableUpdate#added()} updates,
      * {@link TableUpdate#removed()} are ignored; and {@link TableUpdate#modified()} / {@link TableUpdate#shifted()} are
@@ -52,7 +64,8 @@ public class RingTableTools {
      */
     public static Table of2(Table parent, int capacity, boolean initialize) {
         return QueryPerformanceRecorder.withNugget("RingTableTools.of2", () -> {
-            final int capacityPowerOf2 = Integer.highestOneBit(capacity - 1) << 1;
+            // todo: there is probably a better way to do this
+            final int capacityPowerOf2 = capacity == 1 ? 1 : Integer.highestOneBit(capacity - 1) << 1;
             final BaseTable baseTable = (BaseTable) parent.coalesce();
             final SwapListener swapListener = baseTable.createSwapListenerIfRefreshing(SwapListener::new);
             final Table tablePowerOf2 =

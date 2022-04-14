@@ -1,7 +1,6 @@
 package io.deephaven.engine.table.impl.sources.ring;
 
 import io.deephaven.engine.rowset.RowSetFactory;
-import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.impl.sources.DoubleArraySource;
 import org.junit.Test;
 
@@ -57,8 +56,6 @@ public class DoubleRingChunkSourceTest extends RingChunkSourceTestBase {
     }
 
     public void append(DoubleRingChunkSource source, int len) {
-        try (final FillContext fillContext = DATA.makeFillContext(1024)) {
-            source.append(fillContext, DATA, RowSetFactory.fromRange(source.lastKey() + 1, source.lastKey() + len));
-        }
+        source.append(DATA, RowSetFactory.fromRange(source.lastKey() + 1, source.lastKey() + len));
     }
 }

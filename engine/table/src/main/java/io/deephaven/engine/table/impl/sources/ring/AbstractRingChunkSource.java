@@ -7,6 +7,7 @@ import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.RowSequence.Iterator;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.table.ChunkSource;
@@ -50,6 +51,9 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * {@code true}.
      */
     public static final boolean STRICT_KEYS = Configuration.getInstance().getBooleanWithDefault(STRICT_KEYS_KEY, true);
+
+    public static final int APPEND_CHUNK_SIZE =
+            Configuration.getInstance().getIntegerWithDefault("AbstractRingChunkSource.append_chunk_size", 4096);
 
     protected final ARRAY ring;
     protected final int capacity;
@@ -150,13 +154,12 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
     /**
      * Equivalent to {@code append(fillContext, (ChunkSource<? extends Values>) src, srcKeys)}.
      *
-     * @param fillContext the fill context
      * @param src the source
      * @param srcKeys the source keys
-     * @see #append(FillContext, ChunkSource, RowSet)
+     * @see #append(ChunkSource, RowSet)
      */
-    public final void append(FillContext fillContext, ColumnSource<T> src, RowSet srcKeys) {
-        append(fillContext, (ChunkSource<? extends Values>) src, srcKeys);
+    public final void append(ColumnSource<T> src, RowSet srcKeys) {
+        append((ChunkSource<? extends Values>) src, srcKeys);
     }
 
     /**
@@ -164,54 +167,70 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
      * efficient, and will read at most {@link #capacity()} items from the end of {@code src} and {@code srcKeys}. The
      * {@link #lastKey() lastKey} will increase by {@code srcKeys.size()}.
      *
-     * @param fillContext the fill context
      * @param src the source
      * @param srcKeys the source keys
      */
-    public final void append(FillContext fillContext, ChunkSource<? extends Values> src, RowSet srcKeys) {
+    public final void append(ChunkSource<? extends Values> src, RowSet srcKeys) {
         if (srcKeys.isEmpty()) {
             return;
         }
         final long logicalFillSize = srcKeys.size();
         final RowSet physicalRows;
         final long physicalStartRingIx;
-        final int physicalFillSize;
         final boolean hasSkippedRows = logicalFillSize > capacity;
         if (!hasSkippedRows) {
             physicalRows = srcKeys;
             physicalStartRingIx = nextRingIx;
-            physicalFillSize = (int) logicalFillSize;
         } else {
             final long skipRows = logicalFillSize - capacity;
             physicalRows = srcKeys.subSetByPositionRange(skipRows, logicalFillSize);
             physicalStartRingIx = nextRingIx + skipRows;
-            physicalFillSize = capacity;
         }
-        // noinspection unused
+        final int fillStartIx = keyToRingIndex(physicalStartRingIx);
         try (
                 final RowSet _physicalRowsToClose = hasSkippedRows ? physicalRows : null;
-                final ResettableWritableChunk<Any> chunk = getChunkType().makeResettableWritableChunk()) {
-            // [0, capacity)
-            final int fillIndex1 = keyToRingIndex(physicalStartRingIx);
-            // (0, capacity]
-            final int fillMax1 = capacity - fillIndex1;
-            // fillSize1 + fillSize2 = physicalFillSize
-            final int fillSize1 = Math.min(fillMax1, physicalFillSize);
-            final int fillSize2 = physicalFillSize - fillSize1;
-            if (fillSize2 == 0) {
-                src.fillChunk(fillContext, ring(chunk, fillIndex1, fillSize1), physicalRows);
-            } else {
-                // might be nice if there was a "split"
-                // (could be more efficient than calling subSetByPositionRange twice)
-                try (final RowSet rows1 = physicalRows.subSetByPositionRange(0, fillSize1)) {
-                    src.fillChunk(fillContext, ring(chunk, fillIndex1, fillSize1), rows1);
-                }
-                try (final RowSet rows2 = physicalRows.subSetByPositionRange(fillSize1, fillSize1 + fillSize2)) {
-                    src.fillChunk(fillContext, ring(chunk, 0, fillSize2), rows2);
-                }
-            }
+                final ResettableWritableChunk<Any> chunk = getChunkType().makeResettableWritableChunk();
+                final FillContext fillContext = src.makeFillContext(APPEND_CHUNK_SIZE);
+                final Iterator it = physicalRows.getRowSequenceIterator()) {
+            // Note: if we could do it.skip(skipRows), that would probably be more efficient than subSetByPositionRange
+            fillRingFromMiddle(src, chunk, fillContext, it, fillStartIx);
+            fillRingFromStart(src, chunk, fillContext, it, fillStartIx);
         }
         nextRingIx += logicalFillSize;
+    }
+
+    private void fillRingFromMiddle(
+            ChunkSource<? extends Values> src,
+            ResettableWritableChunk<Any> chunk,
+            FillContext fillContext,
+            Iterator it,
+            int ringStartIx) {
+        int ringIx = ringStartIx;
+        int nextSize = Math.min(APPEND_CHUNK_SIZE, capacity - ringIx);
+        do {
+            final RowSequence rows = it.getNextRowSequenceWithLength(nextSize);
+            final int rowsSize = rows.intSize();
+            src.fillChunk(fillContext, ring(chunk, ringIx, rowsSize), rows);
+            ringIx += rowsSize;
+        } while (it.hasMore() && (nextSize = Math.min(APPEND_CHUNK_SIZE, capacity - ringIx)) > 0);
+    }
+
+    private void fillRingFromStart(
+            ChunkSource<? extends Values> src,
+            ResettableWritableChunk<Any> chunk,
+            FillContext fillContext,
+            Iterator it,
+            int ringStartIx) {
+        int ringIx = 0;
+        while (it.hasMore()) {
+            final RowSequence rows = it.getNextRowSequenceWithLength(APPEND_CHUNK_SIZE);
+            final int rowsSize = rows.intSize();
+            if (ringIx + rowsSize > ringStartIx) {
+                throw new IllegalStateException("Overrunning into the start of our fillRingFromMiddle");
+            }
+            src.fillChunk(fillContext, ring(chunk, ringIx, rowsSize), rows);
+            ringIx += rowsSize;
+        }
     }
 
     @Override
@@ -352,8 +371,8 @@ abstract class AbstractRingChunkSource<T, ARRAY, SELF extends AbstractRingChunkS
         return (int) (key % capacity);
     }
 
-    final void bringUpToDate(FillContext fillContext, SELF current) {
-        append(fillContext, current, RowSetFactory.fromRange(nextRingIx, current.nextRingIx - 1));
+    final void bringUpToDate(SELF current) {
+        append(current, RowSetFactory.fromRange(nextRingIx, current.nextRingIx - 1));
         if (nextRingIx != current.nextRingIx) {
             throw new IllegalStateException();
         }

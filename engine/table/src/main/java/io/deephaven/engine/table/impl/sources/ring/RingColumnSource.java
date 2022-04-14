@@ -123,25 +123,16 @@ final class RingColumnSource<T>
     }
 
     public void append(ColumnSource<T> src, RowSet srcKeys) {
-        // todo: don't use capacity
-        try (final FillContext fillContext = src.makeFillContext(capacity())) {
-            ring.append(fillContext, src, srcKeys);
-        }
+        ring.append(src, srcKeys);
     }
 
     public void append(ChunkSource<? extends Values> src, RowSet srcKeys) {
-        // todo: don't use capacity
-        try (final FillContext fillContext = src.makeFillContext(capacity())) {
-            ring.append(fillContext, src, srcKeys);
-        }
+        ring.append(src, srcKeys);
     }
 
     public void bringPreviousUpToDate() {
-        // todo: don't use capacity
-        try (FillContext fillContext = ring.makeFillContext(capacity())) {
-            // noinspection unchecked,rawtypes
-            ((AbstractRingChunkSource) prev).bringUpToDate(fillContext, ring);
-        }
+        // noinspection unchecked,rawtypes
+        ((AbstractRingChunkSource) prev).bringUpToDate(ring);
     }
 
     public WritableRowSet rowSet() {

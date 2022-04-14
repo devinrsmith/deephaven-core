@@ -38,9 +38,11 @@ public class RingTableTools {
      * Constructs a "ring" table, where the next-power-of-2 {@code capacity} from the {@code parent} are retained and
      * re-indexed, with an additional {@link Table#tail(long)} to restructure for {@code capacity}.
      *
-     * <p>Logically equivalent to {@code of(parent, Integer.highestOneBit(capacity - 1) << 1, initialize).tail(capacity)}.
+     * <p>
+     * Logically equivalent to {@code of(parent, Integer.highestOneBit(capacity - 1) << 1, initialize).tail(capacity)}.
      *
-     * <p>This setup may be useful when consumers need to maximize random access fill speed from a ring table.
+     * <p>
+     * This setup may be useful when consumers need to maximize random access fill speed from a ring table.
      *
      * @param parent the parent
      * @param capacity the capacity

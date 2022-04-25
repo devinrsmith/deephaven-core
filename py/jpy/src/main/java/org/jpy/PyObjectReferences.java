@@ -32,6 +32,8 @@ class PyObjectReferences {
 
     private final ReferenceQueue<PyObject> referenceQueue;
     private final Map<Reference<PyObject>, PyObjectState> references;
+
+    // Protected by GIL
     private final long[] buffer;
 
     PyObjectReferences() {
@@ -73,41 +75,38 @@ class PyObjectReferences {
             new PhantomReference<>(pyObject, referenceQueue);
     }
 
-    /**
-     * This should *only* be invoked through the proxy, or when we *know* we have the GIL.
-     */
-    public int cleanupOnlyUseFromGIL() {
-        return cleanupOnlyUseFromGIL(buffer);
+    int cleanup() {
+        return PyLib.ensureGil(this::cleanupInternal);
     }
 
-    private int cleanupOnlyUseFromGIL(long[] buffer) {
-        return PyLib.ensureGil(() -> {
-            int index = 0;
-            while (index < buffer.length) {
-                final Reference<? extends PyObject> reference = referenceQueue.poll();
-                if (reference == null) {
-                    break;
-                }
-                index = appendIfNotClosed(buffer, index, reference);
+    // Caller should have GIL
+    private int cleanupInternal() {
+        int index = 0;
+        while (index < buffer.length) {
+            final Reference<? extends PyObject> reference = referenceQueue.poll();
+            if (reference == null) {
+                break;
             }
-            if (index == 0) {
-                return 0;
-            }
+            index = appendIfNotClosed(index, reference);
+        }
+        if (index == 0) {
+            return 0;
+        }
 
-            // We really really really want to make sure we *already* have the GIL lock at this point in
-            // time. Otherwise, we block here until the GIL is available for us, and stall all cleanup
-            // related to our PyObjects.
+        // We really really really want to make sure we *already* have the GIL lock at this point in
+        // time. Otherwise, we block here until the GIL is available for us, and stall all cleanup
+        // related to our PyObjects.
 
-            if (index == 1) {
-                PyLib.decRef(buffer[0]);
-                return 1;
-            }
-            PyLib.decRefs(buffer, index);
-            return index;
-        });
+        if (index == 1) {
+            PyLib.decRef(buffer[0]);
+            return 1;
+        }
+        PyLib.decRefs(buffer, index);
+        return index;
     }
 
-    private int appendIfNotClosed(long[] buffer, int index, Reference<? extends PyObject> reference) {
+    // Caller should have GIL
+    private int appendIfNotClosed(int index, Reference<? extends PyObject> reference) {
         reference.clear(); // helps GC proceed a bit faster for PhantomReference - guava Finalizer does this too
 
         final PyObjectState state = references.remove(reference);
@@ -121,16 +120,6 @@ class PyObjectReferences {
         }
         buffer[index] = pointerForClosure;
         return index + 1;
-    }
-
-    PyObjectCleanup asProxy() {
-        try (
-            final CreateModule createModule = CreateModule.create();
-            final IdentityModule identityModule = IdentityModule.create(createModule)) {
-            return identityModule
-                .identity(this)
-                .createProxy(PyObjectCleanup.class);
-        }
     }
 
     Thread createCleanupThread(String name) {
@@ -154,7 +143,6 @@ class PyObjectReferences {
                 time.sleep(sleep_time)
          */
 
-        final PyObjectCleanup proxy = asProxy();
 
         while (!Thread.currentThread().isInterrupted()) {
             // This blocks on the GIL, acquires the GIL, and then releases the GIL.
@@ -162,7 +150,7 @@ class PyObjectReferences {
             // any fairness guarantees. As such, we need to be mindful of other python users/code,
             // and ensure we don't overly acquire the GIL causing starvation issues, especially when
             // there is no cleanup work to do.
-            final int size = proxy.cleanupOnlyUseFromGIL();
+            final int size = cleanup();
 
 
             // Although, it *does* make sense to potentially take the GIL in a tight loop when there

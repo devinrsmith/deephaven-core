@@ -57,8 +57,14 @@ public class PyObject implements AutoCloseable {
         }
     }
 
+    /**
+     * Invokes {@link PyLib#decRef(long)} / {@link PyLib#decRefs(long[], int)} for {@link PyObject PyObjects} that are
+     * no longer reachable (due to GC). Acquires and releases the GIL.
+     *
+     * @return the number of decRefs
+     */
     public static int cleanup() {
-        return REFERENCES.asProxy().cleanupOnlyUseFromGIL();
+        return REFERENCES.cleanup();
     }
 
     private final PyObjectState state;
@@ -72,7 +78,7 @@ public class PyObject implements AutoCloseable {
         state = new PyObjectState(pointer);
         if (fromJNI) {
             if (CLEANUP_ON_INIT && PyLib.hasGil()) {
-                REFERENCES.cleanupOnlyUseFromGIL(); // only performs *one* cleanup
+                REFERENCES.cleanup(); // only performs *one* cleanup
             }
             if (CLEANUP_ON_THREAD) {
                 // ensures that we've only started after python has been started, and we know there is something to cleanup

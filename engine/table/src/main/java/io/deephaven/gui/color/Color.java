@@ -15,10 +15,63 @@ import java.util.Map;
 @SuppressWarnings("WeakerAccess")
 public class Color implements Paint, Serializable {
     private static final long serialVersionUID = 989077634719561909L;
+    public static final double[] MIX_DOUBLES = {-0.03, -0.02, -0.01, 0, 0.01, 0.02, 0.03};
+    public static final Color[] MIX_COLORS = {
+            new Color("#F63538"),
+            new Color("#BF4045"),
+            new Color("#8B444E"),
+            new Color("#414554"),
+            new Color("#35764E"),
+            new Color("#2F9E4F"),
+            new Color("#30CC5A")};
 
 
     ////////////////////////// color definition //////////////////////////
 
+    public static Color dailyHeatmap(double x) {
+        return heatmap(x, MIX_DOUBLES, MIX_COLORS);
+    }
+
+    public static Color heatmap(double x, double[] values, Color[] colors) {
+        if (values.length != colors.length) {
+            throw new IllegalArgumentException();
+        }
+        for (int i = 1; i < values.length; ++i) {
+            if (values[i] <= values[i - 1]) {
+                throw new IllegalArgumentException();
+            }
+        }
+        if (x <= values[0]) {
+            return colors[0];
+        }
+        for (int i = 1; i < values.length; ++i) {
+            if (x <= values[i]) {
+                double perc = (x - values[i - 1]) / (values[i] - values[i - 1]);
+                return mix(perc, colors[i - 1], colors[i]);
+            }
+        }
+        return colors[colors.length - 1];
+    }
+
+    public static Color mix(double perc, Color x, Color y) {
+        if (perc >= 1) {
+            return y;
+        }
+        if (perc <= 0) {
+            return x;
+        }
+        float[] hsbx = java.awt.Color.RGBtoHSB(x.javaColor().getRed(), x.javaColor().getGreen(),
+                x.javaColor().getBlue(), null);
+        float[] hsby = java.awt.Color.RGBtoHSB(y.javaColor().getRed(), y.javaColor().getGreen(),
+                y.javaColor().getBlue(), null);
+        double a = (1 - perc) * x.javaColor().getAlpha() + perc * y.javaColor().getAlpha();
+        double h = (1 - perc) * hsbx[0] + perc * hsby[0];
+        double s = (1 - perc) * hsbx[1] + perc * hsby[1];
+        double b = (1 - perc) * hsbx[2] + perc * hsby[2];
+        final int rgb = java.awt.Color.HSBtoRGB((float) h, (float) s, (float) b);
+        final Color c1 = new Color(rgb);
+        return new Color(c1.javaColor().getRed(), c1.javaColor().getGreen(), c1.javaColor().getBlue(), (int) a);
+    }
 
     private final java.awt.Color color;
 
@@ -131,6 +184,9 @@ public class Color implements Paint, Serializable {
         color = new java.awt.Color(r, g, b, a);
     }
 
+    public String toHex() {
+        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+    }
 
     ////////////////////////// internal functionality //////////////////////////
 

@@ -64,7 +64,7 @@ public class Color implements Paint, Serializable {
         double r = (1 - perc) * x.javaColor().getRed() + perc * y.javaColor().getRed();
         double g = (1 - perc) * x.javaColor().getGreen() + perc * y.javaColor().getGreen();
         double b = (1 - perc) * x.javaColor().getBlue() + perc * y.javaColor().getBlue();
-        return new Color((float) r, (float) g, (float) b, (float) a);
+        return new Color((int) r, (int) g, (int) b, (int) a);
     }
 
     private final java.awt.Color color;

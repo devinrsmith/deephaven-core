@@ -60,17 +60,11 @@ public class Color implements Paint, Serializable {
         if (perc <= 0) {
             return x;
         }
-        float[] hsbx = java.awt.Color.RGBtoHSB(x.javaColor().getRed(), x.javaColor().getGreen(),
-                x.javaColor().getBlue(), null);
-        float[] hsby = java.awt.Color.RGBtoHSB(y.javaColor().getRed(), y.javaColor().getGreen(),
-                y.javaColor().getBlue(), null);
         double a = (1 - perc) * x.javaColor().getAlpha() + perc * y.javaColor().getAlpha();
-        double h = (1 - perc) * hsbx[0] + perc * hsby[0];
-        double s = (1 - perc) * hsbx[1] + perc * hsby[1];
-        double b = (1 - perc) * hsbx[2] + perc * hsby[2];
-        final int rgb = java.awt.Color.HSBtoRGB((float) h, (float) s, (float) b);
-        final Color c1 = new Color(rgb);
-        return new Color(c1.javaColor().getRed(), c1.javaColor().getGreen(), c1.javaColor().getBlue(), (int) a);
+        double r = (1 - perc) * x.javaColor().getRed() + perc * y.javaColor().getRed();
+        double g = (1 - perc) * x.javaColor().getGreen() + perc * y.javaColor().getGreen();
+        double b = (1 - perc) * x.javaColor().getBlue() + perc * y.javaColor().getBlue();
+        return new Color((float) r, (float) g, (float) b, (float) a);
     }
 
     private final java.awt.Color color;

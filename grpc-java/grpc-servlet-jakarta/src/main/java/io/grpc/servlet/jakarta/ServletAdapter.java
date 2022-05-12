@@ -322,7 +322,7 @@ public final class ServletAdapter {
                             stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true);
                         } catch (IllegalStateException e) {
                             // todo: figure out why this is happening
-                            logger.log(WARNING, String.format("[%s] onAllDataRead exception", logId), e);
+                            // logger.log(WARNING, String.format("[%s] onAllDataRead exception", logId), e);
                         }
                     });
         }

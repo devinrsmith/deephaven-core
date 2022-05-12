@@ -9,6 +9,7 @@ import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -43,13 +44,12 @@ public class JettyBackedGrpcServer implements GrpcServer {
         HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.addCustomizer(new SecureRequestCustomizer());
 
-//        HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
+        HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
 
         // note: java client breaking when using HTTP2CServerConnectionFactory
         HTTP2ServerConnectionFactory h2 = new HTTP2ServerConnectionFactory(httpConfig);
         ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
-//        alpn.setDefaultProtocol(http11.getProtocol());
-        alpn.setDefaultProtocol(h2.getProtocol());
+        alpn.setDefaultProtocol(http11.getProtocol());
 
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setKeyStorePath("/home/devin/dev/deephaven/deephaven-core/data/felian.fish-moth.ts.net.chain.p12");
@@ -57,8 +57,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
 
         SslConnectionFactory tls = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
 
-//        ServerConnector sc = new ServerConnector(jetty, tls, alpn, h2, http11);
-        ServerConnector sc = new ServerConnector(jetty, tls, alpn, h2);
+        ServerConnector sc = new ServerConnector(jetty, tls, alpn, h2, http11);
         sc.setPort(8443);
         jetty.addConnector(sc);
 

@@ -28,6 +28,8 @@ dependencies {
     implementation project(':grpc-java:grpc-servlet-websocket-jakarta')
     implementation 'org.eclipse.jetty.websocket:websocket-jakarta-server:11.0.8'
 
+    Classpaths.inheritImmutables(project)
+
     testImplementation project(':server-test')
 
     testRuntimeOnly project(':log-to-slf4j')

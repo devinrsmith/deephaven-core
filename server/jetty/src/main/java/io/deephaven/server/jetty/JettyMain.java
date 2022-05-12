@@ -10,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 public class JettyMain extends Main {
     public static void main(String[] args)
             throws IOException, InterruptedException, ClassNotFoundException, TimeoutException {
-        final Configuration config = init(args, Main.class);
+        final Configuration config = init(new String[0], Main.class); // hack
 
         // defaults to 5 minutes
         int httpSessionExpireMs = config.getIntegerWithDefault("http.session.durationMs", 300000);

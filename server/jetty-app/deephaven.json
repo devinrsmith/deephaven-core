@@ -1,0 +1,9 @@
+{
+  "port": 8443,
+  "ssl": {
+    "keyStore": {
+      "path": "/home/devin/dev/deephaven/deephaven-core/data/felian.fish-moth.ts.net.chain.p12",
+      "password": "test"
+    }
+  }
+}

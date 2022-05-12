@@ -1,6 +1,5 @@
 package io.deephaven.server.jetty;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dagger.Module;
 import dagger.Provides;
 import io.deephaven.server.runner.GrpcServer;
@@ -10,9 +9,6 @@ import io.grpc.servlet.jakarta.ServletAdapter;
 import io.grpc.servlet.jakarta.ServletServerBuilder;
 
 import javax.inject.Named;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Set;
 
 @Module
@@ -36,18 +32,5 @@ public class JettyServerModule {
 
         serverBuilder.directExecutor();
         return serverBuilder.buildServletAdapter();
-    }
-
-    @Provides
-    static ServerConfig providesServerConfig(@Named("http.port") int port) {
-        final ObjectMapper om = new ObjectMapper();
-        om.findAndRegisterModules();
-        // om.registerModule(new Jdk8Module());
-        // hack:
-        try {
-            return om.readValue(new File("deephaven.json"), ServerConfig.class);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

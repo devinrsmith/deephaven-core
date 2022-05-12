@@ -1,12 +1,17 @@
 package io.deephaven.server.jetty;
 
+import io.deephaven.server.config.KeySourceConfig;
+import io.deephaven.server.config.KeySourceConfig.Visitor;
+import io.deephaven.server.config.KeyStoreConfig;
+import io.deephaven.server.config.PrivateKeyConfig;
+import io.deephaven.server.config.SSLConfig;
+import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.servlet.jakarta.web.GrpcWebFilter;
 import io.grpc.servlet.web.websocket.WebSocketServerStream;
 import jakarta.servlet.DispatcherType;
 import jakarta.websocket.server.ServerEndpointConfig;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
-import org.eclipse.jetty.http2.parser.RateControl;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -28,7 +33,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.jetty.servlet.ServletContextHandler.SESSIONS;
@@ -42,27 +46,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
             final ServerConfig config,
             final GrpcFilter filter) {
         jetty = new Server();
-
-        // https://www.eclipse.org/jetty/documentation/jetty-11/programming-guide/index.html#pg-server-http-connector-protocol-http2-tls
-        HttpConfiguration httpConfig = new HttpConfiguration();
-        HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
-
-        final ServerConnector sc;
-        final Optional<SslContextFactory.Server> sslContextFactory = config.createSslContextFactory();
-        if (sslContextFactory.isPresent()) {
-            httpConfig.addCustomizer(new SecureRequestCustomizer());
-            HTTP2ServerConnectionFactory h2 = new HTTP2ServerConnectionFactory(httpConfig);
-            ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
-            alpn.setDefaultProtocol(http11.getProtocol());
-            SslConnectionFactory tls = new SslConnectionFactory(sslContextFactory.get(), alpn.getProtocol());
-            sc = new ServerConnector(jetty, tls, alpn, h2, http11);
-        } else {
-            HTTP2CServerConnectionFactory h2c = new HTTP2CServerConnectionFactory(httpConfig);
-            h2c.setRateControlFactory(new RateControl.Factory() {});
-            sc = new ServerConnector(jetty, http11, h2c);
-        }
-        sc.setPort(config.port());
-        jetty.addConnector(sc);
+        jetty.addConnector(createConnector(jetty, config));
 
         final WebAppContext context =
                 new WebAppContext(null, "/", null, null, null, new ErrorPageErrorHandler(), SESSIONS);
@@ -145,5 +129,69 @@ public class JettyBackedGrpcServer implements GrpcServer {
     @Override
     public int getPort() {
         return ((ServerConnector) jetty.getConnectors()[0]).getLocalPort();
+    }
+
+    private static ServerConnector createConnector(Server server, ServerConfig config) {
+        // https://www.eclipse.org/jetty/documentation/jetty-11/programming-guide/index.html#pg-server-http-connector-protocol-http2-tls
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        final HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
+        final ServerConnector serverConnector;
+        if (config.ssl().isPresent()) {
+            httpConfig.addCustomizer(new SecureRequestCustomizer());
+            final HTTP2ServerConnectionFactory h2 = new HTTP2ServerConnectionFactory(httpConfig);
+            // h2.setRateControlFactory(new RateControl.Factory() {});
+            final ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
+            alpn.setDefaultProtocol(http11.getProtocol());
+            final SslContextFactory.Server sslContextFactory = create(config.ssl().get());
+            final SslConnectionFactory tls = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
+            serverConnector = new ServerConnector(server, tls, alpn, h2, http11);
+        } else {
+            final HTTP2CServerConnectionFactory h2c = new HTTP2CServerConnectionFactory(httpConfig);
+            // h2c.setRateControlFactory(new RateControl.Factory() {});
+            serverConnector = new ServerConnector(server, http11, h2c);
+        }
+        serverConnector.setHost(config.host());
+        serverConnector.setPort(config.port());
+        return serverConnector;
+    }
+
+    private static SslContextFactory.Server create(SSLConfig config) {
+        final SslContextFactory.Server factory = new SslContextFactory.Server();
+        config.key().walk(new Visitor<Void>() {
+            @Override
+            public Void visit(KeyStoreConfig keyStore) {
+                factory.setKeyStorePath(keyStore.path());
+                factory.setKeyStorePassword(keyStore.password());
+                keyStore.type().ifPresent(factory::setKeyStoreType);
+                keyStore.provider().ifPresent(factory::setKeyStoreProvider);
+                return null;
+            }
+
+            @Override
+            public Void visit(PrivateKeyConfig privateKey) {
+                throw new IllegalStateException("Unable to set PrivateKeyConfig for Jetty ATM");
+            }
+        });
+        {
+            final KeySourceConfig trustSource = config.trust().orElse(null);
+            if (trustSource != null) {
+                trustSource.walk(new Visitor<Void>() {
+                    @Override
+                    public Void visit(KeyStoreConfig keyStore) {
+                        factory.setTrustStorePath(keyStore.path());
+                        factory.setTrustStorePassword(keyStore.password());
+                        keyStore.type().ifPresent(factory::setTrustStoreType);
+                        keyStore.provider().ifPresent(factory::setTrustStoreProvider);
+                        return null;
+                    }
+
+                    @Override
+                    public Void visit(PrivateKeyConfig privateKey) {
+                        throw new IllegalStateException("Unable to set PrivateKeyConfig for Jetty ATM");
+                    }
+                });
+            }
+        }
+        return factory;
     }
 }

@@ -3,9 +3,8 @@
   "ssl": {
     "key": {
       "type": "privatekey",
-      "certChainPath": "/home/devin/dev/deephaven/deephaven-core/data/felian.fish-moth.ts.net.crt",
-      "privateKeyPath": "/home/devin/dev/deephaven/deephaven-core/data/felian.fish-moth.ts.net.pem"
+      "certChainPath": "/home/devin/certs/echo-dell.fish-moth.ts.net.crt",
+      "privateKeyPath": "/home/devin/certs/echo-dell.fish-moth.ts.net.pem"
     }
-  },
-  "schedulerPoolSize": 2
+  }
 }

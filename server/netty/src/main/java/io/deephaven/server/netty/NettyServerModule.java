@@ -3,32 +3,21 @@ package io.deephaven.server.netty;
 import dagger.Module;
 import dagger.Provides;
 import io.deephaven.UncheckedDeephavenException;
-import io.deephaven.server.config.KeySourceConfig;
+import io.deephaven.server.config.*;
 import io.deephaven.server.config.KeySourceConfig.Visitor;
-import io.deephaven.server.config.KeyStoreConfig;
-import io.deephaven.server.config.PrivateKeyConfig;
-import io.deephaven.server.config.SSLConfig;
-import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.BindableService;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptor;
-import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 
-import javax.inject.Named;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Module
 public class NettyServerModule {
@@ -61,7 +50,7 @@ public class NettyServerModule {
 
             @Override
             public SslContextBuilder visit(PrivateKeyConfig privateKey) {
-                return SslContextBuilder.forServer(new File(privateKey.certChainPath()), new File(privateKey.privateKeyPath()));
+                return GrpcSslContexts.forServer(new File(privateKey.certChainPath()), new File(privateKey.privateKeyPath()));
             }
         });
         final KeySourceConfig trustsource = sslConfig.trust().orElse(null);

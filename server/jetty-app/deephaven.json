@@ -3,9 +3,8 @@
   "ssl": {
     "key": {
       "type": "keystore",
-      "path": "/home/devin/dev/deephaven/deephaven-core/data/felian.fish-moth.ts.net.chain.p12",
+      "path": "/home/devin/certs/echo-dell.fish-moth.ts.net.chain.p12",
       "password": "test"
     }
-  },
-  "schedulerPoolSize": 2
+  }
 }

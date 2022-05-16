@@ -34,7 +34,7 @@ JAVA_OPTS="-Ddeephaven.console.type=groovy" ./server/netty-app/build/install/ser
 Finally, Gradle can be used to update the build and run the application in a single step:
 
 ```shell
-./gradlew server-netty-app:run -Pgroovy
+./gradlew server-netty-app:run -Pgroovy -PdevCerts
 ```
 
 ### Internals

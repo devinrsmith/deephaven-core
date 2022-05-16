@@ -100,6 +100,13 @@ class Classpaths {
     static final String BORINGSSL_NAME = 'netty-tcnative-boringssl-static'
     static final String BORINGSSL_VERSION = '2.0.46.Final'
 
+    static final String JACKSON_GROUP = 'com.fasterxml.jackson'
+    static final String JACKSON_NAME = 'jackson-bom'
+    static final String JACKSON_VERSION = '2.13.3'
+
+    static final String SSLCONTEXT_GROUP = 'io.github.hakky54'
+    static final String SSLCONTEXT_VERSION = '7.4.3'
+
     static boolean addDependency(Configuration conf, String group, String name, String version, Action<? super DefaultExternalModuleDependency> configure = Actions.doNothing()) {
         if (!conf.dependencies.find { it.name == name && it.group == group}) {
             DefaultExternalModuleDependency dep = dependency group, name, version
@@ -240,5 +247,15 @@ class Classpaths {
     static void inheritBoringSsl(Project p, String configName = JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME) {
         Configuration config = p.configurations.getByName(configName)
         addDependency(config, BORINGSSL_GROUP, BORINGSSL_NAME, BORINGSSL_VERSION)
+    }
+
+    static void inheritJacksonPlatform(Project p, String configName = JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME) {
+        Configuration config = p.configurations.getByName(configName)
+        addDependency(config, p.getDependencies().platform("${JACKSON_GROUP}:${JACKSON_NAME}:${JACKSON_VERSION}"))
+    }
+
+    static void inheritSSLContext(Project p, String name, String configName = JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME) {
+        Configuration config = p.configurations.getByName(configName)
+        addDependency(config, SSLCONTEXT_GROUP, name, SSLCONTEXT_VERSION)
     }
 }

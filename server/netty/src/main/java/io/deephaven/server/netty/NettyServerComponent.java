@@ -1,5 +1,6 @@
 package io.deephaven.server.netty;
 
+import dagger.BindsInstance;
 import dagger.Component;
 import io.deephaven.server.healthcheck.HealthCheckModule;
 import io.deephaven.server.plugin.python.PythonPluginsRegistration;
@@ -20,6 +21,9 @@ import javax.inject.Singleton;
 public interface NettyServerComponent extends DeephavenApiServerComponent {
     @Component.Builder
     interface Builder extends DeephavenApiServerComponent.Builder<Builder> {
+        @BindsInstance
+        Builder withNettyConfig(NettyConfig config);
+
         NettyServerComponent build();
     }
 }

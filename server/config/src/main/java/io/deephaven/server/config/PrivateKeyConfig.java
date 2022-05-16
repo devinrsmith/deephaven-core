@@ -1,11 +1,13 @@
 package io.deephaven.server.config;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
 import java.util.Optional;
 
 @Immutable
+@BuildableStyle
 @JsonDeserialize(as = ImmutablePrivateKeyConfig.class)
 public abstract class PrivateKeyConfig implements IdentityConfig {
     public abstract String certChainPath();

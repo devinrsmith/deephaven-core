@@ -22,24 +22,58 @@ import java.security.spec.InvalidKeySpecException;
 class DeephavenSslUtils {
     static SSLFactory create(SSLConfig config) {
         final SSLFactory.Builder builder = SSLFactory.builder();
-        addIdentity(builder, config.identity());
-        addTrust(builder, config);
+        // Identity
+        {
+            if (config.withSystemPropertyIdentity()) {
+                builder.withSystemPropertyDerivedIdentityMaterial();
+            }
+            for (IdentityConfig identity : config.identity()) {
+                addIdentity(builder, identity);
+            }
+        }
+        // Trust
+        {
+            if (config.withJDKTrust()) {
+                builder.withDefaultTrustMaterial();
+            }
+            if (config.withSystemPropertyTrust()) {
+                builder.withSystemPropertyDerivedTrustMaterial();
+            }
+            if (config.withTrustAll()) {
+                builder.withTrustingAllCertificatesWithoutValidation();
+            }
+            for (TrustConfig trust : config.trust()) {
+                addTrust(builder, trust);
+            }
+        }
+        // Ciphers
+        {
+            if (config.withSystemPropertyCiphers()) {
+                builder.withSystemPropertyDerivedCiphers();
+            }
+            builder.withCiphers(config.ciphers().toArray(String[]::new));
+        }
+        // Protocols
+        {
+            if (config.withSystemPropertyProtocols()) {
+                builder.withSystemPropertyDerivedProtocols();
+            }
+            builder.withProtocols(config.protocols().toArray(String[]::new));
+        }
+        // Client authentication
+        switch (config.clientAuthentication()) {
+            case WANTED:
+                builder.withWantClientAuthentication();
+                break;
+            case NEEDED:
+                builder.withNeedClientAuthentication();
+                break;
+            case NONE:
+                break;
+            default:
+                throw new IllegalStateException("Unexpected client auth: " + config.clientAuthentication());
+        }
         return builder.build();
-    }
-
-    private static void addTrust(SSLFactory.Builder builder, SSLConfig config) {
-        if (config.withJDKTrust()) {
-            builder.withDefaultTrustMaterial();
-        }
-        if (config.withSystemPropertyTrust()) {
-            builder.withSystemPropertyDerivedTrustMaterial();
-        }
-        if (config.withTrustAll()) {
-            builder.withTrustingAllCertificatesWithoutValidation();
-        }
-        for (TrustConfig trust : config.trust()) {
-            addTrust(builder, trust);
-        }
     }
 
     private static void addTrust(SSLFactory.Builder builder, TrustConfig config) {
@@ -59,13 +93,15 @@ class DeephavenSslUtils {
     }
 
     private static void addTrust(SSLFactory.Builder builder, TrustCertificatesConfig config) {
-        try {
-            final X509Certificate[] x509Certificates = readX509Certificates(Path.of(config.path()));
-            builder.withTrustMaterial(x509Certificates);
-        } catch (GenericKeyStoreException e) {
-            throw new UncheckedDeephavenException(e.getCause());
-        } catch (CertificateException | IOException e) {
-            throw new UncheckedDeephavenException(e);
+        for (String path : config.path()) {
+            try {
+                final X509Certificate[] x509Certificates = readX509Certificates(Path.of(path));
+                builder.withTrustMaterial(x509Certificates);
+            } catch (GenericKeyStoreException e) {
+                throw new UncheckedDeephavenException(e.getCause());
+            } catch (CertificateException | IOException e) {
+                throw new UncheckedDeephavenException(e);
+            }
         }
     }
 

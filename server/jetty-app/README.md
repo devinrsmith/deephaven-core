@@ -73,7 +73,7 @@ JAVA_OPTS="-Ddeephaven.console.type=groovy" ./server/jetty-app/build/install/ser
 Finally, Gradle can be used to update the build and run the application in a single step:
 
 ```shell
-./gradlew server-jetty-app:run -Pgroovy
+./gradlew server-jetty-app:run -Pgroovy -PdevCerts
 ```
 
 ### Internals

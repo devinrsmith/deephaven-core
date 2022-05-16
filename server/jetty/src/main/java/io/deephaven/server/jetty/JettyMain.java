@@ -1,28 +1,20 @@
 package io.deephaven.server.jetty;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.deephaven.base.system.PrintStreamGlobals;
-import io.deephaven.configuration.Configuration;
-import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.Main;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class JettyMain extends Main {
     public static void main(String[] args)
             throws IOException, InterruptedException, ClassNotFoundException, TimeoutException {
-        final Configuration config = init(args, Main.class); // hack
 
-        final String file = config.getStringWithDefault("deephaven.json", "deephaven.json");
-        final ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
-        final ServerConfig serverConfig = objectMapper.readValue(new File(file), ServerConfig.class);
+        final JettyConfig jettyConfig = init(args, Main.class, JettyConfig.class, JettyConfig::defaultConfig);
 
         DaggerJettyServerComponent
                 .builder()
-                .withServerConfig(serverConfig)
+                .withJettyConfig(jettyConfig)
                 .withOut(PrintStreamGlobals.getOut())
                 .withErr(PrintStreamGlobals.getErr())
                 .build()

@@ -1,5 +1,6 @@
 package io.deephaven.server.netty;
 
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import io.deephaven.UncheckedDeephavenException;
@@ -18,10 +19,14 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 
 @Module
-public class NettyServerModule {
+public interface NettyServerModule {
+
+    @Binds
+    ServerConfig bindsServerConfig(NettyConfig serverConfig);
+
     @Provides
     static GrpcServer serverBuilder(
-            ServerConfig serverConfig,
+            NettyConfig serverConfig,
             Set<BindableService> services,
             Set<ServerInterceptor> interceptors) {
         final NettyServerBuilder serverBuilder =

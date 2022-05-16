@@ -27,6 +27,12 @@ dependencies {
         because 'jetty/netty implementations will access the configuration in their main()s'
     }
 
+    api project(':server-config')
+    Classpaths.inheritJacksonPlatform(project)
+    implementation('com.fasterxml.jackson.core:jackson-databind') {
+        because 'main()s will need to read in JSON configuration'
+    }
+
     implementation('io.github.hakky54:sslcontext-kickstart:7.4.3') {
         because 'it simplifies TLS configuration'
     }

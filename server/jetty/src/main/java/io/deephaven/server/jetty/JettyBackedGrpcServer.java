@@ -11,7 +11,12 @@ import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.util.resource.Resource;
@@ -34,7 +39,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
 
     @Inject
     public JettyBackedGrpcServer(
-            final ServerConfig config,
+            final JettyConfig config,
             final GrpcFilter filter) {
         jetty = new Server();
         jetty.addConnector(createConnector(jetty, config));

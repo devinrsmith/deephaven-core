@@ -1,18 +1,22 @@
 package io.deephaven.server.runner;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.deephaven.base.system.PrintStreamGlobals;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.server.config.ServerConfig;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Supplier;
 
 public class Main {
     private static void bootstrapSystemProperties(String[] args) throws IOException {
@@ -39,12 +43,14 @@ public class Main {
     /**
      * Common init method to share between main() implementations.
      * 
-     * @param mainClass
+     * @param mainClass the main class
+     * @param configClass the config class
+     * @param defaultConfig the default config supplier
      * @return the current configuration instance to be used when configuring the rest of the server
-     * @throws IOException
+     * @throws IOException if an I/O exception occurs
      */
     @NotNull
-    public static Configuration init(String[] args, Class<?> mainClass) throws IOException {
+    public static <T extends ServerConfig> T init(String[] args, Class<?> mainClass, Class<T> configClass, Supplier<T> defaultConfig) throws IOException {
         System.out.printf("# Starting %s%n", mainClass.getName());
 
         // No classes should be loaded before we bootstrap additional system properties
@@ -63,6 +69,16 @@ public class Main {
 
         final Configuration config = Configuration.getInstance();
 
+        final T serverConfig;
+        final String serverConfigFile = config.getStringWithDefault("server.config", null);
+        if (serverConfigFile == null) {
+            serverConfig = defaultConfig.get();
+        } else {
+            final ObjectMapper om = new ObjectMapper();
+            om.findAndRegisterModules();
+            serverConfig = om.readValue(new File(serverConfigFile), configClass);
+        }
+
         // After logging and config are working, redirect any future JUL logging to SLF4J
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
@@ -72,6 +88,6 @@ public class Main {
         final ProcessEnvironment processEnvironment =
                 ProcessEnvironment.basicInteractiveProcessInitialization(config, mainClass.getName(), log);
         Thread.setDefaultUncaughtExceptionHandler(processEnvironment.getFatalErrorReporter());
-        return config;
+        return serverConfig;
     }
 }

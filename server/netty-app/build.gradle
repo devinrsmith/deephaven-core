@@ -41,6 +41,10 @@ if (!hasProperty('excludeHotspotImpl')) {
     extraJvmArgs += ['--add-opens', 'java.management/sun.management=ALL-UNNAMED']
 }
 
+if (hasProperty('devCerts')) {
+    extraJvmArgs += ['-Dserver.config=netty-tls.json']
+}
+
 tasks.withType(JavaExec).configureEach {
     // This appends to the existing jvm args, so that java-open-nio still takes effect
     jvmArgs extraJvmArgs

@@ -1,0 +1,16 @@
+plugins {
+    id 'io.deephaven.project.register'
+}
+
+dependencies {
+    Classpaths.inheritImmutables(project)
+    Classpaths.inheritJacksonPlatform(project)
+    compileOnly 'com.fasterxml.jackson.core:jackson-annotations'
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind'
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jdk8') {
+        because 'we need to parse optional types'
+    }
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310') {
+        because 'we need to parse Durations'
+    }
+}

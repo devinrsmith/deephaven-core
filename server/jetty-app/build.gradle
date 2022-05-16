@@ -27,7 +27,7 @@ def extraJvmArgs = [
         '-XX:+UseG1GC',
         '-XX:MaxGCPauseMillis=100',
         '-XX:+UseStringDeduplication',
-        '-XshowSettings:vm',
+        '-XshowSettings:vm'
 ]
 
 if (hasProperty('groovy')) {
@@ -39,6 +39,10 @@ if (!hasProperty('excludeHotspotImpl')) {
         runtimeOnly project(':hotspot-impl')
     }
     extraJvmArgs += ['--add-opens', 'java.management/sun.management=ALL-UNNAMED']
+}
+
+if (hasProperty('devCerts')) {
+    extraJvmArgs += ['-Dserver.config=jetty-tls.json']
 }
 
 tasks.withType(JavaExec).configureEach {

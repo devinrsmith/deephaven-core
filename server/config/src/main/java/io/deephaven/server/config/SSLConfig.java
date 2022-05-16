@@ -59,8 +59,6 @@ public abstract class SSLConfig {
     }
 
     public enum ClientAuth {
-        NONE,
-        WANTED,
-        NEEDED
+        NONE, WANTED, NEEDED
     }
 }

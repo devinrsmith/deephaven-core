@@ -50,7 +50,8 @@ public class Main {
      * @throws IOException if an I/O exception occurs
      */
     @NotNull
-    public static <T extends ServerConfig> T init(String[] args, Class<?> mainClass, Class<T> configClass, Supplier<T> defaultConfig) throws IOException {
+    public static <T extends ServerConfig> T init(String[] args, Class<?> mainClass, Class<T> configClass,
+            Supplier<T> defaultConfig) throws IOException {
         System.out.printf("# Starting %s%n", mainClass.getName());
 
         // No classes should be loaded before we bootstrap additional system properties

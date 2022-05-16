@@ -45,8 +45,6 @@ dependencies {
     Classpaths.inheritAutoService(project)
     Classpaths.inheritAutoService(project, /* test */ true)
 
-    Classpaths.inheritImmutables(project)
-
     implementation project(':Plot')
 
     implementation project(':ClientSupport')

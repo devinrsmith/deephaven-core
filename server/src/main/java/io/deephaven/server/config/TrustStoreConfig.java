@@ -6,13 +6,11 @@ import org.immutables.value.Value.Immutable;
 import java.util.Optional;
 
 @Immutable
-@JsonDeserialize(as = ImmutableKeyStoreConfig.class)
-public abstract class KeyStoreConfig implements IdentityConfig {
+@JsonDeserialize(as = ImmutableTrustStoreConfig.class)
+public abstract class TrustStoreConfig implements TrustConfig {
     public abstract String path();
 
     public abstract String password();
-
-    public abstract Optional<String> keystoreType();
 
     @Override
     public final <V extends Visitor<T>, T> T walk(V visitor) {

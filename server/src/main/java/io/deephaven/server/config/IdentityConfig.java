@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = KeyStoreConfig.class, name = "keystore"),
         @JsonSubTypes.Type(value = PrivateKeyConfig.class, name = "privatekey"),
 })
-public interface KeySourceConfig {
+public interface IdentityConfig {
     <V extends Visitor<T>, T> T walk(V visitor);
 
     interface Visitor<T> {

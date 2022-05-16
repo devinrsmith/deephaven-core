@@ -1,10 +1,6 @@
 package io.deephaven.server.jetty;
 
-import io.deephaven.server.config.KeySourceConfig;
-import io.deephaven.server.config.KeySourceConfig.Visitor;
-import io.deephaven.server.config.KeyStoreConfig;
-import io.deephaven.server.config.PrivateKeyConfig;
-import io.deephaven.server.config.SSLConfig;
+import io.deephaven.server.config.DeephavenJettySslUtils;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.servlet.jakarta.web.GrpcWebFilter;
@@ -15,12 +11,7 @@ import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.util.resource.Resource;
@@ -142,7 +133,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
             // h2.setRateControlFactory(new RateControl.Factory() {});
             final ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
             alpn.setDefaultProtocol(http11.getProtocol());
-            final SslContextFactory.Server sslContextFactory = create(config.ssl().get());
+            final SslContextFactory.Server sslContextFactory = DeephavenJettySslUtils.forServer(config.ssl().get());
             final SslConnectionFactory tls = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
             serverConnector = new ServerConnector(server, tls, alpn, h2, http11);
         } else {
@@ -153,45 +144,5 @@ public class JettyBackedGrpcServer implements GrpcServer {
         serverConnector.setHost(config.host());
         serverConnector.setPort(config.port());
         return serverConnector;
-    }
-
-    private static SslContextFactory.Server create(SSLConfig config) {
-        final SslContextFactory.Server factory = new SslContextFactory.Server();
-        config.key().walk(new Visitor<Void>() {
-            @Override
-            public Void visit(KeyStoreConfig keyStore) {
-                factory.setKeyStorePath(keyStore.path());
-                factory.setKeyStorePassword(keyStore.password());
-                keyStore.type().ifPresent(factory::setKeyStoreType);
-                keyStore.provider().ifPresent(factory::setKeyStoreProvider);
-                return null;
-            }
-
-            @Override
-            public Void visit(PrivateKeyConfig privateKey) {
-                throw new IllegalStateException("Unable to set PrivateKeyConfig for Jetty ATM");
-            }
-        });
-        {
-            final KeySourceConfig trustSource = config.trust().orElse(null);
-            if (trustSource != null) {
-                trustSource.walk(new Visitor<Void>() {
-                    @Override
-                    public Void visit(KeyStoreConfig keyStore) {
-                        factory.setTrustStorePath(keyStore.path());
-                        factory.setTrustStorePassword(keyStore.password());
-                        keyStore.type().ifPresent(factory::setTrustStoreType);
-                        keyStore.provider().ifPresent(factory::setTrustStoreProvider);
-                        return null;
-                    }
-
-                    @Override
-                    public Void visit(PrivateKeyConfig privateKey) {
-                        throw new IllegalStateException("Unable to set PrivateKeyConfig for Jetty ATM");
-                    }
-                });
-            }
-        }
-        return factory;
     }
 }

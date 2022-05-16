@@ -17,6 +17,9 @@ dependencies {
     implementation 'org.eclipse.jetty.http2:http2-server:11.0.8'
     implementation 'org.eclipse.jetty:jetty-alpn-server:11.0.8'
 
+//    implementation 'io.github.hakky54:sslcontext-kickstart:7.4.3'
+    implementation 'io.github.hakky54:sslcontext-kickstart-for-jetty:7.4.3'
+
     // Todo: is this still true w/ Java 11+, jetty 11.0.x?
     // https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-with-jetty-alpn
     // Should this be left up to server-jetty-app?

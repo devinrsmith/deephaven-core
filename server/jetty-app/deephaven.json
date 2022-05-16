@@ -1,7 +1,7 @@
 {
   "port": 8443,
   "ssl": {
-    "key": {
+    "identity": {
       "type": "keystore",
       "path": "/home/devin/certs/echo-dell.fish-moth.ts.net.chain.p12",
       "password": "test"

@@ -1,7 +1,7 @@
 {
   "port": 8443,
   "ssl": {
-    "key": {
+    "identity": {
       "type": "privatekey",
       "certChainPath": "/home/devin/certs/echo-dell.fish-moth.ts.net.crt",
       "privateKeyPath": "/home/devin/certs/echo-dell.fish-moth.ts.net.pem"

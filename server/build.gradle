@@ -27,6 +27,10 @@ dependencies {
         because 'jetty/netty implementations will access the configuration in their main()s'
     }
 
+    implementation('io.github.hakky54:sslcontext-kickstart:7.4.3') {
+        because 'it simplifies TLS configuration'
+    }
+
     Classpaths.inheritFlatbuffer(project, 'implementation')
 
     Classpaths.inheritDagger(project)

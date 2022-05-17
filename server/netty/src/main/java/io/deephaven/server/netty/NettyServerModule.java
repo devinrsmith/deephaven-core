@@ -13,6 +13,7 @@ import io.grpc.Server;
 import io.grpc.ServerInterceptor;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyServerBuilder;
+import io.netty.handler.ssl.SslContextBuilder;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
@@ -36,8 +37,10 @@ public interface NettyServerModule {
         serverBuilder.maxInboundMessageSize(serverConfig.maxInboundMessageSize());
         if (serverConfig.ssl().isPresent()) {
             final SSLConfig ssl = serverConfig.ssl().get();
+            final SslContextBuilder netty = DeephavenNettySslUtils.forServer(ssl);
+            final SslContextBuilder grpc = GrpcSslContexts.configure(netty);
             try {
-                serverBuilder.sslContext(GrpcSslContexts.configure(DeephavenNettySslUtils.forServer(ssl)).build());
+                serverBuilder.sslContext(grpc.build());
             } catch (SSLException e) {
                 throw new UncheckedDeephavenException(e);
             }

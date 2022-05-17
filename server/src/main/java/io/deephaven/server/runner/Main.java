@@ -1,12 +1,12 @@
 package io.deephaven.server.runner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.deephaven.base.system.PrintStreamGlobals;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.server.config.Parser;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;
@@ -75,9 +75,7 @@ public class Main {
         if (serverConfigFile == null) {
             serverConfig = defaultConfig.get();
         } else {
-            final ObjectMapper om = new ObjectMapper();
-            om.findAndRegisterModules();
-            serverConfig = om.readValue(new File(serverConfigFile), configClass);
+            serverConfig = Parser.parseJson(new File(serverConfigFile), configClass);
         }
 
         // After logging and config are working, redirect any future JUL logging to SLF4J

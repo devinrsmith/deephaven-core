@@ -13,7 +13,4 @@ dependencies {
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jdk8') {
         because 'we need to parse optional types'
     }
-    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310') {
-        because 'we need to parse Durations'
-    }
 }

@@ -41,6 +41,13 @@ dependencies {
     Classpaths.inheritAutoService(project)
     Classpaths.inheritAutoService(project, /* test */ true)
 
+    Classpaths.inheritImmutables(project)
+
+    Classpaths.inheritJacksonPlatform(project)
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310') {
+        because 'we need to parse Durations'
+    }
+
     implementation project(':Plot')
 
     implementation project(':ClientSupport')

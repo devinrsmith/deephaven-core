@@ -102,6 +102,12 @@ project(':log-example-file').projectDir = file('log-factory/examples/example-fil
 include(':server-config')
 project(':server-config').projectDir = file('server/config')
 
+include(':server-config-netty')
+project(':server-config-netty').projectDir = file('server/config-netty')
+
+include(':server-config-jetty')
+project(':server-config-jetty').projectDir = file('server/config-jetty')
+
 include(':server-test')
 project(':server-test').projectDir = file('server/test')
 

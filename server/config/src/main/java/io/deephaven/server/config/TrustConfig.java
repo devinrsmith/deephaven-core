@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TrustStoreConfig.class, name = "truststore"),
-        @JsonSubTypes.Type(value = TrustStoreConfig.class, name = "certs"),
+        @JsonSubTypes.Type(value = TrustCertificatesConfig.class, name = "certs"),
 })
 public interface TrustConfig {
     <V extends Visitor<T>, T> T walk(V visitor);

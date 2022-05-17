@@ -13,7 +13,7 @@ dependencies {
     implementation 'io.grpc:grpc-netty'
 
     Classpaths.inheritImmutables(project)
-    Classpaths.inheritSSLContext(project, 'sslcontext-kickstart-for-netty')
+    implementation project(':server-config-netty')
 
     testImplementation project(':server-test')
 

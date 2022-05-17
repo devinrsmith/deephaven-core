@@ -1,13 +1,11 @@
 package io.deephaven.server.config;
 
-import io.deephaven.UncheckedDeephavenException;
-import io.grpc.util.CertificateUtils;
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.exception.GenericKeyStoreException;
+import nl.altindag.ssl.util.PemUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -33,17 +31,18 @@ class DeephavenSslUtils {
         }
         // Trust
         {
-            if (config.withJDKTrust()) {
-                builder.withDefaultTrustMaterial();
-            }
-            if (config.withSystemPropertyTrust()) {
-                builder.withSystemPropertyDerivedTrustMaterial();
-            }
             if (config.withTrustAll()) {
                 builder.withTrustingAllCertificatesWithoutValidation();
-            }
-            for (TrustConfig trust : config.trust()) {
-                addTrust(builder, trust);
+            } else {
+                if (config.withJDKTrust()) {
+                    builder.withDefaultTrustMaterial();
+                }
+                if (config.withSystemPropertyTrust()) {
+                    builder.withSystemPropertyDerivedTrustMaterial();
+                }
+                for (TrustConfig trust : config.trust()) {
+                    addTrust(builder, trust);
+                }
             }
         }
         // Ciphers
@@ -51,14 +50,14 @@ class DeephavenSslUtils {
             if (config.withSystemPropertyCiphers()) {
                 builder.withSystemPropertyDerivedCiphers();
             }
-            builder.withCiphers(config.ciphers().toArray(String[]::new));
+            builder.withCiphers(config.ciphers().toArray(new String[0]));
         }
         // Protocols
         {
             if (config.withSystemPropertyProtocols()) {
                 builder.withSystemPropertyDerivedProtocols();
             }
-            builder.withProtocols(config.protocols().toArray(String[]::new));
+            builder.withProtocols(config.protocols().toArray(new String[0]));
         }
         // Client authentication
         switch (config.clientAuthentication()) {
@@ -95,12 +94,14 @@ class DeephavenSslUtils {
     private static void addTrust(SSLFactory.Builder builder, TrustCertificatesConfig config) {
         for (String path : config.path()) {
             try {
-                final X509Certificate[] x509Certificates = readX509Certificates(Path.of(path));
+                final X509Certificate[] x509Certificates = readX509Certificates(Paths.get(path));
                 builder.withTrustMaterial(x509Certificates);
             } catch (GenericKeyStoreException e) {
-                throw new UncheckedDeephavenException(e.getCause());
-            } catch (CertificateException | IOException e) {
-                throw new UncheckedDeephavenException(e);
+                throw new RuntimeException(e.getCause());
+            } catch (CertificateException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
     }
@@ -108,9 +109,9 @@ class DeephavenSslUtils {
     private static void addTrust(SSLFactory.Builder builder, TrustStoreConfig config) {
         try {
             final char[] password = config.password().toCharArray();
-            builder.withTrustMaterial(Path.of(config.path()), password);
+            builder.withTrustMaterial(Paths.get(config.path()), password);
         } catch (GenericKeyStoreException e) {
-            throw new UncheckedDeephavenException(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -134,12 +135,12 @@ class DeephavenSslUtils {
         final char[] password = config.password().toCharArray();
         try {
             if (config.keystoreType().isPresent()) {
-                builder.withIdentityMaterial(Path.of(config.path()), password, config.keystoreType().get());
+                builder.withIdentityMaterial(Paths.get(config.path()), password, config.keystoreType().get());
             } else {
-                builder.withIdentityMaterial(Path.of(config.path()), password);
+                builder.withIdentityMaterial(Paths.get(config.path()), password);
             }
         } catch (GenericKeyStoreException e) {
-            throw new UncheckedDeephavenException(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -151,22 +152,22 @@ class DeephavenSslUtils {
             final String alias = config.alias().orElse(null);
             builder.withIdentityMaterial(privateKey, password, alias, x509Certificates);
         } catch (GenericKeyStoreException e) {
-            throw new UncheckedDeephavenException(e.getCause());
-        } catch (CertificateException | IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new UncheckedDeephavenException(e);
+            throw new RuntimeException(e.getCause());
+        } catch (CertificateException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
     private static PrivateKey readPrivateKey(Path path)
             throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        try (final InputStream in = Files.newInputStream(path)) {
-            return CertificateUtils.getPrivateKey(in);
-        }
+        // note: we *could* use io.grpc.util.CertificateUtils
+        return PemUtils.loadPrivateKey(path);
     }
 
     private static X509Certificate[] readX509Certificates(Path path) throws IOException, CertificateException {
-        try (final InputStream in = Files.newInputStream(path)) {
-            return CertificateUtils.getX509Certificates(in);
-        }
+        // note: we *could* use io.grpc.util.CertificateUtils
+        return PemUtils.loadCertificate(path).toArray(new X509Certificate[0]);
     }
 }

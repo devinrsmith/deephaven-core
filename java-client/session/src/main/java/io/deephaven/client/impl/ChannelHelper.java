@@ -1,11 +1,13 @@
 package io.deephaven.client.impl;
 
-import io.deephaven.uri.DeephavenTarget;
-import io.grpc.ChannelCredentials;
-import io.grpc.Grpc;
-import io.grpc.InsecureChannelCredentials;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.TlsChannelCredentials;
+import io.deephaven.server.config.DeephavenNettySslUtils;
+import io.deephaven.server.config.SSLConfig;
+import io.grpc.ManagedChannel;
+import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.NettyChannelBuilder;
+import io.netty.handler.ssl.SslContext;
+
+import javax.net.ssl.SSLException;
 
 public final class ChannelHelper {
 
@@ -14,20 +16,28 @@ public final class ChannelHelper {
     public static final int DEFAULT_PLAINTEXT_PORT = 10000;
 
     /**
-     * Creates a basic {@link ManagedChannelBuilder} by invoking
-     * {@link Grpc#newChannelBuilder(String, ChannelCredentials)} with {@link DeephavenTarget#toString()} and the
-     * appropriate {@link io.grpc.CallCredentials}.
+     * Creates a {@link ManagedChannel} according to the {@code clientConfig}.
      *
-     * @param target the Deephaven target
-     * @return the channel builder
+     * @param clientConfig the Deephaven client configuration
+     * @return the channel
      */
-    public static ManagedChannelBuilder<?> channelBuilder(DeephavenTarget target) {
-        final ChannelCredentials credentials;
-        if (target.isSecure()) {
-            credentials = TlsChannelCredentials.newBuilder().build();
+    public static ManagedChannel channel(ClientConfig clientConfig) {
+        final NettyChannelBuilder builder = NettyChannelBuilder
+                .forTarget(clientConfig.target().toString())
+                .maxInboundMessageSize(clientConfig.maxInboundMessageSize());
+        if (clientConfig.target().isSecure()) {
+            final SSLConfig ssl = clientConfig.sslOrDefault();
+            final SslContext sslContext;
+            try {
+                sslContext = GrpcSslContexts.configure(DeephavenNettySslUtils.forClient(ssl)).build();
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
+            builder.sslContext(sslContext);
         } else {
-            credentials = InsecureChannelCredentials.create();
+            builder.usePlaintext();
         }
-        return Grpc.newChannelBuilder(target.toString(), credentials);
+        clientConfig.userAgent().ifPresent(builder::userAgent);
+        return builder.build();
     }
 }

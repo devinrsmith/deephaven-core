@@ -1,6 +1,6 @@
 package io.deephaven.server.jetty;
 
-import io.deephaven.server.config.DeephavenJettySslUtils;
+import io.deephaven.ssl.config.DeephavenJettySslUtils;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.servlet.jakarta.web.GrpcWebFilter;

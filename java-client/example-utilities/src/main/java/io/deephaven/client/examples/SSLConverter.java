@@ -1,6 +1,6 @@
 package io.deephaven.client.examples;
 
-import io.deephaven.server.config.SSLConfig;
+import io.deephaven.ssl.config.SSLConfig;
 import picocli.CommandLine.ITypeConverter;
 
 import java.io.IOException;

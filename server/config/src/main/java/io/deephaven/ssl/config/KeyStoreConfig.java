@@ -1,4 +1,4 @@
-package io.deephaven.server.config;
+package io.deephaven.ssl.config;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.deephaven.annotations.BuildableStyle;

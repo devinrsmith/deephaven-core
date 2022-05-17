@@ -6,7 +6,7 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
-import io.deephaven.server.config.Parser;
+import io.deephaven.ssl.config.Parser;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;

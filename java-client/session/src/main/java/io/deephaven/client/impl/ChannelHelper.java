@@ -1,7 +1,7 @@
 package io.deephaven.client.impl;
 
-import io.deephaven.server.config.DeephavenNettySslUtils;
-import io.deephaven.server.config.SSLConfig;
+import io.deephaven.ssl.config.DeephavenNettySslUtils;
+import io.deephaven.ssl.config.SSLConfig;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;

@@ -1,4 +1,4 @@
-package io.deephaven.server.config;
+package io.deephaven.ssl.config;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -8,15 +8,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = KeyStoreConfig.class, name = "keystore"),
-        @JsonSubTypes.Type(value = PrivateKeyConfig.class, name = "privatekey"),
+        @JsonSubTypes.Type(value = TrustStoreConfig.class, name = "truststore"),
+        @JsonSubTypes.Type(value = TrustCertificatesConfig.class, name = "certs"),
 })
-public interface IdentityConfig {
+public interface TrustConfig {
     <V extends Visitor<T>, T> T walk(V visitor);
 
     interface Visitor<T> {
-        T visit(KeyStoreConfig keyStore);
+        T visit(TrustStoreConfig trustStore);
 
-        T visit(PrivateKeyConfig privateKey);
+        T visit(TrustCertificatesConfig certificates);
     }
 }

@@ -1,4 +1,4 @@
-package io.deephaven.server.config;
+package io.deephaven.ssl.config;
 
 import nl.altindag.ssl.util.JettySslUtils;
 import org.eclipse.jetty.util.ssl.SslContextFactory;

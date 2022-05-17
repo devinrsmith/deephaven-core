@@ -1,7 +1,7 @@
 package io.deephaven.client.impl;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.server.config.SSLConfig;
+import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.uri.DeephavenTarget;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;

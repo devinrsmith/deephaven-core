@@ -3,7 +3,7 @@ package io.deephaven.client.examples;
 import io.deephaven.client.impl.ChannelHelper;
 import io.deephaven.client.impl.ClientConfig;
 import io.deephaven.client.impl.ClientConfig.Builder;
-import io.deephaven.server.config.SSLConfig;
+import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.uri.DeephavenTarget;
 import io.deephaven.uri.DeephavenUri;
 import io.grpc.ManagedChannel;

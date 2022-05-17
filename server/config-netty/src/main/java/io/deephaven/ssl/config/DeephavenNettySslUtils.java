@@ -1,4 +1,4 @@
-package io.deephaven.server.config;
+package io.deephaven.ssl.config;
 
 import io.netty.handler.ssl.SslContextBuilder;
 import nl.altindag.ssl.util.NettySslUtils;

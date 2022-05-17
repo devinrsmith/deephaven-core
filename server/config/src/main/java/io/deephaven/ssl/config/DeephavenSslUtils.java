@@ -1,4 +1,4 @@
-package io.deephaven.server.config;
+package io.deephaven.ssl.config;
 
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.exception.GenericKeyStoreException;

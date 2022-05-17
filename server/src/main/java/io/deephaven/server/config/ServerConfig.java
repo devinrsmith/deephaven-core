@@ -1,5 +1,6 @@
 package io.deephaven.server.config;
 
+import io.deephaven.ssl.config.SSLConfig;
 import org.immutables.value.Value.Default;
 
 import java.time.Duration;

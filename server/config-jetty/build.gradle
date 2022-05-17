@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api project(':server-config')
+    api project(':ssl-config')
 
     Classpaths.inheritJetty11Platform(project)
     compileOnly 'org.eclipse.jetty:jetty-util'

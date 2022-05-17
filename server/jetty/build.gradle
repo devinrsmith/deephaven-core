@@ -32,7 +32,7 @@ dependencies {
     implementation 'org.eclipse.jetty.websocket:websocket-jakarta-server'
 
     Classpaths.inheritImmutables(project)
-    implementation project(':server-config-jetty')
+    implementation project(':ssl-config-jetty')
 
     testImplementation project(':server-test')
 

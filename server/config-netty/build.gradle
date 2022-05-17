@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api project(':server-config')
+    api project(':ssl-config')
 
     Classpaths.inheritGrpcPlatform(project)
     compileOnly('io.grpc:grpc-netty') {

@@ -17,8 +17,8 @@ dependencies {
   // TODO(deephaven-core#1783): Make proto-backplane-grpc implementation dependency
   api project(':proto:proto-backplane-grpc')
 
-  api project(':server-config')
-  implementation project(':server-config-netty')
+  api project(':ssl-config')
+  implementation project(':ssl-config-netty')
 
   Classpaths.inheritImmutables(project)
   Classpaths.inheritAutoService(project)

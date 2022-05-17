@@ -13,7 +13,7 @@ dependencies {
     implementation 'io.grpc:grpc-netty'
 
     Classpaths.inheritImmutables(project)
-    implementation project(':server-config-netty')
+    implementation project(':ssl-config-netty')
 
     testImplementation project(':server-test')
 

@@ -27,7 +27,7 @@ dependencies {
         because 'jetty/netty implementations will access the configuration in their main()s'
     }
 
-    api project(':server-config')
+    api project(':ssl-config')
 
     implementation('io.github.hakky54:sslcontext-kickstart:7.4.3') {
         because 'it simplifies TLS configuration'

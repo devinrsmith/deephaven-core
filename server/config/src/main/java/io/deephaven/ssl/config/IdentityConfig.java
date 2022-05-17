@@ -3,6 +3,12 @@ package io.deephaven.ssl.config;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+/**
+ * The identity material configuration.
+ *
+ * @see KeyStoreConfig
+ * @see PrivateKeyConfig
+ */
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,

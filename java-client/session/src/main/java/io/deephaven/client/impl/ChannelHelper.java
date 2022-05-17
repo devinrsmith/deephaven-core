@@ -6,6 +6,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 
 import javax.net.ssl.SSLException;
 
@@ -27,13 +28,14 @@ public final class ChannelHelper {
                 .maxInboundMessageSize(clientConfig.maxInboundMessageSize());
         if (clientConfig.target().isSecure()) {
             final SSLConfig ssl = clientConfig.sslOrDefault();
-            final SslContext sslContext;
+            final SslContextBuilder netty = DeephavenNettySslUtils.forClient(ssl);
+            final SslContext grpc;
             try {
-                sslContext = GrpcSslContexts.configure(DeephavenNettySslUtils.forClient(ssl)).build();
+                grpc = GrpcSslContexts.configure(netty).build();
             } catch (SSLException e) {
                 throw new RuntimeException(e);
             }
-            builder.sslContext(sslContext);
+            builder.sslContext(grpc);
         } else {
             builder.usePlaintext();
         }

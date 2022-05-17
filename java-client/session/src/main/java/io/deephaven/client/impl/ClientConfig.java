@@ -33,6 +33,12 @@ public abstract class ClientConfig {
         return 100 * 1024 * 1024;
     }
 
+    /**
+     * Equivalent to {@code ssl().orElseGet(SSLConfig::defaultConfig)}. Useful for retrieving a suitable configuration
+     * when {@code target().isSecure()} is {@code true}.
+     *
+     * @return the SSL configuration
+     */
     public final SSLConfig sslOrDefault() {
         return ssl().orElseGet(SSLConfig::defaultConfig);
     }

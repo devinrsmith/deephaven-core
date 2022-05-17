@@ -3,14 +3,32 @@ plugins {
     id 'io.deephaven.project.register'
 }
 
+description = 'The Deephaven SSL Configuration'
+
 dependencies {
     Classpaths.inheritImmutables(project)
     Classpaths.inheritJacksonPlatform(project)
+    Classpaths.inheritGrpcPlatform(project)
     Classpaths.inheritSSLContext(project, 'sslcontext-kickstart')
-    Classpaths.inheritSSLContext(project, 'sslcontext-kickstart-for-pem')
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jdk8') {
         because 'we need to parse optional types'
     }
+    compileOnly('io.grpc:grpc-core') {
+        because 'we need access to CertificateUtils'
+    }
+
+    Classpaths.inheritJUnitPlatform(project)
+    Classpaths.inheritAssertJ(project)
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+//    Classpaths.inheritSlf4j(project, 'slf4j-api', 'implementation')
+//    Classpaths.inheritSlf4j(project, 'slf4j-simple', 'testRuntimeOnly')
+}
+
+test {
+    useJUnitPlatform()
 }

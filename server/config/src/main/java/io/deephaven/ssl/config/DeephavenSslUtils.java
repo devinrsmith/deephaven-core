@@ -1,11 +1,13 @@
 package io.deephaven.ssl.config;
 
+import io.grpc.util.CertificateUtils;
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.exception.GenericKeyStoreException;
-import nl.altindag.ssl.util.PemUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +24,7 @@ class DeephavenSslUtils {
         final SSLFactory.Builder builder = SSLFactory.builder();
         // Identity
         {
-            if (config.withSystemPropertyIdentity()) {
+            if (config.identityProperties()) {
                 builder.withSystemPropertyDerivedIdentityMaterial();
             }
             for (IdentityConfig identity : config.identity()) {
@@ -31,13 +33,16 @@ class DeephavenSslUtils {
         }
         // Trust
         {
-            if (config.withTrustAll()) {
+            if (config.trustAll()) {
                 builder.withTrustingAllCertificatesWithoutValidation();
             } else {
-                if (config.withJDKTrust()) {
+                if (config.trustJdk()) {
                     builder.withDefaultTrustMaterial();
                 }
-                if (config.withSystemPropertyTrust()) {
+                if (config.trustSystem()) {
+                    builder.withSystemTrustMaterial();
+                }
+                if (config.trustProperties()) {
                     builder.withSystemPropertyDerivedTrustMaterial();
                 }
                 for (TrustConfig trust : config.trust()) {
@@ -47,14 +52,14 @@ class DeephavenSslUtils {
         }
         // Ciphers
         {
-            if (config.withSystemPropertyCiphers()) {
+            if (config.ciphersProperties()) {
                 builder.withSystemPropertyDerivedCiphers();
             }
             builder.withCiphers(config.ciphers().toArray(new String[0]));
         }
         // Protocols
         {
-            if (config.withSystemPropertyProtocols()) {
+            if (config.protocolsProperties()) {
                 builder.withSystemPropertyDerivedProtocols();
             }
             builder.withProtocols(config.protocols().toArray(new String[0]));
@@ -162,12 +167,14 @@ class DeephavenSslUtils {
 
     private static PrivateKey readPrivateKey(Path path)
             throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        // note: we *could* use io.grpc.util.CertificateUtils
-        return PemUtils.loadPrivateKey(path);
+        try (final InputStream in = Files.newInputStream(path)) {
+            return CertificateUtils.getPrivateKey(in);
+        }
     }
 
     private static X509Certificate[] readX509Certificates(Path path) throws IOException, CertificateException {
-        // note: we *could* use io.grpc.util.CertificateUtils
-        return PemUtils.loadCertificate(path).toArray(new X509Certificate[0]);
+        try (final InputStream in = Files.newInputStream(path)) {
+            return CertificateUtils.getX509Certificates(in);
+        }
     }
 }

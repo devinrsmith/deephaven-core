@@ -76,7 +76,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
         context.addFilter(new FilterHolder(filter), "/*", EnumSet.noneOf(DispatcherType.class));
 
         // Set up websocket for grpc-web
-        if (config.withWebsockets()) {
+        if (config.websockets()) {
             JakartaWebSocketServletContainerInitializer.configure(context, (servletContext, container) -> {
                 container.addEndpoint(
                         ServerEndpointConfig.Builder.create(WebSocketServerStream.class, "/{service}/{method}")

@@ -9,35 +9,45 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.Optional;
 
+/**
+ * The client configuration.
+ */
 @Immutable
 @BuildableStyle
 public abstract class ClientConfig {
+
+    public static final int DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 100 * 1024 * 1024;
 
     public static Builder builder() {
         return ImmutableClientConfig.builder();
     }
 
+    /**
+     * The target.
+     */
     public abstract DeephavenTarget target();
 
+    /**
+     * The SSL configuration.
+     */
     public abstract Optional<SSLConfig> ssl();
 
+    /**
+     * The user agent.
+     */
     public abstract Optional<String> userAgent();
 
     /**
      * The maximum inbound message size. Defaults to 100MiB.
-     *
-     * @return the maximum inbound message size
      */
     @Default
     public int maxInboundMessageSize() {
-        return 100 * 1024 * 1024;
+        return DEFAULT_MAX_INBOUND_MESSAGE_SIZE;
     }
 
     /**
      * Equivalent to {@code ssl().orElseGet(SSLConfig::defaultConfig)}. Useful for retrieving a suitable configuration
      * when {@code target().isSecure()} is {@code true}.
-     *
-     * @return the SSL configuration
      */
     public final SSLConfig sslOrDefault() {
         return ssl().orElseGet(SSLConfig::defaultConfig);

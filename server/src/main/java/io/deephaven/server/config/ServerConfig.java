@@ -12,9 +12,12 @@ import java.util.Optional;
 public interface ServerConfig {
 
     String DEFAULT_HOST = "0.0.0.0";
-    Duration DEFAULT_TOKEN_EXPIRE = Duration.ofMinutes(5);
+
+    int DEFAULT_TOKEN_EXPIRE_MIN = 5;
+
     int DEFAULT_SCHEDULER_POOL_SIZE = 4;
-    int DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 100 * 1024 * 1024;
+
+    int DEFAULT_MAX_INBOUND_MESSAGE_SIZE_MiB = 100;
 
     /**
      * The host. Defaults to {@value DEFAULT_HOST}.
@@ -35,11 +38,11 @@ public interface ServerConfig {
     Optional<SSLConfig> ssl();
 
     /**
-     * The token expiration. Defaults to 5 minutes.
+     * The token expiration. Defaults to {@value DEFAULT_TOKEN_EXPIRE_MIN} minutes.
      */
     @Default
     default Duration tokenExpire() {
-        return DEFAULT_TOKEN_EXPIRE;
+        return Duration.ofMinutes(DEFAULT_TOKEN_EXPIRE_MIN);
     }
 
     /**
@@ -51,10 +54,10 @@ public interface ServerConfig {
     }
 
     /**
-     * The maximum inbound message size. Defaults to 100 MiB.
+     * The maximum inbound message size. Defaults to {@value DEFAULT_MAX_INBOUND_MESSAGE_SIZE_MiB} MiB.
      */
     @Default
     default int maxInboundMessageSize() {
-        return DEFAULT_MAX_INBOUND_MESSAGE_SIZE;
+        return DEFAULT_MAX_INBOUND_MESSAGE_SIZE_MiB * 1024 * 1024;
     }
 }

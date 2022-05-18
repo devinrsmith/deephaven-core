@@ -1,6 +1,6 @@
 package io.deephaven.client.impl;
 
-import io.deephaven.ssl.config.DeephavenNettySslUtils;
+import io.deephaven.ssl.config.NettySSLConfig;
 import io.deephaven.ssl.config.SSLConfig;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.GrpcSslContexts;
@@ -28,7 +28,7 @@ public final class ChannelHelper {
                 .maxInboundMessageSize(clientConfig.maxInboundMessageSize());
         if (clientConfig.target().isSecure()) {
             final SSLConfig ssl = clientConfig.sslOrDefault();
-            final SslContextBuilder netty = DeephavenNettySslUtils.forClient(ssl);
+            final SslContextBuilder netty = NettySSLConfig.forClient(ssl);
             final SslContext grpc;
             try {
                 grpc = GrpcSslContexts.configure(netty).build();

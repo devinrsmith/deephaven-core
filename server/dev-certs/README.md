@@ -22,5 +22,5 @@ From the java client examples, the CA certificate can be referenced via:
 
 ```shell
 ./gradlew java-client-session-examples:installDist
-./java-client/session-examples/build/install/java-client-session-examples/bin/<program> --target dh://localhost:8443 --groovy --ssl server/dev-certs/client.json
+./java-client/session-examples/build/install/java-client-session-examples/bin/<program> --target dh://localhost:8443 --ssl server/dev-certs/client.json --groovy
 ```

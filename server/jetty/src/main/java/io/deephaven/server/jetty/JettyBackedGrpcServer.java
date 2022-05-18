@@ -1,6 +1,6 @@
 package io.deephaven.server.jetty;
 
-import io.deephaven.ssl.config.DeephavenJettySslUtils;
+import io.deephaven.ssl.config.JettySSLConfig;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
 import io.grpc.servlet.jakarta.web.GrpcWebFilter;
@@ -138,7 +138,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
             // h2.setRateControlFactory(new RateControl.Factory() {});
             final ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
             alpn.setDefaultProtocol(http11.getProtocol());
-            final SslContextFactory.Server sslContextFactory = DeephavenJettySslUtils.forServer(config.ssl().get());
+            final SslContextFactory.Server sslContextFactory = JettySSLConfig.forServer(config.ssl().get());
             final SslConnectionFactory tls = new SslConnectionFactory(sslContextFactory, alpn.getProtocol());
             serverConnector = new ServerConnector(server, tls, alpn, h2, http11);
         } else {

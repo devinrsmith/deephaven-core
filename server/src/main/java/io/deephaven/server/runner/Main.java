@@ -6,19 +6,22 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
-import io.deephaven.ssl.config.Parser;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Main {
+
+    public static final String SERVER_CONFIG_PROP = "server.config";
+
     private static void bootstrapSystemProperties(String[] args) throws IOException {
         if (args.length > 1) {
             throw new IllegalArgumentException("Expected 0 or 1 argument");
@@ -42,16 +45,20 @@ public class Main {
 
     /**
      * Common init method to share between main() implementations.
+     *
+     * <p>
+     * Sources the {@link ServerConfig} from the configuration file specified via the property
+     * {@value SERVER_CONFIG_PROP}.
      * 
      * @param mainClass the main class
-     * @param configClass the config class
      * @param defaultConfig the default config supplier
+     * @param pathFunction the config function
      * @return the current configuration instance to be used when configuring the rest of the server
      * @throws IOException if an I/O exception occurs
      */
     @NotNull
-    public static <T extends ServerConfig> T init(String[] args, Class<?> mainClass, Class<T> configClass,
-            Supplier<T> defaultConfig) throws IOException {
+    public static <T extends ServerConfig> T init(String[] args, Class<?> mainClass, Supplier<T> defaultConfig,
+            Function<Path, T> pathFunction) throws IOException {
         System.out.printf("# Starting %s%n", mainClass.getName());
 
         // No classes should be loaded before we bootstrap additional system properties
@@ -71,11 +78,11 @@ public class Main {
         final Configuration config = Configuration.getInstance();
 
         final T serverConfig;
-        final String serverConfigFile = config.getStringWithDefault("server.config", null);
+        final String serverConfigFile = config.getStringWithDefault(SERVER_CONFIG_PROP, null);
         if (serverConfigFile == null) {
             serverConfig = defaultConfig.get();
         } else {
-            serverConfig = Parser.parseJson(new File(serverConfigFile), configClass);
+            serverConfig = pathFunction.apply(Path.of(serverConfigFile));
         }
 
         // After logging and config are working, redirect any future JUL logging to SLF4J

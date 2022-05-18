@@ -42,7 +42,7 @@ if (!hasProperty('excludeHotspotImpl')) {
 }
 
 if (hasProperty('devCerts')) {
-    extraJvmArgs += ['-Dserver.config=netty-tls.json']
+    extraJvmArgs += ['-Dserver.config=etc/dev-netty-tls.json']
 }
 
 tasks.withType(JavaExec).configureEach {
@@ -55,7 +55,7 @@ tasks.withType(CreateStartScripts).configureEach {
 }
 
 applicationName = 'start'
-mainClassName = 'io.deephaven.server.netty.NettyAppMain'
+mainClassName = 'io.deephaven.server.netty.NettyMain'
 
 artifacts {
     applicationDist project.tasks.findByName('distTar')

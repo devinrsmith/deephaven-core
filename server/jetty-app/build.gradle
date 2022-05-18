@@ -42,7 +42,7 @@ if (!hasProperty('excludeHotspotImpl')) {
 }
 
 if (hasProperty('devCerts')) {
-    extraJvmArgs += ['-Dserver.config=jetty-tls.json']
+    extraJvmArgs += ['-Dserver.config=etc/dev-jetty-tls.json']
 }
 
 tasks.withType(JavaExec).configureEach {
@@ -55,7 +55,7 @@ tasks.withType(CreateStartScripts).configureEach {
 }
 
 applicationName = 'start'
-mainClassName = 'io.deephaven.server.jetty.JettyAppMain'
+mainClassName = 'io.deephaven.server.jetty.JettyMain'
 
 artifacts {
     applicationDist project.tasks.findByName('distTar')

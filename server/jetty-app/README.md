@@ -95,7 +95,8 @@ JSON:
    "port": 10000,
    "tokenExpire": "PT5m",
    "schedulerPoolSize": 4,
-   "maxInboundMessageSize": 104857600
+   "maxInboundMessageSize": 104857600,
+   "websockets": true
 }
 ```
 
@@ -107,7 +108,6 @@ To bind to the local interface instead of all interfaces:
 ```
 
 To enable SSL, you can can add an `ssl` and `identity` section:
-
 ```json
 {
    "ssl": {
@@ -120,8 +120,7 @@ To enable SSL, you can can add an `ssl` and `identity` section:
 }
 ```
 
-If your identity material is in the Java keystore format, you can specify that with a different identity type:
-
+If your identity material is in the Java keystore format, you can specify that with the `keystore` identity type:
 ```json
 {
    "ssl": {
@@ -135,7 +134,6 @@ If your identity material is in the Java keystore format, you can specify that w
 ```
 
 The SSL block provides further options for configuring SSL behavior:
-
 ```json
 {
    "ssl": {
@@ -146,7 +144,6 @@ The SSL block provides further options for configuring SSL behavior:
 ```
 
 To bring up a SSL-enabled server on port 8443 with a development key and certificate, you can run:
-
 ```shell
 ./gradlew server-jetty-app:run -Pgroovy -PdevCerts
 ```

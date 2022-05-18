@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * The SSL configuration object.
+ *
+ * @see io.deephaven.ssl.config
  */
 @Immutable
 @BuildableStyle
@@ -25,7 +27,29 @@ public abstract class SSLConfig {
 
     /**
      * The default configuration includes {@link #trustJdk()}, but no other trust nor identity material. This
-     * configuration is suitable for generic clients connecting to public services.
+     * configuration is suitable for generic clients connecting to public services. The default configuration is
+     * represented by the JSON:
+     * 
+     * <pre>
+     * {
+     *   "identity": [],
+     *   "identityProperties": false,
+     *
+     *   "trust": [],
+     *   "trustJdk": true,
+     *   "trustSystem": false,
+     *   "trustProperties": false,
+     *   "trustAll": false,
+     *
+     *   "ciphers": [],
+     *   "ciphersProperties": false,
+     *
+     *   "protocols": [],
+     *   "protocolsProperties": false,
+     *
+     *   "clientAuthentication": "NONE"
+     * }
+     * </pre>
      *
      * @return the default configuration
      */

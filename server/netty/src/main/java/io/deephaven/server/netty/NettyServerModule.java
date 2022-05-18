@@ -4,7 +4,7 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import io.deephaven.UncheckedDeephavenException;
-import io.deephaven.ssl.config.DeephavenNettySslUtils;
+import io.deephaven.ssl.config.NettySSLConfig;
 import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
@@ -37,7 +37,7 @@ public interface NettyServerModule {
         serverBuilder.maxInboundMessageSize(serverConfig.maxInboundMessageSize());
         if (serverConfig.ssl().isPresent()) {
             final SSLConfig ssl = serverConfig.ssl().get();
-            final SslContextBuilder netty = DeephavenNettySslUtils.forServer(ssl);
+            final SslContextBuilder netty = NettySSLConfig.forServer(ssl);
             final SslContextBuilder grpc = GrpcSslContexts.configure(netty);
             try {
                 serverBuilder.sslContext(grpc.build());

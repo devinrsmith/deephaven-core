@@ -23,6 +23,10 @@ public abstract class NettyConfig implements ServerConfig {
     public static final int DEFAULT_SSL_PORT = 443;
     public static final int DEFAULT_PLAINTEXT_PORT = 8080;
 
+    public static Builder builder() {
+        return ImmutableNettyConfig.builder();
+    }
+
     /**
      * The default configuration is suitable for local development purposes. It inherits all of the defaults, which are
      * documented on each individual method. In brief, the default server starts up on all interfaces with plaintext
@@ -44,7 +48,7 @@ public abstract class NettyConfig implements ServerConfig {
      * </pre>
      */
     public static NettyConfig defaultConfig() {
-        return ImmutableNettyConfig.builder().build();
+        return builder().build();
     }
 
     /**
@@ -84,5 +88,9 @@ public abstract class NettyConfig implements ServerConfig {
     @Default
     public int port() {
         return ssl().isPresent() ? DEFAULT_SSL_PORT : DEFAULT_PLAINTEXT_PORT;
+    }
+
+    public interface Builder extends ServerConfig.Builder<NettyConfig, Builder> {
+
     }
 }

@@ -60,4 +60,20 @@ public interface ServerConfig {
     default int maxInboundMessageSize() {
         return DEFAULT_MAX_INBOUND_MESSAGE_SIZE_MiB * 1024 * 1024;
     }
+
+    interface Builder<T, B extends Builder<T, B>> {
+        B host(String host);
+
+        B port(int port);
+
+        B ssl(SSLConfig ssl);
+
+        B tokenExpire(Duration duration);
+
+        B schedulerPoolSize(int schedulerPoolSize);
+
+        B maxInboundMessageSize(int maxInboundMessageSize);
+
+        T build();
+    }
 }

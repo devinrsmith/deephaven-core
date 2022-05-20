@@ -1,27 +1,46 @@
 package io.deephaven.server.netty;
 
 import io.deephaven.base.system.PrintStreamGlobals;
+import io.deephaven.configuration.Configuration;
+import io.deephaven.server.netty.NettyConfig.Builder;
 import io.deephaven.server.runner.Main;
+import io.deephaven.ssl.config.PrivateKeyConfig;
+import io.deephaven.ssl.config.SSLConfig;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
-/**
- * The Netty server main. Parses {@link NettyConfig} from the JSON file from the property {@value SERVER_CONFIG_PROP}.
- *
- * @see io.deephaven.server.netty
- * @see NettyConfig
- */
 public class NettyMain extends Main {
     public static void main(String[] args)
             throws IOException, InterruptedException, ClassNotFoundException, TimeoutException {
+        final Configuration config = init(args, Main.class);
 
-        final NettyConfig nettyConfig =
-                init(args, Main.class, NettyConfig::defaultConfig, NettyConfig::parseJsonUnchecked);
+        // defaults to 5 minutes
+        int httpSessionExpireMs = config.getIntegerWithDefault("http.session.durationMs", 300000);
+        int httpPort = config.getIntegerWithDefault("http.port", 8080);
+        int schedulerPoolSize = config.getIntegerWithDefault("scheduler.poolSize", 4);
+        int maxInboundMessageSize = config.getIntegerWithDefault("grpc.maxInboundMessageSize", 100 * 1024 * 1024);
+
+        String sslCa = config.getStringWithDefault("ssl.identity.ca", null);
+        String sslKey = config.getStringWithDefault("ssl.identity.key", null);
+
+        Builder builder = NettyConfig.builder();
+
+        if (sslCa != null && sslKey != null) {
+            PrivateKeyConfig identity = PrivateKeyConfig.builder().certChainPath(sslCa).privateKeyPath(sslKey).build();
+            SSLConfig ssl = SSLConfig.builder().addIdentity(identity).build();
+            builder.ssl(ssl);
+        }
 
         DaggerNettyServerComponent
                 .builder()
-                .withNettyConfig(nettyConfig)
+                .withNettyConfig(builder
+                        .tokenExpire(Duration.ofMillis(httpSessionExpireMs))
+                        .port(httpPort)
+                        .schedulerPoolSize(schedulerPoolSize)
+                        .maxInboundMessageSize(maxInboundMessageSize)
+                        .build())
                 .withOut(PrintStreamGlobals.getOut())
                 .withErr(PrintStreamGlobals.getErr())
                 .build()

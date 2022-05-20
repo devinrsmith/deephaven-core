@@ -42,7 +42,10 @@ if (!hasProperty('excludeHotspotImpl')) {
 }
 
 if (hasProperty('devCerts')) {
-    extraJvmArgs += ['-Dserver.config=etc/dev-jetty-tls.json']
+    extraJvmArgs += [
+            '-Dhttp.port=8443',
+            '-Dssl.identity.ca=../dev-certs/ca.crt',
+            '-Dssl.identity.key=../dev-certs/key.pem']
 }
 
 tasks.withType(JavaExec).configureEach {

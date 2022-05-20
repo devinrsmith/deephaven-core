@@ -24,6 +24,10 @@ public abstract class JettyConfig implements ServerConfig {
     public static final int DEFAULT_PLAINTEXT_PORT = 10000;
     public static final boolean DEFAULT_WITH_WEBSOCKETS = true;
 
+    public static Builder builder() {
+        return ImmutableJettyConfig.builder();
+    }
+
     /**
      * The default configuration is suitable for local development purposes. It inherits all of the defaults, which are
      * documented on each individual method. In brief, the default server starts up on all interfaces with plaintext
@@ -46,7 +50,7 @@ public abstract class JettyConfig implements ServerConfig {
      * </pre>
      */
     public static JettyConfig defaultConfig() {
-        return ImmutableJettyConfig.builder().build();
+        return builder().build();
     }
 
     /**
@@ -94,5 +98,10 @@ public abstract class JettyConfig implements ServerConfig {
     @Default
     public boolean websockets() {
         return DEFAULT_WITH_WEBSOCKETS;
+    }
+
+    public interface Builder extends ServerConfig.Builder<JettyConfig, Builder> {
+
+        Builder websockets(boolean websockets);
     }
 }

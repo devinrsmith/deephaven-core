@@ -27,6 +27,8 @@ dependencies {
         because 'jetty/netty implementations will access the configuration in their main()s'
     }
 
+    api project(':ssl-config')
+
     Classpaths.inheritFlatbuffer(project, 'implementation')
 
     Classpaths.inheritDagger(project)
@@ -34,6 +36,13 @@ dependencies {
 
     Classpaths.inheritAutoService(project)
     Classpaths.inheritAutoService(project, /* test */ true)
+
+    Classpaths.inheritImmutables(project)
+
+    Classpaths.inheritJacksonPlatform(project)
+    runtimeOnly('com.fasterxml.jackson.datatype:jackson-datatype-jsr310') {
+        because 'we need to parse Durations'
+    }
 
     implementation project(':Plot')
 

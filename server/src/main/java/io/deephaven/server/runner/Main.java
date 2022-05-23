@@ -6,6 +6,8 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.ssl.config.IdentityPrivateKey;
+import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -13,6 +15,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 public class Main {
     private static void bootstrapSystemProperties(String[] args) throws IOException {
@@ -73,5 +76,24 @@ public class Main {
                 ProcessEnvironment.basicInteractiveProcessInitialization(config, mainClass.getName(), log);
         Thread.setDefaultUncaughtExceptionHandler(processEnvironment.getFatalErrorReporter());
         return config;
+    }
+
+    public static Optional<SSLConfig> parseSSLConfig(Configuration config) {
+        String sslType = config.getStringWithDefault("ssl.identity.type", null);
+        if (sslType == null) {
+            return Optional.empty();
+        }
+        if (!"privatekey".equals(sslType)) {
+            throw new IllegalArgumentException("Only support `privatekey` identity type through Configuration");
+        }
+        String identityCa = config.getStringWithDefault("ssl.identity.certChainPath", null);
+        String identityKey = config.getStringWithDefault("ssl.identity.privateKeyPath", null);
+        if (identityCa == null || identityKey == null) {
+            throw new IllegalArgumentException(
+                    "Must specify `ssl.identity.certChainPath` and `ssl.identity.privateKeyPath`");
+        }
+        IdentityPrivateKey identity =
+                IdentityPrivateKey.builder().certChainPath(identityCa).privateKeyPath(identityKey).build();
+        return Optional.of(SSLConfig.builder().identity(identity).build());
     }
 }

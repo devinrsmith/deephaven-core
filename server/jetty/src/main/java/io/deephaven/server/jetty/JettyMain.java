@@ -4,8 +4,6 @@ import io.deephaven.base.system.PrintStreamGlobals;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.server.jetty.JettyConfig.Builder;
 import io.deephaven.server.runner.Main;
-import io.deephaven.ssl.config.PrivateKeyConfig;
-import io.deephaven.ssl.config.SSLConfig;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -22,16 +20,8 @@ public class JettyMain extends Main {
         int schedulerPoolSize = config.getIntegerWithDefault("scheduler.poolSize", 4);
         int maxInboundMessageSize = config.getIntegerWithDefault("grpc.maxInboundMessageSize", 100 * 1024 * 1024);
 
-        String sslCa = config.getStringWithDefault("ssl.identity.ca", null);
-        String sslKey = config.getStringWithDefault("ssl.identity.key", null);
-
         Builder builder = JettyConfig.builder();
-
-        if (sslCa != null && sslKey != null) {
-            PrivateKeyConfig identity = PrivateKeyConfig.builder().certChainPath(sslCa).privateKeyPath(sslKey).build();
-            SSLConfig ssl = SSLConfig.builder().addIdentity(identity).build();
-            builder.ssl(ssl);
-        }
+        Main.parseSSLConfig(config).ifPresent(builder::ssl);
 
         DaggerJettyServerComponent
                 .builder()

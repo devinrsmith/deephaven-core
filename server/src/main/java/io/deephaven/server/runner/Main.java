@@ -15,6 +15,8 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Optional;
 
 public class Main {
@@ -79,21 +81,14 @@ public class Main {
     }
 
     public static Optional<SSLConfig> parseSSLConfig(Configuration config) {
-        String sslType = config.getStringWithDefault("ssl.identity.type", null);
-        if (sslType == null) {
+        String sslFile = config.getStringWithDefault("ssl.file", null);
+        if (sslFile == null) {
             return Optional.empty();
         }
-        if (!"privatekey".equals(sslType)) {
-            throw new IllegalArgumentException("Only support `privatekey` identity type through Configuration");
+        try {
+            return Optional.of(SSLConfig.parseJson(Path.of(sslFile)));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        String identityCa = config.getStringWithDefault("ssl.identity.certChainPath", null);
-        String identityKey = config.getStringWithDefault("ssl.identity.privateKeyPath", null);
-        if (identityCa == null || identityKey == null) {
-            throw new IllegalArgumentException(
-                    "Must specify `ssl.identity.certChainPath` and `ssl.identity.privateKeyPath`");
-        }
-        IdentityPrivateKey identity =
-                IdentityPrivateKey.builder().certChainPath(identityCa).privateKeyPath(identityKey).build();
-        return Optional.of(SSLConfig.builder().identity(identity).build());
     }
 }

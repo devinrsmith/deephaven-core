@@ -44,8 +44,9 @@ if (!hasProperty('excludeHotspotImpl')) {
 if (hasProperty('devCerts')) {
     extraJvmArgs += [
             '-Dhttp.port=8443',
-            '-Dssl.identity.ca=../dev-certs/ca.crt',
-            '-Dssl.identity.key=../dev-certs/key.pem']
+            '-Dssl.identity.type=privatekey',
+            '-Dssl.identity.certChainPath=../dev-certs/ca.crt',
+            '-Dssl.identity.privateKeyPath=../dev-certs/key.pem']
 }
 
 tasks.withType(JavaExec).configureEach {

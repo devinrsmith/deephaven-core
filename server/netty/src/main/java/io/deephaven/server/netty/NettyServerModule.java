@@ -18,6 +18,7 @@ import io.grpc.ServerInterceptor;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.util.NettySslUtils;
 
@@ -42,12 +43,17 @@ public interface NettyServerModule {
         interceptors.forEach(serverBuilder::intercept);
         serverBuilder.maxInboundMessageSize(serverConfig.maxInboundMessageSize());
         if (serverConfig.ssl().isPresent()) {
-            final SSLConfig ssl = serverConfig.ssl().get();
-            final SSLFactory kickstart = KickstartUtils.create(ssl, TrustJdk.of(), ProtocolsJdk.of(), CiphersJdk.of());
-            final SslContextBuilder netty = NettySslUtils.forServer(kickstart);
-            final SslContextBuilder grpc = GrpcSslContexts.configure(netty);
+            final SSLConfig ssl = serverConfig.ssl().get().orTrust(TrustJdk.of());
+            final SSLFactory kickstart = KickstartUtils.create(ssl);
+            SslContextBuilder sslBuilder = NettySslUtils.forServer(kickstart);
+            GrpcSslContexts.configure(sslBuilder);
+            if (ssl.protocols().isPresent() || ssl.ciphers().isPresent()) {
+                sslBuilder
+                        .protocols(kickstart.getProtocols())
+                        .ciphers(kickstart.getCiphers(), SupportedCipherSuiteFilter.INSTANCE);
+            }
             try {
-                serverBuilder.sslContext(grpc.build());
+                serverBuilder.sslContext(sslBuilder.build());
             } catch (SSLException e) {
                 throw new UncheckedDeephavenException(e);
             }

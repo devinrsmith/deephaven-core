@@ -2,8 +2,9 @@ package io.deephaven.server.jetty;
 
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
-import io.deephaven.ssl.config.CiphersJdk;
-import io.deephaven.ssl.config.ProtocolsJdk;
+import io.deephaven.ssl.config.CiphersIntermediate;
+import io.deephaven.ssl.config.ProtocolsIntermediate;
+import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.ssl.config.TrustJdk;
 import io.deephaven.ssl.config.impl.KickstartUtils;
 import io.grpc.servlet.web.websocket.WebSocketServerStream;
@@ -139,8 +140,13 @@ public class JettyBackedGrpcServer implements GrpcServer {
             // h2.setRateControlFactory(new RateControl.Factory() {});
             final ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
             alpn.setDefaultProtocol(http11.getProtocol());
-            final SSLFactory kickstart =
-                    KickstartUtils.create(config.ssl().get(), TrustJdk.of(), ProtocolsJdk.of(), CiphersJdk.of());
+            // The Jetty server is getting intermediate setup by default if none are configured. This is most similar to
+            // how the Netty servers gets setup by default via GrpcSslContexts.
+            final SSLConfig sslConfig = config.ssl().get()
+                    .orTrust(TrustJdk.of())
+                    .orProtocols(ProtocolsIntermediate.of())
+                    .orCiphers(CiphersIntermediate.of());
+            final SSLFactory kickstart = KickstartUtils.create(sslConfig);
             final SslContextFactory.Server jetty = JettySslUtils.forServer(kickstart);
             final SslConnectionFactory tls = new SslConnectionFactory(jetty, alpn.getProtocol());
             serverConnector = new ServerConnector(server, tls, alpn, h2, http11);

@@ -6,7 +6,11 @@ import dagger.Provides;
 import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.server.runner.GrpcServer;
+import io.deephaven.ssl.config.CiphersJdk;
+import io.deephaven.ssl.config.Protocols;
+import io.deephaven.ssl.config.ProtocolsJdk;
 import io.deephaven.ssl.config.SSLConfig;
+import io.deephaven.ssl.config.TrustJdk;
 import io.deephaven.ssl.config.impl.KickstartUtils;
 import io.grpc.BindableService;
 import io.grpc.Server;
@@ -39,7 +43,7 @@ public interface NettyServerModule {
         serverBuilder.maxInboundMessageSize(serverConfig.maxInboundMessageSize());
         if (serverConfig.ssl().isPresent()) {
             final SSLConfig ssl = serverConfig.ssl().get();
-            final SSLFactory kickstart = KickstartUtils.create(ssl);
+            final SSLFactory kickstart = KickstartUtils.create(ssl, TrustJdk.of(), ProtocolsJdk.of(), CiphersJdk.of());
             final SslContextBuilder netty = NettySslUtils.forServer(kickstart);
             final SslContextBuilder grpc = GrpcSslContexts.configure(netty);
             try {

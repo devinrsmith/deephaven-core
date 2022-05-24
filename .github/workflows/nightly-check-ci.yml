@@ -55,6 +55,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 1
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue --rerun-tasks ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -62,6 +63,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 2
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -69,6 +71,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 3
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -76,6 +79,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 4
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -83,6 +87,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 5
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -90,6 +95,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 6
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -97,6 +103,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 7
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -104,6 +111,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 8
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -111,6 +119,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 9
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}
@@ -118,6 +127,7 @@ jobs:
 
       - name: Run gradle ${{ matrix.gradle-task }} on java ${{ matrix.test-jvm-version }} 10
         uses: burrunan/gradle-cache-action@v1
+        if: always()
         with:
           job-id: gradle-run
           arguments: --continue -PforceTest=true ${{ matrix.gradle-task }} -PtestRuntimeVersion=${{ matrix.test-jvm-version }}

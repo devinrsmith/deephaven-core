@@ -19,6 +19,6 @@ configurations {
 }
 
 dependencies {
-  compile project(':deephaven-jpy')
+  compile fileTree(dir: "${rootDir}/py/jpy-lib", include: ['*.jar'])
   compile project(':deephaven-jpy-config')
 }

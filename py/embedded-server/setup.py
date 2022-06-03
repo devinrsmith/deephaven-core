@@ -44,7 +44,7 @@ setup(name='deephaven-server',
           'Programming Language :: Python :: 3.7',
       ],
       keywords='Deephaven Development',
-      install_requires=['deephaven-jpy=={}'.format(__normalized_version__),
+      install_requires=['jpy==0.11.0.dev1',
                         'deephaven=={}'.format(__normalized_version__),
                         ],
       )

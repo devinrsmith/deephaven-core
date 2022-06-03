@@ -6,7 +6,7 @@ set -o nounset
 
 JAVA_HOME="${JAVA_HOME}"
 
-./gradlew py-server:buildWheel py-embedded-server:buildWheel
+./gradlew py-server:assemble py-embedded-server:assemble
 
 python3 -m venv /tmp/py-embedded-server
 /tmp/py-embedded-server/bin/pip install --upgrade pip setuptools

@@ -5,23 +5,23 @@ set -o pipefail
 set -o nounset
 
 JAVA_HOME="${JAVA_HOME}"
+PYTHON="${PYTHON:-python3}"
+VENV_PATH="/tmp/py-embedded-server-${PYTHON}"
+PORT="${PORT:-8080}"
 
-./gradlew py-server:assemble py-embedded-server:assemble
+#./gradlew py-server:assemble py-embedded-server:assemble
 
-python3 -m venv /tmp/py-embedded-server
-/tmp/py-embedded-server/bin/pip install --upgrade pip setuptools
-/tmp/py-embedded-server/bin/pip install -r docker/server/src/main/server/requirements.txt
-/tmp/py-embedded-server/bin/pip install \
+"${PYTHON}" -m venv "${VENV_PATH}"
+
+"${VENV_PATH}/bin/pip" install -q --upgrade pip setuptools
+"${VENV_PATH}/bin/pip" install -q -r docker/server/src/main/server/requirements.txt
+"${VENV_PATH}/bin/pip" install -q \
   py/server/build/wheel/deephaven-0.14.0-py3-none-any.whl \
   py/embedded-server/build/wheel/deephaven_server-0.14.0-py3-none-any.whl
 
-/tmp/py-embedded-server/bin/python -i <(cat <<EOF
+"${VENV_PATH}/bin/python" -i <(cat <<EOF
 from deephaven_server import *
-s = Server()
-s.start()
-
-from deephaven import *
-ticking_table = time_table('00:00:01').update_view(formulas=["Col1 = i % 2"])
-print(ticking_table)
+server = Server(port=$PORT)
+server.start()
 EOF
 )

@@ -832,7 +832,7 @@ int JType_CreateJavaArray(JNIEnv* jenv, JPy_JType* componentType, PyObject* pyAr
     return 0;
 }
 
-int JType_ConvertPythonToJavaObject(JNIEnv* jenv, JPy_JType* type, PyObject* pyArg, jobject* objectRef, jboolean allowObjectWrapping)
+int JType_ConvertPythonToJavaObject2(JNIEnv* jenv, JPy_JType* type, PyObject* pyArg, jobject* objectRef, jboolean allowObjectWrapping)
 {
     // Note: There may be a potential memory leak here.
     // If a new local reference is created in this function and assigned to *objectRef, the reference may escape.
@@ -929,6 +929,53 @@ int JType_ConvertPythonToJavaObject(JNIEnv* jenv, JPy_JType* type, PyObject* pyA
     return JType_PythonToJavaConversionError(type, pyArg);
 }
 
+int JType_ConvertPythonToJavaObject(JNIEnv* jenv, JPy_JType* type, PyObject* pyArg, jobject* objectRef, jboolean allowObjectWrapping)
+{
+    // Quick try for https://github.com/deephaven/deephaven-core/issues/2477
+    // note: this is causing crash on startup, seems to crash server on startup
+    // server_1      | Initiating shutdown due to: Uncaught exception in thread main
+//       server_1      | java.lang.RuntimeException: Error in Python interpreter:
+//       server_1      | Type: <class 'SystemError'>
+//       server_1      | Value: <method-wrapper '__len__' of list object at 0x7f4704524308> returned a result with an error set
+//       server_1      | Line: <not available>
+//       server_1      | Namespace: <not available>
+//       server_1      | File: <not available>
+//       server_1      | Traceback (most recent call last):
+//       server_1      |
+//       server_1      |         at org.jpy.PyLib.callAndReturnObject(Native Method)
+//       server_1      |         at org.jpy.PyObject.callMethod(PyObject.java:432)
+//       server_1      |         at org.jpy.PyListWrapper.size(PyListWrapper.java:36)
+//       server_1      |         at org.jpy.PyListWrapper$1.<init>(PyListWrapper.java:60)
+//       server_1      |         at org.jpy.PyListWrapper.iterator(PyListWrapper.java:58)
+//       server_1      |         at io.deephaven.engine.util.PythonDeephavenSession.createDiff(PythonDeephavenSession.java:230)
+//       server_1      |         at io.deephaven.engine.util.PythonDeephavenSession.createDiff(PythonDeephavenSession.java:53)
+//       server_1      |         at io.deephaven.engine.util.AbstractScriptSession.applyDiff(AbstractScriptSession.java:139)
+//       server_1      |         at io.deephaven.engine.util.AbstractScriptSession.publishInitial(AbstractScriptSession.java:107)
+//       server_1      |         at io.deephaven.engine.util.PythonDeephavenSession.<init>(PythonDeephavenSession.java:96)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule.bindPythonSession(PythonConsoleSessionModule.java:28)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule_BindPythonSessionFactory.bindPythonSession(PythonConsoleSessionModule_BindPythonSessionFactory.java:53)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule_BindPythonSessionFactory.get(PythonConsoleSessionModule_BindPythonSessionFactory.java:40)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule_BindPythonSessionFactory.get(PythonConsoleSessionModule_BindPythonSessionFactory.java:12)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule_BindScriptSessionFactory.get(PythonConsoleSessionModule_BindScriptSessionFactory.java:31)
+//       server_1      |         at io.deephaven.server.console.python.PythonConsoleSessionModule_BindScriptSessionFactory.get(PythonConsoleSessionModule_BindScriptSessionFactory.java:10)
+//       server_1      |         at io.deephaven.server.runner.DeephavenApiServerModule.provideScriptSession(DeephavenApiServerModule.java:91)
+//       server_1      |         at io.deephaven.server.runner.DeephavenApiServerModule_ProvideScriptSessionFactory.provideScriptSession(DeephavenApiServerModule_ProvideScriptSessionFactory.java:42)
+//       server_1      |         at io.deephaven.server.runner.DeephavenApiServerModule_ProvideScriptSessionFactory.get(DeephavenApiServerModule_ProvideScriptSessionFactory.java:31)
+//       server_1      |         at io.deephaven.server.runner.DeephavenApiServerModule_ProvideScriptSessionFactory.get(DeephavenApiServerModule_ProvideScriptSessionFactory.java:10)
+//       server_1      |         at dagger.internal.DoubleCheck.get(DoubleCheck.java:47)
+//       server_1      |         at io.deephaven.server.runner.DeephavenApiServer.run(DeephavenApiServer.java:109)
+//       server_1      |         at io.deephaven.server.netty.NettyMain.main(NettyMain.java:31)
+//       server_1      |         at io.deephaven.server.netty.NettyAppMain.main(NettyAppMain.java:9)
+    int result;
+    PyObject* jObject = PyObject_GetAttrString(pyArg, "j_object");
+    if (jObject != NULL) {
+        result = JType_ConvertPythonToJavaObject2(jenv, type, jObject, objectRef, JNI_TRUE);
+        JPy_DECREF(jObject);
+    } else {
+        result = JType_ConvertPythonToJavaObject2(jenv, type, pyArg, objectRef, allowObjectWrapping);
+    }
+    return result;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // The following functions deal with type creation, initialisation, and resolution.

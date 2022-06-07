@@ -316,7 +316,13 @@ public final class ServletAdapter {
         public void onAllDataRead() {
             logger.log(FINE, "[{0}] onAllDataRead", logId);
             stream.transportState().runOnTransportThread(
-                    () -> stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true));
+                    () -> {
+                        try {
+                            stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true);
+                        } catch (IllegalStateException e) {
+                            logger.log(FINE, String.format("[%s] onAllDataRead exception", logId), e);
+                        }
+                    });
         }
 
         @Override

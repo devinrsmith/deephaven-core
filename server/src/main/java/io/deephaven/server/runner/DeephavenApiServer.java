@@ -112,13 +112,13 @@ public class DeephavenApiServer {
         log.info().append("Starting UGP...").endl();
         ugp.start();
 
-        MemoryTableLoggers.maybeStartStatsCollection();
+        // MemoryTableLoggers.maybeStartStatsCollection();
 
-        log.info().append("Starting Performance Trackers...").endl();
-        QueryPerformanceRecorder.installPoolAllocationRecorder();
-        QueryPerformanceRecorder.installUpdateGraphLockInstrumentation();
-        UpdatePerformanceTracker.start();
-        ServerStateTracker.start();
+        // log.info().append("Starting Performance Trackers...").endl();
+        // QueryPerformanceRecorder.installPoolAllocationRecorder();
+        // QueryPerformanceRecorder.installUpdateGraphLockInstrumentation();
+        // UpdatePerformanceTracker.start();
+        // ServerStateTracker.start();
 
         for (UriResolver resolver : uriResolvers.resolvers()) {
             log.debug().append("Found table resolver ").append(resolver.getClass().toString()).endl();

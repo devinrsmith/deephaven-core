@@ -4,10 +4,10 @@ COPY licenses/ /
 
 ARG DEEPHAVEN_VERSION
 
-ADD serverApplicationDist/server-${DEEPHAVEN_VERSION}.tar /opt/deephaven
+ADD serverApplicationDist/server-jetty-${DEEPHAVEN_VERSION}.tar /opt/deephaven
 
 RUN set -eux; \
-    ln -s /opt/deephaven/server-${DEEPHAVEN_VERSION} /opt/deephaven/server
+    ln -s /opt/deephaven/server-jetty-${DEEPHAVEN_VERSION} /opt/deephaven/server-jetty
 
 COPY image-bootstrap.properties image-bootstrap.properties
 
@@ -29,8 +29,8 @@ VOLUME /cache
 # will not attempt to start). If the server is running but trying to shut down, failure will
 # occur within about 9s, as the port will connect correctly, but respond that it isn't
 # available.
-HEALTHCHECK --interval=3s --retries=3 --timeout=11s CMD /bin/grpc_health_probe -addr=localhost:8080 -connect-timeout=10s || exit 1
-ENTRYPOINT [ "/opt/deephaven/server/bin/start", "image-bootstrap.properties" ]
+HEALTHCHECK --interval=3s --retries=3 --timeout=11s CMD /bin/grpc_health_probe -addr=localhost:10000 -connect-timeout=10s || exit 1
+ENTRYPOINT [ "/opt/deephaven/server-jetty/bin/start", "image-bootstrap.properties" ]
 
 ARG DEEPHAVEN_VERSION
 LABEL \
@@ -41,3 +41,5 @@ LABEL \
     org.opencontainers.image.title="Deephaven Server - server-slim" \
     org.opencontainers.image.description="Deephaven Community Core Server - server-slim" \
     org.opencontainers.image.licenses="Deephaven Community License Agreement 1.0"
+
+#ENV JAVA_TOOL_OPTIONS="-Xmx1g"

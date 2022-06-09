@@ -8,6 +8,7 @@ import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.ssl.config.TrustJdk;
 import io.deephaven.ssl.config.impl.KickstartUtils;
 import io.grpc.servlet.web.websocket.WebSocketServerStream;
+import io.grpc.servlet.jakarta.web.GrpcWebFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.websocket.server.ServerEndpointConfig;
 import nl.altindag.ssl.SSLFactory;
@@ -33,6 +34,7 @@ import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServlet
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;

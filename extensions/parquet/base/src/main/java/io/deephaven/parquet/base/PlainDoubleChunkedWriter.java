@@ -28,11 +28,11 @@ public class PlainDoubleChunkedWriter extends AbstractBulkValuesWriter<DoubleBuf
     private final ByteBuffer innerBuffer;
 
     PlainDoubleChunkedWriter(int pageSize, ByteBufferAllocator allocator) {
-        innerBuffer = allocator.allocate(pageSize);
+        this.innerBuffer = allocator.allocate(pageSize);
         innerBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        originalLimit = innerBuffer.limit();
+        this.originalLimit = innerBuffer.limit();
         this.allocator = allocator;
-        targetBuffer = innerBuffer.asDoubleBuffer();
+        this.targetBuffer = innerBuffer.asDoubleBuffer();
         targetBuffer.mark();
         innerBuffer.mark();
     }

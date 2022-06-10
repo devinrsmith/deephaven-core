@@ -1,6 +1,5 @@
 package io.deephaven.parquet.base.util;
 
-import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.bytes.BytesUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -8,24 +7,36 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 
 public class Helpers {
-    public static void readBytes(ReadableByteChannel f, byte[] buffer) throws IOException {
+    public static void readFully(SeekableByteChannel f, byte[] buffer) throws IOException {
         int read = f.read(ByteBuffer.wrap(buffer));
         if (read != buffer.length) {
             throw new IOException("Expected for bytes, only read " + read + " while it expected " + buffer.length);
         }
     }
 
-    public static BytesInput readBytes(ReadableByteChannel f, int expected) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(expected);
+    public static void readFully(SeekableByteChannel f, ByteBuffer buffer) throws IOException {
+        int expected = buffer.remaining();
+        int read = f.read(buffer);
+        if (read != expected) {
+            throw new IOException("Expected for bytes, only read " + read + " while it expected " + expected);
+        }
+    }
+
+    public static ByteBuffer readFully(SeekableByteChannel f, int expected) throws IOException {
+        ByteBuffer buffer = allocate(expected);
         int read = f.read(buffer);
         if (read != expected) {
             throw new IOException("Expected for bytes, only read " + read + " while it expected " + expected);
         }
         buffer.flip();
-        return BytesInput.from(buffer);
+        return buffer;
+    }
+
+    public static ByteBuffer allocate(int capacity) {
+        return ByteBuffer.allocate(capacity);
     }
 
     static int readUnsignedVarInt(ByteBuffer in) {

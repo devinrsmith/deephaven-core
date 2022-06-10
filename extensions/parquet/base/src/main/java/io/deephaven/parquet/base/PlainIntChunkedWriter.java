@@ -22,11 +22,11 @@ public class PlainIntChunkedWriter extends AbstractBulkValuesWriter<IntBuffer, N
     private final ByteBuffer innerBuffer;
 
     PlainIntChunkedWriter(int pageSize, ByteBufferAllocator allocator) {
-        innerBuffer = allocator.allocate(pageSize);
+        this.innerBuffer = allocator.allocate(pageSize);
         innerBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        originalLimit = innerBuffer.limit();
+        this.originalLimit = innerBuffer.limit();
         this.allocator = allocator;
-        targetBuffer = innerBuffer.asIntBuffer();
+        this.targetBuffer = innerBuffer.asIntBuffer();
         targetBuffer.mark();
         innerBuffer.mark();
     }

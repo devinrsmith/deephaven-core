@@ -28,11 +28,11 @@ public class PlainFloatChunkedWriter extends AbstractBulkValuesWriter<FloatBuffe
     private final ByteBuffer innerBuffer;
 
     PlainFloatChunkedWriter(int pageSize, ByteBufferAllocator allocator) {
-        innerBuffer = allocator.allocate(pageSize);
+        this.innerBuffer = allocator.allocate(pageSize);
         innerBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        originalLimit = innerBuffer.limit();
+        this.originalLimit = innerBuffer.limit();
         this.allocator = allocator;
-        targetBuffer = innerBuffer.asFloatBuffer();
+        this.targetBuffer = innerBuffer.asFloatBuffer();
         targetBuffer.mark();
         innerBuffer.mark();
     }

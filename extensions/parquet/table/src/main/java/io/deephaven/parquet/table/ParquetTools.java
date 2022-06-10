@@ -608,7 +608,8 @@ public class ParquetTools {
             return new ParquetFileReader(
                     parquetFile.getAbsolutePath(),
                     new CachedChannelProvider(
-                            new TrackedSeekableChannelsProvider(TrackedFileHandleFactory.getInstance()), 1 << 7));
+                            new TrackedSeekableChannelsProvider(TrackedFileHandleFactory.getInstance()), 1 << 7),
+                    0);
         } catch (IOException e) {
             throw new TableDataException("Failed to create Parquet file reader: " + parquetFile, e);
         }

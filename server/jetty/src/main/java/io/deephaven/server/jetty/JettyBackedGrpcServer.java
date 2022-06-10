@@ -77,6 +77,9 @@ public class JettyBackedGrpcServer implements GrpcServer {
         // Direct jetty all use this configuration as the root application
         context.setContextPath("/");
 
+        // Handle grpc-web connections, translate to vanilla grpc
+        context.addFilter(new FilterHolder(new GrpcWebFilter()), "/*", EnumSet.noneOf(DispatcherType.class));
+
         // Wire up the provided grpc filter
         context.addFilter(new FilterHolder(filter), "/*", EnumSet.noneOf(DispatcherType.class));
 

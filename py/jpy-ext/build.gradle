@@ -19,6 +19,6 @@ configurations {
 }
 
 dependencies {
-  compile fileTree(dir: "${rootDir}/py/jpy-lib", include: ['*.jar'])
+  compile 'org.jpyconsortium:jpy:0.11.0-SNAPSHOT'
   compile project(':deephaven-jpy-config')
 }

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Hack to mount /etc/fstab since doesn't auto-mount
+mount -a
+
+"${__dir}/bin/start" "$@"

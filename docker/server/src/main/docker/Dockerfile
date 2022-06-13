@@ -31,7 +31,7 @@ COPY --from=install / /
 VOLUME /data
 VOLUME /cache
 HEALTHCHECK --interval=3s --retries=3 --timeout=11s CMD /bin/grpc_health_probe -addr=localhost:10000 -connect-timeout=10s || exit 1
-ENTRYPOINT [ "/opt/deephaven/server-jetty/bin/start", "image-bootstrap.properties" ]
+ENTRYPOINT [ "/opt/deephaven/server-jetty/start-fly", "image-bootstrap.properties" ]
 ARG DEEPHAVEN_VERSION
 ARG SERVER
 LABEL \

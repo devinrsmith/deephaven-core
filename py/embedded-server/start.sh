@@ -21,7 +21,7 @@ PORT="${PORT:-8080}"
 
 "${VENV_PATH}/bin/python" -i <(cat <<EOF
 from deephaven_server import *
-server = Server(port=$PORT)
+server = Server(host="127.0.0.1", port=$PORT)
 server.start()
 EOF
 )

@@ -25,6 +25,7 @@ import javax.inject.Provider;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 /**
  * Entrypoint for the Deephaven gRPC server, starting the various engine and script components, running any specified
@@ -130,7 +131,8 @@ public class DeephavenApiServer {
 
         log.info().append("Starting server...").endl();
         server.start();
-        log.info().append("Server started on port ").append(server.getPort()).endl();
+        log.info().append("Server started on: ")
+                .append(server.describeSockets().stream().collect(Collectors.joining(",", "[", "]"))).endl();
 
         return this;
     }

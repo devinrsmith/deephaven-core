@@ -316,7 +316,18 @@ public final class ServletAdapter {
         public void onAllDataRead() {
             logger.log(FINE, "[{0}] onAllDataRead", logId);
             stream.transportState().runOnTransportThread(
-                    () -> stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true));
+                    () -> {
+                        try {
+                            stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true);
+                        } catch (IllegalStateException e) {
+                            //noinspection StatementWithEmptyBody
+                            if ("Past end of stream".equals(e.getMessage())) {
+                                // ignore
+                            } else {
+                                throw e;
+                            }
+                        }
+                    });
         }
 
         @Override

@@ -5,3 +5,10 @@ plugins {
 dependencies {
 
 }
+
+wheel {
+    src 'deephaven'
+    src 'integration-tests'
+    src 'test_helper'
+    src 'tests'
+}

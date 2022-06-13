@@ -10,7 +10,6 @@ configurations {
 }
 
 dependencies {
-    pythonWheel project(':deephaven-legacy-wheel')
     pythonWheel project(':py-server')
 }
 

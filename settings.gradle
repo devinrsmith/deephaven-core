@@ -142,6 +142,8 @@ include(':ParquetHadoop')
 
 include(':codegen')
 
+include(':cpp-client')
+
 include(':replication-util')
 project(':replication-util').projectDir = file('replication/util')
 
@@ -198,6 +200,9 @@ project(':extensions-kafka').projectDir = file('extensions/kafka')
 
 include(':extensions-parquet-base')
 project(':extensions-parquet-base').projectDir = file('extensions/parquet/base')
+
+include(':extensions-parquet-compression')
+project(':extensions-parquet-compression').projectDir = file('extensions/parquet/compression')
 
 include(':extensions-parquet-table')
 project(':extensions-parquet-table').projectDir = file('extensions/parquet/table')
@@ -286,9 +291,6 @@ project(':py-embedded-server').projectDir = file('py/embedded-server')
 
 include(':py-embedded-server-java-runtime')
 project(':py-embedded-server-java-runtime').projectDir = file('py/embedded-server/java-runtime')
-
-include(':deephaven-legacy-wheel')
-project(':deephaven-legacy-wheel').projectDir = file('py/deephaven-legacy-wheel')
 
 include(':sphinx')
 project(':sphinx').buildFileName = 'sphinx.gradle'

@@ -52,7 +52,7 @@ setup(
     keywords='Deephaven Development',
     python_requires='>=3.7',
     install_requires=[
-        'jpy==0.11.0.dev1',
+        'jpy==0.11.0.dev2',
         'deephaven-plugin',
         'numpy',
         'dill>=0.2.8',

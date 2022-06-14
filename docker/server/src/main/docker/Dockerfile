@@ -15,7 +15,7 @@ RUN set -eux; \
 
 COPY wheels/ /wheels
 RUN set -eux; \
-    python -m pip install -q --no-cache-dir jpy==0.11.0.dev1; \
+    python -m pip install -q --no-cache-dir jpy==0.11.0.dev2; \
     python -m pip install -q --no-index --no-cache-dir /wheels/*.whl; \
     rm -r /wheels
 

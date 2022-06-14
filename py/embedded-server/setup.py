@@ -22,29 +22,38 @@ def normalize_version(version):
     return str(packaging.version.Version(version))
 
 
-__deephaven_version__ = os.environ['DEEPHAVEN_VERSION']
+__deephaven_version__ = os.environ['DEEPHAVEN_VERSION'] + ".dev0"
 __normalized_version__ = normalize_version(__deephaven_version__)
 
-setup(name='deephaven-server',
-      version=__normalized_version__,
-      description='Deephaven Embedded Server Python Package',
-      long_description=README,
-      packages=find_namespace_packages(exclude=("tests")),
-      package_data={'deephaven_server': ['jars/*']},
-      url='https://deephaven.io/',
-      author='Deephaven Data Labs',
-      author_email='python@deephaven.io',
-      license='Deephaven Community License',
-      test_loader='unittest:TestLoader',
-      classifiers=[
-          'Development Status :: 2 - Pre-Alpha',
-          'Intended Audience :: Developers, Data Scientists',
-          'Topic :: Software Development :: Build Tools',
-          'License :: Other/Proprietary License',
-          'Programming Language :: Python :: 3.7',
-      ],
-      keywords='Deephaven Development',
-      install_requires=['jpy==0.11.0.dev1',
-                        'deephaven=={}'.format(__normalized_version__),
-                        ],
-      )
+setup(
+    name='deephaven-server',
+    version=__normalized_version__,
+    description='Deephaven Embedded Server Python Package',
+    long_description=README,
+    long_description_content_type='text/markdown',
+    packages=find_namespace_packages(exclude=("tests")),
+    package_data={'deephaven_server': ['jars/*']},
+    url='https://deephaven.io/',
+    author='Deephaven Data Labs',
+    author_email='python@deephaven.io',
+    license='Deephaven Community License',
+    test_loader='unittest:TestLoader',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Topic :: Software Development :: Build Tools',
+        'License :: Other/Proprietary License',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10'
+    ],
+    keywords='Deephaven Development',
+    python_requires='>=3.7',
+    install_requires=[
+        'jpy==0.11.0.dev1',
+        'deephaven-core=={}'.format(__normalized_version__),
+    ]
+)

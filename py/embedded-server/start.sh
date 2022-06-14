@@ -16,8 +16,8 @@ PORT="${PORT:-8080}"
 "${VENV_PATH}/bin/pip" install -q --upgrade pip setuptools
 "${VENV_PATH}/bin/pip" install -q -r docker/server/src/main/server/requirements.txt
 "${VENV_PATH}/bin/pip" install -q \
-  py/server/build/wheel/deephaven-0.14.0-py3-none-any.whl \
-  py/embedded-server/build/wheel/deephaven_server-0.14.0-py3-none-any.whl
+  py/server/build/wheel/deephaven_core-0.14.0.dev0-py3-none-any.whl \
+  py/embedded-server/build/wheel/deephaven_server-0.14.0.dev0-py3-none-any.whl
 
 "${VENV_PATH}/bin/python" -i <(cat <<EOF
 from deephaven_server import *

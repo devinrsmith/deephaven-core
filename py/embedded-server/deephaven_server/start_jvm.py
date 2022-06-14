@@ -8,16 +8,16 @@ from glob import glob
 import jpyutil
 import importlib.resources
 
-def _jars_directory():
+def _jars_path():
     return importlib.resources.path(__package__, 'jars')
 
 def _compiler_directives():
-    with _jars_directory() as jars_directory:
-        return jars_directory / 'dh-compiler-directives.txt'
+    with _jars_path() as jars_path:
+        return jars_path / 'dh-compiler-directives.txt'
 
 def _jars():
-    with _jars_directory() as jars_directory:
-        return jars_directory.glob('*.jar')
+    with _jars_path() as jars_path:
+        return jars_path.glob('*.jar')
 
 DEFAULT_JVM_PROPERTIES = {
     # Default to no init scripts, the built-in py init script will prevent using python stdin
@@ -84,7 +84,6 @@ def start_jvm(
         jvm_args = required_jvm_args
     else:
         jvm_args.extend(required_jvm_args)
-
 
     jpyutil.init_jvm(
         java_home=java_home,

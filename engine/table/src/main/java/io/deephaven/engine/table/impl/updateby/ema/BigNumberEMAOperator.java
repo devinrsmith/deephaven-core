@@ -288,17 +288,17 @@ public abstract class BigNumberEMAOperator<T> extends BaseObjectUpdateByOperator
             final boolean isNullTime) {
         boolean doReset = false;
         if (isNull) {
-            if (control.onNullValue == BadDataBehavior.Throw) {
+            if (control.getOnNullValue() == BadDataBehavior.Throw) {
                 throw new TableDataException("Encountered invalid data during EMA processing");
             }
-            doReset = control.onNullValue == BadDataBehavior.Reset;
+            doReset = control.getOnNullValue() == BadDataBehavior.Reset;
         }
 
         if (isNullTime) {
-            if (control.onNullTime == BadDataBehavior.Throw) {
+            if (control.getOnNullTime() == BadDataBehavior.Throw) {
                 throw new TableDataException("Encountered null timestamp during EMA processing");
             }
-            doReset = control.onNullTime == BadDataBehavior.Reset;
+            doReset = control.getOnNullTime() == BadDataBehavior.Reset;
         }
 
         if (doReset) {

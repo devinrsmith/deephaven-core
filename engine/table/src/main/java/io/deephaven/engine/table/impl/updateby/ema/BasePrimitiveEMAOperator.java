@@ -288,17 +288,17 @@ public abstract class BasePrimitiveEMAOperator extends BaseDoubleUpdateByOperato
             final boolean isNullTime) {
         boolean doReset = false;
         if (isNull) {
-            if (control.onNullValue == BadDataBehavior.Throw) {
+            if (control.getOnNullValue() == BadDataBehavior.Throw) {
                 throw new TableDataException("Encountered null value during EMA processing");
             }
-            doReset = control.onNullValue == BadDataBehavior.Reset;
+            doReset = control.getOnNullValue()  == BadDataBehavior.Reset;
         } else if (isNan) {
-            if (control.onNanValue == BadDataBehavior.Throw) {
+            if (control.getOnNanValue() == BadDataBehavior.Throw) {
                 throw new TableDataException("Encountered NaN value during EMA processing");
-            } else if (control.onNanValue == BadDataBehavior.Poison) {
+            } else if (control.getOnNanValue() == BadDataBehavior.Poison) {
                 ctx.curVal = Double.NaN;
             } else {
-                doReset = control.onNanValue == BadDataBehavior.Reset;
+                doReset = control.getOnNanValue() == BadDataBehavior.Reset;
             }
         }
 

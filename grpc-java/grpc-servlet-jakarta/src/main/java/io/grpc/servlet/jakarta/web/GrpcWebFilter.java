@@ -21,9 +21,9 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
- * Servlet filter that translates grpc-web on the fly to match what is expected by GrpcServlet.
- * This work is done in-process with no addition copies to the request or response data - only
- * the content type header and the trailer content is specially treated at this time.
+ * Servlet filter that translates grpc-web on the fly to match what is expected by GrpcServlet. This work is done
+ * in-process with no addition copies to the request or response data - only the content type header and the trailer
+ * content is specially treated at this time.
  *
  * Note that grpc-web-text is not yet supported.
  */
@@ -64,7 +64,8 @@ public class GrpcWebFilter extends HttpFilter {
                                     if (map != null) {
                                         // write a payload, even for an empty set of trailers, but not for
                                         // the absence of trailers.
-                                        int trailerLength = map.entrySet().stream().mapToInt(e -> e.getKey().length() + e.getValue().length() + 4).sum();
+                                        int trailerLength = map.entrySet().stream()
+                                                .mapToInt(e -> e.getKey().length() + e.getValue().length() + 4).sum();
                                         ByteBuffer payload = ByteBuffer.allocate(5 + trailerLength);
                                         payload.put((byte) 0x80);
                                         payload.putInt(trailerLength);

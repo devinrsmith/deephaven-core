@@ -320,7 +320,7 @@ public final class ServletAdapter {
                         try {
                             stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true);
                         } catch (IllegalStateException e) {
-                            //noinspection StatementWithEmptyBody
+                            // noinspection StatementWithEmptyBody
                             if ("Past end of stream".equals(e.getMessage())) {
                                 // ignore
                             } else {

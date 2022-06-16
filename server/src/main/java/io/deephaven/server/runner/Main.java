@@ -9,8 +9,9 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.LogBufferGlobal;
 import io.deephaven.io.logger.LogBufferInterceptor;
 import io.deephaven.io.logger.Logger;
-import io.deephaven.ssl.config.IdentityPrivateKey;
-import io.deephaven.ssl.config.SSLConfig;
+import io.deephaven.ssl.config.*;
+import io.deephaven.ssl.config.SSLConfig.Builder;
+import io.deephaven.ssl.config.SSLConfig.ClientAuth;
 import io.deephaven.util.process.ProcessEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -25,7 +26,11 @@ public class Main {
     public static final String SSL_IDENTITY_TYPE = "ssl.identity.type";
     public static final String SSL_IDENTITY_CERT_CHAIN_PATH = "ssl.identity.certChainPath";
     public static final String SSL_IDENTITY_PRIVATE_KEY_PATH = "ssl.identity.privateKeyPath";
+    public static final String SSL_TRUST_TYPE = "ssl.trust.type";
+    public static final String SSL_TRUST_PATH = "ssl.trust.path";
+    public static final String SSL_CLIENT_AUTH = "ssl.clientAuthentication";
     public static final String PRIVATEKEY = "privatekey";
+    public static final String CERTS = "certs";
 
     private static void bootstrapSystemProperties(String[] args) throws IOException {
         if (args.length > 1) {
@@ -88,29 +93,65 @@ public class Main {
     }
 
     /**
-     * Parses the configuration properties {@value SSL_IDENTITY_TYPE}, {@value SSL_IDENTITY_CERT_CHAIN_PATH}, and
-     * {@value SSL_IDENTITY_PRIVATE_KEY_PATH}. Currently, the only valid identity type is {@value PRIVATEKEY}.
+     * Parses the configuration properties {@value SSL_IDENTITY_TYPE}, {@value SSL_IDENTITY_CERT_CHAIN_PATH},
+     * {@value SSL_IDENTITY_PRIVATE_KEY_PATH}, {@value SSL_TRUST_TYPE}, {@value SSL_TRUST_PATH}, and
+     * {@value SSL_CLIENT_AUTH}. Currently, the only valid identity type is {@value PRIVATEKEY}, and the only valid
+     * trust type is {@value CERTS}. If trust material is present, {@link TrustJdk} will also be added, and
+     * {@link ClientAuth#NEEDED} will be selected unless explicitly set.
      *
      * @param config the config
      * @return the optional SSL config
      */
     public static Optional<SSLConfig> parseSSLConfig(Configuration config) {
-        String sslType = config.getStringWithDefault(SSL_IDENTITY_TYPE, null);
-        if (sslType == null) {
+        final Optional<Identity> identity = parseIdentityConfig(config);
+        if (identity.isEmpty()) {
             return Optional.empty();
         }
-        if (!PRIVATEKEY.equals(sslType)) {
+        final Builder builder = SSLConfig.builder().identity(identity.get());
+        parseTrustConfig(config).ifPresent(
+                t -> builder.trust(t).clientAuthentication(parseClientAuth(config).orElse(ClientAuth.NEEDED)));
+        return Optional.of(builder.build());
+    }
+
+    private static Optional<Identity> parseIdentityConfig(Configuration config) {
+        final String identityType = config.getStringWithDefault(SSL_IDENTITY_TYPE, null);
+        if (identityType == null) {
+            return Optional.empty();
+        }
+        if (!PRIVATEKEY.equals(identityType)) {
             throw new IllegalArgumentException(
                     String.format("Only support `%s` identity type through Configuration", PRIVATEKEY));
         }
-        String identityCa = config.getStringWithDefault(SSL_IDENTITY_CERT_CHAIN_PATH, null);
-        String identityKey = config.getStringWithDefault(SSL_IDENTITY_PRIVATE_KEY_PATH, null);
+        final String identityCa = config.getStringWithDefault(SSL_IDENTITY_CERT_CHAIN_PATH, null);
+        final String identityKey = config.getStringWithDefault(SSL_IDENTITY_PRIVATE_KEY_PATH, null);
         if (identityCa == null || identityKey == null) {
             throw new IllegalArgumentException(String.format("Must specify `%s` and `%s`", SSL_IDENTITY_CERT_CHAIN_PATH,
                     SSL_IDENTITY_PRIVATE_KEY_PATH));
         }
-        IdentityPrivateKey identity =
-                IdentityPrivateKey.builder().certChainPath(identityCa).privateKeyPath(identityKey).build();
-        return Optional.of(SSLConfig.builder().identity(identity).build());
+        return Optional.of(IdentityPrivateKey.builder().certChainPath(identityCa).privateKeyPath(identityKey).build());
+    }
+
+    private static Optional<Trust> parseTrustConfig(Configuration config) {
+        final String trustType = config.getStringWithDefault(SSL_TRUST_TYPE, null);
+        if (trustType == null) {
+            return Optional.empty();
+        }
+        if (!CERTS.equals(trustType)) {
+            throw new IllegalArgumentException(
+                    String.format("Only support `%s` trust type through Configuration", CERTS));
+        }
+        final String trustPath = config.getStringWithDefault(SSL_TRUST_PATH, null);
+        if (trustPath == null) {
+            throw new IllegalArgumentException(String.format("Must specify `%s`", SSL_TRUST_PATH));
+        }
+        return Optional.of(TrustList.of(TrustJdk.of(), TrustCertificates.of(trustPath)));
+    }
+
+    private static Optional<ClientAuth> parseClientAuth(Configuration config) {
+        final String clientAuth = config.getStringWithDefault(SSL_CLIENT_AUTH, null);
+        if (clientAuth == null) {
+            return Optional.empty();
+        }
+        return Optional.of(ClientAuth.valueOf(clientAuth));
     }
 }

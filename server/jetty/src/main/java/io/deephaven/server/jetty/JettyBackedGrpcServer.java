@@ -61,7 +61,9 @@ public class JettyBackedGrpcServer implements GrpcServer {
         try {
             String knownFile = "/ide/index.html";
             URL ide = JettyBackedGrpcServer.class.getResource(knownFile);
-            context.setBaseResource(Resource.newResource(ide.toExternalForm().replace("!" + knownFile, "!/")));
+            if (ide != null) {
+                context.setBaseResource(Resource.newResource(ide.toExternalForm().replace("!" + knownFile, "!/")));
+            }
         } catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         }

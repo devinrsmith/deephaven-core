@@ -22,7 +22,7 @@ def normalize_version(version):
     return str(packaging.version.Version(version))
 
 
-__deephaven_version__ = os.environ['DEEPHAVEN_VERSION'] + ".dev0"
+__deephaven_version__ = os.environ['DEEPHAVEN_VERSION'] + ".dev2"
 __normalized_version__ = normalize_version(__deephaven_version__)
 
 setup(
@@ -55,8 +55,6 @@ setup(
         'jpy==0.11.0.dev2',
         'deephaven-plugin',
         'numpy',
-        'dill>=0.2.8',
-        'wrapt',
         'pandas',
         'numba'
     ],

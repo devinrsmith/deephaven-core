@@ -22,7 +22,7 @@ def normalize_version(version):
     return str(packaging.version.Version(version))
 
 
-__deephaven_version__ = os.environ['DEEPHAVEN_VERSION'] + ".dev3"
+__deephaven_version__ = os.environ['DEEPHAVEN_VERSION'] + ".dev4"
 __normalized_version__ = normalize_version(__deephaven_version__)
 
 setup(
@@ -54,6 +54,6 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'jpy==0.11.0.dev2',
-        'deephaven-core==0.14.0.dev3',
+        'deephaven-core==0.14.0.dev4',
     ]
 )

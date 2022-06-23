@@ -18,6 +18,7 @@ import io.deephaven.test.types.OutOfBandTest;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -284,6 +285,7 @@ public class ParquetTableReadWriteTest {
         compressionCodecTestHelper("LZ4");
     }
 
+    @Ignore("See BrotliParquetReadWriteTest instead")
     @Test
     public void testParquetBrotliCompressionCodec() {
         compressionCodecTestHelper("BROTLI");

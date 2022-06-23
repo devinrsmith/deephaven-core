@@ -13,6 +13,7 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.engine.liveness.Liveness;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
+import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.table.iterators.*;
 import io.deephaven.engine.updategraph.ConcurrentMethod;
 import io.deephaven.util.QueryConstants;
@@ -476,6 +477,14 @@ public abstract class UncoalescedTable extends BaseTable implements TableWithDef
     @ConcurrentMethod
     public Table treeTable(String idColumn, String parentColumn) {
         return coalesce().treeTable(idColumn, parentColumn);
+    }
+
+    @Override
+    @ConcurrentMethod
+    public Table updateBy(@NotNull final UpdateByControl control,
+            @NotNull final Collection<UpdateByClause> ops,
+            @NotNull final Collection<? extends Selectable> byColumns) {
+        return UpdateBy.updateBy((QueryTable) this.coalesce(), ops, byColumns, control);
     }
 
     @Override

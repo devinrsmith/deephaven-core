@@ -53,7 +53,7 @@ setup(
     keywords='Deephaven Development',
     python_requires='>=3.7',
     install_requires=[
-        'jpy==0.11.0.dev2',
+        'jpy>=0.11.0',
         'deephaven-core==0.14.0.dev4',
     ]
 )

@@ -7,6 +7,8 @@ import dagger.Module;
 import dagger.Provides;
 import io.deephaven.server.config.ServerConfig;
 import io.deephaven.ssl.config.SSLConfig;
+import io.deephaven.ssl.config.Trust;
+import io.deephaven.ssl.config.TrustJdk;
 
 import javax.annotation.Nullable;
 import javax.inject.Named;
@@ -39,8 +41,10 @@ public class DeephavenApiConfigModule {
     }
 
     @Provides
-    @Nullable
+    @Named("client.sslConfig")
     public static SSLConfig providesSSLConfig(ServerConfig config) {
-        return config.ssl().orElse(null);
+        // The client configuration is the same as the server configuration, except it adds in TrustJdk
+        final Trust mixinTrustJdk = config.ssl().flatMap(SSLConfig::trust).orElse(TrustJdk.of()).or(TrustJdk.of());
+        return config.ssl().orElseGet(SSLConfig::empty).withTrust(mixinTrustJdk);
     }
 }

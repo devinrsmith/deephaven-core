@@ -59,9 +59,9 @@ public class ServerBuilderInProcessModule {
     }
 
     @Provides
-    @Nullable
+    @Named("client.sslConfig")
     static SSLConfig providesSSLConfig() {
-        return null;
+        return SSLConfig.empty();
     }
 
     /**

@@ -78,7 +78,7 @@ public abstract class SSLConfig {
         if (trust().isPresent()) {
             return this;
         }
-        return ((ImmutableSSLConfig) this).withTrust(defaultTrust);
+        return withTrust(defaultTrust);
     }
 
     public final SSLConfig orProtocols(Protocols defaultProtocols) {
@@ -94,6 +94,8 @@ public abstract class SSLConfig {
         }
         return ((ImmutableSSLConfig) this).withCiphers(defaultCiphers);
     }
+
+    public abstract SSLConfig withTrust(Trust trust);
 
     public enum ClientAuth {
         NONE, WANTED, NEEDED

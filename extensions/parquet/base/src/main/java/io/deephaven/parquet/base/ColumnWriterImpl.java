@@ -9,7 +9,9 @@ import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.column.Encoding;
+import org.apache.parquet.column.ParquetProperties;
 import org.apache.parquet.column.statistics.Statistics;
+import org.apache.parquet.column.values.delta.DeltaBinaryPackingValuesWriterForLong;
 import org.apache.parquet.column.values.rle.RunLengthBitPackingHybridEncoder;
 import org.apache.parquet.format.*;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
@@ -158,6 +160,7 @@ public class ColumnWriterImpl implements ColumnWriter {
             case INT32:
                 return new PlainIntChunkedWriter(pageSize, allocator);
             case INT64:
+//                return new BulkLongValuesWriterAdapter(new DeltaBinaryPackingValuesWriterForLong(ParquetProperties.builder().build().getInitialSlabSize(), pageSize, allocator));
                 return new PlainLongChunkedWriter(pageSize, allocator);
             case FLOAT:
                 return new PlainFloatChunkedWriter(pageSize, allocator);

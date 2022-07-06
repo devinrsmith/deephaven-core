@@ -552,7 +552,8 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
             }
             dataReader = new DictionaryValuesReader(dictionary);
         } else {
-            dataReader = dataEncoding.getValuesReader(path, VALUES);
+            dataReader = Encoding.DELTA_BINARY_PACKED.getValuesReader(path, VALUES);
+            //dataReader = dataEncoding.getValuesReader(path, VALUES);
         }
 
         try {

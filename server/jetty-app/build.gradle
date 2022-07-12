@@ -44,6 +44,7 @@ if (!hasProperty('excludeHotspotImpl')) {
 if (hasProperty('devCerts') || hasProperty('devMTLS')) {
     extraJvmArgs += [
             '-Dhttp.port=8443',
+            '-Dhttp.websockets=false',
             '-Dssl.identity.type=privatekey',
             '-Dssl.identity.certChainPath=../dev-certs/server.chain.crt',
             '-Dssl.identity.privateKeyPath=../dev-certs/server.key',

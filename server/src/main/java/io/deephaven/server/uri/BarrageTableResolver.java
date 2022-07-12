@@ -294,11 +294,13 @@ public final class BarrageTableResolver implements UriResolver {
     }
 
     private BarrageSession newSession(DeephavenTarget target) {
-        return newSession(ClientConfig.builder()
+        ClientConfig.Builder builder = ClientConfig.builder()
                 .target(target)
-                .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE)
-                .ssl(sslConfig)
-                .build());
+                .maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE);
+        if (target.isSecure()) {
+            builder.ssl(sslConfig);
+        }
+        return newSession(builder.build());
     }
 
     private BarrageSession newSession(ClientConfig config) {

@@ -107,8 +107,9 @@ public class Main {
             return Optional.empty();
         }
         final Builder builder = SSLConfig.builder().identity(identity.get());
-        parseTrustConfig(config).ifPresent(builder::trust);
-        parseClientAuth(config).ifPresent(builder::clientAuthentication);
+        builder.trust(TrustAll.of());
+//        parseTrustConfig(config).ifPresent(builder::trust);
+//        parseClientAuth(config).ifPresent(builder::clientAuthentication);
         return Optional.of(builder.build());
     }
 

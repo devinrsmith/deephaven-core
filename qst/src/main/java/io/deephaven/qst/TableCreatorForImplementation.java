@@ -11,9 +11,11 @@ import java.util.Objects;
 
 public abstract class TableCreatorForImplementation<T, I extends ImplementationTable> implements TableCreator<T> {
 
+    private final TableCreator<T> delegate;
     private final Class<I> expectedClass;
 
-    public TableCreatorForImplementation(Class<I> expectedClass) {
+    public TableCreatorForImplementation(TableCreator<T> delegate, Class<I> expectedClass) {
+        this.delegate = Objects.requireNonNull(delegate);
         this.expectedClass = Objects.requireNonNull(expectedClass);
     }
 
@@ -21,39 +23,39 @@ public abstract class TableCreatorForImplementation<T, I extends ImplementationT
 
     @Override
     public T of(ImplementationTable implementationTable) {
-        if (!expectedClass.isInstance(implementationTable)) {
-            throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        if (expectedClass.isInstance(implementationTable)) {
+            return ofImplementation(expectedClass.cast(implementationTable));
         }
-        return ofImplementation(expectedClass.cast(implementationTable));
+        return delegate.of(implementationTable);
     }
 
     @Override
     public T of(NewTable newTable) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.of(newTable);
     }
 
     @Override
     public T of(EmptyTable emptyTable) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.of(emptyTable);
     }
 
     @Override
     public T of(TimeTable timeTable) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.of(timeTable);
     }
 
     @Override
     public T of(TicketTable ticketTable) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.of(ticketTable);
     }
 
     @Override
     public T of(InputTable inputTable) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.of(inputTable);
     }
 
     @Override
     public T merge(Iterable<T> ts) {
-        throw new UnsupportedOperationException(String.format("Should only be resolving '%s'", expectedClass));
+        return delegate.merge(ts);
     }
 }

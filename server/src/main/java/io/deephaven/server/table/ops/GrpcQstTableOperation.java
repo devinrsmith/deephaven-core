@@ -3,6 +3,7 @@ package io.deephaven.server.table.ops;
 import com.google.rpc.Code;
 import io.deephaven.api.Strings;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.impl.TableCreatorImpl;
 import io.deephaven.engine.table.impl.select.SelectColumn;
 import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
@@ -11,8 +12,13 @@ import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.qst.TableCreator;
 import io.deephaven.qst.TableCreatorForImplementation;
+import io.deephaven.qst.table.EmptyTable;
+import io.deephaven.qst.table.InputTable;
+import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.SelectableTable;
 import io.deephaven.qst.table.TableSpec;
+import io.deephaven.qst.table.TicketTable;
+import io.deephaven.qst.table.TimeTable;
 import io.deephaven.server.session.SessionState.ExportObject;
 import io.deephaven.server.table.validation.ColumnExpressionValidator;
 import io.grpc.StatusRuntimeException;
@@ -103,7 +109,7 @@ public abstract class GrpcQstTableOperation<T, S extends TableSpec> extends Grpc
         private final List<ExportObject<Table>> sourceTables;
 
         public TableCreatorGrpcImpl(List<ExportObject<Table>> sourceTables) {
-            super(GrpcExportTable.class);
+            super(TableCreatorImpl.INSTANCE, GrpcExportTable.class);
             this.sourceTables = Objects.requireNonNull(sourceTables);
         }
 

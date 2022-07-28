@@ -10,6 +10,7 @@ import io.deephaven.engine.table.TableFactory;
 import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
 import io.deephaven.engine.table.impl.util.KeyedArrayBackedMutableTable;
 import io.deephaven.engine.util.TableTools;
+import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.time.DateTime;
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.qst.TableCreator;
@@ -34,7 +35,6 @@ import java.util.stream.StreamSupport;
  * Engine-specific implementation of {@link TableCreator}.
  */
 public enum TableCreatorImpl implements TableCreator<Table> {
-
     INSTANCE;
 
     @SuppressWarnings("unused")
@@ -80,6 +80,10 @@ public enum TableCreatorImpl implements TableCreator<Table> {
         return UpdatableTableAdapter.of(inputTable);
     }
 
+    @Override
+    public final Table of(ImplementationTable implementationTable) {
+        throw new UnsupportedOperationException("Unable to resolve ImplementationTable");
+    }
 
     @Override
     public final Table merge(Iterable<Table> tables) {

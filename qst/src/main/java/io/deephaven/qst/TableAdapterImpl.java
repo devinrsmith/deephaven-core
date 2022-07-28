@@ -15,6 +15,7 @@ import io.deephaven.qst.table.CountByTable;
 import io.deephaven.qst.table.EmptyTable;
 import io.deephaven.qst.table.ExactJoinTable;
 import io.deephaven.qst.table.HeadTable;
+import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.qst.table.InputTable;
 import io.deephaven.qst.table.JoinTable;
 import io.deephaven.qst.table.MergeTable;
@@ -120,6 +121,11 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
     @Override
     public void visit(TimeTable timeTable) {
         addTable(timeTable, tableCreation.of(timeTable));
+    }
+
+    @Override
+    public void visit(ImplementationTable implTable) {
+        addTable(implTable, tableCreation.of(implTable));
     }
 
     @Override

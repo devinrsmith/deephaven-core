@@ -11,6 +11,7 @@ import io.deephaven.qst.table.CountByTable;
 import io.deephaven.qst.table.EmptyTable;
 import io.deephaven.qst.table.ExactJoinTable;
 import io.deephaven.qst.table.HeadTable;
+import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.qst.table.InMemoryAppendOnlyInputTable;
 import io.deephaven.qst.table.InMemoryKeyBackedInputTable;
 import io.deephaven.qst.table.InputTable;
@@ -190,6 +191,11 @@ public class LabelBuilder extends TableVisitorGeneric {
         sb.append("updateBy([");
         append(Strings::of, updateByTable.groupByColumns(), sb);
         sb.append("],[ todo ])");
+    }
+
+    @Override
+    public void visit(ImplementationTable implTable) {
+        sb.append(implTable.toString());
     }
 
     private void join(String name, Join j) {

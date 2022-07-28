@@ -6,6 +6,7 @@ package io.deephaven.qst;
 import io.deephaven.api.TableOperations;
 import io.deephaven.qst.column.Column;
 import io.deephaven.qst.table.EmptyTable;
+import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.qst.table.InputTable;
 import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TableSpec;
@@ -97,6 +98,14 @@ public interface TableCreator<TABLE> {
      * @return the input table
      */
     TABLE of(InputTable inputTable);
+
+    /**
+     * Creates an implementation table.
+     *
+     * @param implementationTable the implementation table
+     * @return the table
+     */
+    TABLE of(ImplementationTable implementationTable);
 
     /**
      * Merges the given {@code tables}.

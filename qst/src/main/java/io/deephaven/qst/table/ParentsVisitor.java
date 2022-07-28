@@ -153,6 +153,11 @@ public class ParentsVisitor implements Visitor {
     }
 
     @Override
+    public void visit(ImplementationTable implTable) {
+        out = implTable.parents().stream();
+    }
+
+    @Override
     public void visit(MergeTable mergeTable) {
         out = mergeTable.tables().stream();
     }

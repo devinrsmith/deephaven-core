@@ -11,6 +11,7 @@ import io.deephaven.qst.TableCreationLogic1Input;
 import io.deephaven.qst.TableCreationLogic2Inputs;
 import io.deephaven.qst.column.Column;
 import io.deephaven.qst.table.EmptyTable;
+import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.qst.table.InputTable;
 import io.deephaven.qst.table.LabeledTables;
 import io.deephaven.qst.table.NewTable;
@@ -98,6 +99,11 @@ public abstract class TableHandleManagerDelegate implements TableHandleManager {
     @Override
     public final TableHandle of(InputTable inputTable) {
         return delegate().of(inputTable);
+    }
+
+    @Override
+    public final TableHandle of(ImplementationTable implementationTable) {
+        return delegate().of(implementationTable);
     }
 
     @Override

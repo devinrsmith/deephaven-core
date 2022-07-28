@@ -18,19 +18,24 @@ import io.deephaven.server.table.ops.FetchTableGrpcImpl;
 import io.deephaven.server.table.ops.FilterTableGrpcImpl;
 import io.deephaven.server.table.ops.FlattenTableGrpcImpl;
 import io.deephaven.server.table.ops.GrpcTableOperation;
+import io.deephaven.server.table.ops.HeadGrpcImpl;
 import io.deephaven.server.table.ops.HeadOrTailByGrpcImpl;
-import io.deephaven.server.table.ops.HeadOrTailGrpcImpl;
 import io.deephaven.server.table.ops.JoinTablesGrpcImpl;
 import io.deephaven.server.table.ops.MergeTablesGrpcImpl;
 import io.deephaven.server.table.ops.RunChartDownsampleGrpcImpl;
 import io.deephaven.server.table.ops.SelectDistinctGrpcImpl;
+import io.deephaven.server.table.ops.SelectGrpcImpl;
 import io.deephaven.server.table.ops.SnapshotTableGrpcImpl;
 import io.deephaven.server.table.ops.SortTableGrpcImpl;
+import io.deephaven.server.table.ops.TailGrpcImpl;
 import io.deephaven.server.table.ops.TimeTableGrpcImpl;
 import io.deephaven.server.table.ops.UngroupGrpcImpl;
 import io.deephaven.server.table.ops.UnstructuredFilterTableGrpcImpl;
 import io.deephaven.server.table.ops.UpdateByGrpcImpl;
+import io.deephaven.server.table.ops.UpdateGrpcImpl;
 import io.deephaven.server.table.ops.UpdateOrSelectGrpcImpl;
+import io.deephaven.server.table.ops.UpdateViewGrpcImpl;
+import io.deephaven.server.table.ops.ViewGrpcImpl;
 import io.grpc.BindableService;
 
 @MapKey
@@ -68,7 +73,7 @@ public interface TableModule {
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.UPDATE)
-    GrpcTableOperation<?> bindOperationUpdate(UpdateOrSelectGrpcImpl.UpdateGrpcImpl op);
+    GrpcTableOperation<?> bindOperationUpdate(UpdateGrpcImpl op);
 
     @Binds
     @IntoMap
@@ -78,17 +83,17 @@ public interface TableModule {
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.VIEW)
-    GrpcTableOperation<?> bindOperationView(UpdateOrSelectGrpcImpl.ViewGrpcImpl op);
+    GrpcTableOperation<?> bindOperationView(ViewGrpcImpl op);
 
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.UPDATE_VIEW)
-    GrpcTableOperation<?> bindOperationUpdateView(UpdateOrSelectGrpcImpl.UpdateViewGrpcImpl op);
+    GrpcTableOperation<?> bindOperationUpdateView(UpdateViewGrpcImpl op);
 
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.SELECT)
-    GrpcTableOperation<?> bindOperationSelect(UpdateOrSelectGrpcImpl.SelectGrpcImpl op);
+    GrpcTableOperation<?> bindOperationSelect(SelectGrpcImpl op);
 
     @Binds
     @IntoMap
@@ -103,12 +108,12 @@ public interface TableModule {
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.HEAD)
-    GrpcTableOperation<?> bindOperationHead(HeadOrTailGrpcImpl.HeadGrpcImpl op);
+    GrpcTableOperation<?> bindOperationHead(HeadGrpcImpl op);
 
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.TAIL)
-    GrpcTableOperation<?> bindOperationTail(HeadOrTailGrpcImpl.TailGrpcImpl op);
+    GrpcTableOperation<?> bindOperationTail(TailGrpcImpl op);
 
     @Binds
     @IntoMap

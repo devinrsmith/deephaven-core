@@ -24,4 +24,11 @@ abstract class GrpcExportTable extends ImplementationTable {
     public final List<TableSpec> parents() {
         return Collections.emptyList();
     }
+
+    @Value.Check
+    final void checkIndex() {
+        if (index() < 0) {
+            throw new IllegalArgumentException("index must be non-negative");
+        }
+    }
 }

@@ -1,12 +1,11 @@
 package io.deephaven.server.table.ops;
 
 import io.deephaven.api.ColumnName;
-import io.deephaven.api.Selectable;
 import io.deephaven.api.updateby.BadDataBehavior;
 import io.deephaven.api.updateby.ColumnUpdateOperation;
 import io.deephaven.api.updateby.OperationControl;
-import io.deephaven.api.updateby.UpdateByOperation;
 import io.deephaven.api.updateby.UpdateByControl;
+import io.deephaven.api.updateby.UpdateByOperation;
 import io.deephaven.api.updateby.spec.CumMinMaxSpec;
 import io.deephaven.api.updateby.spec.CumProdSpec;
 import io.deephaven.api.updateby.spec.CumSumSpec;
@@ -14,6 +13,8 @@ import io.deephaven.api.updateby.spec.EmaSpec;
 import io.deephaven.api.updateby.spec.FillBySpec;
 import io.deephaven.api.updateby.spec.TimeScale;
 import io.deephaven.api.updateby.spec.UpdateBySpec;
+import io.deephaven.engine.table.Table;
+import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.UpdateByRequest;
 import io.deephaven.proto.backplane.grpc.UpdateByRequest.UpdateByOperation.UpdateByColumn;
@@ -25,6 +26,7 @@ import io.deephaven.proto.backplane.grpc.UpdateByRequest.UpdateByOperation.Updat
 import io.deephaven.proto.backplane.grpc.UpdateByRequest.UpdateByOperation.UpdateByColumn.UpdateBySpec.UpdateByEma.UpdateByEmaOptions;
 import io.deephaven.proto.backplane.grpc.UpdateByRequest.UpdateByOperation.UpdateByColumn.UpdateBySpec.UpdateByFill;
 import io.deephaven.proto.backplane.grpc.UpdateByRequest.UpdateByOptions;
+import io.deephaven.qst.TableCreator;
 import io.deephaven.qst.table.UpdateByTable;
 import io.deephaven.qst.table.UpdateByTable.Builder;
 
@@ -37,8 +39,9 @@ import java.math.RoundingMode;
 public final class UpdateByGrpcImpl extends GrpcQstTableOperation<UpdateByRequest, UpdateByTable> {
 
     @Inject
-    public UpdateByGrpcImpl() {
-        super(BatchTableRequest.Operation::getUpdateBy, UpdateByRequest::getResultId, UpdateByRequest::getSourceId);
+    public UpdateByGrpcImpl(UpdateGraphProcessor ugp) {
+        super(ugp, BatchTableRequest.Operation::getUpdateBy, UpdateByRequest::getResultId,
+                UpdateByRequest::getSourceId);
     }
 
     @Override
@@ -47,10 +50,13 @@ public final class UpdateByGrpcImpl extends GrpcQstTableOperation<UpdateByReques
     }
 
     @Override
-    void validateSecurity(UpdateByTable updateByTable) {
-        for (Selectable groupByColumn : updateByTable.groupByColumns()) {
-            ExpressionSecurity.validateSecurity(groupByColumn.expression());
-        }
+    void validateSecurity(UpdateByTable updateByTable, TableCreator<Table> creator) {
+        // UpdateByTable secure-by-default, no arbitrary expressions
+    }
+
+    @Override
+    LockType lockType(UpdateByTable updateByTable, TableCreator<Table> creator) {
+        return LockType.NONE;
     }
 
     private static UpdateByTable adapt(UpdateByRequest request) {

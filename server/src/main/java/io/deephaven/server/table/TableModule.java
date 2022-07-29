@@ -21,6 +21,7 @@ import io.deephaven.server.table.ops.GrpcTableOperation;
 import io.deephaven.server.table.ops.HeadGrpcImpl;
 import io.deephaven.server.table.ops.HeadOrTailByGrpcImpl;
 import io.deephaven.server.table.ops.JoinTablesGrpcImpl;
+import io.deephaven.server.table.ops.LazyUpdateGrpcImpl;
 import io.deephaven.server.table.ops.MergeTablesGrpcImpl;
 import io.deephaven.server.table.ops.RunChartDownsampleGrpcImpl;
 import io.deephaven.server.table.ops.SelectDistinctGrpcImpl;
@@ -33,7 +34,6 @@ import io.deephaven.server.table.ops.UngroupGrpcImpl;
 import io.deephaven.server.table.ops.UnstructuredFilterTableGrpcImpl;
 import io.deephaven.server.table.ops.UpdateByGrpcImpl;
 import io.deephaven.server.table.ops.UpdateGrpcImpl;
-import io.deephaven.server.table.ops.UpdateOrSelectGrpcImpl;
 import io.deephaven.server.table.ops.UpdateViewGrpcImpl;
 import io.deephaven.server.table.ops.ViewGrpcImpl;
 import io.grpc.BindableService;
@@ -78,7 +78,7 @@ public interface TableModule {
     @Binds
     @IntoMap
     @BatchOpCode(BatchTableRequest.Operation.OpCase.LAZY_UPDATE)
-    GrpcTableOperation<?> bindOperationLazyUpdate(UpdateOrSelectGrpcImpl.LazyUpdateGrpcImpl op);
+    GrpcTableOperation<?> bindOperationLazyUpdate(LazyUpdateGrpcImpl op);
 
     @Binds
     @IntoMap

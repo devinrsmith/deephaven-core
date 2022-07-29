@@ -52,13 +52,12 @@ public class SelectableSessionTest extends DeephavenSessionTestBase {
                 return spec.select(formulas);
             }
         },
-        // TODO(deephaven-core#711): [Java API] Flush Remaining Operations for TableSpec
-        // LAZY_UPDATE {
-        // @Override
-        // public TableSpec apply(TableSpec spec, String[] formulas) {
-        // return spec.lazyUpdate(formulas);
-        // }
-        // },
+        LAZY_UPDATE {
+            @Override
+            public TableSpec apply(TableSpec spec, String[] formulas) {
+                return spec.lazyUpdate(formulas);
+            }
+        },
         SELECT_DISTINCT {
             @Override
             public TableSpec apply(TableSpec spec, String[] formulas) {

@@ -248,6 +248,11 @@ public class ParentsVisitor implements Visitor {
     }
 
     @Override
+    public void visit(LazyUpdateTable lazyUpdateTable) {
+        out = single(lazyUpdateTable);
+    }
+
+    @Override
     public void visit(AggregateAllByTable aggAllByTable) {
         out = single(aggAllByTable);
     }

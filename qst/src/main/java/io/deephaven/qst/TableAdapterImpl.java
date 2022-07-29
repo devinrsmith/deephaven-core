@@ -17,6 +17,7 @@ import io.deephaven.qst.table.HeadTable;
 import io.deephaven.qst.table.ImplementationTable;
 import io.deephaven.qst.table.InputTable;
 import io.deephaven.qst.table.JoinTable;
+import io.deephaven.qst.table.LazyUpdateTable;
 import io.deephaven.qst.table.MergeTable;
 import io.deephaven.qst.table.NaturalJoinTable;
 import io.deephaven.qst.table.NewTable;
@@ -49,6 +50,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> implements Visitor {
+
+    // Note: instead of having the visitor recursively resolve dependencies, we are explicitly walking all nodes of the
+    // tree in post-order. In some sense, emulating a recursive ordering, but it explicitly solves some state management
+    // complexity with a recursive implementation.
 
     static <TOPS extends TableOperations<TOPS, TABLE>, TABLE> TableAdapterResults<TOPS, TABLE> of(
             TableCreator<TABLE> creation, TableCreator.TableToOperations<TOPS, TABLE> toOps,
@@ -88,11 +93,11 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
     }
 
     private TOPS ops(TableSpec table) {
-        return outputs.get(table).walk(new GetOp()).getOut();
+        return outputs.get(table).walk(new GetOp());
     }
 
     private TABLE table(TableSpec table) {
-        return outputs.get(table).walk(new GetTable()).getOut();
+        return outputs.get(table).walk(new GetTable());
     }
 
     private void addTable(TableSpec table, TABLE t) {
@@ -199,6 +204,11 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
     @Override
     public void visit(UpdateTable updateTable) {
         addOp(updateTable, parentOps(updateTable).update(updateTable.columns()));
+    }
+
+    @Override
+    public void visit(LazyUpdateTable lazyUpdateTable) {
+        addOp(lazyUpdateTable, parentOps(lazyUpdateTable).lazyUpdate(lazyUpdateTable.columns()));
     }
 
     @Override
@@ -311,14 +321,9 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
             this.table = Objects.requireNonNull(table);
         }
 
-        TOPS toOps() {
-            return toOps.of(table);
-        }
-
         @Override
-        public <V extends Visitor<TOPS, TABLE>> V walk(V visitor) {
-            visitor.visit(table);
-            return visitor;
+        public <T, V extends Visitor<T, TOPS, TABLE>> T walk(V visitor) {
+            return visitor.visit(table);
         }
     }
 
@@ -329,52 +334,35 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
             this.op = Objects.requireNonNull(op);
         }
 
-        TABLE toTable() {
-            return toTable.of(op);
-        }
-
         @Override
-        public <V extends Visitor<TOPS, TABLE>> V walk(V visitor) {
-            visitor.visit(op);
-            return visitor;
+        public <T, V extends Visitor<T, TOPS, TABLE>> T walk(V visitor) {
+            return visitor.visit(op);
         }
     }
 
-    private final class GetTable implements Output.Visitor<TOPS, TABLE> {
+    private final class GetTable implements Output.Visitor<TABLE, TOPS, TABLE> {
 
-        private TABLE out;
-
-        public TABLE getOut() {
-            return Objects.requireNonNull(out);
+        @Override
+        public TABLE visit(TOPS tops) {
+            return toTable.of(tops);
         }
 
         @Override
-        public void visit(TOPS tops) {
-            out = toTable.of(tops);
-        }
-
-        @Override
-        public void visit(TABLE table) {
-            out = table;
+        public TABLE visit(TABLE table) {
+            return table;
         }
     }
 
-    private final class GetOp implements Output.Visitor<TOPS, TABLE> {
+    private final class GetOp implements Output.Visitor<TOPS, TOPS, TABLE> {
 
-        private TOPS out;
-
-        public TOPS getOut() {
-            return Objects.requireNonNull(out);
+        @Override
+        public TOPS visit(TOPS tops) {
+            return tops;
         }
 
         @Override
-        public void visit(TOPS tops) {
-            out = tops;
-        }
-
-        @Override
-        public void visit(TABLE table) {
-            out = toOps.of(table);
+        public TOPS visit(TABLE table) {
+            return toOps.of(table);
         }
     }
 }

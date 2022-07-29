@@ -15,7 +15,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SelectDistinctGrpcImpl extends GrpcQstTableOperation<SelectDistinctRequest, SelectDistinctTable> {
+public class SelectDistinctGrpcImpl extends GrpcTableSpecOperation<SelectDistinctRequest, SelectDistinctTable> {
     @Inject
     public SelectDistinctGrpcImpl(UpdateGraphProcessor ugp) {
         super(ugp, BatchTableRequest.Operation::getSelectDistinct, SelectDistinctRequest::getResultId,

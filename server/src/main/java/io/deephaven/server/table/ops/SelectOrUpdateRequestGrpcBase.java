@@ -11,7 +11,7 @@ import io.deephaven.qst.table.SelectableTable;
 import java.util.function.Function;
 
 public abstract class SelectOrUpdateRequestGrpcBase<T extends SelectableTable>
-        extends GrpcQstTableOperation<SelectOrUpdateRequest, T> {
+        extends GrpcTableSpecOperation<SelectOrUpdateRequest, T> {
 
     public SelectOrUpdateRequestGrpcBase(UpdateGraphProcessor ugp,
             final Function<BatchTableRequest.Operation, SelectOrUpdateRequest> getRequest) {

@@ -12,13 +12,8 @@ import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.qst.TableCreator;
 import io.deephaven.qst.TableCreatorForImplementation;
-import io.deephaven.qst.table.EmptyTable;
-import io.deephaven.qst.table.InputTable;
-import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.SelectableTable;
 import io.deephaven.qst.table.TableSpec;
-import io.deephaven.qst.table.TicketTable;
-import io.deephaven.qst.table.TimeTable;
 import io.deephaven.server.session.SessionState.ExportObject;
 import io.deephaven.server.table.validation.ColumnExpressionValidator;
 import io.grpc.StatusRuntimeException;
@@ -29,25 +24,25 @@ import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 
-public abstract class GrpcQstTableOperation<T, S extends TableSpec> extends GrpcTableOperation<T> {
+public abstract class GrpcTableSpecOperation<T, S extends TableSpec> extends GrpcTableOperation<T> {
 
     private final UpdateGraphProcessor ugp;
 
-    public GrpcQstTableOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
+    public GrpcTableSpecOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
             Function<T, Ticket> getTicket,
             MultiDependencyFunction<T> getDependencies) {
         super(getRequest, getTicket, getDependencies);
         this.ugp = Objects.requireNonNull(ugp);
     }
 
-    public GrpcQstTableOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
+    public GrpcTableSpecOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
             Function<T, Ticket> getTicket,
             Function<T, TableReference> getDependency) {
         super(getRequest, getTicket, getDependency);
         this.ugp = Objects.requireNonNull(ugp);
     }
 
-    public GrpcQstTableOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
+    public GrpcTableSpecOperation(UpdateGraphProcessor ugp, Function<Operation, T> getRequest,
             Function<T, Ticket> getTicket) {
         super(getRequest, getTicket);
         this.ugp = Objects.requireNonNull(ugp);

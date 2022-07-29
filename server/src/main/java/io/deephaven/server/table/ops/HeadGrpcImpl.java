@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class HeadGrpcImpl extends GrpcQstTableOperation<HeadOrTailRequest, HeadTable> {
+public class HeadGrpcImpl extends GrpcTableSpecOperation<HeadOrTailRequest, HeadTable> {
 
     @Inject
     public HeadGrpcImpl(final UpdateGraphProcessor ugp) {

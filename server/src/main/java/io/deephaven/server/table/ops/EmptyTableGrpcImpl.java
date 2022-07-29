@@ -9,14 +9,12 @@ import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.EmptyTableRequest;
 import io.deephaven.qst.TableCreator;
 import io.deephaven.qst.table.EmptyTable;
-import io.deephaven.server.session.SessionState;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 
 @Singleton
-public class EmptyTableGrpcImpl extends GrpcQstTableOperation<EmptyTableRequest, EmptyTable> {
+public class EmptyTableGrpcImpl extends GrpcTableSpecOperation<EmptyTableRequest, EmptyTable> {
 
     @Inject
     public EmptyTableGrpcImpl(UpdateGraphProcessor ugp) {

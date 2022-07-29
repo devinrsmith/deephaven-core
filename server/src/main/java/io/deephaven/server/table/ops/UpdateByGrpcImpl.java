@@ -36,7 +36,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 
 @Singleton
-public final class UpdateByGrpcImpl extends GrpcQstTableOperation<UpdateByRequest, UpdateByTable> {
+public final class UpdateByGrpcImpl extends GrpcTableSpecOperation<UpdateByRequest, UpdateByTable> {
 
     @Inject
     public UpdateByGrpcImpl(UpdateGraphProcessor ugp) {

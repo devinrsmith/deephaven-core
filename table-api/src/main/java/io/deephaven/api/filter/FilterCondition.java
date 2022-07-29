@@ -196,9 +196,8 @@ public abstract class FilterCondition extends FilterBase implements Serializable
     }
 
     @Override
-    public final <V extends Filter.Visitor> V walk(V visitor) {
-        visitor.visit(this);
-        return visitor;
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     public interface Builder {

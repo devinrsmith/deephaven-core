@@ -16,13 +16,13 @@ import java.io.Serializable;
  */
 public interface Expression extends Serializable {
 
-    <V extends Visitor> V walk(V visitor);
+    <T> T walk(Visitor<T> visitor);
 
-    interface Visitor {
+    interface Visitor<T> {
         // TODO (deephaven-core#830): Add more table api Expression structuring
 
-        void visit(Value value);
+        T visit(Value value);
 
-        void visit(RawString rawString);
+        T visit(RawString rawString);
     }
 }

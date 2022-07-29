@@ -571,34 +571,29 @@ class BatchTableRequestBuilder {
         return Literal.newBuilder().setLongValue(x).build();
     }
 
-    static class ValueAdapter implements Value.Visitor {
+    private enum ValueAdapter implements Value.Visitor<io.deephaven.proto.backplane.grpc.Value> {
+        INSTANCE;
+
         static io.deephaven.proto.backplane.grpc.Value adapt(Value value) {
-            return value.walk(new ValueAdapter()).out();
-        }
-
-        private io.deephaven.proto.backplane.grpc.Value out;
-
-        public io.deephaven.proto.backplane.grpc.Value out() {
-            return Objects.requireNonNull(out);
+            return value.walk(INSTANCE);
         }
 
         @Override
-        public void visit(ColumnName x) {
-            out = io.deephaven.proto.backplane.grpc.Value.newBuilder().setReference(reference(x))
-                    .build();
+        public io.deephaven.proto.backplane.grpc.Value visit(ColumnName x) {
+            return io.deephaven.proto.backplane.grpc.Value.newBuilder().setReference(reference(x)).build();
         }
 
         @Override
-        public void visit(long x) {
-            out =
-                    io.deephaven.proto.backplane.grpc.Value.newBuilder().setLiteral(literal(x)).build();
+        public io.deephaven.proto.backplane.grpc.Value visit(long x) {
+            return io.deephaven.proto.backplane.grpc.Value.newBuilder().setLiteral(literal(x)).build();
         }
     }
 
-    static class FilterAdapter implements Filter.Visitor {
+    private enum FilterAdapter implements Filter.Visitor<Condition> {
+        INSTANCE;
 
         static Condition of(Filter filter) {
-            return filter.walk(new FilterAdapter()).out();
+            return filter.walk(INSTANCE);
         }
 
         private static CompareOperation adapt(Operator operator) {
@@ -620,29 +615,23 @@ class BatchTableRequestBuilder {
             }
         }
 
-        private Condition out;
-
-        public Condition out() {
-            return Objects.requireNonNull(out);
-        }
-
         @Override
-        public void visit(FilterIsNull isNull) {
-            out = Condition.newBuilder()
+        public Condition visit(FilterIsNull isNull) {
+            return Condition.newBuilder()
                     .setIsNull(
                             IsNullCondition.newBuilder().setReference(reference(isNull.column())).build())
                     .build();
         }
 
         @Override
-        public void visit(FilterIsNotNull isNotNull) {
-            out = of(FilterIsNull.of(isNotNull.column()).not());
+        public Condition visit(FilterIsNotNull isNotNull) {
+            return of(FilterIsNull.of(isNotNull.column()).not());
         }
 
         @Override
-        public void visit(FilterCondition condition) {
+        public Condition visit(FilterCondition condition) {
             FilterCondition preferred = condition.maybeTranspose();
-            out = Condition.newBuilder()
+            return Condition.newBuilder()
                     .setCompare(CompareCondition.newBuilder().setOperation(adapt(preferred.operator()))
                             .setLhs(ValueAdapter.adapt(preferred.lhs()))
                             .setRhs(ValueAdapter.adapt(preferred.rhs())).build())
@@ -650,31 +639,31 @@ class BatchTableRequestBuilder {
         }
 
         @Override
-        public void visit(FilterNot not) {
-            out = Condition.newBuilder()
+        public Condition visit(FilterNot not) {
+            return Condition.newBuilder()
                     .setNot(NotCondition.newBuilder().setFilter(of(not.filter())).build()).build();
         }
 
         @Override
-        public void visit(FilterOr ors) {
+        public Condition visit(FilterOr ors) {
             OrCondition.Builder builder = OrCondition.newBuilder();
             for (Filter filter : ors) {
                 builder.addFilters(of(filter));
             }
-            out = Condition.newBuilder().setOr(builder.build()).build();
+            return Condition.newBuilder().setOr(builder.build()).build();
         }
 
         @Override
-        public void visit(FilterAnd ands) {
+        public Condition visit(FilterAnd ands) {
             AndCondition.Builder builder = AndCondition.newBuilder();
             for (Filter filter : ands) {
                 builder.addFilters(of(filter));
             }
-            out = Condition.newBuilder().setAnd(builder.build()).build();
+            return Condition.newBuilder().setAnd(builder.build()).build();
         }
 
         @Override
-        public void visit(RawString rawString) {
+        public Condition visit(RawString rawString) {
             throw new IllegalStateException("Can't build Condition with raw string");
         }
     }

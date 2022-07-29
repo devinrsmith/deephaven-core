@@ -100,83 +100,77 @@ public class Strings {
         if (selectable.newColumn().equals(selectable.expression())) {
             return lhs;
         }
-        String rhs = selectable.expression().walk(new UniversalAdapter()).getOut();
+        String rhs = selectable.expression().walk(UniversalAdapter.INSTANCE);
         return String.format("%s=%s", lhs, rhs);
     }
 
     public static String of(Expression expression) {
-        return expression.walk(new UniversalAdapter()).getOut();
+        return expression.walk(UniversalAdapter.INSTANCE);
     }
 
     public static String of(Filter filter) {
-        return filter.walk(new UniversalAdapter()).getOut();
+        return filter.walk(UniversalAdapter.INSTANCE);
     }
 
     public static String of(Value value) {
-        UniversalAdapter universalAdapter = new UniversalAdapter();
-        value.walk((Value.Visitor) universalAdapter);
-        return universalAdapter.getOut();
+        return value.walk((Value.Visitor<String>) UniversalAdapter.INSTANCE);
     }
 
     /**
      * If we ever need to provide more specificity for a type, we can create a non-universal impl.
      */
-    private static class UniversalAdapter
-            implements Filter.Visitor, Expression.Visitor, Value.Visitor {
-        private String out;
+    private enum UniversalAdapter
+            implements Filter.Visitor<String>, Expression.Visitor<String>, Value.Visitor<String> {
+        INSTANCE;
 
-        public String getOut() {
-            return Objects.requireNonNull(out);
+        @Override
+        public String visit(ColumnName name) {
+            return of(name);
         }
 
         @Override
-        public void visit(ColumnName name) {
-            out = of(name);
+        public String visit(RawString rawString) {
+            return of(rawString);
         }
 
         @Override
-        public void visit(RawString rawString) {
-            out = of(rawString);
+        public String visit(FilterCondition condition) {
+            return of(condition);
         }
 
         @Override
-        public void visit(FilterCondition condition) {
-            out = of(condition);
+        public String visit(FilterIsNull isNull) {
+            return of(isNull);
         }
 
         @Override
-        public void visit(FilterIsNull isNull) {
-            out = of(isNull);
+        public String visit(FilterIsNotNull isNotNull) {
+            return of(isNotNull);
         }
 
         @Override
-        public void visit(FilterIsNotNull isNotNull) {
-            out = of(isNotNull);
+        public String visit(FilterNot not) {
+            return of(not);
         }
 
         @Override
-        public void visit(FilterNot not) {
-            out = of(not);
+        public String visit(FilterOr ors) {
+            return of(ors);
         }
 
         @Override
-        public void visit(FilterOr ors) {
-            out = of(ors);
+        public String visit(FilterAnd ands) {
+            return of(ands);
         }
 
         @Override
-        public void visit(FilterAnd ands) {
-            out = of(ands);
+        public String visit(Value value) {
+            return of(value);
         }
 
         @Override
-        public void visit(Value value) {
-            out = of(value);
-        }
-
-        @Override
-        public void visit(long x) {
-            out = Long.toString(x);
+        public String visit(long x) {
+            return Long.toString(x);
         }
     }
 }

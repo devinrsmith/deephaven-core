@@ -5,52 +5,45 @@ package io.deephaven.api.filter;
 
 import io.deephaven.api.RawString;
 
-public class FilterHasRaw implements Filter.Visitor {
+public enum FilterHasRaw implements Filter.Visitor<Boolean> {
+    INSTANCE;
 
     public static boolean of(Filter filter) {
-        return filter.walk(new FilterHasRaw()).out();
-    }
-
-    public Boolean hasRaw;
-
-    private FilterHasRaw() {}
-
-    public boolean out() {
-        return hasRaw;
+        return filter.walk(INSTANCE);
     }
 
     @Override
-    public void visit(FilterIsNull isNull) {
-        hasRaw = false;
+    public Boolean visit(FilterIsNull isNull) {
+        return false;
     }
 
     @Override
-    public void visit(FilterIsNotNull isNotNull) {
-        hasRaw = false;
+    public Boolean visit(FilterIsNotNull isNotNull) {
+        return false;
     }
 
     @Override
-    public void visit(FilterCondition condition) {
-        hasRaw = false;
+    public Boolean visit(FilterCondition condition) {
+        return false;
     }
 
     @Override
-    public void visit(FilterNot not) {
-        not.filter().walk(this);
+    public Boolean visit(FilterNot not) {
+        return not.filter().walk(this);
     }
 
     @Override
-    public void visit(FilterOr ors) {
-        hasRaw = ors.filters().stream().anyMatch(FilterHasRaw::of);
+    public Boolean visit(FilterOr ors) {
+        return ors.filters().stream().anyMatch(FilterHasRaw::of);
     }
 
     @Override
-    public void visit(FilterAnd ands) {
-        hasRaw = ands.filters().stream().anyMatch(FilterHasRaw::of);
+    public Boolean visit(FilterAnd ands) {
+        return ands.filters().stream().anyMatch(FilterHasRaw::of);
     }
 
     @Override
-    public void visit(RawString rawString) {
-        hasRaw = true;
+    public Boolean visit(RawString rawString) {
+        return true;
     }
 }

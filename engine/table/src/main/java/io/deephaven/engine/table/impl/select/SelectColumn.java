@@ -23,7 +23,7 @@ public interface SelectColumn extends Selectable {
     static SelectColumn of(Selectable selectable) {
         return (selectable instanceof SelectColumn)
                 ? (SelectColumn) selectable
-                : selectable.expression().walk(new ExpressionAdapter(selectable.newColumn())).getOut();
+                : selectable.expression().walk(new ExpressionAdapter(selectable.newColumn()));
     }
 
     static SelectColumn[] from(Selectable... selectables) {
@@ -169,36 +169,31 @@ public interface SelectColumn extends Selectable {
      */
     SelectColumn copy();
 
-    class ExpressionAdapter implements Expression.Visitor, Value.Visitor {
+    class ExpressionAdapter implements Expression.Visitor<SelectColumn>, Value.Visitor<SelectColumn> {
         private final ColumnName lhs;
-        private SelectColumn out;
 
         ExpressionAdapter(ColumnName lhs) {
             this.lhs = Objects.requireNonNull(lhs);
         }
 
-        public SelectColumn getOut() {
-            return Objects.requireNonNull(out);
+        @Override
+        public SelectColumn visit(Value rhs) {
+            return rhs.walk((Value.Visitor<SelectColumn>) this);
         }
 
         @Override
-        public void visit(Value rhs) {
-            rhs.walk((Value.Visitor) this);
+        public SelectColumn visit(ColumnName rhs) {
+            return new SourceColumn(rhs.name(), lhs.name());
         }
 
         @Override
-        public void visit(ColumnName rhs) {
-            out = new SourceColumn(rhs.name(), lhs.name());
+        public SelectColumn visit(RawString rhs) {
+            return SelectColumnFactory.getExpression(String.format("%s=%s", lhs.name(), rhs.value()));
         }
 
         @Override
-        public void visit(RawString rhs) {
-            out = SelectColumnFactory.getExpression(String.format("%s=%s", lhs.name(), rhs.value()));
-        }
-
-        @Override
-        public void visit(long rhs) {
-            out = SelectColumnFactory.getExpression(String.format("%s=%dL", lhs.name(), rhs));
+        public SelectColumn visit(long rhs) {
+            return SelectColumnFactory.getExpression(String.format("%s=%dL", lhs.name(), rhs));
         }
     }
 

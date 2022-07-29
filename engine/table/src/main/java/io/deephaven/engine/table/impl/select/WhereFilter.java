@@ -29,11 +29,11 @@ public interface WhereFilter extends Filter {
     static WhereFilter of(Filter filter) {
         return (filter instanceof WhereFilter)
                 ? (WhereFilter) filter
-                : filter.walk(new Adapter(false)).getOut();
+                : filter.walk(new Adapter(false));
     }
 
     static WhereFilter ofInverted(Filter filter) {
-        return filter.walk(new Adapter(true)).getOut();
+        return filter.walk(new Adapter(true));
     }
 
     static WhereFilter[] from(Collection<? extends Filter> filters) {
@@ -193,74 +193,69 @@ public interface WhereFilter extends Filter {
         }
     }
 
-    class Adapter implements Filter.Visitor {
+    class Adapter implements Filter.Visitor<WhereFilter> {
         private final boolean inverted;
-        private WhereFilter out;
 
         private Adapter(boolean inverted) {
             this.inverted = inverted;
         }
 
-        public WhereFilter getOut() {
-            return Objects.requireNonNull(out);
+        @Override
+        public WhereFilter visit(FilterCondition condition) {
+            return FilterConditionAdapter.of(inverted ? condition.invert() : condition);
         }
 
         @Override
-        public void visit(FilterCondition condition) {
-            out = FilterConditionAdapter.of(inverted ? condition.invert() : condition);
+        public WhereFilter visit(FilterNot not) {
+            return not.filter().walk(new Adapter(!inverted));
         }
 
         @Override
-        public void visit(FilterNot not) {
-            out = not.filter().walk(new Adapter(!inverted)).getOut();
-        }
-
-        @Override
-        public void visit(FilterIsNull isNull) {
+        public WhereFilter visit(FilterIsNull isNull) {
             if (inverted) {
-                out = isNotNull(isNull.column());
+                return isNotNull(isNull.column());
             } else {
-                out = isNull(isNull.column());
+                return isNull(isNull.column());
             }
         }
 
         @Override
-        public void visit(FilterIsNotNull isNotNull) {
+        public WhereFilter visit(FilterIsNotNull isNotNull) {
             if (inverted) {
-                out = isNull(isNotNull.column());
+                return isNull(isNotNull.column());
             } else {
-                out = isNotNull(isNotNull.column());
+                return isNotNull(isNotNull.column());
             }
         }
 
         @Override
-        public void visit(FilterOr ors) {
+        public WhereFilter visit(FilterOr ors) {
             if (inverted) {
                 // !A && !B && ... && !Z
-                out = ConjunctiveFilter.makeConjunctiveFilter(fromInverted(ors.filters()));
+                return ConjunctiveFilter.makeConjunctiveFilter(fromInverted(ors.filters()));
             } else {
                 // A || B || ... || Z
-                out = DisjunctiveFilter.makeDisjunctiveFilter(from(ors.filters()));
+                return DisjunctiveFilter.makeDisjunctiveFilter(from(ors.filters()));
             }
         }
 
         @Override
-        public void visit(FilterAnd ands) {
+        public WhereFilter visit(FilterAnd ands) {
             if (inverted) {
                 // !A || !B || ... || !Z
-                out = DisjunctiveFilter.makeDisjunctiveFilter(fromInverted(ands.filters()));
+                return DisjunctiveFilter.makeDisjunctiveFilter(fromInverted(ands.filters()));
             } else {
                 // A && B && ... && Z
-                out = ConjunctiveFilter.makeConjunctiveFilter(from(ands.filters()));
+                return ConjunctiveFilter.makeConjunctiveFilter(from(ands.filters()));
             }
         }
 
         @Override
-        public void visit(RawString rawString) {
+        public WhereFilter visit(RawString rawString) {
             if (inverted) {
-                out = WhereFilterFactory.getExpression(String.format("!(%s)", rawString.value()));
+                return WhereFilterFactory.getExpression(String.format("!(%s)", rawString.value()));
             } else {
-                out = WhereFilterFactory.getExpression(rawString.value());
+                return WhereFilterFactory.getExpression(rawString.value());
             }
         }
 
@@ -272,56 +267,44 @@ public interface WhereFilter extends Filter {
             return new MatchFilter(MatchType.Inverted, columnName.name(), new Object[] {null});
         }
 
-        private static class FilterConditionAdapter implements Value.Visitor {
+        private static class FilterConditionAdapter implements Value.Visitor<WhereFilter> {
 
             public static WhereFilter of(FilterCondition condition) {
                 FilterCondition preferred = condition.maybeTranspose();
-                return preferred.lhs().walk(new FilterConditionAdapter(condition, preferred)).getOut();
+                return preferred.lhs().walk(new FilterConditionAdapter(condition, preferred));
             }
 
             private final FilterCondition original;
             private final FilterCondition preferred;
-
-            private WhereFilter out;
 
             private FilterConditionAdapter(FilterCondition original, FilterCondition preferred) {
                 this.original = Objects.requireNonNull(original);
                 this.preferred = Objects.requireNonNull(preferred);
             }
 
-            public WhereFilter getOut() {
-                return Objects.requireNonNull(out);
-            }
-
             @Override
-            public void visit(ColumnName lhs) {
-                preferred.rhs().walk(new Value.Visitor() {
+            public WhereFilter visit(ColumnName lhs) {
+                return preferred.rhs().walk(new Value.Visitor<WhereFilter>() {
                     @Override
-                    public void visit(ColumnName rhs) {
-                        out = WhereFilterFactory.getExpression(Strings.of(original));
+                    public WhereFilter visit(ColumnName rhs) {
+                        return WhereFilterFactory.getExpression(Strings.of(original));
                     }
 
                     @Override
-                    public void visit(long rhs) {
+                    public WhereFilter visit(long rhs) {
                         switch (preferred.operator()) {
                             case LESS_THAN:
-                                out = new LongRangeFilter(lhs.name(), Long.MIN_VALUE, rhs, true, false);
-                                break;
+                                return new LongRangeFilter(lhs.name(), Long.MIN_VALUE, rhs, true, false);
                             case LESS_THAN_OR_EQUAL:
-                                out = new LongRangeFilter(lhs.name(), Long.MIN_VALUE, rhs, true, true);
-                                break;
+                                return new LongRangeFilter(lhs.name(), Long.MIN_VALUE, rhs, true, true);
                             case GREATER_THAN:
-                                out = new LongRangeFilter(lhs.name(), rhs, Long.MAX_VALUE, false, true);
-                                break;
+                                return new LongRangeFilter(lhs.name(), rhs, Long.MAX_VALUE, false, true);
                             case GREATER_THAN_OR_EQUAL:
-                                out = new LongRangeFilter(lhs.name(), rhs, Long.MAX_VALUE, true, true);
-                                break;
+                                return new LongRangeFilter(lhs.name(), rhs, Long.MAX_VALUE, true, true);
                             case EQUALS:
-                                out = new MatchFilter(lhs.name(), rhs);
-                                break;
+                                return new MatchFilter(lhs.name(), rhs);
                             case NOT_EQUALS:
-                                out = new MatchFilter(MatchType.Inverted, lhs.name(), rhs);
-                                break;
+                                return new MatchFilter(MatchType.Inverted, lhs.name(), rhs);
                             default:
                                 throw new IllegalStateException("Unexpected operator " + original.operator());
                         }
@@ -333,8 +316,8 @@ public interface WhereFilter extends Filter {
             // the case where rhs is column name.
 
             @Override
-            public void visit(long lhs) {
-                out = WhereFilterFactory.getExpression(Strings.of(original));
+            public WhereFilter visit(long lhs) {
+                return WhereFilterFactory.getExpression(Strings.of(original));
             }
         }
     }
@@ -347,7 +330,7 @@ public interface WhereFilter extends Filter {
     }
 
     @Override
-    default <V extends Visitor> V walk(V visitor) {
+    default <T> T walk(Visitor<T> visitor) {
         throw new UnsupportedOperationException("WhereFilters do not implement walk");
     }
 

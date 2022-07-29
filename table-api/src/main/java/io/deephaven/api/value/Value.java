@@ -16,13 +16,13 @@ public interface Value extends Expression {
         return ValueLong.of(value);
     }
 
-    <V extends Visitor> V walk(V visitor);
+    <T> T walk(Visitor<T> visitor);
 
-    interface Visitor {
+    interface Visitor<T> {
         // TODO (deephaven-core#831): Add more table api Value structuring
 
-        void visit(ColumnName x);
+        T visit(ColumnName x);
 
-        void visit(long x);
+        T visit(long x);
     }
 }

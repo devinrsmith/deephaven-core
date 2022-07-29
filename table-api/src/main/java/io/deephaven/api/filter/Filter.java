@@ -45,23 +45,23 @@ public interface Filter extends Serializable {
 
     FilterNot not();
 
-    <V extends Visitor> V walk(V visitor);
+    <T> T walk(Visitor<T> visitor);
 
-    interface Visitor {
+    interface Visitor<T> {
         // TODO (deephaven-core#829): Add more table api Filter structuring
 
-        void visit(FilterIsNull isNull);
+        T visit(FilterIsNull isNull);
 
-        void visit(FilterIsNotNull isNotNull);
+        T visit(FilterIsNotNull isNotNull);
 
-        void visit(FilterCondition condition);
+        T visit(FilterCondition condition);
 
-        void visit(FilterNot not);
+        T visit(FilterNot not);
 
-        void visit(FilterOr ors);
+        T visit(FilterOr ors);
 
-        void visit(FilterAnd ands);
+        T visit(FilterAnd ands);
 
-        void visit(RawString rawString);
+        T visit(RawString rawString);
     }
 }

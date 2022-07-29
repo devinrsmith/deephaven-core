@@ -86,15 +86,13 @@ public abstract class ColumnName
     }
 
     @Override
-    public final <V extends Expression.Visitor> V walk(V visitor) {
-        visitor.visit(this);
-        return visitor;
+    public final <T> T walk(Expression.Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Override
-    public final <V extends Value.Visitor> V walk(V visitor) {
-        visitor.visit(this);
-        return visitor;
+    public final <T> T walk(Value.Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     @Check

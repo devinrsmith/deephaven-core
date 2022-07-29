@@ -20,9 +20,8 @@ abstract class ValueLong extends ValueBase {
     public abstract long value();
 
     @Override
-    public final <V extends Visitor> V walk(V visitor) {
-        visitor.visit(value());
-        return visitor;
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(value());
     }
 
     @Check

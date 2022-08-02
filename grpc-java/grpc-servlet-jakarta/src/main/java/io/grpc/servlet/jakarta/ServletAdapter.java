@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -273,6 +274,7 @@ public final class ServletAdapter {
         final AsyncContext asyncCtx;
         final ServletInputStream input;
         final InternalLogId logId;
+        private final AtomicBoolean closed = new AtomicBoolean(false);
 
         GrpcReadListener(
                 ServletServerStream stream,
@@ -315,6 +317,11 @@ public final class ServletAdapter {
         @Override
         public void onAllDataRead() {
             logger.log(FINE, "[{0}] onAllDataRead", logId);
+            if (!closed.compareAndSet(false, true)) {
+                // https://github.com/eclipse/jetty.project/issues/8405
+                logger.log(FINE, "[{0}] onAllDataRead already called, skipping this one", logId);
+                return;
+            }
             stream.transportState().runOnTransportThread(
                     () -> stream.transportState().inboundDataReceived(ReadableBuffers.empty(), true));
         }

@@ -1,0 +1,16 @@
+plugins {
+    id 'io.deephaven.project.register'
+    id 'java-library'
+}
+
+dependencies {
+    api project(':plugin')
+    api project(':application-mode')
+
+    Classpaths.inheritAutoService(project)
+    Classpaths.inheritImmutables(project)
+
+    Classpaths.inheritJacksonPlatform(project, 'implementation')
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+}

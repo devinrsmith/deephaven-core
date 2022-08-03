@@ -28,6 +28,7 @@ def extraJvmArgs = [
         '-XX:MaxGCPauseMillis=100',
         '-XX:+UseStringDeduplication',
         '-XshowSettings:vm',
+        '-Dio.deephaven.web.WebApplication.layout=/home/devin/Downloads/deephaven-app-layout-2022-08-04-150038.json'
 ]
 
 if (hasProperty('groovy')) {

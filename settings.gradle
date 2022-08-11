@@ -54,6 +54,7 @@ include 'combined-javadoc'
 
 include 'grpc-java:grpc-servlet-jakarta'
 include 'grpc-java:grpc-servlet-websocket-jakarta'
+include 'grpc-java:grpc-mtls'
 
 include 'DHProcess'
 include 'proto:proto-backplane-grpc'

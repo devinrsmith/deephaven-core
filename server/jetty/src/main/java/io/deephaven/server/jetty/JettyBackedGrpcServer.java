@@ -20,6 +20,7 @@ import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http2.parser.RateControl;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
+import org.eclipse.jetty.rewrite.handler.ForwardedSchemeHeaderRule;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -63,6 +64,9 @@ public class JettyBackedGrpcServer implements GrpcServer {
         } catch (IOException ioException) {
             throw new UncheckedIOException(ioException);
         }
+
+
+        new ForwardedSchemeHeaderRule();
 
         // For the Web UI, cache everything in the static folder
         // https://create-react-app.dev/docs/production-build/#static-file-caching
@@ -140,6 +144,8 @@ public class JettyBackedGrpcServer implements GrpcServer {
     private static ServerConnector createConnector(Server server, JettyConfig config) {
         // https://www.eclipse.org/jetty/documentation/jetty-11/programming-guide/index.html#pg-server-http-connector-protocol-http2-tls
         final HttpConfiguration httpConfig = new HttpConfiguration();
+//        httpConfig.addCustomizer( new org.eclipse.jetty.server.ForwardedRequestCustomizer() );
+
         final HttpConnectionFactory http11 = config.http1OrDefault() ? new HttpConnectionFactory(httpConfig) : null;
         final ServerConnector serverConnector;
         if (config.ssl().isPresent()) {

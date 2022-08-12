@@ -20,6 +20,8 @@ dependencies {
     implementation 'org.eclipse.jetty:jetty-webapp'
     implementation 'org.eclipse.jetty.http2:http2-server'
     implementation 'org.eclipse.jetty:jetty-alpn-server'
+    implementation 'org.eclipse.jetty:jetty-rewrite'
+
     // TODO(deephaven-core#2506): Support for alternative ALPN implementations
     runtimeOnly 'org.eclipse.jetty:jetty-alpn-java-server'
 

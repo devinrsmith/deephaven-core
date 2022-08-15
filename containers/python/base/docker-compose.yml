@@ -1,43 +1,29 @@
 version: "3.4"
 
 services:
-  server:
-    image: ghcr.io/deephaven/server:${VERSION:-latest}
-    expose:
-      - '8080'
+  deephaven:
+    image: ghcr.io/deephaven/server:0.16.0-python
+    labels:
+      - 'traefik.http.routers.deephaven.rule=Host(`localhost`)'
     volumes:
       - ./data:/data
-      - api-cache:/cache
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx4g -Ddeephaven.console.type=python
+      - JAVA_OPTS=-Xmx4g
 
-  web:
-    image: ghcr.io/deephaven/web:${VERSION:-latest}
-    expose:
-      - '80'
+  notebooks:
+    image: ghcr.io/devinrsmith/webdav:latest
+    labels:
+      - 'traefik.http.routers.notebooks.rule=PathPrefix(`/notebooks/`)'
+      - 'traefik.http.routers.notebooks.priority=100'
     volumes:
-      - ./data:/data
-      - web-tmp:/tmp
+      - ./notebooks:/srv/webdav
 
-  grpc-proxy:
-    image: ghcr.io/deephaven/grpc-proxy:${VERSION:-latest}
-    environment:
-      - BACKEND_ADDR=server:8080
-    depends_on:
-      - server
-    expose:
-      - '8080'
-
-  envoy:
-    image: ghcr.io/deephaven/envoy:${VERSION:-latest}
-    depends_on:
-      - web
-      - grpc-proxy
-      - server
+  reverse-proxy:
+    image: traefik:v2.8
+    command:
+      - '--providers.docker=true'
+      - '--entrypoints.web.address=:80'
     ports:
-      - "${DEEPHAVEN_PORT:-10000}:10000"
-
-volumes:
-    web-tmp:
-    api-cache:
-      
+      - "${DEEPHAVEN_PORT:-10000}:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

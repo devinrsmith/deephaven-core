@@ -77,12 +77,12 @@ public final class TableToStream {
 
     private void fillAndHandoff(Table newData, int bufferSize, Iterator it) {
         while (it.hasMore()) {
-            final WritableChunk<Values>[] chunks = new WritableChunk[streamTable.numColumns()];
+            final WritableChunk[] chunks =
+                    StreamToTableAdapter.makeChunksForDefinition(streamTable.getDefinition(), bufferSize);
             final RowSequence seq = it.getNextRowSequenceWithLength(bufferSize);
             int i = 0;
             for (String columnName : streamTable.getDefinition().getColumnNames()) {
                 final ColumnSource<?> src = newData.getColumnSource(columnName);
-                chunks[i] = src.getChunkType().makeWritableChunk(bufferSize);
                 try (final FillContext fillContext = src.makeFillContext(bufferSize)) {
                     src.fillChunk(fillContext, chunks[i], seq);
                 }

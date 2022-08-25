@@ -34,7 +34,7 @@ import java.util.Set;
 
 import static com.sun.management.GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION;
 
-@AutoService(ApplicationState.Factory.class)
+// @AutoService(ApplicationState.Factory.class)
 public final class GcApplication implements ApplicationState.Factory, NotificationListener {
 
     private static final ColumnHeader<Long> ID = ColumnHeader.ofLong("Id");

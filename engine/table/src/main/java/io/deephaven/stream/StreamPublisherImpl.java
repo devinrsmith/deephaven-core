@@ -1,12 +1,10 @@
 /**
  * Copyright (c) 2016-2022 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.kafka;
+package io.deephaven.stream;
 
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamPublisher;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.IntFunction;

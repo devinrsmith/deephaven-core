@@ -103,6 +103,10 @@ public class StreamToTableAdapter extends ReferenceCountedLivenessNode
         tableRef = new WeakReference<>(table);
     }
 
+    public TableDefinition getTableDefinition() {
+        return tableDefinition;
+    }
+
     /**
      * Set a callback to be invoked when this StreamToTableAdapter will no longer deliver new data to downstream
      * consumers.

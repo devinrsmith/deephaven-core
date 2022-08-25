@@ -20,6 +20,7 @@ public abstract class WebConfig {
     public static WebConfig systemPropertiesInstance() {
         final String csvDownload = System.getProperty("deephaven.web.csvDownload");
         final String copy = System.getProperty("deephaven.web.copy");
+        final String console = System.getProperty("deephaven.console.disable");
         final Builder builder = builder();
         if (csvDownload != null) {
             builder.csvDownload(Boolean.parseBoolean(csvDownload));
@@ -27,18 +28,30 @@ public abstract class WebConfig {
         if (copy != null) {
             builder.copy(Boolean.parseBoolean(copy));
         }
+        if (console != null) {
+            builder.console(Boolean.parseBoolean(console));
+        }
         return builder.build();
     }
 
+    // https://github.com/deephaven/web-client-ui/issues/703
     @Default
     @JsonProperty("csv_download")
     public boolean csvDownload() {
         return true;
     }
 
+    // https://github.com/deephaven/web-client-ui/issues/703
     @Default
     @JsonProperty("copy")
     public boolean copy() {
+        return true;
+    }
+
+    // https://github.com/deephaven/web-client-ui/issues/596
+    @Default
+    @JsonProperty("console")
+    public boolean console() {
         return true;
     }
 
@@ -47,6 +60,8 @@ public abstract class WebConfig {
         Builder csvDownload(boolean csvDownload);
 
         Builder copy(boolean copy);
+
+        Builder console(boolean console);
 
         WebConfig build();
     }

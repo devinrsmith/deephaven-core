@@ -35,6 +35,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Stream;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
+import io.deephaven.stream.StreamPublisherImpl;
 import io.deephaven.time.DateTime;
 import io.deephaven.engine.liveness.LivenessScope;
 import io.deephaven.engine.liveness.LivenessScopeStack;

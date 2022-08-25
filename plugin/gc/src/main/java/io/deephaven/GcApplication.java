@@ -9,8 +9,7 @@ import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
-import io.deephaven.engine.table.impl.util.AppendOnlyArrayBackedMutableTable;
-import io.deephaven.engine.util.config.MutableInputTable;
+import io.deephaven.engine.table.impl.util.TableToStream;
 import io.deephaven.qst.column.Column;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.column.header.ColumnHeaders6;
@@ -54,9 +53,9 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
     private static final ColumnHeader<Long> COMMITTED = ColumnHeader.ofLong("Committed");
 
     private final Instant vmStart;
-    private MutableInputTable notificationInfo;
-    private MutableInputTable beforePools;
-    private MutableInputTable afterPools;
+    private TableToStream notificationInfo;
+    private TableToStream beforePools;
+    private TableToStream afterPools;
 
     public GcApplication() {
         vmStart = Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime());
@@ -79,25 +78,25 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         return state;
     }
 
-    private MutableInputTable createNotificationInfo(ApplicationState state) {
-        final AppendOnlyArrayBackedMutableTable n = AppendOnlyArrayBackedMutableTable.make(TableDefinition
-                .from(Arrays.asList(ID, START, END, GC_NAME, GC_ACTION, GC_CAUSE, BEFORE_GC, AFTER_GC)));
-        state.setField("notification_info", n.readOnlyCopy());
-        return (MutableInputTable) n.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
+    private TableToStream createNotificationInfo(ApplicationState state) {
+        final TableToStream tts = TableToStream.of(
+                TableDefinition.from(Arrays.asList(ID, START, END, GC_NAME, GC_ACTION, GC_CAUSE, BEFORE_GC, AFTER_GC)));
+        state.setField("notification_info", tts.table());
+        return tts;
     }
 
-    private MutableInputTable createBeforePools(ApplicationState state) {
-        final AppendOnlyArrayBackedMutableTable n = AppendOnlyArrayBackedMutableTable
-                .make(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
-        state.setField("before_pools", n.readOnlyCopy());
-        return (MutableInputTable) n.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
+    private TableToStream createBeforePools(ApplicationState state) {
+        final TableToStream tts =
+                TableToStream.of(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
+        state.setField("before_pools", tts.table());
+        return tts;
     }
 
-    private MutableInputTable createAfterPools(ApplicationState state) {
-        final AppendOnlyArrayBackedMutableTable n = AppendOnlyArrayBackedMutableTable
-                .make(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
-        state.setField("after_pools", n.readOnlyCopy());
-        return (MutableInputTable) n.getAttribute(Table.INPUT_TABLE_ATTRIBUTE);
+    private TableToStream createAfterPools(ApplicationState state) {
+        final TableToStream tts =
+                TableToStream.of(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
+        state.setField("after_pools", tts.table());
+        return tts;
     }
 
     public void install() {
@@ -141,9 +140,9 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         final Map<String, MemoryUsage> after = info.getGcInfo().getMemoryUsageAfterGc();
         final long beforeGc = before.values().stream().mapToLong(MemoryUsage::getUsed).sum();
         final long afterGc = after.values().stream().mapToLong(MemoryUsage::getUsed).sum();
-        beforePools.add(pool(id, before.entrySet()));
-        afterPools.add(pool(id, after.entrySet()));
-        notificationInfo.add(InMemoryTable.from(NewTable.of(
+        beforePools.addSplittable(pool(id, before.entrySet()));
+        afterPools.addSplittable(pool(id, after.entrySet()));
+        notificationInfo.addSplittable(InMemoryTable.from(NewTable.of(
                 Column.of(ID, id),
                 Column.of(START, vmStart.plusMillis(vmStartOffsetMillis)),
                 Column.of(END, vmStart.plusMillis(vmEndOffsetMillis)),

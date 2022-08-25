@@ -232,6 +232,12 @@ project(':plugin-figure').projectDir = file('plugin/figure')
 include(':plugin-partitionedtable')
 project(':plugin-partitionedtable').projectDir = file('plugin/partitionedtable')
 
+include(':plugin-gc')
+project(':plugin-gc').projectDir = file('plugin/gc')
+
+include(':plugin-memory')
+project(':plugin-memory').projectDir = file('plugin/memory')
+
 include(':envoy')
 
 include(':grpc-proxy')

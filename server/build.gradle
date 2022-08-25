@@ -69,6 +69,8 @@ dependencies {
 
     runtimeOnly project(':plugin-figure')
     runtimeOnly project(':plugin-partitionedtable')
+    runtimeOnly project(':plugin-gc')
+    runtimeOnly project(':plugin-memory')
 
     Classpaths.inheritGrpcPlatform(project, 'api')
 

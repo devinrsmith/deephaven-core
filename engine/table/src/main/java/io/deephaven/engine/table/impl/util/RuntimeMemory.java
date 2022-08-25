@@ -44,13 +44,13 @@ public class RuntimeMemory {
 
     private static class Snapshot {
         /**
-         * When should we next check for free/total memory.
-         */
-        long nextCheck;
-        /**
          * When should we next log free/total/max memory.
          */
         long nextLog;
+        /**
+         * What is the last timestamp.
+         */
+        long lastTimestampMillis;
         /**
          * What is the last free memory value we retrieved from the Runtime.
          */
@@ -70,6 +70,7 @@ public class RuntimeMemory {
         long totalCollectionTimeMs;
 
         private void readInto(Sample buf) {
+            buf.timestampMillis = lastTimestampMillis;
             buf.freeMemory = lastFreeMemory;
             buf.totalMemory = lastTotalMemory;
             buf.totalCollections = totalCollections;
@@ -115,6 +116,10 @@ public class RuntimeMemory {
 
     public static class Sample {
         /**
+         * What is the timestamp.
+         */
+        public long timestampMillis;
+        /**
          * What is the last free memory value we retrieved from the {@link Runtime#freeMemory()}.
          */
         public long freeMemory;
@@ -137,7 +142,7 @@ public class RuntimeMemory {
          * Reset all sample data to zero.
          */
         void reset() {
-            freeMemory = totalMemory = totalCollections = totalCollectionTimeMs = 0L;
+            timestampMillis = freeMemory = totalMemory = totalCollections = totalCollectionTimeMs = 0L;
         }
 
         /**
@@ -146,6 +151,7 @@ public class RuntimeMemory {
          * @param s destination for the copied data
          */
         void copy(final Sample s) {
+            timestampMillis = s.timestampMillis;
             freeMemory = s.freeMemory;
             totalMemory = s.totalMemory;
             totalCollections = s.totalCollections;
@@ -161,13 +167,13 @@ public class RuntimeMemory {
     public void read(final Sample buf) {
         final long now = System.currentTimeMillis();
         Snapshot snapshot = currSnapshot;
-        if (now >= snapshot.nextCheck) {
+        if (now >= snapshot.lastTimestampMillis + cacheInterval) {
             synchronized (this) {
-                if (now >= currSnapshot.nextCheck) {
+                if (now >= currSnapshot.lastTimestampMillis + cacheInterval) {
                     snapshot = new Snapshot();
+                    snapshot.lastTimestampMillis = now;
                     snapshot.lastFreeMemory = runtime.freeMemory();
                     snapshot.lastTotalMemory = runtime.totalMemory();
-                    snapshot.nextCheck = now + cacheInterval;
                     long collections = 0;
                     long collectionsMs = 0;
                     for (final GarbageCollectorMXBean gcBean : gcBeans) {

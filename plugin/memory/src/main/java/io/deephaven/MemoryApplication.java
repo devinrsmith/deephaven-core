@@ -7,6 +7,8 @@ import io.deephaven.engine.liveness.LivenessScope;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
+import io.deephaven.engine.table.impl.StreamTableTools;
+import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.table.impl.util.RuntimeMemory;
 import io.deephaven.engine.table.impl.util.RuntimeMemory.Sample;
 import io.deephaven.engine.table.impl.util.TableToStream;
@@ -20,7 +22,7 @@ import java.util.Arrays;
 public final class MemoryApplication implements ApplicationState.Factory {
 
     private static final ColumnHeader<Instant> TIMESTAMP = ColumnHeader.ofInstant("Timestamp");
-    private static final ColumnHeader<Long> FREE_MEMORY = ColumnHeader.ofLong("FreeMemory");
+    private static final ColumnHeader<Long> USED_MEMORY = ColumnHeader.ofLong("UsedMemory");
     private static final ColumnHeader<Long> TOTAL_MEMORY = ColumnHeader.ofLong("TotalMemory");
     private static final ColumnHeader<Long> COLLECTION_COUNT = ColumnHeader.ofLong("CollectionCount");
     private static final ColumnHeader<Long> COLLECTION_TIME = ColumnHeader.ofLong("CollectionTime");
@@ -45,14 +47,15 @@ public final class MemoryApplication implements ApplicationState.Factory {
             final Sample buf = new Sample();
             while (true) {
                 runtimeMemory.read(buf);
+                final long usedMemory = buf.totalMemory - buf.freeMemory;
                 table.addSplittable(InMemoryTable.from(
-                        ColumnHeader.of(TIMESTAMP, FREE_MEMORY, TOTAL_MEMORY, COLLECTION_COUNT, COLLECTION_TIME)
+                        ColumnHeader.of(TIMESTAMP, USED_MEMORY, TOTAL_MEMORY, COLLECTION_COUNT, COLLECTION_TIME)
                                 .start(1)
-                                .row(Instant.ofEpochMilli(buf.timestampMillis), buf.freeMemory, buf.totalMemory,
+                                .row(Instant.ofEpochMilli(buf.timestampMillis), usedMemory, buf.totalMemory,
                                         buf.totalCollections, buf.totalCollectionTimeMs)
                                 .newTable()));
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -63,8 +66,10 @@ public final class MemoryApplication implements ApplicationState.Factory {
 
     private TableToStream createMemory(ApplicationState state) {
         final TableToStream tts = TableToStream.of(TableDefinition
-                .from(Arrays.asList(TIMESTAMP, FREE_MEMORY, TOTAL_MEMORY, COLLECTION_COUNT, COLLECTION_TIME)));
+                .from(Arrays.asList(TIMESTAMP, USED_MEMORY, TOTAL_MEMORY, COLLECTION_COUNT, COLLECTION_TIME)));
         state.setField("memory", tts.table());
+        state.setField("memory_append", StreamTableTools.streamToAppendOnlyTable(tts.table()));
+        state.setField("memory_ring", RingTableTools.of(tts.table(), 6000));
         return tts;
     }
 }

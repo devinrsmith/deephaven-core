@@ -9,6 +9,7 @@ import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.InMemoryTable;
+import io.deephaven.engine.table.impl.StreamTableTools;
 import io.deephaven.engine.table.impl.util.TableToStream;
 import io.deephaven.qst.column.Column;
 import io.deephaven.qst.column.header.ColumnHeader;
@@ -34,7 +35,7 @@ import java.util.Set;
 
 import static com.sun.management.GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION;
 
-// @AutoService(ApplicationState.Factory.class)
+@AutoService(ApplicationState.Factory.class)
 public final class GcApplication implements ApplicationState.Factory, NotificationListener {
 
     private static final ColumnHeader<Long> ID = ColumnHeader.ofLong("Id");
@@ -82,6 +83,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         final TableToStream tts = TableToStream.of(
                 TableDefinition.from(Arrays.asList(ID, START, END, GC_NAME, GC_ACTION, GC_CAUSE, BEFORE_GC, AFTER_GC)));
         state.setField("notification_info", tts.table());
+        state.setField("notification_info_append", StreamTableTools.streamToAppendOnlyTable(tts.table()));
         return tts;
     }
 
@@ -89,6 +91,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         final TableToStream tts =
                 TableToStream.of(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
         state.setField("before_pools", tts.table());
+        state.setField("before_pools_append", StreamTableTools.streamToAppendOnlyTable(tts.table()));
         return tts;
     }
 
@@ -96,6 +99,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         final TableToStream tts =
                 TableToStream.of(TableDefinition.from(Arrays.asList(ID, POOL, INIT, USED, COMMITTED, MAX)));
         state.setField("after_pools", tts.table());
+        state.setField("after_pools_append", StreamTableTools.streamToAppendOnlyTable(tts.table()));
         return tts;
     }
 

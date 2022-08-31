@@ -2169,7 +2169,7 @@ public class KafkaTools {
         }
 
         @Override
-        public void acceptFailure(@NotNull Exception cause) {
+        public void acceptFailure(@NotNull Throwable cause) {
             streamToTableAdapter.acceptFailure(cause);
         }
     }

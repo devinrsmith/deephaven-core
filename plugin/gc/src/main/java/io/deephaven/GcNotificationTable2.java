@@ -57,10 +57,6 @@ final class GcNotificationTable2 {
         }
     }
 
-    public synchronized void acceptFailure(Throwable e) {
-        consumer.acceptFailure(e);
-    }
-
     public synchronized void flush() {
         if (chunks[0].size() == 0) {
             return;
@@ -68,5 +64,9 @@ final class GcNotificationTable2 {
         consumer.accept(chunks);
         // noinspection unchecked
         chunks = StreamToTableAdapter.makeChunksForDefinition(DEFINITION, CHUNK_SIZE);
+    }
+
+    public void acceptFailure(Throwable e) {
+        consumer.acceptFailure(e);
     }
 }

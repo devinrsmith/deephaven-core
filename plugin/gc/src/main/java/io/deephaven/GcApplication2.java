@@ -80,6 +80,7 @@ public final class GcApplication2 implements ApplicationState.Factory, Notificat
             } catch (ListenerNotFoundException e) {
                 t.addSuppressed(e);
             }
+            throw t;
         }
     }
 }

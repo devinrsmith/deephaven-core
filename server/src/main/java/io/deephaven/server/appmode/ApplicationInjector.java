@@ -100,14 +100,4 @@ public class ApplicationInjector {
         log.info().append("\tfound ").append(numExports).append(" exports").endl();
         ticketResolver.onApplicationLoad(app);
     }
-
-    private void loadApplicationFactory(ApplicationState.Factory factory) {
-        log.info().append("Starting ApplicationState.Factory '").append(factory.toString()).append('\'').endl();
-        try (final SafeCloseable ignored = LivenessScopeStack.open()) {
-            final ApplicationState app = factory.create(applicationListener);
-            int numExports = app.listFields().size();
-            log.info().append("\tfound ").append(numExports).append(" exports").endl();
-            ticketResolver.onApplicationLoad(app);
-        }
-    }
 }

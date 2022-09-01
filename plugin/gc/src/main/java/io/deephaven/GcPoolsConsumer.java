@@ -2,6 +2,7 @@ package io.deephaven;
 
 import com.sun.management.GcInfo;
 import io.deephaven.api.agg.Aggregation;
+import io.deephaven.api.agg.util.PercentileOutput;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -42,30 +43,43 @@ final class GcPoolsConsumer {
     }
 
     public static Table stats(Table pools) {
-        return pools.updateView(
+        return pools
+                .updateView(
                         "UsedReclaimed=BeforeUsed-AfterUsed",
                         "CommittedReclaimed=BeforeCommitted-AfterCommitted")
-                .aggBy(Arrays.asList(Aggregation.AggLast(
-                                        "BeforeInit",
-                                        "BeforeUsed",
-                                        "BeforeCommitted",
-                                        "BeforeMax",
-                                        "AfterInit",
-                                        "AfterUsed",
-                                        "AfterCommitted",
-                                        "AfterMax"),
-                                Aggregation.AggSum(
-                                        "TotalUsedReclaimed=UsedReclaimed",
-                                        "TotalCommittedReclaimed=CommittedReclaimed")),
+                .aggBy(Arrays.asList(
+                        Aggregation.AggCount("Count"),
+                        Aggregation.AggSum(
+                                "UsedReclaimedTotal=UsedReclaimed",
+                                "CommittedReclaimedTotal=CommittedReclaimed"),
+                        Aggregation.AggAvg(
+                                "UsedReclaimedAvg=UsedReclaimed",
+                                "CommittedReclaimedAvg=CommittedReclaimed"),
+                        Aggregation.AggApproxPct("UsedReclaimed",
+                                PercentileOutput.of(0.5, "UsedReclaimedP_50")),
+                        Aggregation.AggApproxPct("CommittedReclaimed",
+                                PercentileOutput.of(0.5, "CommittedReclaimedP_50")),
+                        Aggregation.AggLast(
+                                "BeforeInit",
+                                "BeforeUsed",
+                                "BeforeCommitted",
+                                "BeforeMax",
+                                "AfterInit",
+                                "AfterUsed",
+                                "AfterCommitted",
+                                "AfterMax")),
                         "Name");
     }
+
     private final StreamConsumer consumer;
     private WritableChunk<Values>[] chunks;
+    private boolean isFirst;
 
     GcPoolsConsumer(StreamConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer);
         // noinspection unchecked
         chunks = StreamToTableAdapter.makeChunksForDefinition(DEFINITION, CHUNK_SIZE);
+        isFirst = true;
     }
 
     public synchronized void add(GcInfo info) {
@@ -74,6 +88,9 @@ final class GcPoolsConsumer {
             final String poolName = e.getKey();
             final MemoryUsage before = e.getValue();
             final MemoryUsage after = afterMap.get(poolName);
+            if (!isFirst && equals(before, after)) {
+                continue;
+            }
             chunks[0].asWritableLongChunk().add(info.getId());
             chunks[1].<String>asWritableObjectChunk().add(poolName.intern());
 
@@ -87,6 +104,7 @@ final class GcPoolsConsumer {
             chunks[8].asWritableLongChunk().add(after.getCommitted());
             chunks[9].asWritableLongChunk().add(negativeOneToNullLong(after.getMax()));
         }
+        isFirst = false;
         if (chunks[0].size() + POOL_SIZE_UPPER_BOUND >= CHUNK_SIZE) {
             flushInternal();
         }
@@ -107,6 +125,13 @@ final class GcPoolsConsumer {
 
     public void acceptFailure(Throwable e) {
         consumer.acceptFailure(e);
+    }
+
+    private static boolean equals(MemoryUsage before, MemoryUsage after) {
+        return before.getUsed() == after.getUsed()
+                && before.getCommitted() == after.getCommitted()
+                && before.getMax() == after.getMax()
+                && before.getInit() == after.getInit();
     }
 
     private static long negativeOneToNullLong(long x) {

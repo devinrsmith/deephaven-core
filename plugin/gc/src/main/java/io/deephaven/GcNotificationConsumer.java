@@ -36,28 +36,27 @@ final class GcNotificationConsumer {
     }
 
     public static Table stats(Table notificationInfo) {
+        // Would be great to have a aggBy Exponential Decayed Sum so we could have "GC rate over the last 1, 5, 15 min"
+        // Could further extend with updateBy Exponential Decayed Sum and graphs of rates.
         return notificationInfo
                 .updateView("Duration=(End-Start)/1000000000")
                 .aggBy(Arrays.asList(
-                                Aggregation.AggCount("Count"),
-                                Aggregation.AggLast(
-                                        "LastId=Id",
-                                        "LastStart=Start",
-                                        "LastEnd=End",
-                                        "LastReclaimed=Reclaimed"),
-                                Aggregation.AggSum("DurationTotal=Duration", "ReclaimedTotal=Reclaimed"),
-                                Aggregation.AggMax("DurationMax=Duration", "ReclaimedMax=Reclaimed"),
-                                Aggregation.AggAvg("DurationAvg=Duration", "ReclaimedAvg=Reclaimed"),
-                                Aggregation.AggApproxPct("Duration",
-                                        PercentileOutput.of(0.5, "DurationP_50"),
-                                        PercentileOutput.of(0.9, "DurationP_90"),
-                                        PercentileOutput.of(0.95, "DurationP_95"),
-                                        PercentileOutput.of(0.99, "DurationP_99")),
-                                Aggregation.AggApproxPct("Reclaimed",
-                                        PercentileOutput.of(0.5, "ReclaimedP_50"),
-                                        PercentileOutput.of(0.9, "ReclaimedP_90"),
-                                        PercentileOutput.of(0.95, "ReclaimedP_95"),
-                                        PercentileOutput.of(0.99, "ReclaimedP_99"))),
+                        Aggregation.AggCount("Count"),
+                        Aggregation.AggSum("DurationTotal=Duration", "ReclaimedTotal=Reclaimed"),
+                        Aggregation.AggMax("DurationMax=Duration"),
+                        Aggregation.AggAvg("DurationAvg=Duration", "ReclaimedAvg=Reclaimed"),
+                        Aggregation.AggApproxPct("Reclaimed",
+                                PercentileOutput.of(0.5, "ReclaimedP_50")),
+                        Aggregation.AggApproxPct("Duration",
+                                PercentileOutput.of(0.5, "DurationP_50"),
+                                PercentileOutput.of(0.9, "DurationP_90"),
+                                PercentileOutput.of(0.95, "DurationP_95"),
+                                PercentileOutput.of(0.99, "DurationP_99")),
+                        Aggregation.AggLast(
+                                "LastId=Id",
+                                "LastStart=Start",
+                                "LastEnd=End",
+                                "LastReclaimed=Reclaimed")),
                         "GcName", "GcAction", "GcCause");
     }
 
@@ -83,8 +82,10 @@ final class GcNotificationConsumer {
 
         // This is a bit of a de-normalization - arguably, it could be computed by joining against the "pools" table.
         // But this is a very useful summary value, and easy for use to provide here for more convenience.
-        final long usedBefore = gcNotification.getGcInfo().getMemoryUsageBeforeGc().values().stream().mapToLong(MemoryUsage::getUsed).sum();
-        final long usedAfter = gcNotification.getGcInfo().getMemoryUsageAfterGc().values().stream().mapToLong(MemoryUsage::getUsed).sum();
+        final long usedBefore = gcNotification.getGcInfo().getMemoryUsageBeforeGc().values().stream()
+                .mapToLong(MemoryUsage::getUsed).sum();
+        final long usedAfter = gcNotification.getGcInfo().getMemoryUsageAfterGc().values().stream()
+                .mapToLong(MemoryUsage::getUsed).sum();
         // Note: reclaimed *can* be negative
         final long reclaimed = usedBefore - usedAfter;
         chunks[6].asWritableLongChunk().add(reclaimed);

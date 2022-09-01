@@ -13,11 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -28,6 +29,8 @@ import java.util.regex.Pattern;
  * Note that grpc-web-text is not yet supported.
  */
 public class GrpcWebFilter extends HttpFilter {
+    private static final Logger logger = Logger.getLogger(GrpcWebFilter.class.getName());
+
     public static final String CONTENT_TYPE_GRPC_WEB = GrpcUtil.CONTENT_TYPE_GRPC + "-web";
 
     @Override
@@ -71,16 +74,27 @@ public class GrpcWebFilter extends HttpFilter {
                                         payload.putInt(trailerLength);
                                         for (Map.Entry<String, String> entry : map.entrySet()) {
                                             payload.put(entry.getKey().getBytes(StandardCharsets.US_ASCII));
-                                            payload.put(": ".getBytes(StandardCharsets.US_ASCII));
+                                            payload.put((byte) ':');
+                                            payload.put((byte) ' ');
                                             payload.put(entry.getValue().getBytes(StandardCharsets.US_ASCII));
-                                            payload.put("\r\n".getBytes(StandardCharsets.US_ASCII));
+                                            payload.put((byte) '\r');
+                                            payload.put((byte) '\n');
+                                        }
+                                        if (payload.hasRemaining()) {
+                                            // Normally we must not throw, but this is an exceptional case. Complete
+                                            // the stream, _then_ throw.
+                                            super.complete();
+                                            throw new IllegalStateException(
+                                                    "Incorrectly sized buffer, trailer payload will be sized wrong");
                                         }
                                         wrappedResponse.getOutputStream().write(payload.array());
                                     }
                                 }
                             } catch (IOException e) {
-                                // TODO reconsider this, find a better way to report
-                                throw new UncheckedIOException(e);
+                                // complete() should not throw, but instead just log the error. In this case,
+                                // the connection has likely been lost, so there is no way to send the trailers,
+                                // so we just let the exception slide.
+                                logger.log(Level.FINE, "Error sending grpc-web trailers", e);
                             }
 
                             // Let the superclass complete the stream so we formally close it
@@ -100,8 +114,7 @@ public class GrpcWebFilter extends HttpFilter {
         return request.getContentType() != null && request.getContentType().startsWith(CONTENT_TYPE_GRPC_WEB);
     }
 
-    // Technically we should throw away content-length too, but the impl won't care
-    public static class GrpcWebHttpResponse extends HttpServletResponseWrapper {
+    private static class GrpcWebHttpResponse extends HttpServletResponseWrapper {
         private Supplier<Map<String, String>> trailers;
 
         public GrpcWebHttpResponse(HttpServletResponse response) {

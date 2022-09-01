@@ -16,7 +16,7 @@ import static io.deephaven.engine.util.TableTools.doubleCol;
 import static io.deephaven.engine.util.TableTools.intCol;
 import static io.deephaven.engine.util.TableTools.longCol;
 
-public class TableToStreamTest {
+public class TableToStreamTableTest {
 
     @Rule
     public final EngineCleanup framework = new EngineCleanup();
@@ -41,7 +41,7 @@ public class TableToStreamTest {
                 longCol("L", 5L),
                 doubleCol("D", Math.E));
 
-        final TableToStream adapter = tableToStream(tableDefinition);
+        final TableToStreamTable adapter = tableToStreamTable(tableDefinition);
         final TableStreamConsumer consumer = adapter.consumer(2048, true);
         final Table result = adapter.table();
 
@@ -90,7 +90,7 @@ public class TableToStreamTest {
 
         final Table t_4096 = TableTools.emptyTable(4096).view("L=ii");
 
-        final TableToStream adapter = tableToStream(tableDefinition);
+        final TableToStreamTable adapter = tableToStreamTable(tableDefinition);
 
         final TableStreamConsumer consumer = adapter.consumer(2048, true);
 
@@ -123,7 +123,7 @@ public class TableToStreamTest {
         TstUtils.assertTableEquals(empty, result);
     }
 
-    private static TableToStream tableToStream(TableDefinition tableDefinition) {
-        return TableToStream.of("test", tableDefinition, UpdateGraphProcessor.DEFAULT, null, null);
+    private static TableToStreamTable tableToStreamTable(TableDefinition tableDefinition) {
+        return TableToStreamTable.of("test", tableDefinition, UpdateGraphProcessor.DEFAULT, null);
     }
 }

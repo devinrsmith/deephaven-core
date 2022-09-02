@@ -1,18 +1,16 @@
 package io.deephaven.util.datastructures.hash;
 
-import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 2, jvmArgs = {"-Xms32G", "-Xmx32G"})
+@Fork(value = 2, jvmArgs = {"-Xms4G", "-Xmx4G"})
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
@@ -32,19 +30,27 @@ public class HashFunctionBenchmark {
         return (int)x;
     }
 
-    /**
-     * Returns the 32 high bits of Stafford variant 4 mix64 function as int.
-     * See java.util.SplittableRandom#mix32(long).
-     */
+    // See java.util.SplittableRandom#mix32(long).
     private static int SplittableRandom_mix32(long z) {
         z = (z ^ (z >>> 33)) * 0x62a9d9ed799705f5L;
         return (int)(((z ^ (z >>> 28)) * 0xcb24d0a5c88c35b3L) >>> 32);
     }
 
+    // See java.util.SplittableRandom#mix64(long).
     private static int SplittableRandom_mix64(long z) {
         z = (z ^ (z >>> 30)) * 0xbf58476d1ce4e5b9L;
         z = (z ^ (z >>> 27)) * 0x94d049bb133111ebL;
         return (int)(z ^ (z >>> 31));
+    }
+
+    // https://www.pcg-random.org/pdf/hmc-cs-2014-0905.pdf, page 44
+    private static int pcg_xsh_rr(long state) {
+        return  Integer.rotateRight((int)((state ^ (state >> 18)) >> 27), (int)(state >> 59));
+    }
+
+    // https://www.pcg-random.org/pdf/hmc-cs-2014-0905.pdf, page 44
+    private static int pcg_xsh_rs(long state) {
+        return (int)((state ^ (state >> 22)) >> (22 + (state >> 61)));
     }
 
     // http://mostlymangling.blogspot.com/2019/01/better-stronger-mixer-and-test-procedure.html
@@ -57,14 +63,6 @@ public class HashFunctionBenchmark {
     }
 
     // http://mostlymangling.blogspot.com/2019/12/stronger-better-morer-moremur-better.html
-    private static int moremur(long x) {
-        x ^= x >>> 27;
-        x *= 0x3C79AC492BA7B653L;
-        x ^= x >>> 33;
-        x *= 0x1C69B3F74AC4AE35L;
-        x ^= x >>> 27;
-        return (int)x;
-    }
 
 
 //    @Benchmark
@@ -137,13 +135,33 @@ public class HashFunctionBenchmark {
 //        return x;
 //    }
 
-    @Benchmark
-    @OperationsPerInvocation(OPERATIONS)
-    public long SplittableRandom_mix64() {
-        int x = SEED;
-        for (int i = 0; i < OPERATIONS; ++i) {
-            x = SplittableRandom_mix64((((long)x) << 32) | x);
-        }
-        return x;
-    }
+//    @Benchmark
+//    @OperationsPerInvocation(OPERATIONS)
+//    public long SplittableRandom_mix64() {
+//        int x = SEED;
+//        for (int i = 0; i < OPERATIONS; ++i) {
+//            x = SplittableRandom_mix64((((long)x) << 32) | x);
+//        }
+//        return x;
+//    }
+
+//    @Benchmark
+//    @OperationsPerInvocation(OPERATIONS)
+//    public long pcg_xsh_rr() {
+//        int x = SEED;
+//        for (int i = 0; i < OPERATIONS; ++i) {
+//            x = pcg_xsh_rr((((long)x) << 32) | x);
+//        }
+//        return x;
+//    }
+
+//    @Benchmark
+//    @OperationsPerInvocation(OPERATIONS)
+//    public long pcg_xsh_rs() {
+//        int x = SEED;
+//        for (int i = 0; i < OPERATIONS; ++i) {
+//            x = pcg_xsh_rs((((long)x) << 32) | x);
+//        }
+//        return x;
+//    }
 }

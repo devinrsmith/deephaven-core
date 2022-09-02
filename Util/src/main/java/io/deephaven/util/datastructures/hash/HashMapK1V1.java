@@ -8,6 +8,8 @@ public abstract class HashMapK1V1 extends HashMapBase {
         super(desiredInitialCapacity, loadFactor, noEntryValue);
     }
 
+    abstract int hash32(long key);
+
     final long putImpl(long[] kvs, long key, long value, boolean insertOnly) {
         if (kvs == null) {
             kvs = allocateKeysAndValuesArray(1);
@@ -82,13 +84,13 @@ public abstract class HashMapK1V1 extends HashMapBase {
         return kvs[location + 1];
     }
 
-    private static int getLocationFor(long[] kvs, long target) {
+    private int getLocationFor(long[] kvs, long target) {
         // In units of longs
         final int length = kvs.length;
         // In units of buckets
         final int numBuckets = length / (1 * 2);
 
-        final int hash1 = HashFunctions.hash32(target) & 0x7fffffff;
+        final int hash1 = hash32(target) & 0x7fffffff;
         final int bucketProbe = hash1 % numBuckets;
         // In units of longs again
         int probe = bucketProbe * (1 * 2);

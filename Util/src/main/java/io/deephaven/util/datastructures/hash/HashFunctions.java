@@ -102,8 +102,12 @@ class HashFunctions {
         return moremur(x);
     }
 
-    public static int hash32(long val) {
-        final long mix = mix(val);
-        return (int)((mix >> 32) ^ mix);
+    public static int hash32(long x) {
+        x ^= x >>> 27;
+        x *= 0x3C79AC492BA7B653L;
+        x ^= x >>> 33;
+        x *= 0x1C69B3F74AC4AE35L;
+        x ^= x >>> 27;
+        return (int)x;
     }
 }

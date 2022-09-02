@@ -87,7 +87,7 @@ public abstract class HashMapK4V4 extends HashMapBase {
         // In units of buckets
         final int numBuckets = length / (4 * 2);
 
-        final int hash1 = gnu.trove.impl.HashFunctions.hash(target) & 0x7fffffff;
+        final int hash1 = HashFunctions.hash32(target) & 0x7fffffff;
         final int bucketProbe = hash1 % numBuckets;
         // In units of longs again
         int probe = bucketProbe * (4 * 2);

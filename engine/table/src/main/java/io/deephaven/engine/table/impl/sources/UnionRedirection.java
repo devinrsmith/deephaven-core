@@ -29,7 +29,7 @@ public class UnionRedirection {
      */
     @VisibleForTesting
     public static final long ALLOCATION_UNIT_ROW_KEYS =
-            Configuration.getInstance().getLongWithDefault("UnionRedirection.allocationUnit", 1 << 16);
+            Configuration.getInstance().getLongWithDefault("UnionRedirection.allocationUnit", 2199023255552L);
 
     // We would like to use jdk.internal.util.ArraysSupport.MAX_ARRAY_LENGTH, but it is not exported
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;

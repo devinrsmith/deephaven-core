@@ -1,0 +1,5 @@
+notebooks/notebooks/*
+!notebooks/notebooks/01-example.py
+
+data/*
+!data/.ignore

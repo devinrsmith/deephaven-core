@@ -6,7 +6,6 @@ package io.deephaven.configuration;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.internal.log.LoggerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.*;
@@ -22,9 +21,6 @@ public class Configuration extends PropertyFile {
     @SuppressWarnings("WeakerAccess")
     public static final String WORKSPACE_PROPERTY = "workspace";
 
-    /** Token used for process name substitution */
-    private static final String PROCESS_NAME_TOKEN = "<processname>";
-
     /** Token used for workspace substitution */
     private static final String WORKSPACE_TOKEN = "<workspace>";
 
@@ -32,7 +28,6 @@ public class Configuration extends PropertyFile {
     @SuppressWarnings("WeakerAccess")
     static final String[] FILE_NAME_PROPERTIES = {"Configuration.rootFile"};
     public static final String QUIET_PROPERTY = "configuration.quiet";
-    private static final String PROCESS_NAME_PROPERTY = "process.name";
 
     private static NullableConfiguration INSTANCE = null;
 
@@ -55,33 +50,6 @@ public class Configuration extends PropertyFile {
             INSTANCE = new NullableConfiguration();
         }
         return INSTANCE;
-    }
-
-    /**
-     * Get the process name based on the standard process name property {@link #PROCESS_NAME_PROPERTY}. Throw an
-     * exception if the property name does not exist.
-     *
-     * @return the process name
-     */
-    public String getProcessName() {
-        return getProcessName(true);
-    }
-
-    /**
-     * Get the process name based on the standard process name property {@link #PROCESS_NAME_PROPERTY}. If the property
-     * does not exist and requireProcessName is true, throw an exception. If the property does not exist and
-     * requireProcessName is false, return null.
-     *
-     * @param requireProcessName if true, throw an exception if the process name can't be found or is empty
-     * @return the process name, or null if the process name can't be determined and requireProcessName is false
-     */
-    @SuppressWarnings("WeakerAccess")
-    public @Nullable String getProcessName(final boolean requireProcessName) {
-        final String processName = getStringWithDefault(PROCESS_NAME_PROPERTY, null);
-        if (requireProcessName && (processName == null || processName.isEmpty())) {
-            throw new ConfigurationException("Property " + PROCESS_NAME_PROPERTY + " must be defined and non-empty");
-        }
-        return processName;
     }
 
     /**

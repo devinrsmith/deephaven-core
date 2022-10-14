@@ -332,6 +332,9 @@ project(':hotspot').projectDir = file('hotspot')
 include(':hotspot-impl')
 project(':hotspot-impl').projectDir = file('hotspot-impl')
 
+include(':bench-timestamp')
+project(':bench-timestamp').projectDir = file('bench/timestamp')
+
 include ':authentication'
 
 file("${rootDir}/docker/registry").list().each { name ->

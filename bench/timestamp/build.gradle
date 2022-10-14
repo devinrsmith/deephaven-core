@@ -1,0 +1,18 @@
+plugins {
+    id 'io.deephaven.project.register'
+    id 'me.champeau.jmh' version '0.6.7'
+}
+
+jmh {
+    jmhVersion = '1.35'
+}
+
+// No need to assemble the jar by default on build
+// assemble.dependsOn(jmhJar)
+check.dependsOn(jmhClasses)
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['--add-exports', 'java.base/jdk.internal.misc=ALL-UNNAMED']
+    // Explicitly set the source compatibility so gradle will invoke javac with `-source 11` instead of `--release`
+    sourceCompatibility = 11
+}

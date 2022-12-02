@@ -1,8 +1,10 @@
 package io.deephaven.server.console.completer;
 
 import com.google.rpc.Code;
+import io.deephaven.engine.util.DelegatingScriptSession;
 import io.deephaven.engine.util.ScriptSession;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.integrations.python.PythonDeephavenSession;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.lang.completion.ChunkerCompleter;
@@ -135,10 +137,12 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
                         .append(" has source code:").append(text).endl();
             }
 
+            final PyObject scope =
+                    ((PythonDeephavenSession) ((DelegatingScriptSession) scriptSession).delegate()).scope();
             // our java is 0-indexed lines, 1-indexed chars. jedi is 1-indexed-both.
             // we'll keep that translation ugliness to the in-java result-processing.
-            final PyObject results =
-                    jediSettings.do_completion(doc.getUri(), doc.getVersion(), pos.getLine() + 1, pos.getCharacter());
+            final PyObject results = jediSettings.do_completion(scope, doc.getUri(), doc.getVersion(),
+                    pos.getLine() + 1, pos.getCharacter());
             if (!results.isList()) {
                 throw new UnsupportedOperationException(
                         "Expected list from jedi_settings.do_completion, got " + results.call("repr"));

@@ -16,7 +16,7 @@ public interface JediSettings extends Closeable {
 
     boolean is_enabled();
 
-    PyObject do_completion(String uri, int version, int line, int character);
+    PyObject do_completion(PyObject scope, String uri, int version, int line, int character);
 
     boolean can_jedi();
 

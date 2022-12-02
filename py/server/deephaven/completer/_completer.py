@@ -65,7 +65,7 @@ class Completer(object):
     def can_jedi(self) -> bool:
         return self.__can_jedi
 
-    def do_completion(self, uri: str, version: int, line: int, col: int) -> list[list[Any]]:
+    def do_completion(self, scope: dict, uri: str, version: int, line: int, col: int) -> list[list[Any]]:
         if not self._versions[uri] == version:
             # if you aren't the newest completion, you get nothing, quickly
             return []
@@ -75,7 +75,7 @@ class Completer(object):
         # The Script completer is static analysis only, so we should actually be feeding it a whole document at once.
 
         completer = Script if self.__mode == CompleterMode.safe else Interpreter
-        completions = completer(txt, [globals()]).complete(line, col)
+        completions = completer(txt, [scope]).complete(line, col)
         # for now, a simple sorting based on number of preceding _
         # we may want to apply additional sorting to each list before combining
         results: list = []

@@ -33,6 +33,10 @@ public class DelegatingScriptSession implements ScriptSession {
         this.delegate = Objects.requireNonNull(delegate);
     }
 
+    public ScriptSession delegate() {
+        return delegate;
+    }
+
     private Changes contextualizeChanges(final Changes diff) {
         knownVariables.removeAll(diff.removed.keySet());
 

@@ -277,7 +277,9 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                 log.info().append(canJedi ? "Using jedi for python autocomplete"
                         : "No jedi dependency available in python environment; disabling autocomplete.").endl();
                 if (!canJedi) {
-                    settings[0].close();
+                    if (settings[0] != null) {
+                        settings[0].close();
+                    }
                     return new NoopAutoCompleteObserver(responseObserver);
                 }
                 return new PythonAutoCompleteObserver(responseObserver, session, settings[0]);

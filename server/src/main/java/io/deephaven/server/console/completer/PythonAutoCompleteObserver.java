@@ -137,7 +137,8 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
 
             // our java is 0-indexed lines, 1-indexed chars. jedi is 1-indexed-both.
             // we'll keep that translation ugliness to the in-java result-processing.
-            final PyObject results = jediSettings.do_completion(doc.getUri(), doc.getVersion(), pos.getLine() + 1, pos.getCharacter());
+            final PyObject results =
+                    jediSettings.do_completion(doc.getUri(), doc.getVersion(), pos.getLine() + 1, pos.getCharacter());
             if (!results.isList()) {
                 throw new UnsupportedOperationException(
                         "Expected list from jedi_settings.do_completion, got " + results.call("repr"));

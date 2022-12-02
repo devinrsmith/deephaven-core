@@ -24,6 +24,7 @@ import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.grpc.TypedTicket;
 import io.deephaven.proto.backplane.script.grpc.*;
 import io.deephaven.server.console.completer.JavaAutoCompleteObserver;
+import io.deephaven.server.console.completer.JediSettings;
 import io.deephaven.server.console.completer.PythonAutoCompleteObserver;
 import io.deephaven.server.session.SessionCloseableObserver;
 import io.deephaven.server.session.SessionService;
@@ -31,6 +32,7 @@ import io.deephaven.server.session.SessionState;
 import io.deephaven.server.session.SessionState.ExportBuilder;
 import io.deephaven.server.session.TicketRouter;
 import io.grpc.stub.StreamObserver;
+import org.jpy.PyModule;
 import org.jpy.PyObject;
 
 import javax.inject.Inject;
@@ -259,19 +261,21 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         return GrpcUtil.rpcWrapper(log, responseObserver, () -> {
             final SessionState session = sessionService.getCurrentSession();
             if (PythonDeephavenSession.SCRIPT_TYPE.equals(scriptSessionProvider.get().scriptType())) {
-                PyObject[] settings = new PyObject[1];
+                JediSettings[] settings = new JediSettings[1];
                 safelyExecute(() -> {
-                    final ScriptSession scriptSession = scriptSessionProvider.get();
-                    scriptSession.evaluateScript("from deephaven.completer import jedi_settings");
-                    settings[0] = (PyObject) scriptSession.getVariable("jedi_settings");
+                    try (final PyModule pyModule = PyModule.importModule("deephaven.completer")) {
+                        settings[0] = pyModule.getAttribute("jedi_settings").createProxy(JediSettings.class);
+                    }
                 });
-                boolean canJedi = settings[0] != null && settings[0].call("can_jedi").getBooleanValue();
+                boolean canJedi = settings[0] != null && settings[0].can_jedi();
                 log.info().append(canJedi ? "Using jedi for python autocomplete"
                         : "No jedi dependency available in python environment; disabling autocomplete.").endl();
-                return canJedi ? new PythonAutoCompleteObserver(responseObserver, scriptSessionProvider, session)
-                        : new NoopAutoCompleteObserver(responseObserver);
+                if (!canJedi) {
+                    settings[0].close();
+                    return new NoopAutoCompleteObserver(responseObserver);
+                }
+                return new PythonAutoCompleteObserver(responseObserver, session, settings[0]);
             }
-
             return new JavaAutoCompleteObserver(session, responseObserver);
         });
     }

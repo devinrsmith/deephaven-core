@@ -7,7 +7,19 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.lang.completion.ChunkerCompleter;
 import io.deephaven.lang.parse.CompletionParser;
-import io.deephaven.proto.backplane.script.grpc.*;
+import io.deephaven.proto.backplane.script.grpc.AutoCompleteRequest;
+import io.deephaven.proto.backplane.script.grpc.AutoCompleteResponse;
+import io.deephaven.proto.backplane.script.grpc.ChangeDocumentRequest;
+import io.deephaven.proto.backplane.script.grpc.CloseDocumentRequest;
+import io.deephaven.proto.backplane.script.grpc.CompletionItem;
+import io.deephaven.proto.backplane.script.grpc.DocumentRange;
+import io.deephaven.proto.backplane.script.grpc.GetCompletionItemsRequest;
+import io.deephaven.proto.backplane.script.grpc.GetCompletionItemsResponse;
+import io.deephaven.proto.backplane.script.grpc.OpenDocumentRequest;
+import io.deephaven.proto.backplane.script.grpc.Position;
+import io.deephaven.proto.backplane.script.grpc.TextDocumentItem;
+import io.deephaven.proto.backplane.script.grpc.TextEdit;
+import io.deephaven.proto.backplane.script.grpc.VersionedTextDocumentIdentifier;
 import io.deephaven.server.console.ConsoleServiceGrpcImpl;
 import io.deephaven.server.session.SessionState;
 import io.deephaven.util.SafeCloseable;
@@ -15,9 +27,11 @@ import io.grpc.stub.StreamObserver;
 import org.jpy.PyObject;
 
 import javax.inject.Provider;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyExecute;
 import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyExecuteLocked;
 
 /**
@@ -31,45 +45,44 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
      * We only log timing for completions that take longer than, currently, 100ms
      */
     private static final long HUNDRED_MS_IN_NS = 100_000_000;
-    private final Provider<ScriptSession> scriptSession;
     private final SessionState session;
     private final StreamObserver<AutoCompleteResponse> responseObserver;
 
-    public PythonAutoCompleteObserver(StreamObserver<AutoCompleteResponse> responseObserver,
-            Provider<ScriptSession> scriptSession, final SessionState session) {
-        this.scriptSession = scriptSession;
+    private JediSettings jediSettings;
+
+    public PythonAutoCompleteObserver(
+            StreamObserver<AutoCompleteResponse> responseObserver, SessionState session, JediSettings jediSettings) {
         this.session = session;
         this.responseObserver = responseObserver;
+        this.jediSettings = jediSettings;
     }
 
     @Override
     @SuppressWarnings("DuplicatedCode")
     public void onNext(AutoCompleteRequest value) {
+        if (jediSettings == null) {
+            throw GrpcUtil.statusRuntimeException(Code.INTERNAL, "jediSettings already closed");
+        }
         switch (value.getRequestCase()) {
             case OPEN_DOCUMENT: {
                 final OpenDocumentRequest openDoc = value.getOpenDocument();
                 final TextDocumentItem doc = openDoc.getTextDocument();
-                PyObject completer = (PyObject) scriptSession.get().getVariable("jedi_settings");
-                completer.callMethod("open_doc", doc.getText(), doc.getUri(), doc.getVersion());
+                jediSettings.open_doc(doc.getText(), doc.getUri(), doc.getVersion());
                 break;
             }
             case CHANGE_DOCUMENT: {
                 ChangeDocumentRequest request = value.getChangeDocument();
                 final VersionedTextDocumentIdentifier text = request.getTextDocument();
-
-                PyObject completer = (PyObject) scriptSession.get().getVariable("jedi_settings");
                 String uri = text.getUri();
                 int version = text.getVersion();
-                String document = completer.callMethod("get_doc", text.getUri()).getStringValue();
-
+                String document = jediSettings.get_doc(text.getUri());
                 final List<ChangeDocumentRequest.TextDocumentContentChangeEvent> changes =
                         request.getContentChangesList();
                 document = CompletionParser.updateDocumentChanges(uri, version, document, changes);
                 if (document == null) {
                     return;
                 }
-
-                completer.callMethod("update_doc", document, uri, version);
+                jediSettings.update_doc(document, uri, version);
                 break;
             }
             case GET_COMPLETION_ITEMS: {
@@ -86,13 +99,11 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
             }
             case CLOSE_DOCUMENT: {
                 CloseDocumentRequest request = value.getCloseDocument();
-                PyObject completer = (PyObject) scriptSession.get().getVariable("jedi_settings");
-                completer.callMethod("close_doc", request.getTextDocument().getUri());
+                jediSettings.close_doc(request.getTextDocument().getUri());
                 break;
             }
             case REQUEST_NOT_SET: {
-                throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT,
-                        "Autocomplete command missing request");
+                throw GrpcUtil.statusRuntimeException(Code.INVALID_ARGUMENT, "Autocomplete command missing request");
             }
         }
     }
@@ -102,9 +113,7 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
             StreamObserver<AutoCompleteResponse> responseObserver) {
         final ScriptSession scriptSession = exportedConsole.get();
         try (final SafeCloseable ignored = scriptSession.getExecutionContext().open()) {
-
-            PyObject completer = (PyObject) scriptSession.getVariable("jedi_settings");
-            boolean canJedi = completer.callMethod("is_enabled").getBooleanValue();
+            boolean canJedi = jediSettings.is_enabled();
             if (!canJedi) {
                 log.trace().append("Ignoring completion request because jedi is disabled").endl();
                 // send back an empty, failed response...
@@ -121,14 +130,14 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
             final long startNano = System.nanoTime();
 
             if (log.isTraceEnabled()) {
-                String text = completer.call("get_doc", doc.getUri()).getStringValue();
+                String text = jediSettings.get_doc(doc.getUri());
                 log.trace().append("Completion version ").append(doc.getVersion())
                         .append(" has source code:").append(text).endl();
             }
-            final PyObject results = completer.callMethod("do_completion", doc.getUri(), doc.getVersion(),
-                    // our java is 0-indexed lines, 1-indexed chars. jedi is 1-indexed-both.
-                    // we'll keep that translation ugliness to the in-java result-processing.
-                    pos.getLine() + 1, pos.getCharacter());
+
+            // our java is 0-indexed lines, 1-indexed chars. jedi is 1-indexed-both.
+            // we'll keep that translation ugliness to the in-java result-processing.
+            final PyObject results = jediSettings.do_completion(doc.getUri(), doc.getVersion(), pos.getLine() + 1, pos.getCharacter());
             if (!results.isList()) {
                 throw new UnsupportedOperationException(
                         "Expected list from jedi_settings.do_completion, got " + results.call("repr"));
@@ -228,13 +237,25 @@ public class PythonAutoCompleteObserver implements StreamObserver<AutoCompleteRe
     @Override
     public void onError(Throwable t) {
         // ignore, client doesn't need us, will be cleaned up later
+        safelyExecute(this::closeJedi);
     }
 
     @Override
     public void onCompleted() {
         // just hang up too, browser will reconnect if interested
-        synchronized (responseObserver) {
+        safelyExecuteLocked(responseObserver, () -> {
             responseObserver.onCompleted();
+            closeJedi();
+        });
+    }
+
+    private void closeJedi() {
+        if (jediSettings != null) {
+            try {
+                jediSettings.close();
+            } finally {
+                jediSettings = null;
+            }
         }
     }
 }

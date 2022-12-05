@@ -43,6 +43,10 @@ public class DateTimeFormatter {
         return format(dateTime, TimeZone.TZ_DEFAULT);
     }
 
+    public DateTime parse(CharSequence text) {
+        return getFormatter(TimeZone.TZ_DEFAULT).parse(text, DateTime::from);
+    }
+
     @Override
     public String toString() {
         return format(DateTime.now());

@@ -16,12 +16,23 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Date;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
+import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 
 /**
  * An object representing a timepoint in Deephaven.
@@ -35,7 +46,7 @@ import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
  */
 @TypeUtils.IsDateTime
 @ReflexiveUse(referrers = "io.deephaven.gui.table.filters.StringFilterData")
-public final class DateTime implements Comparable<DateTime>, Externalizable {
+public final class DateTime implements Comparable<DateTime>, Externalizable, TemporalAccessor {
 
     private static final long serialVersionUID = -9077991715632523353L;
 
@@ -75,6 +86,28 @@ public final class DateTime implements Comparable<DateTime>, Externalizable {
      */
     public static DateTime ofMillis(Clock clock) {
         return new DateTime(Math.multiplyExact(clock.currentTimeMillis(), 1_000_000));
+    }
+
+    /**
+     * Obtains an instance of {@link DateTime} from a temporal object.
+     *
+     * @param temporal  the temporal object to convert, not null
+     * @return the DateTime, not null
+     * @throws DateTimeException if unable to convert to an {@link DateTime}
+     */
+    public static DateTime from(TemporalAccessor temporal) {
+        if (temporal instanceof DateTime) {
+            return (DateTime) temporal;
+        }
+        Objects.requireNonNull(temporal, "temporal");
+        try {
+            long instantSecs = temporal.getLong(INSTANT_SECONDS);
+            int nanoOfSecond = temporal.get(NANO_OF_SECOND);
+            return new DateTime(Math.addExact(TimeUnit.SECONDS.toNanos(instantSecs), nanoOfSecond));
+        } catch (DateTimeException ex) {
+            throw new DateTimeException("Unable to obtain Instant from TemporalAccessor: " +
+                    temporal + " of type " + temporal.getClass().getName(), ex);
+        }
     }
 
     /**
@@ -310,5 +343,43 @@ public final class DateTime implements Comparable<DateTime>, Externalizable {
 
     public void readExternal(ObjectInput in) throws IOException {
         nanos = in.readLong();
+    }
+
+    @Override
+    public boolean isSupported(TemporalField field) {
+        // Modeled after Instant#isSupported
+        if (field instanceof ChronoField) {
+            return field == INSTANT_SECONDS || field == NANO_OF_SECOND || field == MICRO_OF_SECOND || field == MILLI_OF_SECOND;
+        }
+        return field != null && field.isSupportedBy(this);
+    }
+
+    @Override
+    public int get(TemporalField field) {
+        // Modeled after Instant#get
+        if (field instanceof ChronoField) {
+            switch ((ChronoField) field) {
+                case NANO_OF_SECOND: return (int)(nanos % 1_000_000_000);
+                case MICRO_OF_SECOND: return (int)(nanos % 1_000_000_000) / 1_000;
+                case MILLI_OF_SECOND: return (int)(nanos % 1_000_000_000) / 1_000_000;
+            }
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        }
+        return range(field).checkValidIntValue(field.getFrom(this), field);
+    }
+
+    @Override
+    public long getLong(TemporalField field) {
+        // Modeled after Instant#get
+        if (field instanceof ChronoField) {
+            switch ((ChronoField) field) {
+                case NANO_OF_SECOND: return nanos % 1_000_000_000;
+                case MICRO_OF_SECOND: return (nanos % 1_000_000_000) / 1_000;
+                case MILLI_OF_SECOND: return (nanos % 1_000_000_000) / 1_000_000;
+                case INSTANT_SECONDS: return nanos / 1_000_000_000;
+            }
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        }
+        return field.getFrom(this);
     }
 }

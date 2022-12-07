@@ -2,6 +2,7 @@ package io.deephaven.server.auth;
 
 import io.deephaven.auth.AuthContext;
 import io.deephaven.auth.AuthContext.SuperUser;
+import io.deephaven.auth.ServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.ApplicationServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.ConfigServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.ConsoleServiceAuthWiring;
@@ -39,57 +40,12 @@ public final class MyAuthorization implements AuthorizationProvider {
         return new ConsoleServiceAuthWiring.DenyAll() {
             @Override
             public void onMessageReceivedGetConsoleTypes(AuthContext authContext, GetConsoleTypesRequest request) {
-                super.onMessageReceivedGetConsoleTypes(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedStartConsole(AuthContext authContext, StartConsoleRequest request) {
-                super.onMessageReceivedStartConsole(authContext, request);
+                // allowed
             }
 
             @Override
             public void onMessageReceivedGetHeapInfo(AuthContext authContext, GetHeapInfoRequest request) {
-                super.onMessageReceivedGetHeapInfo(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedSubscribeToLogs(AuthContext authContext, LogSubscriptionRequest request) {
-                super.onMessageReceivedSubscribeToLogs(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedExecuteCommand(AuthContext authContext, ExecuteCommandRequest request) {
-                super.onMessageReceivedExecuteCommand(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedCancelCommand(AuthContext authContext, CancelCommandRequest request) {
-                super.onMessageReceivedCancelCommand(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedBindTableToVariable(AuthContext authContext, BindTableToVariableRequest request) {
-                super.onMessageReceivedBindTableToVariable(authContext, request);
-            }
-
-            @Override
-            public void onCallStartedAutoCompleteStream(AuthContext authContext) {
-                super.onCallStartedAutoCompleteStream(authContext);
-            }
-
-            @Override
-            public void onMessageReceivedAutoCompleteStream(AuthContext authContext, AutoCompleteRequest request) {
-                super.onMessageReceivedAutoCompleteStream(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedOpenAutoCompleteStream(AuthContext authContext, AutoCompleteRequest request) {
-                super.onMessageReceivedOpenAutoCompleteStream(authContext, request);
-            }
-
-            @Override
-            public void onMessageReceivedNextAutoCompleteStream(AuthContext authContext, AutoCompleteRequest request) {
-                super.onMessageReceivedNextAutoCompleteStream(authContext, request);
+                // allowed
             }
         };
     }

@@ -13,6 +13,17 @@ import io.deephaven.auth.codegen.impl.PartitionedTableServiceContextualAuthWirin
 import io.deephaven.auth.codegen.impl.SessionServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.StorageServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.TableServiceContextualAuthWiring;
+import io.deephaven.engine.table.Table;
+import io.deephaven.proto.backplane.grpc.ApplyPreviewColumnsRequest;
+import io.deephaven.proto.backplane.grpc.EmptyTableRequest;
+import io.deephaven.proto.backplane.grpc.ExportedTableUpdatesRequest;
+import io.deephaven.proto.backplane.grpc.FetchFileRequest;
+import io.deephaven.proto.backplane.grpc.FetchTableRequest;
+import io.deephaven.proto.backplane.grpc.FlattenRequest;
+import io.deephaven.proto.backplane.grpc.ListFieldsRequest;
+import io.deephaven.proto.backplane.grpc.ListItemsRequest;
+import io.deephaven.proto.backplane.grpc.SelectOrUpdateRequest;
+import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.script.grpc.AutoCompleteRequest;
 import io.deephaven.proto.backplane.script.grpc.BindTableToVariableRequest;
 import io.deephaven.proto.backplane.script.grpc.CancelCommandRequest;
@@ -24,15 +35,19 @@ import io.deephaven.proto.backplane.script.grpc.StartConsoleRequest;
 import io.deephaven.server.session.TicketResolverBase.AuthTransformation;
 import io.deephaven.server.session.TicketResolverBase.IdentityTransformation;
 
+import java.util.List;
+
 public final class MyAuthorization implements AuthorizationProvider {
     @Override
     public ApplicationServiceAuthWiring getApplicationServiceAuthWiring() {
-        return new ApplicationServiceAuthWiring.DenyAll();
+        // todo: web ui needs this
+        return new ApplicationServiceAuthWiring.AllowAll();
     }
 
     @Override
     public ConfigServiceAuthWiring getConfigServiceAuthWiring() {
-        return new ConfigServiceAuthWiring.DenyAll();
+        // todo: web ui needs this
+        return new ConfigServiceAuthWiring.AllowAll();
     }
 
     @Override
@@ -45,6 +60,16 @@ public final class MyAuthorization implements AuthorizationProvider {
 
             @Override
             public void onMessageReceivedGetHeapInfo(AuthContext authContext, GetHeapInfoRequest request) {
+                // allowed
+            }
+
+            @Override
+            public void onMessageReceivedStartConsole(AuthContext authContext, StartConsoleRequest request) {
+                // allowed
+            }
+
+            @Override
+            public void onMessageReceivedSubscribeToLogs(AuthContext authContext, LogSubscriptionRequest request) {
                 // allowed
             }
         };
@@ -62,17 +87,57 @@ public final class MyAuthorization implements AuthorizationProvider {
 
     @Override
     public StorageServiceAuthWiring getStorageServiceAuthWiring() {
-        return new StorageServiceAuthWiring.DenyAll();
+        return new StorageServiceAuthWiring.DenyAll() {
+            @Override
+            public void onMessageReceivedListItems(AuthContext authContext, ListItemsRequest request) {
+                // todo: web ui needs this
+            }
+
+            @Override
+            public void onMessageReceivedFetchFile(AuthContext authContext, FetchFileRequest request) {
+                // todo: web ui needs this
+            }
+        };
     }
 
     @Override
     public HealthAuthWiring getHealthAuthWiring() {
-        return new HealthAuthWiring.DenyAll();
+        return new HealthAuthWiring.AllowAll();
     }
 
     @Override
     public TableServiceContextualAuthWiring getTableServiceContextualAuthWiring() {
-        return new TableServiceContextualAuthWiring.DenyAll();
+        return new TableServiceContextualAuthWiring.DenyAll() {
+            @Override
+            public void checkPermissionExportedTableUpdates(AuthContext authContext,
+                    ExportedTableUpdatesRequest request, List<Table> sourceTables) {
+                // todo: web ui needs this
+            }
+
+            @Override
+            public void checkPermissionApplyPreviewColumns(AuthContext authContext, ApplyPreviewColumnsRequest request,
+                    List<Table> sourceTables) {
+                // todo: web ui needs this
+            }
+
+            @Override
+            public void checkPermissionFlatten(AuthContext authContext, FlattenRequest request,
+                    List<Table> sourceTables) {
+                // todo: web ui needs this
+            }
+
+            // @Override
+            // public void checkPermissionView(AuthContext authContext, SelectOrUpdateRequest request, List<Table>
+            // sourceTables) {
+            // // allow temp
+            // }
+            //
+            // @Override
+            // public void checkPermissionEmptyTable(AuthContext authContext, EmptyTableRequest request, List<Table>
+            // sourceTables) {
+            // // allow temp
+            // }
+        };
     }
 
     @Override

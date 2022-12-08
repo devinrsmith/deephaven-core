@@ -14,6 +14,7 @@ import io.deephaven.auth.codegen.impl.SessionServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.StorageServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.TableServiceContextualAuthWiring;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.updategraph.UpdateGraphProcessor;
 import io.deephaven.proto.backplane.grpc.ApplyPreviewColumnsRequest;
 import io.deephaven.proto.backplane.grpc.EmptyTableRequest;
 import io.deephaven.proto.backplane.grpc.ExportedTableUpdatesRequest;
@@ -34,6 +35,7 @@ import io.deephaven.proto.backplane.script.grpc.LogSubscriptionRequest;
 import io.deephaven.proto.backplane.script.grpc.StartConsoleRequest;
 import io.deephaven.server.session.TicketResolverBase.AuthTransformation;
 import io.deephaven.server.session.TicketResolverBase.IdentityTransformation;
+import io.deephaven.util.SafeCloseable;
 
 import java.util.List;
 
@@ -124,6 +126,18 @@ public final class MyAuthorization implements AuthorizationProvider {
             public void checkPermissionFlatten(AuthContext authContext, FlattenRequest request,
                     List<Table> sourceTables) {
                 // todo: web ui needs this
+            }
+
+            @Override
+            public void checkPermissionFetchTable(AuthContext authContext, FetchTableRequest request,
+                    List<Table> sourceTables) {
+                // my application needs this for w2w
+                // doesn't technically prevent it, but it's how w2w works right now
+                try (final SafeCloseable _lock = UpdateGraphProcessor.DEFAULT.sharedLock().lockCloseable()) {
+                    if (sourceTables.get(0).size() > 1_000_000) {
+                        ServiceAuthWiring.operationNotAllowed("Preventing fetch, table too big for worker-2-worker");
+                    }
+                }
             }
 
             // @Override

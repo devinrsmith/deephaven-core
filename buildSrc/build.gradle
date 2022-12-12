@@ -38,4 +38,8 @@ dependencies {
     implementation('gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.16.1') {
         because('needed by plugin java-header-conventions')
     }
+
+    implementation('com.github.ben-manes:gradle-versions-plugin:0.44.0') {
+        because('needed by plugin java-version-conventions')
+    }
 }

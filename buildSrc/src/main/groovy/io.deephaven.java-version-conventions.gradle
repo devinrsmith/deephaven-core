@@ -1,0 +1,10 @@
+plugins {
+    id 'com.github.ben-manes.versions'
+}
+
+project.tasks.named('dependencyUpdates').configure {
+    checkConstraints = true
+    checkBuildEnvironmentConstraints = true
+    gradleReleaseChannel = 'current'
+    outputFormatter = 'html'
+}

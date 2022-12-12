@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'io.deephaven.project.register'
+    id 'org.cyclonedx.bom' version '1.7.2'
 }
 
 configurations {
@@ -91,6 +92,18 @@ mainClassName = 'io.deephaven.server.jetty.JettyMain'
 
 artifacts {
     applicationDist project.tasks.findByName('distTar')
+}
+
+cyclonedxBom {
+    includeConfigs = ["runtimeClasspath"]
+    skipConfigs = ["compileClasspath", "testCompileClasspath"]
+    projectType = "application"
+    schemaVersion = "1.4"
+    destination = file("build/reports")
+    outputName = "CycloneDX-Sbom"
+    outputFormat = "all"
+    includeBomSerialNumber = true
+    componentVersion = "2.0.0"
 }
 
 apply plugin: 'io.deephaven.java-open-nio'

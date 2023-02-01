@@ -5,6 +5,7 @@ package io.deephaven.server.console;
 
 import com.google.rpc.Code;
 import io.deephaven.base.LockFreeArrayQueue;
+import io.deephaven.base.log.LogOutput;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.util.RuntimeMemory;
@@ -59,6 +60,7 @@ import javax.inject.Singleton;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.LongAdder;
 
 import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyComplete;
 import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyOnNext;
@@ -341,6 +343,15 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         private volatile boolean done;
         private volatile boolean tooSlow;
 
+        private long clientNotReadyInner;
+        private long queueEmpty;
+        private long send;
+        private final LongAdder clientNotReady = new LongAdder();
+        private final LongAdder retry = new LongAdder();
+        private final LongAdder noGuard = new LongAdder();
+        private final LongAdder jobs = new LongAdder();
+        private final LongAdder onReady = new LongAdder();
+
         public LogsClient(
                 final LogSubscriptionRequest request,
                 final ServerCallStreamObserver<LogSubscriptionData> client) {
@@ -398,8 +409,10 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
 
         @Override
         public void run() {
+            jobs.increment();
             while (!done) {
                 if (!guard.compareAndSet(false, true)) {
+                    noGuard.increment();
                     return;
                 }
                 boolean queueIsKnownEmpty;
@@ -415,14 +428,17 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                             return;
                         }
                         if (!client.isReady()) {
+                            ++clientNotReadyInner;
                             break;
                         }
                         final LogSubscriptionData payload = dequeue();
                         if (payload == null) {
+                            ++queueEmpty;
                             queueIsKnownEmpty = true;
                             break;
                         }
                         GrpcUtil.safelyOnNext(client, payload);
+                        ++send;
                     }
                 } finally {
                     guard.set(false);
@@ -432,6 +448,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                     // Note: it's important that client.isReady() is checked _outside_ of the guard block (otherwise,
                     // the onReady() call could execute and schedule before the current thread exits the guard block,
                     // and we'd fail to successfully reschedule).
+                    clientNotReady.increment();
                     return;
                 }
                 if (queueIsKnownEmpty) {
@@ -439,6 +456,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                     scheduler.runAfterDelay(SUBSCRIBE_TO_LOGS_SEND_MILLIS, this);
                     return;
                 }
+                retry.increment();
                 // Continue sending until the client is full or we know the queue is empty (or done, or tooSlow).
             }
         }
@@ -447,16 +465,27 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
 
         private void onReady() {
             scheduler.runImmediately(this);
+            onReady.increment();
         }
 
         private void onClose() {
             done = true;
             logBuffer.unsubscribe(this);
+            log.info()
+                    .append("onClose").append(',')
+                    .append(this::appendClient).append(',')
+                    .append(this::appendStats)
+                    .endl();
         }
 
         private void onCancel() {
             done = true;
             logBuffer.unsubscribe(this);
+            log.info()
+                    .append("onCancel").append(',')
+                    .append(this::appendClient).append(',')
+                    .append(this::appendStats)
+                    .endl();
         }
 
         // ------------------------------------------------------------------------------------------------------------
@@ -482,6 +511,25 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
 
         private LogSubscriptionData dequeue() {
             return buffer.dequeue();
+        }
+
+        // ------------------------------------------------------------------------------------------------------------
+
+        private LogOutput appendClient(LogOutput logOutput) {
+            return logOutput
+                    .append("client=").append(System.identityHashCode(client));
+        }
+
+        private LogOutput appendStats(LogOutput logOutput) {
+            return logOutput
+                    .append("send=").append(send)
+                    .append(",queueEmpty=").append(queueEmpty)
+                    .append(",clientNotReadyInner=").append(clientNotReadyInner)
+                    .append(",clientNotReady=").append(clientNotReady.sum())
+                    .append(",retry=").append(retry.sum())
+                    .append(",jobs=").append(jobs.sum())
+                    .append(",noGuard=").append(noGuard.sum())
+                    .append(",onReady=").append(onReady.sum());
         }
     }
 }

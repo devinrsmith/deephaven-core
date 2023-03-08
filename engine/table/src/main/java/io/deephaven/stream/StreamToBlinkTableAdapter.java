@@ -85,7 +85,6 @@ public class StreamToBlinkTableAdapter extends ReferenceCountedLivenessNode
         this.streamPublisher = streamPublisher;
         this.updateSourceRegistrar = updateSourceRegistrar;
         this.name = name;
-
         nullColumnSources = makeNullColumnSources(tableDefinition);
 
         final LinkedHashMap<String, ColumnSource<?>> visibleSources = new LinkedHashMap<>();

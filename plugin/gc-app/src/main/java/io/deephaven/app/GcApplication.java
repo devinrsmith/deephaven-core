@@ -113,6 +113,9 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
 
     private GcNotificationPublisher notificationInfoPublisher;
     private GcPoolsPublisher poolsPublisher;
+
+    @SuppressWarnings("FieldCanBeLocal")
+    private UpdateContext updateContext;
     @SuppressWarnings("FieldCanBeLocal")
     private LivenessScope scope;
 
@@ -146,13 +149,16 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         if (!notificationInfoEnabled() && !poolsEnabled()) {
             return state;
         }
-        scope = new LivenessScope();
-        try (final SafeCloseable ignored = LivenessScopeStack.open(scope, false)) {
-            if (notificationInfoEnabled) {
-                setNotificationInfo(state);
-            }
-            if (poolsEnabled) {
-                setPools(state);
+        updateContext = UpdateContext.newBuilder("GcUGP").build();
+        try (final SafeCloseable _open_context = updateContext.open()) {
+            scope = new LivenessScope();
+            try (final SafeCloseable ignored = LivenessScopeStack.open(scope, false)) {
+                if (notificationInfoEnabled) {
+                    setNotificationInfo(state);
+                }
+                if (poolsEnabled) {
+                    setPools(state);
+                }
             }
         }
         install();

@@ -17,6 +17,7 @@ import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.Compressor;
 import org.apache.hadoop.io.compress.Decompressor;
 import org.apache.parquet.bytes.BytesInput;
+import org.apache.parquet.hadoop.codec.Lz4RawCodec;
 import org.apache.parquet.hadoop.codec.SnappyCodec;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
@@ -61,6 +62,10 @@ public class DeephavenCompressorAdapterFactory {
                 // does use platform-specific implementations, but has native implementations for the
                 // platforms we support today.
                 SnappyCodec.class, CompressionCodecName.SNAPPY,
+
+                // Use the Parquet LZ4_RAW codec (it actually uses aircompressor under the hood)
+                Lz4RawCodec.class, CompressionCodecName.LZ4_RAW,
+
                 // The rest of these are aircompressor codecs which have fast / pure java implementations
                 JdkGzipCodec.class, CompressionCodecName.GZIP,
                 LzoCodec.class, CompressionCodecName.LZO,

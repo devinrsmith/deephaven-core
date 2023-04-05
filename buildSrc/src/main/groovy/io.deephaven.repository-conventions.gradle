@@ -1,9 +1,16 @@
 repositories {
-    mavenCentral()
+    mavenCentral() {
+        mavenContent {
+            releasesOnly()
+        }
+    }
     maven {
         url 'https://jitpack.io'
         content {
             includeGroup 'com.github.rdblue'
+        }
+        mavenContent {
+            releasesOnly()
         }
     }
     maven {
@@ -11,6 +18,15 @@ repositories {
         content {
             includeGroup 'io.confluent'
             includeGroup 'org.apache.kafka'
+        }
+        mavenContent {
+            releasesOnly()
+        }
+    }
+    maven {
+        url 'https://repository.apache.org/content/groups/snapshots'
+        mavenContent {
+            snapshotsOnly()
         }
     }
 }

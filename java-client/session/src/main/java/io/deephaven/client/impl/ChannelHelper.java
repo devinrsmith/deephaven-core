@@ -6,6 +6,8 @@ package io.deephaven.client.impl;
 import io.deephaven.ssl.config.SSLConfig;
 import io.deephaven.ssl.config.TrustJdk;
 import io.deephaven.ssl.config.impl.KickstartUtils;
+import io.deephaven.uri.DeephavenTarget;
+import io.deephaven.uri.DeephavenUri;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.netty.GrpcSslContexts;
@@ -39,7 +41,7 @@ public final class ChannelHelper {
      */
     public static ManagedChannel channel(ClientConfig clientConfig) {
         final NettyChannelBuilder channelBuilder = NettyChannelBuilder
-                .forTarget(clientConfig.target().toString())
+                .forTarget(targetString(clientConfig.target()))
                 .maxInboundMessageSize(clientConfig.maxInboundMessageSize());
         if (clientConfig.target().isSecure()) {
             final SSLConfig ssl = clientConfig.ssl().orElseGet(SSLConfig::empty).orTrust(TrustJdk.of());
@@ -65,10 +67,18 @@ public final class ChannelHelper {
             channelBuilder.usePlaintext();
         }
         clientConfig.userAgent().ifPresent(channelBuilder::userAgent);
-        if (!clientConfig.extraHeaders().isEmpty()) {
-            channelBuilder.intercept(MetadataUtils.newAttachHeadersInterceptor(of(clientConfig.extraHeaders())));
+        final Map<String, String> combinedHeaders = clientConfig.combinedHeaders();
+        if (!combinedHeaders.isEmpty()) {
+            channelBuilder.intercept(MetadataUtils.newAttachHeadersInterceptor(of(combinedHeaders)));
         }
         return channelBuilder.build();
+    }
+
+    private static String targetString(DeephavenTarget target) {
+        final String scheme = target.isSecure() ? DeephavenUri.SECURE_SCHEME : DeephavenUri.PLAINTEXT_SCHEME;
+        return target.port().isPresent()
+                ? String.format("%s://%s:%d", scheme, target.host(), target.port().getAsInt())
+                : String.format("%s://%s", scheme, target.host());
     }
 
     private static Metadata of(Map<String, String> map) {

@@ -33,6 +33,26 @@ public class DeephavenTargetTest {
     }
 
     @Test
+    void routingHeaders() {
+        check("dh://host#foo", DeephavenTarget.builder()
+                .isSecure(true)
+                .host("host")
+                .putHeaders("dhtarget", "foo")
+                .build());
+        check("dh://host#another=bar", DeephavenTarget.builder()
+                .isSecure(true)
+                .host("host")
+                .putHeaders("another", "bar")
+                .build());
+        check("dh://host#another=bar&foo", DeephavenTarget.builder()
+                .isSecure(true)
+                .host("host")
+                .putHeaders("another", "bar")
+                .putHeaders("dhtarget", "foo")
+                .build());
+    }
+
+    @Test
     void badPort() {
         invalid("dh://host:-1");
         invalid(() -> DeephavenTarget.builder().isSecure(true).host("host").port(-1).build());
@@ -69,7 +89,6 @@ public class DeephavenTargetTest {
 
     @Test
     void fragment() {
-        invalid("dh://host#bad");
         invalid(() -> DeephavenTarget.builder().isSecure(true).host("host#bad").build());
     }
 

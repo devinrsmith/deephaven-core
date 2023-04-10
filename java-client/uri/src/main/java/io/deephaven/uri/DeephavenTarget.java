@@ -8,6 +8,9 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.OptionalInt;
 
 /**
@@ -23,6 +26,9 @@ import java.util.OptionalInt;
 @Immutable
 @BuildableStyle
 public abstract class DeephavenTarget {
+
+    private static final String DHQUERY = "dhquery";
+    private static final String DHFRAGMENT = "dhfragment";
 
     public static Builder builder() {
         return ImmutableDeephavenTarget.builder();
@@ -43,7 +49,12 @@ public abstract class DeephavenTarget {
     }
 
     public static boolean isWellFormed(URI uri) {
-        return isValidScheme(uri.getScheme()) && UriHelper.isRemoteTarget(uri);
+        return isValidScheme(uri.getScheme())
+                && uri.getHost() != null
+                && !uri.isOpaque()
+                && uri.getPath().isEmpty()
+                && uri.getQuery() == null
+                && uri.getUserInfo() == null;
     }
 
     /**
@@ -87,6 +98,10 @@ public abstract class DeephavenTarget {
         if (port != -1) {
             builder.port(port);
         }
+        final String fragment = uri.getFragment();
+        if (fragment != null) {
+            putHeaders(builder, fragment);
+        }
         return builder.build();
     }
 
@@ -112,19 +127,26 @@ public abstract class DeephavenTarget {
     public abstract OptionalInt port();
 
     /**
+     * The headers necessary to establish a connection.
+     *
+     * <p>
+     * When present, these are typically entries that are necessary for intermediate proxies to correctly route the gRPC
+     * connection.
+     *
+     * @return the headers
+     */
+    public abstract Map<String, String> headers();
+
+    /**
      * The target as a URI.
      *
      * @return the URI
      */
     public final URI toURI() {
-        return URI.create(toString());
-    }
-
-    @Check
-    final void checkHostPort() {
-        // Will cause URI exception if port is invalid too
-        if (!host().equals(toURI().getHost())) {
-            throw new IllegalArgumentException(String.format("Invalid host '%s'", host()));
+        try {
+            return toURIImpl();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -135,9 +157,30 @@ public abstract class DeephavenTarget {
      */
     @Override
     public final String toString() {
-        final String scheme = isSecure() ? DeephavenUri.SECURE_SCHEME : DeephavenUri.PLAINTEXT_SCHEME;
-        return port().isPresent() ? String.format("%s://%s:%d", scheme, host(), port().getAsInt())
-                : String.format("%s://%s", scheme, host());
+        return toURI().toString();
+    }
+
+    @Check
+    final void checkURI() {
+        final URI uri;
+        try {
+            uri = toURIImpl();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+        // Will cause URI exception if port is invalid too
+        if (!host().equals(uri.getHost())) {
+            throw new IllegalArgumentException(String.format("Invalid host '%s'", host()));
+        }
+    }
+
+    @Check
+    final void checkPort() {
+        if (port().isPresent()) {
+            if (port().getAsInt() <= 0 || port().getAsInt() > 65535) {
+                throw new IllegalArgumentException("Port must be in range [1, 65535]");
+            }
+        }
     }
 
     public interface Builder {
@@ -148,6 +191,54 @@ public abstract class DeephavenTarget {
 
         Builder isSecure(boolean isSecure);
 
+        Builder putHeaders(String key, String value);
+
+        Builder putAllHeaders(Map<String, ? extends String> entries);
+
         DeephavenTarget build();
+    }
+
+    private URI toURIImpl() throws URISyntaxException {
+        return new URI(
+                isSecure() ? DeephavenUri.SECURE_SCHEME : DeephavenUri.PLAINTEXT_SCHEME,
+                null,
+                host(),
+                port().orElse(-1),
+                null,
+                null,
+                headersToFragment());
+    }
+
+    private String headersToFragment() {
+        if (headers().isEmpty()) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
+        int i = 0;
+        for (Entry<String, String> e : headers().entrySet()) {
+            if (i > 0) {
+                sb.append('&');
+            }
+            if (DHFRAGMENT.equals(e.getKey())) {
+                sb.append(e.getValue());
+            } else {
+                sb.append(e.getKey()).append('=').append(e.getValue());
+            }
+            ++i;
+        }
+        return sb.toString();
+    }
+
+    private static void putHeaders(Builder builder, String fragment) {
+        for (String entry : fragment.split("&")) {
+            final String[] split = entry.split("=");
+            if (split.length == 1) {
+                builder.putHeaders(DHFRAGMENT, split[0]);
+            } else if (split.length == 2) {
+                builder.putHeaders(split[0], split[1]);
+            } else {
+                throw new IllegalArgumentException("todo");
+            }
+        }
     }
 }

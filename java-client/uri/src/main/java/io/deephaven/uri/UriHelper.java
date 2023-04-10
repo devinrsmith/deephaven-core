@@ -51,22 +51,6 @@ public class UriHelper {
     }
 
     /**
-     * A URI is a "remote target" when the only components are {@link URI#getScheme() scheme}, {@link URI#getHost()
-     * host}, and {@link URI#getPath() path}; and path is empty.
-     *
-     * @param uri the URI
-     * @return true if {@code uri} is a "remote target"
-     */
-    public static boolean isRemoteTarget(URI uri) {
-        return uri.getHost() != null
-                && !uri.isOpaque()
-                && uri.getPath().isEmpty()
-                && uri.getQuery() == null
-                && uri.getUserInfo() == null
-                && uri.getFragment() == null;
-    }
-
-    /**
      * A URI is a "remote query" when the only components are {@link URI#getScheme() scheme}, {@link URI#getHost()
      * host}, {@link URI#getQuery() query}, and {@link URI#getPath() path}; and path is empty.
      *

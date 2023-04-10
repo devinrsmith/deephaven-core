@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
  * @see FilterAnd
  * @see ColumnName
  * @see Function
+ * @see Method
  * @see LiteralFilter
  * @see RawString
  */

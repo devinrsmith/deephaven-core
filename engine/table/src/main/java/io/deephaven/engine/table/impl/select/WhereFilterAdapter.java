@@ -14,31 +14,34 @@ import io.deephaven.api.filter.FilterIsNotNull;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
+import io.deephaven.api.filter.FilterQuick;
 import io.deephaven.api.literal.Literal;
+import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.select.MatchFilter.MatchType;
 import io.deephaven.gui.table.filters.Condition;
 
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
 
-    public static WhereFilter of(Filter filter) {
-        return filter.walk(new WhereFilterAdapter(false));
+    public static WhereFilter of(TableDefinition parentDefinition, Filter filter) {
+        return filter.walk(new WhereFilterAdapter(parentDefinition, false));
     }
 
-    public static WhereFilter of(FilterNot<?> not) {
-        return not.filter().walk(new WhereFilterAdapter(true));
+    public static WhereFilter of(TableDefinition parentDefinition, FilterNot<?> not) {
+        return not.filter().walk(new WhereFilterAdapter(parentDefinition, true));
     }
 
-    public static WhereFilter of(FilterOr ors) {
-        return DisjunctiveFilter.makeDisjunctiveFilter(WhereFilter.from(ors.filters()));
+    public static WhereFilter of(TableDefinition parentDefinition, FilterOr ors) {
+        return DisjunctiveFilter.makeDisjunctiveFilter(WhereFilter.from(parentDefinition, ors.filters()));
     }
 
-    public static WhereFilter of(FilterAnd ands) {
-        return ConjunctiveFilter.makeConjunctiveFilter(WhereFilter.from(ands.filters()));
+    public static WhereFilter of(TableDefinition parentDefinition, FilterAnd ands) {
+        return ConjunctiveFilter.makeConjunctiveFilter(WhereFilter.from(parentDefinition, ands.filters()));
     }
 
-    public static WhereFilter of(FilterComparison comparison) {
+    public static WhereFilter of(TableDefinition parentDefinition, FilterComparison comparison) {
         return FilterComparisonAdapter.of(comparison);
     }
 
@@ -84,20 +87,22 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
                 : WhereFilterFactory.getExpression(rawString.value());
     }
 
+    private final TableDefinition parentDefinition;
     private final boolean inverted;
 
-    WhereFilterAdapter(boolean inverted) {
+    WhereFilterAdapter(TableDefinition parentDefinition, boolean inverted) {
+        this.parentDefinition = Objects.requireNonNull(parentDefinition);
         this.inverted = inverted;
     }
 
     @Override
     public WhereFilter visit(FilterComparison comparison) {
-        return of(inverted ? comparison.invert() : comparison);
+        return of(parentDefinition, inverted ? comparison.invert() : comparison);
     }
 
     @Override
     public WhereFilter visit(FilterNot<?> not) {
-        return inverted ? of(not.invert()) : of(not);
+        return inverted ? of(parentDefinition, not.invert()) : of(parentDefinition, not);
     }
 
     @Override
@@ -114,19 +119,29 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
     public WhereFilter visit(FilterOr ors) {
         // !A && !B && ... && !Z
         // A || B || ... || Z
-        return inverted ? of(ors.invert()) : of(ors);
+        return inverted ? of(parentDefinition, ors.invert()) : of(parentDefinition, ors);
     }
 
     @Override
     public WhereFilter visit(FilterAnd ands) {
         // !A || !B || ... || !Z
         // A && B && ... && Z
-        return inverted ? of(ands.invert()) : of(ands);
+        return inverted ? of(parentDefinition, ands.invert()) : of(parentDefinition, ands);
     }
 
     @Override
     public WhereFilter visit(ColumnName columnName) {
         return of(columnName, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterQuick quick) {
+        if (inverted) {
+            throw new IllegalArgumentException("todo");
+        }
+        final WhereFilter[] filters = WhereFilterFactory.expandQuickFilter(parentDefinition, quick.quickFilter(),
+                quick.columns().stream().map(ColumnName::name).collect(Collectors.toSet()));
+        return DisjunctiveFilter.makeDisjunctiveFilter(filters);
     }
 
     @Override

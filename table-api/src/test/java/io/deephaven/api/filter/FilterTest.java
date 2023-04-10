@@ -155,6 +155,11 @@ public class FilterTest {
         }
 
         @Override
+        public String visit(FilterQuick quick) {
+            return of(quick);
+        }
+
+        @Override
         public String visit(ColumnName columnName) {
             return of(columnName);
         }

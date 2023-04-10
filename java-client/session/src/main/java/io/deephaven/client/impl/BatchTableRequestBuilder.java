@@ -27,6 +27,7 @@ import io.deephaven.api.filter.FilterIsNotNull;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
+import io.deephaven.api.filter.FilterQuick;
 import io.deephaven.api.snapshot.SnapshotWhenOptions;
 import io.deephaven.api.snapshot.SnapshotWhenOptions.Flag;
 import io.deephaven.api.literal.Literal;
@@ -57,6 +58,7 @@ import io.deephaven.proto.backplane.grpc.NaturalJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.NotCondition;
 import io.deephaven.proto.backplane.grpc.OrCondition;
 import io.deephaven.proto.backplane.grpc.Reference;
+import io.deephaven.proto.backplane.grpc.SearchCondition;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
 import io.deephaven.proto.backplane.grpc.SelectOrUpdateRequest;
 import io.deephaven.proto.backplane.grpc.SnapshotTableRequest;
@@ -115,11 +117,13 @@ import io.deephaven.qst.table.WhereTable;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 class BatchTableRequestBuilder {
 
@@ -716,6 +720,17 @@ class BatchTableRequestBuilder {
                 builder.addFilters(of(filter));
             }
             return Condition.newBuilder().setAnd(builder.build()).build();
+        }
+
+        @Override
+        public Condition visit(FilterQuick quick) {
+            final List<Reference> columnNames =
+                    quick.columns().stream().map(BatchTableRequestBuilder::reference).collect(Collectors.toList());
+            return Condition.newBuilder().setSearch(SearchCondition.newBuilder()
+                    .setSearchString(quick.quickFilter())
+                    .addAllOptionalReferences(columnNames)
+                    .build())
+                    .build();
         }
 
         @Override

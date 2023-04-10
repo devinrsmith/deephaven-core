@@ -15,6 +15,7 @@ import io.deephaven.api.filter.FilterIsNotNull;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
+import io.deephaven.api.filter.FilterQuick;
 import io.deephaven.api.literal.Literal;
 
 import java.util.Collection;
@@ -57,6 +58,10 @@ public class Strings {
 
     public static String of(FilterAnd filterAnd) {
         return filterAnd.filters().stream().map(Strings::ofEncapsulated).collect(Collectors.joining(" && "));
+    }
+
+    public static String of(FilterQuick filterSearch) {
+        throw new UnsupportedOperationException("Unsupported");
     }
 
     public static String of(Pair pair) {
@@ -215,6 +220,11 @@ public class Strings {
         @Override
         public String visit(FilterAnd ands) {
             return encapsulate(of(ands));
+        }
+
+        @Override
+        public String visit(FilterQuick quick) {
+            return encapsulate(of(quick));
         }
 
         @Override

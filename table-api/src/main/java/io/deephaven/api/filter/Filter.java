@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
  * @see FilterOr
  * @see FilterAnd
  * @see ColumnName
+ * @see FilterQuick
  * @see Function
  * @see Method
  * @see LiteralFilter
@@ -214,6 +215,8 @@ public interface Filter extends Expression, Serializable {
         T visit(FilterOr ors);
 
         T visit(FilterAnd ands);
+
+        T visit(FilterQuick quick);
 
         T visit(ColumnName columnName);
 

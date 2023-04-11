@@ -920,15 +920,44 @@ message Condition {
   }
 }
 
+message Filter {
+  oneof type {
+      AndFilter and = 1;
+      OrFilter or = 2;
+      NotFilter not = 3;
+      CompareFilter compare = 4;
+      MatchFilter in = 5;
+      InvokeCondition invoke = 6;
+      IsNullFilter is_null = 7;
+      RegexFilter regex = 8;
+      StringContainsFilter contains = 9;
+      SearchCondition search = 10;
+  }
+}
+
 // merge AND and OR into one and give them an "operation"?
 message AndCondition {
   repeated Condition filters = 1;
 }
+
+message AndFilter {
+  repeated Filter filters = 1;
+}
+
 message OrCondition {
   repeated Condition filters = 1;
 }
+
+message OrFilter {
+  repeated Filter filters = 1;
+}
+
 message NotCondition {
   Condition filter = 1;
+}
+
+message NotFilter {
+  Filter filter = 1;
 }
 
 message CompareCondition {
@@ -944,6 +973,21 @@ message CompareCondition {
   CaseSensitivity case_sensitivity = 2;
   Value lhs = 3;
   Value rhs = 4;
+}
+
+message CompareFilter {
+  enum CompareOperation {
+    LESS_THAN = 0;
+    LESS_THAN_OR_EQUAL = 1;
+    GREATER_THAN = 2;
+    GREATER_THAN_OR_EQUAL = 3;
+    EQUALS = 4;
+    NOT_EQUALS = 5;
+  }
+  CompareOperation operation = 1;
+  CaseSensitivity case_sensitivity = 2;
+  Expression lhs = 3;
+  Expression rhs = 4;
 }
 
 enum CaseSensitivity {
@@ -963,6 +1007,12 @@ message InCondition {
   MatchType match_type = 4;
 }
 
+message MatchFilter {
+  string column_name = 1;
+  repeated Literal values = 2;
+  CaseSensitivity case_sensitivity = 3;
+}
+
 message InvokeCondition {
   string method = 1;
   Value target = 2;
@@ -970,6 +1020,10 @@ message InvokeCondition {
 }
 message IsNullCondition {
   Reference reference = 1;
+}
+
+message IsNullFilter {
+  Expression expression = 1;
 }
 
 message MatchesCondition {
@@ -980,6 +1034,12 @@ message MatchesCondition {
   MatchType match_type = 4;
 }
 
+message RegexFilter {
+  string column_name = 1;
+  string regex = 2;
+  CaseSensitivity case_sensitivity = 3;
+}
+
 message ContainsCondition {
   Reference reference = 1;
   string search_string = 2;
@@ -988,10 +1048,25 @@ message ContainsCondition {
   MatchType match_type = 4;
 }
 
+message StringContainsFilter {
+  string column_name = 1;
+  repeated string values = 2;
+  CaseSensitivity case_sensitivity = 3;
+  bool match_all = 4; // any vs all
+}
+
 // search
 message SearchCondition {
   string search_string = 1;
   repeated Reference optional_references = 2;
+}
+
+message Expression {
+  oneof type {
+      Literal literal = 1;
+      string column_name = 2;
+      Filter filter = 3;
+  }
 }
 
 message FlattenRequest {

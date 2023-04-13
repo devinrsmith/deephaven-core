@@ -29,17 +29,17 @@ public abstract class SnapshotWhenSessionTestBase extends TableSpecTestBase {
         return TimeTable.of(Duration.ofSeconds(1)).snapshot();
     }
 
-    static SnapshotWhenTable snapshotTicking(Builder builder) {
+    static TableSpec snapshotTicking(Builder builder) {
         return TimeTable.of(Duration.ofSeconds(1)).view("Id=ii")
                 .snapshotWhen(TimeTable.of(Duration.ofSeconds(2)), builder.build());
     }
 
-    static SnapshotWhenTable snapshotTickingDoInitial(Builder builder) {
+    static TableSpec snapshotTickingDoInitial(Builder builder) {
         return TimeTable.of(Duration.ofSeconds(1)).view("Id=ii")
                 .snapshotWhen(TimeTable.of(Duration.ofSeconds(2)), builder.build());
     }
 
-    static SnapshotWhenTable snapshotTickingStamp(Builder builder) {
+    static TableSpec snapshotTickingStamp(Builder builder) {
         final SnapshotWhenOptions control = builder.addStampColumns(ColumnName.of("Timestamp")).build();
         return TimeTable.of(Duration.ofSeconds(1)).view("Id=ii")
                 .snapshotWhen(TimeTable.of(Duration.ofSeconds(2)).updateView("Id=ii"), control);
@@ -52,7 +52,7 @@ public abstract class SnapshotWhenSessionTestBase extends TableSpecTestBase {
                 .snapshotWhen(TimeTable.of(Duration.ofSeconds(2)), control);
     }
 
-    static SnapshotWhenTable snapshotTickingStampDoInitial(Builder builder) {
+    static TableSpec snapshotTickingStampDoInitial(Builder builder) {
         final SnapshotWhenOptions control = builder
                 .addStampColumns(ColumnName.of("Timestamp"))
                 .addFlags(Flag.INITIAL)

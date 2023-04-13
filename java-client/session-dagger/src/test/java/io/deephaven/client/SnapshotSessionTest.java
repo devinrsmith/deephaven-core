@@ -18,7 +18,7 @@ public class SnapshotSessionTest extends TableSpecTestBase {
         return iterable(snapshot(), snapshotTicking());
     }
 
-    static SnapshotTable snapshot() {
+    static TableSpec snapshot() {
         return EmptyTable.of(1000).view("I=i").snapshot();
     }
 

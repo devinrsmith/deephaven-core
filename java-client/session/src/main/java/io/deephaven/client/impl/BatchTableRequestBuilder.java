@@ -28,6 +28,7 @@ import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.filter.FilterQuick;
+import io.deephaven.api.filter.FilterString;
 import io.deephaven.api.snapshot.SnapshotWhenOptions;
 import io.deephaven.api.snapshot.SnapshotWhenOptions.Flag;
 import io.deephaven.api.literal.Literal;
@@ -38,6 +39,7 @@ import io.deephaven.proto.backplane.grpc.AsOfJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation;
 import io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.Builder;
+import io.deephaven.proto.backplane.grpc.CaseSensitivity;
 import io.deephaven.proto.backplane.grpc.CompareCondition;
 import io.deephaven.proto.backplane.grpc.CompareCondition.CompareOperation;
 import io.deephaven.proto.backplane.grpc.Condition;
@@ -754,6 +756,12 @@ class BatchTableRequestBuilder {
         public Condition visit(FilterPattern pattern) {
             // TODO(deephaven-core#3609): Update gRPC expression / filter / literal structures
             throw new UnsupportedOperationException("Can't build Condition with FilterPattern");
+        }
+
+        @Override
+        public Condition visit(FilterString string) {
+            // TODO(deephaven-core#3609): Update gRPC expression / filter / literal structures
+            throw new UnsupportedOperationException("Can't build Condition with FilterString");
         }
 
         @Override

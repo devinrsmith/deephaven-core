@@ -121,7 +121,7 @@ public interface ChunkFilter {
     /**
      * How many values we read from a column source into a chunk before applying a filter.
      */
-    int FILTER_CHUNK_SIZE = 2048;
+    int FILTER_CHUNK_SIZE = 4096;
     /**
      * How many values we wait for before checking for interruption and throwing a cancellation exception
      */
@@ -149,28 +149,28 @@ public interface ChunkFilter {
         final RowSetBuilderSequential builder = RowSetFactory.builderSequential();
 
         final int contextSize = (int) Math.min(FILTER_CHUNK_SIZE, selection.size());
-        long chunksBetweenChecks = INITIAL_INTERRUPTION_SIZE / FILTER_CHUNK_SIZE;
-        long filteredChunks = 0;
-        long lastInterruptCheck = System.currentTimeMillis();
+        // long chunksBetweenChecks = INITIAL_INTERRUPTION_SIZE / FILTER_CHUNK_SIZE;
+        // long filteredChunks = 0;
+        // long lastInterruptCheck = System.currentTimeMillis();
 
         try (final ColumnSource.GetContext getContext = columnSource.makeGetContext(contextSize);
                 final WritableLongChunk<OrderedRowKeys> longChunk = WritableLongChunk.makeWritableChunk(contextSize);
                 final RowSequence.Iterator rsIt = selection.getRowSequenceIterator()) {
             while (rsIt.hasMore()) {
-                if (filteredChunks++ == chunksBetweenChecks) {
-                    if (Thread.interrupted()) {
-                        throw new CancellationException("interrupted while filtering data");
-                    }
-
-                    final long now = System.currentTimeMillis();
-                    final long checkDuration = now - lastInterruptCheck;
-
-                    // tune so that we check at the desired interval, never less than one chunk
-                    chunksBetweenChecks = Math.max(1, Math.min(1, checkDuration <= 0 ? chunksBetweenChecks * 2
-                            : chunksBetweenChecks * INTERRUPTION_GOAL_MILLIS / checkDuration));
-                    lastInterruptCheck = now;
-                    filteredChunks = 0;
-                }
+                // if (filteredChunks++ == chunksBetweenChecks) {
+                // if (Thread.interrupted()) {
+                // throw new CancellationException("interrupted while filtering data");
+                // }
+                //
+                // final long now = System.currentTimeMillis();
+                // final long checkDuration = now - lastInterruptCheck;
+                //
+                // // tune so that we check at the desired interval, never less than one chunk
+                // chunksBetweenChecks = Math.max(1, Math.min(1, checkDuration <= 0 ? chunksBetweenChecks * 2
+                // : chunksBetweenChecks * INTERRUPTION_GOAL_MILLIS / checkDuration));
+                // lastInterruptCheck = now;
+                // filteredChunks = 0;
+                // }
                 final RowSequence okChunk = rsIt.getNextRowSequenceWithLength(contextSize);
                 final LongChunk<OrderedRowKeys> keyChunk = okChunk.asRowKeyChunk();
 

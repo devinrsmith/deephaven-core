@@ -3,7 +3,10 @@
  */
 package io.deephaven.server.table.ops.filter;
 
+import io.deephaven.api.ColumnName;
+import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterPattern.Mode;
+import io.deephaven.api.filter.FilterString;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.select.ConjunctiveFilter;
 import io.deephaven.engine.table.impl.select.DisjunctiveFilter;
@@ -236,13 +239,14 @@ public class FilterFactory implements FilterVisitor<WhereFilter> {
     @Override
     public WhereFilter onContains(Reference reference, String searchString, CaseSensitivity caseSensitivity,
             MatchType matchType) {
-        // Note: this implementation only inverts the pattern and not the nullness-matching
-        final int flags = caseSensitivity == CaseSensitivity.IGNORE_CASE ? Pattern.CASE_INSENSITIVE : 0;
-        return WhereFilterAdapter.ofNotNullAndPattern(
-                reference.getColumnName(),
-                Pattern.compile(Pattern.quote(searchString), flags),
-                Mode.FIND,
-                matchType == MatchType.INVERTED);
+        FilterString filter = FilterString.contains(reference.getColumnName(), searchString);
+        if (caseSensitivity == CaseSensitivity.IGNORE_CASE) {
+            filter = filter.withCaseInsensitive();
+        }
+        return WhereFilterAdapter.of(Filter.and(
+                Filter.isNotNull(ColumnName.of(reference.getColumnName())),
+                matchType == MatchType.INVERTED ? filter.invert() : filter),
+                tableDefinition);
     }
 
     @Override

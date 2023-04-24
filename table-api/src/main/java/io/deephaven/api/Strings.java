@@ -16,9 +16,11 @@ import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.filter.FilterQuick;
+import io.deephaven.api.filter.FilterString;
 import io.deephaven.api.literal.Literal;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.io.FilterInputStream;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -92,6 +94,14 @@ public class Strings {
     }
 
     public static String of(FilterPattern pattern, boolean encapsulate) {
+        throw new UnsupportedOperationException();
+    }
+
+    public static String of(FilterString pattern) {
+        throw new UnsupportedOperationException();
+    }
+
+    public static String of(FilterString pattern, boolean encapsulate) {
         throw new UnsupportedOperationException();
     }
 
@@ -296,6 +306,11 @@ public class Strings {
         @Override
         public String visit(FilterPattern pattern) {
             return invert ? of(pattern.invert(), encapsulate) : of(pattern, encapsulate);
+        }
+
+        @Override
+        public String visit(FilterString string) {
+            return invert ? of(string.invert(), encapsulate) : of(string, encapsulate);
         }
 
         @Override

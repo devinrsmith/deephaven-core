@@ -206,6 +206,11 @@ public class FilterTest {
         }
 
         @Override
+        public String visit(FilterString string) {
+            return of(string);
+        }
+
+        @Override
         public String visit(FilterQuick quick) {
             return of(quick);
         }

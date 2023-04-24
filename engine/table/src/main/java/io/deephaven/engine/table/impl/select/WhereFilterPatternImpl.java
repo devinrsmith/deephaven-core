@@ -6,19 +6,15 @@ package io.deephaven.engine.table.impl.select;
 import io.deephaven.api.ColumnName;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.filter.FilterPattern.Mode;
-import io.deephaven.chunk.LongChunk;
-import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableLongChunk;
-import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.WritableRowSet;
-import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.chunkfilter.ChunkFilter;
 import io.deephaven.engine.table.impl.chunkfilter.ChunkFilter.ObjectChunkFilter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,8 +60,8 @@ final class WhereFilterPatternImpl extends WhereFilterImpl {
                     columnName, tableDefinition.getColumnNames()));
         }
         chunkFilterImpl = filterPattern.mode() == Mode.MATCHES
-                ? (inverted ? new MatchesInverted() : new Matches())
-                : (inverted ? new FindInverted() : new Find());
+                ? (inverted ? new Matches().invertFilter() : new Matches())
+                : (inverted ? new Find().invertFilter() : new Find());
     }
 
     @Override
@@ -135,71 +131,17 @@ final class WhereFilterPatternImpl extends WhereFilterImpl {
         return ((ColumnName) filterPattern.expression()).name();
     }
 
-    class Matches implements ObjectChunkFilter<String> {
+    class Matches extends ObjectChunkFilterSimpleNotNullBase<String> {
         @Override
-        public void filter(
-                ObjectChunk<String, ? extends Values> values,
-                LongChunk<OrderedRowKeys> keys,
-                WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ix = 0; ix < values.size(); ++ix) {
-                if (matches(values.get(ix))) {
-                    results.add(keys.get(ix));
-                }
-            }
+        public boolean filter(@NotNull String s) {
+            return filterPattern.pattern().matcher(s).matches();
         }
     }
 
-    class MatchesInverted implements ObjectChunkFilter<String> {
+    class Find extends ObjectChunkFilterSimpleNotNullBase<String> {
         @Override
-        public void filter(
-                ObjectChunk<String, ? extends Values> values,
-                LongChunk<OrderedRowKeys> keys,
-                WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ix = 0; ix < values.size(); ++ix) {
-                if (!matches(values.get(ix))) {
-                    results.add(keys.get(ix));
-                }
-            }
+        public boolean filter(@NotNull String s) {
+            return filterPattern.pattern().matcher(s).find();
         }
-    }
-
-    class Find implements ObjectChunkFilter<String> {
-        @Override
-        public void filter(
-                ObjectChunk<String, ? extends Values> values,
-                LongChunk<OrderedRowKeys> keys,
-                WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ix = 0; ix < values.size(); ++ix) {
-                if (find(values.get(ix))) {
-                    results.add(keys.get(ix));
-                }
-            }
-        }
-    }
-
-    class FindInverted implements ObjectChunkFilter<String> {
-        @Override
-        public void filter(
-                ObjectChunk<String, ? extends Values> values,
-                LongChunk<OrderedRowKeys> keys,
-                WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ix = 0; ix < values.size(); ++ix) {
-                if (!find(values.get(ix))) {
-                    results.add(keys.get(ix));
-                }
-            }
-        }
-    }
-
-    private boolean matches(String value) {
-        return filterPattern.pattern().matcher(value).matches();
-    }
-
-    private boolean find(String value) {
-        return filterPattern.pattern().matcher(value).find();
     }
 }

@@ -1,6 +1,7 @@
 package io.deephaven.api.filter;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.api.ColumnName;
 import io.deephaven.api.expression.Expression;
 import org.immutables.value.Value.Immutable;
 
@@ -23,11 +24,50 @@ public abstract class FilterPattern extends FilterBase {
                 .build();
     }
 
+    /**
+     * Creates a simple filter pattern.
+     *
+     * <p>
+     * Equivalent to
+     *
+     * <pre>
+     * {@code
+     * builder()
+     *         .expression(ColumnName.of(columnName))
+     *         .pattern(Pattern.compile(regex))
+     *         .build();
+     * }
+     * </pre>
+     *
+     * @param columnName the column name
+     * @param regex the regex
+     * @return the filter pattern
+     * @see Pattern regex details
+     */
+    public static FilterPattern of(String columnName, String regex) {
+        return builder()
+                .expression(ColumnName.of(columnName))
+                .pattern(Pattern.compile(regex))
+                .build();
+    }
+
+    public static FilterPattern matches(String columnName, String value, boolean caseInsensitive) {
+        final int flags = Pattern.LITERAL | (caseInsensitive ? Pattern.CASE_INSENSITIVE : 0);
+        return builder()
+                .expression(ColumnName.of(columnName))
+                .pattern(Pattern.compile(value, flags))
+                .mode(Mode.MATCHES)
+                .build();
+    }
+
     public abstract Expression expression();
 
     public abstract Pattern pattern();
 
-    public abstract Mode mode();
+    @Default
+    public Mode mode() {
+        return Mode.FIND;
+    }
 
     @Override
     public final FilterNot<FilterPattern> invert() {
@@ -82,12 +122,12 @@ public abstract class FilterPattern extends FilterBase {
         /**
          * Matches the entire {@code input} against the {@code pattern}, uses {@link Matcher#matches()}.
          */
-        FIND,
+        MATCHES,
 
         /**
          * Matches any subsequence of the {@code input} against the {@code pattern}, uses {@link Matcher#find()}.
          */
-        MATCHES
+        FIND
     }
 
     public interface Builder {

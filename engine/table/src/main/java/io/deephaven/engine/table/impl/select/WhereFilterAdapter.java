@@ -16,6 +16,7 @@ import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.filter.FilterPattern.Mode;
 import io.deephaven.api.filter.FilterQuick;
+import io.deephaven.api.filter.FilterString;
 import io.deephaven.api.literal.Literal;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.select.MatchFilter.MatchType;
@@ -52,6 +53,10 @@ public class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
 
     public static WhereFilter of(FilterPattern pattern, boolean inverted) {
         return WhereFilterPatternImpl.of(pattern, inverted);
+    }
+
+    public static WhereFilter of(FilterString filter, boolean inverted) {
+        return WhereFilterStringImpl.of(filter, inverted);
     }
 
     public static WhereFilter of(FilterQuick quick, TableDefinition parentDefinition) {
@@ -150,6 +155,11 @@ public class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
     @Override
     public WhereFilter visit(FilterPattern pattern) {
         return of(pattern, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterString string) {
+        return of(string, inverted);
     }
 
     @Override

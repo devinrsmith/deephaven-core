@@ -20,7 +20,7 @@ class FilterTestCase(BaseTestCase):
 
     def test_pattern_filter(self):
         new_test_table = self.test_table.update("X = String.valueOf(d)")
-        regex_filter = pattern(PatternMode.MATCHES, "X", "(?s)...")
+        regex_filter = pattern("X", "(?s)^...$")
         with self.assertRaises(DHError):
             filtered_table = self.test_table.where(filters=regex_filter)
 
@@ -31,7 +31,7 @@ class FilterTestCase(BaseTestCase):
             filtered_table = new_test_table.where(filters=[regex_filter, "b < 100"])
 
         new_test_table = new_test_table.update("Y = String.valueOf(e)")
-        regex_filter1 = pattern(PatternMode.MATCHES, "Y", "(?s).0.")
+        regex_filter1 = pattern("Y", "(?s)^.0.$")
         filtered_table = new_test_table.where(filters=[regex_filter, regex_filter1])
         self.assertLessEqual(filtered_table.size, new_test_table.size)
 

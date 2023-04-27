@@ -113,6 +113,51 @@ public class DoubleComparisons {
                         : new LT(pivot));
     }
 
+    public static DoublePredicate between(
+            double lower,
+            double upper,
+            boolean lowerInclusive,
+            boolean upperInclusive) {
+        if (!leq(lower, upper)) {
+            throw new IllegalArgumentException();
+        }
+        final DoublePredicate lowerPredicate = lowerInclusive
+                ? DoubleComparisons.geq(lower)
+                : DoubleComparisons.gt(lower);
+        final DoublePredicate upperPredicate = upperInclusive
+                ? DoubleComparisons.leq(upper)
+                : DoubleComparisons.lt(upper);
+        return and(lowerPredicate, upperPredicate);
+    }
+
+    public static DoublePredicate or(DoublePredicate x, DoublePredicate y) {
+        if (isTrue(y)) {
+            return y.or(x);
+        }
+        if (isFalse(y)) {
+            return y.or(x);
+        }
+        return x.or(y);
+    }
+
+    public static DoublePredicate and(DoublePredicate x, DoublePredicate y) {
+        if (isTrue(y)) {
+            return y.and(x);
+        }
+        if (isFalse(y)) {
+            return y.and(x);
+        }
+        return x.and(y);
+    }
+
+    public static boolean isTrue(DoublePredicate p) {
+        return p == True.INSTANCE;
+    }
+
+    public static boolean isFalse(DoublePredicate p) {
+        return p == False.INSTANCE;
+    }
+
     private enum True implements DoublePredicate {
         INSTANCE;
 

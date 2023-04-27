@@ -29,8 +29,7 @@ public class DoubleRangeFilter extends AbstractRangeFilter {
 
     public DoubleRangeFilter(String columnName, double val1, double val2, boolean lowerInclusive, boolean upperInclusive) {
         super(columnName, lowerInclusive, upperInclusive);
-
-        if(val1 > val2) {
+        if(DoubleComparisons.gt(val1, val2)) {
             upper = val1;
             lower = val2;
         } else {

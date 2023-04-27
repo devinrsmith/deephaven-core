@@ -24,8 +24,7 @@ public class FloatRangeFilter extends AbstractRangeFilter {
 
     public FloatRangeFilter(String columnName, float val1, float val2, boolean lowerInclusive, boolean upperInclusive) {
         super(columnName, lowerInclusive, upperInclusive);
-
-        if(val1 > val2) {
+        if(FloatComparisons.gt(val1, val2)) {
             upper = val1;
             lower = val2;
         } else {

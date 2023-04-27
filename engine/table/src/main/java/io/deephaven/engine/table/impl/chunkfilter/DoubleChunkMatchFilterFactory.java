@@ -8,204 +8,152 @@
  */
 package io.deephaven.engine.table.impl.chunkfilter;
 
-import io.deephaven.chunk.*;
-import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
-import io.deephaven.chunk.attributes.Values;
+import gnu.trove.iterator.TDoubleIterator;
 import gnu.trove.set.hash.TDoubleHashSet;
+import io.deephaven.chunk.DoubleChunk;
+import io.deephaven.chunk.LongChunk;
+import io.deephaven.chunk.WritableLongChunk;
+import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
+import io.deephaven.engine.table.impl.chunkfilter.ChunkFilter.DoubleChunkFilter;
+
+import java.util.Objects;
+import java.util.function.DoublePredicate;
 
 /**
  * Creates chunk filters for double values.
  *
+ * <p>
  * The strategy is that for one, two, or three values we have specialized
  * classes that will do the appropriate simple equality check.
  *
+ * <p>
  * For more values, we use a trove set and check contains for each value in the chunk.
  */
 public class DoubleChunkMatchFilterFactory {
     private DoubleChunkMatchFilterFactory() {} // static use only
 
-    public static ChunkFilter.DoubleChunkFilter makeFilter(boolean invertMatch, double ... values) {
-        if (invertMatch) {
-            if (values.length == 1) {
-                return new InverseSingleValueDoubleChunkFilter(values[0]);
-            }
-            if (values.length == 2) {
-                return new InverseTwoValueDoubleChunkFilter(values[0], values[1]);
-            }
-            if (values.length == 3) {
-                return new InverseThreeValueDoubleChunkFilter(values[0], values[1], values[2]);
-            }
-            return new InverseMultiValueDoubleChunkFilter(values);
-        } else {
-            if (values.length == 1) {
-                return new SingleValueDoubleChunkFilter(values[0]);
-            }
-            if (values.length == 2) {
-                return new TwoValueDoubleChunkFilter(values[0], values[1]);
-            }
-            if (values.length == 3) {
-                return new ThreeValueDoubleChunkFilter(values[0], values[1], values[2]);
-            }
-            return new MultiValueDoubleChunkFilter(values);
+    public static ChunkFilter.DoubleChunkFilter makeFilter(boolean invertMatch, double... values) {
+        if (values.length == 0) {
+            throw new IllegalArgumentException();
         }
+        final DoublePredicate predicate = predicate(values);
+        return new DoubleChunkFilterPredicateImpl(invertMatch ? predicate.negate() : predicate);
     }
 
-    private static class SingleValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final double value;
+    private static DoublePredicate predicate(double... values) {
+        boolean matchNaN = false;
+        final TDoubleHashSet set = new TDoubleHashSet(values.length);
+        for (double value : values) {
+            if (Double.isNaN(value)) {
+                matchNaN = true;
+                continue;
+            }
+            set.add(value);
+        }
+        if (set.isEmpty()) {
+            if (!matchNaN) {
+                throw new IllegalStateException();
+            }
+            return Double::isNaN;
+        }
+        final DoublePredicate p1 = predicate(set);
+        return matchNaN ? ((DoublePredicate) Double::isNaN).or(p1) : p1;
+    }
 
-        private SingleValueDoubleChunkFilter(double value) {
-            this.value = value;
+    private static DoublePredicate predicate(TDoubleHashSet set) {
+        if (set.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        final TDoubleIterator it = set.iterator();
+        final double value1 = it.next();
+        if (!it.hasNext()) {
+            return new SingleValue(value1);
+        }
+        final double value2 = it.next();
+        if (!it.hasNext()) {
+            return new TwoValues(value1, value2);
+        }
+        final double value3 = it.next();
+        if (!it.hasNext()) {
+            return new ThreeValues(value1, value2, value3);
+        }
+        return new MultiValues(set);
+    }
+
+    private static final class SingleValue implements DoublePredicate {
+        private final double value1;
+
+        public SingleValue(double value1) {
+            this.value1 = value1;
         }
 
         @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                if (values.get(ii) == value) {
-                    results.add(keys.get(ii));
-                }
-            }
+        public boolean test(double value) {
+            return value == value1;
         }
     }
 
-    private static class InverseSingleValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final double value;
-
-        private InverseSingleValueDoubleChunkFilter(double value) {
-            this.value = value;
-        }
-
-        @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                if (values.get(ii) != value) {
-                    results.add(keys.get(ii));
-                }
-            }
-        }
-    }
-
-    private static class TwoValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
+    private static final class TwoValues implements DoublePredicate {
         private final double value1;
         private final double value2;
 
-        private TwoValueDoubleChunkFilter(double value1, double value2) {
+        public TwoValues(double value1, double value2) {
             this.value1 = value1;
             this.value2 = value2;
         }
 
         @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (checkValue == value1 || checkValue == value2) {
-                    results.add(keys.get(ii));
-                }
-            }
+        public boolean test(double value) {
+            return value == value1 || value == value2;
         }
     }
 
-    private static class InverseTwoValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final double value1;
-        private final double value2;
-
-        private InverseTwoValueDoubleChunkFilter(double value1, double value2) {
-            this.value1 = value1;
-            this.value2 = value2;
-        }
-
-        @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (!(checkValue == value1 || checkValue == value2)) {
-                    results.add(keys.get(ii));
-                }
-            }
-        }
-    }
-
-    private static class ThreeValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
+    private static final class ThreeValues implements DoublePredicate {
         private final double value1;
         private final double value2;
         private final double value3;
 
-        private ThreeValueDoubleChunkFilter(double value1, double value2, double value3) {
+        public ThreeValues(double value1, double value2, double value3) {
             this.value1 = value1;
             this.value2 = value2;
             this.value3 = value3;
         }
 
         @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (checkValue == value1 || checkValue == value2 || checkValue == value3) {
-                    results.add(keys.get(ii));
-                }
-            }
+        public boolean test(double value) {
+            return value == value1 || value == value2 || value == value3;
         }
     }
 
-    private static class InverseThreeValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final double value1;
-        private final double value2;
-        private final double value3;
+    private static final class MultiValues implements DoublePredicate {
+        private final TDoubleHashSet set;
 
-        private InverseThreeValueDoubleChunkFilter(double value1, double value2, double value3) {
-            this.value1 = value1;
-            this.value2 = value2;
-            this.value3 = value3;
+        public MultiValues(TDoubleHashSet set) {
+            this.set = Objects.requireNonNull(set);
         }
 
         @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (!(checkValue == value1 || checkValue == value2 || checkValue == value3)) {
-                    results.add(keys.get(ii));
-                }
-            }
+        public boolean test(double value) {
+            return set.contains(value);
         }
     }
 
-    private static class MultiValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final TDoubleHashSet values;
+    private static final class DoubleChunkFilterPredicateImpl implements DoubleChunkFilter {
+        private final DoublePredicate predicate;
 
-        private MultiValueDoubleChunkFilter(double ... values) {
-            this.values = new TDoubleHashSet(values);
+        public DoubleChunkFilterPredicateImpl(DoublePredicate predicate) {
+            this.predicate = Objects.requireNonNull(predicate);
         }
 
         @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
+        public void filter(
+                DoubleChunk<? extends Values> values,
+                LongChunk<OrderedRowKeys> keys,
+                WritableLongChunk<OrderedRowKeys> results) {
             results.setSize(0);
             for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (this.values.contains(checkValue)) {
-                    results.add(keys.get(ii));
-                }
-            }
-        }
-    }
-
-    private static class InverseMultiValueDoubleChunkFilter implements ChunkFilter.DoubleChunkFilter {
-        private final TDoubleHashSet values;
-
-        private InverseMultiValueDoubleChunkFilter(double ... values) {
-            this.values = new TDoubleHashSet(values);
-        }
-
-        @Override
-        public void filter(DoubleChunk<? extends Values> values, LongChunk<OrderedRowKeys> keys, WritableLongChunk<OrderedRowKeys> results) {
-            results.setSize(0);
-            for (int ii = 0; ii < values.size(); ++ii) {
-                final double checkValue = values.get(ii);
-                if (!this.values.contains(checkValue)) {
+                if (predicate.test(values.get(ii))) {
                     results.add(keys.get(ii));
                 }
             }

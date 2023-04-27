@@ -4,6 +4,9 @@
 package io.deephaven.util.compare;
 
 import io.deephaven.util.QueryConstants;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.function.DoublePredicate;
 
 public class DoubleComparisons {
 
@@ -33,6 +36,31 @@ public class DoubleComparisons {
         return lhs < rhs ? -1 : 1;
     }
 
+    @SuppressWarnings("UseCompareMethod")
+    private static int compareRhsNotNullNorNaN(double lhs, double rhs) {
+        if (lhs == QueryConstants.NULL_DOUBLE) {
+            // nulls first
+            return -1;
+        }
+        if (Double.isNaN(lhs)) {
+            // NaNs last
+            return 1;
+        }
+        if (lhs < rhs) {
+            return -1;
+        }
+        if (lhs > rhs) {
+            return 1;
+        }
+        // Note this intentionally makes -0.0 and 0.0 compare equal, which is the behavior of -0.0 == 0.0
+        return 0;
+        // If we need to eventually distinguish between -0.0 and 0.0:
+        // final long lhsBits = Double.doubleToRawLongBits(lhs);
+        // final long rhsBits = Double.doubleToRawLongBits(rhs);
+        // // noinspection UseCompareMethod
+        // return lhsBits == rhsBits ? 0 : (lhsBits < rhsBits ? -1 : 1);
+    }
+
     public static boolean eq(double lhs, double rhs) {
         return (Double.isNaN(lhs) && Double.isNaN(rhs)) || lhs == rhs;
     }
@@ -51,5 +79,185 @@ public class DoubleComparisons {
 
     public static boolean leq(double lhs, double rhs) {
         return compare(lhs, rhs) <= 0;
+    }
+
+    public static DoublePredicate geq(double pivot) {
+        return pivot == QueryConstants.NULL_DOUBLE
+                ? True.INSTANCE
+                : (Double.isNaN(pivot)
+                        ? IsNaN.INSTANCE
+                        : new GEQ(pivot));
+    }
+
+    public static DoublePredicate gt(double pivot) {
+        return Double.isNaN(pivot)
+                ? False.INSTANCE
+                : (pivot == QueryConstants.NULL_DOUBLE
+                        ? IsNull.INSTANCE.negate()
+                        : new GT(pivot));
+    }
+
+    public static DoublePredicate leq(double pivot) {
+        return Double.isNaN(pivot)
+                ? True.INSTANCE
+                : (pivot == QueryConstants.NULL_DOUBLE
+                        ? IsNull.INSTANCE
+                        : new LEQ(pivot));
+    }
+
+    public static DoublePredicate lt(double pivot) {
+        return pivot == QueryConstants.NULL_DOUBLE
+                ? False.INSTANCE
+                : (Double.isNaN(pivot)
+                        ? IsNaN.INSTANCE.negate()
+                        : new LT(pivot));
+    }
+
+    private enum True implements DoublePredicate {
+        INSTANCE;
+
+        @Override
+        public boolean test(double value) {
+            return true;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate and(@NotNull DoublePredicate other) {
+            return other;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return False.INSTANCE;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate or(@NotNull DoublePredicate other) {
+            return this;
+        }
+    }
+
+    private enum False implements DoublePredicate {
+        INSTANCE;
+
+        @Override
+        public boolean test(double value) {
+            return false;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate and(@NotNull DoublePredicate other) {
+            return this;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return True.INSTANCE;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate or(@NotNull DoublePredicate other) {
+            return other;
+        }
+    }
+
+    private enum IsNaN implements DoublePredicate {
+        INSTANCE;
+
+        @Override
+        public boolean test(double value) {
+            return Double.isNaN(value);
+        }
+    }
+
+    private enum IsNull implements DoublePredicate {
+        INSTANCE;
+
+        @Override
+        public boolean test(double value) {
+            return value == QueryConstants.NULL_DOUBLE;
+        }
+    }
+
+    private static class GEQ implements DoublePredicate {
+        private final double pivot;
+
+        private GEQ(double pivot) {
+            this.pivot = pivot;
+        }
+
+        @Override
+        public boolean test(double value) {
+            return DoubleComparisons.compareRhsNotNullNorNaN(value, pivot) >= 0;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return new LT(pivot);
+        }
+    }
+
+    private static class GT implements DoublePredicate {
+        private final double pivot;
+
+        private GT(double pivot) {
+            this.pivot = pivot;
+        }
+
+        @Override
+        public boolean test(double value) {
+            return DoubleComparisons.compareRhsNotNullNorNaN(value, pivot) > 0;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return new LEQ(pivot);
+        }
+    }
+
+    private static class LEQ implements DoublePredicate {
+        private final double pivot;
+
+        private LEQ(double pivot) {
+            this.pivot = pivot;
+        }
+
+        @Override
+        public boolean test(double value) {
+            return DoubleComparisons.compareRhsNotNullNorNaN(value, pivot) <= 0;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return new GT(pivot);
+        }
+    }
+
+    private static class LT implements DoublePredicate {
+        private final double pivot;
+
+        private LT(double pivot) {
+            this.pivot = pivot;
+        }
+
+        @Override
+        public boolean test(double value) {
+            return DoubleComparisons.compareRhsNotNullNorNaN(value, pivot) < 0;
+        }
+
+        @NotNull
+        @Override
+        public DoublePredicate negate() {
+            return new GEQ(pivot);
+        }
     }
 }

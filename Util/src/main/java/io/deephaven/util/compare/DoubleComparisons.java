@@ -29,8 +29,16 @@ public class DoubleComparisons {
         if (Double.isNaN(rhs)) {
             return -1; // rhs is NaN, lhs is not
         }
-        // Neither is NULL or NaN, and they are not equal; fall back to regular comparisons
+        // Neither is NULL or NaN or -0.0/0.0, and they are not equal; fall back to regular comparisons
         return lhs < rhs ? -1 : 1;
+    }
+
+    public static double min(double lhs, double rhs) {
+        return leq(lhs, rhs) ? lhs : rhs;
+    }
+
+    public static double max(double lhs, double rhs) {
+        return geq(lhs, rhs) ? lhs : rhs;
     }
 
     public static boolean eq(double lhs, double rhs) {

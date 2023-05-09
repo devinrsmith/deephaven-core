@@ -51,8 +51,8 @@ class ShortChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
             if (candidate != QueryConstants.NULL_SHORT) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (ShortComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = ShortComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class ShortChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
         short value = QueryConstants.NULL_SHORT;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final short candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_SHORT) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (ShortComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = ShortComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_SHORT ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private short min(short a, short b) {
-        return ShortComparisons.lt(a, b) ? a : b;
-    }
-
-    private short max(short a, short b) {
-        return ShortComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class ShortChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? ShortComparisons.min(chunkValue, oldValue) : ShortComparisons.max(chunkValue, oldValue);
         }
         if (!ShortComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

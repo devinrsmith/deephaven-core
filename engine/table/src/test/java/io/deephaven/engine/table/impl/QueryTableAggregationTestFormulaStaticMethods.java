@@ -426,8 +426,8 @@ public class QueryTableAggregationTestFormulaStaticMethods {
             if (c != QueryConstants.NULL_CHAR) {
                 if (count++ == 0) {
                     min = c;
-                } else if (CharComparisons.lt(c, min)) {
-                    min = c;
+                } else {
+                    min = CharComparisons.min(min, c);
                 }
             }
         }
@@ -445,8 +445,8 @@ public class QueryTableAggregationTestFormulaStaticMethods {
             if (c != QueryConstants.NULL_CHAR) {
                 if (count++ == 0) {
                     max = c;
-                } else if (CharComparisons.gt(c, max)) {
-                    max = c;
+                } else {
+                    max = CharComparisons.max(max, c);
                 }
             }
         }
@@ -464,8 +464,8 @@ public class QueryTableAggregationTestFormulaStaticMethods {
             if (v != null) {
                 if (count++ == 0) {
                     min = v;
-                } else if (ObjectComparisons.lt(v, min)) {
-                    min = v;
+                } else {
+                    min = ObjectComparisons.min(min, v);
                 }
             }
         }
@@ -483,8 +483,8 @@ public class QueryTableAggregationTestFormulaStaticMethods {
             if (v != null) {
                 if (count++ == 0) {
                     max = v;
-                } else if (ObjectComparisons.gt(v, max)) {
-                    max = v;
+                } else {
+                    max = ObjectComparisons.max(max, v);
                 }
             }
         }
@@ -503,8 +503,8 @@ public class QueryTableAggregationTestFormulaStaticMethods {
                                                    // !Double.isNaN(v)) {
                 if (count++ == 0) {
                     min = v;
-                } else if (DoubleComparisons.lt(v, min)) {
-                    min = v;
+                } else {
+                    min = DoubleComparisons.min(min, v);
                 }
             }
         }
@@ -515,20 +515,20 @@ public class QueryTableAggregationTestFormulaStaticMethods {
         if (values.size() == 0) {
             return QueryConstants.NULL_DOUBLE;
         }
-        double min = 0;
+        double max = 0;
         int count = 0;
         for (int ii = 0; ii < values.size(); ++ii) {
             final double v = values.get(ii);
             if (v != QueryConstants.NULL_DOUBLE) { // TODO: the existing aggregator doesn't handle this &&
                                                    // !Double.isNaN(v)) {
                 if (count++ == 0) {
-                    min = v;
-                } else if (DoubleComparisons.gt(v, min)) {
-                    min = v;
+                    max = v;
+                } else {
+                    max = DoubleComparisons.max(max, v);
                 }
             }
         }
-        return count == 0 ? QueryConstants.NULL_DOUBLE : min;
+        return count == 0 ? QueryConstants.NULL_DOUBLE : max;
     }
 
     static String sumFunction(String col) {

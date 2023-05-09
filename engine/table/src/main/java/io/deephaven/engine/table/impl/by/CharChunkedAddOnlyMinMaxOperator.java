@@ -46,8 +46,8 @@ class CharChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             if (candidate != QueryConstants.NULL_CHAR) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (CharComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = CharComparisons.min(value, candidate);
                 }
             }
         }
@@ -60,24 +60,11 @@ class CharChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         char value = QueryConstants.NULL_CHAR;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final char candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_CHAR) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (CharComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = CharComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_CHAR ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private char min(char a, char b) {
-        return CharComparisons.lt(a, b) ? a : b;
-    }
-
-    private char max(char a, char b) {
-        return CharComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -133,7 +120,7 @@ class CharChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? CharComparisons.min(chunkValue, oldValue) : CharComparisons.max(chunkValue, oldValue);
         }
         if (!CharComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

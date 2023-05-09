@@ -51,8 +51,8 @@ class ObjectChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
             if (candidate != null) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (ObjectComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = ObjectComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class ObjectChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
         Object value = null;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final Object candidate = values.get(ii);
-            if (candidate != null) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (ObjectComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = ObjectComparisons.max(value, candidate);
+            nonNull += (candidate == null ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private Object min(Object a, Object b) {
-        return ObjectComparisons.lt(a, b) ? a : b;
-    }
-
-    private Object max(Object a, Object b) {
-        return ObjectComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class ObjectChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? ObjectComparisons.min(chunkValue, oldValue) : ObjectComparisons.max(chunkValue, oldValue);
         }
         if (!ObjectComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

@@ -9,23 +9,31 @@ public class ByteComparisons {
         return Byte.compare(lhs, rhs);
     }
 
+    public static byte min(byte lhs, byte rhs) {
+        return (byte) Math.min(lhs, rhs);
+    }
+
+    public static byte max(byte lhs, byte rhs) {
+        return (byte) Math.max(lhs, rhs);
+    }
+
     public static boolean eq(byte lhs, byte rhs) {
         return lhs == rhs;
     }
 
     public static boolean gt(byte lhs, byte rhs) {
-        return compare(lhs, rhs) > 0;
+        return lhs > rhs;
     }
 
     public static boolean lt(byte lhs, byte rhs) {
-        return compare(lhs, rhs) < 0;
+        return lhs < rhs;
     }
 
     public static boolean geq(byte lhs, byte rhs) {
-        return compare(lhs, rhs) >= 0;
+        return lhs >= rhs;
     }
 
     public static boolean leq(byte lhs, byte rhs) {
-        return compare(lhs, rhs) <= 0;
+        return lhs <= rhs;
     }
 }

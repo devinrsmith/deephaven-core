@@ -69,8 +69,8 @@ class LongChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             if (candidate != QueryConstants.NULL_LONG) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (LongComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = LongComparisons.min(value, candidate);
                 }
             }
         }
@@ -83,24 +83,11 @@ class LongChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         long value = QueryConstants.NULL_LONG;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final long candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_LONG) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (LongComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = LongComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_LONG ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private long min(long a, long b) {
-        return LongComparisons.lt(a, b) ? a : b;
-    }
-
-    private long max(long a, long b) {
-        return LongComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -156,7 +143,7 @@ class LongChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? LongComparisons.min(chunkValue, oldValue) : LongComparisons.max(chunkValue, oldValue);
         }
         if (!LongComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

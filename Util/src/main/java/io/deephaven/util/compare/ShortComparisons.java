@@ -9,23 +9,31 @@ public class ShortComparisons {
         return Short.compare(lhs, rhs);
     }
 
+    public static short min(short lhs, short rhs) {
+        return (short) Math.min(lhs, rhs);
+    }
+
+    public static short max(short lhs, short rhs) {
+        return (short) Math.max(lhs, rhs);
+    }
+
     public static boolean eq(short lhs, short rhs) {
         return lhs == rhs;
     }
 
     public static boolean gt(short lhs, short rhs) {
-        return compare(lhs, rhs) > 0;
+        return lhs > rhs;
     }
 
     public static boolean lt(short lhs, short rhs) {
-        return compare(lhs, rhs) < 0;
+        return lhs < rhs;
     }
 
     public static boolean geq(short lhs, short rhs) {
-        return compare(lhs, rhs) >= 0;
+        return lhs >= rhs;
     }
 
     public static boolean leq(short lhs, short rhs) {
-        return compare(lhs, rhs) <= 0;
+        return lhs <= rhs;
     }
 }

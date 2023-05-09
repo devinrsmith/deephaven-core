@@ -114,12 +114,11 @@ public class IntStreamSortedFirstOrLastChunkedOperator extends CopyingPermutedSt
         for (int ii = newDestination ? 1 : 0; ii < length; ++ii) {
             final int chunkPos = start + ii;
             final int value = values.get(chunkPos);
-            final int comparison = IntComparisons.compare(value, bestValue);
             // @formatter:off
             // No need to compare relative row keys. A stream's logical row set is always monotonically increasing.
             final boolean better =
-                    ( isFirst && comparison <  0) ||
-                    (!isFirst && comparison >= 0)  ;
+                    ( isFirst && IntComparisons.lt(value, bestValue)) ||
+                    (!isFirst && IntComparisons.geq(value, bestValue));
             // @formatter:on
             if (better) {
                 bestChunkPos = chunkPos;

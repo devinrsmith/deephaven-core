@@ -51,8 +51,8 @@ class DoubleChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
             if (candidate != QueryConstants.NULL_DOUBLE) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (DoubleComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = DoubleComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class DoubleChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
         double value = QueryConstants.NULL_DOUBLE;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final double candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_DOUBLE) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (DoubleComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = DoubleComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_DOUBLE ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private double min(double a, double b) {
-        return DoubleComparisons.lt(a, b) ? a : b;
-    }
-
-    private double max(double a, double b) {
-        return DoubleComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class DoubleChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? DoubleComparisons.min(chunkValue, oldValue) : DoubleComparisons.max(chunkValue, oldValue);
         }
         if (!DoubleComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

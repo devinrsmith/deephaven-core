@@ -105,7 +105,7 @@ public class ShortPercentileTypeHelper implements SsmChunkedPercentileOperator.P
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final short testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = ShortComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -114,13 +114,5 @@ public class ShortPercentileTypeHelper implements SsmChunkedPercentileOperator.P
         }
 
         return hi;
-    }
-
-    private static int doComparison(short lhs, short rhs) {
-        return ShortComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(short lhs, short rhs) {
-        return doComparison(lhs, rhs) > 0;
     }
 }

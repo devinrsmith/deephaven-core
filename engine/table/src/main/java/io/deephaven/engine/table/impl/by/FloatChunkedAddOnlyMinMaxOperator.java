@@ -51,8 +51,8 @@ class FloatChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
             if (candidate != QueryConstants.NULL_FLOAT) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (FloatComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = FloatComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class FloatChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
         float value = QueryConstants.NULL_FLOAT;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final float candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_FLOAT) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (FloatComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = FloatComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_FLOAT ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private float min(float a, float b) {
-        return FloatComparisons.lt(a, b) ? a : b;
-    }
-
-    private float max(float a, float b) {
-        return FloatComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class FloatChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? FloatComparisons.min(chunkValue, oldValue) : FloatComparisons.max(chunkValue, oldValue);
         }
         if (!FloatComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

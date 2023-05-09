@@ -29,8 +29,16 @@ public class FloatComparisons {
         if (Float.isNaN(rhs)) {
             return -1; // rhs is NaN, lhs is not
         }
-        // Neither is NULL or NaN, and they are not equal; fall back to regular comparisons
+        // Neither is NULL or NaN or -0.0/0.0, and they are not equal; fall back to regular comparisons
         return lhs < rhs ? -1 : 1;
+    }
+
+    public static float min(float lhs, float rhs) {
+        return leq(lhs, rhs) ? lhs : rhs;
+    }
+
+    public static float max(float lhs, float rhs) {
+        return geq(lhs, rhs) ? lhs : rhs;
     }
 
     public static boolean eq(float lhs, float rhs) {

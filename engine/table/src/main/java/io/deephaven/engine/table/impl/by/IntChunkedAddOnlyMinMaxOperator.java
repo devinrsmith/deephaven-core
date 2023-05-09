@@ -51,8 +51,8 @@ class IntChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOper
             if (candidate != QueryConstants.NULL_INT) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (IntComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = IntComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class IntChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOper
         int value = QueryConstants.NULL_INT;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final int candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_INT) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (IntComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = IntComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_INT ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private int min(int a, int b) {
-        return IntComparisons.lt(a, b) ? a : b;
-    }
-
-    private int max(int a, int b) {
-        return IntComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class IntChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOper
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? IntComparisons.min(chunkValue, oldValue) : IntComparisons.max(chunkValue, oldValue);
         }
         if (!IntComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

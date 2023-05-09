@@ -20,6 +20,14 @@ public class CharComparisons {
         return Character.compare(lhs, rhs);
     }
 
+    public static char min(char lhs, char rhs) {
+        return leq(lhs, rhs) ? lhs : rhs;
+    }
+
+    public static char max(char lhs, char rhs) {
+        return geq(lhs, rhs) ? lhs : rhs;
+    }
+
     public static boolean eq(char lhs, char rhs) {
         return lhs == rhs;
     }

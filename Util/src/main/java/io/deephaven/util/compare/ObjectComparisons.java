@@ -21,6 +21,14 @@ public class ObjectComparisons {
         return ((Comparable) lhs).compareTo(rhs);
     }
 
+    public static Object min(Object lhs, Object rhs) {
+        return leq(lhs, rhs) ? lhs : rhs;
+    }
+
+    public static Object max(Object lhs, Object rhs) {
+        return geq(lhs, rhs) ? lhs : rhs;
+    }
+
     public static boolean eq(Object lhs, Object rhs) {
         return Objects.equals(lhs, rhs);
     }

@@ -51,8 +51,8 @@ class ByteChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             if (candidate != QueryConstants.NULL_BYTE) {
                 if (nonNull++ == 0) {
                     value = candidate;
-                } else if (ByteComparisons.lt(candidate, value)) {
-                    value = candidate;
+                } else {
+                    value = ByteComparisons.min(value, candidate);
                 }
             }
         }
@@ -65,24 +65,11 @@ class ByteChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         byte value = QueryConstants.NULL_BYTE;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final byte candidate = values.get(ii);
-            if (candidate != QueryConstants.NULL_BYTE) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else if (ByteComparisons.gt(candidate, value)) {
-                    value = candidate;
-                }
-            }
+            value = ByteComparisons.max(value, candidate);
+            nonNull += (candidate == QueryConstants.NULL_BYTE ? 1 : 0);
         }
         chunkNonNull.setValue(nonNull);
         return value;
-    }
-
-    private byte min(byte a, byte b) {
-        return ByteComparisons.lt(a, b) ? a : b;
-    }
-
-    private byte max(byte a, byte b) {
-        return ByteComparisons.gt(a, b) ? a : b;
     }
 
     @Override
@@ -138,7 +125,7 @@ class ByteChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
             // that it is in fact empty and we should use the value from the chunk
             result = chunkValue;
         } else {
-            result = minimum ? min(chunkValue, oldValue) : max(chunkValue, oldValue);
+            result = minimum ? ByteComparisons.min(chunkValue, oldValue) : ByteComparisons.max(chunkValue, oldValue);
         }
         if (!ByteComparisons.eq(result, oldValue)) {
             resultColumn.set(destination, result);

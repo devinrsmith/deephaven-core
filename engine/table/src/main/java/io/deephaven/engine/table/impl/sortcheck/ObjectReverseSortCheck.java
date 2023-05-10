@@ -30,7 +30,7 @@ public class ObjectReverseSortCheck implements SortCheck {
         Object last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final Object current = valuesToCheck.get(ii);
-            if (!inOrder(last, current)) {
+            if (!leq(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -54,4 +54,8 @@ public class ObjectReverseSortCheck implements SortCheck {
         return ((Comparable)rhs).compareTo(lhs);
     }
     // endregion comparison functions
+
+    private static boolean leq(Object lhs, Object rhs) {
+        return doComparison(lhs, rhs) <= 0;
+    }
 }

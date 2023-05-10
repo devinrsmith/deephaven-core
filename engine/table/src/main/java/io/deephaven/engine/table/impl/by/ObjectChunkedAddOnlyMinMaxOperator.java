@@ -16,7 +16,7 @@ import io.deephaven.util.compare.ObjectComparisons;
 import io.deephaven.engine.table.impl.sources.ObjectArraySource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.Collections;
 import java.util.Map;
@@ -43,33 +43,32 @@ class ObjectChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
         // endregion resultColumn initialization
     }
 
-    private Object min(ObjectChunk<Object, ?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
-        Object value = QueryConstants.MAX_OBJECT;
+    private Object min(ObjectChunk<Object, ?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
+        int nonNull = 0;
+        Object value = null;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final Object candidate = values.get(ii);
             if (candidate != null) {
-                hasValue.setTrue();
-                value = ObjectComparisons.min(value, candidate);
-                if (value == QueryConstants.MIN_OBJECT) {
-                    break;
+                if (nonNull++ == 0) {
+                    value = candidate;
+                } else {
+                    value = ObjectComparisons.min(value, candidate);
                 }
             }
         }
+        chunkNonNull.setValue(nonNull);
         return value;
     }
 
-    private Object max(ObjectChunk<Object, ?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
-        Object value = QueryConstants.MIN_OBJECT;
+    private Object max(ObjectChunk<Object, ?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
+        int nonNull =0;
+        Object value = null;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final Object candidate = values.get(ii);
-            if (candidate != null) {
-                hasValue.setTrue();
-            }
             value = ObjectComparisons.max(value, candidate);
-            if (value == QueryConstants.MAX_OBJECT) {
-                break;
-            }
+            nonNull += (candidate == null ? 1 : 0);
         }
+        chunkNonNull.setValue(nonNull);
         return value;
     }
 
@@ -112,19 +111,15 @@ class ObjectChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationO
         if (chunkSize == 0) {
             return false;
         }
-        final Object oldValue = resultColumn.getUnsafe(destination);
-        if ((minimum && oldValue == QueryConstants.MIN_OBJECT) || (!minimum && oldValue == QueryConstants.MAX_OBJECT)) {
-            return false;
-        }
-
-        final MutableBoolean hasValue = new MutableBoolean(false);
+        final MutableInt chunkNonNull = new MutableInt(0);
         final int chunkEnd = chunkStart + chunkSize;
-        final Object chunkValue = minimum ? min(values, hasValue, chunkStart, chunkEnd) : max(values, hasValue, chunkStart, chunkEnd);
-        if (hasValue.isFalse()) {
+        final Object chunkValue = minimum ? min(values, chunkNonNull, chunkStart, chunkEnd) : max(values, chunkNonNull, chunkStart, chunkEnd);
+        if (chunkNonNull.intValue() == 0) {
             return false;
         }
 
         final Object result;
+        final Object oldValue = resultColumn.getUnsafe(destination);
         if (oldValue == null) {
             // we exclude nulls from the min/max calculation, therefore if the value in our min/max is null we know
             // that it is in fact empty and we should use the value from the chunk

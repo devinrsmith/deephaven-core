@@ -28,7 +28,7 @@ public class IntReverseSortCheck implements SortCheck {
         int last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final int current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -38,12 +38,8 @@ public class IntReverseSortCheck implements SortCheck {
 
     // region comparison functions
     // note that this is a descending kernel, thus the comparisons here are backwards (e.g., the lt function is in terms of the sort direction, so is implemented by gt)
-    private static int doComparison(int lhs, int rhs) {
-        return -1 * IntComparisons.compare(lhs, rhs);
+    private static boolean inOrder(int lhs, int rhs) {
+        return IntComparisons.geq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(int lhs, int rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

@@ -25,7 +25,7 @@ import io.deephaven.util.compare.LongComparisons;
 import io.deephaven.engine.table.impl.sources.LongArraySource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.Collections;
 import java.util.Map;
@@ -61,32 +61,33 @@ class LongChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         // endregion resultColumn initialization
     }
 
-    private long min(LongChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull = 0;
-        long value = QueryConstants.NULL_LONG;
+    private long min(LongChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        long value = QueryConstants.MAX_LONG;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final long candidate = values.get(ii);
             if (candidate != QueryConstants.NULL_LONG) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else {
-                    value = LongComparisons.min(value, candidate);
+                hasValue.setTrue();
+                value = LongComparisons.min(value, candidate);
+                if (value == QueryConstants.MIN_LONG) {
+                    break;
                 }
             }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
-    private long max(LongChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull =0;
-        long value = QueryConstants.NULL_LONG;
+    private long max(LongChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        long value = QueryConstants.MIN_LONG;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final long candidate = values.get(ii);
+            if (candidate != QueryConstants.NULL_LONG) {
+                hasValue.setTrue();
+            }
             value = LongComparisons.max(value, candidate);
-            nonNull += (candidate == QueryConstants.NULL_LONG ? 1 : 0);
+            if (value == QueryConstants.MAX_LONG) {
+                break;
+            }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
@@ -129,15 +130,19 @@ class LongChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         if (chunkSize == 0) {
             return false;
         }
-        final MutableInt chunkNonNull = new MutableInt(0);
+        final long oldValue = resultColumn.getUnsafe(destination);
+        if ((minimum && oldValue == QueryConstants.MIN_LONG) || (!minimum && oldValue == QueryConstants.MAX_LONG)) {
+            return false;
+        }
+
+        final MutableBoolean hasValue = new MutableBoolean(false);
         final int chunkEnd = chunkStart + chunkSize;
-        final long chunkValue = minimum ? min(values, chunkNonNull, chunkStart, chunkEnd) : max(values, chunkNonNull, chunkStart, chunkEnd);
-        if (chunkNonNull.intValue() == 0) {
+        final long chunkValue = minimum ? min(values, hasValue, chunkStart, chunkEnd) : max(values, hasValue, chunkStart, chunkEnd);
+        if (hasValue.isFalse()) {
             return false;
         }
 
         final long result;
-        final long oldValue = resultColumn.getUnsafe(destination);
         if (oldValue == QueryConstants.NULL_LONG) {
             // we exclude nulls from the min/max calculation, therefore if the value in our min/max is null we know
             // that it is in fact empty and we should use the value from the chunk

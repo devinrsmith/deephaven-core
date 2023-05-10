@@ -89,7 +89,7 @@ public class ShortLongMegaMergeKernel {
             }
 
             while (destWins < minGallop && chunkWins < minGallop) {
-                if (geq(val2, val1)) {
+                if (descendingMergeLhs(val2, val1)) {
                     destinationValues.set(ii, val2);
                     destinationKeys.set(ii--, keysChunk.get(chunkCursor));
 
@@ -180,14 +180,20 @@ public class ShortLongMegaMergeKernel {
     }
 
     // region comparison functions
-    private static int doComparison(short lhs, short rhs) {
-        return ShortComparisons.compare(lhs, rhs);
+    private static boolean descendingMergeLhs(short lhs, short rhs) {
+        return ShortComparisons.geq(lhs, rhs);
+    }
+
+    private static boolean inOrder(short lhs, short rhs) {
+        return ShortComparisons.leq(lhs, rhs);
+    }
+
+    private static boolean inOrderStrict(short lhs, short rhs) {
+        return ShortComparisons.lt(lhs, rhs);
     }
     // endregion comparison functions
 
-    private static boolean geq(short lhs, short rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
+
 
     // when we binary search in 1, we must identify a position for search value that is *after* our test values;
     // because the values from run 2 may never be inserted before an equal value from run 1
@@ -201,12 +207,10 @@ public class ShortLongMegaMergeKernel {
 
     private static long bound(ShortArraySource valuesToSort, long lo, long hi, short searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final long mid = (lo + hi) >>> 1;
             final short testValue = valuesToSort.getUnsafe(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;
@@ -227,12 +231,10 @@ public class ShortLongMegaMergeKernel {
 
     private static int bound(ShortChunk<?> valuesToSort, int lo, int hi, short searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final short testValue = valuesToSort.get(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;

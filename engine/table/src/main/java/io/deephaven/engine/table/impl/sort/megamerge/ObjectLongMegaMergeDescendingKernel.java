@@ -89,7 +89,7 @@ public class ObjectLongMegaMergeDescendingKernel {
             }
 
             while (destWins < minGallop && chunkWins < minGallop) {
-                if (geq(val2, val1)) {
+                if (descendingMergeLhs(val2, val1)) {
                     destinationValues.set(ii, val2);
                     destinationKeys.set(ii--, keysChunk.get(chunkCursor));
 
@@ -181,14 +181,20 @@ public class ObjectLongMegaMergeDescendingKernel {
 
     // region comparison functions
     // note that this is a descending kernel, thus the comparisons here are backwards (e.g., the lt function is in terms of the sort direction, so is implemented by gt)
-    private static int doComparison(Object lhs, Object rhs) {
-        return -1 * ObjectComparisons.compare(lhs, rhs);
+    private static boolean descendingMergeLhs(Object lhs, Object rhs) {
+        return ObjectComparisons.leq(lhs, rhs);
+    }
+
+    private static boolean inOrder(Object lhs, Object rhs) {
+        return ObjectComparisons.geq(lhs, rhs);
+    }
+
+    private static boolean inOrderStrict(Object lhs, Object rhs) {
+        return ObjectComparisons.gt(lhs, rhs);
     }
     // endregion comparison functions
 
-    private static boolean geq(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
+
 
     // when we binary search in 1, we must identify a position for search value that is *after* our test values;
     // because the values from run 2 may never be inserted before an equal value from run 1
@@ -202,12 +208,10 @@ public class ObjectLongMegaMergeDescendingKernel {
 
     private static long bound(ObjectArraySource valuesToSort, long lo, long hi, Object searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final long mid = (lo + hi) >>> 1;
             final Object testValue = valuesToSort.getUnsafe(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;
@@ -228,12 +232,10 @@ public class ObjectLongMegaMergeDescendingKernel {
 
     private static int bound(ObjectChunk<Object, ?> valuesToSort, int lo, int hi, Object searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final Object testValue = valuesToSort.get(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;

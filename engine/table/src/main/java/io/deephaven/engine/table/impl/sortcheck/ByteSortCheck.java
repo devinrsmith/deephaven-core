@@ -28,7 +28,7 @@ public class ByteSortCheck implements SortCheck {
         byte last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final byte current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -37,12 +37,8 @@ public class ByteSortCheck implements SortCheck {
     }
 
     // region comparison functions
-    private static int doComparison(byte lhs, byte rhs) {
-        return ByteComparisons.compare(lhs, rhs);
+    private static boolean inOrder(byte lhs, byte rhs) {
+        return ByteComparisons.leq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

@@ -103,7 +103,7 @@ public class DateTimePercentileTypeHelper implements SsmChunkedPercentileOperato
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = LongComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -112,13 +112,5 @@ public class DateTimePercentileTypeHelper implements SsmChunkedPercentileOperato
         }
 
         return hi;
-    }
-
-    private static int doComparison(long lhs, long rhs) {
-        return LongComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(long lhs, long rhs) {
-        return doComparison(lhs, rhs) > 0;
     }
 }

@@ -28,7 +28,7 @@ public class ShortReverseSortCheck implements SortCheck {
         short last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final short current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -38,12 +38,8 @@ public class ShortReverseSortCheck implements SortCheck {
 
     // region comparison functions
     // note that this is a descending kernel, thus the comparisons here are backwards (e.g., the lt function is in terms of the sort direction, so is implemented by gt)
-    private static int doComparison(short lhs, short rhs) {
-        return -1 * ShortComparisons.compare(lhs, rhs);
+    private static boolean inOrder(short lhs, short rhs) {
+        return ShortComparisons.geq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(short lhs, short rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

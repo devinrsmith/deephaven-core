@@ -28,7 +28,7 @@ public class ObjectSortCheck implements SortCheck {
         Object last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final Object current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -37,12 +37,8 @@ public class ObjectSortCheck implements SortCheck {
     }
 
     // region comparison functions
-    private static int doComparison(Object lhs, Object rhs) {
-        return ObjectComparisons.compare(lhs, rhs);
+    private static boolean inOrder(Object lhs, Object rhs) {
+        return ObjectComparisons.leq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

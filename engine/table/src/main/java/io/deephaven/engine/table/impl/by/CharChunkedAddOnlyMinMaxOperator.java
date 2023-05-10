@@ -12,7 +12,7 @@ import io.deephaven.util.compare.CharComparisons;
 import io.deephaven.engine.table.impl.sources.CharacterArraySource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.Collections;
 import java.util.Map;
@@ -38,32 +38,33 @@ class CharChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         // endregion resultColumn initialization
     }
 
-    private char min(CharChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull = 0;
-        char value = QueryConstants.NULL_CHAR;
+    private char min(CharChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        char value = QueryConstants.MAX_CHAR;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final char candidate = values.get(ii);
             if (candidate != QueryConstants.NULL_CHAR) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else {
-                    value = CharComparisons.min(value, candidate);
+                hasValue.setTrue();
+                value = CharComparisons.min(value, candidate);
+                if (value == QueryConstants.MIN_CHAR) {
+                    break;
                 }
             }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
-    private char max(CharChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull =0;
-        char value = QueryConstants.NULL_CHAR;
+    private char max(CharChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        char value = QueryConstants.MIN_CHAR;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final char candidate = values.get(ii);
+            if (candidate != QueryConstants.NULL_CHAR) {
+                hasValue.setTrue();
+            }
             value = CharComparisons.max(value, candidate);
-            nonNull += (candidate == QueryConstants.NULL_CHAR ? 1 : 0);
+            if (value == QueryConstants.MAX_CHAR) {
+                break;
+            }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
@@ -106,15 +107,19 @@ class CharChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         if (chunkSize == 0) {
             return false;
         }
-        final MutableInt chunkNonNull = new MutableInt(0);
+        final char oldValue = resultColumn.getUnsafe(destination);
+        if ((minimum && oldValue == QueryConstants.MIN_CHAR) || (!minimum && oldValue == QueryConstants.MAX_CHAR)) {
+            return false;
+        }
+
+        final MutableBoolean hasValue = new MutableBoolean(false);
         final int chunkEnd = chunkStart + chunkSize;
-        final char chunkValue = minimum ? min(values, chunkNonNull, chunkStart, chunkEnd) : max(values, chunkNonNull, chunkStart, chunkEnd);
-        if (chunkNonNull.intValue() == 0) {
+        final char chunkValue = minimum ? min(values, hasValue, chunkStart, chunkEnd) : max(values, hasValue, chunkStart, chunkEnd);
+        if (hasValue.isFalse()) {
             return false;
         }
 
         final char result;
-        final char oldValue = resultColumn.getUnsafe(destination);
         if (oldValue == QueryConstants.NULL_CHAR) {
             // we exclude nulls from the min/max calculation, therefore if the value in our min/max is null we know
             // that it is in fact empty and we should use the value from the chunk

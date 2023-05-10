@@ -23,7 +23,7 @@ public class CharSortCheck implements SortCheck {
         char last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final char current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -32,12 +32,8 @@ public class CharSortCheck implements SortCheck {
     }
 
     // region comparison functions
-    private static int doComparison(char lhs, char rhs) {
-        return CharComparisons.compare(lhs, rhs);
+    private static boolean inOrder(char lhs, char rhs) {
+        return CharComparisons.leq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(char lhs, char rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

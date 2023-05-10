@@ -15,6 +15,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.deephaven.replication.ReplicatePrimitiveCode.*;
@@ -398,9 +399,36 @@ public class ReplicateSortKernel {
     public static List<String> invertComparisons(List<String> lines) {
         final List<String> descendingComment = Collections.singletonList(
                 "    // note that this is a descending kernel, thus the comparisons here are backwards (e.g., the lt function is in terms of the sort direction, so is implemented by gt)");
-        return insertRegion(
-                applyFixup(lines, "comparison functions", "(\\s+return )(.*compare.*;)",
-                        m -> Collections.singletonList(m.group(1) + "-1 * " + m.group(2))),
-                "comparison functions", descendingComment);
+        final String region = "comparison functions";
+
+        lines = insertRegion(applyFixup(lines, region, "(\\s+return )(.*compare.*;)",
+                m -> Collections.singletonList(m.group(1) + "-1 * " + m.group(2))), region, descendingComment);
+        {
+            String pattern = "(.*)("
+                    + Pattern.quote(".leq(") + "|"
+                    + Pattern.quote(".lt(") + "|"
+                    + Pattern.quote(".geq(") + "|"
+                    + Pattern.quote(".gt(")
+                    + ")(.*)";
+            lines = insertRegion(
+                    applyFixup(lines, region, pattern,
+                            m -> List.of(m.group(1) + replaceComparisonFunction(m.group(2)) + m.group(3))),
+                    region, List.of());
+        }
+        return lines;
+    }
+
+    private static String replaceComparisonFunction(String f) {
+        switch (f) {
+            case ".leq(":
+                return ".geq(";
+            case ".lt(":
+                return ".gt(";
+            case ".geq(":
+                return ".leq(";
+            case ".gt(":
+                return ".lt(";
+        }
+        throw new IllegalArgumentException("Unexpected comparison function " + f);
     }
 }

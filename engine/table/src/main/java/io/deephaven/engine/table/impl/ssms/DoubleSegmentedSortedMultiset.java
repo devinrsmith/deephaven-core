@@ -81,8 +81,8 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
     private int insertExistingIntoLeaf(WritableDoubleChunk<? extends Values> valuesToInsert, WritableIntChunk<ChunkLengths> counts, int ripos, MutableInt wipos, int leafSize, double [] leafValues, long [] leafCounts, double maxInsert, boolean lastLeaf) {
         int rlpos = 0;
         double nextValue;
-        while (rlpos < leafSize && ripos < valuesToInsert.size() && (leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
-            if (gt(leafValues[rlpos], nextValue)) {
+        while (rlpos < leafSize && ripos < valuesToInsert.size() && (DoubleComparisons.leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
+            if (DoubleComparisons.gt(leafValues[rlpos], nextValue)) {
                 // we're not going to find nextValue in this leaf, so we skip over it
                 valuesToInsert.set(wipos.intValue(), nextValue);
                 counts.set(wipos.intValue(), counts.get(ripos));
@@ -91,7 +91,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
             } else {
                 rlpos = upperBound(leafValues, rlpos, leafSize, nextValue);
                 if (rlpos < leafSize) {
-                    if (eq(leafValues[rlpos], nextValue)) {
+                    if (DoubleComparisons.eq(leafValues[rlpos], nextValue)) {
                         leafCounts[rlpos] += counts.get(ripos);
                         ripos++;
                     }
@@ -140,7 +140,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (remaining-- > 0) {
             final double insertValue = valuesToInsert.get(ripos);
             final double leafValue = leafValues[firstLeaf][rlpos];
-            final boolean useInsertValue = gt(insertValue, leafValue);
+            final boolean useInsertValue = DoubleComparisons.gt(insertValue, leafValue);
 
             if (useInsertValue) {
                 leafValues[wleaf][wpos] = insertValue;
@@ -280,7 +280,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
             final double insertValue = valuesToInsert.get(ripos);
             final double leafValue = leafValues[rlpos];
 
-            if (gt(insertValue, leafValue)) {
+            if (DoubleComparisons.gt(insertValue, leafValue)) {
                 leafValues[wpos] = insertValue;
                 leafCounts[wpos] = counts.get(ripos);
                 if (ripos == 0) {
@@ -427,7 +427,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
         maybeAccumulateAdditions(valuesToInsert);
 
-        if (leafCount > 1 && gt(valuesToInsert.get(0), getMaxDouble())) {
+        if (leafCount > 1 && DoubleComparisons.gt(valuesToInsert.get(0), getMaxDouble())) {
             doAppend(valuesToInsert, counts);
             return;
         }
@@ -670,7 +670,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = DoubleComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 lo = mid;
                 if (lo == hi - 1) {
@@ -697,7 +697,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch.get(mid);
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = DoubleComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -724,7 +724,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = DoubleComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -751,7 +751,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch[mid];
-            final boolean moveHi = geq(testValue, searchValue);
+            final boolean moveHi = DoubleComparisons.geq(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -775,7 +775,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = DoubleComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -799,7 +799,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final double testValue = valuesToSearch[mid];
-            final boolean moveLo = lt(testValue, searchValue);
+            final boolean moveLo = DoubleComparisons.lt(testValue, searchValue);
             if (moveLo) {
                 lo = mid + 1;
                 if (lo == hi) {
@@ -1143,7 +1143,11 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
             Assert.gtZero(counts.get(ii), "counts.get(ii)");
             final double prevValue = valuesToInsert.get(ii - 1);
             final double curValue = valuesToInsert.get(ii);
-            Assert.assertion(DoubleComparisons.lt(prevValue, curValue), "DoubleComparisons.lt(prevValue, curValue)", prevValue, "prevValue", curValue, "curValue");
+            Assert.assertion(
+                    DoubleComparisons.lt(prevValue, curValue),
+                    "DoubleComparisons.lt(prevValue, curValue)",
+                    prevValue, "prevValue",
+                    curValue, "curValue");
         }
     }
 
@@ -1199,15 +1203,27 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
                 final double lastValue = leafValues[ii][leafSizes[ii] - 1];
                 if (ii < leafCount - 1) {
                     final double directoryValue = directoryValues[ii];
-                    Assert.assertion(leq(lastValue, directoryValue), "lt(lastValue, directoryValue)", lastValue, "leafValues[ii][leafSizes[ii] - 1]", directoryValue, "directoryValue");
+                    Assert.assertion(
+                            DoubleComparisons.leq(lastValue, directoryValue),
+                            "DoubleComparisons.lt(lastValue, directoryValue)",
+                            lastValue, "leafValues[ii][leafSizes[ii] - 1]",
+                            directoryValue, "directoryValue");
 
                     if (ii < leafCount - 2) {
                         final double nextDirectoryValue = directoryValues[ii + 1];
-                        Assert.assertion(lt(directoryValue, nextDirectoryValue), "lt(directoryValue, nextDirectoryValue)", directoryValue, "directoryValue", nextDirectoryValue, "nextDirectoryValue");
+                        Assert.assertion(
+                                DoubleComparisons.lt(directoryValue, nextDirectoryValue),
+                                "DoubleComparisons.lt(directoryValue, nextDirectoryValue)",
+                                directoryValue, "directoryValue",
+                                nextDirectoryValue, "nextDirectoryValue");
                     }
 
                     final double nextFirstValue = leafValues[ii + 1][0];
-                    Assert.assertion(lt(directoryValue, nextFirstValue), "lt(directoryValue, nextFirstValue)", directoryValue, "directoryValue", nextFirstValue, "nextFirstValue");
+                    Assert.assertion(
+                            DoubleComparisons.lt(directoryValue, nextFirstValue),
+                            "DoubleComparisons.lt(directoryValue, nextFirstValue)",
+                            directoryValue, "directoryValue",
+                            nextFirstValue, "nextFirstValue");
                 }
                 // It would be nice to enable an assertion to make sure we are dense after removals, but the other
                 // reason this assertion can fail is that if we insert into a node that is too large we may have to
@@ -1228,7 +1244,7 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         for (int leaf = 0; leaf < leafCount - 1; ++leaf) {
             final double lastValue = leafValues[leaf][leafSizes[leaf] - 1];
             final double nextValue = leafValues[leaf + 1][0];
-            Assert.assertion(lt(lastValue, nextValue), lastValue + " < " + nextValue);
+            Assert.assertion(DoubleComparisons.lt(lastValue, nextValue), lastValue + " < " + nextValue);
         }
     }
 
@@ -1244,7 +1260,12 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
             Assert.gtZero(counts[ii], "counts[ii]");
             final double thisValue = values[ii];
             final double nextValue = values[ii + 1];
-            Assert.assertion(lt(values[ii], values[ii + 1]), "lt(values[ii], values[ii + 1])", (Double)thisValue, "values[ii]", (Double)nextValue, "values[ii + 1]", ii, "ii");
+            Assert.assertion(
+                    DoubleComparisons.lt(values[ii], values[ii + 1]),
+                    "DoubleComparisons.lt(values[ii], values[ii + 1])",
+                    (Double)thisValue, "values[ii]",
+                    (Double)nextValue, "values[ii + 1]",
+                    ii, "ii");
         }
         if (size > 0) {
             Assert.gtZero(counts[size - 1], "counts[size - 1]");
@@ -1278,32 +1299,6 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
     private static int valuesPerLeaf(int values, int leafCount) {
         return (values + leafCount - 1) / leafCount;
-    }
-
-    private static int doComparison(double lhs, double rhs) {
-        return DoubleComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(double lhs, double rhs) {
-        return doComparison(lhs, rhs) > 0;
-    }
-
-    private static boolean lt(double lhs, double rhs) {
-        return doComparison(lhs, rhs) < 0;
-    }
-
-    private static boolean leq(double lhs, double rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
-
-    private static boolean geq(double lhs, double rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
-
-    private static boolean eq(double lhs, double rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
     }
     //endregion
 
@@ -1454,11 +1449,13 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(geq(getMinDouble(), destination.getMaxDouble()), "geq(getMinDouble(), destination.getMaxDouble())");
+                Assert.assertion(
+                        DoubleComparisons.geq(getMinDouble(), destination.getMaxDouble()),
+                        "DoubleComparisons.geq(getMinDouble(), destination.getMaxDouble())");
             }
         }
 
-        if (destination.size > 0 && eq(getMinDouble(), destination.getMaxDouble())) {
+        if (destination.size > 0 && DoubleComparisons.eq(getMinDouble(), destination.getMaxDouble())) {
             final long minCount = getMinCount();
             final long toAdd;
             if (minCount > count) {
@@ -1722,7 +1719,9 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(geq(getMinDouble(), destination.getMaxDouble()), "geq(getMinDouble(), destination.getMaxDouble())");
+                Assert.assertion(
+                        DoubleComparisons.geq(getMinDouble(), destination.getMaxDouble()),
+                        "DoubleComparisons.geq(getMinDouble(), destination.getMaxDouble())");
             }
         }
 
@@ -1882,11 +1881,13 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(leq(getMaxDouble(), destination.getMinDouble()), "leq(getMaxDouble(), destination.getMinDouble())");
+                Assert.assertion(
+                        DoubleComparisons.leq(getMaxDouble(), destination.getMinDouble()),
+                        "DoubleComparisons.leq(getMaxDouble(), destination.getMinDouble())");
             }
         }
 
-        if (destination.size > 0 && eq(getMaxDouble(), destination.getMinDouble())) {
+        if (destination.size > 0 && DoubleComparisons.eq(getMaxDouble(), destination.getMinDouble())) {
             final long maxCount = getMaxCount();
             final long toAdd;
             if (maxCount > count) {
@@ -2082,7 +2083,9 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(leq(getMaxDouble(), destination.getMinDouble()), "leq(getMaxDouble(), destination.getMinDouble())");
+                Assert.assertion(
+                        DoubleComparisons.leq(getMaxDouble(), destination.getMinDouble()),
+                        "DoubleComparisons.leq(getMaxDouble(), destination.getMinDouble())");
             }
         }
     }

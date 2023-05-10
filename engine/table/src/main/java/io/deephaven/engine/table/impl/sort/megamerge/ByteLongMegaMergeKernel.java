@@ -89,7 +89,7 @@ public class ByteLongMegaMergeKernel {
             }
 
             while (destWins < minGallop && chunkWins < minGallop) {
-                if (geq(val2, val1)) {
+                if (descendingMergeLhs(val2, val1)) {
                     destinationValues.set(ii, val2);
                     destinationKeys.set(ii--, keysChunk.get(chunkCursor));
 
@@ -180,14 +180,20 @@ public class ByteLongMegaMergeKernel {
     }
 
     // region comparison functions
-    private static int doComparison(byte lhs, byte rhs) {
-        return ByteComparisons.compare(lhs, rhs);
+    private static boolean descendingMergeLhs(byte lhs, byte rhs) {
+        return ByteComparisons.geq(lhs, rhs);
+    }
+
+    private static boolean inOrder(byte lhs, byte rhs) {
+        return ByteComparisons.leq(lhs, rhs);
+    }
+
+    private static boolean inOrderStrict(byte lhs, byte rhs) {
+        return ByteComparisons.lt(lhs, rhs);
     }
     // endregion comparison functions
 
-    private static boolean geq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
+
 
     // when we binary search in 1, we must identify a position for search value that is *after* our test values;
     // because the values from run 2 may never be inserted before an equal value from run 1
@@ -201,12 +207,10 @@ public class ByteLongMegaMergeKernel {
 
     private static long bound(ByteArraySource valuesToSort, long lo, long hi, byte searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final long mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSort.getUnsafe(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;
@@ -227,12 +231,10 @@ public class ByteLongMegaMergeKernel {
 
     private static int bound(ByteChunk<?> valuesToSort, int lo, int hi, byte searchValue,
             @SuppressWarnings("SameParameterValue") final boolean lower) {
-        final int compareLimit = lower ? -1 : 0; // lt or leq
-
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSort.get(mid);
-            final boolean moveLo = doComparison(testValue, searchValue) <= compareLimit;
+            final boolean moveLo = lower ? inOrderStrict(testValue, searchValue) : inOrder(testValue, searchValue);
             if (moveLo) {
                 // For bound, (testValue OP searchValue) means that the result somewhere later than 'mid' [OP=lt or leq]
                 lo = mid + 1;

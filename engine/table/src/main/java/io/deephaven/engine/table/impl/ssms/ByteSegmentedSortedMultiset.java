@@ -81,8 +81,8 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
     private int insertExistingIntoLeaf(WritableByteChunk<? extends Values> valuesToInsert, WritableIntChunk<ChunkLengths> counts, int ripos, MutableInt wipos, int leafSize, byte [] leafValues, long [] leafCounts, byte maxInsert, boolean lastLeaf) {
         int rlpos = 0;
         byte nextValue;
-        while (rlpos < leafSize && ripos < valuesToInsert.size() && (leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
-            if (gt(leafValues[rlpos], nextValue)) {
+        while (rlpos < leafSize && ripos < valuesToInsert.size() && (ByteComparisons.leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
+            if (ByteComparisons.gt(leafValues[rlpos], nextValue)) {
                 // we're not going to find nextValue in this leaf, so we skip over it
                 valuesToInsert.set(wipos.intValue(), nextValue);
                 counts.set(wipos.intValue(), counts.get(ripos));
@@ -91,7 +91,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
             } else {
                 rlpos = upperBound(leafValues, rlpos, leafSize, nextValue);
                 if (rlpos < leafSize) {
-                    if (eq(leafValues[rlpos], nextValue)) {
+                    if (ByteComparisons.eq(leafValues[rlpos], nextValue)) {
                         leafCounts[rlpos] += counts.get(ripos);
                         ripos++;
                     }
@@ -140,7 +140,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (remaining-- > 0) {
             final byte insertValue = valuesToInsert.get(ripos);
             final byte leafValue = leafValues[firstLeaf][rlpos];
-            final boolean useInsertValue = gt(insertValue, leafValue);
+            final boolean useInsertValue = ByteComparisons.gt(insertValue, leafValue);
 
             if (useInsertValue) {
                 leafValues[wleaf][wpos] = insertValue;
@@ -280,7 +280,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
             final byte insertValue = valuesToInsert.get(ripos);
             final byte leafValue = leafValues[rlpos];
 
-            if (gt(insertValue, leafValue)) {
+            if (ByteComparisons.gt(insertValue, leafValue)) {
                 leafValues[wpos] = insertValue;
                 leafCounts[wpos] = counts.get(ripos);
                 if (ripos == 0) {
@@ -427,7 +427,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         maybeAccumulateAdditions(valuesToInsert);
 
-        if (leafCount > 1 && gt(valuesToInsert.get(0), getMaxByte())) {
+        if (leafCount > 1 && ByteComparisons.gt(valuesToInsert.get(0), getMaxByte())) {
             doAppend(valuesToInsert, counts);
             return;
         }
@@ -670,7 +670,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = ByteComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 lo = mid;
                 if (lo == hi - 1) {
@@ -697,7 +697,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch.get(mid);
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = ByteComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -724,7 +724,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = ByteComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -751,7 +751,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch[mid];
-            final boolean moveHi = geq(testValue, searchValue);
+            final boolean moveHi = ByteComparisons.geq(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -775,7 +775,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = ByteComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -799,7 +799,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final byte testValue = valuesToSearch[mid];
-            final boolean moveLo = lt(testValue, searchValue);
+            final boolean moveLo = ByteComparisons.lt(testValue, searchValue);
             if (moveLo) {
                 lo = mid + 1;
                 if (lo == hi) {
@@ -1143,7 +1143,11 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
             Assert.gtZero(counts.get(ii), "counts.get(ii)");
             final byte prevValue = valuesToInsert.get(ii - 1);
             final byte curValue = valuesToInsert.get(ii);
-            Assert.assertion(ByteComparisons.lt(prevValue, curValue), "ByteComparisons.lt(prevValue, curValue)", prevValue, "prevValue", curValue, "curValue");
+            Assert.assertion(
+                    ByteComparisons.lt(prevValue, curValue),
+                    "ByteComparisons.lt(prevValue, curValue)",
+                    prevValue, "prevValue",
+                    curValue, "curValue");
         }
     }
 
@@ -1199,15 +1203,27 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
                 final byte lastValue = leafValues[ii][leafSizes[ii] - 1];
                 if (ii < leafCount - 1) {
                     final byte directoryValue = directoryValues[ii];
-                    Assert.assertion(leq(lastValue, directoryValue), "lt(lastValue, directoryValue)", lastValue, "leafValues[ii][leafSizes[ii] - 1]", directoryValue, "directoryValue");
+                    Assert.assertion(
+                            ByteComparisons.leq(lastValue, directoryValue),
+                            "ByteComparisons.lt(lastValue, directoryValue)",
+                            lastValue, "leafValues[ii][leafSizes[ii] - 1]",
+                            directoryValue, "directoryValue");
 
                     if (ii < leafCount - 2) {
                         final byte nextDirectoryValue = directoryValues[ii + 1];
-                        Assert.assertion(lt(directoryValue, nextDirectoryValue), "lt(directoryValue, nextDirectoryValue)", directoryValue, "directoryValue", nextDirectoryValue, "nextDirectoryValue");
+                        Assert.assertion(
+                                ByteComparisons.lt(directoryValue, nextDirectoryValue),
+                                "ByteComparisons.lt(directoryValue, nextDirectoryValue)",
+                                directoryValue, "directoryValue",
+                                nextDirectoryValue, "nextDirectoryValue");
                     }
 
                     final byte nextFirstValue = leafValues[ii + 1][0];
-                    Assert.assertion(lt(directoryValue, nextFirstValue), "lt(directoryValue, nextFirstValue)", directoryValue, "directoryValue", nextFirstValue, "nextFirstValue");
+                    Assert.assertion(
+                            ByteComparisons.lt(directoryValue, nextFirstValue),
+                            "ByteComparisons.lt(directoryValue, nextFirstValue)",
+                            directoryValue, "directoryValue",
+                            nextFirstValue, "nextFirstValue");
                 }
                 // It would be nice to enable an assertion to make sure we are dense after removals, but the other
                 // reason this assertion can fail is that if we insert into a node that is too large we may have to
@@ -1228,7 +1244,7 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         for (int leaf = 0; leaf < leafCount - 1; ++leaf) {
             final byte lastValue = leafValues[leaf][leafSizes[leaf] - 1];
             final byte nextValue = leafValues[leaf + 1][0];
-            Assert.assertion(lt(lastValue, nextValue), lastValue + " < " + nextValue);
+            Assert.assertion(ByteComparisons.lt(lastValue, nextValue), lastValue + " < " + nextValue);
         }
     }
 
@@ -1244,7 +1260,12 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
             Assert.gtZero(counts[ii], "counts[ii]");
             final byte thisValue = values[ii];
             final byte nextValue = values[ii + 1];
-            Assert.assertion(lt(values[ii], values[ii + 1]), "lt(values[ii], values[ii + 1])", (Byte)thisValue, "values[ii]", (Byte)nextValue, "values[ii + 1]", ii, "ii");
+            Assert.assertion(
+                    ByteComparisons.lt(values[ii], values[ii + 1]),
+                    "ByteComparisons.lt(values[ii], values[ii + 1])",
+                    (Byte)thisValue, "values[ii]",
+                    (Byte)nextValue, "values[ii + 1]",
+                    ii, "ii");
         }
         if (size > 0) {
             Assert.gtZero(counts[size - 1], "counts[size - 1]");
@@ -1278,32 +1299,6 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
     private static int valuesPerLeaf(int values, int leafCount) {
         return (values + leafCount - 1) / leafCount;
-    }
-
-    private static int doComparison(byte lhs, byte rhs) {
-        return ByteComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) > 0;
-    }
-
-    private static boolean lt(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) < 0;
-    }
-
-    private static boolean leq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
-
-    private static boolean geq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
-
-    private static boolean eq(byte lhs, byte rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
     }
     //endregion
 
@@ -1454,11 +1449,13 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(geq(getMinByte(), destination.getMaxByte()), "geq(getMinByte(), destination.getMaxByte())");
+                Assert.assertion(
+                        ByteComparisons.geq(getMinByte(), destination.getMaxByte()),
+                        "ByteComparisons.geq(getMinByte(), destination.getMaxByte())");
             }
         }
 
-        if (destination.size > 0 && eq(getMinByte(), destination.getMaxByte())) {
+        if (destination.size > 0 && ByteComparisons.eq(getMinByte(), destination.getMaxByte())) {
             final long minCount = getMinCount();
             final long toAdd;
             if (minCount > count) {
@@ -1722,7 +1719,9 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(geq(getMinByte(), destination.getMaxByte()), "geq(getMinByte(), destination.getMaxByte())");
+                Assert.assertion(
+                        ByteComparisons.geq(getMinByte(), destination.getMaxByte()),
+                        "ByteComparisons.geq(getMinByte(), destination.getMaxByte())");
             }
         }
 
@@ -1882,11 +1881,13 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(leq(getMaxByte(), destination.getMinByte()), "leq(getMaxByte(), destination.getMinByte())");
+                Assert.assertion(
+                        ByteComparisons.leq(getMaxByte(), destination.getMinByte()),
+                        "ByteComparisons.leq(getMaxByte(), destination.getMinByte())");
             }
         }
 
-        if (destination.size > 0 && eq(getMaxByte(), destination.getMinByte())) {
+        if (destination.size > 0 && ByteComparisons.eq(getMaxByte(), destination.getMinByte())) {
             final long maxCount = getMaxCount();
             final long toAdd;
             if (maxCount > count) {
@@ -2082,7 +2083,9 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(leq(getMaxByte(), destination.getMinByte()), "leq(getMaxByte(), destination.getMinByte())");
+                Assert.assertion(
+                        ByteComparisons.leq(getMaxByte(), destination.getMinByte()),
+                        "ByteComparisons.leq(getMaxByte(), destination.getMinByte())");
             }
         }
     }

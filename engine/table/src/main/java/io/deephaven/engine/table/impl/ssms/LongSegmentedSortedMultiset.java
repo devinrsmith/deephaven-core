@@ -85,8 +85,8 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
     private int insertExistingIntoLeaf(WritableLongChunk<? extends Values> valuesToInsert, WritableIntChunk<ChunkLengths> counts, int ripos, MutableInt wipos, int leafSize, long [] leafValues, long [] leafCounts, long maxInsert, boolean lastLeaf) {
         int rlpos = 0;
         long nextValue;
-        while (rlpos < leafSize && ripos < valuesToInsert.size() && (leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
-            if (gt(leafValues[rlpos], nextValue)) {
+        while (rlpos < leafSize && ripos < valuesToInsert.size() && (LongComparisons.leq(nextValue = valuesToInsert.get(ripos), maxInsert) || lastLeaf)) {
+            if (LongComparisons.gt(leafValues[rlpos], nextValue)) {
                 // we're not going to find nextValue in this leaf, so we skip over it
                 valuesToInsert.set(wipos.intValue(), nextValue);
                 counts.set(wipos.intValue(), counts.get(ripos));
@@ -95,7 +95,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
             } else {
                 rlpos = upperBound(leafValues, rlpos, leafSize, nextValue);
                 if (rlpos < leafSize) {
-                    if (eq(leafValues[rlpos], nextValue)) {
+                    if (LongComparisons.eq(leafValues[rlpos], nextValue)) {
                         leafCounts[rlpos] += counts.get(ripos);
                         ripos++;
                     }
@@ -144,7 +144,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (remaining-- > 0) {
             final long insertValue = valuesToInsert.get(ripos);
             final long leafValue = leafValues[firstLeaf][rlpos];
-            final boolean useInsertValue = gt(insertValue, leafValue);
+            final boolean useInsertValue = LongComparisons.gt(insertValue, leafValue);
 
             if (useInsertValue) {
                 leafValues[wleaf][wpos] = insertValue;
@@ -284,7 +284,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
             final long insertValue = valuesToInsert.get(ripos);
             final long leafValue = leafValues[rlpos];
 
-            if (gt(insertValue, leafValue)) {
+            if (LongComparisons.gt(insertValue, leafValue)) {
                 leafValues[wpos] = insertValue;
                 leafCounts[wpos] = counts.get(ripos);
                 if (ripos == 0) {
@@ -431,7 +431,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         maybeAccumulateAdditions(valuesToInsert);
 
-        if (leafCount > 1 && gt(valuesToInsert.get(0), getMaxLong())) {
+        if (leafCount > 1 && LongComparisons.gt(valuesToInsert.get(0), getMaxLong())) {
             doAppend(valuesToInsert, counts);
             return;
         }
@@ -674,7 +674,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = LongComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 lo = mid;
                 if (lo == hi - 1) {
@@ -701,7 +701,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch.get(mid);
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = LongComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -728,7 +728,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch[mid];
-            final boolean moveLo = leq(testValue, searchValue);
+            final boolean moveLo = LongComparisons.leq(testValue, searchValue);
             if (moveLo) {
                 if (mid == lo) {
                     return mid + 1;
@@ -755,7 +755,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch[mid];
-            final boolean moveHi = geq(testValue, searchValue);
+            final boolean moveHi = LongComparisons.geq(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -779,7 +779,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = LongComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -803,7 +803,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final long testValue = valuesToSearch[mid];
-            final boolean moveLo = lt(testValue, searchValue);
+            final boolean moveLo = LongComparisons.lt(testValue, searchValue);
             if (moveLo) {
                 lo = mid + 1;
                 if (lo == hi) {
@@ -1147,7 +1147,11 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
             Assert.gtZero(counts.get(ii), "counts.get(ii)");
             final long prevValue = valuesToInsert.get(ii - 1);
             final long curValue = valuesToInsert.get(ii);
-            Assert.assertion(LongComparisons.lt(prevValue, curValue), "LongComparisons.lt(prevValue, curValue)", prevValue, "prevValue", curValue, "curValue");
+            Assert.assertion(
+                    LongComparisons.lt(prevValue, curValue),
+                    "LongComparisons.lt(prevValue, curValue)",
+                    prevValue, "prevValue",
+                    curValue, "curValue");
         }
     }
 
@@ -1203,15 +1207,27 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
                 final long lastValue = leafValues[ii][leafSizes[ii] - 1];
                 if (ii < leafCount - 1) {
                     final long directoryValue = directoryValues[ii];
-                    Assert.assertion(leq(lastValue, directoryValue), "lt(lastValue, directoryValue)", lastValue, "leafValues[ii][leafSizes[ii] - 1]", directoryValue, "directoryValue");
+                    Assert.assertion(
+                            LongComparisons.leq(lastValue, directoryValue),
+                            "LongComparisons.lt(lastValue, directoryValue)",
+                            lastValue, "leafValues[ii][leafSizes[ii] - 1]",
+                            directoryValue, "directoryValue");
 
                     if (ii < leafCount - 2) {
                         final long nextDirectoryValue = directoryValues[ii + 1];
-                        Assert.assertion(lt(directoryValue, nextDirectoryValue), "lt(directoryValue, nextDirectoryValue)", directoryValue, "directoryValue", nextDirectoryValue, "nextDirectoryValue");
+                        Assert.assertion(
+                                LongComparisons.lt(directoryValue, nextDirectoryValue),
+                                "LongComparisons.lt(directoryValue, nextDirectoryValue)",
+                                directoryValue, "directoryValue",
+                                nextDirectoryValue, "nextDirectoryValue");
                     }
 
                     final long nextFirstValue = leafValues[ii + 1][0];
-                    Assert.assertion(lt(directoryValue, nextFirstValue), "lt(directoryValue, nextFirstValue)", directoryValue, "directoryValue", nextFirstValue, "nextFirstValue");
+                    Assert.assertion(
+                            LongComparisons.lt(directoryValue, nextFirstValue),
+                            "LongComparisons.lt(directoryValue, nextFirstValue)",
+                            directoryValue, "directoryValue",
+                            nextFirstValue, "nextFirstValue");
                 }
                 // It would be nice to enable an assertion to make sure we are dense after removals, but the other
                 // reason this assertion can fail is that if we insert into a node that is too large we may have to
@@ -1232,7 +1248,7 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         for (int leaf = 0; leaf < leafCount - 1; ++leaf) {
             final long lastValue = leafValues[leaf][leafSizes[leaf] - 1];
             final long nextValue = leafValues[leaf + 1][0];
-            Assert.assertion(lt(lastValue, nextValue), lastValue + " < " + nextValue);
+            Assert.assertion(LongComparisons.lt(lastValue, nextValue), lastValue + " < " + nextValue);
         }
     }
 
@@ -1248,7 +1264,12 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
             Assert.gtZero(counts[ii], "counts[ii]");
             final long thisValue = values[ii];
             final long nextValue = values[ii + 1];
-            Assert.assertion(lt(values[ii], values[ii + 1]), "lt(values[ii], values[ii + 1])", (Long)thisValue, "values[ii]", (Long)nextValue, "values[ii + 1]", ii, "ii");
+            Assert.assertion(
+                    LongComparisons.lt(values[ii], values[ii + 1]),
+                    "LongComparisons.lt(values[ii], values[ii + 1])",
+                    (Long)thisValue, "values[ii]",
+                    (Long)nextValue, "values[ii + 1]",
+                    ii, "ii");
         }
         if (size > 0) {
             Assert.gtZero(counts[size - 1], "counts[size - 1]");
@@ -1282,32 +1303,6 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
     private static int valuesPerLeaf(int values, int leafCount) {
         return (values + leafCount - 1) / leafCount;
-    }
-
-    private static int doComparison(long lhs, long rhs) {
-        return LongComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(long lhs, long rhs) {
-        return doComparison(lhs, rhs) > 0;
-    }
-
-    private static boolean lt(long lhs, long rhs) {
-        return doComparison(lhs, rhs) < 0;
-    }
-
-    private static boolean leq(long lhs, long rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
-
-    private static boolean geq(long lhs, long rhs) {
-        return doComparison(lhs, rhs) >= 0;
-    }
-
-    private static boolean eq(long lhs, long rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
     }
     //endregion
 
@@ -1458,11 +1453,13 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(geq(getMinLong(), destination.getMaxLong()), "geq(getMinLong(), destination.getMaxLong())");
+                Assert.assertion(
+                        LongComparisons.geq(getMinLong(), destination.getMaxLong()),
+                        "LongComparisons.geq(getMinLong(), destination.getMaxLong())");
             }
         }
 
-        if (destination.size > 0 && eq(getMinLong(), destination.getMaxLong())) {
+        if (destination.size > 0 && LongComparisons.eq(getMinLong(), destination.getMaxLong())) {
             final long minCount = getMinCount();
             final long toAdd;
             if (minCount > count) {
@@ -1726,7 +1723,9 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(geq(getMinLong(), destination.getMaxLong()), "geq(getMinLong(), destination.getMaxLong())");
+                Assert.assertion(
+                        LongComparisons.geq(getMinLong(), destination.getMaxLong()),
+                        "LongComparisons.geq(getMinLong(), destination.getMaxLong())");
             }
         }
 
@@ -1886,11 +1885,13 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (destination.size > 0) {
-                Assert.assertion(leq(getMaxLong(), destination.getMinLong()), "leq(getMaxLong(), destination.getMinLong())");
+                Assert.assertion(
+                        LongComparisons.leq(getMaxLong(), destination.getMinLong()),
+                        "LongComparisons.leq(getMaxLong(), destination.getMinLong())");
             }
         }
 
-        if (destination.size > 0 && eq(getMaxLong(), destination.getMinLong())) {
+        if (destination.size > 0 && LongComparisons.eq(getMaxLong(), destination.getMinLong())) {
             final long maxCount = getMaxCount();
             final long toAdd;
             if (maxCount > count) {
@@ -2086,7 +2087,9 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
 
         if (SEGMENTED_SORTED_MULTISET_VALIDATION) {
             if (size > 0 && destination.size > 0) {
-                Assert.assertion(leq(getMaxLong(), destination.getMinLong()), "leq(getMaxLong(), destination.getMinLong())");
+                Assert.assertion(
+                        LongComparisons.leq(getMaxLong(), destination.getMinLong()),
+                        "LongComparisons.leq(getMaxLong(), destination.getMinLong())");
             }
         }
     }

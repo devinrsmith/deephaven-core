@@ -28,7 +28,7 @@ public class ShortSortCheck implements SortCheck {
         short last = valuesToCheck.get(0);
         for (int ii = 1; ii < valuesToCheck.size(); ++ii) {
             final short current = valuesToCheck.get(ii);
-            if (!leq(last, current)) {
+            if (!inOrder(last, current)) {
                 return ii - 1;
             }
             last = current;
@@ -37,12 +37,8 @@ public class ShortSortCheck implements SortCheck {
     }
 
     // region comparison functions
-    private static int doComparison(short lhs, short rhs) {
-        return ShortComparisons.compare(lhs, rhs);
+    private static boolean inOrder(short lhs, short rhs) {
+        return ShortComparisons.leq(lhs, rhs);
     }
     // endregion comparison functions
-
-    private static boolean leq(short lhs, short rhs) {
-        return doComparison(lhs, rhs) <= 0;
-    }
 }

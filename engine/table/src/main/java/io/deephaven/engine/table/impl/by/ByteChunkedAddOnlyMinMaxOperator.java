@@ -17,7 +17,7 @@ import io.deephaven.util.compare.ByteComparisons;
 import io.deephaven.engine.table.impl.sources.ByteArraySource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.Collections;
 import java.util.Map;
@@ -43,32 +43,33 @@ class ByteChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         // endregion resultColumn initialization
     }
 
-    private byte min(ByteChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull = 0;
-        byte value = QueryConstants.NULL_BYTE;
+    private byte min(ByteChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        byte value = QueryConstants.MAX_BYTE;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final byte candidate = values.get(ii);
             if (candidate != QueryConstants.NULL_BYTE) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else {
-                    value = ByteComparisons.min(value, candidate);
+                hasValue.setTrue();
+                value = ByteComparisons.min(value, candidate);
+                if (value == QueryConstants.MIN_BYTE) {
+                    break;
                 }
             }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
-    private byte max(ByteChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull =0;
-        byte value = QueryConstants.NULL_BYTE;
+    private byte max(ByteChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        byte value = QueryConstants.MIN_BYTE;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final byte candidate = values.get(ii);
+            if (candidate != QueryConstants.NULL_BYTE) {
+                hasValue.setTrue();
+            }
             value = ByteComparisons.max(value, candidate);
-            nonNull += (candidate == QueryConstants.NULL_BYTE ? 1 : 0);
+            if (value == QueryConstants.MAX_BYTE) {
+                break;
+            }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
@@ -111,15 +112,19 @@ class ByteChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOpe
         if (chunkSize == 0) {
             return false;
         }
-        final MutableInt chunkNonNull = new MutableInt(0);
+        final byte oldValue = resultColumn.getUnsafe(destination);
+        if ((minimum && oldValue == QueryConstants.MIN_BYTE) || (!minimum && oldValue == QueryConstants.MAX_BYTE)) {
+            return false;
+        }
+
+        final MutableBoolean hasValue = new MutableBoolean(false);
         final int chunkEnd = chunkStart + chunkSize;
-        final byte chunkValue = minimum ? min(values, chunkNonNull, chunkStart, chunkEnd) : max(values, chunkNonNull, chunkStart, chunkEnd);
-        if (chunkNonNull.intValue() == 0) {
+        final byte chunkValue = minimum ? min(values, hasValue, chunkStart, chunkEnd) : max(values, hasValue, chunkStart, chunkEnd);
+        if (hasValue.isFalse()) {
             return false;
         }
 
         final byte result;
-        final byte oldValue = resultColumn.getUnsafe(destination);
         if (oldValue == QueryConstants.NULL_BYTE) {
             // we exclude nulls from the min/max calculation, therefore if the value in our min/max is null we know
             // that it is in fact empty and we should use the value from the chunk

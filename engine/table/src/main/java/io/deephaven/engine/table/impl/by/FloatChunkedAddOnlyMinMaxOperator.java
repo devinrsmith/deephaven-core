@@ -17,7 +17,7 @@ import io.deephaven.util.compare.FloatComparisons;
 import io.deephaven.engine.table.impl.sources.FloatArraySource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
-import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.Collections;
 import java.util.Map;
@@ -43,32 +43,33 @@ class FloatChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
         // endregion resultColumn initialization
     }
 
-    private float min(FloatChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull = 0;
-        float value = QueryConstants.NULL_FLOAT;
+    private float min(FloatChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        float value = QueryConstants.MAX_FLOAT;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final float candidate = values.get(ii);
             if (candidate != QueryConstants.NULL_FLOAT) {
-                if (nonNull++ == 0) {
-                    value = candidate;
-                } else {
-                    value = FloatComparisons.min(value, candidate);
+                hasValue.setTrue();
+                value = FloatComparisons.min(value, candidate);
+                if (value == QueryConstants.MIN_FLOAT) {
+                    break;
                 }
             }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
-    private float max(FloatChunk<?> values, MutableInt chunkNonNull, int chunkStart, int chunkEnd) {
-        int nonNull =0;
-        float value = QueryConstants.NULL_FLOAT;
+    private float max(FloatChunk<?> values, MutableBoolean hasValue, int chunkStart, int chunkEnd) {
+        float value = QueryConstants.MIN_FLOAT;
         for (int ii = chunkStart; ii < chunkEnd; ++ii) {
             final float candidate = values.get(ii);
+            if (candidate != QueryConstants.NULL_FLOAT) {
+                hasValue.setTrue();
+            }
             value = FloatComparisons.max(value, candidate);
-            nonNull += (candidate == QueryConstants.NULL_FLOAT ? 1 : 0);
+            if (value == QueryConstants.MAX_FLOAT) {
+                break;
+            }
         }
-        chunkNonNull.setValue(nonNull);
         return value;
     }
 
@@ -111,15 +112,19 @@ class FloatChunkedAddOnlyMinMaxOperator implements IterativeChunkedAggregationOp
         if (chunkSize == 0) {
             return false;
         }
-        final MutableInt chunkNonNull = new MutableInt(0);
+        final float oldValue = resultColumn.getUnsafe(destination);
+        if ((minimum && oldValue == QueryConstants.MIN_FLOAT) || (!minimum && oldValue == QueryConstants.MAX_FLOAT)) {
+            return false;
+        }
+
+        final MutableBoolean hasValue = new MutableBoolean(false);
         final int chunkEnd = chunkStart + chunkSize;
-        final float chunkValue = minimum ? min(values, chunkNonNull, chunkStart, chunkEnd) : max(values, chunkNonNull, chunkStart, chunkEnd);
-        if (chunkNonNull.intValue() == 0) {
+        final float chunkValue = minimum ? min(values, hasValue, chunkStart, chunkEnd) : max(values, hasValue, chunkStart, chunkEnd);
+        if (hasValue.isFalse()) {
             return false;
         }
 
         final float result;
-        final float oldValue = resultColumn.getUnsafe(destination);
         if (oldValue == QueryConstants.NULL_FLOAT) {
             // we exclude nulls from the min/max calculation, therefore if the value in our min/max is null we know
             // that it is in fact empty and we should use the value from the chunk

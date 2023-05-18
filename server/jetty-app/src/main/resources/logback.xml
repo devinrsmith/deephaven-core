@@ -23,6 +23,12 @@
   <!--<logger name="io.netty" level="INFO"/>-->
   <!--<logger name="io.deephaven" level="INFO"/>-->
 
+  <!-- Note: this object is only created if io.deephaven.ssl.config.SSLConfig.trustLogging is true -->
+  <logger name="nl.altindag.ssl.trustmanager.LoggingX509ExtendedTrustManager" level="DEBUG"/>
+
+  <!-- Note: this object is only created if io.deephaven.ssl.config.SSLConfig.identityLogging is true -->
+  <logger name="nl.altindag.ssl.keymanager.LoggingX509ExtendedKeyManager" level="DEBUG"/>
+
   <root level="info">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="LOGBUFFER" />

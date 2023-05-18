@@ -54,6 +54,12 @@ public class KickstartUtils {
         config.protocols().ifPresent(protocols -> addProtocols(builder, protocols));
         config.ciphers().ifPresent(ciphers -> addCiphers(builder, ciphers));
         config.clientAuthentication().ifPresent(clientAuth -> addClientAuth(builder, clientAuth));
+        if (config.trustLoggingOrElse(false)) {
+            builder.withLoggingTrustMaterial();
+        }
+        if (config.identityLoggingOrElse(false)) {
+            builder.withLoggingIdentityMaterial();
+        }
         return builder.build();
     }
 

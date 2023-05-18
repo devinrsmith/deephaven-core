@@ -156,6 +156,16 @@ public class SSLConfigTest {
                 .build());
     }
 
+    @Test
+    void identityLogging() throws IOException {
+        check("identity-logging.json", SSLConfig.builder().identityLogging(true).build());
+    }
+
+    @Test
+    void trustLogging() throws IOException {
+        check("trust-logging.json", SSLConfig.builder().trustLogging(true).build());
+    }
+
     private static SSLConfig server(Identity identity) {
         return SSLConfig.builder().identity(identity).build();
     }

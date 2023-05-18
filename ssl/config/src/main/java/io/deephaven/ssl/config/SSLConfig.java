@@ -6,8 +6,8 @@ package io.deephaven.ssl.config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.URL;
@@ -74,6 +74,12 @@ public abstract class SSLConfig {
      */
     public abstract Optional<ClientAuth> clientAuthentication();
 
+    @Nullable
+    public abstract Boolean trustLogging();
+
+    @Nullable
+    public abstract Boolean identityLogging();
+
     public abstract SSLConfig withTrust(Trust trust);
 
     public abstract SSLConfig withProtocols(Protocols protocols);
@@ -92,6 +98,16 @@ public abstract class SSLConfig {
         return ciphers().isPresent() ? this : withCiphers(ciphers);
     }
 
+    public final boolean trustLoggingOrElse(boolean defaultValue) {
+        final Boolean value = trustLogging();
+        return value == null ? defaultValue : value;
+    }
+
+    public final boolean identityLoggingOrElse(boolean defaultValue) {
+        final Boolean value = identityLogging();
+        return value == null ? defaultValue : value;
+    }
+
     public enum ClientAuth {
         NONE, WANTED, NEEDED
     }
@@ -106,6 +122,10 @@ public abstract class SSLConfig {
         Builder ciphers(Ciphers ciphers);
 
         Builder clientAuthentication(ClientAuth clientAuthentication);
+
+        Builder trustLogging(Boolean trustLogging);
+
+        Builder identityLogging(Boolean identityLogging);
 
         SSLConfig build();
     }

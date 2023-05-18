@@ -15,6 +15,9 @@ dependencies {
         because 'we need to parse optional types'
     }
 
+    // because we need Nullable annotation
+    compileOnly depAnnotations
+
     Classpaths.inheritJUnitPlatform(project)
     Classpaths.inheritAssertJ(project)
 

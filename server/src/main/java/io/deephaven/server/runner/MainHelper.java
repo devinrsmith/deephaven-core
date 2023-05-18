@@ -37,8 +37,11 @@ public class MainHelper {
     public static final String SSL_IDENTITY_TYPE = "ssl.identity.type";
     public static final String SSL_IDENTITY_CERT_CHAIN_PATH = "ssl.identity.certChainPath";
     public static final String SSL_IDENTITY_PRIVATE_KEY_PATH = "ssl.identity.privateKeyPath";
+    public static final String SSL_IDENTITY_LOGGING = "ssl.identity.logging";
+
     public static final String SSL_TRUST_TYPE = "ssl.trust.type";
     public static final String SSL_TRUST_PATH = "ssl.trust.path";
+    public static final String SSL_TRUST_LOGGING = "ssl.trust.logging";
     public static final String SSL_CLIENT_AUTH = "ssl.clientAuthentication";
     public static final String PRIVATEKEY = "privatekey";
     public static final String CERTS = "certs";
@@ -163,6 +166,8 @@ public class MainHelper {
         identity.ifPresent(builder::identity);
         parseTrustConfig(prefix, config).ifPresent(builder::trust);
         parseClientAuth(prefix, config).ifPresent(builder::clientAuthentication);
+        parseTrustLogging(prefix, config).ifPresent(builder::trustLogging);
+        parseIdentityLogging(prefix, config).ifPresent(builder::identityLogging);
         return Optional.of(builder.build());
     }
 
@@ -200,6 +205,16 @@ public class MainHelper {
                     throw new IllegalArgumentException(
                             String.format("Must specify `%s`", prefix(prefix, SSL_TRUST_PATH)));
                 });
+    }
+
+    private static Optional<Boolean> parseTrustLogging(String prefix, Configuration config) {
+        final String logging = config.getStringWithDefault(prefix(prefix, SSL_TRUST_LOGGING), null);
+        return Optional.ofNullable(logging).map(Boolean::parseBoolean);
+    }
+
+    private static Optional<Boolean> parseIdentityLogging(String prefix, Configuration config) {
+        final String logging = config.getStringWithDefault(prefix(prefix, SSL_IDENTITY_LOGGING), null);
+        return Optional.ofNullable(logging).map(Boolean::parseBoolean);
     }
 
     private static Optional<ClientAuth> parseClientAuth(String prefix, Configuration config) {

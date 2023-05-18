@@ -10,10 +10,14 @@ configurations {
 dependencies {
     implementation project(':server-jetty')
 
+    runtimeOnly project(':engine-sql')
+
     runtimeOnly project(':log-to-slf4j')
     runtimeOnly project(':logback-print-stream-globals')
     runtimeOnly project(':logback-logbuffer')
     Classpaths.inheritLogbackClassic(project)
+
+    // implementation 'org.apache.calcite:calcite-babel:1.34.0'
 }
 
 distributions {

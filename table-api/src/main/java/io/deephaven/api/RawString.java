@@ -41,4 +41,9 @@ public abstract class RawString implements Expression, Filter, Serializable {
     public final <T> T walk(Filter.Visitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this, false);
+    }
 }

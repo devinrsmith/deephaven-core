@@ -62,6 +62,11 @@ public abstract class Method implements Expression, Filter {
         return visitor.visit(this);
     }
 
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this, false);
+    }
+
     public interface Builder {
         Builder object(Expression object);
 

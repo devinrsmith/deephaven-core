@@ -61,6 +61,11 @@ public abstract class FilterAnd extends FilterBase implements Iterable<Filter> {
     }
 
     @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    @Override
     public final Iterator<Filter> iterator() {
         return filters().iterator();
     }

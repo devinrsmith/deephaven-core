@@ -40,6 +40,18 @@ public interface Pair extends Serializable {
     }
 
     /**
+     * Produces an RPC-string, compatible with {@link #parse(String)}.
+     *
+     * @return the RPC-string
+     */
+    static String toRpcString(Pair pair) {
+        if (pair.input().equals(pair.output())) {
+            return pair.output().toRpcString();
+        }
+        return pair.output().toRpcString() + "=" + pair.input().toRpcString();
+    }
+
+    /**
      * The input column.
      *
      * @return the input column

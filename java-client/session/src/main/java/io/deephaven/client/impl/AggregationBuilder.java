@@ -54,7 +54,7 @@ class AggregationBuilder implements io.deephaven.api.agg.Aggregation.Visitor {
     public void visit(ColumnAggregation columnAgg) {
         out = singletonList(of(Builder::setColumns, AggregationColumns.newBuilder()
                 .setSpec(AggSpecBuilder.adapt(columnAgg.spec()))
-                .addMatchPairs(Strings.of(columnAgg.pair()))));
+                .addMatchPairs(Pair.toRpcString(columnAgg.pair()))));
     }
 
     @Override
@@ -62,7 +62,7 @@ class AggregationBuilder implements io.deephaven.api.agg.Aggregation.Visitor {
         AggregationColumns.Builder builder = AggregationColumns.newBuilder()
                 .setSpec(AggSpecBuilder.adapt(columnAggs.spec()));
         for (Pair pair : columnAggs.pairs()) {
-            builder.addMatchPairs(Strings.of(pair));
+            builder.addMatchPairs(Pair.toRpcString(pair));
         }
         out = singletonList(of(Builder::setColumns, builder));
     }

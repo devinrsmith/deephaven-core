@@ -33,4 +33,9 @@ abstract class LiteralBool extends LiteralBase implements LiteralFilter {
     public final <T> T walk(Filter.Visitor<T> visitor) {
         return visitor.visit(value());
     }
+
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(value());
+    }
 }

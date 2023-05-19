@@ -212,6 +212,11 @@ public abstract class FilterComparison extends FilterBase implements Serializabl
         return visitor.visit(this);
     }
 
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder {
         Builder operator(Operator operator);
 

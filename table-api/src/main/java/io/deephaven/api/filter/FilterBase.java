@@ -11,4 +11,9 @@ public abstract class FilterBase implements Filter {
     public final <T> T walk(Expression.Visitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    // @Override
+    // public final <T> T walk(SimplifiedVisitor<T> visitor) {
+    // return walk(new SimplifiedVisitorAdapter<>(visitor));
+    // }
 }

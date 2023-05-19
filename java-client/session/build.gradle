@@ -8,6 +8,7 @@ description = 'The Deephaven client session library'
 dependencies {
   api project(':qst')
   api project(':uri')
+  implementation project(':engine-strings')
 
   Classpaths.inheritGrpcPlatform(project, 'api')
   api 'io.grpc:grpc-api'

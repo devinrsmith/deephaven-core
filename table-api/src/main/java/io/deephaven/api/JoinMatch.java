@@ -60,6 +60,18 @@ public interface JoinMatch extends Serializable {
         return of(left, right);
     }
 
+    /**
+     * Produces an RPC-string, compatible with {@link #parse(String)}.
+     *
+     * @return the RPC-string
+     */
+    static String toRpcString(JoinMatch match) {
+        if (match.left().equals(match.right())) {
+            return match.left().toRpcString();
+        }
+        return match.left().toRpcString() + "==" + match.right().toRpcString();
+    }
+
     static List<JoinMatch> from(String... values) {
         return JoinMatch.from(Arrays.asList(values));
     }

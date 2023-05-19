@@ -61,6 +61,11 @@ public abstract class FilterPattern extends FilterBase {
         return visitor.visit(this);
     }
 
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this, false);
+    }
+
     // Implementation note: toString is needed because Pattern#toString does not output flags
 
     @Override

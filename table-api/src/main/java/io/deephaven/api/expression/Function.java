@@ -55,6 +55,11 @@ public abstract class Function implements Expression, Filter {
         return visitor.visit(this);
     }
 
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this, false);
+    }
+
     public interface Builder {
         Builder name(String name);
 

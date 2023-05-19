@@ -197,7 +197,25 @@ public interface Filter extends Expression, Serializable {
      */
     Filter invert();
 
+    /**
+     * Walks and consumes {@code this} filter exactly as it was constructed. For callers that prefer a simplified
+     * approach where you don't need to manage your own inversion logic, see {@link #walk(SimplifiedVisitor)}.
+     *
+     * @param visitor the visitor
+     * @return the return value
+     * @param <T> the return type
+     */
     <T> T walk(Visitor<T> visitor);
+
+    /**
+     * Walks and consumes a logical equivalent to {@code this} filter with an interface that eliminates the need for
+     * handling and recursing through {@link FilterNot}.
+     *
+     * @param visitor the simplified visitor
+     * @return the return value
+     * @param <T> the return type
+     */
+    <T> T walk(SimplifiedVisitor<T> visitor);
 
     interface Visitor<T> {
 
@@ -222,5 +240,28 @@ public interface Filter extends Expression, Serializable {
         T visit(boolean literal);
 
         T visit(RawString rawString);
+    }
+
+    interface SimplifiedVisitor<T> {
+
+        T visit(FilterComparison comparison);
+
+        T visit(FilterOr ors);
+
+        T visit(FilterAnd ands);
+
+        T visit(boolean literal);
+
+        T visit(FilterIsNull isNull, boolean inverted);
+
+        T visit(FilterIn in, boolean inverted);
+
+        T visit(FilterPattern pattern, boolean inverted);
+
+        T visit(Function function, boolean inverted);
+
+        T visit(Method method, boolean inverted);
+
+        T visit(RawString rawString, boolean inverted);
     }
 }

@@ -29,10 +29,26 @@ public abstract class ColumnName
         return NameValidator.isValidColumnName(value.trim());
     }
 
+    /**
+     * Creates a column name from {@code name}. {@code name} must be a {@link NameValidator#isValidColumnName(String)
+     * valid column name}.
+     *
+     * @param name the name
+     * @return the column name
+     */
     public static ColumnName of(String name) {
         return ImmutableColumnName.of(name);
     }
 
+    /**
+     * Creates a column name from the trimmed value of {@code value}.
+     *
+     * <p>
+     * Equivalent to {@code of(value.trim())}.
+     *
+     * @param value the value
+     * @return the column name
+     */
     public static ColumnName parse(String value) {
         return of(value.trim());
     }
@@ -60,7 +76,7 @@ public abstract class ColumnName
     }
 
     /**
-     * The column name.
+     * The column name. Guaranteed to be a {@link NameValidator#isValidColumnName(String) valid column name}.
      *
      * @return the column name
      */
@@ -135,5 +151,14 @@ public abstract class ColumnName
     @Override
     public final String toString() {
         return "ColumnName(" + name() + ")";
+    }
+
+    /**
+     * Produces an RPC-string, compatible with {@link #parse(String)}.
+     *
+     * @return the RPC-string
+     */
+    public final String toRpcString() {
+        return name();
     }
 }

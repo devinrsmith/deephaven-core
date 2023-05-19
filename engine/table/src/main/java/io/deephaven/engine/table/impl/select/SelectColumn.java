@@ -4,14 +4,8 @@
 package io.deephaven.engine.table.impl.select;
 
 import io.deephaven.api.ColumnName;
-import io.deephaven.api.RawString;
 import io.deephaven.api.Selectable;
-import io.deephaven.api.Strings;
 import io.deephaven.api.expression.Expression;
-import io.deephaven.api.expression.Function;
-import io.deephaven.api.expression.Method;
-import io.deephaven.api.filter.Filter;
-import io.deephaven.api.literal.Literal;
 import io.deephaven.engine.context.QueryCompiler;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -26,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -35,9 +28,7 @@ import java.util.stream.Collectors;
 public interface SelectColumn extends Selectable {
 
     static SelectColumn of(Selectable selectable) {
-        return (selectable instanceof SelectColumn)
-                ? (SelectColumn) selectable
-                : selectable.expression().walk(new ExpressionAdapter(selectable.newColumn()));
+        return (selectable instanceof SelectColumn) ? (SelectColumn) selectable : SelectColumnAdapter.of(selectable);
     }
 
     static SelectColumn[] from(Selectable... selectables) {
@@ -193,49 +184,6 @@ public interface SelectColumn extends Selectable {
      * @return an independent copy of this SelectColumn.
      */
     SelectColumn copy();
-
-    class ExpressionAdapter implements Expression.Visitor<SelectColumn> {
-        private final ColumnName lhs;
-
-        ExpressionAdapter(ColumnName lhs) {
-            this.lhs = Objects.requireNonNull(lhs);
-        }
-
-        @Override
-        public SelectColumn visit(ColumnName rhs) {
-            return new SourceColumn(rhs.name(), lhs.name());
-        }
-
-        @Override
-        public SelectColumn visit(Literal rhs) {
-            return makeSelectColumn(Strings.of(rhs));
-        }
-
-        @Override
-        public SelectColumn visit(Filter rhs) {
-            return makeSelectColumn(Strings.of(rhs));
-        }
-
-        @Override
-        public SelectColumn visit(Function rhs) {
-            return makeSelectColumn(Strings.of(rhs));
-        }
-
-        @Override
-        public SelectColumn visit(Method rhs) {
-            return makeSelectColumn(Strings.of(rhs));
-        }
-
-        @Override
-        public SelectColumn visit(RawString rhs) {
-            return makeSelectColumn(Strings.of(rhs));
-        }
-
-        private SelectColumn makeSelectColumn(String rhs) {
-            // TODO(deephaven-core#3740): Remove engine crutch on io.deephaven.api.Strings
-            return SelectColumnFactory.getExpression(String.format("%s=%s", lhs.name(), rhs));
-        }
-    }
 
     // region Selectable impl
 

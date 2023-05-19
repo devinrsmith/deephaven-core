@@ -40,6 +40,18 @@ public interface JoinAddition extends Serializable {
         return of(newColumn, existingColumn);
     }
 
+    /**
+     * Produces an RPC-string, compatible with {@link #parse(String)}.
+     *
+     * @return the RPC-string
+     */
+    static String toRpcString(JoinAddition addition) {
+        if (addition.newColumn().equals(addition.existingColumn())) {
+            return addition.newColumn().toRpcString();
+        }
+        return addition.newColumn().toRpcString() + "=" + addition.existingColumn().toRpcString();
+    }
+
     static List<JoinAddition> from(Collection<String> values) {
         return values.stream().map(JoinAddition::parse).collect(Collectors.toList());
     }

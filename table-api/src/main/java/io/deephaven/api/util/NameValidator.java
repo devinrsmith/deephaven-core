@@ -130,10 +130,36 @@ public class NameValidator {
         return Type.QUERY_PARAM.isValid(name);
     }
 
+    /**
+     * Returns the column name if {@code name} is a valid column name.
+     *
+     * <p>
+     * See {@link #isValidColumnName(String)} for what constitutes a valid column name.
+     *
+     * @param name the name
+     * @return the column name if {@code name} is a valid column name
+     */
     public static String validateColumnName(String name) {
         return Type.COLUMN.validate(name);
     }
 
+    /**
+     * Checks whether {@code name} is a valid column name.
+     *
+     * <p>
+     * A {@code name} is a valid column name if all of the following are {@code true}:
+     *
+     * <ol>
+     * <li>it is not null</li>
+     * <li>it is not empty ("")</li>
+     * <li>it is not a Deephaven keyword ("in", "not", "i", "ii", or "k")</li>
+     * <li>it is not a {@link SourceVersion#isKeyword(CharSequence) java keyword}</li>
+     * <li>it is a {@link SourceVersion#isIdentifier(CharSequence) java identifier}</li>
+     * </ol>
+     *
+     * @param name the column name
+     * @return if the name is a valid column name
+     */
     public static boolean isValidColumnName(String name) {
         return Type.COLUMN.isValid(name);
     }

@@ -17,7 +17,6 @@ import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.literal.Literal;
-import org.apache.commons.text.StringEscapeUtils;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 public class Strings {
 
     public static String of(ColumnName columnName) {
-        return columnName.name();
+        return columnName.toRpcString();
     }
 
     public static String of(ColumnName columnName, boolean inverted) {
@@ -117,17 +116,11 @@ public class Strings {
     }
 
     public static String of(Pair pair) {
-        if (pair.input().equals(pair.output())) {
-            return of(pair.output());
-        }
-        return String.format("%s=%s", of(pair.output()), of(pair.input()));
+        return Pair.toRpcString(pair);
     }
 
     public static String of(JoinMatch match) {
-        if (match.left().equals(match.right())) {
-            return of(match.left());
-        }
-        return String.format("%s==%s", of(match.left()), of(match.right()));
+        return JoinMatch.toRpcString(match);
     }
 
     public static String ofJoinMatches(Collection<? extends JoinMatch> matches) {
@@ -135,10 +128,7 @@ public class Strings {
     }
 
     public static String of(JoinAddition addition) {
-        if (addition.newColumn().equals(addition.existingColumn())) {
-            return of(addition.newColumn());
-        }
-        return String.format("%s=%s", of(addition.newColumn()), of(addition.existingColumn()));
+        return JoinAddition.toRpcString(addition);
     }
 
     public static String ofJoinAdditions(Collection<? extends JoinAddition> additions) {
@@ -260,7 +250,7 @@ public class Strings {
     }
 
     public static String of(String literal) {
-        return '"' + StringEscapeUtils.escapeJava(literal) + '"';
+        return '"' + literal + '"';
     }
 
     private static String ofEncapsulated(Expression expression) {

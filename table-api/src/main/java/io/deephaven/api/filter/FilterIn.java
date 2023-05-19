@@ -45,6 +45,11 @@ public abstract class FilterIn extends FilterBase {
         return visitor.visit(this);
     }
 
+    @Override
+    public final <T> T walk(SimplifiedVisitor<T> visitor) {
+        return visitor.visit(this, false);
+    }
+
     /**
      * Creates the logical equivalent of {@code this} as an {@link Filter#or(Collection)} with
      * {@link FilterComparison#eq(Expression, Expression)} between {@link #expression()} and each {@link #values()}.

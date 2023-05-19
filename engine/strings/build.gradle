@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+description 'Engine Strings: hacking strongly typed objects into strings'
+
+dependencies {
+    api project(':table-api')
+    Classpaths.inheritCommonsText(project, 'implementation')
+}

@@ -13,7 +13,6 @@ import io.deephaven.api.ReverseAsOfJoinRule;
 import io.deephaven.api.Selectable;
 import io.deephaven.api.SortColumn;
 import io.deephaven.api.SortColumn.Order;
-import io.deephaven.api.Strings;
 import io.deephaven.api.agg.Aggregation;
 import io.deephaven.api.expression.Expression;
 import io.deephaven.api.expression.Function;
@@ -30,6 +29,8 @@ import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.api.snapshot.SnapshotWhenOptions;
 import io.deephaven.api.snapshot.SnapshotWhenOptions.Flag;
 import io.deephaven.api.literal.Literal;
+import io.deephaven.engine.table.impl.strings.ExpressionString;
+import io.deephaven.engine.table.impl.strings.FilterString;
 import io.deephaven.proto.backplane.grpc.AggregateAllRequest;
 import io.deephaven.proto.backplane.grpc.AggregateRequest;
 import io.deephaven.proto.backplane.grpc.AndCondition;
@@ -51,7 +52,6 @@ import io.deephaven.proto.backplane.grpc.ExactJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.FetchTableRequest;
 import io.deephaven.proto.backplane.grpc.FilterTableRequest;
 import io.deephaven.proto.backplane.grpc.HeadOrTailRequest;
-import io.deephaven.proto.backplane.grpc.InCondition;
 import io.deephaven.proto.backplane.grpc.IsNullCondition;
 import io.deephaven.proto.backplane.grpc.MergeTablesRequest;
 import io.deephaven.proto.backplane.grpc.NaturalJoinTablesRequest;
@@ -59,7 +59,6 @@ import io.deephaven.proto.backplane.grpc.NotCondition;
 import io.deephaven.proto.backplane.grpc.OrCondition;
 import io.deephaven.proto.backplane.grpc.RangeJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.Reference;
-import io.deephaven.proto.backplane.grpc.SearchCondition;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
 import io.deephaven.proto.backplane.grpc.SelectOrUpdateRequest;
 import io.deephaven.proto.backplane.grpc.SnapshotTableRequest;
@@ -283,7 +282,7 @@ class BatchTableRequestBuilder {
                     .setIncremental(options.has(Flag.INCREMENTAL))
                     .setHistory(options.has(Flag.HISTORY));
             for (JoinAddition stampColumn : options.stampColumns()) {
-                builder.addStampColumns(Strings.of(stampColumn));
+                builder.addStampColumns(JoinAddition.toRpcString(stampColumn));
             }
             out = op(Builder::setSnapshotWhen, builder.build());
         }
@@ -298,13 +297,11 @@ class BatchTableRequestBuilder {
         }
 
         private Operation createUnstructuredFilterTableRequest(WhereTable whereTable) {
-            // TODO(deephaven-core#3740): Remove engine crutch on io.deephaven.api.Strings
-            UnstructuredFilterTableRequest request = UnstructuredFilterTableRequest.newBuilder()
+            UnstructuredFilterTableRequest.Builder builder = UnstructuredFilterTableRequest.newBuilder()
                     .setResultId(ticket)
                     .setSourceId(ref(whereTable.parent()))
-                    .addFilters(Strings.of(whereTable.filter()))
-                    .build();
-            return op(Builder::setUnstructuredFilter, request);
+                    .addFilters(FilterString.of(whereTable.filter()));
+            return op(Builder::setUnstructuredFilter, builder.build());
         }
 
         @Override
@@ -326,7 +323,7 @@ class BatchTableRequestBuilder {
                     .setRightId(ref(whereInTable.right()))
                     .setInverted(whereInTable.inverted());
             for (JoinMatch match : whereInTable.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             out = op(Builder::setWhereIn, builder.build());
         }
@@ -336,10 +333,10 @@ class BatchTableRequestBuilder {
             NaturalJoinTablesRequest.Builder builder = NaturalJoinTablesRequest.newBuilder()
                     .setResultId(ticket).setLeftId(ref(j.left())).setRightId(ref(j.right()));
             for (JoinMatch match : j.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             for (JoinAddition addition : j.additions()) {
-                builder.addColumnsToAdd(Strings.of(addition));
+                builder.addColumnsToAdd(JoinAddition.toRpcString(addition));
             }
             out = op(Builder::setNaturalJoin, builder.build());
         }
@@ -349,10 +346,10 @@ class BatchTableRequestBuilder {
             ExactJoinTablesRequest.Builder builder = ExactJoinTablesRequest.newBuilder()
                     .setResultId(ticket).setLeftId(ref(j.left())).setRightId(ref(j.right()));
             for (JoinMatch match : j.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             for (JoinAddition addition : j.additions()) {
-                builder.addColumnsToAdd(Strings.of(addition));
+                builder.addColumnsToAdd(JoinAddition.toRpcString(addition));
             }
             out = op(Builder::setExactJoin, builder.build());
         }
@@ -365,10 +362,10 @@ class BatchTableRequestBuilder {
                     .setRightId(ref(j.right()));
             j.reserveBits().ifPresent(builder::setReserveBits);
             for (JoinMatch match : j.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             for (JoinAddition addition : j.additions()) {
-                builder.addColumnsToAdd(Strings.of(addition));
+                builder.addColumnsToAdd(JoinAddition.toRpcString(addition));
             }
             out = op(Builder::setCrossJoin, builder.build());
         }
@@ -383,10 +380,10 @@ class BatchTableRequestBuilder {
                             ? AsOfJoinTablesRequest.MatchRule.LESS_THAN_EQUAL
                             : AsOfJoinTablesRequest.MatchRule.LESS_THAN);
             for (JoinMatch match : aj.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             for (JoinAddition addition : aj.additions()) {
-                builder.addColumnsToAdd(Strings.of(addition));
+                builder.addColumnsToAdd(JoinAddition.toRpcString(addition));
             }
             out = op(Builder::setAsOfJoin, builder.build());
         }
@@ -401,10 +398,10 @@ class BatchTableRequestBuilder {
                             ? AsOfJoinTablesRequest.MatchRule.GREATER_THAN_EQUAL
                             : AsOfJoinTablesRequest.MatchRule.GREATER_THAN);
             for (JoinMatch match : raj.matches()) {
-                builder.addColumnsToMatch(Strings.of(match));
+                builder.addColumnsToMatch(JoinMatch.toRpcString(match));
             }
             for (JoinAddition addition : raj.additions()) {
-                builder.addColumnsToAdd(Strings.of(addition));
+                builder.addColumnsToAdd(JoinAddition.toRpcString(addition));
             }
             out = op(Builder::setAsOfJoin, builder.build());
         }
@@ -417,10 +414,10 @@ class BatchTableRequestBuilder {
                     .setRightId(ref(rangeJoinTable.right()));
 
             for (JoinMatch exactMatch : rangeJoinTable.exactMatches()) {
-                builder.addExactMatchColumns(Strings.of(exactMatch));
+                builder.addExactMatchColumns(JoinMatch.toRpcString(exactMatch));
             }
 
-            builder.setLeftStartColumn(Strings.of(rangeJoinTable.rangeMatch().leftStartColumn()));
+            builder.setLeftStartColumn(rangeJoinTable.rangeMatch().leftStartColumn().toRpcString());
             final RangeJoinTablesRequest.RangeStartRule rangeStartRule;
             switch (rangeJoinTable.rangeMatch().rangeStartRule()) {
                 case LESS_THAN:
@@ -437,7 +434,7 @@ class BatchTableRequestBuilder {
                             rangeJoinTable.rangeMatch().rangeStartRule()));
             }
             builder.setRangeStartRule(rangeStartRule);
-            builder.setRightRangeColumn(Strings.of(rangeJoinTable.rangeMatch().rightRangeColumn()));
+            builder.setRightRangeColumn(rangeJoinTable.rangeMatch().rightRangeColumn().toRpcString());
             final RangeJoinTablesRequest.RangeEndRule rangeEndRule;
             switch (rangeJoinTable.rangeMatch().rangeEndRule()) {
                 case GREATER_THAN:
@@ -454,7 +451,7 @@ class BatchTableRequestBuilder {
                             rangeJoinTable.rangeMatch().rangeEndRule()));
             }
             builder.setRangeEndRule(rangeEndRule);
-            builder.setLeftEndColumn(Strings.of(rangeJoinTable.rangeMatch().leftEndColumn()));
+            builder.setLeftEndColumn(rangeJoinTable.rangeMatch().leftEndColumn().toRpcString());
 
             for (Aggregation aggregation : rangeJoinTable.aggregations()) {
                 for (io.deephaven.proto.backplane.grpc.Aggregation adapted : AggregationBuilder.adapt(aggregation)) {
@@ -497,7 +494,7 @@ class BatchTableRequestBuilder {
                     .setSourceId(ref(aggregateAllTable.parent()))
                     .setSpec(AggSpecBuilder.adapt(aggregateAllTable.spec()));
             for (ColumnName column : aggregateAllTable.groupByColumns()) {
-                builder.addGroupByColumns(Strings.of(column));
+                builder.addGroupByColumns(column.toRpcString());
             }
             out = op(Builder::setAggregateAll, builder.build());
         }
@@ -518,7 +515,7 @@ class BatchTableRequestBuilder {
                 }
             }
             for (ColumnName column : aggregateTable.groupByColumns()) {
-                builder.addGroupByColumns(Strings.of(column));
+                builder.addGroupByColumns(column.toRpcString());
             }
             out = op(Builder::setAggregate, builder.build());
         }
@@ -604,7 +601,7 @@ class BatchTableRequestBuilder {
             SelectOrUpdateRequest.Builder builder =
                     SelectOrUpdateRequest.newBuilder().setResultId(ticket).setSourceId(ref(x.parent()));
             for (Selectable column : columns) {
-                builder.addColumnSpecs(Strings.of(column));
+                builder.addColumnSpecs(selectableString(column));
             }
             return builder.build();
         }
@@ -614,10 +611,19 @@ class BatchTableRequestBuilder {
                     .setResultId(ticket)
                     .setSourceId(ref(selectDistinctTable.parent()));
             for (Selectable column : selectDistinctTable.columns()) {
-                builder.addColumnNames(Strings.of(column));
+                builder.addColumnNames(selectableString(column));
             }
             return builder.build();
         }
+    }
+
+    private static String selectableString(Selectable selectable) {
+        // todo
+        if (selectable.newColumn().equals(selectable.expression())) {
+            return ExpressionString.INSTANCE.visit(selectable.newColumn());
+        }
+        return ExpressionString.INSTANCE.visit(selectable.newColumn()) + "="
+                + ExpressionString.of(selectable.expression());
     }
 
     private static Reference reference(ColumnName columnName) {

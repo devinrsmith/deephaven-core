@@ -56,7 +56,7 @@ class UpdateByBuilder {
         UpdateByColumn.Builder builder = UpdateByColumn.newBuilder()
                 .setSpec(adapt(columnUpdate.spec()));
         for (Pair pair : columnUpdate.columns()) {
-            builder.addMatchPairs(Strings.of(pair));
+            builder.addMatchPairs(Pair.toRpcString(pair));
         }
         return builder.build();
     }

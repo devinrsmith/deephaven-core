@@ -286,5 +286,10 @@ public interface WhereFilter extends Filter {
         throw new UnsupportedOperationException("WhereFilters do not implement walk");
     }
 
+    @Override
+    default <T> T walk(SimplifiedVisitor<T> visitor) {
+        throw new UnsupportedOperationException("WhereFilters do not implement walk");
+    }
+
     // endregion Filter impl
 }

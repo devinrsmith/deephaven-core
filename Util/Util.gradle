@@ -7,7 +7,7 @@ configurations {
     implementation.extendsFrom configurations.dhUtil, commonsLang3
     testImplementation.extendsFrom fishBaseTest
 }
-
+ 
 dependencies {
     api project(':engine-query-constants')
     implementation project(':log-factory')

@@ -1,5 +1,6 @@
 package io.deephaven.engine.table.impl;
 
+import io.deephaven.api.AsOfJoinMatch;
 import io.deephaven.api.AsOfJoinRule;
 import io.deephaven.api.ColumnName;
 import io.deephaven.api.JoinAddition;
@@ -257,6 +258,11 @@ public interface TableAdapter extends TableDefaults {
     @Override
     default Table aj(Table rightTable, Collection<? extends JoinMatch> columnsToMatch,
             Collection<? extends JoinAddition> columnsToAdd, AsOfJoinRule asOfJoinRule) {
+        return throwUnsupported();
+    }
+
+    @Override
+    default Table aj(Table rightTable, Collection<? extends JoinMatch> columnsToMatch, AsOfJoinMatch joinMatch, Collection<? extends JoinAddition> columnsToAdd) {
         return throwUnsupported();
     }
 

@@ -12,5 +12,5 @@ import java.util.Collection;
  * @see JoinMatch
  */
 public enum AsOfJoinRule {
-    LESS_THAN_EQUAL, LESS_THAN
+    LESS_THAN_EQUAL, LESS_THAN, GREATER_THAN_EQUAL, GREATER_THAN
 }

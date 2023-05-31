@@ -129,6 +129,11 @@ public abstract class TableBase implements TableSpec {
     }
 
     @Override
+    public final TableSpec aj(TableSpec rightTable, Collection<? extends JoinMatch> columnsToMatch, AsOfJoinMatch joinMatch, Collection<? extends JoinAddition> columnsToAdd) {
+        return AsOfJoinTable.builder().left(this).right(rightTable).addAllMatches(columnsToMatch).join
+    }
+
+    @Override
     public final TableSpec raj(TableSpec rightTable,
             Collection<? extends JoinMatch> columnsToMatch,
             Collection<? extends JoinAddition> columnsToAdd, ReverseAsOfJoinRule reverseAsOfJoinRule) {

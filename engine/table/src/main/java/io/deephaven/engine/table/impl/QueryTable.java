@@ -4,6 +4,7 @@
 package io.deephaven.engine.table.impl;
 
 import io.deephaven.UncheckedDeephavenException;
+import io.deephaven.api.AsOfJoinMatch;
 import io.deephaven.api.AsOfJoinRule;
 import io.deephaven.api.ColumnName;
 import io.deephaven.api.JoinAddition;
@@ -1838,6 +1839,31 @@ public class QueryTable extends BaseTable<QueryTable> {
                 MatchPair.fromMatches(columnsToMatch),
                 MatchPair.fromAddition(columnsToAdd),
                 AsOfMatchRule.of(asOfJoinRule));
+    }
+
+    @Override
+    public Table aj(
+            Table rightTable,
+            Collection<? extends JoinMatch> columnsToMatch,
+            AsOfJoinMatch joinMatch,
+            Collection<? extends JoinAddition> columnsToAdd) {
+        final MatchPair[] matches = Stream.concat(
+                columnsToMatch.stream().map(MatchPair::of),
+                Stream.of(new MatchPair(joinMatch.leftColumn().name(), joinMatch.rightColumn().name())))
+                .toArray(MatchPair[]::new);
+        final MatchPair[] additions = MatchPair.fromAddition(columnsToAdd);
+        switch (joinMatch.joinRule()) {
+            case LESS_THAN_EQUAL:
+                return ajImpl(rightTable, matches, additions, AsOfMatchRule.LESS_THAN_EQUAL);
+            case LESS_THAN:
+                return ajImpl(rightTable, matches, additions, AsOfMatchRule.LESS_THAN);
+            case GREATER_THAN_EQUAL:
+                return rajImpl(rightTable, matches, additions, AsOfMatchRule.GREATER_THAN_EQUAL);
+            case GREATER_THAN:
+                return rajImpl(rightTable, matches, additions, AsOfMatchRule.GREATER_THAN);
+            default:
+                throw new IllegalStateException("Unexpected join rule " + joinMatch.joinRule());
+        }
     }
 
     @Override

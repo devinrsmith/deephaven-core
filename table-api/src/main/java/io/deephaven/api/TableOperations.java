@@ -8,8 +8,8 @@ import io.deephaven.api.agg.spec.AggSpec;
 import io.deephaven.api.filter.Filter;
 import io.deephaven.api.snapshot.SnapshotWhenOptions;
 import io.deephaven.api.snapshot.SnapshotWhenOptions.Flag;
-import io.deephaven.api.updateby.UpdateByOperation;
 import io.deephaven.api.updateby.UpdateByControl;
+import io.deephaven.api.updateby.UpdateByOperation;
 import io.deephaven.api.util.ConcurrentMethod;
 
 import java.util.Collection;
@@ -452,21 +452,6 @@ public interface TableOperations<TOPS extends TableOperations<TOPS, TABLE>, TABL
      * Perform an as-of join with the {@code rightTable}.
      *
      * <p>
-     * Delegates to {@link #aj(Object, Collection, Collection, AsOfJoinRule)}.
-     *
-     * @param rightTable The right side table on the join.
-     * @param columnsToMatch The match pair conditions.
-     * @param columnsToAdd The columns from the right side that need to be added to the left side as a result of the
-     *        match.
-     * @return a new table joined according to the specification in columnsToMatch and columnsToAdd
-     */
-    TOPS aj(TABLE rightTable, Collection<? extends JoinMatch> columnsToMatch,
-            Collection<? extends JoinAddition> columnsToAdd);
-
-    /**
-     * Perform an as-of join with the {@code rightTable}.
-     *
-     * <p>
      * Looks up the columns in the {@code rightTable} that meet the match conditions in {@code columnsToMatch}. Matching
      * is done exactly for the first n-1 columns and via a binary search for the last match pair. The columns of the
      * {@code this} table are returned intact, together with the columns from {@code rightTable} defined in the
@@ -481,6 +466,12 @@ public interface TableOperations<TOPS extends TableOperations<TOPS, TABLE>, TABL
      */
     TOPS aj(TABLE rightTable, Collection<? extends JoinMatch> columnsToMatch,
             Collection<? extends JoinAddition> columnsToAdd, AsOfJoinRule asOfJoinRule);
+
+    TOPS aj(
+            TABLE rightTable,
+            Collection<? extends JoinMatch> columnsToMatch,
+            AsOfJoinMatch joinMatch,
+            Collection<? extends JoinAddition> columnsToAdd);
 
     // -------------------------------------------------------------------------------------------
 

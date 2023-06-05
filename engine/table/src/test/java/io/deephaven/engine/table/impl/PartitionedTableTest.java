@@ -7,6 +7,7 @@ import io.deephaven.api.ColumnName;
 import io.deephaven.api.SortColumn;
 import io.deephaven.api.agg.Partition;
 import io.deephaven.base.SleepUtil;
+import io.deephaven.base.system.AsyncSystem;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.datastructures.util.CollectionUtil;
@@ -52,10 +53,6 @@ public class PartitionedTableTest extends RefreshingTableTestCase {
 
     @Override
     public void setUp() throws Exception {
-        if (null == ProcessEnvironment.tryGet()) {
-            ProcessEnvironment.basicServerInitialization(Configuration.getInstance(),
-                    "TestTransformablePartitionedTableThenMerge", new StreamLoggerImpl());
-        }
         super.setUp();
         setExpectError(false);
     }

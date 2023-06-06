@@ -1,40 +1,35 @@
 package io.deephaven.app;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
-import com.sun.management.GcInfo;
 import io.deephaven.api.agg.Aggregation;
 import io.deephaven.api.agg.util.PercentileOutput;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.attributes.Values;
-import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
-import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamPublisher;
-import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.time.DateTimeUtils;
-import org.jetbrains.annotations.NotNull;
+import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
+import io.deephaven.stream.blink.BlinkTableMapperConfig;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Objects;
 
-final class GcNotificationPublisher implements StreamPublisher {
+final class GcNotificationPublisher {
 
-    private static final TableDefinition DEFINITION = TableDefinition.of(
-            ColumnDefinition.ofLong("Id"),
-            ColumnDefinition.ofTime("Start"),
-            ColumnDefinition.ofTime("End"),
-            ColumnDefinition.ofString("GcName"),
-            ColumnDefinition.ofString("GcAction"),
-            ColumnDefinition.ofString("GcCause"),
-            ColumnDefinition.ofLong("Reclaimed"));
-    private static final int CHUNK_SIZE = ArrayBackedColumnSource.BLOCK_SIZE;
+    private static final long VM_START_TIME_EPOCH_MILLIS = ManagementFactory.getRuntimeMXBean().getStartTime();
 
-    public static TableDefinition definition() {
-        return DEFINITION;
+    public static BlinkTableMapperConfig<GarbageCollectionNotificationInfo> create(
+            String name, int chunkSize, UpdateSourceRegistrar usr) {
+        return BlinkTableMapperConfig.<GarbageCollectionNotificationInfo>builder()
+                .name(name)
+                .chunkSize(chunkSize)
+                .updateSourceRegistrar(usr)
+                .putLong("Id", GcNotificationPublisher::id)
+                .putInstant("Start", GcNotificationPublisher::start)
+                .putInstant("End", GcNotificationPublisher::end)
+                .putString("GcName", GarbageCollectionNotificationInfo::getGcName)
+                .putString("GcAction", GarbageCollectionNotificationInfo::getGcAction)
+                .putString("GcCause", GarbageCollectionNotificationInfo::getGcCause)
+                .putLong("Reclaimed", GcNotificationPublisher::reclaimed)
+                .build();
     }
 
     public static Table stats(Table notificationInfo) {
@@ -62,38 +57,19 @@ final class GcNotificationPublisher implements StreamPublisher {
                         "GcName", "GcAction", "GcCause");
     }
 
-    private final long vmStartMillis;
-    private WritableChunk<Values>[] chunks;
-    private StreamConsumer consumer;
-
-    GcNotificationPublisher() {
-        this.vmStartMillis = ManagementFactory.getRuntimeMXBean().getStartTime();
-        chunks = StreamToBlinkTableAdapter.makeChunksForDefinition(DEFINITION, CHUNK_SIZE);
+    private static long id(GarbageCollectionNotificationInfo gcNotification) {
+        return gcNotification.getGcInfo().getId();
     }
 
-    @Override
-    public void register(@NotNull StreamConsumer consumer) {
-        if (this.consumer != null) {
-            throw new IllegalStateException("Can not register multiple StreamConsumers.");
-        }
-        this.consumer = Objects.requireNonNull(consumer);
+    private static Instant start(GarbageCollectionNotificationInfo gcNotification) {
+        return Instant.ofEpochMilli(VM_START_TIME_EPOCH_MILLIS + gcNotification.getGcInfo().getStartTime());
     }
 
-    public synchronized void add(GarbageCollectionNotificationInfo gcNotification) {
-        final GcInfo gcInfo = gcNotification.getGcInfo();
+    private static Instant end(GarbageCollectionNotificationInfo gcNotification) {
+        return Instant.ofEpochMilli(VM_START_TIME_EPOCH_MILLIS + gcNotification.getGcInfo().getEndTime());
+    }
 
-        // Note: there's potential for possible further optimization by having a typed field per column (ie, doing the
-        // casts only once per flush). Also, potential to use `set` with our own size field instead of `add`.
-        chunks[0].asWritableLongChunk().add(gcInfo.getId());
-        chunks[1].asWritableLongChunk().add(DateTimeUtils.millisToNanos(vmStartMillis + gcInfo.getStartTime()));
-        chunks[2].asWritableLongChunk().add(DateTimeUtils.millisToNanos(vmStartMillis + gcInfo.getEndTime()));
-
-        // Note: there may be value in interning these strings for ring tables if we find they are causing a lot of
-        // extra memory usage.
-        chunks[3].<String>asWritableObjectChunk().add(gcNotification.getGcName());
-        chunks[4].<String>asWritableObjectChunk().add(gcNotification.getGcAction());
-        chunks[5].<String>asWritableObjectChunk().add(gcNotification.getGcCause());
-
+    private static long reclaimed(GarbageCollectionNotificationInfo gcNotification) {
         // This is a bit of a de-normalization - arguably, it could be computed by joining against the "pools" table.
         // But this is a very useful summary value, and easy for use to provide here for more convenience.
         final long usedBefore = gcNotification.getGcInfo().getMemoryUsageBeforeGc().values().stream()
@@ -101,28 +77,6 @@ final class GcNotificationPublisher implements StreamPublisher {
         final long usedAfter = gcNotification.getGcInfo().getMemoryUsageAfterGc().values().stream()
                 .mapToLong(MemoryUsage::getUsed).sum();
         // Note: reclaimed *can* be negative
-        final long reclaimed = usedBefore - usedAfter;
-        chunks[6].asWritableLongChunk().add(reclaimed);
-
-        if (chunks[0].size() == CHUNK_SIZE) {
-            flushInternal();
-        }
-    }
-
-    @Override
-    public synchronized void flush() {
-        if (chunks[0].size() == 0) {
-            return;
-        }
-        flushInternal();
-    }
-
-    private void flushInternal() {
-        consumer.accept(chunks);
-        chunks = StreamToBlinkTableAdapter.makeChunksForDefinition(DEFINITION, CHUNK_SIZE);
-    }
-
-    public void acceptFailure(Throwable e) {
-        consumer.acceptFailure(e);
+        return usedBefore - usedAfter;
     }
 }

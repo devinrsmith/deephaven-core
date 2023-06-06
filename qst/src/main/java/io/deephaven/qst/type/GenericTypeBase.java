@@ -11,7 +11,8 @@ public abstract class GenericTypeBase<T> extends ColumnTypeBase<T> implements Ge
     }
 
     @Override
-    public final NativeArrayType<?, T> arrayType() {
-        return NativeArrayType.toArrayType(this);
+    public final NativeArrayType<T[], T> arrayType() {
+        // noinspection unchecked
+        return (NativeArrayType<T[], T>) NativeArrayType.toArrayType(this);
     }
 }

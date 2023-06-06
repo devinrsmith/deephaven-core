@@ -16,6 +16,9 @@ public interface GenericType<T> extends Type<T> {
 
     <R> R walk(Visitor<R> visitor);
 
+    @Override
+    NativeArrayType<T[], T> arrayType();
+
     interface Visitor<R> {
         R visit(StringType stringType);
 

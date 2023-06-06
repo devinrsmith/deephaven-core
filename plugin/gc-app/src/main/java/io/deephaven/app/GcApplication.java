@@ -8,6 +8,8 @@ import io.deephaven.engine.liveness.LivenessScope;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
+import io.deephaven.engine.updategraph.UpdateGraph;
+import io.deephaven.engine.updategraph.impl.PeriodicUpdateGraph;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.SafeCloseable;
 
@@ -115,7 +117,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
     private GcPoolsPublisher poolsPublisher;
 
     @SuppressWarnings("FieldCanBeLocal")
-    private UpdateContext updateContext;
+    private UpdateGraph updateGraph;
     @SuppressWarnings("FieldCanBeLocal")
     private LivenessScope scope;
 
@@ -149,8 +151,9 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         if (!notificationInfoEnabled() && !poolsEnabled()) {
             return state;
         }
-        updateContext = UpdateContext.newBuilder("GcUGP").build();
-        try (final SafeCloseable _open_context = updateContext.open()) {
+        updateGraph = PeriodicUpdateGraph.newBuilder("GcUGP").build();
+
+        try (final SafeCloseable _context = ExecutionContext.getContext().withUpdateGraph(updateGraph).open()) {
             scope = new LivenessScope();
             try (final SafeCloseable ignored = LivenessScopeStack.open(scope, false)) {
                 if (notificationInfoEnabled) {

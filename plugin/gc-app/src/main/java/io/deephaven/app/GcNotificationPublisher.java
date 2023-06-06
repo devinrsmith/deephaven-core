@@ -4,6 +4,8 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 import com.sun.management.GcInfo;
 import io.deephaven.api.agg.Aggregation;
 import io.deephaven.api.agg.util.PercentileOutput;
+import io.deephaven.app.f.MyB;
+import io.deephaven.app.f.Streamer;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -18,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -107,6 +110,48 @@ final class GcNotificationPublisher implements StreamPublisher {
         if (chunks[0].size() == CHUNK_SIZE) {
             flushInternal();
         }
+    }
+
+    private static long id(GarbageCollectionNotificationInfo gcNotification) {
+        return gcNotification.getGcInfo().getId();
+    }
+
+    private static Instant start(GarbageCollectionNotificationInfo gcNotification) {
+        // todo
+        return Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime() + gcNotification.getGcInfo().getStartTime());
+    }
+
+    private static long start2(GarbageCollectionNotificationInfo gcNotification) {
+        // todo
+        return ManagementFactory.getRuntimeMXBean().getStartTime() + gcNotification.getGcInfo().getStartTime();
+    }
+
+    private static Instant end(GarbageCollectionNotificationInfo gcNotification) {
+        // todo
+        return Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime() + gcNotification.getGcInfo().getEndTime());
+    }
+
+    private static long reclaimed(GarbageCollectionNotificationInfo gcNotification) {
+        // This is a bit of a de-normalization - arguably, it could be computed by joining against the "pools" table.
+        // But this is a very useful summary value, and easy for use to provide here for more convenience.
+        final long usedBefore = gcNotification.getGcInfo().getMemoryUsageBeforeGc().values().stream()
+                .mapToLong(MemoryUsage::getUsed).sum();
+        final long usedAfter = gcNotification.getGcInfo().getMemoryUsageAfterGc().values().stream()
+                .mapToLong(MemoryUsage::getUsed).sum();
+        // Note: reclaimed *can* be negative
+        return usedBefore - usedAfter;
+    }
+
+    public static Streamer<GarbageCollectionNotificationInfo> create() {
+        return MyB.<GarbageCollectionNotificationInfo>builder()
+                .addLong("Id", GcNotificationPublisher::id)
+                .addInstant("Start", GcNotificationPublisher::start)
+                .addInstant("End", GcNotificationPublisher::end)
+                .addString("GcName", GarbageCollectionNotificationInfo::getGcName)
+                .addString("GcAction", GarbageCollectionNotificationInfo::getGcAction)
+                .addString("GcCause", GarbageCollectionNotificationInfo::getGcCause)
+                .addLong("Reclaimed", GcNotificationPublisher::reclaimed)
+                .build();
     }
 
     @Override

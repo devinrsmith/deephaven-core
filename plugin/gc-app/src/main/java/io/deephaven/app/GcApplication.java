@@ -1,6 +1,7 @@
 package io.deephaven.app;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
+import io.deephaven.app.f.Streamer;
 import io.deephaven.appmode.ApplicationState;
 import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.engine.context.ExecutionContext;
@@ -111,7 +112,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         return "true".equalsIgnoreCase(System.getProperty(POOLS_STATS_ENABLED, "true"));
     }
 
-    private GcNotificationPublisher notificationInfoPublisher;
+    private Streamer<GarbageCollectionNotificationInfo> notificationInfoPublisher;
     private GcPoolsPublisher poolsPublisher;
     @SuppressWarnings("FieldCanBeLocal")
     private LivenessScope scope;
@@ -124,7 +125,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
             notificationInfoPublisher.add(info);
             poolsPublisher.add(info.getGcInfo());
         } catch (Throwable t) {
-            notificationInfoPublisher.acceptFailure(t);
+            notificationInfoPublisher.failure(t);
             poolsPublisher.acceptFailure(t);
             try {
                 remove();
@@ -160,7 +161,9 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
     }
 
     private void setNotificationInfo(ApplicationState state) {
-        notificationInfoPublisher = new GcNotificationPublisher();
+        notificationInfoPublisher = GcNotificationPublisher.create();
+
+
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(GcNotificationPublisher.definition(),
                 notificationInfoPublisher, ExecutionContext.getContext().getUpdateGraph(), NOTIFICATION_INFO);
         final Table notificationInfo = adapter.table();

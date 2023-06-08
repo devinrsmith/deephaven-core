@@ -1,8 +1,10 @@
-package io.deephaven.app.f;
+package io.deephaven.stream.blink;
+
+import io.deephaven.qst.type.Type;
 
 import java.time.Instant;
 
-public interface Mapp<T>  {
+public interface Mapp<T> {
 
     static <X> IntMapp<X> of(IntMapp<X> x) {
         return x;
@@ -17,21 +19,25 @@ public interface Mapp<T>  {
     }
 
     static <X> ObjectMapp<X, Instant> ofEpochMilli(LongMapp<X> longMapp) {
-        return longMapp.andThen(Instant::ofEpochMilli);
+        return longMapp.andThen(Instant::ofEpochMilli, null);
     }
 
     static <X> ObjectMapp<X, Instant> ofEpochSecond(LongMapp<X> longMapp) {
-        return longMapp.andThen(Instant::ofEpochSecond);
+        return longMapp.andThen(Instant::ofEpochSecond, null);
     }
+
+    Type<?> returnType();
 
     <V> V walk(Visitor<T, V> visitor);
 
     interface Visitor<T, R> {
+        R visit(BooleanMapp<T> booleanMapp);
+
         R visit(CharMapp<T> charMapp);
 
         R visit(ByteMapp<T> byteMapp);
 
-        R visit(ShortMapp<T> intMapp);
+        R visit(ShortMapp<T> shortMapp);
 
         R visit(IntMapp<T> intMapp);
 

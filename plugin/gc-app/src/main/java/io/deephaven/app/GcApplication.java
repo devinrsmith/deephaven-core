@@ -1,15 +1,17 @@
 package io.deephaven.app;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
-import io.deephaven.app.f.Streamer;
 import io.deephaven.appmode.ApplicationState;
 import io.deephaven.appmode.ApplicationState.Listener;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.liveness.LivenessScope;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.stream.blink.BlinkTableMapper;
+import io.deephaven.stream.blink.Producer;
 import io.deephaven.util.SafeCloseable;
 
 import javax.management.ListenerNotFoundException;
@@ -55,6 +57,8 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
             "io.deephaven.app.GcApplication.notification_info_ring.enabled";
     private static final String POOLS_ENABLED = "io.deephaven.app.GcApplication.pools.enabled";
     private static final String POOLS_STATS_ENABLED = "io.deephaven.app.GcApplication.pools_stats.enabled";
+
+    private static final int CHUNK_SIZE = ArrayBackedColumnSource.BLOCK_SIZE;
 
     /**
      * Looks up the system property {@value ENABLED}, defaults to {@code false}.
@@ -112,7 +116,7 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         return "true".equalsIgnoreCase(System.getProperty(POOLS_STATS_ENABLED, "true"));
     }
 
-    private Streamer<GarbageCollectionNotificationInfo> notificationInfoPublisher;
+    private Producer<GarbageCollectionNotificationInfo> notificationInfoProducer;
     private GcPoolsPublisher poolsPublisher;
     @SuppressWarnings("FieldCanBeLocal")
     private LivenessScope scope;
@@ -122,10 +126,10 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
         try {
             final GarbageCollectionNotificationInfo info =
                     GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
-            notificationInfoPublisher.add(info);
+            notificationInfoProducer.add(info);
             poolsPublisher.add(info.getGcInfo());
         } catch (Throwable t) {
-            notificationInfoPublisher.failure(t);
+            notificationInfoProducer.failure(t);
             poolsPublisher.acceptFailure(t);
             try {
                 remove();
@@ -161,12 +165,13 @@ public final class GcApplication implements ApplicationState.Factory, Notificati
     }
 
     private void setNotificationInfo(ApplicationState state) {
-        notificationInfoPublisher = GcNotificationPublisher.create();
-
-
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(GcNotificationPublisher.definition(),
-                notificationInfoPublisher, ExecutionContext.getContext().getUpdateGraph(), NOTIFICATION_INFO);
-        final Table notificationInfo = adapter.table();
+        final BlinkTableMapper<GarbageCollectionNotificationInfo> mapper =
+                BlinkTableMapper.create(GcNotificationPublisher.create(
+                        NOTIFICATION_INFO,
+                        CHUNK_SIZE,
+                        ExecutionContext.getContext().getUpdateGraph()));
+        notificationInfoProducer = mapper.producer();
+        final Table notificationInfo = mapper.table();
         state.setField(NOTIFICATION_INFO, notificationInfo);
         if (notificationInfoStatsEnabled()) {
             state.setField(NOTIFICATION_INFO_STATS, GcNotificationPublisher.stats(notificationInfo));

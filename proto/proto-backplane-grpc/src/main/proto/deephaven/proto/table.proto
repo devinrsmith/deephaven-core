@@ -286,6 +286,21 @@ message ExportedTableCreationResponse {
   sint64 size = 6 [jstype=JS_STRING];
 
   // TODO: attributes
+
+  enum What {
+    ROUNDING_MODE_NOT_SPECIFIED = 0;
+    UP = 1;
+    DOWN = 2;
+  }
+
+  What what = 7;
+
+  oneof foo {
+    int32 bar = 8;
+    int32 baz = 9;
+  }
+
+  map<string, string> my_map = 10;
 }
 
 message FetchTableRequest {

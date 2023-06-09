@@ -38,8 +38,8 @@ public class QueryPerformanceNuggetConfig {
                 .putLong("PoolAllocatedBytes", QueryPerformanceNugget::getPoolAllocatedBytes)
                 .putLong("InputSizeLong", QueryPerformanceNugget::getInputSize)
                 .putBoolean("WasInterrupted", QueryPerformanceNugget::wasInterrupted)
-                //             this.IsReplayer.setBoolean(queryProcessingResults.isReplayer());
-                //            this.Exception.set(queryProcessingResults.getException());
+                // this.IsReplayer.setBoolean(queryProcessingResults.isReplayer());
+                // this.Exception.set(queryProcessingResults.getException());
                 .build();
     }
 
@@ -47,6 +47,7 @@ public class QueryPerformanceNuggetConfig {
         // todo
         return EngineMetrics.getProcessInfo().getId().value();
     }
+
     private static boolean isCompilation(QueryPerformanceNugget n) {
         return n.getName().startsWith("Compile:");
     }

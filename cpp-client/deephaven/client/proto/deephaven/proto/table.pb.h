@@ -30,6 +30,9 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/map.h>  // IWYU pragma: export
+#include <google/protobuf/map_entry.h>
+#include <google/protobuf/map_field_inl.h>
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "deephaven/proto/ticket.pb.h"
@@ -205,6 +208,9 @@ extern ExactJoinTablesRequestDefaultTypeInternal _ExactJoinTablesRequest_default
 class ExportedTableCreationResponse;
 struct ExportedTableCreationResponseDefaultTypeInternal;
 extern ExportedTableCreationResponseDefaultTypeInternal _ExportedTableCreationResponse_default_instance_;
+class ExportedTableCreationResponse_MyMapEntry_DoNotUse;
+struct ExportedTableCreationResponse_MyMapEntry_DoNotUseDefaultTypeInternal;
+extern ExportedTableCreationResponse_MyMapEntry_DoNotUseDefaultTypeInternal _ExportedTableCreationResponse_MyMapEntry_DoNotUse_default_instance_;
 class ExportedTableUpdateMessage;
 struct ExportedTableUpdateMessageDefaultTypeInternal;
 extern ExportedTableUpdateMessageDefaultTypeInternal _ExportedTableUpdateMessage_default_instance_;
@@ -466,6 +472,7 @@ template<> ::io::deephaven::proto::backplane::grpc::DropColumnsRequest* Arena::C
 template<> ::io::deephaven::proto::backplane::grpc::EmptyTableRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::EmptyTableRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::ExactJoinTablesRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::ExactJoinTablesRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse>(Arena*);
+template<> ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_MyMapEntry_DoNotUse* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_MyMapEntry_DoNotUse>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::ExportedTableUpdateMessage* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::ExportedTableUpdateMessage>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::ExportedTableUpdatesRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::ExportedTableUpdatesRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::FetchTableRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::FetchTableRequest>(Arena*);
@@ -541,6 +548,32 @@ namespace proto {
 namespace backplane {
 namespace grpc {
 
+enum ExportedTableCreationResponse_What : int {
+  ExportedTableCreationResponse_What_ROUNDING_MODE_NOT_SPECIFIED = 0,
+  ExportedTableCreationResponse_What_UP = 1,
+  ExportedTableCreationResponse_What_DOWN = 2,
+  ExportedTableCreationResponse_What_ExportedTableCreationResponse_What_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
+  ExportedTableCreationResponse_What_ExportedTableCreationResponse_What_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()
+};
+bool ExportedTableCreationResponse_What_IsValid(int value);
+constexpr ExportedTableCreationResponse_What ExportedTableCreationResponse_What_What_MIN = ExportedTableCreationResponse_What_ROUNDING_MODE_NOT_SPECIFIED;
+constexpr ExportedTableCreationResponse_What ExportedTableCreationResponse_What_What_MAX = ExportedTableCreationResponse_What_DOWN;
+constexpr int ExportedTableCreationResponse_What_What_ARRAYSIZE = ExportedTableCreationResponse_What_What_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ExportedTableCreationResponse_What_descriptor();
+template<typename T>
+inline const std::string& ExportedTableCreationResponse_What_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, ExportedTableCreationResponse_What>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function ExportedTableCreationResponse_What_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    ExportedTableCreationResponse_What_descriptor(), enum_t_value);
+}
+inline bool ExportedTableCreationResponse_What_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, ExportedTableCreationResponse_What* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<ExportedTableCreationResponse_What>(
+    ExportedTableCreationResponse_What_descriptor(), name, value);
+}
 enum MathContext_RoundingMode : int {
   MathContext_RoundingMode_ROUNDING_MODE_NOT_SPECIFIED = 0,
   MathContext_RoundingMode_UP = 1,
@@ -1064,6 +1097,34 @@ class TableReference final :
 };
 // -------------------------------------------------------------------
 
+class ExportedTableCreationResponse_MyMapEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<ExportedTableCreationResponse_MyMapEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> {
+public:
+  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<ExportedTableCreationResponse_MyMapEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> SuperType;
+  ExportedTableCreationResponse_MyMapEntry_DoNotUse();
+  explicit PROTOBUF_CONSTEXPR ExportedTableCreationResponse_MyMapEntry_DoNotUse(
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+  explicit ExportedTableCreationResponse_MyMapEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  void MergeFrom(const ExportedTableCreationResponse_MyMapEntry_DoNotUse& other);
+  static const ExportedTableCreationResponse_MyMapEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const ExportedTableCreationResponse_MyMapEntry_DoNotUse*>(&_ExportedTableCreationResponse_MyMapEntry_DoNotUse_default_instance_); }
+  static bool ValidateKey(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.MyMapEntry.key");
+ }
+  static bool ValidateValue(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.MyMapEntry.value");
+ }
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  friend struct ::TableStruct_deephaven_2fproto_2ftable_2eproto;
+};
+
+// -------------------------------------------------------------------
+
 class ExportedTableCreationResponse final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse) */ {
  public:
@@ -1107,12 +1168,18 @@ class ExportedTableCreationResponse final :
   static const ExportedTableCreationResponse& default_instance() {
     return *internal_default_instance();
   }
+  enum FooCase {
+    kBar = 8,
+    kBaz = 9,
+    FOO_NOT_SET = 0,
+  };
+
   static inline const ExportedTableCreationResponse* internal_default_instance() {
     return reinterpret_cast<const ExportedTableCreationResponse*>(
                &_ExportedTableCreationResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    1;
+    2;
 
   friend void swap(ExportedTableCreationResponse& a, ExportedTableCreationResponse& b) {
     a.Swap(&b);
@@ -1171,6 +1238,8 @@ class ExportedTableCreationResponse final :
   protected:
   explicit ExportedTableCreationResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                        bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
   public:
 
   static const ClassData _class_data_;
@@ -1180,16 +1249,70 @@ class ExportedTableCreationResponse final :
 
   // nested types ----------------------------------------------------
 
+
+  typedef ExportedTableCreationResponse_What What;
+  static constexpr What ROUNDING_MODE_NOT_SPECIFIED =
+    ExportedTableCreationResponse_What_ROUNDING_MODE_NOT_SPECIFIED;
+  static constexpr What UP =
+    ExportedTableCreationResponse_What_UP;
+  static constexpr What DOWN =
+    ExportedTableCreationResponse_What_DOWN;
+  static inline bool What_IsValid(int value) {
+    return ExportedTableCreationResponse_What_IsValid(value);
+  }
+  static constexpr What What_MIN =
+    ExportedTableCreationResponse_What_What_MIN;
+  static constexpr What What_MAX =
+    ExportedTableCreationResponse_What_What_MAX;
+  static constexpr int What_ARRAYSIZE =
+    ExportedTableCreationResponse_What_What_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  What_descriptor() {
+    return ExportedTableCreationResponse_What_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& What_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, What>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function What_Name.");
+    return ExportedTableCreationResponse_What_Name(enum_t_value);
+  }
+  static inline bool What_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      What* value) {
+    return ExportedTableCreationResponse_What_Parse(name, value);
+  }
+
   // accessors -------------------------------------------------------
 
   enum : int {
+    kMyMapFieldNumber = 10,
     kErrorInfoFieldNumber = 3,
     kSchemaHeaderFieldNumber = 4,
     kResultIdFieldNumber = 1,
-    kSizeFieldNumber = 6,
     kSuccessFieldNumber = 2,
     kIsStaticFieldNumber = 5,
+    kWhatFieldNumber = 7,
+    kSizeFieldNumber = 6,
+    kBarFieldNumber = 8,
+    kBazFieldNumber = 9,
   };
+  // map<string, string> my_map = 10;
+  int my_map_size() const;
+  private:
+  int _internal_my_map_size() const;
+  public:
+  void clear_my_map();
+  private:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      _internal_my_map() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      _internal_mutable_my_map();
+  public:
+  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+      my_map() const;
+  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+      mutable_my_map();
+
   // string error_info = 3;
   void clear_error_info();
   const std::string& error_info() const;
@@ -1236,15 +1359,6 @@ class ExportedTableCreationResponse final :
       ::io::deephaven::proto::backplane::grpc::TableReference* result_id);
   ::io::deephaven::proto::backplane::grpc::TableReference* unsafe_arena_release_result_id();
 
-  // sint64 size = 6 [jstype = JS_STRING];
-  void clear_size();
-  int64_t size() const;
-  void set_size(int64_t value);
-  private:
-  int64_t _internal_size() const;
-  void _internal_set_size(int64_t value);
-  public:
-
   // bool success = 2;
   void clear_success();
   bool success() const;
@@ -1263,20 +1377,85 @@ class ExportedTableCreationResponse final :
   void _internal_set_is_static(bool value);
   public:
 
+  // .io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.What what = 7;
+  void clear_what();
+  ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What what() const;
+  void set_what(::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What value);
+  private:
+  ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What _internal_what() const;
+  void _internal_set_what(::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What value);
+  public:
+
+  // sint64 size = 6 [jstype = JS_STRING];
+  void clear_size();
+  int64_t size() const;
+  void set_size(int64_t value);
+  private:
+  int64_t _internal_size() const;
+  void _internal_set_size(int64_t value);
+  public:
+
+  // int32 bar = 8;
+  bool has_bar() const;
+  private:
+  bool _internal_has_bar() const;
+  public:
+  void clear_bar();
+  int32_t bar() const;
+  void set_bar(int32_t value);
+  private:
+  int32_t _internal_bar() const;
+  void _internal_set_bar(int32_t value);
+  public:
+
+  // int32 baz = 9;
+  bool has_baz() const;
+  private:
+  bool _internal_has_baz() const;
+  public:
+  void clear_baz();
+  int32_t baz() const;
+  void set_baz(int32_t value);
+  private:
+  int32_t _internal_baz() const;
+  void _internal_set_baz(int32_t value);
+  public:
+
+  void clear_foo();
+  FooCase foo_case() const;
   // @@protoc_insertion_point(class_scope:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse)
  private:
   class _Internal;
+  void set_has_bar();
+  void set_has_baz();
+
+  inline bool has_foo() const;
+  inline void clear_has_foo();
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::MapField<
+      ExportedTableCreationResponse_MyMapEntry_DoNotUse,
+      std::string, std::string,
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> my_map_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr error_info_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr schema_header_;
   ::io::deephaven::proto::backplane::grpc::TableReference* result_id_;
-  int64_t size_;
   bool success_;
   bool is_static_;
+  int what_;
+  int64_t size_;
+  union FooUnion {
+    constexpr FooUnion() : _constinit_{} {}
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+    int32_t bar_;
+    int32_t baz_;
+  } foo_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  uint32_t _oneof_case_[1];
+
   friend struct ::TableStruct_deephaven_2fproto_2ftable_2eproto;
 };
 // -------------------------------------------------------------------
@@ -1329,7 +1508,7 @@ class FetchTableRequest final :
                &_FetchTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    2;
+    3;
 
   friend void swap(FetchTableRequest& a, FetchTableRequest& b) {
     a.Swap(&b);
@@ -1501,7 +1680,7 @@ class ApplyPreviewColumnsRequest final :
                &_ApplyPreviewColumnsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    3;
+    4;
 
   friend void swap(ApplyPreviewColumnsRequest& a, ApplyPreviewColumnsRequest& b) {
     a.Swap(&b);
@@ -1672,7 +1851,7 @@ class ExportedTableUpdatesRequest final :
                &_ExportedTableUpdatesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    5;
 
   friend void swap(ExportedTableUpdatesRequest& a, ExportedTableUpdatesRequest& b) {
     a.Swap(&b);
@@ -1789,7 +1968,7 @@ class ExportedTableUpdateMessage final :
                &_ExportedTableUpdateMessage_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    6;
 
   friend void swap(ExportedTableUpdateMessage& a, ExportedTableUpdateMessage& b) {
     a.Swap(&b);
@@ -1968,7 +2147,7 @@ class EmptyTableRequest final :
                &_EmptyTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    7;
 
   friend void swap(EmptyTableRequest& a, EmptyTableRequest& b) {
     a.Swap(&b);
@@ -2131,7 +2310,7 @@ class TimeTableRequest final :
                &_TimeTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    8;
 
   friend void swap(TimeTableRequest& a, TimeTableRequest& b) {
     a.Swap(&b);
@@ -2305,7 +2484,7 @@ class SelectOrUpdateRequest final :
                &_SelectOrUpdateRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    9;
 
   friend void swap(SelectOrUpdateRequest& a, SelectOrUpdateRequest& b) {
     a.Swap(&b);
@@ -2503,7 +2682,7 @@ class MathContext final :
                &_MathContext_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    10;
 
   friend void swap(MathContext& a, MathContext& b) {
     a.Swap(&b);
@@ -2701,7 +2880,7 @@ class UpdateByWindowScale_UpdateByWindowTicks final :
                &_UpdateByWindowScale_UpdateByWindowTicks_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    11;
 
   friend void swap(UpdateByWindowScale_UpdateByWindowTicks& a, UpdateByWindowScale_UpdateByWindowTicks& b) {
     a.Swap(&b);
@@ -2844,7 +3023,7 @@ class UpdateByWindowScale_UpdateByWindowTime final :
                &_UpdateByWindowScale_UpdateByWindowTime_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    12;
 
   friend void swap(UpdateByWindowScale_UpdateByWindowTime& a, UpdateByWindowScale_UpdateByWindowTime& b) {
     a.Swap(&b);
@@ -3009,7 +3188,7 @@ class UpdateByWindowScale final :
                &_UpdateByWindowScale_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    13;
 
   friend void swap(UpdateByWindowScale& a, UpdateByWindowScale& b) {
     a.Swap(&b);
@@ -3197,7 +3376,7 @@ class UpdateByEmOptions final :
                &_UpdateByEmOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    14;
 
   friend void swap(UpdateByEmOptions& a, UpdateByEmOptions& b) {
     a.Swap(&b);
@@ -3404,7 +3583,7 @@ class UpdateByDeltaOptions final :
                &_UpdateByDeltaOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    15;
 
   friend void swap(UpdateByDeltaOptions& a, UpdateByDeltaOptions& b) {
     a.Swap(&b);
@@ -3547,7 +3726,7 @@ class UpdateByRequest_UpdateByOptions final :
                &_UpdateByRequest_UpdateByOptions_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    16;
 
   friend void swap(UpdateByRequest_UpdateByOptions& a, UpdateByRequest_UpdateByOptions& b) {
     a.Swap(&b);
@@ -3789,7 +3968,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumu
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeSum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    17;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeSum& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeSum& b) {
     a.Swap(&b);
@@ -3905,7 +4084,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumu
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    18;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMin& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMin& b) {
     a.Swap(&b);
@@ -4021,7 +4200,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumu
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMax_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    19;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMax& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeMax& b) {
     a.Swap(&b);
@@ -4137,7 +4316,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumu
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeProduct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    20;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeProduct& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByCumulativeProduct& b) {
     a.Swap(&b);
@@ -4253,7 +4432,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByFill
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByFill_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    21;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByFill& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByFill& b) {
     a.Swap(&b);
@@ -4370,7 +4549,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEma 
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEma_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    22;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEma& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEma& b) {
     a.Swap(&b);
@@ -4542,7 +4721,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEms 
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEms_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    23;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEms& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEms& b) {
     a.Swap(&b);
@@ -4714,7 +4893,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMi
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    24;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMin& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMin& b) {
     a.Swap(&b);
@@ -4886,7 +5065,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMa
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMax_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    25;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMax& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmMax& b) {
     a.Swap(&b);
@@ -5058,7 +5237,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmSt
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmStd_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    26;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmStd& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByEmStd& b) {
     a.Swap(&b);
@@ -5230,7 +5409,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByDelt
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByDelta_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    27;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByDelta& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByDelta& b) {
     a.Swap(&b);
@@ -5382,7 +5561,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingSum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    28;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingSum& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingSum& b) {
     a.Swap(&b);
@@ -5554,7 +5733,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingGroup_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    29;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingGroup& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingGroup& b) {
     a.Swap(&b);
@@ -5726,7 +5905,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingAvg_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    30;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingAvg& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingAvg& b) {
     a.Swap(&b);
@@ -5898,7 +6077,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    31;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMin& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMin& b) {
     a.Swap(&b);
@@ -6070,7 +6249,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMax_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    32;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMax& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingMax& b) {
     a.Swap(&b);
@@ -6242,7 +6421,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingProduct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    33;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingProduct& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingProduct& b) {
     a.Swap(&b);
@@ -6414,7 +6593,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingCount_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    34;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingCount& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingCount& b) {
     a.Swap(&b);
@@ -6586,7 +6765,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingStd_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    35;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingStd& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingStd& b) {
     a.Swap(&b);
@@ -6758,7 +6937,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRoll
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingWAvg_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    36;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingWAvg& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_UpdateByRollingWAvg& b) {
     a.Swap(&b);
@@ -6970,7 +7149,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec final :
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    37;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec& a, UpdateByRequest_UpdateByOperation_UpdateByColumn_UpdateBySpec& b) {
     a.Swap(&b);
@@ -7554,7 +7733,7 @@ class UpdateByRequest_UpdateByOperation_UpdateByColumn final :
                &_UpdateByRequest_UpdateByOperation_UpdateByColumn_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    38;
 
   friend void swap(UpdateByRequest_UpdateByOperation_UpdateByColumn& a, UpdateByRequest_UpdateByOperation_UpdateByColumn& b) {
     a.Swap(&b);
@@ -7739,7 +7918,7 @@ class UpdateByRequest_UpdateByOperation final :
                &_UpdateByRequest_UpdateByOperation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    39;
 
   friend void swap(UpdateByRequest_UpdateByOperation& a, UpdateByRequest_UpdateByOperation& b) {
     a.Swap(&b);
@@ -7905,7 +8084,7 @@ class UpdateByRequest final :
                &_UpdateByRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    40;
 
   friend void swap(UpdateByRequest& a, UpdateByRequest& b) {
     a.Swap(&b);
@@ -8146,7 +8325,7 @@ class SelectDistinctRequest final :
                &_SelectDistinctRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    41;
 
   friend void swap(SelectDistinctRequest& a, SelectDistinctRequest& b) {
     a.Swap(&b);
@@ -8344,7 +8523,7 @@ class DropColumnsRequest final :
                &_DropColumnsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    42;
 
   friend void swap(DropColumnsRequest& a, DropColumnsRequest& b) {
     a.Swap(&b);
@@ -8542,7 +8721,7 @@ class UnstructuredFilterTableRequest final :
                &_UnstructuredFilterTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    43;
 
   friend void swap(UnstructuredFilterTableRequest& a, UnstructuredFilterTableRequest& b) {
     a.Swap(&b);
@@ -8740,7 +8919,7 @@ class HeadOrTailRequest final :
                &_HeadOrTailRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    44;
 
   friend void swap(HeadOrTailRequest& a, HeadOrTailRequest& b) {
     a.Swap(&b);
@@ -8923,7 +9102,7 @@ class HeadOrTailByRequest final :
                &_HeadOrTailByRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    45;
 
   friend void swap(HeadOrTailByRequest& a, HeadOrTailByRequest& b) {
     a.Swap(&b);
@@ -9132,7 +9311,7 @@ class UngroupRequest final :
                &_UngroupRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    46;
 
   friend void swap(UngroupRequest& a, UngroupRequest& b) {
     a.Swap(&b);
@@ -9341,7 +9520,7 @@ class MergeTablesRequest final :
                &_MergeTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    47;
 
   friend void swap(MergeTablesRequest& a, MergeTablesRequest& b) {
     a.Swap(&b);
@@ -9529,7 +9708,7 @@ class SnapshotTableRequest final :
                &_SnapshotTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    48;
 
   friend void swap(SnapshotTableRequest& a, SnapshotTableRequest& b) {
     a.Swap(&b);
@@ -9701,7 +9880,7 @@ class SnapshotWhenTableRequest final :
                &_SnapshotWhenTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    49;
 
   friend void swap(SnapshotWhenTableRequest& a, SnapshotWhenTableRequest& b) {
     a.Swap(&b);
@@ -9952,7 +10131,7 @@ class CrossJoinTablesRequest final :
                &_CrossJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    50;
 
   friend void swap(CrossJoinTablesRequest& a, CrossJoinTablesRequest& b) {
     a.Swap(&b);
@@ -10207,7 +10386,7 @@ class NaturalJoinTablesRequest final :
                &_NaturalJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    51;
 
   friend void swap(NaturalJoinTablesRequest& a, NaturalJoinTablesRequest& b) {
     a.Swap(&b);
@@ -10451,7 +10630,7 @@ class ExactJoinTablesRequest final :
                &_ExactJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    52;
 
   friend void swap(ExactJoinTablesRequest& a, ExactJoinTablesRequest& b) {
     a.Swap(&b);
@@ -10695,7 +10874,7 @@ class LeftJoinTablesRequest final :
                &_LeftJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    53;
 
   friend void swap(LeftJoinTablesRequest& a, LeftJoinTablesRequest& b) {
     a.Swap(&b);
@@ -10939,7 +11118,7 @@ class AsOfJoinTablesRequest final :
                &_AsOfJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    54;
 
   friend void swap(AsOfJoinTablesRequest& a, AsOfJoinTablesRequest& b) {
     a.Swap(&b);
@@ -11228,7 +11407,7 @@ class AjRajTablesRequest final :
                &_AjRajTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    55;
 
   friend void swap(AjRajTablesRequest& a, AjRajTablesRequest& b) {
     a.Swap(&b);
@@ -11488,7 +11667,7 @@ class RangeJoinTablesRequest final :
                &_RangeJoinTablesRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    56;
 
   friend void swap(RangeJoinTablesRequest& a, RangeJoinTablesRequest& b) {
     a.Swap(&b);
@@ -11864,7 +12043,7 @@ class ComboAggregateRequest_Aggregate final :
                &_ComboAggregateRequest_Aggregate_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    57;
 
   friend void swap(ComboAggregateRequest_Aggregate& a, ComboAggregateRequest_Aggregate& b) {
     a.Swap(&b);
@@ -12071,7 +12250,7 @@ class ComboAggregateRequest final :
                &_ComboAggregateRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    58;
 
   friend void swap(ComboAggregateRequest& a, ComboAggregateRequest& b) {
     a.Swap(&b);
@@ -12356,7 +12535,7 @@ class AggregateAllRequest final :
                &_AggregateAllRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    59;
 
   friend void swap(AggregateAllRequest& a, AggregateAllRequest& b) {
     a.Swap(&b);
@@ -12574,7 +12753,7 @@ class AggSpec_AggSpecApproximatePercentile final :
                &_AggSpec_AggSpecApproximatePercentile_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    60;
 
   friend void swap(AggSpec_AggSpecApproximatePercentile& a, AggSpec_AggSpecApproximatePercentile& b) {
     a.Swap(&b);
@@ -12733,7 +12912,7 @@ class AggSpec_AggSpecCountDistinct final :
                &_AggSpec_AggSpecCountDistinct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    61;
 
   friend void swap(AggSpec_AggSpecCountDistinct& a, AggSpec_AggSpecCountDistinct& b) {
     a.Swap(&b);
@@ -12876,7 +13055,7 @@ class AggSpec_AggSpecDistinct final :
                &_AggSpec_AggSpecDistinct_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    62;
 
   friend void swap(AggSpec_AggSpecDistinct& a, AggSpec_AggSpecDistinct& b) {
     a.Swap(&b);
@@ -13019,7 +13198,7 @@ class AggSpec_AggSpecFormula final :
                &_AggSpec_AggSpecFormula_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    63;
 
   friend void swap(AggSpec_AggSpecFormula& a, AggSpec_AggSpecFormula& b) {
     a.Swap(&b);
@@ -13183,7 +13362,7 @@ class AggSpec_AggSpecMedian final :
                &_AggSpec_AggSpecMedian_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    64;
 
   friend void swap(AggSpec_AggSpecMedian& a, AggSpec_AggSpecMedian& b) {
     a.Swap(&b);
@@ -13326,7 +13505,7 @@ class AggSpec_AggSpecPercentile final :
                &_AggSpec_AggSpecPercentile_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    65;
 
   friend void swap(AggSpec_AggSpecPercentile& a, AggSpec_AggSpecPercentile& b) {
     a.Swap(&b);
@@ -13480,7 +13659,7 @@ class AggSpec_AggSpecSorted final :
                &_AggSpec_AggSpecSorted_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    66;
 
   friend void swap(AggSpec_AggSpecSorted& a, AggSpec_AggSpecSorted& b) {
     a.Swap(&b);
@@ -13632,7 +13811,7 @@ class AggSpec_AggSpecSortedColumn final :
                &_AggSpec_AggSpecSortedColumn_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    67;
 
   friend void swap(AggSpec_AggSpecSortedColumn& a, AggSpec_AggSpecSortedColumn& b) {
     a.Swap(&b);
@@ -13780,7 +13959,7 @@ class AggSpec_AggSpecTDigest final :
                &_AggSpec_AggSpecTDigest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    68;
 
   friend void swap(AggSpec_AggSpecTDigest& a, AggSpec_AggSpecTDigest& b) {
     a.Swap(&b);
@@ -13928,7 +14107,7 @@ class AggSpec_AggSpecUnique final :
                &_AggSpec_AggSpecUnique_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    69;
 
   friend void swap(AggSpec_AggSpecUnique& a, AggSpec_AggSpecUnique& b) {
     a.Swap(&b);
@@ -14105,7 +14284,7 @@ class AggSpec_AggSpecNonUniqueSentinel final :
                &_AggSpec_AggSpecNonUniqueSentinel_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    70;
 
   friend void swap(AggSpec_AggSpecNonUniqueSentinel& a, AggSpec_AggSpecNonUniqueSentinel& b) {
     a.Swap(&b);
@@ -14413,7 +14592,7 @@ class AggSpec_AggSpecWeighted final :
                &_AggSpec_AggSpecWeighted_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    71;
 
   friend void swap(AggSpec_AggSpecWeighted& a, AggSpec_AggSpecWeighted& b) {
     a.Swap(&b);
@@ -14560,7 +14739,7 @@ class AggSpec_AggSpecAbsSum final :
                &_AggSpec_AggSpecAbsSum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    72;
 
   friend void swap(AggSpec_AggSpecAbsSum& a, AggSpec_AggSpecAbsSum& b) {
     a.Swap(&b);
@@ -14676,7 +14855,7 @@ class AggSpec_AggSpecAvg final :
                &_AggSpec_AggSpecAvg_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    73;
 
   friend void swap(AggSpec_AggSpecAvg& a, AggSpec_AggSpecAvg& b) {
     a.Swap(&b);
@@ -14792,7 +14971,7 @@ class AggSpec_AggSpecFirst final :
                &_AggSpec_AggSpecFirst_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    74;
 
   friend void swap(AggSpec_AggSpecFirst& a, AggSpec_AggSpecFirst& b) {
     a.Swap(&b);
@@ -14908,7 +15087,7 @@ class AggSpec_AggSpecFreeze final :
                &_AggSpec_AggSpecFreeze_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    75;
 
   friend void swap(AggSpec_AggSpecFreeze& a, AggSpec_AggSpecFreeze& b) {
     a.Swap(&b);
@@ -15024,7 +15203,7 @@ class AggSpec_AggSpecGroup final :
                &_AggSpec_AggSpecGroup_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    76;
 
   friend void swap(AggSpec_AggSpecGroup& a, AggSpec_AggSpecGroup& b) {
     a.Swap(&b);
@@ -15140,7 +15319,7 @@ class AggSpec_AggSpecLast final :
                &_AggSpec_AggSpecLast_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    77;
 
   friend void swap(AggSpec_AggSpecLast& a, AggSpec_AggSpecLast& b) {
     a.Swap(&b);
@@ -15256,7 +15435,7 @@ class AggSpec_AggSpecMax final :
                &_AggSpec_AggSpecMax_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    78;
 
   friend void swap(AggSpec_AggSpecMax& a, AggSpec_AggSpecMax& b) {
     a.Swap(&b);
@@ -15372,7 +15551,7 @@ class AggSpec_AggSpecMin final :
                &_AggSpec_AggSpecMin_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    79;
 
   friend void swap(AggSpec_AggSpecMin& a, AggSpec_AggSpecMin& b) {
     a.Swap(&b);
@@ -15488,7 +15667,7 @@ class AggSpec_AggSpecStd final :
                &_AggSpec_AggSpecStd_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    80;
 
   friend void swap(AggSpec_AggSpecStd& a, AggSpec_AggSpecStd& b) {
     a.Swap(&b);
@@ -15604,7 +15783,7 @@ class AggSpec_AggSpecSum final :
                &_AggSpec_AggSpecSum_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    81;
 
   friend void swap(AggSpec_AggSpecSum& a, AggSpec_AggSpecSum& b) {
     a.Swap(&b);
@@ -15720,7 +15899,7 @@ class AggSpec_AggSpecVar final :
                &_AggSpec_AggSpecVar_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    82;
 
   friend void swap(AggSpec_AggSpecVar& a, AggSpec_AggSpecVar& b) {
     a.Swap(&b);
@@ -15864,7 +16043,7 @@ class AggSpec final :
                &_AggSpec_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    83;
 
   friend void swap(AggSpec& a, AggSpec& b) {
     a.Swap(&b);
@@ -16514,7 +16693,7 @@ class AggregateRequest final :
                &_AggregateRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    84;
 
   friend void swap(AggregateRequest& a, AggregateRequest& b) {
     a.Swap(&b);
@@ -16763,7 +16942,7 @@ class Aggregation_AggregationColumns final :
                &_Aggregation_AggregationColumns_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    85;
 
   friend void swap(Aggregation_AggregationColumns& a, Aggregation_AggregationColumns& b) {
     a.Swap(&b);
@@ -16941,7 +17120,7 @@ class Aggregation_AggregationCount final :
                &_Aggregation_AggregationCount_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    86;
 
   friend void swap(Aggregation_AggregationCount& a, Aggregation_AggregationCount& b) {
     a.Swap(&b);
@@ -17089,7 +17268,7 @@ class Aggregation_AggregationRowKey final :
                &_Aggregation_AggregationRowKey_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    87;
 
   friend void swap(Aggregation_AggregationRowKey& a, Aggregation_AggregationRowKey& b) {
     a.Swap(&b);
@@ -17237,7 +17416,7 @@ class Aggregation_AggregationPartition final :
                &_Aggregation_AggregationPartition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    88;
 
   friend void swap(Aggregation_AggregationPartition& a, Aggregation_AggregationPartition& b) {
     a.Swap(&b);
@@ -17405,7 +17584,7 @@ class Aggregation final :
                &_Aggregation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    89;
 
   friend void swap(Aggregation& a, Aggregation& b) {
     a.Swap(&b);
@@ -17658,7 +17837,7 @@ class SortDescriptor final :
                &_SortDescriptor_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    90;
 
   friend void swap(SortDescriptor& a, SortDescriptor& b) {
     a.Swap(&b);
@@ -17862,7 +18041,7 @@ class SortTableRequest final :
                &_SortTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    91;
 
   friend void swap(SortTableRequest& a, SortTableRequest& b) {
     a.Swap(&b);
@@ -18054,7 +18233,7 @@ class FilterTableRequest final :
                &_FilterTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    92;
 
   friend void swap(FilterTableRequest& a, FilterTableRequest& b) {
     a.Swap(&b);
@@ -18246,7 +18425,7 @@ class SeekRowRequest final :
                &_SeekRowRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    93;
 
   friend void swap(SeekRowRequest& a, SeekRowRequest& b) {
     a.Swap(&b);
@@ -18478,7 +18657,7 @@ class SeekRowResponse final :
                &_SeekRowResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    94;
 
   friend void swap(SeekRowResponse& a, SeekRowResponse& b) {
     a.Swap(&b);
@@ -18621,7 +18800,7 @@ class Reference final :
                &_Reference_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    95;
 
   friend void swap(Reference& a, Reference& b) {
     a.Swap(&b);
@@ -18778,7 +18957,7 @@ class Literal final :
                &_Literal_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    96;
 
   friend void swap(Literal& a, Literal& b) {
     a.Swap(&b);
@@ -19012,7 +19191,7 @@ class Value final :
                &_Value_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    97;
 
   friend void swap(Value& a, Value& b) {
     a.Swap(&b);
@@ -19211,7 +19390,7 @@ class Condition final :
                &_Condition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    98;
 
   friend void swap(Condition& a, Condition& b) {
     a.Swap(&b);
@@ -19564,7 +19743,7 @@ class AndCondition final :
                &_AndCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    99;
 
   friend void swap(AndCondition& a, AndCondition& b) {
     a.Swap(&b);
@@ -19716,7 +19895,7 @@ class OrCondition final :
                &_OrCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    100;
 
   friend void swap(OrCondition& a, OrCondition& b) {
     a.Swap(&b);
@@ -19868,7 +20047,7 @@ class NotCondition final :
                &_NotCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    101;
 
   friend void swap(NotCondition& a, NotCondition& b) {
     a.Swap(&b);
@@ -20020,7 +20199,7 @@ class CompareCondition final :
                &_CompareCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    102;
 
   friend void swap(CompareCondition& a, CompareCondition& b) {
     a.Swap(&b);
@@ -20252,7 +20431,7 @@ class InCondition final :
                &_InCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    103;
 
   friend void swap(InCondition& a, InCondition& b) {
     a.Swap(&b);
@@ -20446,7 +20625,7 @@ class InvokeCondition final :
                &_InvokeCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    104;
 
   friend void swap(InvokeCondition& a, InvokeCondition& b) {
     a.Swap(&b);
@@ -20634,7 +20813,7 @@ class IsNullCondition final :
                &_IsNullCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    105;
 
   friend void swap(IsNullCondition& a, IsNullCondition& b) {
     a.Swap(&b);
@@ -20786,7 +20965,7 @@ class MatchesCondition final :
                &_MatchesCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    106;
 
   friend void swap(MatchesCondition& a, MatchesCondition& b) {
     a.Swap(&b);
@@ -20976,7 +21155,7 @@ class ContainsCondition final :
                &_ContainsCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    107;
 
   friend void swap(ContainsCondition& a, ContainsCondition& b) {
     a.Swap(&b);
@@ -21166,7 +21345,7 @@ class SearchCondition final :
                &_SearchCondition_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    108;
 
   friend void swap(SearchCondition& a, SearchCondition& b) {
     a.Swap(&b);
@@ -21334,7 +21513,7 @@ class FlattenRequest final :
                &_FlattenRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    108;
+    109;
 
   friend void swap(FlattenRequest& a, FlattenRequest& b) {
     a.Swap(&b);
@@ -21506,7 +21685,7 @@ class MetaTableRequest final :
                &_MetaTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    109;
+    110;
 
   friend void swap(MetaTableRequest& a, MetaTableRequest& b) {
     a.Swap(&b);
@@ -21678,7 +21857,7 @@ class RunChartDownsampleRequest_ZoomRange final :
                &_RunChartDownsampleRequest_ZoomRange_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    110;
+    111;
 
   friend void swap(RunChartDownsampleRequest_ZoomRange& a, RunChartDownsampleRequest_ZoomRange& b) {
     a.Swap(&b);
@@ -21841,7 +22020,7 @@ class RunChartDownsampleRequest final :
                &_RunChartDownsampleRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    111;
+    112;
 
   friend void swap(RunChartDownsampleRequest& a, RunChartDownsampleRequest& b) {
     a.Swap(&b);
@@ -22087,7 +22266,7 @@ class CreateInputTableRequest_InputTableKind_InMemoryAppendOnly final :
                &_CreateInputTableRequest_InputTableKind_InMemoryAppendOnly_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    112;
+    113;
 
   friend void swap(CreateInputTableRequest_InputTableKind_InMemoryAppendOnly& a, CreateInputTableRequest_InputTableKind_InMemoryAppendOnly& b) {
     a.Swap(&b);
@@ -22204,7 +22383,7 @@ class CreateInputTableRequest_InputTableKind_InMemoryKeyBacked final :
                &_CreateInputTableRequest_InputTableKind_InMemoryKeyBacked_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    113;
+    114;
 
   friend void swap(CreateInputTableRequest_InputTableKind_InMemoryKeyBacked& a, CreateInputTableRequest_InputTableKind_InMemoryKeyBacked& b) {
     a.Swap(&b);
@@ -22368,7 +22547,7 @@ class CreateInputTableRequest_InputTableKind final :
                &_CreateInputTableRequest_InputTableKind_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    114;
+    115;
 
   friend void swap(CreateInputTableRequest_InputTableKind& a, CreateInputTableRequest_InputTableKind& b) {
     a.Swap(&b);
@@ -22562,7 +22741,7 @@ class CreateInputTableRequest final :
                &_CreateInputTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    115;
+    116;
 
   friend void swap(CreateInputTableRequest& a, CreateInputTableRequest& b) {
     a.Swap(&b);
@@ -22789,7 +22968,7 @@ class WhereInRequest final :
                &_WhereInRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    116;
+    117;
 
   friend void swap(WhereInRequest& a, WhereInRequest& b) {
     a.Swap(&b);
@@ -23061,7 +23240,7 @@ class BatchTableRequest_Operation final :
                &_BatchTableRequest_Operation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    117;
+    118;
 
   friend void swap(BatchTableRequest_Operation& a, BatchTableRequest_Operation& b) {
     a.Swap(&b);
@@ -24023,7 +24202,7 @@ class BatchTableRequest final :
                &_BatchTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    118;
+    119;
 
   friend void swap(BatchTableRequest& a, BatchTableRequest& b) {
     a.Swap(&b);
@@ -24251,6 +24430,8 @@ inline void TableReference::clear_has_ref() {
 inline TableReference::RefCase TableReference::ref_case() const {
   return TableReference::RefCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // ExportedTableCreationResponse
@@ -24505,6 +24686,140 @@ inline void ExportedTableCreationResponse::set_size(int64_t value) {
   // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.size)
 }
 
+// .io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.What what = 7;
+inline void ExportedTableCreationResponse::clear_what() {
+  what_ = 0;
+}
+inline ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What ExportedTableCreationResponse::_internal_what() const {
+  return static_cast< ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What >(what_);
+}
+inline ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What ExportedTableCreationResponse::what() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.what)
+  return _internal_what();
+}
+inline void ExportedTableCreationResponse::_internal_set_what(::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What value) {
+  
+  what_ = value;
+}
+inline void ExportedTableCreationResponse::set_what(::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What value) {
+  _internal_set_what(value);
+  // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.what)
+}
+
+// int32 bar = 8;
+inline bool ExportedTableCreationResponse::_internal_has_bar() const {
+  return foo_case() == kBar;
+}
+inline bool ExportedTableCreationResponse::has_bar() const {
+  return _internal_has_bar();
+}
+inline void ExportedTableCreationResponse::set_has_bar() {
+  _oneof_case_[0] = kBar;
+}
+inline void ExportedTableCreationResponse::clear_bar() {
+  if (_internal_has_bar()) {
+    foo_.bar_ = 0;
+    clear_has_foo();
+  }
+}
+inline int32_t ExportedTableCreationResponse::_internal_bar() const {
+  if (_internal_has_bar()) {
+    return foo_.bar_;
+  }
+  return 0;
+}
+inline void ExportedTableCreationResponse::_internal_set_bar(int32_t value) {
+  if (!_internal_has_bar()) {
+    clear_foo();
+    set_has_bar();
+  }
+  foo_.bar_ = value;
+}
+inline int32_t ExportedTableCreationResponse::bar() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.bar)
+  return _internal_bar();
+}
+inline void ExportedTableCreationResponse::set_bar(int32_t value) {
+  _internal_set_bar(value);
+  // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.bar)
+}
+
+// int32 baz = 9;
+inline bool ExportedTableCreationResponse::_internal_has_baz() const {
+  return foo_case() == kBaz;
+}
+inline bool ExportedTableCreationResponse::has_baz() const {
+  return _internal_has_baz();
+}
+inline void ExportedTableCreationResponse::set_has_baz() {
+  _oneof_case_[0] = kBaz;
+}
+inline void ExportedTableCreationResponse::clear_baz() {
+  if (_internal_has_baz()) {
+    foo_.baz_ = 0;
+    clear_has_foo();
+  }
+}
+inline int32_t ExportedTableCreationResponse::_internal_baz() const {
+  if (_internal_has_baz()) {
+    return foo_.baz_;
+  }
+  return 0;
+}
+inline void ExportedTableCreationResponse::_internal_set_baz(int32_t value) {
+  if (!_internal_has_baz()) {
+    clear_foo();
+    set_has_baz();
+  }
+  foo_.baz_ = value;
+}
+inline int32_t ExportedTableCreationResponse::baz() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.baz)
+  return _internal_baz();
+}
+inline void ExportedTableCreationResponse::set_baz(int32_t value) {
+  _internal_set_baz(value);
+  // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.baz)
+}
+
+// map<string, string> my_map = 10;
+inline int ExportedTableCreationResponse::_internal_my_map_size() const {
+  return my_map_.size();
+}
+inline int ExportedTableCreationResponse::my_map_size() const {
+  return _internal_my_map_size();
+}
+inline void ExportedTableCreationResponse::clear_my_map() {
+  my_map_.Clear();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+ExportedTableCreationResponse::_internal_my_map() const {
+  return my_map_.GetMap();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+ExportedTableCreationResponse::my_map() const {
+  // @@protoc_insertion_point(field_map:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.my_map)
+  return _internal_my_map();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+ExportedTableCreationResponse::_internal_mutable_my_map() {
+  return my_map_.MutableMap();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+ExportedTableCreationResponse::mutable_my_map() {
+  // @@protoc_insertion_point(field_mutable_map:io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.my_map)
+  return _internal_mutable_my_map();
+}
+
+inline bool ExportedTableCreationResponse::has_foo() const {
+  return foo_case() != FOO_NOT_SET;
+}
+inline void ExportedTableCreationResponse::clear_has_foo() {
+  _oneof_case_[0] = FOO_NOT_SET;
+}
+inline ExportedTableCreationResponse::FooCase ExportedTableCreationResponse::foo_case() const {
+  return ExportedTableCreationResponse::FooCase(_oneof_case_[0]);
+}
 // -------------------------------------------------------------------
 
 // FetchTableRequest
@@ -49725,6 +50040,8 @@ BatchTableRequest::ops() const {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -49736,6 +50053,11 @@ BatchTableRequest::ops() const {
 
 PROTOBUF_NAMESPACE_OPEN
 
+template <> struct is_proto_enum< ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What>() {
+  return ::io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse_What_descriptor();
+}
 template <> struct is_proto_enum< ::io::deephaven::proto::backplane::grpc::MathContext_RoundingMode> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::io::deephaven::proto::backplane::grpc::MathContext_RoundingMode>() {

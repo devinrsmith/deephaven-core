@@ -6,7 +6,8 @@ import io.deephaven.qst.type.Type;
 @FunctionalInterface
 public interface BooleanFunction<T> extends TypedFunction<T> {
 
-    boolean applyAsBoolean(T value);
+    // todo Boolean?
+    Boolean applyAsBoolean(T value);
 
     @Override
     default BooleanType returnType() {

@@ -92,7 +92,8 @@ public class EngineMetrics {
         }
 
         // todo: other context
-        qplBlink = BlinkTableMapper.create(QueryPerformanceNuggetConfig.config("todo", 1024, ExecutionContext.getContext().getUpdateGraph()));
+        qplBlink = BlinkTableMapper.create(
+                QueryPerformanceNuggetConfig.config("todo", 1024, ExecutionContext.getContext().getUpdateGraph()));
     }
 
     public QueryTable getQplLoggerQueryTable() {

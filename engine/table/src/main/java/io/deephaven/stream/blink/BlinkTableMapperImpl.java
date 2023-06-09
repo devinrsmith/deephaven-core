@@ -28,6 +28,7 @@ import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 import io.deephaven.time.DateTimeUtils;
+import io.deephaven.util.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -51,8 +52,8 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         this.adapters = new ArrayList<>(config.columns().size());
         this.chunkSize = config.chunkSize();
         int i = 0;
-        for (TypedFunction<T> mapp : config.columns().values()) {
-            adapters.add(new Adapter(mapp, i));
+        for (TypedFunction<T> tf : config.columns().values()) {
+            adapters.add(new Adapter(tf, i));
             ++i;
         }
         final StreamToBlinkTableAdapter adapter =
@@ -118,19 +119,19 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
     }
 
     private class Adapter implements Visitor<T, Void> {
-        private final TypedFunction<T> mapp;
+        private final TypedFunction<T> tf;
         private final int index;
         private Collection<? extends T> values;
 
-        Adapter(TypedFunction<T> mapp, int index) {
-            this.mapp = Objects.requireNonNull(mapp);
+        Adapter(TypedFunction<T> tf, int index) {
+            this.tf = Objects.requireNonNull(tf);
             this.index = index;
         }
 
         public void addAll(Collection<? extends T> values) {
             this.values = values;
             try {
-                mapp.walk(this);
+                tf.walk(this);
             } finally {
                 this.values = null;
             }
@@ -141,87 +142,87 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(CharFunction<T> charMapp) {
+        public Void visit(CharFunction<T> f) {
             final WritableCharChunk<Values> c = chunk().asWritableCharChunk();
             for (T value : values) {
-                c.add(charMapp.applyAsChar(value));
+                c.add(f.applyAsChar(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(ByteFunction<T> byteMapp) {
+        public Void visit(ByteFunction<T> f) {
             final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
             for (T value : values) {
-                c.add(byteMapp.applyAsByte(value));
+                c.add(f.applyAsByte(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(ShortFunction<T> shortMapp) {
+        public Void visit(ShortFunction<T> f) {
             final WritableShortChunk<Values> c = chunk().asWritableShortChunk();
             for (T value : values) {
-                c.add(shortMapp.applyAsShort(value));
+                c.add(f.applyAsShort(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(IntFunction<T> intMapp) {
+        public Void visit(IntFunction<T> f) {
             final WritableIntChunk<Values> c = chunk().asWritableIntChunk();
             for (T value : values) {
-                c.add(intMapp.applyAsInt(value));
+                c.add(f.applyAsInt(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(LongFunction<T> longMapp) {
+        public Void visit(LongFunction<T> f) {
             final WritableLongChunk<Values> c = chunk().asWritableLongChunk();
             for (T value : values) {
-                c.add(longMapp.applyAsLong(value));
+                c.add(f.applyAsLong(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(FloatFunction<T> floatMapp) {
+        public Void visit(FloatFunction<T> f) {
             final WritableFloatChunk<Values> c = chunk().asWritableFloatChunk();
             for (T value : values) {
-                c.add(floatMapp.applyAsFloat(value));
+                c.add(f.applyAsFloat(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(DoubleFunction<T> doubleMapp) {
+        public Void visit(DoubleFunction<T> f) {
             final WritableDoubleChunk<Values> c = chunk().asWritableDoubleChunk();
             for (T value : values) {
-                c.add(doubleMapp.applyAsDouble(value));
+                c.add(f.applyAsDouble(value));
             }
             return null;
         }
 
         @Override
-        public Void visit(BooleanFunction<T> booleanMapp) {
+        public Void visit(BooleanFunction<T> f) {
             final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
             for (T value : values) {
-                c.add(booleanMapp.applyAsBoolean(value) ? (byte) 1 : (byte) 0);
+                c.add(BooleanUtils.booleanAsByte(f.applyAsBoolean(value)));
             }
             return null;
         }
 
         @Override
-        public Void visit(ObjectFunction<T, ?> objectMapp) {
-            if (Type.instantType().equals(objectMapp.returnType())) {
+        public Void visit(ObjectFunction<T, ?> f) {
+            if (Type.instantType().equals(f.returnType())) {
                 // noinspection unchecked
-                visitInstant((ObjectFunction<T, Instant>) objectMapp);
+                visitInstant((ObjectFunction<T, Instant>) f);
                 return null;
             }
             final WritableObjectChunk<Object, Values> c = chunk().asWritableObjectChunk();
             for (T value : values) {
-                c.add(objectMapp.apply(value));
+                c.add(f.apply(value));
             }
             return null;
         }

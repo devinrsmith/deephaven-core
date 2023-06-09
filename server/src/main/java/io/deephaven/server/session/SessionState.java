@@ -929,6 +929,7 @@ public class SessionState {
                             qplLogger.log(evaluationNumber,
                                     queryProcessingResults,
                                     nugget);
+                            memLoggers.blinkProducer().add(nugget);
                         }
                         final List<QueryPerformanceNugget> nuggets =
                                 queryProcessingResults.getRecorder().getOperationLevelPerformanceData();

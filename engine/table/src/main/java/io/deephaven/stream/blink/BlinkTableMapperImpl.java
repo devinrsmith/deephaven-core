@@ -16,7 +16,17 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.stream.blink.Mapp.Visitor;
+import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.DoubleFunction;
+import io.deephaven.stream.blink.tf.FloatFunction;
+import io.deephaven.stream.blink.tf.IntFunction;
+import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.ShortFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 import io.deephaven.time.DateTimeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,7 +36,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-final class Impl<T> implements Producer<T>, StreamPublisher {
+final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
     private final TableDefinition definition;
     private final List<Adapter> adapters;
@@ -36,12 +46,12 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
     private StreamConsumer consumer;
     private WritableChunk<Values>[] chunks;
 
-    Impl(BlinkTableMapperConfig<T> config) {
+    BlinkTableMapperImpl(BlinkTableMapperConfig<T> config) {
         this.definition = config.definition();
-        this.adapters = new ArrayList<>(config.map().size());
+        this.adapters = new ArrayList<>(config.columns().size());
         this.chunkSize = config.chunkSize();
         int i = 0;
-        for (Mapp<T> mapp : config.map().values()) {
+        for (TypedFunction<T> mapp : config.columns().values()) {
             adapters.add(new Adapter(mapp, i));
             ++i;
         }
@@ -108,11 +118,11 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
     }
 
     private class Adapter implements Visitor<T, Void> {
-        private final Mapp<T> mapp;
+        private final TypedFunction<T> mapp;
         private final int index;
         private Collection<? extends T> values;
 
-        Adapter(Mapp<T> mapp, int index) {
+        Adapter(TypedFunction<T> mapp, int index) {
             this.mapp = Objects.requireNonNull(mapp);
             this.index = index;
         }
@@ -131,7 +141,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(CharMapp<T> charMapp) {
+        public Void visit(CharFunction<T> charMapp) {
             final WritableCharChunk<Values> c = chunk().asWritableCharChunk();
             for (T value : values) {
                 c.add(charMapp.applyAsChar(value));
@@ -140,7 +150,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(ByteMapp<T> byteMapp) {
+        public Void visit(ByteFunction<T> byteMapp) {
             final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
             for (T value : values) {
                 c.add(byteMapp.applyAsByte(value));
@@ -149,7 +159,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(ShortMapp<T> shortMapp) {
+        public Void visit(ShortFunction<T> shortMapp) {
             final WritableShortChunk<Values> c = chunk().asWritableShortChunk();
             for (T value : values) {
                 c.add(shortMapp.applyAsShort(value));
@@ -158,7 +168,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(IntMapp<T> intMapp) {
+        public Void visit(IntFunction<T> intMapp) {
             final WritableIntChunk<Values> c = chunk().asWritableIntChunk();
             for (T value : values) {
                 c.add(intMapp.applyAsInt(value));
@@ -167,7 +177,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(LongMapp<T> longMapp) {
+        public Void visit(LongFunction<T> longMapp) {
             final WritableLongChunk<Values> c = chunk().asWritableLongChunk();
             for (T value : values) {
                 c.add(longMapp.applyAsLong(value));
@@ -176,7 +186,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(FloatMapp<T> floatMapp) {
+        public Void visit(FloatFunction<T> floatMapp) {
             final WritableFloatChunk<Values> c = chunk().asWritableFloatChunk();
             for (T value : values) {
                 c.add(floatMapp.applyAsFloat(value));
@@ -185,7 +195,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(DoubleMapp<T> doubleMapp) {
+        public Void visit(DoubleFunction<T> doubleMapp) {
             final WritableDoubleChunk<Values> c = chunk().asWritableDoubleChunk();
             for (T value : values) {
                 c.add(doubleMapp.applyAsDouble(value));
@@ -194,7 +204,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(BooleanMapp<T> booleanMapp) {
+        public Void visit(BooleanFunction<T> booleanMapp) {
             final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
             for (T value : values) {
                 c.add(booleanMapp.applyAsBoolean(value) ? (byte) 1 : (byte) 0);
@@ -203,10 +213,10 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(ObjectMapp<T, ?> objectMapp) {
+        public Void visit(ObjectFunction<T, ?> objectMapp) {
             if (Type.instantType().equals(objectMapp.returnType())) {
                 // noinspection unchecked
-                visitInstant((ObjectMapp<T, Instant>) objectMapp);
+                visitInstant((ObjectFunction<T, Instant>) objectMapp);
                 return null;
             }
             final WritableObjectChunk<Object, Values> c = chunk().asWritableObjectChunk();
@@ -216,7 +226,7 @@ final class Impl<T> implements Producer<T>, StreamPublisher {
             return null;
         }
 
-        private void visitInstant(ObjectMapp<T, Instant> instantMapp) {
+        private void visitInstant(ObjectFunction<T, Instant> instantMapp) {
             final WritableLongChunk<Values> c = chunk().asWritableLongChunk();
             for (T value : values) {
                 c.add(DateTimeUtils.epochNanos(instantMapp.apply(value)));

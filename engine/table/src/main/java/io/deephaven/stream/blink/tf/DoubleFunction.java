@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink;
+package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.Type;
@@ -6,7 +6,7 @@ import io.deephaven.qst.type.Type;
 import java.util.function.ToDoubleFunction;
 
 @FunctionalInterface
-public interface DoubleMapp<T> extends Mapp<T>, ToDoubleFunction<T> {
+public interface DoubleFunction<T> extends TypedFunction<T>, ToDoubleFunction<T> {
 
     @Override
     double applyAsDouble(T value);

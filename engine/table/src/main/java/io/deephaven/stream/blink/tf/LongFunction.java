@@ -1,14 +1,14 @@
-package io.deephaven.stream.blink;
+package io.deephaven.stream.blink.tf;
 
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.Type;
 
 import java.time.Instant;
-import java.util.function.LongFunction;
 import java.util.function.ToLongFunction;
 
 @FunctionalInterface
-public interface LongMapp<T> extends Mapp<T>, ToLongFunction<T> {
+public interface LongFunction<T> extends TypedFunction<T>, ToLongFunction<T> {
 
     @Override
     long applyAsLong(T value);
@@ -23,15 +23,15 @@ public interface LongMapp<T> extends Mapp<T>, ToLongFunction<T> {
         return visitor.visit(this);
     }
 
-    default <X> ObjectMapp<T, X> andThen(LongFunction<X> f, Type<X> returnType) {
-        return ObjectMapp.of(t -> f.apply(applyAsLong(t)), returnType);
+    default <X> ObjectFunction<T, X> andThen(java.util.function.LongFunction<X> f, GenericType<X> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsLong(t)), returnType);
     }
 
-    default ObjectMapp<T, Instant> ofEpochMilli() {
+    default ObjectFunction<T, Instant> ofEpochMilli() {
         return andThen(Instant::ofEpochMilli, Type.instantType());
     }
 
-    default ObjectMapp<T, Instant> ofEpochSecond() {
+    default ObjectFunction<T, Instant> ofEpochSecond() {
         return andThen(Instant::ofEpochSecond, Type.instantType());
     }
 }

@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink;
+package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;
@@ -6,7 +6,7 @@ import io.deephaven.qst.type.Type;
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
-public interface IntMapp<T> extends Mapp<T>, ToIntFunction<T> {
+public interface IntFunction<T> extends TypedFunction<T>, ToIntFunction<T> {
 
     @Override
     int applyAsInt(T value);

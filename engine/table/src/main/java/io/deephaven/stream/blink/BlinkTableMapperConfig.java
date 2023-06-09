@@ -5,6 +5,16 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.DoubleFunction;
+import io.deephaven.stream.blink.tf.FloatFunction;
+import io.deephaven.stream.blink.tf.IntFunction;
+import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.ShortFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
 import org.immutables.value.Value.Immutable;
 
 import java.time.Instant;
@@ -27,14 +37,14 @@ public abstract class BlinkTableMapperConfig<T> {
 
     public abstract UpdateSourceRegistrar updateSourceRegistrar();
 
-    public abstract Map<String, Mapp<T>> map();
+    public abstract Map<String, TypedFunction<T>> columns();
 
     final TableDefinition definition() {
         return TableDefinition.from(headers());
     }
 
     final List<ColumnHeader<?>> headers() {
-        return map()
+        return columns()
                 .entrySet()
                 .stream()
                 .map(e -> ColumnHeader.of(e.getKey(), e.getValue().returnType()))
@@ -49,25 +59,49 @@ public abstract class BlinkTableMapperConfig<T> {
 
         Builder<T> updateSourceRegistrar(UpdateSourceRegistrar updateSourceRegistrar);
 
-        Builder<T> putMap(String key, Mapp<T> value);
-
-        Builder<T> putAllMap(Map<String, ? extends Mapp<T>> entries);
-
-        default Builder<T> putInt(String key, IntMapp<T> f) {
-            return putMap(key, f);
+        default Builder<T> putBoolean(String key, BooleanFunction<T> f) {
+            return putColumn(key, f);
         }
 
-        default Builder<T> putLong(String key, LongMapp<T> f) {
-            return putMap(key, f);
+        default Builder<T> putByte(String key, ByteFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putChar(String key, CharFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putShort(String key, ShortFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putInt(String key, IntFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putLong(String key, LongFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putFloat(String key, FloatFunction<T> f) {
+            return putColumn(key, f);
+        }
+
+        default Builder<T> putDouble(String key, DoubleFunction<T> f) {
+            return putColumn(key, f);
         }
 
         default Builder<T> putString(String key, Function<T, String> f) {
-            return putMap(key, ObjectMapp.of(f, Type.stringType()));
+            return putColumn(key, ObjectFunction.of(f, Type.stringType()));
         }
 
         default Builder<T> putInstant(String key, Function<T, Instant> f) {
-            return putMap(key, ObjectMapp.of(f, Type.instantType()));
+            return putColumn(key, ObjectFunction.of(f, Type.instantType()));
         }
+
+        Builder<T> putColumn(String key, TypedFunction<T> value);
+
+        Builder<T> putAllColumns(Map<String, ? extends TypedFunction<T>> entries);
 
         BlinkTableMapperConfig<T> build();
     }

@@ -9,13 +9,9 @@ import org.immutables.value.Value.Parameter;
 @SimpleStyle
 public abstract class BlinkTableMapper<T> {
 
-    public static <T> BlinkTableMapper<T> of(Producer<T> producer, Table table) {
-        return ImmutableBlinkTableMapper.of(producer, table);
-    }
-
     public static <T> BlinkTableMapper<T> create(BlinkTableMapperConfig<T> config) {
-        final Impl<T> impl = new Impl<>(config);
-        return of(impl, impl.table());
+        final BlinkTableMapperImpl<T> impl = new BlinkTableMapperImpl<>(config);
+        return ImmutableBlinkTableMapper.of(impl, impl.table());
     }
 
     @Parameter

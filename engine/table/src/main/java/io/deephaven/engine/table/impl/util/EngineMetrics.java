@@ -5,12 +5,16 @@ package io.deephaven.engine.table.impl.util;
 
 import io.deephaven.base.clock.Clock;
 import io.deephaven.configuration.Configuration;
+import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.impl.perf.QueryPerformanceNugget;
 import io.deephaven.engine.tablelogger.EngineTableLoggers;
 import io.deephaven.engine.tablelogger.ProcessInfoLogLogger;
 import io.deephaven.engine.tablelogger.ProcessMetricsLogLogger;
 import io.deephaven.engine.tablelogger.QueryOperationPerformanceLogLogger;
 import io.deephaven.engine.tablelogger.QueryPerformanceLogLogger;
 import io.deephaven.engine.tablelogger.impl.memory.MemoryTableLogger;
+import io.deephaven.engine.tablelogger.impl.memory.QueryPerformanceNuggetConfig;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.stats.StatsIntradayLogger;
 import io.deephaven.engine.table.impl.QueryTable;
@@ -20,6 +24,8 @@ import io.deephaven.process.ProcessInfoConfig;
 import io.deephaven.process.ProcessInfoStoreDBImpl;
 import io.deephaven.process.StatsIntradayLoggerDBImpl;
 import io.deephaven.stats.Driver;
+import io.deephaven.stream.blink.BlinkTableMapper;
+import io.deephaven.stream.blink.Producer;
 
 import java.io.IOException;
 
@@ -56,6 +62,7 @@ public class EngineMetrics {
     }
 
     private final QueryPerformanceLogLogger qplLogger;
+    private final BlinkTableMapper<QueryPerformanceNugget> qplBlink;
     private final QueryOperationPerformanceLogLogger qoplLogger;
     private final ProcessInfoLogLogger processInfoLogger;
     private final ProcessMetricsLogLogger processMetricsLogger;
@@ -83,10 +90,17 @@ public class EngineMetrics {
             processMetricsLogger = null;
             statsLogger = null;
         }
+
+        // todo: other context
+        qplBlink = BlinkTableMapper.create(QueryPerformanceNuggetConfig.config("todo", 1024, ExecutionContext.getContext().getUpdateGraph()));
     }
 
     public QueryTable getQplLoggerQueryTable() {
         return MemoryTableLogger.maybeGetQueryTable(qplLogger);
+    }
+
+    public Table qplBlinkTable() {
+        return qplBlink.table();
     }
 
     public QueryTable getQoplLoggerQueryTable() {
@@ -95,6 +109,10 @@ public class EngineMetrics {
 
     public QueryPerformanceLogLogger getQplLogger() {
         return qplLogger;
+    }
+
+    public Producer<QueryPerformanceNugget> blinkProducer() {
+        return qplBlink.producer();
     }
 
     public QueryOperationPerformanceLogLogger getQoplLogger() {

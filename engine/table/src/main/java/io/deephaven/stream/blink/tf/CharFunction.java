@@ -1,10 +1,10 @@
-package io.deephaven.stream.blink;
+package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.CharType;
 import io.deephaven.qst.type.Type;
 
 @FunctionalInterface
-public interface CharMapp<T> extends Mapp<T> {
+public interface CharFunction<T> extends TypedFunction<T> {
 
     char applyAsChar(T value);
 

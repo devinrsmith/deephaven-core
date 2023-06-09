@@ -1,10 +1,10 @@
-package io.deephaven.stream.blink;
+package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.Type;
 
 @FunctionalInterface
-public interface BooleanMapp<T> extends Mapp<T> {
+public interface BooleanFunction<T> extends TypedFunction<T> {
 
     boolean applyAsBoolean(T value);
 

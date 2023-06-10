@@ -301,6 +301,9 @@ message ExportedTableCreationResponse {
   }
 
   map<string, string> my_map = 10;
+
+  map<string, What> my_map_2 = 11;
+
 }
 
 message FetchTableRequest {

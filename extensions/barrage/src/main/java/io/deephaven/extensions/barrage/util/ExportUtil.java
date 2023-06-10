@@ -11,6 +11,7 @@ import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.UncoalescedTable;
 import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse;
+import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse.What;
 import io.deephaven.proto.backplane.grpc.TableReference;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.stream.blink.BlinkTableMapper;
@@ -55,6 +56,8 @@ public class ExportUtil {
                 .setSize(size)
                 .setSchemaHeader(BarrageUtil.schemaBytesFromTable(table))
                 .putMyMap("mykey", "myvalue")
+                .putMyMap2("some", What.DOWN)
+                .putMyMap2("ok", What.UP)
                 .build();
 
         try {
@@ -65,7 +68,6 @@ public class ExportUtil {
             throw new RuntimeException(e);
         }
 
-        etcr.field
         mapper().producer().add(etcr);
         return etcr;
     }

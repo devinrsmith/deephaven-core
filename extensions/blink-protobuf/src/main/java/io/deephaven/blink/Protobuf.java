@@ -23,6 +23,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.BlinkTableMapper;
 import io.deephaven.stream.blink.BlinkTableMapperConfig;
 import io.deephaven.stream.blink.BlinkTableMapperConfig.Builder;
+import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
@@ -35,10 +36,8 @@ import io.deephaven.vector.ByteVector;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 public class Protobuf {
 
@@ -59,31 +58,7 @@ public class Protobuf {
 
     public static TypedFunction<Message> typedFunction(FieldDescriptor fd) {
         if (fd.isMapField()) {
-            final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
-            final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
-            final TypedFunction<Message> keyTf = typedFunction(keyFd);
-            if (keyTf == null) {
-                return null;
-            }
-            final TypedFunction<Message> valueTf = typedFunction(valueFd);
-            if (valueTf == null) {
-                return null;
-            }
-            // todo: proper Map types?
-            return ObjectFunction.of(new Function<Message, Map>() {
-                @Override
-                public Map apply(Message message) {
-                    final Map<?, ?> map = new LinkedHashMap<>();
-                    final int count = message.getRepeatedFieldCount(fd);
-                    for (int i = 0; i < count; ++i) {
-                        final Message entry = (Message) message.getRepeatedField(fd, i);
-                        entry.getField(keyFd);
-                        // todo
-                    }
-                    message.getRepeatedField(fd, 0)
-                    return null;
-                }
-            }, CustomType.of(Map.class));
+            return mapFunction(fd);
         }
         if (fd.isRepeated()) {
             return null;
@@ -128,7 +103,7 @@ public class Protobuf {
                     case "google.protobuf.StringValue":
                         return stringValueFunction(fd);
                     case "google.protobuf.BytesValue":
-                        return byteVectorFunction(fd);
+                        return byteVectorValueFunction(fd);
                     case "google.protobuf.Any":
                         return customTypedFunction(fd, Any.class);
                     case "google.protobuf.FieldMask":
@@ -228,6 +203,32 @@ public class Protobuf {
 
     private static ObjectFunction<Message, Duration> durationFunction(FieldDescriptor fd) {
         return ObjectFunction.of(v -> durationValue(v, fd), CustomType.of(Duration.class));
+    }
+
+    private static ObjectFunction<Message, Map> mapFunction(FieldDescriptor fd) {
+        final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
+        final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
+        final TypedFunction<Message> keyTf = typedFunction(keyFd);
+        if (keyTf == null) {
+            return null;
+        }
+        final TypedFunction<Message> valueTf = typedFunction(valueFd);
+        if (valueTf == null) {
+            return null;
+        }
+        // todo: proper Map types?
+        return ObjectFunction.of(message -> {
+            final Map<Object, Object> map = new LinkedHashMap<>();
+            final int count = message.getRepeatedFieldCount(fd);
+            for (int i = 0; i < count; ++i) {
+                final Message entry = (Message) message.getRepeatedField(fd, i);
+                // This is inefficient, but we are currently using Map; so, may not matter.
+                final Object key = keyTf.walk(new ApplyVisitor<>(entry));
+                final Object value = valueTf.walk(new ApplyVisitor<>(entry));
+                map.put(key, value);
+            }
+            return map;
+        }, CustomType.of(Map.class));
     }
 
     private static Boolean boolValue(Message value, FieldDescriptor fd) {

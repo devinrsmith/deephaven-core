@@ -106,7 +106,15 @@ public class Protobuf {
         final Map<String, TypedFunction<Message>> yolo = namedFunctions(messageType);
         final Map<String, TypedFunction<Message>> output = new LinkedHashMap<>(yolo.size());
         for (Entry<String, TypedFunction<Message>> e : yolo.entrySet()) {
-            output.put(name + "_" + e.getKey(), e.getValue());
+            final String newName = name + "_" + e.getKey();
+            final TypedFunction<Message> innerFunction = e.getValue();
+            final TypedFunction<Message> adaptedFunction = new ModifiedTypeFunction<>(message -> {
+                if (!message.hasField(fd)) {
+                    return null;
+                }
+                return (Message) message.getField(fd);
+            }, innerFunction);
+            output.put(newName, adaptedFunction);
         }
         return output;
     }
@@ -249,19 +257,6 @@ public class Protobuf {
         return m -> doubleApply(m, fd, toDouble);
     }
 
-    // private static ObjectFunction<Message, ByteVector> byteStringFunction(FieldDescriptor fd) {
-    // return ObjectFunction.of(m -> objectApply(m, fd, castTo(BYTE_STRING_TYPE))
-    // .map(ByteVectorByteStringWrapper::new)
-    // .orElse(null), ByteVector.type());
-    // }
-    //
-    // private static ObjectFunction<Message, ByteVector> bytesValueFunction(FieldDescriptor fd) {
-    // return ObjectFunction.of(m -> objectApply(m, fd, castTo(BYTES_VALUE_TYPE))
-    // .map(BytesValue::getValue)
-    // .map(ByteVectorByteStringWrapper::new)
-    // .orElse(null), ByteVector.type());
-    // }
-
     private static ObjectFunction<Message, Map> mapFunction(FieldDescriptor fd) {
         final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
         final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
@@ -288,14 +283,8 @@ public class Protobuf {
         }, Type.ofCustom(Map.class));
     }
 
-    // private static Boolean boolValueApply(Message m, FieldDescriptor fd) {
-    // return hasField(m, fd)
-    // ? ((BoolValue) m.getField(fd)).getValue()
-    // : null;
-    // }
-
     private static boolean hasField(Message m, FieldDescriptor fd) {
-        return !fd.hasPresence() || m.hasField(fd);
+        return m != null && (!fd.hasPresence() || m.hasField(fd));
     }
 
     private static Boolean boolApply(Message m, FieldDescriptor fd, BooleanFunction<Object> toBoolean) {

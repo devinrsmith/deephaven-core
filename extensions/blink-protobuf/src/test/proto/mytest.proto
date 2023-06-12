@@ -58,3 +58,44 @@ message TheWrappers {
   google.protobuf.StringValue string = 8;
   google.protobuf.BytesValue bytes = 9;
 }
+
+message RepeatedBasics {
+  repeated bool bool = 1;
+  repeated int32 int32 = 2;
+  repeated uint32 uint32 = 3;
+  repeated int64 int64 = 4;
+  repeated uint64 uint64 = 5;
+  repeated float float = 6;
+  repeated double double = 7;
+  repeated string string = 8;
+  repeated bytes bytes = 9;
+}
+
+message RepeatedWrappers {
+  repeated google.protobuf.BoolValue bool = 1;
+  repeated google.protobuf.Int32Value int32 = 2;
+  repeated google.protobuf.UInt32Value uint32 = 3;
+  repeated google.protobuf.Int64Value int64 = 4;
+  repeated google.protobuf.UInt64Value uint64 = 5;
+  repeated google.protobuf.FloatValue float = 6;
+  repeated google.protobuf.DoubleValue double = 7;
+  repeated google.protobuf.StringValue string = 8;
+  repeated google.protobuf.BytesValue bytes = 9;
+}
+
+message RepeatedTimestamp {
+  repeated google.protobuf.Timestamp ts = 1;
+}
+
+message RepeatedDuration {
+  repeated google.protobuf.Duration dur = 1;
+}
+
+message ANested {
+  message SubMessage {
+    int32 foo = 1;
+    int64 bar = 2;
+  }
+
+  SubMessage baz = 1;
+}

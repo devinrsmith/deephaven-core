@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2016-2022 Deephaven Data Labs and Patent Pending
+ */
+syntax = "proto3";
+
+package io.deephaven.blink.protobuf.test;
+
+option java_multiple_files = true;
+option optimize_for = SPEED;
+
+message UnionType {
+  oneof type {
+    bool bool = 1;
+    int32 int32 = 2;
+    uint32 uint32 = 3;
+    int32 int64 = 4;
+    uint32 uint64 = 5;
+    float float = 6;
+    double double = 7;
+    string string = 8;
+    bytes bytes = 9;
+  }
+}

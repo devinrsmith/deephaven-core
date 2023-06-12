@@ -4,26 +4,6 @@ import io.deephaven.qst.type.Type;
 
 public interface TypedFunction<T> {
 
-    static <X> IntFunction<X> of(IntFunction<X> x) {
-        return x;
-    }
-
-    static <X> LongFunction<X> of(LongFunction<X> x) {
-        return x;
-    }
-    //
-    // static <X, R> ObjectMapp<X, R> of(ObjectMapp<X, R> x) {
-    // return x;
-    // }
-    //
-    // static <X> ObjectMapp<X, Instant> ofEpochMilli(LongMapp<X> longMapp) {
-    // return longMapp.andThen(Instant::ofEpochMilli, null);
-    // }
-    //
-    // static <X> ObjectMapp<X, Instant> ofEpochSecond(LongMapp<X> longMapp) {
-    // return longMapp.andThen(Instant::ofEpochSecond, null);
-    // }
-
     Type<?> returnType();
 
     <V> V walk(Visitor<T, V> visitor);

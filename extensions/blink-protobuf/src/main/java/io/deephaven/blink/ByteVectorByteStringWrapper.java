@@ -6,13 +6,16 @@ import io.deephaven.vector.ByteVector;
 import io.deephaven.vector.ByteVectorDirect;
 import io.deephaven.vector.ByteVectorSlice;
 
+import java.util.Objects;
+
 import static io.deephaven.util.QueryConstants.NULL_BYTE;
 
 class ByteVectorByteStringWrapper implements ByteVector {
+
     private final ByteString bs;
 
     public ByteVectorByteStringWrapper(ByteString bs) {
-        this.bs = bs;
+        this.bs = Objects.requireNonNull(bs);
     }
 
     @Override
@@ -51,5 +54,15 @@ class ByteVectorByteStringWrapper implements ByteVector {
     @Override
     public ByteVector getDirect() {
         return new ByteVectorDirect(toArray());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return ByteVector.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return ByteVector.hashCode(this);
     }
 }

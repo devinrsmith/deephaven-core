@@ -3,6 +3,10 @@
  */
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
 package io.deephaven.blink.protobuf.test;
 
 option java_multiple_files = true;
@@ -13,11 +17,44 @@ message UnionType {
     bool bool = 1;
     int32 int32 = 2;
     uint32 uint32 = 3;
-    int32 int64 = 4;
-    uint32 uint64 = 5;
+    int64 int64 = 4;
+    uint64 uint64 = 5;
     float float = 6;
     double double = 7;
     string string = 8;
     bytes bytes = 9;
   }
+}
+
+message AStringStringMap {
+  map<string, string> properties = 1;
+}
+
+message ATimestamp {
+  google.protobuf.Timestamp ts = 1;
+}
+
+message ADuration {
+  google.protobuf.Duration dur = 1;
+}
+
+message AnEnum {
+  enum TheEnum {
+    FOO = 0;
+    BAR = 1;
+    BAZ = 2;
+  }
+  TheEnum fbb = 1;
+}
+
+message TheWrappers {
+  google.protobuf.BoolValue bool = 1;
+  google.protobuf.Int32Value int32 = 2;
+  google.protobuf.UInt32Value uint32 = 3;
+  google.protobuf.Int64Value int64 = 4;
+  google.protobuf.UInt64Value uint64 = 5;
+  google.protobuf.FloatValue float = 6;
+  google.protobuf.DoubleValue double = 7;
+  google.protobuf.StringValue string = 8;
+  google.protobuf.BytesValue bytes = 9;
 }

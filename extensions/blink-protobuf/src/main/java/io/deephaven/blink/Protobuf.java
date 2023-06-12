@@ -56,17 +56,17 @@ import java.util.function.Function;
 
 public class Protobuf {
 
-    private static final CustomType<Duration> DURATION_TYPE = CustomType.of(Duration.class);
-    private static final CustomType<EnumValueDescriptor> ENUM_TYPE = CustomType.of(EnumValueDescriptor.class);
-    private static final CustomType<Any> ANY_TYPE = CustomType.of(Any.class);
-    private static final CustomType<FieldMask> FIELD_MASK_TYPE = CustomType.of(FieldMask.class);
-    private static final CustomType<Message> MESSAGE_TYPE = CustomType.of(Message.class);
-    private static final CustomType<ByteString> BYTE_STRING_TYPE = CustomType.of(ByteString.class);
-    private static final CustomType<BytesValue> BYTES_VALUE_TYPE = CustomType.of(BytesValue.class);
-    private static final CustomType<StringValue> STRING_VALUE_TYPE = CustomType.of(StringValue.class);
-    private static final CustomType<Timestamp> TIMESTAMP_TYPE = CustomType.of(Timestamp.class);
+    private static final CustomType<Duration> DURATION_TYPE = Type.ofCustom(Duration.class);
+    private static final CustomType<EnumValueDescriptor> ENUM_TYPE = Type.ofCustom(EnumValueDescriptor.class);
+    private static final CustomType<Any> ANY_TYPE = Type.ofCustom(Any.class);
+    private static final CustomType<FieldMask> FIELD_MASK_TYPE = Type.ofCustom(FieldMask.class);
+    private static final CustomType<Message> MESSAGE_TYPE = Type.ofCustom(Message.class);
+    private static final CustomType<ByteString> BYTE_STRING_TYPE = Type.ofCustom(ByteString.class);
+    private static final CustomType<BytesValue> BYTES_VALUE_TYPE = Type.ofCustom(BytesValue.class);
+    private static final CustomType<StringValue> STRING_VALUE_TYPE = Type.ofCustom(StringValue.class);
+    private static final CustomType<Timestamp> TIMESTAMP_TYPE = Type.ofCustom(Timestamp.class);
     private static final CustomType<com.google.protobuf.Duration> PB_DURATION_TYPE =
-            CustomType.of(com.google.protobuf.Duration.class);
+            Type.ofCustom(com.google.protobuf.Duration.class);
 
     public static <M extends Message> BlinkTableMapper<M> create(Descriptor descriptor) {
         final Builder<M> builder = BlinkTableMapperConfig.<M>builder()
@@ -285,7 +285,7 @@ public class Protobuf {
                 map.put(key, value);
             }
             return map;
-        }, CustomType.of(Map.class));
+        }, Type.ofCustom(Map.class));
     }
 
     // private static Boolean boolValueApply(Message m, FieldDescriptor fd) {

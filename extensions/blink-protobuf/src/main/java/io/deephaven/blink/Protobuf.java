@@ -45,6 +45,8 @@ import io.deephaven.vector.LongVectorDirect;
 import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
 import io.deephaven.vector.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -106,14 +108,10 @@ public class Protobuf {
         final Map<String, TypedFunction<Message>> yolo = namedFunctions(messageType);
         final Map<String, TypedFunction<Message>> output = new LinkedHashMap<>(yolo.size());
         for (Entry<String, TypedFunction<Message>> e : yolo.entrySet()) {
+            // todo: naming schema
             final String newName = name + "_" + e.getKey();
             final TypedFunction<Message> innerFunction = e.getValue();
-            final TypedFunction<Message> adaptedFunction = new ModifiedTypeFunction<>(message -> {
-                if (!message.hasField(fd)) {
-                    return null;
-                }
-                return (Message) message.getField(fd);
-            }, innerFunction);
+            final TypedFunction<Message> adaptedFunction = new ModifiedTypeFunction<>(messageFunction(fd)::apply, innerFunction);
             output.put(newName, adaptedFunction);
         }
         return output;
@@ -257,6 +255,11 @@ public class Protobuf {
         return m -> doubleApply(m, fd, toDouble);
     }
 
+    private static ObjectFunction<Message, Message> messageFunction(FieldDescriptor fd) {
+        return ObjectFunction.of(m -> objectApply(m, fd, castTo(MESSAGE_TYPE)).orElse(null), MESSAGE_TYPE);
+    }
+
+
     private static ObjectFunction<Message, Map> mapFunction(FieldDescriptor fd) {
         final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
         final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
@@ -284,6 +287,8 @@ public class Protobuf {
     }
 
     private static boolean hasField(Message m, FieldDescriptor fd) {
+        // Note: in protobuf an actualized Message is never null.
+        // In the case of our translation layer though, we may be short-circuiting (todo continue describe)
         return m != null && (!fd.hasPresence() || m.hasField(fd));
     }
 
@@ -292,7 +297,6 @@ public class Protobuf {
                 ? toBoolean.applyAsBoolean(m.getField(fd))
                 : null;
     }
-
 
     private static int intApply(Message m, FieldDescriptor fd, IntFunction<Object> toInt) {
         return hasField(m, fd)
@@ -323,7 +327,6 @@ public class Protobuf {
                 ? Optional.of(toObject.apply(m.getField(fd)))
                 : Optional.empty();
     }
-
 
     private static Instant adapt(Timestamp t) {
         return t == null ? null : Instant.ofEpochSecond(t.getSeconds(), t.getNanos());

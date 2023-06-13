@@ -99,3 +99,15 @@ message ANested {
 
   SubMessage baz = 1;
 }
+
+message AMultiNested {
+  message SubMessage1 {
+    message SubMessage2 {
+      string world = 1;
+    }
+    int32 foo = 1;
+    int64 bar = 2;
+    SubMessage2 baz = 3;
+  }
+  SubMessage1 hello = 1;
+}

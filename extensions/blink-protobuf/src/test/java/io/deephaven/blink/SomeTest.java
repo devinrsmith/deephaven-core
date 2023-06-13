@@ -15,6 +15,9 @@ import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
 import io.deephaven.blink.protobuf.test.ADuration;
+import io.deephaven.blink.protobuf.test.AMultiNested;
+import io.deephaven.blink.protobuf.test.AMultiNested.SubMessage1;
+import io.deephaven.blink.protobuf.test.AMultiNested.SubMessage1.SubMessage2;
 import io.deephaven.blink.protobuf.test.ANested;
 import io.deephaven.blink.protobuf.test.ANested.SubMessage;
 import io.deephaven.blink.protobuf.test.AStringStringMap;
@@ -565,6 +568,9 @@ public class SomeTest {
 
     @Test
     void nested() {
+        final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(ANested.getDescriptor());
+        assertThat(nf.keySet()).containsExactly("baz_foo", "baz_bar");
+
         checkKey(
                 ANested.getDescriptor(),
                 "baz_foo",
@@ -580,6 +586,68 @@ public class SomeTest {
                 Map.of(
                         ANested.getDefaultInstance(), QueryConstants.NULL_LONG,
                         ANested.newBuilder().setBaz(SubMessage.newBuilder().setBar(42L).build()).build(), 42L));
+    }
+
+    /*
+    message AMultiNested {
+  message SubMessage1 {
+    message SubMessage2 {
+      string world = 1;
+    }
+    int32 foo = 1;
+    int64 bar = 2;
+    SubMessage2 baz = 3;
+  }
+  SubMessage1 hello = 1;
+}
+     */
+
+    @Test
+    void multiNested() {
+        final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(AMultiNested.getDescriptor());
+        assertThat(nf.keySet()).containsExactly("hello_foo", "hello_bar", "hello_baz_world");
+
+        final AMultiNested defaultInstance = AMultiNested.getDefaultInstance();
+        final AMultiNested noBaz = AMultiNested.newBuilder()
+                .setHello(SubMessage1.newBuilder().setFoo(42).setBar(43).build())
+                .build();
+        final AMultiNested bazDefault = AMultiNested.newBuilder()
+                .setHello(SubMessage1.newBuilder().setBaz(SubMessage2.getDefaultInstance()).build())
+                .build();
+        final AMultiNested bazWorld = AMultiNested.newBuilder()
+                .setHello(SubMessage1.newBuilder().setBaz(SubMessage2.newBuilder().setWorld("OK").build()).build())
+                .build();
+
+        checkKey(
+                AMultiNested.getDescriptor(),
+                "hello_foo",
+                Type.intType(),
+                Map.of(
+                        defaultInstance, QueryConstants.NULL_INT,
+                        noBaz, 42,
+                        bazDefault, 0,
+                        bazWorld, 0));
+
+        checkKey(
+                AMultiNested.getDescriptor(),
+                "hello_bar",
+                Type.longType(),
+                Map.of(
+                        defaultInstance, QueryConstants.NULL_LONG,
+                        noBaz, 43L,
+                        bazDefault, 0L,
+                        bazWorld, 0L));
+
+        checkKey(
+                AMultiNested.getDescriptor(),
+                "hello_baz_world",
+                Type.stringType(),
+                new HashMap<>() {{
+                    put(defaultInstance, null);
+                    put(noBaz, null);
+                    put(bazDefault, "");
+                    put(bazWorld, "OK");
+                }});
     }
 
     private static <T> void checkKey(

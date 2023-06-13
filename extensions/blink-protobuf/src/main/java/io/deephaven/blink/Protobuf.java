@@ -13,18 +13,16 @@ import com.google.protobuf.FloatValue;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
+import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
-import io.deephaven.engine.context.ExecutionContext;
+import com.google.protobuf.UnknownFieldSet;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.BlinkTableMapper;
-import io.deephaven.stream.blink.BlinkTableMapperConfig;
-import io.deephaven.stream.blink.BlinkTableMapperConfig.Builder;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -42,10 +40,13 @@ import java.lang.reflect.Array;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Protobuf {
 
@@ -60,51 +61,56 @@ public class Protobuf {
     private static final CustomType<Timestamp> TIMESTAMP_TYPE = Type.ofCustom(Timestamp.class);
     private static final CustomType<com.google.protobuf.Duration> PB_DURATION_TYPE =
             Type.ofCustom(com.google.protobuf.Duration.class);
+    public static final CustomType<UnknownFieldSet> UNKNOWN_FIELD_SET_TYPE = Type.ofCustom(UnknownFieldSet.class);
+    public static final CustomType<Unmapped> UNMAPPED_TYPE = Type.ofCustom(Unmapped.class);
 
-    public static <M extends Message> BlinkTableMapper<M> create(Descriptor descriptor) {
-        final Builder<M> builder = BlinkTableMapperConfig.<M>builder()
-                .name(descriptor.getFullName())
-                .chunkSize(1024)
-                .updateSourceRegistrar(ExecutionContext.getContext().getUpdateGraph());
-        for (Entry<String, TypedFunction<Message>> e : namedFunctions(descriptor).entrySet()) {
-            // noinspection unchecked
-            builder.putColumns(e.getKey(), (TypedFunction<M>) e.getValue());
-        }
-        return BlinkTableMapper.create(builder.build());
+    public interface Unmapped {
     }
 
-    static Map<String, TypedFunction<Message>> namedFunctions(Descriptor descriptor) {
-        final Map<String, TypedFunction<Message>> map = new LinkedHashMap<>();
+    static Map<List<String>, TypedFunction<Message>> namedFunctions(Descriptor descriptor, ProtobufOptions options) {
+        return namedFunctions(descriptor, options, List.of());
+    }
+
+    private static Map<List<String>, TypedFunction<Message>> namedFunctions(Descriptor descriptor,
+            ProtobufOptions options, List<String> context) {
+        final Map<List<String>, TypedFunction<Message>> map = new LinkedHashMap<>();
         for (FieldDescriptor field : descriptor.getFields()) {
-            map.putAll(namedFunctions(field));
+            map.putAll(namedFunctions(field, options, context));
         }
+        options.serializedSizeName().ifPresent(name -> map.put(List.of(name), serializedSizeFunction()));
+        options.unknownFieldSetName().ifPresent(name -> map.put(List.of(name), unknownFieldsFunction()));
+        options.rawMessageName().ifPresent(name -> map.put(List.of(name), rawMessageFunction()));
         return map;
     }
 
-    private static Map<String, TypedFunction<Message>> namedFunctions(FieldDescriptor fd) {
-        // todo
-        final TypedFunction<Message> tf = typedFunction(fd);
-        if (tf == null) {
+    private static Map<List<String>, TypedFunction<Message>> namedFunctions(FieldDescriptor fd, ProtobufOptions options,
+            List<String> context) {
+        final String name = fd.getName();
+        final List<String> fieldPath = path(context, name);
+        if (!options.include(fieldPath)) {
             return Map.of();
         }
-        final String name = fd.getName();
+
+        final TypedFunction<Message> tf = typedFunction(fd);
         if (!MESSAGE_TYPE.equals(tf.returnType())) {
-            // "simple" type, return it
-            return Map.of(name, tf);
+            return Map.of(fieldPath, tf);
         }
-        // todo: parameter if we want to break it down?
-        // let's recurse to break down the message:
+
+        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+
         final Descriptor messageType = fd.getMessageType();
-        final Map<String, TypedFunction<Message>> yolo = namedFunctions(messageType);
-        final Map<String, TypedFunction<Message>> output = new LinkedHashMap<>(yolo.size());
-        for (Entry<String, TypedFunction<Message>> e : yolo.entrySet()) {
-            // todo: naming schema
-            final String newName = name + "_" + e.getKey();
+        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
             final TypedFunction<Message> innerFunction = e.getValue();
-            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction(fd)::apply);
-            output.put(newName, adaptedFunction);
+            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+            output.put(e.getKey(), adaptedFunction);
         }
         return output;
+    }
+
+    private static List<String> path(List<String> context, String name) {
+        return Stream.concat(context.stream(), Stream.of(name)).collect(Collectors.toList());
     }
 
     private static TypedFunction<Message> typedFunction(FieldDescriptor fd) {
@@ -171,7 +177,7 @@ public class Protobuf {
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
-                return repeatedGenericFunction(fd, Type.booleanType().boxedArrayType());
+                return repeatedGenericFunction(fd, Boolean.class, UNMAPPED_TYPE.arrayType(), b -> null);
             case INT:
                 return repeatedIntFunction(fd, intLiteral());
             case LONG:
@@ -196,8 +202,7 @@ public class Protobuf {
                         return repeatedGenericFunction(fd, com.google.protobuf.Duration.class,
                                 DURATION_TYPE.arrayType(), Protobuf::adapt);
                     case "google.protobuf.BoolValue":
-                        return null;
-                    // return repeatedBooleanFunction(fd, boolValue());
+                        return repeatedGenericFunction(fd, BoolValue.class, UNMAPPED_TYPE.arrayType(), b -> null);
                     case "google.protobuf.Int32Value":
                         return repeatedIntFunction(fd, int32Value());
                     case "google.protobuf.UInt32Value":
@@ -252,17 +257,28 @@ public class Protobuf {
         return ObjectFunction.of(m -> objectApply(m, fd, castTo(MESSAGE_TYPE)).orElse(null), MESSAGE_TYPE);
     }
 
+    private static ObjectFunction<Message, UnknownFieldSet> unknownFieldsFunction() {
+        return ObjectFunction.of(MessageOrBuilder::getUnknownFields, UNKNOWN_FIELD_SET_TYPE);
+    }
 
-    private static ObjectFunction<Message, Map> mapFunction(FieldDescriptor fd) {
+    private static IntFunction<Message> serializedSizeFunction() {
+        return Message::getSerializedSize;
+    }
+
+    private static ObjectFunction<Message, Message> rawMessageFunction() {
+        return ObjectFunction.of(Function.identity(), MESSAGE_TYPE);
+    }
+
+    private static ObjectFunction<Message, ?> mapFunction(FieldDescriptor fd) {
         final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
-        final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
         final TypedFunction<Message> keyTf = typedFunction(keyFd);
-        if (keyTf == null) {
-            return null;
+        if (isUnmapped(keyTf.returnType())) {
+            return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
         }
+        final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
         final TypedFunction<Message> valueTf = typedFunction(valueFd);
-        if (valueTf == null) {
-            return null;
+        if (isUnmapped(valueTf.returnType())) {
+            return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
         }
         // todo: proper Map types?
         return ObjectFunction.of(message -> {
@@ -277,6 +293,10 @@ public class Protobuf {
             }
             return map;
         }, Type.ofCustom(Map.class));
+    }
+
+    private static boolean isUnmapped(Type<?> type) {
+        return UNMAPPED_TYPE.equals(type) || UNMAPPED_TYPE.arrayType().equals(type);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

@@ -8,7 +8,6 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface BooleanFunction<T> extends TypedFunction<T> {
 
-    // todo Boolean?
     Boolean applyAsBoolean(T value);
 
     @Override

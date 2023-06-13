@@ -1,7 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.GenericType;
-import io.deephaven.qst.type.NativeArrayType;
 
 import java.util.function.Function;
 
@@ -11,8 +10,8 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return new ObjectFunctionImpl<>(f, returnType);
     }
 
-    static <T, R> ObjectFunction<T, R> of2(Function<T, R> f, NativeArrayType<R, ?> returnType) {
-        return new ObjectFunctionImpl<>(f, returnType);
+    static <T, R> ObjectFunction<T, R> ofSingle(R sentinel, GenericType<R> type) {
+        return new ObjectFunctionImpl<>(m -> sentinel, type);
     }
 
     GenericType<R> returnType();

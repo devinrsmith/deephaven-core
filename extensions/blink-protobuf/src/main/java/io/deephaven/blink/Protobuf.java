@@ -35,7 +35,6 @@ import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.vector.BooleanVector;
-import io.deephaven.vector.ByteVector;
 import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
 
@@ -172,8 +171,7 @@ public class Protobuf {
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
-                return null;
-            // return repeatedBooleanFunction(fd, booleanLiteral());
+                return repeatedGenericFunction(fd, Type.booleanType().boxedArrayType());
             case INT:
                 return repeatedIntFunction(fd, intLiteral());
             case LONG:
@@ -386,45 +384,23 @@ public class Protobuf {
             Class<T> intermediateType,
             NativeArrayType<ArrayType, ComponentType> returnType,
             Function<T, ComponentType> adapter) {
-        return ObjectFunction.of(m -> {
-            final int count = m.getRepeatedFieldCount(fd);
-            final ArrayType array = returnType.newArrayInstance(count);
-            for (int i = 0; i < count; ++i) {
-                final ComponentType value = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
-                returnType.set(array, i, value);
-            }
-            return array;
-        }, returnType);
-
-        // return ObjectFunction.of(m -> {
-        // final int count = m.getRepeatedFieldCount(fd);
-        // //noinspection unchecked
-        // final R[] data = (R[]) Array.newInstance(returnType.componentType().clazz(), count);
-        // for (int i = 0; i < count; ++i) {
-        // data[i] = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
-        // }
-        // return data;
-        // }, returnType);
-
-        /*
-         * final GenericType<R[]> returnType = null; final NativeArrayType<?, R> arrayType = componentType.arrayType();
-         * 
-         * final ObjectFunction<Object, int[]> objectObjectFunction = ObjectFunction.of2(null,
-         * Type.intType().arrayType());
-         * 
-         * final ObjectFunction<Object, int[]> of = ObjectFunction.of(null, Type.intType().arrayType());
-         * 
-         * return ObjectFunction.of(message -> repeatedAdaptF(message, fd, adapter, intermediateType,
-         * componentType.clazz()), returnType);
-         */
+        return ObjectFunction.of(m -> repeatedGenericF(m, fd, intermediateType, returnType, adapter), returnType);
     }
 
-    // private static ObjectFunction<Message, Boolean[]> repeatedBooleanFunction(
-    // FieldDescriptor fd,
-    // BooleanFunction<Object> toBoolean) {
-    // final GenericType<ObjectVector<Boolean>> returnType = ;
-    // return ObjectFunction.of(m -> repeatedBooleanF(m, fd, toBoolean), returnType);
-    // }
+    private static <T, ArrayType, ComponentType> ArrayType repeatedGenericF(
+            Message m,
+            FieldDescriptor fd,
+            Class<T> intermediateType,
+            NativeArrayType<ArrayType, ComponentType> returnType,
+            Function<T, ComponentType> adapter) {
+        final int count = m.getRepeatedFieldCount(fd);
+        final ArrayType array = returnType.newArrayInstance(count);
+        for (int i = 0; i < count; ++i) {
+            final ComponentType value = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
+            returnType.set(array, i, value);
+        }
+        return array;
+    }
 
     private static int[] repeatedIntF(Message m, FieldDescriptor fd, IntFunction<Object> toInt) {
         final int count = m.getRepeatedFieldCount(fd);

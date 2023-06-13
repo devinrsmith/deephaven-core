@@ -33,6 +33,11 @@ public abstract class FloatType extends PrimitiveTypeBase<Float> {
     }
 
     @Override
+    public final NativeArrayType<Float[], Float> boxedArrayType() {
+        return NativeArrayType.of(Float[].class, this);
+    }
+
+    @Override
     public final <V extends PrimitiveType.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

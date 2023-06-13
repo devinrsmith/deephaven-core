@@ -412,19 +412,19 @@ public class SomeTest {
     @Test
     void repeated() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(RepeatedBasics.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("int32", "uint32", "int64", "uint64", "float", "double",
+        assertThat(nf.keySet()).containsExactly("boolean", "int32", "uint32", "int64", "uint64", "float", "double",
                 "string", "bytes");
 
         final RepeatedBasics allEmpty = RepeatedBasics.getDefaultInstance();
 
-        // checkKey(
-        // RepeatedBasics.getDescriptor(),
-        // "bool",
-        // BooleanVector.type(),
-        // Map.of(
-        // allEmpty, BooleanVector.empty(),
-        // RepeatedBasics.newBuilder().addBool(true).addBool(false).build(),
-        // BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
+        checkKey(
+                RepeatedBasics.getDescriptor(),
+                "bool",
+                Type.booleanType().boxedArrayType(),
+                Map.of(
+                        allEmpty, new Boolean[] {},
+                        RepeatedBasics.newBuilder().addBool(true).addBool(false).build(),
+                        new Boolean[] {true, false}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),

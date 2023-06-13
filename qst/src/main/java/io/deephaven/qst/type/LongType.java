@@ -33,6 +33,11 @@ public abstract class LongType extends PrimitiveTypeBase<Long> {
     }
 
     @Override
+    public final NativeArrayType<Long[], Long> boxedArrayType() {
+        return NativeArrayType.of(Long[].class, this);
+    }
+
+    @Override
     public final <V extends PrimitiveType.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

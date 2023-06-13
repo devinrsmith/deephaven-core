@@ -20,6 +20,8 @@ public interface PrimitiveType<T> extends Type<T> {
 
     Class<T> boxedClass();
 
+    NativeArrayType<?, T> boxedArrayType();
+
     <V extends Visitor> V walk(V visitor);
 
     interface Visitor {

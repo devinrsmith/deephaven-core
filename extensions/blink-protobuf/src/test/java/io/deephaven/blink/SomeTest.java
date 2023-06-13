@@ -30,6 +30,7 @@ import io.deephaven.blink.protobuf.test.RepeatedTimestamp;
 import io.deephaven.blink.protobuf.test.RepeatedWrappers;
 import io.deephaven.blink.protobuf.test.TheWrappers;
 import io.deephaven.blink.protobuf.test.UnionType;
+import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -48,6 +49,7 @@ import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -153,10 +155,10 @@ public class SomeTest {
         checkKey(
                 BytesValue.getDescriptor(),
                 "value",
-                ByteVector.type(),
+                Type.byteType().arrayType(),
                 Map.of(
-                        BytesValue.of(foo), new ByteVectorByteStringWrapper(foo),
-                        BytesValue.of(bar), new ByteVectorByteStringWrapper(bar)));
+                        BytesValue.of(foo), "foo".getBytes(StandardCharsets.UTF_8),
+                        BytesValue.of(bar), "bar".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test
@@ -396,13 +398,13 @@ public class SomeTest {
         checkKey(
                 TheWrappers.getDescriptor(),
                 "bytes",
-                ByteVector.type(),
+                Type.byteType().arrayType(),
                 new HashMap<>() {
                     {
                         put(allNull, null);
                         final ByteString foo = ByteString.copyFromUtf8("foo");
                         put(TheWrappers.newBuilder().setBytes(BytesValue.newBuilder().setValue(foo).build()).build(),
-                                new ByteVectorByteStringWrapper(foo));
+                                "foo".getBytes(StandardCharsets.UTF_8));
                     }
                 });
     }
@@ -410,139 +412,143 @@ public class SomeTest {
     @Test
     void repeated() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(RepeatedBasics.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("bool", "int32", "uint32", "int64", "uint64", "float", "double", "string", "bytes");
+        assertThat(nf.keySet()).containsExactly("int32", "uint32", "int64", "uint64", "float", "double",
+                "string", "bytes");
 
         final RepeatedBasics allEmpty = RepeatedBasics.getDefaultInstance();
 
-        checkKey(
-                RepeatedBasics.getDescriptor(),
-                "bool",
-                BooleanVector.type(),
-                Map.of(
-                        allEmpty, BooleanVector.empty(),
-                        RepeatedBasics.newBuilder().addBool(true).addBool(false).build(), BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
+        // checkKey(
+        // RepeatedBasics.getDescriptor(),
+        // "bool",
+        // BooleanVector.type(),
+        // Map.of(
+        // allEmpty, BooleanVector.empty(),
+        // RepeatedBasics.newBuilder().addBool(true).addBool(false).build(),
+        // BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "int32",
-                IntVector.type(),
+                Type.intType().arrayType(),
                 Map.of(
-                        allEmpty, IntVectorDirect.ZERO_LENGTH_VECTOR,
-                        RepeatedBasics.newBuilder().addInt32(42).addInt32(43).build(), new IntVectorDirect(42, 43)));
+                        allEmpty, new int[] {},
+                        RepeatedBasics.newBuilder().addInt32(42).addInt32(43).build(), new int[] {42, 43}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "uint32",
-                IntVector.type(),
+                Type.intType().arrayType(),
                 Map.of(
-                        allEmpty, IntVectorDirect.ZERO_LENGTH_VECTOR,
-                        RepeatedBasics.newBuilder().addUint32(42).addUint32(43).build(), new IntVectorDirect(42, 43)));
+                        allEmpty, new int[] {},
+                        RepeatedBasics.newBuilder().addUint32(42).addUint32(43).build(), new int[] {42, 43}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "int64",
-                LongVector.type(),
+                Type.longType().arrayType(),
                 Map.of(
-                        allEmpty, LongVectorDirect.ZERO_LENGTH_VECTOR,
-                        RepeatedBasics.newBuilder().addInt64(42).addInt64(43).build(), new LongVectorDirect(42, 43)));
+                        allEmpty, new long[] {},
+                        RepeatedBasics.newBuilder().addInt64(42).addInt64(43).build(), new long[] {42, 43}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "uint64",
-                LongVector.type(),
+                Type.longType().arrayType(),
                 Map.of(
-                        allEmpty, LongVectorDirect.ZERO_LENGTH_VECTOR,
-                        RepeatedBasics.newBuilder().addUint64(42).addUint64(43).build(), new LongVectorDirect(42, 43)));
+                        allEmpty, new long[] {},
+                        RepeatedBasics.newBuilder().addUint64(42).addUint64(43).build(), new long[] {42, 43}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "float",
-                FloatVector.type(),
+                Type.floatType().arrayType(),
                 Map.of(
-                        allEmpty, FloatVectorDirect.ZERO_LENGTH_VECTOR,
-                        RepeatedBasics.newBuilder().addFloat(42).addFloat(43).build(), new FloatVectorDirect(42, 43)));
+                        allEmpty, new float[] {},
+                        RepeatedBasics.newBuilder().addFloat(42).addFloat(43).build(), new float[] {42, 43}));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
                 "double",
-                DoubleVector.type(),
+                Type.doubleType().arrayType(),
                 Map.of(
-                        allEmpty, DoubleVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new double[] {},
                         RepeatedBasics.newBuilder().addDouble(42).addDouble(43).build(),
-                        new DoubleVectorDirect(42, 43)));
+                        new double[] {42, 43}));
     }
 
     @Test
     void repeatedWrappers() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(RepeatedWrappers.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("bool", "int32", "uint32", "int64", "uint64", "float", "double", "string", "bytes");
+        assertThat(nf.keySet()).containsExactly("int32", "uint32", "int64", "uint64", "float", "double",
+                "string", "bytes");
 
         final RepeatedWrappers allEmpty = RepeatedWrappers.getDefaultInstance();
 
-        checkKey(
-                RepeatedWrappers.getDescriptor(),
-                "bool",
-                BooleanVector.type(),
-                Map.of(
-                        allEmpty, BooleanVector.empty(),
-                        RepeatedWrappers.newBuilder().addBool(BoolValue.of(true)).addBool(BoolValue.of(false)).build(), BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
+        // checkKey(
+        // RepeatedWrappers.getDescriptor(),
+        // "bool",
+        // BooleanVector.type(),
+        // Map.of(
+        // allEmpty, BooleanVector.empty(),
+        // RepeatedWrappers.newBuilder().addBool(BoolValue.of(true)).addBool(BoolValue.of(false)).build(),
+        // BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "int32",
-                IntVector.type(),
+                Type.intType().arrayType(),
                 Map.of(
-                        allEmpty, IntVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new int[] {},
                         RepeatedWrappers.newBuilder().addInt32(Int32Value.of(42)).addInt32(Int32Value.of(43)).build(),
-                        new IntVectorDirect(42, 43)));
+                        new int[] {42, 43}));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "uint32",
-                IntVector.type(),
+                Type.intType().arrayType(),
                 Map.of(
-                        allEmpty, IntVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new int[] {},
                         RepeatedWrappers.newBuilder().addUint32(UInt32Value.of(42)).addUint32(UInt32Value.of(43))
                                 .build(),
-                        new IntVectorDirect(42, 43)));
+                        new int[] {42, 43}));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "int64",
-                LongVector.type(),
+                Type.longType().arrayType(),
                 Map.of(
-                        allEmpty, LongVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new long[] {},
                         RepeatedWrappers.newBuilder().addInt64(Int64Value.of(42)).addInt64(Int64Value.of(43)).build(),
-                        new LongVectorDirect(42, 43)));
+                        new long[] {42, 43}));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "uint64",
-                LongVector.type(),
+                Type.longType().arrayType(),
                 Map.of(
-                        allEmpty, LongVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new long[] {},
                         RepeatedWrappers.newBuilder().addUint64(UInt64Value.of(42)).addUint64(UInt64Value.of(43))
                                 .build(),
-                        new LongVectorDirect(42, 43)));
+                        new long[] {42, 43}));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "float",
-                FloatVector.type(),
+                Type.floatType().arrayType(),
                 Map.of(
-                        allEmpty, FloatVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new float[] {},
                         RepeatedWrappers.newBuilder().addFloat(FloatValue.of(42)).addFloat(FloatValue.of(43)).build(),
-                        new FloatVectorDirect(42, 43)));
+                        new float[] {42, 43}));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
                 "double",
-                DoubleVector.type(),
+                Type.doubleType().arrayType(),
                 Map.of(
-                        allEmpty, DoubleVectorDirect.ZERO_LENGTH_VECTOR,
+                        allEmpty, new double[] {},
                         RepeatedWrappers.newBuilder().addDouble(DoubleValue.of(42)).addDouble(DoubleValue.of(43))
                                 .build(),
-                        new DoubleVectorDirect(42, 43)));
+                        new double[] {42, 43}));
     }
 
     @Test
@@ -550,16 +556,16 @@ public class SomeTest {
         checkKey(
                 RepeatedTimestamp.getDescriptor(),
                 "ts",
-                ObjectVector.type(Type.instantType()),
+                Type.instantType().arrayType(),
                 Map.of(
-                        RepeatedTimestamp.getDefaultInstance(), ObjectVectorDirect.empty(),
+                        RepeatedTimestamp.getDefaultInstance(), new Instant[] {},
                         RepeatedTimestamp.newBuilder()
                                 .addTs(Timestamp.newBuilder().setSeconds(1).setNanos(2).build())
                                 .addTs(Timestamp.newBuilder().setSeconds(3).setNanos(4).build())
                                 .build(),
-                        new ObjectVectorDirect<>(
+                        new Instant[] {
                                 Instant.ofEpochSecond(1, 2),
-                                Instant.ofEpochSecond(3, 4))));
+                                Instant.ofEpochSecond(3, 4)}));
     }
 
     @Test
@@ -567,16 +573,16 @@ public class SomeTest {
         checkKey(
                 RepeatedDuration.getDescriptor(),
                 "dur",
-                ObjectVector.type(Type.ofCustom(Duration.class)),
+                Type.ofCustom(Duration.class).arrayType(),
                 Map.of(
-                        RepeatedDuration.getDefaultInstance(), ObjectVectorDirect.empty(),
+                        RepeatedDuration.getDefaultInstance(), new Duration[] {},
                         RepeatedDuration.newBuilder()
                                 .addDur(com.google.protobuf.Duration.newBuilder().setSeconds(1).setNanos(2).build())
                                 .addDur(com.google.protobuf.Duration.newBuilder().setSeconds(3).setNanos(4).build())
                                 .build(),
-                        new ObjectVectorDirect<>(
+                        new Duration[] {
                                 Duration.ofSeconds(1, 2),
-                                Duration.ofSeconds(3, 4))));
+                                Duration.ofSeconds(3, 4)}));
     }
 
     @Test

@@ -20,7 +20,6 @@ import com.google.protobuf.UInt64Value;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
-import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.BlinkTableMapper;
@@ -132,7 +131,7 @@ public class Protobuf {
             case ENUM:
                 return castFunction(fd, ENUM_TYPE);
             case BYTE_STRING:
-                return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, ByteVector.type());
+                return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
             case MESSAGE:
                 switch (fd.getMessageType().getFullName()) {
                     case "google.protobuf.Timestamp":
@@ -156,7 +155,7 @@ public class Protobuf {
                     case "google.protobuf.StringValue":
                         return castFunction(fd, STRING_VALUE_TYPE).map(Protobuf::adapt, Type.stringType());
                     case "google.protobuf.BytesValue":
-                        return castFunction(fd, BYTES_VALUE_TYPE).map(Protobuf::adapt, ByteVector.type());
+                        return castFunction(fd, BYTES_VALUE_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
                     case "google.protobuf.Any":
                         return castFunction(fd, ANY_TYPE);
                     case "google.protobuf.FieldMask":
@@ -174,7 +173,7 @@ public class Protobuf {
         switch (fd.getJavaType()) {
             case BOOLEAN:
                 return null;
-                //return repeatedBooleanFunction(fd, booleanLiteral());
+            // return repeatedBooleanFunction(fd, booleanLiteral());
             case INT:
                 return repeatedIntFunction(fd, intLiteral());
             case LONG:
@@ -184,21 +183,23 @@ public class Protobuf {
             case DOUBLE:
                 return repeatedDoubleFunction(fd, doubleLiteral());
             case STRING:
-                return repeatedGenericFunction(fd, Type.stringType());
+                return repeatedGenericFunction(fd, Type.stringType().arrayType());
             case ENUM:
-                return repeatedGenericFunction(fd, ENUM_TYPE);
+                return repeatedGenericFunction(fd, ENUM_TYPE.arrayType());
             case BYTE_STRING:
-                return repeatedGenericFunction(fd, ByteVector.type(), ByteString.class, Protobuf::adapt);
+                return repeatedGenericFunction(fd, ByteString.class, Type.byteType().arrayType().arrayType(),
+                        Protobuf::adapt);
             case MESSAGE:
                 switch (fd.getMessageType().getFullName()) {
                     case "google.protobuf.Timestamp":
-                        return repeatedGenericFunction(fd, Type.instantType(), Timestamp.class, Protobuf::adapt);
-                    case "google.protobuf.Duration":
-                        return repeatedGenericFunction(fd, DURATION_TYPE, com.google.protobuf.Duration.class,
+                        return repeatedGenericFunction(fd, Timestamp.class, Type.instantType().arrayType(),
                                 Protobuf::adapt);
+                    case "google.protobuf.Duration":
+                        return repeatedGenericFunction(fd, com.google.protobuf.Duration.class,
+                                DURATION_TYPE.arrayType(), Protobuf::adapt);
                     case "google.protobuf.BoolValue":
                         return null;
-                        //return repeatedBooleanFunction(fd, boolValue());
+                    // return repeatedBooleanFunction(fd, boolValue());
                     case "google.protobuf.Int32Value":
                         return repeatedIntFunction(fd, int32Value());
                     case "google.protobuf.UInt32Value":
@@ -212,15 +213,17 @@ public class Protobuf {
                     case "google.protobuf.DoubleValue":
                         return repeatedDoubleFunction(fd, doubleValue());
                     case "google.protobuf.StringValue":
-                        return repeatedGenericFunction(fd, Type.stringType(), StringValue.class, Protobuf::adapt);
+                        return repeatedGenericFunction(fd, StringValue.class, Type.stringType().arrayType(),
+                                Protobuf::adapt);
                     case "google.protobuf.BytesValue":
-                        return repeatedGenericFunction(fd, ByteVector.type(), BytesValue.class, Protobuf::adapt);
+                        return repeatedGenericFunction(fd, BytesValue.class, Type.byteType().arrayType().arrayType(),
+                                Protobuf::adapt);
                     case "google.protobuf.Any":
-                        return repeatedGenericFunction(fd, ANY_TYPE);
+                        return repeatedGenericFunction(fd, ANY_TYPE.arrayType());
                     case "google.protobuf.FieldMask":
-                        return repeatedGenericFunction(fd, FIELD_MASK_TYPE);
+                        return repeatedGenericFunction(fd, FIELD_MASK_TYPE.arrayType());
                     default:
-                        return repeatedGenericFunction(fd, MESSAGE_TYPE);
+                        return repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType());
                 }
             default:
                 throw new IllegalStateException();
@@ -335,12 +338,12 @@ public class Protobuf {
         return d == null ? null : Duration.ofSeconds(d.getSeconds(), d.getNanos());
     }
 
-    private static ByteVector adapt(ByteString bs) {
-        return bs == null ? null : new ByteVectorByteStringWrapper(bs);
+    private static byte[] adapt(ByteString bs) {
+        return bs == null ? null : bs.toByteArray();
     }
 
-    private static ByteVector adapt(BytesValue bv) {
-        return bv == null ? null : new ByteVectorByteStringWrapper(bv.getValue());
+    private static byte[] adapt(BytesValue bv) {
+        return bv == null ? null : bv.getValue().toByteArray();
     }
 
     private static String adapt(StringValue sv) {
@@ -372,44 +375,56 @@ public class Protobuf {
     }
 
 
-    private static <T> ObjectFunction<Message, T[]> repeatedGenericFunction(FieldDescriptor fd,
-            GenericType<T> type) {
-        return repeatedGenericFunction(fd, type, type.clazz(), Function.identity());
+    private static <ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
+            FieldDescriptor fd,
+            NativeArrayType<ArrayType, ComponentType> returnType) {
+        return repeatedGenericFunction(fd, returnType.componentType().clazz(), returnType, Function.identity());
     }
 
-    private static <T, R> ObjectFunction<Message, R[]> repeatedGenericFunction(
+    private static <T, ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
             FieldDescriptor fd,
             Class<T> intermediateType,
-            Class<R> componentType,
-            Function<T, R> adapter) {
-        final GenericType<R[]> returnType = null;
+            NativeArrayType<ArrayType, ComponentType> returnType,
+            Function<T, ComponentType> adapter) {
         return ObjectFunction.of(m -> {
             final int count = m.getRepeatedFieldCount(fd);
-            //noinspection unchecked
-            final R[] data = (R[]) Array.newInstance(componentType, count);
+            final ArrayType array = returnType.newArrayInstance(count);
             for (int i = 0; i < count; ++i) {
-                data[i] = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
+                final ComponentType value = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
+                returnType.set(array, i, value);
             }
-            return data;
+            return array;
         }, returnType);
 
+        // return ObjectFunction.of(m -> {
+        // final int count = m.getRepeatedFieldCount(fd);
+        // //noinspection unchecked
+        // final R[] data = (R[]) Array.newInstance(returnType.componentType().clazz(), count);
+        // for (int i = 0; i < count; ++i) {
+        // data[i] = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
+        // }
+        // return data;
+        // }, returnType);
+
         /*
-        final GenericType<R[]> returnType = null;
-        final NativeArrayType<?, R> arrayType = componentType.arrayType();
-
-        final ObjectFunction<Object, int[]> objectObjectFunction = ObjectFunction.of2(null, Type.intType().arrayType());
-
-        final ObjectFunction<Object, int[]> of = ObjectFunction.of(null, Type.intType().arrayType());
-
-        return ObjectFunction.of(message -> repeatedAdaptF(message, fd, adapter, intermediateType, componentType.clazz()), returnType);*/
+         * final GenericType<R[]> returnType = null; final NativeArrayType<?, R> arrayType = componentType.arrayType();
+         * 
+         * final ObjectFunction<Object, int[]> objectObjectFunction = ObjectFunction.of2(null,
+         * Type.intType().arrayType());
+         * 
+         * final ObjectFunction<Object, int[]> of = ObjectFunction.of(null, Type.intType().arrayType());
+         * 
+         * return ObjectFunction.of(message -> repeatedAdaptF(message, fd, adapter, intermediateType,
+         * componentType.clazz()), returnType);
+         */
     }
 
-//    private static ObjectFunction<Message, Boolean[]> repeatedBooleanFunction(
-//            FieldDescriptor fd,
-//            BooleanFunction<Object> toBoolean) {
-//        final GenericType<ObjectVector<Boolean>> returnType = ;
-//        return ObjectFunction.of(m -> repeatedBooleanF(m, fd, toBoolean), returnType);
-//    }
+    // private static ObjectFunction<Message, Boolean[]> repeatedBooleanFunction(
+    // FieldDescriptor fd,
+    // BooleanFunction<Object> toBoolean) {
+    // final GenericType<ObjectVector<Boolean>> returnType = ;
+    // return ObjectFunction.of(m -> repeatedBooleanF(m, fd, toBoolean), returnType);
+    // }
 
     private static int[] repeatedIntF(Message m, FieldDescriptor fd, IntFunction<Object> toInt) {
         final int count = m.getRepeatedFieldCount(fd);
@@ -447,9 +462,10 @@ public class Protobuf {
         return direct;
     }
 
-    private static <T, R> R[] repeatedAdaptF(Message m, FieldDescriptor fd, Function<T, R> f, Class<T> clazz, Class<R> clazzR) {
+    private static <T, R> R[] repeatedAdaptF(Message m, FieldDescriptor fd, Function<T, R> f, Class<T> clazz,
+            Class<R> clazzR) {
         final int count = m.getRepeatedFieldCount(fd);
-        //noinspection unchecked
+        // noinspection unchecked
         final R[] data = (R[]) Array.newInstance(clazzR, count);
         for (int i = 0; i < count; ++i) {
             data[i] = f.apply(repeatedObjectValue(m, fd, i, clazz));
@@ -457,9 +473,10 @@ public class Protobuf {
         return data;
     }
 
-    private static <T, R> R[] repeatedAdaptF2(Message m, FieldDescriptor fd, ObjectFunction<T, R> f, Class<T> clazz, Class<R> clazzR) {
+    private static <T, R> R[] repeatedAdaptF2(Message m, FieldDescriptor fd, ObjectFunction<T, R> f, Class<T> clazz,
+            Class<R> clazzR) {
         final int count = m.getRepeatedFieldCount(fd);
-        //noinspection unchecked
+        // noinspection unchecked
         final R[] data = (R[]) Array.newInstance(clazzR, count);
         for (int i = 0; i < count; ++i) {
             data[i] = f.apply(repeatedObjectValue(m, fd, i, clazz));
@@ -471,7 +488,8 @@ public class Protobuf {
         return clazz.cast(m.getRepeatedField(fd, index));
     }
 
-    private static ObjectVector<Boolean> repeatedBooleanF(Message m, FieldDescriptor fd, BooleanFunction<Object> toBoolean) {
+    private static ObjectVector<Boolean> repeatedBooleanF(Message m, FieldDescriptor fd,
+            BooleanFunction<Object> toBoolean) {
         final int count = m.getRepeatedFieldCount(fd);
         if (count == 0) {
             return BooleanVector.empty();

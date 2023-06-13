@@ -51,6 +51,15 @@ public abstract class NativeArrayType<T, ComponentType> extends ArrayTypeBase<T,
         return visitor;
     }
 
+    public final T newArrayInstance(int length) {
+        // noinspection unchecked
+        return (T) Array.newInstance(componentType().clazz(), length);
+    }
+
+    public final void set(T array, int index, ComponentType value) {
+        Array.set(array, index, value);
+    }
+
     @Check
     final void checkArrayType() {
         if (!clazz().isArray()) {

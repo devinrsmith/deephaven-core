@@ -17,7 +17,7 @@ public interface BooleanVector extends ObjectVector<Boolean> {
         }
         return (BooleanVector) Proxy.newProxyInstance(
                 BooleanVector.class.getClassLoader(),
-                new Class[]{BooleanVector.class},
+                new Class[] {BooleanVector.class},
                 (proxy, method, args) -> method.invoke(delegate, args));
     }
 

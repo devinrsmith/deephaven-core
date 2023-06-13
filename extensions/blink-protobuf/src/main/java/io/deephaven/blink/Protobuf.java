@@ -20,6 +20,8 @@ import com.google.protobuf.UInt64Value;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.IntType;
+import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.BlinkTableMapper;
 import io.deephaven.stream.blink.BlinkTableMapperConfig;
@@ -33,21 +35,12 @@ import io.deephaven.stream.blink.tf.LongFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
+import io.deephaven.vector.BooleanVector;
 import io.deephaven.vector.ByteVector;
-import io.deephaven.vector.DoubleVector;
-import io.deephaven.vector.DoubleVectorDirect;
-import io.deephaven.vector.FloatVector;
-import io.deephaven.vector.FloatVectorDirect;
-import io.deephaven.vector.IntVector;
-import io.deephaven.vector.IntVectorDirect;
-import io.deephaven.vector.LongVector;
-import io.deephaven.vector.LongVectorDirect;
 import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
-import io.deephaven.vector.Vector;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Array;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -169,7 +162,6 @@ public class Protobuf {
                     case "google.protobuf.FieldMask":
                         return castFunction(fd, FIELD_MASK_TYPE);
                     default:
-                        // todo recursive?
                         return castFunction(fd, MESSAGE_TYPE);
                 }
             default:
@@ -177,11 +169,12 @@ public class Protobuf {
         }
     }
 
-    private static ObjectFunction<Message, ? extends Vector<?>> repeatedTypedFunction(FieldDescriptor fd) {
+    private static ObjectFunction<Message, ?> repeatedTypedFunction(FieldDescriptor fd) {
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
                 return null;
+                //return repeatedBooleanFunction(fd, booleanLiteral());
             case INT:
                 return repeatedIntFunction(fd, intLiteral());
             case LONG:
@@ -205,6 +198,7 @@ public class Protobuf {
                                 Protobuf::adapt);
                     case "google.protobuf.BoolValue":
                         return null;
+                        //return repeatedBooleanFunction(fd, boolValue());
                     case "google.protobuf.Int32Value":
                         return repeatedIntFunction(fd, int32Value());
                     case "google.protobuf.UInt32Value":
@@ -357,109 +351,136 @@ public class Protobuf {
         return ObjectFunction.of(m -> objectApply(m, fd, castTo(type)).orElse(null), type);
     }
 
-    private static ObjectFunction<Message, IntVector> repeatedIntFunction(FieldDescriptor fd,
+    private static ObjectFunction<Message, int[]> repeatedIntFunction(FieldDescriptor fd,
             IntFunction<Object> toInt) {
-        return ObjectFunction.of(m -> repeatedIntF(m, fd, toInt), IntVector.type());
+        return ObjectFunction.of(m -> repeatedIntF(m, fd, toInt), Type.intType().arrayType());
     }
 
-    private static ObjectFunction<Message, LongVector> repeatedLongFunction(FieldDescriptor fd,
+    private static ObjectFunction<Message, long[]> repeatedLongFunction(FieldDescriptor fd,
             LongFunction<Object> toLong) {
-        return ObjectFunction.of(m -> repeatedLongF(m, fd, toLong), LongVector.type());
+        return ObjectFunction.of(m -> repeatedLongF(m, fd, toLong), Type.longType().arrayType());
     }
 
-    private static ObjectFunction<Message, FloatVector> repeatedFloatFunction(FieldDescriptor fd,
+    private static ObjectFunction<Message, float[]> repeatedFloatFunction(FieldDescriptor fd,
             FloatFunction<Object> toFloat) {
-        return ObjectFunction.of(m -> repeatedFloatF(m, fd, toFloat), FloatVector.type());
+        return ObjectFunction.of(m -> repeatedFloatF(m, fd, toFloat), Type.floatType().arrayType());
     }
 
-    private static ObjectFunction<Message, DoubleVector> repeatedDoubleFunction(FieldDescriptor fd,
+    private static ObjectFunction<Message, double[]> repeatedDoubleFunction(FieldDescriptor fd,
             DoubleFunction<Object> toDouble) {
-        return ObjectFunction.of(m -> repeatedDoubleF(m, fd, toDouble), DoubleVector.type());
+        return ObjectFunction.of(m -> repeatedDoubleF(m, fd, toDouble), Type.doubleType().arrayType());
     }
 
 
-    private static <T> ObjectFunction<Message, ObjectVector<T>> repeatedGenericFunction(FieldDescriptor fd,
+    private static <T> ObjectFunction<Message, T[]> repeatedGenericFunction(FieldDescriptor fd,
             GenericType<T> type) {
         return repeatedGenericFunction(fd, type, type.clazz(), Function.identity());
     }
 
-    private static <T, R> ObjectFunction<Message, ObjectVector<R>> repeatedGenericFunction(
+    private static <T, R> ObjectFunction<Message, R[]> repeatedGenericFunction(
             FieldDescriptor fd,
-            GenericType<R> componentType,
             Class<T> intermediateType,
+            Class<R> componentType,
             Function<T, R> adapter) {
-        return ObjectFunction.of(message -> repeatedAdaptF(message, fd, adapter, intermediateType),
-                ObjectVector.type(componentType));
+        final GenericType<R[]> returnType = null;
+        return ObjectFunction.of(m -> {
+            final int count = m.getRepeatedFieldCount(fd);
+            //noinspection unchecked
+            final R[] data = (R[]) Array.newInstance(componentType, count);
+            for (int i = 0; i < count; ++i) {
+                data[i] = adapter.apply(repeatedObjectValue(m, fd, i, intermediateType));
+            }
+            return data;
+        }, returnType);
+
+        /*
+        final GenericType<R[]> returnType = null;
+        final NativeArrayType<?, R> arrayType = componentType.arrayType();
+
+        final ObjectFunction<Object, int[]> objectObjectFunction = ObjectFunction.of2(null, Type.intType().arrayType());
+
+        final ObjectFunction<Object, int[]> of = ObjectFunction.of(null, Type.intType().arrayType());
+
+        return ObjectFunction.of(message -> repeatedAdaptF(message, fd, adapter, intermediateType, componentType.clazz()), returnType);*/
     }
 
-    private static IntVector repeatedIntF(Message m, FieldDescriptor fd, IntFunction<Object> toInt) {
+//    private static ObjectFunction<Message, Boolean[]> repeatedBooleanFunction(
+//            FieldDescriptor fd,
+//            BooleanFunction<Object> toBoolean) {
+//        final GenericType<ObjectVector<Boolean>> returnType = ;
+//        return ObjectFunction.of(m -> repeatedBooleanF(m, fd, toBoolean), returnType);
+//    }
+
+    private static int[] repeatedIntF(Message m, FieldDescriptor fd, IntFunction<Object> toInt) {
         final int count = m.getRepeatedFieldCount(fd);
-        if (count == 0) {
-            return IntVectorDirect.ZERO_LENGTH_VECTOR;
-        }
-        // TODO: we could have a wrapper instead?
         int[] direct = new int[count];
         for (int i = 0; i < count; ++i) {
             direct[i] = toInt.applyAsInt(m.getRepeatedField(fd, i));
         }
-        return new IntVectorDirect(direct);
+        return direct;
     }
 
-    private static LongVector repeatedLongF(Message m, FieldDescriptor fd, LongFunction<Object> toLong) {
+    private static long[] repeatedLongF(Message m, FieldDescriptor fd, LongFunction<Object> toLong) {
         final int count = m.getRepeatedFieldCount(fd);
-        if (count == 0) {
-            return LongVectorDirect.ZERO_LENGTH_VECTOR;
-        }
-        // TODO: we could have a wrapper instead?
         long[] direct = new long[count];
         for (int i = 0; i < count; ++i) {
             direct[i] = toLong.applyAsLong(m.getRepeatedField(fd, i));
         }
-        return new LongVectorDirect(direct);
+        return direct;
     }
 
-    private static FloatVector repeatedFloatF(Message m, FieldDescriptor fd, FloatFunction<Object> toFloat) {
+    private static float[] repeatedFloatF(Message m, FieldDescriptor fd, FloatFunction<Object> toFloat) {
         final int count = m.getRepeatedFieldCount(fd);
-        if (count == 0) {
-            return FloatVectorDirect.ZERO_LENGTH_VECTOR;
-        }
-        // TODO: we could have a wrapper instead?
         float[] direct = new float[count];
         for (int i = 0; i < count; ++i) {
             direct[i] = toFloat.applyAsFloat(m.getRepeatedField(fd, i));
         }
-        return new FloatVectorDirect(direct);
+        return direct;
     }
 
-    private static DoubleVector repeatedDoubleF(Message m, FieldDescriptor fd, DoubleFunction<Object> toDouble) {
+    private static double[] repeatedDoubleF(Message m, FieldDescriptor fd, DoubleFunction<Object> toDouble) {
         final int count = m.getRepeatedFieldCount(fd);
-        if (count == 0) {
-            return DoubleVectorDirect.ZERO_LENGTH_VECTOR;
-        }
-        // TODO: we could have a wrapper instead?
         double[] direct = new double[count];
         for (int i = 0; i < count; ++i) {
             direct[i] = toDouble.applyAsDouble(m.getRepeatedField(fd, i));
         }
-        return new DoubleVectorDirect(direct);
+        return direct;
     }
 
-    private static <T, R> ObjectVector<R> repeatedAdaptF(Message m, FieldDescriptor fd, Function<T, R> f,
-            Class<T> clazz) {
+    private static <T, R> R[] repeatedAdaptF(Message m, FieldDescriptor fd, Function<T, R> f, Class<T> clazz, Class<R> clazzR) {
         final int count = m.getRepeatedFieldCount(fd);
-        if (count == 0) {
-            return ObjectVectorDirect.empty();
-        }
-        final Object[] data = new Object[count];
+        //noinspection unchecked
+        final R[] data = (R[]) Array.newInstance(clazzR, count);
         for (int i = 0; i < count; ++i) {
             data[i] = f.apply(repeatedObjectValue(m, fd, i, clazz));
         }
-        // noinspection unchecked
-        return new ObjectVectorDirect<>((R[]) data);
+        return data;
+    }
+
+    private static <T, R> R[] repeatedAdaptF2(Message m, FieldDescriptor fd, ObjectFunction<T, R> f, Class<T> clazz, Class<R> clazzR) {
+        final int count = m.getRepeatedFieldCount(fd);
+        //noinspection unchecked
+        final R[] data = (R[]) Array.newInstance(clazzR, count);
+        for (int i = 0; i < count; ++i) {
+            data[i] = f.apply(repeatedObjectValue(m, fd, i, clazz));
+        }
+        return data;
     }
 
     private static <T> T repeatedObjectValue(Message m, FieldDescriptor fd, int index, Class<T> clazz) {
         return clazz.cast(m.getRepeatedField(fd, index));
+    }
+
+    private static ObjectVector<Boolean> repeatedBooleanF(Message m, FieldDescriptor fd, BooleanFunction<Object> toBoolean) {
+        final int count = m.getRepeatedFieldCount(fd);
+        if (count == 0) {
+            return BooleanVector.empty();
+        }
+        Boolean[] direct = new Boolean[count];
+        for (int i = 0; i < count; ++i) {
+            direct[i] = toBoolean.applyAsBoolean(m.getRepeatedField(fd, i));
+        }
+        return BooleanVector.proxy(new ObjectVectorDirect<>(direct));
     }
 
     private static BooleanFunction<Object> booleanLiteral() {

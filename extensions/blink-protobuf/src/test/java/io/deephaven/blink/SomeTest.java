@@ -34,8 +34,8 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
+import io.deephaven.vector.BooleanVector;
 import io.deephaven.vector.ByteVector;
-import io.deephaven.vector.ByteVectorDirect;
 import io.deephaven.vector.DoubleVector;
 import io.deephaven.vector.DoubleVectorDirect;
 import io.deephaven.vector.FloatVector;
@@ -48,7 +48,6 @@ import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -411,10 +410,17 @@ public class SomeTest {
     @Test
     void repeated() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(RepeatedBasics.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("int32", "uint32", "int64", "uint64", "float", "double", "string",
-                "bytes");
+        assertThat(nf.keySet()).containsExactly("bool", "int32", "uint32", "int64", "uint64", "float", "double", "string", "bytes");
 
         final RepeatedBasics allEmpty = RepeatedBasics.getDefaultInstance();
+
+        checkKey(
+                RepeatedBasics.getDescriptor(),
+                "bool",
+                BooleanVector.type(),
+                Map.of(
+                        allEmpty, BooleanVector.empty(),
+                        RepeatedBasics.newBuilder().addBool(true).addBool(false).build(), BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
 
         checkKey(
                 RepeatedBasics.getDescriptor(),
@@ -469,10 +475,17 @@ public class SomeTest {
     @Test
     void repeatedWrappers() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(RepeatedWrappers.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("int32", "uint32", "int64", "uint64", "float", "double", "string",
-                "bytes");
+        assertThat(nf.keySet()).containsExactly("bool", "int32", "uint32", "int64", "uint64", "float", "double", "string", "bytes");
 
         final RepeatedWrappers allEmpty = RepeatedWrappers.getDefaultInstance();
+
+        checkKey(
+                RepeatedWrappers.getDescriptor(),
+                "bool",
+                BooleanVector.type(),
+                Map.of(
+                        allEmpty, BooleanVector.empty(),
+                        RepeatedWrappers.newBuilder().addBool(BoolValue.of(true)).addBool(BoolValue.of(false)).build(), BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
 
         checkKey(
                 RepeatedWrappers.getDescriptor(),
@@ -587,11 +600,6 @@ public class SomeTest {
                         ANested.getDefaultInstance(), QueryConstants.NULL_LONG,
                         ANested.newBuilder().setBaz(SubMessage.newBuilder().setBar(42L).build()).build(), 42L));
     }
-
-    /*
-     * message AMultiNested { message SubMessage1 { message SubMessage2 { string world = 1; } int32 foo = 1; int64 bar =
-     * 2; SubMessage2 baz = 3; } SubMessage1 hello = 1; }
-     */
 
     @Test
     void multiNested() {

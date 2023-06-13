@@ -17,6 +17,7 @@ public class PrimitiveVectorTest {
     public void types()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         assertThat(PrimitiveVectorType.types()).containsExactlyInAnyOrder(
+                BooleanVector.type(),
                 ByteVector.type(),
                 CharVector.type(),
                 ShortVector.type(),

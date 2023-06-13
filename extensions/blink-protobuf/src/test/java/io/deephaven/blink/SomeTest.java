@@ -589,23 +589,15 @@ public class SomeTest {
     }
 
     /*
-    message AMultiNested {
-  message SubMessage1 {
-    message SubMessage2 {
-      string world = 1;
-    }
-    int32 foo = 1;
-    int64 bar = 2;
-    SubMessage2 baz = 3;
-  }
-  SubMessage1 hello = 1;
-}
+     * message AMultiNested { message SubMessage1 { message SubMessage2 { string world = 1; } int32 foo = 1; int64 bar =
+     * 2; SubMessage2 baz = 3; } SubMessage1 hello = 1; }
      */
 
     @Test
     void multiNested() {
         final Map<String, TypedFunction<Message>> nf = Protobuf.namedFunctions(AMultiNested.getDescriptor());
-        assertThat(nf.keySet()).containsExactly("hello_foo", "hello_bar", "hello_baz_world");
+        assertThat(nf.keySet()).containsExactly("hello_foo", "hello_bar", "hello_baz_world", "hello_baz_world2",
+                "hello_baz_world3");
 
         final AMultiNested defaultInstance = AMultiNested.getDefaultInstance();
         final AMultiNested noBaz = AMultiNested.newBuilder()
@@ -615,7 +607,11 @@ public class SomeTest {
                 .setHello(SubMessage1.newBuilder().setBaz(SubMessage2.getDefaultInstance()).build())
                 .build();
         final AMultiNested bazWorld = AMultiNested.newBuilder()
-                .setHello(SubMessage1.newBuilder().setBaz(SubMessage2.newBuilder().setWorld("OK").build()).build())
+                .setHello(SubMessage1.newBuilder().setBaz(SubMessage2.newBuilder()
+                        .setWorld("OK")
+                        .setWorld2(StringValue.newBuilder().setValue("OK2"))
+                        .setWorld3(DoubleValue.newBuilder().setValue(42.0d)).build())
+                        .build())
                 .build();
 
         checkKey(
@@ -642,12 +638,37 @@ public class SomeTest {
                 AMultiNested.getDescriptor(),
                 "hello_baz_world",
                 Type.stringType(),
-                new HashMap<>() {{
-                    put(defaultInstance, null);
-                    put(noBaz, null);
-                    put(bazDefault, "");
-                    put(bazWorld, "OK");
-                }});
+                new HashMap<>() {
+                    {
+                        put(defaultInstance, null);
+                        put(noBaz, null);
+                        put(bazDefault, "");
+                        put(bazWorld, "OK");
+                    }
+                });
+
+        checkKey(
+                AMultiNested.getDescriptor(),
+                "hello_baz_world2",
+                Type.stringType(),
+                new HashMap<>() {
+                    {
+                        put(defaultInstance, null);
+                        put(noBaz, null);
+                        put(bazDefault, null);
+                        put(bazWorld, "OK2");
+                    }
+                });
+
+        checkKey(
+                AMultiNested.getDescriptor(),
+                "hello_baz_world3",
+                Type.doubleType(),
+                Map.of(
+                        defaultInstance, QueryConstants.NULL_DOUBLE,
+                        noBaz, QueryConstants.NULL_DOUBLE,
+                        bazDefault, QueryConstants.NULL_DOUBLE,
+                        bazWorld, 42.0d));
     }
 
     private static <T> void checkKey(

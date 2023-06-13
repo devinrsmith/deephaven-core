@@ -96,7 +96,6 @@ public class Protobuf {
         if (tf == null) {
             return Map.of();
         }
-        // todo: json name?
         final String name = fd.getName();
         if (!MESSAGE_TYPE.equals(tf.returnType())) {
             // "simple" type, return it
@@ -111,7 +110,7 @@ public class Protobuf {
             // todo: naming schema
             final String newName = name + "_" + e.getKey();
             final TypedFunction<Message> innerFunction = e.getValue();
-            final TypedFunction<Message> adaptedFunction = new ModifiedTypeFunction<>(messageFunction(fd)::apply, innerFunction);
+            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction(fd)::apply);
             output.put(newName, adaptedFunction);
         }
         return output;
@@ -227,7 +226,6 @@ public class Protobuf {
                     case "google.protobuf.FieldMask":
                         return repeatedGenericFunction(fd, FIELD_MASK_TYPE);
                     default:
-                        // todo recursive?
                         return repeatedGenericFunction(fd, MESSAGE_TYPE);
                 }
             default:
@@ -286,11 +284,16 @@ public class Protobuf {
         }, Type.ofCustom(Map.class));
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+
+    // Note: in protobuf an actualized Message is never null.
+    // In the case of our translation layer though, the presence of a null Message means that the field, or some parent
+    // of the field, was not present; but we still need to translate the value for the specific column.
     private static boolean hasField(Message m, FieldDescriptor fd) {
-        // Note: in protobuf an actualized Message is never null.
-        // In the case of our translation layer though, we may be short-circuiting (todo continue describe)
-        return m != null && (!fd.hasPresence() || m.hasField(fd));
+        return m != null && (m.hasField(fd) || !fd.hasPresence());
     }
+
+    // All our calls to Message#getField are guarded by #hasField.
 
     private static Boolean boolApply(Message m, FieldDescriptor fd, BooleanFunction<Object> toBoolean) {
         return hasField(m, fd)
@@ -327,6 +330,8 @@ public class Protobuf {
                 ? Optional.of(toObject.apply(m.getField(fd)))
                 : Optional.empty();
     }
+
+    // ----------------------------------------------------------------------------------------------------------------
 
     private static Instant adapt(Timestamp t) {
         return t == null ? null : Instant.ofEpochSecond(t.getSeconds(), t.getNanos());

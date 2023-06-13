@@ -19,6 +19,15 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return visitor.visit(this);
     }
 
+    default ObjectFunction<T, R> onNull(R onNull) {
+        return ObjectFunction.of(x -> x == null ? onNull : apply(x), returnType());
+    }
+
+    @Override
+    default ObjectFunction<T, R> mapInput(Function<T, T> f) {
+        return ObjectFunction.of(x -> apply(f.apply(x)), returnType());
+    }
+
     default <R2> ObjectFunction<T, R2> map(ObjectFunction<R, R2> f) {
         return ObjectFunction.of(t -> f.apply(ObjectFunction.this.apply(t)), f.returnType());
     }

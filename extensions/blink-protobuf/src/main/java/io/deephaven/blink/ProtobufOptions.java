@@ -1,5 +1,7 @@
 package io.deephaven.blink;
 
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -42,6 +44,27 @@ public abstract class ProtobufOptions {
 
     final boolean include(List<String> path) {
         return !excludePaths().contains(path);
+    }
+
+    final boolean parseAdHocMessage(FieldDescriptor fd, ProtobufOptions options, List<String> context) {
+        return parseAdHocMessage(); // todo
+    }
+
+    final boolean parseAdHocRepeatedMessage(FieldDescriptor fd, ProtobufOptions options, List<String> context) {
+        return false;
+        //return parseAdHocMessage(); // todo
+    }
+
+    final Optional<String> unknownFieldSetName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
+        return unknownFieldSetName(); // todo
+    }
+
+    final Optional<String> serializedSizeName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
+        return serializedSizeName(); // todo
+    }
+
+    final Optional<String> rawMessageName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
+        return rawMessageName(); // todo
     }
 
     public interface Builder {

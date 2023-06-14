@@ -20,19 +20,24 @@ import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
 import com.google.protobuf.UnknownFieldSet;
+import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.GenericType.Visitor;
 import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.vector.BooleanVector;
@@ -75,9 +80,9 @@ public class Protobuf {
         for (FieldDescriptor field : descriptor.getFields()) {
             map.putAll(namedFunctions(field, options, context));
         }
-        options.serializedSizeName().ifPresent(name -> map.put(List.of(name), serializedSizeFunction()));
-        options.unknownFieldSetName().ifPresent(name -> map.put(List.of(name), unknownFieldsFunction()));
-        options.rawMessageName().ifPresent(name -> map.put(List.of(name), rawMessageFunction()));
+        options.serializedSizeName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), serializedSizeFunction()));
+        options.unknownFieldSetName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), unknownFieldsFunction()));
+        options.rawMessageName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), rawMessageFunction()));
         return map;
     }
 
@@ -94,27 +99,47 @@ public class Protobuf {
             return Map.of(fieldPath, tf);
         }
 
+        // All simple and known messages types should already be handled
+
         if (fd.getJavaType() != JavaType.MESSAGE) {
             throw new IllegalStateException();
         }
 
-        if (!fd.isRepeated() && options.parseAdHocMessage()) {
-            final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
-            final Descriptor messageType = fd.getMessageType();
-            final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
-            final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
-            for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
-                final TypedFunction<Message> innerFunction = e.getValue();
-                final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
-                output.put(e.getKey(), adaptedFunction);
-            }
-            return output;
+        if (!fd.isRepeated()) {
+            return options.parseAdHocMessage(fd, options, context)
+                    ? singularMessageFunctions(fd, options, fieldPath)
+                    : Map.of(fieldPath, castFunction(fd, MESSAGE_TYPE));
+        } else {
+            return options.parseAdHocRepeatedMessage(fd, options, context)
+                    ? repeatedMessageFunctions(fd, options, fieldPath)
+                    : Map.of(fieldPath, repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType()));
         }
+    }
 
-        // Fallback to simple Message.class type
-        return Map.of(fieldPath, fd.isRepeated()
-                ? repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType())
-                : castFunction(fd, MESSAGE_TYPE));
+    private static Map<List<String>, TypedFunction<Message>> singularMessageFunctions(FieldDescriptor fd, ProtobufOptions options, List<String> fieldPath) {
+        final Descriptor messageType = fd.getMessageType();
+        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
+            final TypedFunction<Message> innerFunction = e.getValue();
+            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+            output.put(e.getKey(), adaptedFunction);
+        }
+        return output;
+    }
+
+    private static Map<List<String>, TypedFunction<Message>> repeatedMessageFunctions(FieldDescriptor fd, ProtobufOptions options, List<String> fieldPath) {
+        final Descriptor messageType = fd.getMessageType();
+//        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
+            final TypedFunction<Message> innerFunction = e.getValue();
+            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+            output.put(e.getKey(), adaptedFunction);
+        }
+        return output;
     }
 
     private static List<String> path(List<String> context, String name) {
@@ -123,11 +148,15 @@ public class Protobuf {
 
     private static TypedFunction<Message> typedFunction(FieldDescriptor fd, ProtobufOptions options) {
         if (fd.isMapField()) {
+            // special case? todo, make optional
             return mapFunction(fd, options);
         }
-        if (fd.isRepeated()) {
-            return repeatedTypedFunction(fd, options);
-        }
+        return !fd.isRepeated()
+                ? singularTypedFunction(fd, options)
+                : repeatedTypedFunction(fd, options);
+    }
+
+    private static TypedFunction<Message> singularTypedFunction(FieldDescriptor fd, ProtobufOptions options) {
         switch (fd.getJavaType()) {
             case BOOLEAN:
                 return booleanFunction(fd, booleanLiteral());
@@ -171,7 +200,7 @@ public class Protobuf {
             case ENUM:
                 return repeatedGenericFunction(fd, ENUM_TYPE.arrayType());
             case BYTE_STRING:
-                return repeatedGenericFunction(fd, ByteString.class, Protobuf::adapt, Type.byteType().arrayType().arrayType());
+                return repeatedGenericFunction(fd, BYTE_STRING_TYPE.clazz(), Protobuf::adapt, Type.byteType().arrayType().arrayType());
             case MESSAGE:
                 final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
                 // Note: we could consider repeating all of the individual types in this message in the future.
@@ -775,6 +804,168 @@ public class Protobuf {
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
             return repeatedGenericFunction(fd, type.arrayType());
+        }
+    }
+
+    private static <T> TypedFunction<T> toArray(TypedFunction<T> tf) {
+
+    }
+
+    private static class ToArrayTypedFunction implements TypedFunction.Visitor<Object, TypedFunction<Message>> {
+
+        private final FieldDescriptor fd;
+
+        public ToArrayTypedFunction(FieldDescriptor fd) {
+            this.fd = Objects.requireNonNull(fd);
+        }
+
+        @Override
+        public TypedFunction<Message> visit(BooleanFunction<Object> f) {
+            // todo
+            return repeatedGenericFunction(fd, Boolean.class, b -> null, UNMAPPED_TYPE.arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(CharFunction<Object> f) {
+            return ObjectFunction.of(m -> toChars(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(ByteFunction<Object> f) {
+            return ObjectFunction.of(m -> toBytes(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(ShortFunction<Object> f) {
+            return ObjectFunction.of(m -> toShorts(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(IntFunction<Object> f) {
+            return ObjectFunction.of(m -> toInts(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(LongFunction<Object> f) {
+            return ObjectFunction.of(m -> toLongs(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(FloatFunction<Object> f) {
+            return ObjectFunction.of(m -> toFloats(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(DoubleFunction<Object> f) {
+            return ObjectFunction.of(m -> toDoubles(fd, f, m), f.returnType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> visit(ObjectFunction<Object, ?> f) {
+            TypedFunction<Message>[] out = new TypedFunction[1];
+            f.returnType().walk(new Visitor() {
+                @Override
+                public void visit(StringType stringType) {
+
+
+                    ObjectFunction.of(new Function<Object, String[]>() {
+                        @Override
+                        public String[] apply(Object o) {
+                            return toGenericArray(fd, f, )
+                        }
+                    }, stringType.arrayType());
+
+                }
+
+                @Override
+                public void visit(InstantType instantType) {
+
+                }
+
+                @Override
+                public void visit(ArrayType<?, ?> arrayType) {
+
+                }
+
+                @Override
+                public void visit(CustomType<?> customType) {
+
+                }
+            });
+
+        }
+
+        private static char[] toChars(FieldDescriptor fd, CharFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final char[] out = new char[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsChar(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static byte[] toBytes(FieldDescriptor fd, ByteFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final byte[] out = new byte[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsByte(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static short[] toShorts(FieldDescriptor fd, ShortFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final short[] out = new short[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsShort(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static int[] toInts(FieldDescriptor fd, IntFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final int[] out = new int[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsInt(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static long[] toLongs(FieldDescriptor fd, LongFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final long[] out = new long[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsLong(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static float[] toFloats(FieldDescriptor fd, FloatFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final float[] out = new float[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsFloat(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static double[] toDoubles(FieldDescriptor fd, DoubleFunction<Object> f, Message message) {
+            final int count = message.getRepeatedFieldCount(fd);
+            final double[] out = new double[count];
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.applyAsDouble(message.getRepeatedField(fd, i));
+            }
+            return out;
+        }
+
+        private static <R> R[] toGenericArray(FieldDescriptor fd, ObjectFunction<Object, R> f, Message message, Class<R> clazz) {
+            final int count = message.getRepeatedFieldCount(fd);
+            //noinspection unchecked
+            final R[] out = (R[]) Array.newInstance(clazz, count);
+            for (int i = 0; i < count; ++i) {
+                out[i] = f.apply(message.getRepeatedField(fd, i));
+            }
+            return out;
         }
     }
 }

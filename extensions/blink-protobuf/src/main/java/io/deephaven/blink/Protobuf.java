@@ -862,34 +862,53 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> visit(ObjectFunction<Object, ?> f) {
-            TypedFunction<Message>[] out = new TypedFunction[1];
+
+//            NativeArrayType<Object[], Object> x = f.arrayType();
+//            out[0] = ObjectFunction.of(message -> {
+//                //noinspection unchecked,rawtypes
+//                return toGenericArray(fd, (ObjectFunction) f, message, customType.clazz());
+//            }, x);
+
+
+            final TypedFunction<Message>[] out = new TypedFunction[1];
+
+//            out[0] = ObjectFunction.of(m -> toGenericArray(fd, (ObjectFunction)f, m, f.returnType().clazz()), f.returnType().arrayType());
+
             f.returnType().walk(new Visitor() {
                 @Override
                 public void visit(StringType stringType) {
-
-
-                    ObjectFunction.of(new Function<Object, String[]>() {
-                        @Override
-                        public String[] apply(Object o) {
-                            return toGenericArray(fd, f, )
-                        }
+                    out[0] = ObjectFunction.of(m -> {
+                        //noinspection unchecked
+                        return toGenericArray(fd, (ObjectFunction<Object, String>) f, m, String.class);
                     }, stringType.arrayType());
-
                 }
 
                 @Override
                 public void visit(InstantType instantType) {
-
+                    out[0] = ObjectFunction.of(m -> {
+                        //noinspection unchecked
+                        return toGenericArray(fd, (ObjectFunction<Object, Instant>) f, m, Instant.class);
+                    }, instantType.arrayType());
                 }
 
                 @Override
                 public void visit(ArrayType<?, ?> arrayType) {
-
+                    //noinspection unchecked
+//                    final NativeArrayType<Object[], Object> at2  = ((ArrayType<Object, ?>) arrayType).arrayType();
+//                    out[0] = ObjectFunction.of(message -> {
+//                        //noinspection unchecked,rawtypes
+//                        return toGenericArray(fd, (ObjectFunction) f, message, arrayType.clazz());
+//                    }, at2);
                 }
 
                 @Override
                 public void visit(CustomType<?> customType) {
-
+                    //noinspection unchecked
+                    NativeArrayType<Object[], Object> arrayType = ((CustomType<Object>)customType).arrayType();
+                    out[0] = ObjectFunction.of(message -> {
+                        //noinspection unchecked,rawtypes
+                        return toGenericArray(fd, (ObjectFunction) f, message, customType.clazz());
+                    }, arrayType);
                 }
             });
 

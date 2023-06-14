@@ -1,9 +1,11 @@
 package io.deephaven.blink;
 
 import io.deephaven.annotations.BuildableStyle;
+import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,6 +30,11 @@ public abstract class ProtobufOptions {
 
     public abstract Set<List<String>> excludePaths();
 
+    @Default
+    public Map<String, MessageTypeParser> parsers() {
+        return MessageTypeParser.defaults();
+    }
+
     final boolean include(List<String> path) {
         return !excludePaths().contains(path);
     }
@@ -45,6 +52,8 @@ public abstract class ProtobufOptions {
         Builder addExcludePaths(List<String>... elements);
 
         Builder addAllExcludePaths(Iterable<? extends List<String>> elements);
+
+        Builder parsers(Map<String, MessageTypeParser> parsers);
 
         ProtobufOptions build();
     }

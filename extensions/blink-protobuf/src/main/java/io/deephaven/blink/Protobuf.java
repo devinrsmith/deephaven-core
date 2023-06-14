@@ -37,12 +37,15 @@ import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -91,7 +94,7 @@ public class Protobuf {
             return Map.of();
         }
 
-        final TypedFunction<Message> tf = typedFunction(fd);
+        final TypedFunction<Message> tf = typedFunction(fd, options);
         if (!MESSAGE_TYPE.equals(tf.returnType())) {
             return Map.of(fieldPath, tf);
         }
@@ -113,12 +116,12 @@ public class Protobuf {
         return Stream.concat(context.stream(), Stream.of(name)).collect(Collectors.toList());
     }
 
-    private static TypedFunction<Message> typedFunction(FieldDescriptor fd) {
+    private static TypedFunction<Message> typedFunction(FieldDescriptor fd, ProtobufOptions options) {
         if (fd.isMapField()) {
-            return mapFunction(fd);
+            return mapFunction(fd, options);
         }
         if (fd.isRepeated()) {
-            return repeatedTypedFunction(fd);
+            return repeatedTypedFunction(fd, options);
         }
         switch (fd.getJavaType()) {
             case BOOLEAN:
@@ -138,42 +141,16 @@ public class Protobuf {
             case BYTE_STRING:
                 return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
             case MESSAGE:
-                switch (fd.getMessageType().getFullName()) {
-                    case "google.protobuf.Timestamp":
-                        return castFunction(fd, TIMESTAMP_TYPE).map(Protobuf::adapt, Type.instantType());
-                    case "google.protobuf.Duration":
-                        return castFunction(fd, PB_DURATION_TYPE).map(Protobuf::adapt, DURATION_TYPE);
-                    case "google.protobuf.BoolValue":
-                        return booleanFunction(fd, boolValue());
-                    case "google.protobuf.Int32Value":
-                        return intFunction(fd, int32Value());
-                    case "google.protobuf.UInt32Value":
-                        return intFunction(fd, uint32Value());
-                    case "google.protobuf.Int64Value":
-                        return longFunction(fd, int64Value());
-                    case "google.protobuf.UInt64Value":
-                        return longFunction(fd, uint64Value());
-                    case "google.protobuf.FloatValue":
-                        return floatFunction(fd, floatValue());
-                    case "google.protobuf.DoubleValue":
-                        return doubleFunction(fd, doubleValue());
-                    case "google.protobuf.StringValue":
-                        return castFunction(fd, STRING_VALUE_TYPE).map(Protobuf::adapt, Type.stringType());
-                    case "google.protobuf.BytesValue":
-                        return castFunction(fd, BYTES_VALUE_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
-                    case "google.protobuf.Any":
-                        return castFunction(fd, ANY_TYPE);
-                    case "google.protobuf.FieldMask":
-                        return castFunction(fd, FIELD_MASK_TYPE);
-                    default:
-                        return castFunction(fd, MESSAGE_TYPE);
-                }
+                final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
+                return parser == null
+                        ? castFunction(fd, MESSAGE_TYPE)
+                        : parser.parse(fd, options);
             default:
                 throw new IllegalStateException();
         }
     }
 
-    private static ObjectFunction<Message, ?> repeatedTypedFunction(FieldDescriptor fd) {
+    private static TypedFunction<Message> repeatedTypedFunction(FieldDescriptor fd, ProtobufOptions options) {
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
@@ -194,40 +171,14 @@ public class Protobuf {
                 return repeatedGenericFunction(fd, ByteString.class, Type.byteType().arrayType().arrayType(),
                         Protobuf::adapt);
             case MESSAGE:
-                switch (fd.getMessageType().getFullName()) {
-                    case "google.protobuf.Timestamp":
-                        return repeatedGenericFunction(fd, Timestamp.class, Type.instantType().arrayType(),
-                                Protobuf::adapt);
-                    case "google.protobuf.Duration":
-                        return repeatedGenericFunction(fd, com.google.protobuf.Duration.class,
-                                DURATION_TYPE.arrayType(), Protobuf::adapt);
-                    case "google.protobuf.BoolValue":
-                        return repeatedGenericFunction(fd, BoolValue.class, UNMAPPED_TYPE.arrayType(), b -> null);
-                    case "google.protobuf.Int32Value":
-                        return repeatedIntFunction(fd, int32Value());
-                    case "google.protobuf.UInt32Value":
-                        return repeatedIntFunction(fd, uint32Value());
-                    case "google.protobuf.Int64Value":
-                        return repeatedLongFunction(fd, int64Value());
-                    case "google.protobuf.UInt64Value":
-                        return repeatedLongFunction(fd, uint64Value());
-                    case "google.protobuf.FloatValue":
-                        return repeatedFloatFunction(fd, floatValue());
-                    case "google.protobuf.DoubleValue":
-                        return repeatedDoubleFunction(fd, doubleValue());
-                    case "google.protobuf.StringValue":
-                        return repeatedGenericFunction(fd, StringValue.class, Type.stringType().arrayType(),
-                                Protobuf::adapt);
-                    case "google.protobuf.BytesValue":
-                        return repeatedGenericFunction(fd, BytesValue.class, Type.byteType().arrayType().arrayType(),
-                                Protobuf::adapt);
-                    case "google.protobuf.Any":
-                        return repeatedGenericFunction(fd, ANY_TYPE.arrayType());
-                    case "google.protobuf.FieldMask":
-                        return repeatedGenericFunction(fd, FIELD_MASK_TYPE.arrayType());
-                    default:
-                        return repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType());
-                }
+                final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
+
+                // Note: we could consider repeating all of the individual types in this message in the future.
+                // see SomeTest#repeatedMessageDescructured
+                return parser == null
+                        ? repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType())
+                        : parser.parseRepeated(fd, options);
+
             default:
                 throw new IllegalStateException();
         }
@@ -269,14 +220,14 @@ public class Protobuf {
         return ObjectFunction.of(Function.identity(), MESSAGE_TYPE);
     }
 
-    private static ObjectFunction<Message, ?> mapFunction(FieldDescriptor fd) {
+    private static ObjectFunction<Message, ?> mapFunction(FieldDescriptor fd, ProtobufOptions options) {
         final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
-        final TypedFunction<Message> keyTf = typedFunction(keyFd);
+        final TypedFunction<Message> keyTf = typedFunction(keyFd, options);
         if (isUnmapped(keyTf.returnType())) {
             return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
         }
         final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
-        final TypedFunction<Message> valueTf = typedFunction(valueFd);
+        final TypedFunction<Message> valueTf = typedFunction(valueFd, options);
         if (isUnmapped(valueTf.returnType())) {
             return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
         }
@@ -352,20 +303,8 @@ public class Protobuf {
         return t == null ? null : Instant.ofEpochSecond(t.getSeconds(), t.getNanos());
     }
 
-    private static Duration adapt(com.google.protobuf.Duration d) {
-        return d == null ? null : Duration.ofSeconds(d.getSeconds(), d.getNanos());
-    }
-
     private static byte[] adapt(ByteString bs) {
         return bs == null ? null : bs.toByteArray();
-    }
-
-    private static byte[] adapt(BytesValue bv) {
-        return bv == null ? null : bv.getValue().toByteArray();
-    }
-
-    private static String adapt(StringValue sv) {
-        return sv == null ? null : sv.getValue();
     }
 
     private static <T, M extends Message> ObjectFunction<M, T> castFunction(FieldDescriptor fd, GenericType<T> type) {
@@ -391,7 +330,6 @@ public class Protobuf {
             DoubleFunction<Object> toDouble) {
         return ObjectFunction.of(m -> repeatedDoubleF(m, fd, toDouble), Type.doubleType().arrayType());
     }
-
 
     private static <ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
             FieldDescriptor fd,
@@ -521,31 +459,319 @@ public class Protobuf {
         return ObjectFunction.of(o -> type.clazz().cast(o), type);
     }
 
-    private static BooleanFunction<Object> boolValue() {
-        return o -> ((BoolValue) o).getValue();
+    static List<MessageTypeParser> builtinParsers() {
+        return List.of(
+                TimestampParser.INSTANCE,
+                DurationParser.INSTANCE,
+                BoolValueParser.INSTANCE,
+                Int32ValueParser.INSTANCE,
+                UInt32ValueParser.INSTANCE,
+                Int64ValueParser.INSTANCE,
+                UInt64ValueParser.INSTANCE,
+                FloatValueParser.INSTANCE,
+                DoubleValueParser.INSTANCE,
+                StringValueParser.INSTANCE,
+                BytesValueParser.INSTANCE,
+                customParser(Any.class),
+                customParser(FieldMask.class));
     }
 
-    private static IntFunction<Object> int32Value() {
-        return o -> ((Int32Value) o).getValue();
+    private enum TimestampParser implements MessageTypeParser, Function<Timestamp, Instant> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return Timestamp.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return castFunction(fd, TIMESTAMP_TYPE).map(this, Type.instantType());
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, Timestamp.class, Type.instantType().arrayType(), this);
+        }
+
+        @Override
+        public Instant apply(Timestamp t) {
+            return t == null ? null : Instant.ofEpochSecond(t.getSeconds(), t.getNanos());
+        }
     }
 
-    private static IntFunction<Object> uint32Value() {
-        return o -> ((UInt32Value) o).getValue();
+    private enum DurationParser implements MessageTypeParser, Function<com.google.protobuf.Duration, Duration> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return com.google.protobuf.Duration.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return castFunction(fd, PB_DURATION_TYPE).map(this, DURATION_TYPE);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, com.google.protobuf.Duration.class, DURATION_TYPE.arrayType(), this);
+        }
+
+        @Override
+        public Duration apply(com.google.protobuf.Duration d) {
+            return d == null ? null : Duration.ofSeconds(d.getSeconds(), d.getNanos());
+        }
     }
 
-    private static LongFunction<Object> int64Value() {
-        return o -> ((Int64Value) o).getValue();
+    private enum BoolValueParser implements MessageTypeParser, BooleanFunction<Object>{
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return BoolValue.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return booleanFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, BoolValue.class, UNMAPPED_TYPE.arrayType(), b -> null);
+        }
+
+        @Override
+        public Boolean applyAsBoolean(Object value) {
+            return ((BoolValue) value).getValue();
+        }
     }
 
-    private static LongFunction<Object> uint64Value() {
-        return o -> ((UInt64Value) o).getValue();
+    private enum Int32ValueParser implements MessageTypeParser, IntFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return Int32Value.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return intFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedIntFunction(fd, this);
+        }
+
+        @Override
+        public int applyAsInt(Object value) {
+            return ((Int32Value) value).getValue();
+        }
     }
 
-    private static FloatFunction<Object> floatValue() {
-        return o -> ((FloatValue) o).getValue();
+    private enum UInt32ValueParser implements MessageTypeParser, IntFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return UInt32Value.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return intFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedIntFunction(fd, this);
+        }
+
+        @Override
+        public int applyAsInt(Object value) {
+            return ((UInt32Value) value).getValue();
+        }
     }
 
-    private static DoubleFunction<Object> doubleValue() {
-        return o -> ((DoubleValue) o).getValue();
+    private enum Int64ValueParser implements MessageTypeParser, LongFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return Int64Value.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return longFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedLongFunction(fd, this);
+        }
+
+        @Override
+        public long applyAsLong(Object value) {
+            return ((Int64Value) value).getValue();
+        }
+    }
+
+    private enum UInt64ValueParser implements MessageTypeParser, LongFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return UInt64Value.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return longFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedLongFunction(fd, this);
+        }
+
+        @Override
+        public long applyAsLong(Object value) {
+            return ((UInt64Value) value).getValue();
+        }
+    }
+
+    private enum FloatValueParser implements MessageTypeParser, FloatFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return FloatValue.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return floatFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedFloatFunction(fd, this);
+        }
+
+        @Override
+        public float applyAsFloat(Object value) {
+            return ((FloatValue) value).getValue();
+        }
+    }
+
+    private enum DoubleValueParser implements MessageTypeParser, DoubleFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return DoubleValue.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return doubleFunction(fd, this);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedDoubleFunction(fd, this);
+        }
+
+        @Override
+        public double applyAsDouble(Object value) {
+            return ((DoubleValue) value).getValue();
+        }
+    }
+
+    private enum StringValueParser implements MessageTypeParser, Function<StringValue, String> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return StringValue.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return castFunction(fd, STRING_VALUE_TYPE).map(this, Type.stringType());
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, StringValue.class, Type.stringType().arrayType(), this);
+        }
+
+        @Override
+        public String apply(StringValue sv) {
+            return sv == null ? null : sv.getValue();
+        }
+    }
+
+    private enum BytesValueParser implements MessageTypeParser, Function<BytesValue, byte[]> {
+        INSTANCE;
+
+        @Override
+        public String fullName() {
+            return BytesValue.getDescriptor().getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return castFunction(fd, BYTES_VALUE_TYPE).map(this, Type.byteType().arrayType());
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, BytesValue.class, Type.byteType().arrayType().arrayType(), this);
+        }
+
+        @Override
+        public byte[] apply(BytesValue bv) {
+            return bv == null ? null : bv.getValue().toByteArray();
+        }
+    }
+
+    static <T extends Message> MessageTypeParser customParser(Class<T> clazz) {
+        try {
+            final Method method = clazz.getDeclaredMethod("getDescriptor");
+            final Descriptor descriptor = (Descriptor) method.invoke(null);
+            return new GenericParser<>(CustomType.of(clazz), descriptor);
+        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class GenericParser<T extends Message> implements MessageTypeParser {
+        private final GenericType<T> type;
+        private final Descriptor descriptor;
+
+        public GenericParser(GenericType<T> type, Descriptor descriptor) {
+            this.type = Objects.requireNonNull(type);
+            this.descriptor = Objects.requireNonNull(descriptor);
+        }
+
+        @Override
+        public String fullName() {
+            return descriptor.getFullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+            return castFunction(fd, type);
+        }
+
+        @Override
+        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            return repeatedGenericFunction(fd, type.arrayType());
+        }
     }
 }

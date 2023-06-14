@@ -27,6 +27,8 @@ import io.deephaven.blink.protobuf.test.AnEnum;
 import io.deephaven.blink.protobuf.test.AnEnum.TheEnum;
 import io.deephaven.blink.protobuf.test.RepeatedBasics;
 import io.deephaven.blink.protobuf.test.RepeatedDuration;
+import io.deephaven.blink.protobuf.test.RepeatedMessage;
+import io.deephaven.blink.protobuf.test.RepeatedMessage.Person;
 import io.deephaven.blink.protobuf.test.RepeatedTimestamp;
 import io.deephaven.blink.protobuf.test.RepeatedWrappers;
 import io.deephaven.blink.protobuf.test.TheWrappers;
@@ -35,6 +37,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -624,6 +627,54 @@ public class SomeTest {
                         noBaz, QueryConstants.NULL_DOUBLE,
                         bazDefault, QueryConstants.NULL_DOUBLE,
                         bazWorld, 42.0d));
+    }
+
+    @Test
+    void repeatedMessage() {
+        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.namedFunctions(
+                RepeatedMessage.getDescriptor(),
+                ProtobufOptions.defaults());
+        assertThat(nf.keySet()).containsExactly(List.of("persons"));
+
+        final Person p1 = Person.newBuilder().setFirstName("First").setLastName("Last").build();
+        final Person p2 = Person.newBuilder().setFirstName("Foo").setLastName("Bar").build();
+        checkKey(
+                RepeatedMessage.getDescriptor(),
+                List.of("persons"),
+                Type.ofCustom(Message.class).arrayType(),
+                Map.of(
+                        RepeatedMessage.getDefaultInstance(), new Message[] {},
+                        RepeatedMessage.newBuilder().addPersons(p1).addPersons(p2).build(), new Message[] {p1, p2}));
+    }
+
+    @Disabled
+    @Test
+    void repeatedMessageDestructured() {
+        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.namedFunctions(
+                RepeatedMessage.getDescriptor(),
+                ProtobufOptions.defaults());
+        assertThat(nf.keySet()).containsExactly(List.of("persons", "first_name"), List.of("persons", "last_name"));
+
+        final Person p1 = Person.newBuilder().setFirstName("First").setLastName("Last").build();
+        final Person p2 = Person.newBuilder().setFirstName("Foo").setLastName("Bar").build();
+
+        checkKey(
+                RepeatedMessage.getDescriptor(),
+                List.of("persons", "first_name"),
+                Type.stringType().arrayType(),
+                Map.of(
+                        RepeatedMessage.getDefaultInstance(), new String[] {},
+                        RepeatedMessage.newBuilder().addPersons(p1).addPersons(p2).build(),
+                        new String[] {"First", "Foo"}));
+
+        checkKey(
+                RepeatedMessage.getDescriptor(),
+                List.of("persons", "last_name"),
+                Type.stringType().arrayType(),
+                Map.of(
+                        RepeatedMessage.getDefaultInstance(), new String[] {},
+                        RepeatedMessage.newBuilder().addPersons(p1).addPersons(p2).build(),
+                        new String[] {"Last", "Bar"}));
     }
 
     private static <T> void checkKey(

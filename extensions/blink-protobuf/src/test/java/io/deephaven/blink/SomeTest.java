@@ -647,6 +647,7 @@ public class SomeTest {
                         RepeatedMessage.newBuilder().addPersons(p1).addPersons(p2).build(), new Message[] {p1, p2}));
     }
 
+    // This is a potential improvement in parsing we might want in the future
     @Disabled
     @Test
     void repeatedMessageDestructured() {

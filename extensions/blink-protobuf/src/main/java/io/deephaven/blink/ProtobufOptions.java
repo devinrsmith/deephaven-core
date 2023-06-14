@@ -31,6 +31,11 @@ public abstract class ProtobufOptions {
     public abstract Set<List<String>> excludePaths();
 
     @Default
+    public boolean parseAdHocMessage() {
+        return true;
+    }
+
+    @Default
     public Map<String, MessageTypeParser> parsers() {
         return MessageTypeParser.defaults();
     }

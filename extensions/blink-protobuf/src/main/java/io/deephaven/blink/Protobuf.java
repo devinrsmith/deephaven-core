@@ -7,6 +7,7 @@ import com.google.protobuf.BytesValue;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.DoubleValue;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.FloatValue;
@@ -21,7 +22,9 @@ import com.google.protobuf.UInt64Value;
 import com.google.protobuf.UnknownFieldSet;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.NativeArrayType;
+import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
@@ -53,17 +56,9 @@ import java.util.stream.Stream;
 
 public class Protobuf {
 
-    private static final CustomType<Duration> DURATION_TYPE = Type.ofCustom(Duration.class);
     private static final CustomType<EnumValueDescriptor> ENUM_TYPE = Type.ofCustom(EnumValueDescriptor.class);
-    private static final CustomType<Any> ANY_TYPE = Type.ofCustom(Any.class);
-    private static final CustomType<FieldMask> FIELD_MASK_TYPE = Type.ofCustom(FieldMask.class);
     private static final CustomType<Message> MESSAGE_TYPE = Type.ofCustom(Message.class);
     private static final CustomType<ByteString> BYTE_STRING_TYPE = Type.ofCustom(ByteString.class);
-    private static final CustomType<BytesValue> BYTES_VALUE_TYPE = Type.ofCustom(BytesValue.class);
-    private static final CustomType<StringValue> STRING_VALUE_TYPE = Type.ofCustom(StringValue.class);
-    private static final CustomType<Timestamp> TIMESTAMP_TYPE = Type.ofCustom(Timestamp.class);
-    private static final CustomType<com.google.protobuf.Duration> PB_DURATION_TYPE =
-            Type.ofCustom(com.google.protobuf.Duration.class);
     public static final CustomType<UnknownFieldSet> UNKNOWN_FIELD_SET_TYPE = Type.ofCustom(UnknownFieldSet.class);
     public static final CustomType<Unmapped> UNMAPPED_TYPE = Type.ofCustom(Unmapped.class);
 
@@ -95,21 +90,31 @@ public class Protobuf {
         }
 
         final TypedFunction<Message> tf = typedFunction(fd, options);
-        if (!MESSAGE_TYPE.equals(tf.returnType())) {
+        if (tf != null) {
             return Map.of(fieldPath, tf);
         }
 
-        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
-
-        final Descriptor messageType = fd.getMessageType();
-        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
-        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
-        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
-            final TypedFunction<Message> innerFunction = e.getValue();
-            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
-            output.put(e.getKey(), adaptedFunction);
+        if (fd.getJavaType() != JavaType.MESSAGE) {
+            throw new IllegalStateException();
         }
-        return output;
+
+        if (!fd.isRepeated() && options.parseAdHocMessage()) {
+            final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+            final Descriptor messageType = fd.getMessageType();
+            final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+            final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+            for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
+                final TypedFunction<Message> innerFunction = e.getValue();
+                final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+                output.put(e.getKey(), adaptedFunction);
+            }
+            return output;
+        }
+
+        // Fallback to simple Message.class type
+        return Map.of(fieldPath, fd.isRepeated()
+                ? repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType())
+                : castFunction(fd, MESSAGE_TYPE));
     }
 
     private static List<String> path(List<String> context, String name) {
@@ -142,9 +147,7 @@ public class Protobuf {
                 return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
             case MESSAGE:
                 final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
-                return parser == null
-                        ? castFunction(fd, MESSAGE_TYPE)
-                        : parser.parse(fd, options);
+                return parser == null ? null : parser.parse(fd, options);
             default:
                 throw new IllegalStateException();
         }
@@ -154,7 +157,7 @@ public class Protobuf {
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
-                return repeatedGenericFunction(fd, Boolean.class, UNMAPPED_TYPE.arrayType(), b -> null);
+                return repeatedGenericFunction(fd, Boolean.class, b -> null, UNMAPPED_TYPE.arrayType());
             case INT:
                 return repeatedIntFunction(fd, intLiteral());
             case LONG:
@@ -168,16 +171,12 @@ public class Protobuf {
             case ENUM:
                 return repeatedGenericFunction(fd, ENUM_TYPE.arrayType());
             case BYTE_STRING:
-                return repeatedGenericFunction(fd, ByteString.class, Type.byteType().arrayType().arrayType(),
-                        Protobuf::adapt);
+                return repeatedGenericFunction(fd, ByteString.class, Protobuf::adapt, Type.byteType().arrayType().arrayType());
             case MESSAGE:
                 final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
-
                 // Note: we could consider repeating all of the individual types in this message in the future.
                 // see SomeTest#repeatedMessageDescructured
-                return parser == null
-                        ? repeatedGenericFunction(fd, MESSAGE_TYPE.arrayType())
-                        : parser.parseRepeated(fd, options);
+                return parser == null ? null : parser.parseRepeated(fd, options);
 
             default:
                 throw new IllegalStateException();
@@ -223,13 +222,13 @@ public class Protobuf {
     private static ObjectFunction<Message, ?> mapFunction(FieldDescriptor fd, ProtobufOptions options) {
         final FieldDescriptor keyFd = fd.getMessageType().findFieldByNumber(1);
         final TypedFunction<Message> keyTf = typedFunction(keyFd, options);
-        if (isUnmapped(keyTf.returnType())) {
-            return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
+        if (keyTf == null) {
+            return null;
         }
         final FieldDescriptor valueFd = fd.getMessageType().findFieldByNumber(2);
         final TypedFunction<Message> valueTf = typedFunction(valueFd, options);
-        if (isUnmapped(valueTf.returnType())) {
-            return ObjectFunction.ofSingle(null, UNMAPPED_TYPE);
+        if (valueTf == null) {
+            return null;
         }
         // todo: proper Map types?
         return ObjectFunction.of(message -> {
@@ -244,10 +243,6 @@ public class Protobuf {
             }
             return map;
         }, Type.ofCustom(Map.class));
-    }
-
-    private static boolean isUnmapped(Type<?> type) {
-        return UNMAPPED_TYPE.equals(type) || UNMAPPED_TYPE.arrayType().equals(type);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -299,10 +294,6 @@ public class Protobuf {
 
     // ----------------------------------------------------------------------------------------------------------------
 
-    private static Instant adapt(Timestamp t) {
-        return t == null ? null : Instant.ofEpochSecond(t.getSeconds(), t.getNanos());
-    }
-
     private static byte[] adapt(ByteString bs) {
         return bs == null ? null : bs.toByteArray();
     }
@@ -334,23 +325,23 @@ public class Protobuf {
     private static <ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
             FieldDescriptor fd,
             NativeArrayType<ArrayType, ComponentType> returnType) {
-        return repeatedGenericFunction(fd, returnType.componentType().clazz(), returnType, Function.identity());
+        return repeatedGenericFunction(fd, returnType.componentType().clazz(), Function.identity(), returnType);
     }
 
     private static <T, ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
             FieldDescriptor fd,
             Class<T> intermediateType,
-            NativeArrayType<ArrayType, ComponentType> returnType,
-            Function<T, ComponentType> adapter) {
-        return ObjectFunction.of(m -> repeatedGenericF(m, fd, intermediateType, returnType, adapter), returnType);
+            Function<T, ComponentType> adapter,
+            NativeArrayType<ArrayType, ComponentType> returnType) {
+        return ObjectFunction.of(m -> repeatedGenericF(m, fd, intermediateType, adapter, returnType), returnType);
     }
 
     private static <T, ArrayType, ComponentType> ArrayType repeatedGenericF(
             Message m,
             FieldDescriptor fd,
             Class<T> intermediateType,
-            NativeArrayType<ArrayType, ComponentType> returnType,
-            Function<T, ComponentType> adapter) {
+            Function<T, ComponentType> adapter,
+            NativeArrayType<ArrayType, ComponentType> returnType) {
         final int count = m.getRepeatedFieldCount(fd);
         final ArrayType array = returnType.newArrayInstance(count);
         for (int i = 0; i < count; ++i) {
@@ -479,6 +470,9 @@ public class Protobuf {
     private enum TimestampParser implements MessageTypeParser, Function<Timestamp, Instant> {
         INSTANCE;
 
+        private static final CustomType<Timestamp> IN_TYPE = Type.ofCustom(Timestamp.class);
+        private static final InstantType OUT_TYPE = Type.instantType();
+
         @Override
         public String fullName() {
             return Timestamp.getDescriptor().getFullName();
@@ -486,12 +480,12 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, TIMESTAMP_TYPE).map(this, Type.instantType());
+            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
         }
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, Timestamp.class, Type.instantType().arrayType(), this);
+            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
         }
 
         @Override
@@ -503,6 +497,9 @@ public class Protobuf {
     private enum DurationParser implements MessageTypeParser, Function<com.google.protobuf.Duration, Duration> {
         INSTANCE;
 
+        private static final CustomType<com.google.protobuf.Duration> IN_TYPE = Type.ofCustom(com.google.protobuf.Duration.class);
+        private static final CustomType<Duration> OUT_TYPE = Type.ofCustom(Duration.class);
+
         @Override
         public String fullName() {
             return com.google.protobuf.Duration.getDescriptor().getFullName();
@@ -510,12 +507,12 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, PB_DURATION_TYPE).map(this, DURATION_TYPE);
+            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
         }
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, com.google.protobuf.Duration.class, DURATION_TYPE.arrayType(), this);
+            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
         }
 
         @Override
@@ -539,7 +536,7 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, BoolValue.class, UNMAPPED_TYPE.arrayType(), b -> null);
+            return repeatedGenericFunction(fd, BoolValue.class, b -> null, UNMAPPED_TYPE.arrayType());
         }
 
         @Override
@@ -695,6 +692,9 @@ public class Protobuf {
     private enum StringValueParser implements MessageTypeParser, Function<StringValue, String> {
         INSTANCE;
 
+        private static final CustomType<StringValue> IN_TYPE = Type.ofCustom(StringValue.class);
+        private static final StringType OUT_TYPE = Type.stringType();
+
         @Override
         public String fullName() {
             return StringValue.getDescriptor().getFullName();
@@ -702,12 +702,12 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, STRING_VALUE_TYPE).map(this, Type.stringType());
+            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
         }
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, StringValue.class, Type.stringType().arrayType(), this);
+            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
         }
 
         @Override
@@ -719,6 +719,9 @@ public class Protobuf {
     private enum BytesValueParser implements MessageTypeParser, Function<BytesValue, byte[]> {
         INSTANCE;
 
+        private static final CustomType<BytesValue> IN_TYPE = Type.ofCustom(BytesValue.class);
+        private static final NativeArrayType<byte[], Byte> OUT_TYPE = Type.byteType().arrayType();
+
         @Override
         public String fullName() {
             return BytesValue.getDescriptor().getFullName();
@@ -726,12 +729,12 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, BYTES_VALUE_TYPE).map(this, Type.byteType().arrayType());
+            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
         }
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, BytesValue.class, Type.byteType().arrayType().arrayType(), this);
+            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
         }
 
         @Override

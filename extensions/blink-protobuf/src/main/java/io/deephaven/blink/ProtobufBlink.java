@@ -3,6 +3,8 @@ package io.deephaven.blink;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.protobuf.Protobuf;
+import io.deephaven.protobuf.ProtobufOptions;
 import io.deephaven.stream.blink.BlinkTableMapper;
 import io.deephaven.stream.blink.BlinkTableMapperConfig;
 import io.deephaven.stream.blink.BlinkTableMapperConfig.Builder;
@@ -17,7 +19,7 @@ public class ProtobufBlink {
                 .name(descriptor.getFullName())
                 .chunkSize(1024)
                 .updateSourceRegistrar(ExecutionContext.getContext().getUpdateGraph());
-        for (Entry<List<String>, TypedFunction<Message>> e : Protobuf.namedFunctions(descriptor, options).entrySet()) {
+        for (Entry<List<String>, TypedFunction<Message>> e : Protobuf.parser(descriptor, options).entrySet()) {
             // noinspection unchecked
             builder.putColumns(pathToName(e.getKey()), (TypedFunction<M>) e.getValue());
         }

@@ -1,4 +1,4 @@
-package io.deephaven.blink;
+package io.deephaven.protobuf;
 
 import com.google.protobuf.BoolValue;
 import com.google.protobuf.ByteString;
@@ -14,25 +14,25 @@ import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
-import io.deephaven.blink.Protobuf.Unmapped;
-import io.deephaven.blink.protobuf.test.ADuration;
-import io.deephaven.blink.protobuf.test.AMultiNested;
-import io.deephaven.blink.protobuf.test.AMultiNested.SubMessage1;
-import io.deephaven.blink.protobuf.test.AMultiNested.SubMessage1.SubMessage2;
-import io.deephaven.blink.protobuf.test.ANested;
-import io.deephaven.blink.protobuf.test.ANested.SubMessage;
-import io.deephaven.blink.protobuf.test.AStringStringMap;
-import io.deephaven.blink.protobuf.test.ATimestamp;
-import io.deephaven.blink.protobuf.test.AnEnum;
-import io.deephaven.blink.protobuf.test.AnEnum.TheEnum;
-import io.deephaven.blink.protobuf.test.RepeatedBasics;
-import io.deephaven.blink.protobuf.test.RepeatedDuration;
-import io.deephaven.blink.protobuf.test.RepeatedMessage;
-import io.deephaven.blink.protobuf.test.RepeatedMessage.Person;
-import io.deephaven.blink.protobuf.test.RepeatedTimestamp;
-import io.deephaven.blink.protobuf.test.RepeatedWrappers;
-import io.deephaven.blink.protobuf.test.TheWrappers;
-import io.deephaven.blink.protobuf.test.UnionType;
+import io.deephaven.protobuf.Protobuf.Unmapped;
+import io.deephaven.protobuf.test.ADuration;
+import io.deephaven.protobuf.test.AMultiNested;
+import io.deephaven.protobuf.test.AMultiNested.SubMessage1;
+import io.deephaven.protobuf.test.AMultiNested.SubMessage1.SubMessage2;
+import io.deephaven.protobuf.test.ANested;
+import io.deephaven.protobuf.test.ANested.SubMessage;
+import io.deephaven.protobuf.test.AStringStringMap;
+import io.deephaven.protobuf.test.ATimestamp;
+import io.deephaven.protobuf.test.AnEnum;
+import io.deephaven.protobuf.test.AnEnum.TheEnum;
+import io.deephaven.protobuf.test.RepeatedBasics;
+import io.deephaven.protobuf.test.RepeatedDuration;
+import io.deephaven.protobuf.test.RepeatedMessage;
+import io.deephaven.protobuf.test.RepeatedMessage.Person;
+import io.deephaven.protobuf.test.RepeatedTimestamp;
+import io.deephaven.protobuf.test.RepeatedWrappers;
+import io.deephaven.protobuf.test.TheWrappers;
+import io.deephaven.protobuf.test.UnionType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -50,7 +50,7 @@ import java.util.Map.Entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SomeTest {
+public class ProtobufTest {
 
     @Test
     public void string() {
@@ -120,7 +120,7 @@ public class SomeTest {
     @Test
     void unionTypes() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(
                 List.of("bool"),
                 List.of("int32"),
@@ -136,7 +136,7 @@ public class SomeTest {
     @Test
     void oneOfBool() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setBool(true).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(true);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -153,7 +153,7 @@ public class SomeTest {
     @Test
     void oneOfInt32() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setInt32(42).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(42);
@@ -169,7 +169,7 @@ public class SomeTest {
     @Test
     void oneOfUInt32() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setUint32(42).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -185,7 +185,7 @@ public class SomeTest {
     @Test
     void oneOfInt64() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setInt64(42).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -201,7 +201,7 @@ public class SomeTest {
     @Test
     void oneOfUInt64() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setUint64(42).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -217,7 +217,7 @@ public class SomeTest {
     @Test
     void oneOfFloat() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setFloat(42.0f).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -233,7 +233,7 @@ public class SomeTest {
     @Test
     void oneOfDouble() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setDouble(42.0d).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -249,7 +249,7 @@ public class SomeTest {
     @Test
     void oneOfString() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setString("hello").build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -265,7 +265,7 @@ public class SomeTest {
     @Test
     void oneOfBytes() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(UnionType.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(UnionType.getDescriptor(), ProtobufOptions.defaults());
         final UnionType message = UnionType.newBuilder().setBytes(ByteString.copyFromUtf8("world")).build();
         assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_BOOLEAN);
         assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(QueryConstants.NULL_INT);
@@ -319,7 +319,7 @@ public class SomeTest {
     @Test
     void wrappers() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(TheWrappers.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(TheWrappers.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(
                 List.of("bool"),
                 List.of("int32"),
@@ -388,7 +388,7 @@ public class SomeTest {
     @Test
     void repeated() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(RepeatedBasics.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(RepeatedBasics.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(
                 List.of("bool"),
                 List.of("int32"),
@@ -436,7 +436,7 @@ public class SomeTest {
     @Test
     void repeatedWrappers() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(RepeatedWrappers.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(RepeatedWrappers.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(
                 List.of("bool"),
                 List.of("int32"),
@@ -526,7 +526,7 @@ public class SomeTest {
     @Test
     void nested() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(ANested.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(ANested.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(List.of("baz", "foo"), List.of("baz", "bar"));
 
         checkKey(
@@ -549,7 +549,7 @@ public class SomeTest {
     @Test
     void multiNested() {
         final Map<List<String>, TypedFunction<Message>> nf =
-                Protobuf.namedFunctions(AMultiNested.getDescriptor(), ProtobufOptions.defaults());
+                Protobuf.parser(AMultiNested.getDescriptor(), ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(
                 List.of("hello", "foo"),
                 List.of("hello", "bar"),
@@ -631,7 +631,7 @@ public class SomeTest {
 
     @Test
     void repeatedMessage() {
-        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.namedFunctions(
+        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.parser(
                 RepeatedMessage.getDescriptor(),
                 ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(List.of("persons"));
@@ -651,7 +651,7 @@ public class SomeTest {
     @Disabled
     @Test
     void repeatedMessageDestructured() {
-        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.namedFunctions(
+        final Map<List<String>, TypedFunction<Message>> nf = Protobuf.parser(
                 RepeatedMessage.getDescriptor(),
                 ProtobufOptions.defaults());
         assertThat(nf.keySet()).containsExactly(List.of("persons", "first_name"), List.of("persons", "last_name"));
@@ -684,7 +684,7 @@ public class SomeTest {
             Type<T> expectedType,
             Map<Message, T> expectedExamples) {
         final Map<List<String>, TypedFunction<Message>> map =
-                Protobuf.namedFunctions(descriptor, ProtobufOptions.defaults());
+                Protobuf.parser(descriptor, ProtobufOptions.defaults());
         assertThat(map)
                 .extractingByKey(expectedPath)
                 .extracting(TypedFunction::returnType)

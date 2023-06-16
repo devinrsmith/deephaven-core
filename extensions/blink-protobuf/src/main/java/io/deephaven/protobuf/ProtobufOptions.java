@@ -1,4 +1,4 @@
-package io.deephaven.blink;
+package io.deephaven.protobuf;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -38,8 +38,8 @@ public abstract class ProtobufOptions {
     }
 
     @Default
-    public Map<String, MessageTypeParser> parsers() {
-        return MessageTypeParser.defaults();
+    public Map<String, Parser> parsers() {
+        return Parser.defaults();
     }
 
     final boolean include(List<String> path) {
@@ -81,7 +81,7 @@ public abstract class ProtobufOptions {
 
         Builder addAllExcludePaths(Iterable<? extends List<String>> elements);
 
-        Builder parsers(Map<String, MessageTypeParser> parsers);
+        Builder parsers(Map<String, Parser> parsers);
 
         ProtobufOptions build();
     }

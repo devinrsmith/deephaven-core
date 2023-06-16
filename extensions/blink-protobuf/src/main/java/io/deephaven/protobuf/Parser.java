@@ -1,4 +1,4 @@
-package io.deephaven.blink;
+package io.deephaven.protobuf;
 
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
@@ -9,22 +9,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public interface MessageTypeParser {
+public interface Parser {
 
-    static List<MessageTypeParser> builtin() {
+    static List<Parser> builtin() {
         return Protobuf.builtinParsers();
     }
 
-    static Iterable<MessageTypeParser> serviceLoaders() {
-        return ServiceLoader.load(MessageTypeParser.class);
+    static Iterable<Parser> serviceLoaders() {
+        return ServiceLoader.load(Parser.class);
     }
 
-    static Map<String, MessageTypeParser> defaults() {
-        Map<String, MessageTypeParser> map = new HashMap<>();
-        for (MessageTypeParser parser : builtin()) {
+    static Map<String, Parser> defaults() {
+        Map<String, Parser> map = new HashMap<>();
+        for (Parser parser : builtin()) {
             map.put(parser.fullName(), parser);
         }
-        for (MessageTypeParser parser : serviceLoaders()) {
+        for (Parser parser : serviceLoaders()) {
             map.put(parser.fullName(), parser);
         }
         return map;

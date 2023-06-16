@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
-package io.deephaven.blink.protobuf.test;
+package io.deephaven.protobuf.test;
 
 option java_multiple_files = true;
 option optimize_for = SPEED;

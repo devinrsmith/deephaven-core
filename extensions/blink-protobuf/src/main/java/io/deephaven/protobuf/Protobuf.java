@@ -1,4 +1,4 @@
-package io.deephaven.blink;
+package io.deephaven.protobuf;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.BoolValue;
@@ -70,7 +70,7 @@ public class Protobuf {
     public interface Unmapped {
     }
 
-    static Map<List<String>, TypedFunction<Message>> namedFunctions(Descriptor descriptor, ProtobufOptions options) {
+    public static Map<List<String>, TypedFunction<Message>> parser(Descriptor descriptor, ProtobufOptions options) {
         return namedFunctions(descriptor, options, List.of());
     }
 
@@ -130,16 +130,17 @@ public class Protobuf {
     }
 
     private static Map<List<String>, TypedFunction<Message>> repeatedMessageFunctions(FieldDescriptor fd, ProtobufOptions options, List<String> fieldPath) {
-        final Descriptor messageType = fd.getMessageType();
-//        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
-        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
-        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
-        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
-            final TypedFunction<Message> innerFunction = e.getValue();
-            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
-            output.put(e.getKey(), adaptedFunction);
-        }
-        return output;
+        throw new UnsupportedOperationException();
+//        final Descriptor messageType = fd.getMessageType();
+////        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+//        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+//        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+//        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
+//            final TypedFunction<Message> innerFunction = e.getValue();
+//            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+//            output.put(e.getKey(), adaptedFunction);
+//        }
+//        return output;
     }
 
     private static List<String> path(List<String> context, String name) {
@@ -175,7 +176,7 @@ public class Protobuf {
             case BYTE_STRING:
                 return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
             case MESSAGE:
-                final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
+                final Parser parser = options.parsers().get(fd.getMessageType().getFullName());
                 return parser == null ? null : parser.parse(fd, options);
             default:
                 throw new IllegalStateException();
@@ -202,7 +203,7 @@ public class Protobuf {
             case BYTE_STRING:
                 return repeatedGenericFunction(fd, BYTE_STRING_TYPE.clazz(), Protobuf::adapt, Type.byteType().arrayType().arrayType());
             case MESSAGE:
-                final MessageTypeParser parser = options.parsers().get(fd.getMessageType().getFullName());
+                final Parser parser = options.parsers().get(fd.getMessageType().getFullName());
                 // Note: we could consider repeating all of the individual types in this message in the future.
                 // see SomeTest#repeatedMessageDescructured
                 return parser == null ? null : parser.parseRepeated(fd, options);
@@ -479,7 +480,7 @@ public class Protobuf {
         return ObjectFunction.of(o -> type.clazz().cast(o), type);
     }
 
-    static List<MessageTypeParser> builtinParsers() {
+    static List<Parser> builtinParsers() {
         return List.of(
                 TimestampParser.INSTANCE,
                 DurationParser.INSTANCE,
@@ -496,7 +497,7 @@ public class Protobuf {
                 customParser(FieldMask.class));
     }
 
-    private enum TimestampParser implements MessageTypeParser, Function<Timestamp, Instant> {
+    private enum TimestampParser implements Parser, Function<Timestamp, Instant> {
         INSTANCE;
 
         private static final CustomType<Timestamp> IN_TYPE = Type.ofCustom(Timestamp.class);
@@ -523,7 +524,7 @@ public class Protobuf {
         }
     }
 
-    private enum DurationParser implements MessageTypeParser, Function<com.google.protobuf.Duration, Duration> {
+    private enum DurationParser implements Parser, Function<com.google.protobuf.Duration, Duration> {
         INSTANCE;
 
         private static final CustomType<com.google.protobuf.Duration> IN_TYPE = Type.ofCustom(com.google.protobuf.Duration.class);
@@ -550,7 +551,7 @@ public class Protobuf {
         }
     }
 
-    private enum BoolValueParser implements MessageTypeParser, BooleanFunction<Object>{
+    private enum BoolValueParser implements Parser, BooleanFunction<Object>{
         INSTANCE;
 
         @Override
@@ -565,6 +566,7 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+            // todo
             return repeatedGenericFunction(fd, BoolValue.class, b -> null, UNMAPPED_TYPE.arrayType());
         }
 
@@ -574,7 +576,7 @@ public class Protobuf {
         }
     }
 
-    private enum Int32ValueParser implements MessageTypeParser, IntFunction<Object> {
+    private enum Int32ValueParser implements Parser, IntFunction<Object> {
         INSTANCE;
 
         @Override
@@ -598,7 +600,7 @@ public class Protobuf {
         }
     }
 
-    private enum UInt32ValueParser implements MessageTypeParser, IntFunction<Object> {
+    private enum UInt32ValueParser implements Parser, IntFunction<Object> {
         INSTANCE;
 
         @Override
@@ -622,7 +624,7 @@ public class Protobuf {
         }
     }
 
-    private enum Int64ValueParser implements MessageTypeParser, LongFunction<Object> {
+    private enum Int64ValueParser implements Parser, LongFunction<Object> {
         INSTANCE;
 
         @Override
@@ -646,7 +648,7 @@ public class Protobuf {
         }
     }
 
-    private enum UInt64ValueParser implements MessageTypeParser, LongFunction<Object> {
+    private enum UInt64ValueParser implements Parser, LongFunction<Object> {
         INSTANCE;
 
         @Override
@@ -670,7 +672,7 @@ public class Protobuf {
         }
     }
 
-    private enum FloatValueParser implements MessageTypeParser, FloatFunction<Object> {
+    private enum FloatValueParser implements Parser, FloatFunction<Object> {
         INSTANCE;
 
         @Override
@@ -694,7 +696,7 @@ public class Protobuf {
         }
     }
 
-    private enum DoubleValueParser implements MessageTypeParser, DoubleFunction<Object> {
+    private enum DoubleValueParser implements Parser, DoubleFunction<Object> {
         INSTANCE;
 
         @Override
@@ -718,7 +720,7 @@ public class Protobuf {
         }
     }
 
-    private enum StringValueParser implements MessageTypeParser, Function<StringValue, String> {
+    private enum StringValueParser implements Parser, Function<StringValue, String> {
         INSTANCE;
 
         private static final CustomType<StringValue> IN_TYPE = Type.ofCustom(StringValue.class);
@@ -745,7 +747,7 @@ public class Protobuf {
         }
     }
 
-    private enum BytesValueParser implements MessageTypeParser, Function<BytesValue, byte[]> {
+    private enum BytesValueParser implements Parser, Function<BytesValue, byte[]> {
         INSTANCE;
 
         private static final CustomType<BytesValue> IN_TYPE = Type.ofCustom(BytesValue.class);
@@ -772,7 +774,7 @@ public class Protobuf {
         }
     }
 
-    static <T extends Message> MessageTypeParser customParser(Class<T> clazz) {
+    static <T extends Message> Parser customParser(Class<T> clazz) {
         try {
             final Method method = clazz.getDeclaredMethod("getDescriptor");
             final Descriptor descriptor = (Descriptor) method.invoke(null);
@@ -782,7 +784,7 @@ public class Protobuf {
         }
     }
 
-    private static class GenericParser<T extends Message> implements MessageTypeParser {
+    private static class GenericParser<T extends Message> implements Parser {
         private final GenericType<T> type;
         private final Descriptor descriptor;
 
@@ -807,8 +809,8 @@ public class Protobuf {
         }
     }
 
-    private static <T> TypedFunction<T> toArray(TypedFunction<T> tf) {
-
+    private static TypedFunction<Message> toArray(FieldDescriptor fd, TypedFunction<Object> tf) {
+        return tf.walk(new ToArrayTypedFunction(fd));
     }
 
     private static class ToArrayTypedFunction implements TypedFunction.Visitor<Object, TypedFunction<Message>> {
@@ -912,6 +914,7 @@ public class Protobuf {
                 }
             });
 
+            return out[0];
         }
 
         private static char[] toChars(FieldDescriptor fd, CharFunction<Object> f, Message message) {

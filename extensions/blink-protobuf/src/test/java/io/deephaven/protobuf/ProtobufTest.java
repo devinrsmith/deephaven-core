@@ -3,12 +3,16 @@ package io.deephaven.protobuf;
 import com.google.protobuf.BoolValue;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.BytesValue;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
+import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.DoubleValue;
 import com.google.protobuf.FloatValue;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Int64Value;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
@@ -726,6 +730,19 @@ public class ProtobufTest {
                 Type.instantType().arrayType().arrayType(),
                 Map.of());
 
+    }
+
+    @Test
+    void dynamicMessage() throws InvalidProtocolBufferException, DescriptorValidationException {
+
+        String x = "message MyDynamic {\n" +
+                "  int32 foo = 1;\n" +
+                "  string bar = 2;\n" +
+                "}";
+
+        final FileDescriptor fileDescriptor = FileDescriptor.buildFrom(FileDescriptorProto.parseFrom(x.getBytes(StandardCharsets.UTF_8)), new FileDescriptor[]{});
+
+        int t = 0;
     }
 
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {

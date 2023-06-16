@@ -16,6 +16,9 @@ public interface GenericType<T> extends Type<T> {
 
     <V extends Visitor> V walk(V visitor);
 
+    @Override
+    NativeArrayType<T[], T> arrayType();
+
     interface Visitor {
         void visit(StringType stringType);
 

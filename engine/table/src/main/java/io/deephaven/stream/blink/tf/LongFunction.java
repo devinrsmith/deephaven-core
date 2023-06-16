@@ -29,7 +29,7 @@ public interface LongFunction<T> extends TypedFunction<T>, ToLongFunction<T> {
         return x -> applyAsLong(f.apply(x));
     }
 
-    default LongFunction<T> onNull(long onNull) {
+    default LongFunction<T> onNullInput(long onNull) {
         return x -> x == null ? onNull : applyAsLong(x);
     }
 

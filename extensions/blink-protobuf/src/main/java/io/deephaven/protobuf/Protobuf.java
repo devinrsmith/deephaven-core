@@ -153,43 +153,181 @@ public class Protobuf {
             return mapFunction(fd, options);
         }
         return !fd.isRepeated()
-                ? singularTypedFunction(fd, options)
-                : repeatedTypedFunction(fd, options);
+                ? singleMessageToValue(fd, options)
+                : repeatedMessageToValue2(fd, options);
     }
 
-    private static TypedFunction<Message> singularTypedFunction(FieldDescriptor fd, ProtobufOptions options) {
+    private static TypedFunction<Message> singleMessageToValue(FieldDescriptor fd, ProtobufOptions options) {
+        return messageToValue(fieldFunction(fd), fd, options);
+    }
+
+    private static ObjectFunction<Message, ?> repeatedMessageToValue2(FieldDescriptor fd, ProtobufOptions options) {
+        final int[] index = new int[] { 0 };
+        final TypedFunction<Message> tf = messageToValue(ObjectFunction.of(m -> m.getRepeatedField(fd, index[0]), CustomType.of(Object.class)), fd, options);
+        if (tf == null) {
+            return null;
+        }
+        return tf.walk(new TypedFunction.Visitor<>() {
+            @Override
+            public ObjectFunction<Message, ?> visit(BooleanFunction<Message> f) {
+                // todo
+                return repeatedGenericFunction(fd, Boolean.class, b -> null, UNMAPPED_TYPE.arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, char[]> visit(CharFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final char[] out = new char[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsChar(message);
+                    }
+                    return out;
+                }, Type.charType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, byte[]> visit(ByteFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final byte[] out = new byte[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsByte(message);
+                    }
+                    return out;
+                }, Type.byteType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, short[]> visit(ShortFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final short[] out = new short[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsShort(message);
+                    }
+                    return out;
+                }, Type.shortType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, int[]> visit(IntFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final int[] out = new int[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsInt(message);
+                    }
+                    return out;
+                }, Type.intType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, long[]> visit(LongFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final long[] out = new long[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsLong(message);
+                    }
+                    return out;
+                }, Type.longType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, float[]> visit(FloatFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final float[] out = new float[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsFloat(message);
+                    }
+                    return out;
+                }, Type.floatType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, double[]> visit(DoubleFunction<Message> f) {
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final double[] out = new double[count];
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.applyAsDouble(message);
+                    }
+                    return out;
+                }, Type.doubleType().arrayType());
+            }
+
+            @Override
+            public ObjectFunction<Message, ?> visit(ObjectFunction<Message, ?> f) {
+                return visitImpl(f);
+            }
+
+            private <R> ObjectFunction<Message, R[]> visitImpl(ObjectFunction<Message, R> f) {
+                final GenericType<R> rt = f.returnType();
+                final NativeArrayType<R[], R> arrayType = rt.arrayType();
+                return ObjectFunction.of(message -> {
+                    final int count = message.getRepeatedFieldCount(fd);
+                    final R[] out = arrayType.newArrayInstance(count);
+                    for (int i = 0; i < count; ++i) {
+                        index[0] = i;
+                        out[i] = f.apply(message);
+                    }
+                    return out;
+                }, arrayType);
+            }
+        });
+    }
+
+    private static TypedFunction<Message> messageToValue(ObjectFunction<Message, Object> messageToObject, FieldDescriptor fd, ProtobufOptions options) {
         switch (fd.getJavaType()) {
             case BOOLEAN:
-                return booleanFunction(fd, booleanLiteral());
+                return messageToObject.map(NullGuard.of(booleanLiteral()));
             case INT:
-                return intFunction(fd, intLiteral());
+                return messageToObject.map(NullGuard.of(intLiteral()));
             case LONG:
-                return longFunction(fd, longLiteral());
+                return messageToObject.map(NullGuard.of(longLiteral()));
             case FLOAT:
-                return floatFunction(fd, floatLiteral());
+                return messageToObject.map(NullGuard.of(floatLiteral()));
             case DOUBLE:
-                return doubleFunction(fd, doubleLiteral());
+                return messageToObject.map(NullGuard.of(doubleLiteral()));
             case STRING:
-                return castFunction(fd, Type.stringType());
+                return messageToObject.as(Type.stringType());
             case ENUM:
-                return castFunction(fd, ENUM_TYPE);
+                return messageToObject.as(ENUM_TYPE);
             case BYTE_STRING:
-                return castFunction(fd, BYTE_STRING_TYPE).map(Protobuf::adapt, Type.byteType().arrayType());
+                return messageToObject.as(BYTE_STRING_TYPE).map(NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType())));
             case MESSAGE:
-                final Parser parser = options.parsers().get(fd.getMessageType().getFullName());
-                return parser == null ? null : parser.parse(fd, options);
+                final SingleValuedMessageParser parser = options.parsers().get(fd.getMessageType().getFullName());
+                if (parser == null) {
+                    return null;
+                }
+                return messageToObject.as(MESSAGE_TYPE).map(NullGuard.of(parser.parser(options)));
             default:
                 throw new IllegalStateException();
         }
     }
 
-    private static TypedFunction<Message> repeatedTypedFunction(FieldDescriptor fd, ProtobufOptions options) {
+
+    private static TypedFunction<Message> repeatedMessageToValue(FieldDescriptor fd, ProtobufOptions options) {
+
+        final TypedFunction<Message> valueFunction = messageToValue(null, fd, options);
+
         // we already know repeated, and not a map
         switch (fd.getJavaType()) {
             case BOOLEAN:
                 return repeatedGenericFunction(fd, Boolean.class, b -> null, UNMAPPED_TYPE.arrayType());
             case INT:
-                return repeatedIntFunction(fd, intLiteral());
+
+
+                //return repeatedIntFunction(fd, intLiteral());
             case LONG:
                 return repeatedLongFunction(fd, longLiteral());
             case FLOAT:
@@ -203,14 +341,19 @@ public class Protobuf {
             case BYTE_STRING:
                 return repeatedGenericFunction(fd, BYTE_STRING_TYPE.clazz(), Protobuf::adapt, Type.byteType().arrayType().arrayType());
             case MESSAGE:
-                final Parser parser = options.parsers().get(fd.getMessageType().getFullName());
+                final SingleValuedMessageParser parser = options.parsers().get(fd.getMessageType().getFullName());
                 // Note: we could consider repeating all of the individual types in this message in the future.
                 // see SomeTest#repeatedMessageDescructured
-                return parser == null ? null : parser.parseRepeated(fd, options);
+                //return parser == null ? null : parser.parseRepeated(fd, options);
+                return null;
 
             default:
                 throw new IllegalStateException();
         }
+    }
+
+    private static <T> TypedFunction<T> nullGuard(TypedFunction<T> what) {
+        return NullGuard.of(what);
     }
 
     private static BooleanFunction<Message> booleanFunction(FieldDescriptor fd, BooleanFunction<Object> toBoolean) {
@@ -480,7 +623,7 @@ public class Protobuf {
         return ObjectFunction.of(o -> type.clazz().cast(o), type);
     }
 
-    static List<Parser> builtinParsers() {
+    static List<SingleValuedMessageParser> builtinParsers() {
         return List.of(
                 TimestampParser.INSTANCE,
                 DurationParser.INSTANCE,
@@ -497,7 +640,27 @@ public class Protobuf {
                 customParser(FieldMask.class));
     }
 
-    private enum TimestampParser implements Parser, Function<Timestamp, Instant> {
+    private static ObjectFunction<Message, Object> fieldFunction(FieldDescriptor fd) {
+        return ObjectFunction.of(message -> hasField(message, fd) ? message.getField(fd) : null, Type.ofCustom(Object.class));
+    }
+
+    private static ObjectFunction<Message, Object> fieldFunctionRepeated(FieldDescriptor fd, int index) {
+        return ObjectFunction.of(message -> message.getRepeatedField(fd, index), Type.ofCustom(Object.class));
+    }
+
+    private static ObjectFunction<Message, Message> messageFieldFunction(FieldDescriptor fd) {
+        return fieldFunction(fd).as(MESSAGE_TYPE);
+    }
+
+    private static ObjectFunction<Message, Message> messageFieldFunctionRepeated(FieldDescriptor fd, int index) {
+        return fieldFunctionRepeated(fd, index).as(MESSAGE_TYPE);
+    }
+
+    private static <R extends Message> ObjectFunction<Message, R> message(GenericType<R> type) {
+        return ObjectFunction.cast(type);
+    }
+
+    private enum TimestampParser implements SingleValuedMessageParser, Function<Timestamp, Instant> {
         INSTANCE;
 
         private static final CustomType<Timestamp> IN_TYPE = Type.ofCustom(Timestamp.class);
@@ -509,14 +672,19 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+        public ObjectFunction<Message, Instant> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(this, OUT_TYPE);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).map(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
+//        }
 
         @Override
         public Instant apply(Timestamp t) {
@@ -524,7 +692,7 @@ public class Protobuf {
         }
     }
 
-    private enum DurationParser implements Parser, Function<com.google.protobuf.Duration, Duration> {
+    private enum DurationParser implements SingleValuedMessageParser, Function<com.google.protobuf.Duration, Duration> {
         INSTANCE;
 
         private static final CustomType<com.google.protobuf.Duration> IN_TYPE = Type.ofCustom(com.google.protobuf.Duration.class);
@@ -536,14 +704,19 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+        public ObjectFunction<Message, Duration> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(this, OUT_TYPE);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).map(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
+//        }
 
         @Override
         public Duration apply(com.google.protobuf.Duration d) {
@@ -551,8 +724,10 @@ public class Protobuf {
         }
     }
 
-    private enum BoolValueParser implements Parser, BooleanFunction<Object>{
+    private enum BoolValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<BoolValue> IN_TYPE = Type.ofCustom(BoolValue.class);
 
         @Override
         public String fullName() {
@@ -560,24 +735,26 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return booleanFunction(fd, this);
+        public BooleanFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(BoolValue::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            // todo
-            return repeatedGenericFunction(fd, BoolValue.class, b -> null, UNMAPPED_TYPE.arrayType());
-        }
-
-        @Override
-        public Boolean applyAsBoolean(Object value) {
-            return ((BoolValue) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).mapToBoolean(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            // todo
+//            return repeatedGenericFunction(fd, BoolValue.class, b -> null, UNMAPPED_TYPE.arrayType());
+//        }
     }
 
-    private enum Int32ValueParser implements Parser, IntFunction<Object> {
+    private enum Int32ValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<Int32Value> IN_TYPE = Type.ofCustom(Int32Value.class);
 
         @Override
         public String fullName() {
@@ -585,23 +762,26 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return intFunction(fd, this);
+        public IntFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(Int32Value::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedIntFunction(fd, this);
-        }
-
-        @Override
-        public int applyAsInt(Object value) {
-            return ((Int32Value) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).mapToInt(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedIntFunction(fd, this);
+//        }
     }
 
-    private enum UInt32ValueParser implements Parser, IntFunction<Object> {
+    private enum UInt32ValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<UInt32Value> IN_TYPE = Type.ofCustom(UInt32Value.class);
+
 
         @Override
         public String fullName() {
@@ -609,23 +789,26 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return intFunction(fd, this);
+        public IntFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(UInt32Value::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedIntFunction(fd, this);
-        }
-
-        @Override
-        public int applyAsInt(Object value) {
-            return ((UInt32Value) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).mapToInt(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedIntFunction(fd, this);
+//        }
     }
 
-    private enum Int64ValueParser implements Parser, LongFunction<Object> {
+    private enum Int64ValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<Int64Value> IN_TYPE = Type.ofCustom(Int64Value.class);
+
 
         @Override
         public String fullName() {
@@ -633,23 +816,27 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return longFunction(fd, this);
+        public LongFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(Int64Value::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedLongFunction(fd, this);
-        }
 
-        @Override
-        public long applyAsLong(Object value) {
-            return ((Int64Value) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return messageFieldFunction(fd).mapToLong(parser(options));
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedLongFunction(fd, this);
+//        }
     }
 
-    private enum UInt64ValueParser implements Parser, LongFunction<Object> {
+    private enum UInt64ValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<UInt64Value> IN_TYPE = Type.ofCustom(UInt64Value.class);
+
 
         @Override
         public String fullName() {
@@ -657,23 +844,26 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return longFunction(fd, this);
+        public LongFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(UInt64Value::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedLongFunction(fd, this);
-        }
 
-        @Override
-        public long applyAsLong(Object value) {
-            return ((UInt64Value) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return longFunction(fd, this);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedLongFunction(fd, this);
+//        }
     }
 
-    private enum FloatValueParser implements Parser, FloatFunction<Object> {
+    private enum FloatValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<FloatValue> IN_TYPE = Type.ofCustom(FloatValue.class);
 
         @Override
         public String fullName() {
@@ -681,23 +871,31 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return floatFunction(fd, this);
+        public FloatFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(FloatValue::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedFloatFunction(fd, this);
-        }
 
-        @Override
-        public float applyAsFloat(Object value) {
-            return ((FloatValue) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return floatFunction(fd, this);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedFloatFunction(fd, this);
+//        }
+//
+//        @Override
+//        public float applyAsFloat(Object value) {
+//            return ((FloatValue) value).getValue();
+//        }
     }
 
-    private enum DoubleValueParser implements Parser, DoubleFunction<Object> {
+    private enum DoubleValueParser implements SingleValuedMessageParser {
         INSTANCE;
+
+        private static final CustomType<DoubleValue> IN_TYPE = Type.ofCustom(DoubleValue.class);
 
         @Override
         public String fullName() {
@@ -705,22 +903,27 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return doubleFunction(fd, this);
+        public DoubleFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(DoubleValue::getValue);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedDoubleFunction(fd, this);
-        }
-
-        @Override
-        public double applyAsDouble(Object value) {
-            return ((DoubleValue) value).getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return doubleFunction(fd, this);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedDoubleFunction(fd, this);
+//        }
+//
+//        @Override
+//        public double applyAsDouble(Object value) {
+//            return ((DoubleValue) value).getValue();
+//        }
     }
 
-    private enum StringValueParser implements Parser, Function<StringValue, String> {
+    private enum StringValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
         private static final CustomType<StringValue> IN_TYPE = Type.ofCustom(StringValue.class);
@@ -732,22 +935,28 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+        public ObjectFunction<Message, String> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(StringValue::getValue, OUT_TYPE);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
-        }
 
-        @Override
-        public String apply(StringValue sv) {
-            return sv == null ? null : sv.getValue();
-        }
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
+//        }
+//
+//        @Override
+//        public String apply(StringValue sv) {
+//            return sv == null ? null : sv.getValue();
+//        }
     }
 
-    private enum BytesValueParser implements Parser, Function<BytesValue, byte[]> {
+    private enum BytesValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
         private static final CustomType<BytesValue> IN_TYPE = Type.ofCustom(BytesValue.class);
@@ -759,22 +968,32 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+        public TypedFunction<Message> parser(ProtobufOptions options) {
+            return message(IN_TYPE).map(BytesValueParser::toBytes, OUT_TYPE);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
+        private static byte[] toBytes(BytesValue bv) {
+            return bv.getValue().toByteArray();
         }
 
-        @Override
-        public byte[] apply(BytesValue bv) {
-            return bv == null ? null : bv.getValue().toByteArray();
-        }
+
+//        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return castFunction(fd, IN_TYPE).map(this, OUT_TYPE);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedGenericFunction(fd, IN_TYPE.clazz(), this, OUT_TYPE.arrayType());
+//        }
+//
+//        @Override
+//        public byte[] apply(BytesValue bv) {
+//            return bv == null ? null : bv.getValue().toByteArray();
+//        }
     }
 
-    static <T extends Message> Parser customParser(Class<T> clazz) {
+    static <T extends Message> SingleValuedMessageParser customParser(Class<T> clazz) {
         try {
             final Method method = clazz.getDeclaredMethod("getDescriptor");
             final Descriptor descriptor = (Descriptor) method.invoke(null);
@@ -784,7 +1003,7 @@ public class Protobuf {
         }
     }
 
-    private static class GenericParser<T extends Message> implements Parser {
+    private static class GenericParser<T extends Message> implements SingleValuedMessageParser {
         private final GenericType<T> type;
         private final Descriptor descriptor;
 
@@ -799,14 +1018,19 @@ public class Protobuf {
         }
 
         @Override
-        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
-            return castFunction(fd, type);
+        public TypedFunction<Message> parser(ProtobufOptions options) {
+            return message(type);
         }
 
-        @Override
-        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
-            return repeatedGenericFunction(fd, type.arrayType());
-        }
+        //        @Override
+//        public TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options) {
+//            return castFunction(fd, type);
+//        }
+//
+//        @Override
+//        public TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options) {
+//            return repeatedGenericFunction(fd, type.arrayType());
+//        }
     }
 
     private static TypedFunction<Message> toArray(FieldDescriptor fd, TypedFunction<Object> tf) {

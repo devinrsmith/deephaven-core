@@ -38,8 +38,8 @@ public abstract class ProtobufOptions {
     }
 
     @Default
-    public Map<String, Parser> parsers() {
-        return Parser.defaults();
+    public Map<String, SingleValuedMessageParser> parsers() {
+        return SingleValuedMessageParser.defaults();
     }
 
     final boolean include(List<String> path) {
@@ -81,7 +81,7 @@ public abstract class ProtobufOptions {
 
         Builder addAllExcludePaths(Iterable<? extends List<String>> elements);
 
-        Builder parsers(Map<String, Parser> parsers);
+        Builder parsers(Map<String, SingleValuedMessageParser> parsers);
 
         ProtobufOptions build();
     }

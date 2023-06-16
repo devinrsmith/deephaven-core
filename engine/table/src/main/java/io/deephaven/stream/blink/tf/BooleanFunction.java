@@ -25,7 +25,7 @@ public interface BooleanFunction<T> extends TypedFunction<T> {
         return x -> applyAsBoolean(f.apply(x));
     }
 
-    default BooleanFunction<T> onNull(Boolean onNull) {
+    default BooleanFunction<T> onNullInput(Boolean onNull) {
         return x -> x == null ? onNull : applyAsBoolean(x);
     }
 }

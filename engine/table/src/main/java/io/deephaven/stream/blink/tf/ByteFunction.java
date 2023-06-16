@@ -25,7 +25,7 @@ public interface ByteFunction<T> extends TypedFunction<T> {
         return x -> applyAsByte(f.apply(x));
     }
 
-    default ByteFunction<T> onNull(byte onNull) {
+    default ByteFunction<T> onNullInput(byte onNull) {
         return x -> x == null ? onNull : applyAsByte(x);
     }
 }

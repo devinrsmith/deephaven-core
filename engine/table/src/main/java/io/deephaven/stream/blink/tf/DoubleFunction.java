@@ -27,7 +27,7 @@ public interface DoubleFunction<T> extends TypedFunction<T>, ToDoubleFunction<T>
         return x -> applyAsDouble(f.apply(x));
     }
 
-    default DoubleFunction<T> onNull(double onNull) {
+    default DoubleFunction<T> onNullInput(double onNull) {
         return x -> x == null ? onNull : applyAsDouble(x);
     }
 }

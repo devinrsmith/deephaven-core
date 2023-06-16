@@ -27,7 +27,7 @@ public interface IntFunction<T> extends TypedFunction<T>, ToIntFunction<T> {
         return x -> applyAsInt(f.apply(x));
     }
 
-    default IntFunction<T> onNull(int onNull) {
+    default IntFunction<T> onNullInput(int onNull) {
         return x -> x == null ? onNull : applyAsInt(x);
     }
 }

@@ -25,7 +25,7 @@ public interface ShortFunction<T> extends TypedFunction<T> {
         return x -> applyAsShort(f.apply(x));
     }
 
-    default ShortFunction<T> onNull(short onNull) {
+    default ShortFunction<T> onNullInput(short onNull) {
         return x -> x == null ? onNull : applyAsShort(x);
     }
 }

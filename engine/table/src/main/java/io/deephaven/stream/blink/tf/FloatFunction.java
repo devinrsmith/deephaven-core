@@ -25,7 +25,7 @@ public interface FloatFunction<T> extends TypedFunction<T> {
         return x -> applyAsFloat(f.apply(x));
     }
 
-    default FloatFunction<T> onNull(float onNull) {
+    default FloatFunction<T> onNullInput(float onNull) {
         return x -> x == null ? onNull : applyAsFloat(x);
     }
 }

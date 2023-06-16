@@ -25,7 +25,7 @@ public interface CharFunction<T> extends TypedFunction<T> {
         return x -> applyAsChar(f.apply(x));
     }
 
-    default CharFunction<T> onNull(char onNull) {
+    default CharFunction<T> onNullInput(char onNull) {
         return x -> x == null ? onNull : applyAsChar(x);
     }
 }

@@ -121,3 +121,10 @@ message RepeatedMessage {
   }
   repeated Person persons = 1;
 }
+
+message NestedRepeatedTimestamps {
+  message Timestamps {
+    repeated google.protobuf.Timestamp ts = 1;
+  }
+  repeated Timestamps stamps = 1;
+}

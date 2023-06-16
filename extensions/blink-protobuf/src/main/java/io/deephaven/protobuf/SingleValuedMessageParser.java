@@ -33,7 +33,17 @@ public interface SingleValuedMessageParser {
 
     TypedFunction<Message> parser(ProtobufOptions options);
 
-//    TypedFunction<Message> parse(FieldDescriptor fd, ProtobufOptions options);
-//
-//    TypedFunction<Message> parseRepeated(FieldDescriptor fd, ProtobufOptions options);
+    default GenericMessageParser asGenericMessageParser() {
+        return new GenericMessageParser() {
+            @Override
+            public String fullName() {
+                return SingleValuedMessageParser.this.fullName();
+            }
+
+            @Override
+            public Map<List<String>, TypedFunction<Message>> parser(ProtobufOptions options) {
+                return Map.of(List.of(), SingleValuedMessageParser.this.parser(options));
+            }
+        };
+    }
 }

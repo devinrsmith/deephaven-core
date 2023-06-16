@@ -19,7 +19,7 @@ public class ProtobufBlink {
                 .name(descriptor.getFullName())
                 .chunkSize(1024)
                 .updateSourceRegistrar(ExecutionContext.getContext().getUpdateGraph());
-        for (Entry<List<String>, TypedFunction<Message>> e : Protobuf.parser(descriptor, options).entrySet()) {
+        for (Entry<List<String>, TypedFunction<Message>> e : Protobuf.parser(descriptor).parser(options).entrySet()) {
             // noinspection unchecked
             builder.putColumns(pathToName(e.getKey()), (TypedFunction<M>) e.getValue());
         }

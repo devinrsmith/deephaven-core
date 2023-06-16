@@ -1,8 +1,10 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.Producer;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public interface TypedFunction<T> {
 

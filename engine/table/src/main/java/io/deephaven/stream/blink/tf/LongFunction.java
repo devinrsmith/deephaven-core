@@ -6,10 +6,14 @@ import io.deephaven.qst.type.Type;
 
 import java.time.Instant;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 
 @FunctionalInterface
 public interface LongFunction<T> extends TypedFunction<T>, ToLongFunction<T> {
+    static <T> LongFunction<T> ifElse(Predicate<T> p, LongFunction<T> ifTrue, LongFunction<T> ifFalse) {
+        return value -> p.test(value) ? ifTrue.applyAsLong(value) : ifFalse.applyAsLong(value);
+    }
 
     @Override
     long applyAsLong(T value);

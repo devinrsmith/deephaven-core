@@ -306,21 +306,21 @@ public class Protobuf {
     private static TypedFunction<Message> messageFieldToValue(ObjectFunction<Message, Object> messageToObject, FieldDescriptor fd, ProtobufOptions options) {
         switch (fd.getJavaType()) {
             case BOOLEAN:
-                return messageToObject.map(NullGuard.of(booleanLiteral()));
+                return messageToObject.mapBoolean(NullGuard.of(booleanLiteral()));
             case INT:
-                return messageToObject.map(NullGuard.of(intLiteral()));
+                return messageToObject.mapInt(NullGuard.of(intLiteral()));
             case LONG:
-                return messageToObject.map(NullGuard.of(longLiteral()));
+                return messageToObject.mapLong(NullGuard.of(longLiteral()));
             case FLOAT:
-                return messageToObject.map(NullGuard.of(floatLiteral()));
+                return messageToObject.mapFloat(NullGuard.of(floatLiteral()));
             case DOUBLE:
-                return messageToObject.map(NullGuard.of(doubleLiteral()));
+                return messageToObject.mapDouble(NullGuard.of(doubleLiteral()));
             case STRING:
                 return messageToObject.as(Type.stringType());
             case ENUM:
                 return messageToObject.as(ENUM_TYPE);
             case BYTE_STRING:
-                return messageToObject.as(BYTE_STRING_TYPE).map(NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType())));
+                return messageToObject.as(BYTE_STRING_TYPE).mapObj(NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType())));
             case MESSAGE:
                 final SingleValuedMessageParser parser = options.parsers().get(fd.getMessageType().getFullName());
                 if (parser == null) {
@@ -376,7 +376,7 @@ public class Protobuf {
     // Note: in protobuf an actualized Message is never null.
     // In the case of our translation layer though, the presence of a null Message means that the field, or some parent
     // of the field, was not present; but we still need to translate the value for the specific column.
-    private static boolean hasField(Message m, FieldDescriptor fd) {
+    static boolean hasField(Message m, FieldDescriptor fd) {
         return m != null && (m.hasField(fd) || !fd.hasPresence());
     }
 
@@ -499,7 +499,7 @@ public class Protobuf {
 
         @Override
         public ObjectFunction<Message, Instant> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(this, OUT_TYPE);
+            return message(IN_TYPE).mapObj(this, OUT_TYPE);
         }
 
         @Override
@@ -521,7 +521,7 @@ public class Protobuf {
 
         @Override
         public ObjectFunction<Message, Duration> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(this, OUT_TYPE);
+            return message(IN_TYPE).mapObj(this, OUT_TYPE);
         }
 
         @Override
@@ -542,7 +542,7 @@ public class Protobuf {
 
         @Override
         public BooleanFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(BoolValue::getValue);
+            return message(IN_TYPE).mapBoolean(BoolValue::getValue);
         }
     }
 
@@ -558,7 +558,7 @@ public class Protobuf {
 
         @Override
         public IntFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(Int32Value::getValue);
+            return message(IN_TYPE).mapInt(Int32Value::getValue);
         }
     }
 
@@ -575,7 +575,7 @@ public class Protobuf {
 
         @Override
         public IntFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(UInt32Value::getValue);
+            return message(IN_TYPE).mapInt(UInt32Value::getValue);
         }
     }
 
@@ -592,7 +592,7 @@ public class Protobuf {
 
         @Override
         public LongFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(Int64Value::getValue);
+            return message(IN_TYPE).mapLong(Int64Value::getValue);
         }
     }
 
@@ -609,7 +609,7 @@ public class Protobuf {
 
         @Override
         public LongFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(UInt64Value::getValue);
+            return message(IN_TYPE).mapLong(UInt64Value::getValue);
         }
     }
 
@@ -625,7 +625,7 @@ public class Protobuf {
 
         @Override
         public FloatFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(FloatValue::getValue);
+            return message(IN_TYPE).mapFloat(FloatValue::getValue);
         }
     }
 
@@ -641,7 +641,7 @@ public class Protobuf {
 
         @Override
         public DoubleFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(DoubleValue::getValue);
+            return message(IN_TYPE).mapDouble(DoubleValue::getValue);
         }
     }
 
@@ -658,7 +658,7 @@ public class Protobuf {
 
         @Override
         public ObjectFunction<Message, String> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(StringValue::getValue, OUT_TYPE);
+            return message(IN_TYPE).mapObj(StringValue::getValue, OUT_TYPE);
         }
     }
 
@@ -675,7 +675,7 @@ public class Protobuf {
 
         @Override
         public TypedFunction<Message> parser(ProtobufOptions options) {
-            return message(IN_TYPE).map(BytesValueParser::toBytes, OUT_TYPE);
+            return message(IN_TYPE).mapObj(BytesValueParser::toBytes, OUT_TYPE);
         }
 
         private static byte[] toBytes(BytesValue bv) {

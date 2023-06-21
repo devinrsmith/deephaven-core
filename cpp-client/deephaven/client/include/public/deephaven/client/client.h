@@ -6,6 +6,7 @@
 #include <memory>
 #include <string_view>
 #include "deephaven/client/columns.h"
+#include "deephaven/client/client_options.h"
 #include "deephaven/client/expressions.h"
 #include "deephaven/dhcore/ticking/ticking.h"
 #include "deephaven/dhcore/utility/callbacks.h"
@@ -17,7 +18,6 @@
  */
 namespace deephaven::client {
 class FlightWrapper;
-class TableHandleAndFlightDescriptor;
 }  // namespace deephaven::client
 
 /**
@@ -118,13 +118,21 @@ public:
   TableHandle timeTable(std::chrono::system_clock::time_point startTime,
       std::chrono::system_clock::duration period) const;
   /**
-   * Allocate a fresh TableHandle and return both it and its corresponding Arrow FlightDescriptor.
-   * This is used when the caller wants to do an Arrow DoPut operation.
-   * The object returned is only forward-referenced in this file. If you want to use it, you will
-   * also need to include deephaven/client/flight.h.
-   * @return A TableHandle and Arrow FlightDescriptor referring to the new table.
+   * Allocate a fresh client ticket. This is a low level operation, typically used when the caller wants to do an Arrow
+   * doPut operation.
+   * @example
+   * auto ticket = manager.newTicket();
+   * auto flightDescriptor = convertTicketToFlightDescriptor(ticket);
+   * // [do arrow operations here to put your table to the server]
+   * // Once that is done, you can bind the ticket to a TableHandle
+   * auto tableHandle = manager.makeTableHandleFromTicket(ticket);
    */
-  TableHandleAndFlightDescriptor newTableHandleAndFlightDescriptor() const;
+  std::string newTicket() const;
+  /**
+   * Creates a TableHandle that owns the underlying ticket and its resources. The ticket argument is typically
+   * created with newTicket() and then populated e.g. with Arrow operations.
+   */
+  TableHandle makeTableHandleFromTicket(std::string ticket) const;
   /**
    * Execute a script on the server. This assumes that the Client was created with a sessionType corresponding to
    * the language of the script (typically either "python" or "groovy") and that the code matches that language.
@@ -150,22 +158,6 @@ private:
   std::shared_ptr<impl::TableHandleManagerImpl> impl_;
 };
 
-class ClientOptions {
-public:
-  ClientOptions();
-  ~ClientOptions();
-
-  ClientOptions &setDefaultAuthentication();
-  ClientOptions &setBasicAuthentication(const std::string &username, const std::string &password);
-  ClientOptions &setCustomAuthentication(const std::string &authenticationKey, const std::string &authenticationValue);
-  ClientOptions &setSessionType(const std::string &sessionType);
-
-private:
-  std::string authorizationValue_;
-  std::string sessionType_;
-
-  friend class Client;
-};
 
 /**
  * The main class for interacting with Deephaven. Start here to connect with
@@ -1321,6 +1313,26 @@ public:
    * Used internally, for debugging.
    */
   void observe() const;
+
+  /**
+   * A specialized operation to release the state of this TableHandle. This operation is normally done by the
+   * destructor, so most programs will never need to call this method.. If there are no other copies of this
+   * TableHandle, and if there are no "child" TableHandles dependent on this TableHandle, then the corresponding server
+   * resources will be released.
+   */
+  void release() {
+    impl_.reset();
+  }
+
+  /**
+   * Number of rows in the table at the time this TableHandle was created.
+   */
+  int64_t numRows();
+
+  /**
+   * Whether the table was static at the time this TableHandle was created.
+   */
+  bool isStatic();
 
   /**
    * Used internally. Returns the underlying impl object.

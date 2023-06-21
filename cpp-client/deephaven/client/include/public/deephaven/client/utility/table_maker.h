@@ -100,7 +100,6 @@ public:
   /**
    * Make the table. Call this after all your calls to addColumn().
    * @param manager The TableHandleManager
-   * @param tableName The name of the table
    * @return The TableHandle referencing the newly-created table.
    */
   TableHandle makeTable(const TableHandleManager &manager);

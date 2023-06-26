@@ -16,6 +16,10 @@ public abstract class ProtobufFunctions {
         return ImmutableProtobufFunctions.builder();
     }
 
+    public static ProtobufFunctions empty() {
+        return builder().build();
+    }
+
     public abstract Map<List<String>, TypedFunction<Message>> columns();
 
     public interface Builder {

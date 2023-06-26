@@ -50,6 +50,10 @@ public class Protobuf2 {
         if (wellKnown != null) {
             return wellKnown;
         }
+        if (fd.isRepeated()) {
+            // todo and map
+            return ProtobufFunctions.empty();
+        }
         return fieldObject(fd).toFunctions(context);
     }
 
@@ -69,6 +73,9 @@ public class Protobuf2 {
         private final FieldDescriptor fd;
 
         public FieldObject(FieldDescriptor fd) {
+            if (fd.isRepeated()) {
+                throw new IllegalArgumentException();
+            }
             this.fd = Objects.requireNonNull(fd);
         }
 
@@ -138,5 +145,12 @@ public class Protobuf2 {
         private static ObjectFunction<ByteString, byte[]> bytes_() {
             return NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));
         }
+    }
+
+    private static ProtobufFunctions singleWellKnown(FieldDescriptor fd, ProtobufOptions options) {
+        final String messageTypeFullName = fd.getMessageType().getFullName();
+        // todo: pass in
+        final SingleValuedMessageParser svmp = SingleValuedMessageParser.defaults().get(messageTypeFullName);
+        return simpleField(fd, svmp.parser(options));
     }
 }

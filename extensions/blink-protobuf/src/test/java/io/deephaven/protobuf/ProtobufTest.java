@@ -338,8 +338,7 @@ public class ProtobufTest {
 
     @Test
     void wrappers() {
-        final Map<List<String>, TypedFunction<Message>> nf =
-                nf(TheWrappers.getDescriptor());
+        final Map<List<String>, TypedFunction<Message>> nf = nf(TheWrappers.getDescriptor());
         assertThat(nf.keySet()).containsExactly(
                 List.of("bool"),
                 List.of("int32"),
@@ -732,22 +731,11 @@ public class ProtobufTest {
 
     }
 
-    @Test
-    void dynamicMessage() throws InvalidProtocolBufferException, DescriptorValidationException {
-
-        String x = "message MyDynamic {\n" +
-                "  int32 foo = 1;\n" +
-                "  string bar = 2;\n" +
-                "}";
-
-        final FileDescriptor fileDescriptor = FileDescriptor
-                .buildFrom(FileDescriptorProto.parseFrom(x.getBytes(StandardCharsets.UTF_8)), new FileDescriptor[] {});
-
-        int t = 0;
-    }
-
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
-        return Protobuf.parser(descriptor).parser(ProtobufOptions.defaults());
+
+        return new Protobuf2(ProtobufOptions.defaults()).translate(descriptor).columns();
+
+        // return Protobuf.parser(descriptor).parser(ProtobufOptions.defaults());
     }
 
     private static <T> void checkKey(

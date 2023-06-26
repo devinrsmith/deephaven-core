@@ -2,6 +2,7 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.GenericType;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 public interface ObjectFunction<T, R> extends TypedFunction<T> {

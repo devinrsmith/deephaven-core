@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.qst.type.GenericType;
@@ -26,131 +27,184 @@ import java.util.stream.Stream;
 
 public class Protobuf2 {
 
-    public interface Context {
-        Optional<ProtobufFunctions> wellKnown(Descriptor descriptor);
+    private final ProtobufOptions options;
 
-        Optional<ProtobufFunctions> wellKnown(FieldDescriptor fieldDescriptor);
+    public Protobuf2(ProtobufOptions options) {
+        this.options = Objects.requireNonNull(options);
     }
 
-    private static ProtobufFunctions translate(Descriptor descriptor, Context context) {
-        final ProtobufFunctions wellKnown = context.wellKnown(descriptor).orElse(null);
-        if (wellKnown != null) {
-            return wellKnown;
-        }
-        final Builder builder = ProtobufFunctions.builder();
-        for (FieldDescriptor fd : descriptor.getFields()) {
-            builder.putAllColumns(translate(fd, context).columns());
-        }
-        // todo: additional context, serialized size etc
-        return builder.build();
-    }
-
-    private static ProtobufFunctions translate(FieldDescriptor fd, Context context) {
-        final ProtobufFunctions wellKnown = context.wellKnown(fd).orElse(null);
-        if (wellKnown != null) {
-            return wellKnown;
-        }
-        if (fd.isRepeated()) {
-            // todo and map
-            return ProtobufFunctions.empty();
-        }
-        return fieldObject(fd).toFunctions(context);
-    }
-
-    private static ProtobufFunctions simpleField(FieldDescriptor fd, TypedFunction<Message> f) {
-        return ProtobufFunctions.builder().putColumns(List.of(fd.getName()), f).build();
+    public ProtobufFunctions translate(Descriptor descriptor) {
+        return new DescriptorContext(List.of(), descriptor).functions();
     }
 
     private static List<String> prefix(String name, List<String> rest) {
         return Stream.concat(Stream.of(name), rest.stream()).collect(Collectors.toList());
     }
 
-    private static FieldObject fieldObject(FieldDescriptor fd) {
-        return new FieldObject(fd);
+    private TypedFunction<Message> parser(SingleValuedMessageParser svmp) {
+        return NullGuard.of(svmp.parser(options));
     }
 
-    private static class FieldObject implements ObjectFunction<Message, Object> {
+    private class DescriptorContext {
+        private final List<FieldDescriptor> parents;
+        private final Descriptor descriptor;
+
+        public DescriptorContext(List<FieldDescriptor> parents, Descriptor descriptor) {
+            this.parents = Objects.requireNonNull(parents);
+            this.descriptor = Objects.requireNonNull(descriptor);
+        }
+
+        private ProtobufFunctions functions() {
+            final ProtobufFunctions wellKnown = wellKnown().orElse(null);
+            if (wellKnown != null) {
+                return wellKnown;
+            }
+            final Builder builder = ProtobufFunctions.builder();
+            for (FieldContext fc : fcs()) {
+                builder.putAllColumns(fc.functions().columns());
+            }
+            // todo: additional context, serialized size etc
+            return builder.build();
+        }
+
+        private Optional<ProtobufFunctions> wellKnown() {
+            // todo: eventually support cases that are >1 field
+            return svmp()
+                    .map(Protobuf2.this::parser)
+                    .map(ProtobufFunctions::unnamed);
+        }
+
+        private Optional<SingleValuedMessageParser> svmp() {
+            return Optional.ofNullable(options.parsers().get(descriptor.getFullName()));
+        }
+
+        private List<FieldContext> fcs() {
+            return descriptor.getFields().stream().map(this::fc).collect(Collectors.toList());
+        }
+
+        private FieldContext fc(FieldDescriptor fd) {
+            return new FieldContext(this, fd);
+        }
+    }
+
+    private class FieldContext {
+        private final DescriptorContext parent;
         private final FieldDescriptor fd;
 
-        public FieldObject(FieldDescriptor fd) {
-            if (fd.isRepeated()) {
-                throw new IllegalArgumentException();
-            }
+        public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
+            this.parent = Objects.requireNonNull(parent);
             this.fd = Objects.requireNonNull(fd);
         }
 
-        @Override
-        public GenericType<Object> returnType() {
-            return Type.ofCustom(Object.class);
-        }
-
-        @Override
-        public Object apply(Message value) {
-            return Protobuf.hasField(value, fd) ? value.getField(fd) : null;
-        }
-
-        private ProtobufFunctions toFunctions(Context context) {
-            switch (fd.getJavaType()) {
-                case INT:
-                    return simpleField(fd, mapInt(int_()));
-                case LONG:
-                    return simpleField(fd, mapLong(long_()));
-                case FLOAT:
-                    return simpleField(fd, mapFloat(float_()));
-                case DOUBLE:
-                    return simpleField(fd, mapDouble(double_()));
-                case BOOLEAN:
-                    return simpleField(fd, mapBoolean(boolean_()));
-                case STRING:
-                    return simpleField(fd, as(Type.stringType()));
-                case BYTE_STRING:
-                    return simpleField(fd, as(Type.ofCustom(ByteString.class)).mapObj(bytes_()));
-                case ENUM:
-                    return simpleField(fd, as(Type.ofCustom(EnumValueDescriptor.class)));
-                case MESSAGE:
-                    final ProtobufFunctions subF = translate(fd.getMessageType(), context);
-                    final Function<Message, Message> toSubmessage = as(Type.ofCustom(Message.class))::apply;
-                    final Builder builder = ProtobufFunctions.builder();
-                    for (Entry<List<String>, TypedFunction<Message>> e : subF.columns().entrySet()) {
-                        final List<String> key = e.getKey();
-                        final TypedFunction<Message> value = e.getValue();
-                        builder.putColumns(prefix(fd.getName(), key), value.mapInput(toSubmessage));
-                    }
-                    return builder.build();
-                default:
-                    throw new IllegalStateException();
+        private ProtobufFunctions functions() {
+            final ProtobufFunctions wellKnown = wellKnown().orElse(null);
+            if (wellKnown != null) {
+                return wellKnown;
             }
+            if (fd.isRepeated()) {
+                // todo and map
+                return ProtobufFunctions.empty();
+            }
+            return new FieldObject(fd).functions();
         }
 
-        private static IntFunction<Object> int_() {
-            return NullGuard.of((IntFunction<Object>) x -> (int) x);
+        private Optional<ProtobufFunctions> wellKnown() {
+            // todo: eventually have support for parsing specific fields in specific ways
+            return Optional.empty();
         }
 
-        private static LongFunction<Object> long_() {
-            return NullGuard.of((LongFunction<Object>) x -> (long) x);
+        private ProtobufFunctions namedField(TypedFunction<Message> tf) {
+            return ProtobufFunctions.builder()
+                    .putColumns(List.of(fd.getName()), tf)
+                    .build();
         }
 
-        private static FloatFunction<Object> float_() {
-            return NullGuard.of((FloatFunction<Object>) x -> (float) x);
+        private DescriptorContext toMessageContext() {
+            if (fd.getJavaType() != JavaType.MESSAGE) {
+                throw new IllegalStateException();
+            }
+            final List<FieldDescriptor> parents = Stream.concat(parent.parents.stream(), Stream.of(fd))
+                    .collect(Collectors.toList());
+            return new DescriptorContext(parents, fd.getMessageType());
         }
 
-        private static DoubleFunction<Object> double_() {
-            return NullGuard.of((DoubleFunction<Object>) x -> (double) x);
-        }
+        private class FieldObject implements ObjectFunction<Message, Object> {
+            private final FieldDescriptor fd;
 
-        private static BooleanFunction<Object> boolean_() {
-            return NullGuard.of((BooleanFunction<Object>) x -> (boolean) x);
-        }
+            public FieldObject(FieldDescriptor fd) {
+                if (fd.isRepeated()) {
+                    throw new IllegalArgumentException();
+                }
+                this.fd = Objects.requireNonNull(fd);
+            }
 
-        private static ObjectFunction<ByteString, byte[]> bytes_() {
-            return NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));
+            @Override
+            public GenericType<Object> returnType() {
+                return Type.ofCustom(Object.class);
+            }
+
+            @Override
+            public Object apply(Message value) {
+                return Protobuf.hasField(value, fd) ? value.getField(fd) : null;
+            }
+
+            private ProtobufFunctions functions() {
+                switch (fd.getJavaType()) {
+                    case INT:
+                        return namedField(mapInt(int_()));
+                    case LONG:
+                        return namedField(mapLong(long_()));
+                    case FLOAT:
+                        return namedField(mapFloat(float_()));
+                    case DOUBLE:
+                        return namedField(mapDouble(double_()));
+                    case BOOLEAN:
+                        return namedField(mapBoolean(boolean_()));
+                    case STRING:
+                        return namedField(as(Type.stringType()));
+                    case BYTE_STRING:
+                        return namedField(as(Type.ofCustom(ByteString.class)).mapObj(bytes_()));
+                    case ENUM:
+                        return namedField(as(Type.ofCustom(EnumValueDescriptor.class)));
+                    case MESSAGE:
+                        final DescriptorContext messageContext = toMessageContext();
+                        final ProtobufFunctions subF = messageContext.functions();
+                        final Function<Message, Message> toSubmessage = as(Type.ofCustom(Message.class))::apply;
+                        final Builder builder = ProtobufFunctions.builder();
+                        for (Entry<List<String>, TypedFunction<Message>> e : subF.columns().entrySet()) {
+                            final List<String> key = e.getKey();
+                            final TypedFunction<Message> value = e.getValue();
+                            builder.putColumns(prefix(fd.getName(), key), value.mapInput(toSubmessage));
+                        }
+                        return builder.build();
+                    default:
+                        throw new IllegalStateException();
+                }
+            }
         }
     }
 
-    private static ProtobufFunctions singleWellKnown(FieldDescriptor fd, ProtobufOptions options) {
-        final String messageTypeFullName = fd.getMessageType().getFullName();
-        // todo: pass in
-        final SingleValuedMessageParser svmp = SingleValuedMessageParser.defaults().get(messageTypeFullName);
-        return simpleField(fd, svmp.parser(options));
+    private static IntFunction<Object> int_() {
+        return NullGuard.of((IntFunction<Object>) x -> (int) x);
+    }
+
+    private static LongFunction<Object> long_() {
+        return NullGuard.of((LongFunction<Object>) x -> (long) x);
+    }
+
+    private static FloatFunction<Object> float_() {
+        return NullGuard.of((FloatFunction<Object>) x -> (float) x);
+    }
+
+    private static DoubleFunction<Object> double_() {
+        return NullGuard.of((DoubleFunction<Object>) x -> (double) x);
+    }
+
+    private static BooleanFunction<Object> boolean_() {
+        return NullGuard.of((BooleanFunction<Object>) x -> (boolean) x);
+    }
+
+    private static ObjectFunction<ByteString, byte[]> bytes_() {
+        return NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));
     }
 }

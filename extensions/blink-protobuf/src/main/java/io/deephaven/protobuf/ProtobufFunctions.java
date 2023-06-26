@@ -3,6 +3,7 @@ package io.deephaven.protobuf;
 import com.google.protobuf.Message;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.stream.blink.tf.TypedFunction;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
@@ -18,6 +19,10 @@ public abstract class ProtobufFunctions {
 
     public static ProtobufFunctions empty() {
         return builder().build();
+    }
+
+    public static ProtobufFunctions unnamed(TypedFunction<Message> tf) {
+        return builder().putColumns(List.of(), tf).build();
     }
 
     public abstract Map<List<String>, TypedFunction<Message>> columns();

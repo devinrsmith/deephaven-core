@@ -459,8 +459,9 @@ public class ProtobufTest {
 
         checkKey(RepeatedBasics.getDescriptor(), List.of("bytes"), Type.byteType().arrayType().arrayType(), Map.of(
                 allEmpty, new byte[][] {},
-                RepeatedBasics.newBuilder().addBytes(ByteString.copyFromUtf8("hello")).addBytes(ByteString.copyFromUtf8("foo")).build(),
-                new byte[][] { "hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
+                RepeatedBasics.newBuilder().addBytes(ByteString.copyFromUtf8("hello"))
+                        .addBytes(ByteString.copyFromUtf8("foo")).build(),
+                new byte[][] {"hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
     }
 
     @Test
@@ -529,8 +530,9 @@ public class ProtobufTest {
 
         checkKey(RepeatedWrappers.getDescriptor(), List.of("bytes"), Type.byteType().arrayType().arrayType(), Map.of(
                 allEmpty, new byte[][] {},
-                RepeatedWrappers.newBuilder().addBytes(BytesValue.of(ByteString.copyFromUtf8("hello"))).addBytes(BytesValue.of(ByteString.copyFromUtf8("foo"))).build(),
-                new byte[][] { "hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
+                RepeatedWrappers.newBuilder().addBytes(BytesValue.of(ByteString.copyFromUtf8("hello")))
+                        .addBytes(BytesValue.of(ByteString.copyFromUtf8("foo"))).build(),
+                new byte[][] {"hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
     }
 
     @Test
@@ -672,8 +674,7 @@ public class ProtobufTest {
     @Test
     void repeatedMessage() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(
-                RepeatedMessage.getDescriptor()
-        );
+                RepeatedMessage.getDescriptor());
         assertThat(nf.keySet()).containsExactly(List.of("persons"));
 
         final Person p1 = Person.newBuilder().setFirstName("First").setLastName("Last").build();
@@ -692,8 +693,7 @@ public class ProtobufTest {
     @Test
     void repeatedMessageDestructured() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(
-                RepeatedMessage.getDescriptor()
-        );
+                RepeatedMessage.getDescriptor());
         assertThat(nf.keySet()).containsExactly(List.of("persons", "first_name"), List.of("persons", "last_name"));
 
         final Person p1 = Person.newBuilder().setFirstName("First").setLastName("Last").build();
@@ -740,7 +740,8 @@ public class ProtobufTest {
                 "  string bar = 2;\n" +
                 "}";
 
-        final FileDescriptor fileDescriptor = FileDescriptor.buildFrom(FileDescriptorProto.parseFrom(x.getBytes(StandardCharsets.UTF_8)), new FileDescriptor[]{});
+        final FileDescriptor fileDescriptor = FileDescriptor
+                .buildFrom(FileDescriptorProto.parseFrom(x.getBytes(StandardCharsets.UTF_8)), new FileDescriptor[] {});
 
         int t = 0;
     }

@@ -17,8 +17,8 @@ enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
     INSTANCE;
 
     public static <T> TypedFunction<T> of(TypedFunction<T> f) {
-        //noinspection unchecked
-        return (TypedFunction<T>) f.walk((Visitor<T, ?>)INSTANCE);
+        // noinspection unchecked
+        return (TypedFunction<T>) f.walk((Visitor<T, ?>) INSTANCE);
     }
 
     public static <T> BooleanFunction<T> of(BooleanFunction<T> f) {

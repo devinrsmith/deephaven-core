@@ -13,11 +13,12 @@ public class RuntimeSchema {
     public static void what() throws InvalidProtocolBufferException, DescriptorValidationException {
         final FileDescriptorSet set = FileDescriptorSet.parseFrom("".getBytes(StandardCharsets.UTF_8));
 
-        FileDescriptor.buildFrom(FileDescriptorProto.parseFrom("todo".getBytes(StandardCharsets.UTF_8)), new FileDescriptor[] { });
+        FileDescriptor.buildFrom(FileDescriptorProto.parseFrom("todo".getBytes(StandardCharsets.UTF_8)),
+                new FileDescriptor[] {});
 
         for (FileDescriptorProto fdp : set.getFileList()) {
 
-            FileDescriptor.buildFrom(fdp, new FileDescriptor[] { });
+            FileDescriptor.buildFrom(fdp, new FileDescriptor[] {});
         }
 
 

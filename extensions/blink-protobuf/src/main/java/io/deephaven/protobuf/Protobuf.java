@@ -97,9 +97,12 @@ public class Protobuf {
                 map.putAll(messageFieldToValues(field, options, context));
             }
         }
-        options.serializedSizeName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), serializedSizeFunction()));
-        options.unknownFieldSetName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), unknownFieldsFunction()));
-        options.rawMessageName(descriptor, options, context).ifPresent(name -> map.put(path(context, name), rawMessageFunction()));
+        options.serializedSizeName(descriptor, options, context)
+                .ifPresent(name -> map.put(path(context, name), serializedSizeFunction()));
+        options.unknownFieldSetName(descriptor, options, context)
+                .ifPresent(name -> map.put(path(context, name), unknownFieldsFunction()));
+        options.rawMessageName(descriptor, options, context)
+                .ifPresent(name -> map.put(path(context, name), rawMessageFunction()));
         return map;
     }
 
@@ -133,7 +136,8 @@ public class Protobuf {
         }
     }
 
-    private static Map<List<String>, TypedFunction<Message>> singularMessageFunctions(FieldDescriptor fd, ProtobufOptions options, List<String> fieldPath) {
+    private static Map<List<String>, TypedFunction<Message>> singularMessageFunctions(FieldDescriptor fd,
+            ProtobufOptions options, List<String> fieldPath) {
         final Descriptor messageType = fd.getMessageType();
         final Function<Message, Message> messageFunction = messageFieldFunction(fd)::apply;
         final Map<List<String>, TypedFunction<Message>> nf = messageToValues(messageType, options, fieldPath);
@@ -146,18 +150,19 @@ public class Protobuf {
         return output;
     }
 
-    private static Map<List<String>, TypedFunction<Message>> repeatedMessageFunctions(FieldDescriptor fd, ProtobufOptions options, List<String> fieldPath) {
+    private static Map<List<String>, TypedFunction<Message>> repeatedMessageFunctions(FieldDescriptor fd,
+            ProtobufOptions options, List<String> fieldPath) {
         throw new UnsupportedOperationException();
-//        final Descriptor messageType = fd.getMessageType();
-////        final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
-//        final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
-//        final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
-//        for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
-//            final TypedFunction<Message> innerFunction = e.getValue();
-//            final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
-//            output.put(e.getKey(), adaptedFunction);
-//        }
-//        return output;
+        // final Descriptor messageType = fd.getMessageType();
+        //// final Function<Message, Message> messageFunction = messageFunction(fd)::apply;
+        // final Map<List<String>, TypedFunction<Message>> nf = namedFunctions(messageType, options, fieldPath);
+        // final Map<List<String>, TypedFunction<Message>> output = new LinkedHashMap<>(nf.size());
+        // for (Entry<List<String>, TypedFunction<Message>> e : nf.entrySet()) {
+        // final TypedFunction<Message> innerFunction = e.getValue();
+        // final TypedFunction<Message> adaptedFunction = innerFunction.mapInput(messageFunction);
+        // output.put(e.getKey(), adaptedFunction);
+        // }
+        // return output;
     }
 
     private static List<String> path(List<String> context, String name) {
@@ -179,8 +184,9 @@ public class Protobuf {
     }
 
     private static ObjectFunction<Message, ?> repeatedMessageFieldToValue(FieldDescriptor fd, ProtobufOptions options) {
-        final int[] index = new int[] { 0 };
-        final TypedFunction<Message> tf = messageFieldToValue(ObjectFunction.of(m -> m.getRepeatedField(fd, index[0]), CustomType.of(Object.class)), fd, options);
+        final int[] index = new int[] {0};
+        final TypedFunction<Message> tf = messageFieldToValue(
+                ObjectFunction.of(m -> m.getRepeatedField(fd, index[0]), CustomType.of(Object.class)), fd, options);
         if (tf == null) {
             return null;
         }
@@ -303,7 +309,8 @@ public class Protobuf {
         });
     }
 
-    private static TypedFunction<Message> messageFieldToValue(ObjectFunction<Message, Object> messageToObject, FieldDescriptor fd, ProtobufOptions options) {
+    private static TypedFunction<Message> messageFieldToValue(ObjectFunction<Message, Object> messageToObject,
+            FieldDescriptor fd, ProtobufOptions options) {
         switch (fd.getJavaType()) {
             case BOOLEAN:
                 return messageToObject.mapBoolean(NullGuard.of(booleanLiteral()));
@@ -320,7 +327,8 @@ public class Protobuf {
             case ENUM:
                 return messageToObject.as(ENUM_TYPE);
             case BYTE_STRING:
-                return messageToObject.as(BYTE_STRING_TYPE).mapObj(NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType())));
+                return messageToObject.as(BYTE_STRING_TYPE)
+                        .mapObj(NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType())));
             case MESSAGE:
                 final SingleValuedMessageParser parser = options.parsers().get(fd.getMessageType().getFullName());
                 if (parser == null) {
@@ -384,17 +392,18 @@ public class Protobuf {
 
 
 
-//    private static <T> Optional<T> objectApply(Message m, FieldDescriptor fd, ObjectFunction<Object, T> toObject) {
-//        return hasField(m, fd)
-//                ? Optional.of(toObject.apply(m.getField(fd)))
-//                : Optional.empty();
-//    }
+    // private static <T> Optional<T> objectApply(Message m, FieldDescriptor fd, ObjectFunction<Object, T> toObject) {
+    // return hasField(m, fd)
+    // ? Optional.of(toObject.apply(m.getField(fd)))
+    // : Optional.empty();
+    // }
 
     // ----------------------------------------------------------------------------------------------------------------
 
-//    private static <T, M extends Message> ObjectFunction<M, T> castFunction(FieldDescriptor fd, GenericType<T> type) {
-//        return ObjectFunction.of(m -> objectApply(m, fd, castTo(type)).orElse(null), type);
-//    }
+    // private static <T, M extends Message> ObjectFunction<M, T> castFunction(FieldDescriptor fd, GenericType<T> type)
+    // {
+    // return ObjectFunction.of(m -> objectApply(m, fd, castTo(type)).orElse(null), type);
+    // }
 
 
     private static <ArrayType, ComponentType> ObjectFunction<Message, ArrayType> repeatedGenericFunction(
@@ -475,7 +484,8 @@ public class Protobuf {
     }
 
     private static ObjectFunction<Message, Object> fieldFunction(FieldDescriptor fd) {
-        return ObjectFunction.of(message -> hasField(message, fd) ? message.getField(fd) : null, Type.ofCustom(Object.class));
+        return ObjectFunction.of(message -> hasField(message, fd) ? message.getField(fd) : null,
+                Type.ofCustom(Object.class));
     }
 
     private static ObjectFunction<Message, Message> messageFieldFunction(FieldDescriptor fd) {
@@ -511,7 +521,8 @@ public class Protobuf {
     private enum DurationParser implements SingleValuedMessageParser, Function<com.google.protobuf.Duration, Duration> {
         INSTANCE;
 
-        private static final CustomType<com.google.protobuf.Duration> IN_TYPE = Type.ofCustom(com.google.protobuf.Duration.class);
+        private static final CustomType<com.google.protobuf.Duration> IN_TYPE =
+                Type.ofCustom(com.google.protobuf.Duration.class);
         private static final CustomType<Duration> OUT_TYPE = Type.ofCustom(Duration.class);
 
         @Override

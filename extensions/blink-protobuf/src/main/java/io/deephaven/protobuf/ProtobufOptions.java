@@ -52,7 +52,7 @@ public abstract class ProtobufOptions {
 
     final boolean parseAdHocRepeatedMessage(FieldDescriptor fd, ProtobufOptions options, List<String> context) {
         return false;
-        //return parseAdHocMessage(); // todo
+        // return parseAdHocMessage(); // todo
     }
 
     final Optional<String> unknownFieldSetName(Descriptor descriptor, ProtobufOptions options, List<String> context) {

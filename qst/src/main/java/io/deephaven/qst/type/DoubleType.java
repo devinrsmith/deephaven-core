@@ -33,11 +33,6 @@ public abstract class DoubleType extends PrimitiveTypeBase<Double> {
     }
 
     @Override
-    public final NativeArrayType<Double[], Double> boxedArrayType() {
-        return NativeArrayType.of(Double[].class, this);
-    }
-
-    @Override
     public final <V extends PrimitiveType.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

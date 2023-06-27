@@ -33,11 +33,6 @@ public abstract class CharType extends PrimitiveTypeBase<Character> {
     }
 
     @Override
-    public final NativeArrayType<Character[], Character> boxedArrayType() {
-        return NativeArrayType.of(Character[].class, this);
-    }
-
-    @Override
     public final <V extends PrimitiveType.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

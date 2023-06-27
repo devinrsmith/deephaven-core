@@ -29,7 +29,11 @@ import io.deephaven.protobuf.test.AStringStringMap;
 import io.deephaven.protobuf.test.ATimestamp;
 import io.deephaven.protobuf.test.AnEnum;
 import io.deephaven.protobuf.test.AnEnum.TheEnum;
+import io.deephaven.protobuf.test.ByteWrapper;
+import io.deephaven.protobuf.test.ByteWrapperRepeated;
+import io.deephaven.protobuf.test.NestedByteWrapper;
 import io.deephaven.protobuf.test.NestedRepeatedTimestamps;
+import io.deephaven.protobuf.test.NestedRepeatedTimestamps.Timestamps;
 import io.deephaven.protobuf.test.RepeatedBasics;
 import io.deephaven.protobuf.test.RepeatedDuration;
 import io.deephaven.protobuf.test.RepeatedMessage;
@@ -421,10 +425,12 @@ public class ProtobufTest {
 
         final RepeatedBasics allEmpty = RepeatedBasics.getDefaultInstance();
 
-        checkKey(RepeatedBasics.getDescriptor(), List.of("bool"), Type.ofCustom(Unmapped.class).arrayType(), Map.of(
-                allEmpty, new Unmapped[] {},
-                RepeatedBasics.newBuilder().addBool(true).addBool(false).build(),
-                new Unmapped[] {null, null}));
+        checkKey(RepeatedBasics.getDescriptor(), List.of("bool"), Type.booleanType().arrayType(), new HashMap<>() {
+            {
+                put(allEmpty, new boolean[] {});
+                put(RepeatedBasics.newBuilder().addBool(true).addBool(false).build(), new boolean[] {true, false});
+            }
+        });
 
         checkKey(RepeatedBasics.getDescriptor(), List.of("int32"), Type.intType().arrayType(), Map.of(
                 allEmpty, new int[] {},
@@ -671,6 +677,7 @@ public class ProtobufTest {
     }
 
     @Test
+    @Disabled
     void repeatedMessage() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(
                 RepeatedMessage.getDescriptor());
@@ -688,7 +695,6 @@ public class ProtobufTest {
     }
 
     // This is a potential improvement in parsing we might want in the future
-    @Disabled
     @Test
     void repeatedMessageDestructured() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(
@@ -717,8 +723,6 @@ public class ProtobufTest {
                         new String[] {"Last", "Bar"}));
     }
 
-    // potential
-    @Disabled
     @Test
     void nestedRepeatedTimestamps() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(NestedRepeatedTimestamps.getDescriptor());
@@ -727,15 +731,62 @@ public class ProtobufTest {
                 NestedRepeatedTimestamps.getDescriptor(),
                 List.of("stamps", "ts"),
                 Type.instantType().arrayType().arrayType(),
-                Map.of());
+                Map.of(
+                        NestedRepeatedTimestamps.getDefaultInstance(), new Instant[][] {},
+                        NestedRepeatedTimestamps.newBuilder().addStamps(Timestamps.getDefaultInstance()).build(),
+                        new Instant[][] {new Instant[] {}},
+                        NestedRepeatedTimestamps.newBuilder()
+                                .addStamps(Timestamps.newBuilder().addTs(Timestamp.getDefaultInstance()).build())
+                                .build(),
+                        new Instant[][] {new Instant[] {Instant.ofEpochMilli(0)}}));
 
     }
 
+    @Test
+    void byteWrapper() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(ByteWrapper.getDescriptor());
+        assertThat(nf.keySet()).containsExactly(List.of());
+        checkKey(
+                ByteWrapper.getDescriptor(),
+                List.of(),
+                Type.byteType(),
+                Map.of(
+                        ByteWrapper.getDefaultInstance(), (byte) 0,
+                        ByteWrapper.newBuilder().setValue(42).build(), (byte) 42));
+    }
+
+    @Test
+    void byteWrapperNested() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(NestedByteWrapper.getDescriptor());
+        assertThat(nf.keySet()).containsExactly(List.of("my_byte"));
+        checkKey(
+                NestedByteWrapper.getDescriptor(),
+                List.of("my_byte"),
+                Type.byteType(),
+                Map.of(
+                        NestedByteWrapper.getDefaultInstance(), QueryConstants.NULL_BYTE,
+                        NestedByteWrapper.newBuilder().setMyByte(ByteWrapper.getDefaultInstance()).build(), (byte) 0,
+                        NestedByteWrapper.newBuilder().setMyByte(ByteWrapper.newBuilder().setValue(42)).build(),
+                        (byte) 42));
+    }
+
+    @Test
+    void repeatedByteWrapper() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(ByteWrapperRepeated.getDescriptor());
+        assertThat(nf.keySet()).containsExactly(List.of("my_bytes"));
+        checkKey(
+                ByteWrapperRepeated.getDescriptor(),
+                List.of("my_bytes"),
+                Type.byteType().arrayType(),
+                Map.of(
+                        ByteWrapperRepeated.getDefaultInstance(), new byte[0],
+                        ByteWrapperRepeated.newBuilder().addMyBytes(ByteWrapper.newBuilder().setValue(42).build())
+                                .build(),
+                        new byte[] {(byte) 42}));
+    }
+
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
-
         return new Protobuf2(ProtobufOptions.defaults()).translate(descriptor).columns();
-
-        // return Protobuf.parser(descriptor).parser(ProtobufOptions.defaults());
     }
 
     private static <T> void checkKey(

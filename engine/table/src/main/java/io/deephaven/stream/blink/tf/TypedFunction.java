@@ -11,8 +11,8 @@ public interface TypedFunction<T> {
     <V> V walk(Visitor<T, V> visitor);
 
     /**
-     * Creates a new function whose value is first transformed into the same type by {@code f} before application.
-     * The semantics are equivalent to {@code x -> theApplyFunction(f.apply(x))}.
+     * Creates a new function whose value is first transformed into the same type by {@code f} before application. The
+     * semantics are equivalent to {@code x -> theApplyFunction(f.apply(x))}.
      *
      * @param f the input function
      * @return the new function

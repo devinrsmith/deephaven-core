@@ -33,11 +33,6 @@ public abstract class BooleanType extends PrimitiveTypeBase<Boolean> {
     }
 
     @Override
-    public final NativeArrayType<Boolean[], Boolean> boxedArrayType() {
-        return NativeArrayType.of(Boolean[].class, this);
-    }
-
-    @Override
     public final <V extends PrimitiveType.Visitor> V walk(V visitor) {
         visitor.visit(this);
         return visitor;

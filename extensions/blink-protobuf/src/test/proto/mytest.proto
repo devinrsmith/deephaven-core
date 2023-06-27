@@ -128,3 +128,18 @@ message NestedRepeatedTimestamps {
   }
   repeated Timestamps stamps = 1;
 }
+
+// tread this type as a byte
+message ByteWrapper {
+  int32 value = 1;
+}
+
+message NestedByteWrapper {
+  // this should be treated as byte
+  ByteWrapper my_byte = 1;
+}
+
+message ByteWrapperRepeated {
+  // this should be treated as byte[]
+  repeated ByteWrapper my_bytes = 1;
+}

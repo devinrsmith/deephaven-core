@@ -27,13 +27,14 @@ import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.NullGuard;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -192,7 +193,7 @@ public class Protobuf {
         }
         return tf.walk(new TypedFunction.Visitor<>() {
             @Override
-            public ObjectFunction<Message, ?> visit(BooleanFunction<Message> f) {
+            public ObjectFunction<Message, ?> visit(BoxedBooleanFunction<Message> f) {
                 // todo
                 return repeatedGenericFunction(fd, Boolean.class, b -> null, UNMAPPED_TYPE.arrayType());
             }
@@ -315,13 +316,13 @@ public class Protobuf {
             case BOOLEAN:
                 return messageToObject.mapBoolean(NullGuard.of(booleanLiteral()));
             case INT:
-                return messageToObject.mapInt(NullGuard.of(intLiteral()));
+                return messageToObject.mapInt(IntFunction.guardedPrimitive());
             case LONG:
-                return messageToObject.mapLong(NullGuard.of(longLiteral()));
+                return messageToObject.mapLong(LongFunction.guardedPrimitive());
             case FLOAT:
-                return messageToObject.mapFloat(NullGuard.of(floatLiteral()));
+                return messageToObject.mapFloat(FloatFunction.guardedPrimitive());
             case DOUBLE:
-                return messageToObject.mapDouble(NullGuard.of(doubleLiteral()));
+                return messageToObject.mapDouble(DoubleFunction.guardedPrimitive());
             case STRING:
                 return messageToObject.as(Type.stringType());
             case ENUM:
@@ -442,7 +443,7 @@ public class Protobuf {
     }
 
 
-    private static BooleanFunction<Object> booleanLiteral() {
+    private static BoxedBooleanFunction<Object> booleanLiteral() {
         return o -> (boolean) o;
     }
 
@@ -552,7 +553,7 @@ public class Protobuf {
         }
 
         @Override
-        public BooleanFunction<Message> parser(ProtobufOptions options) {
+        public BoxedBooleanFunction<Message> parser(ProtobufOptions options) {
             return message(IN_TYPE).mapBoolean(BoolValue::getValue);
         }
     }

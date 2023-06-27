@@ -4,9 +4,8 @@ import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.qst.column.header.ColumnHeader;
-import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -68,7 +67,7 @@ public abstract class BlinkTableMapperConfig<T> {
 
         Builder<T> updateSourceRegistrar(UpdateSourceRegistrar updateSourceRegistrar);
 
-        default Builder<T> putBoolean(String key, BooleanFunction<T> f) {
+        default Builder<T> putBoolean(String key, BoxedBooleanFunction<T> f) {
             return putColumns(key, f);
         }
 

@@ -10,7 +10,7 @@ public class ApplyVisitor<T> implements Visitor<T, Object> {
     }
 
     @Override
-    public Object visit(BooleanFunction<T> f) {
+    public Object visit(BoxedBooleanFunction<T> f) {
         return f.applyAsBoolean(value);
     }
 

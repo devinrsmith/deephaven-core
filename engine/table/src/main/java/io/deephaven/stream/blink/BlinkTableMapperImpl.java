@@ -16,7 +16,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -205,7 +205,7 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(BooleanFunction<T> f) {
+        public Void visit(BoxedBooleanFunction<T> f) {
             final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
             for (T value : values) {
                 c.add(BooleanUtils.booleanAsByte(f.applyAsBoolean(value)));

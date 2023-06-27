@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.GenericType;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 public interface ObjectFunction<T, R> extends TypedFunction<T> {
@@ -45,7 +44,7 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return mapObj(cast(type));
     }
 
-    default BooleanFunction<T> mapBoolean(BooleanFunction<R> f) {
+    default BoxedBooleanFunction<T> mapBoolean(BoxedBooleanFunction<R> f) {
         return value -> f.applyAsBoolean(apply(value));
     }
 
@@ -88,7 +87,7 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
     default TypedFunction<T> map(TypedFunction<R> f) {
         return f.walk(new Visitor<>() {
             @Override
-            public TypedFunction<T> visit(BooleanFunction<R> f) {
+            public TypedFunction<T> visit(BoxedBooleanFunction<R> f) {
                 return mapBoolean(f);
             }
 

@@ -6,7 +6,7 @@ import io.deephaven.qst.type.Type;
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface BooleanFunction<T> extends TypedFunction<T> {
+public interface BoxedBooleanFunction<T> extends TypedFunction<T> {
 
     Boolean applyAsBoolean(T value);
 
@@ -21,11 +21,11 @@ public interface BooleanFunction<T> extends TypedFunction<T> {
     }
 
     @Override
-    default BooleanFunction<T> mapInput(Function<T, T> f) {
+    default BoxedBooleanFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsBoolean(f.apply(x));
     }
 
-    default BooleanFunction<T> onNullInput(Boolean onNull) {
+    default BoxedBooleanFunction<T> onNullInput(Boolean onNull) {
         return x -> x == null ? onNull : applyAsBoolean(x);
     }
 }

@@ -7,13 +7,15 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
+import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.NullGuard;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 
@@ -26,6 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Protobuf2 {
+
+    private static final CustomType<ByteString> BYTE_STRING_TYPE = Type.ofCustom(ByteString.class);
+    private static final CustomType<EnumValueDescriptor> ENUM_VALUE_DESCRIPTOR_TYPE = Type.ofCustom(EnumValueDescriptor.class);
 
     private final ProtobufOptions options;
 
@@ -151,57 +156,77 @@ public class Protobuf2 {
             private ProtobufFunctions functions() {
                 switch (fd.getJavaType()) {
                     case INT:
-                        return namedField(mapInt(int_()));
+                        return namedField(asInt());
                     case LONG:
-                        return namedField(mapLong(long_()));
+                        return namedField(asLong());
                     case FLOAT:
-                        return namedField(mapFloat(float_()));
+                        return namedField(asFloat());
                     case DOUBLE:
-                        return namedField(mapDouble(double_()));
+                        return namedField(asDouble());
                     case BOOLEAN:
-                        return namedField(mapBoolean(boolean_()));
+                        return namedField(asBoolean());
                     case STRING:
-                        return namedField(as(Type.stringType()));
+                        return namedField(asString());
                     case BYTE_STRING:
-                        return namedField(as(Type.ofCustom(ByteString.class)).mapObj(bytes_()));
+                        return namedField(asBytes());
                     case ENUM:
-                        return namedField(as(Type.ofCustom(EnumValueDescriptor.class)));
+                        return namedField(asEnum());
                     case MESSAGE:
+                        final Function<Message, Message> messageF = asMessage()::apply;
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions subF = messageContext.functions();
-                        final Function<Message, Message> toSubmessage = as(Type.ofCustom(Message.class))::apply;
                         final Builder builder = ProtobufFunctions.builder();
                         for (Entry<List<String>, TypedFunction<Message>> e : subF.columns().entrySet()) {
                             final List<String> key = e.getKey();
                             final TypedFunction<Message> value = e.getValue();
-                            builder.putColumns(prefix(fd.getName(), key), value.mapInput(toSubmessage));
+                            builder.putColumns(prefix(fd.getName(), key), value.mapInput(messageF));
                         }
                         return builder.build();
                     default:
                         throw new IllegalStateException();
                 }
             }
+
+            private IntFunction<Message> asInt() {
+                return mapInt(IntFunction.guardedPrimitive());
+            }
+
+            private LongFunction<Message> asLong() {
+                return mapLong(LongFunction.guardedPrimitive());
+            }
+
+            private FloatFunction<Message> asFloat() {
+                return mapFloat(FloatFunction.guardedPrimitive());
+            }
+
+            private DoubleFunction<Message> asDouble() {
+                return mapDouble(DoubleFunction.guardedPrimitive());
+            }
+
+            private BoxedBooleanFunction<Message> asBoolean() {
+                return mapBoolean(boolean_());
+            }
+
+            private ObjectFunction<Message, String> asString() {
+                return as(Type.stringType());
+            }
+
+            private ObjectFunction<Message, byte[]> asBytes() {
+                return as(BYTE_STRING_TYPE).mapObj(bytes_());
+            }
+
+            private ObjectFunction<Message, EnumValueDescriptor> asEnum() {
+                return as(ENUM_VALUE_DESCRIPTOR_TYPE);
+            }
+
+            private ObjectFunction<Message, Message> asMessage() {
+                return as(Type.ofCustom(Message.class));
+            }
         }
     }
 
-    private static IntFunction<Object> int_() {
-        return NullGuard.of((IntFunction<Object>) x -> (int) x);
-    }
-
-    private static LongFunction<Object> long_() {
-        return NullGuard.of((LongFunction<Object>) x -> (long) x);
-    }
-
-    private static FloatFunction<Object> float_() {
-        return NullGuard.of((FloatFunction<Object>) x -> (float) x);
-    }
-
-    private static DoubleFunction<Object> double_() {
-        return NullGuard.of((DoubleFunction<Object>) x -> (double) x);
-    }
-
-    private static BooleanFunction<Object> boolean_() {
-        return NullGuard.of((BooleanFunction<Object>) x -> (boolean) x);
+    private static BoxedBooleanFunction<Object> boolean_() {
+        return NullGuard.of((BoxedBooleanFunction<Object>) x -> (boolean) x);
     }
 
     private static ObjectFunction<ByteString, byte[]> bytes_() {

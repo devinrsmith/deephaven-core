@@ -1,19 +1,9 @@
-package io.deephaven.protobuf;
+package io.deephaven.stream.blink.tf;
 
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.ByteFunction;
-import io.deephaven.stream.blink.tf.CharFunction;
-import io.deephaven.stream.blink.tf.DoubleFunction;
-import io.deephaven.stream.blink.tf.FloatFunction;
-import io.deephaven.stream.blink.tf.IntFunction;
-import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.ObjectFunction;
-import io.deephaven.stream.blink.tf.ShortFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 import io.deephaven.util.QueryConstants;
 
-enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
+public enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
     INSTANCE;
 
     public static <T> TypedFunction<T> of(TypedFunction<T> f) {
@@ -21,7 +11,7 @@ enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
         return (TypedFunction<T>) f.walk((Visitor<T, ?>) INSTANCE);
     }
 
-    public static <T> BooleanFunction<T> of(BooleanFunction<T> f) {
+    public static <T> BoxedBooleanFunction<T> of(BoxedBooleanFunction<T> f) {
         return f.onNullInput(null);
     }
 
@@ -37,6 +27,14 @@ enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
         return f.onNullInput(QueryConstants.NULL_SHORT);
     }
 
+    /**
+     * Equivalent to {@code f.onNullInput(QueryConstants.NULL_INT)}.
+     *
+     * @param f the int function
+     * @return the guarded int function
+     * @param <T> the value type
+     * @see IntFunction#onNullInput(int)
+     */
     public static <T> IntFunction<T> of(IntFunction<T> f) {
         return f.onNullInput(QueryConstants.NULL_INT);
     }
@@ -58,7 +56,7 @@ enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>> {
     }
 
     @Override
-    public TypedFunction<?> visit(BooleanFunction<Object> f) {
+    public TypedFunction<?> visit(BoxedBooleanFunction<Object> f) {
         return of(f);
     }
 

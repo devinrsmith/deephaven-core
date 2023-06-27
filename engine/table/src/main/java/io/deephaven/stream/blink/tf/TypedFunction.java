@@ -1,10 +1,8 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.Producer;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public interface TypedFunction<T> {
 
@@ -12,10 +10,17 @@ public interface TypedFunction<T> {
 
     <V> V walk(Visitor<T, V> visitor);
 
+    /**
+     * Creates a new function whose value is first transformed into the same type by {@code f} before application.
+     * The semantics are equivalent to {@code x -> theApplyFunction(f.apply(x))}.
+     *
+     * @param f the input function
+     * @return the new function
+     */
     TypedFunction<T> mapInput(Function<T, T> f);
 
     interface Visitor<T, R> {
-        R visit(BooleanFunction<T> f);
+        R visit(BoxedBooleanFunction<T> f);
 
         R visit(CharFunction<T> f);
 

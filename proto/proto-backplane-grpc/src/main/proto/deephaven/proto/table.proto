@@ -254,6 +254,10 @@ service TableService {
    */
   rpc MetaTable(MetaTableRequest) returns (ExportedTableCreationResponse) {}
 
+  /*
+   * Creates a ring table.
+   */
+  rpc RingTable(RingTableRequest) returns (ExportedTableCreationResponse) {}
 }
 
 message TableReference {
@@ -1224,6 +1228,13 @@ message WhereInRequest {
   repeated string columns_to_match = 5;
 }
 
+message RingTableRequest {
+  Ticket result_id = 1;
+  TableReference source_id = 2;
+  int32 size = 3;
+  bool initialize = 4;
+}
+
 message BatchTableRequest {
   repeated Operation ops = 1;
 
@@ -1271,6 +1282,7 @@ message BatchTableRequest {
       RangeJoinTablesRequest range_join = 39;
       AjRajTablesRequest aj = 40;
       AjRajTablesRequest raj = 41;
+      RingTableRequest ring = 42;
     }
   }
 }

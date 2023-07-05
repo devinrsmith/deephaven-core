@@ -302,6 +302,11 @@ public enum ParentsVisitor implements Visitor<Stream<TableSpec>> {
         return single(dropColumnsTable);
     }
 
+    @Override
+    public Stream<TableSpec> visit(RingTable ringTable) {
+        return single(ringTable);
+    }
+
     private static class Search {
 
         private final Predicate<TableSpec> excludePaths;

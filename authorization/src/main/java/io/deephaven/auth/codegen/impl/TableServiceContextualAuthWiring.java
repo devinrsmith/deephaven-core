@@ -32,6 +32,7 @@ import io.deephaven.proto.backplane.grpc.MergeTablesRequest;
 import io.deephaven.proto.backplane.grpc.MetaTableRequest;
 import io.deephaven.proto.backplane.grpc.NaturalJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.RangeJoinTablesRequest;
+import io.deephaven.proto.backplane.grpc.RingTableRequest;
 import io.deephaven.proto.backplane.grpc.RunChartDownsampleRequest;
 import io.deephaven.proto.backplane.grpc.SeekRowRequest;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
@@ -515,6 +516,17 @@ public interface TableServiceContextualAuthWiring {
             List<Table> sourceTables);
 
     /**
+     * Authorize a request to RingTable.
+     *
+     * @param authContext the authentication context of the request
+     * @param request the request to authorize
+     * @param sourceTables the operation's source tables
+     * @throws io.grpc.StatusRuntimeException if the user is not authorized to invoke RingTable
+     */
+    void checkPermissionRingTable(AuthContext authContext, RingTableRequest request,
+            List<Table> sourceTables);
+
+    /**
      * A default implementation that funnels all requests to invoke {@code checkPermission}.
      */
     abstract class DelegateAll implements TableServiceContextualAuthWiring {
@@ -726,6 +738,11 @@ public interface TableServiceContextualAuthWiring {
         }
 
         public void checkPermissionMetaTable(AuthContext authContext, MetaTableRequest request,
+                List<Table> sourceTables) {
+            checkPermission(authContext, sourceTables);
+        }
+
+        public void checkPermissionRingTable(AuthContext authContext, RingTableRequest request,
                 List<Table> sourceTables) {
             checkPermission(authContext, sourceTables);
         }
@@ -1043,6 +1060,13 @@ public interface TableServiceContextualAuthWiring {
                 List<Table> sourceTables) {
             if (delegate != null) {
                 delegate.checkPermissionMetaTable(authContext, request, sourceTables);
+            }
+        }
+
+        public void checkPermissionRingTable(AuthContext authContext, RingTableRequest request,
+                List<Table> sourceTables) {
+            if (delegate != null) {
+                delegate.checkPermissionRingTable(authContext, request, sourceTables);
             }
         }
     }

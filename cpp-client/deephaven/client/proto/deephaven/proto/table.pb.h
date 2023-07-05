@@ -268,6 +268,9 @@ extern RangeJoinTablesRequestDefaultTypeInternal _RangeJoinTablesRequest_default
 class Reference;
 struct ReferenceDefaultTypeInternal;
 extern ReferenceDefaultTypeInternal _Reference_default_instance_;
+class RingTableRequest;
+struct RingTableRequestDefaultTypeInternal;
+extern RingTableRequestDefaultTypeInternal _RingTableRequest_default_instance_;
 class RunChartDownsampleRequest;
 struct RunChartDownsampleRequestDefaultTypeInternal;
 extern RunChartDownsampleRequestDefaultTypeInternal _RunChartDownsampleRequest_default_instance_;
@@ -487,6 +490,7 @@ template<> ::io::deephaven::proto::backplane::grpc::NotCondition* Arena::CreateM
 template<> ::io::deephaven::proto::backplane::grpc::OrCondition* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::OrCondition>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::RangeJoinTablesRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::RangeJoinTablesRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::Reference* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::Reference>(Arena*);
+template<> ::io::deephaven::proto::backplane::grpc::RingTableRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::RingTableRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::RunChartDownsampleRequest* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::RunChartDownsampleRequest>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::RunChartDownsampleRequest_ZoomRange* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::RunChartDownsampleRequest_ZoomRange>(Arena*);
 template<> ::io::deephaven::proto::backplane::grpc::SearchCondition* Arena::CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::SearchCondition>(Arena*);
@@ -23013,6 +23017,200 @@ class WhereInRequest final :
 };
 // -------------------------------------------------------------------
 
+class RingTableRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:io.deephaven.proto.backplane.grpc.RingTableRequest) */ {
+ public:
+  inline RingTableRequest() : RingTableRequest(nullptr) {}
+  ~RingTableRequest() override;
+  explicit PROTOBUF_CONSTEXPR RingTableRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  RingTableRequest(const RingTableRequest& from);
+  RingTableRequest(RingTableRequest&& from) noexcept
+    : RingTableRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline RingTableRequest& operator=(const RingTableRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RingTableRequest& operator=(RingTableRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const RingTableRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const RingTableRequest* internal_default_instance() {
+    return reinterpret_cast<const RingTableRequest*>(
+               &_RingTableRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    117;
+
+  friend void swap(RingTableRequest& a, RingTableRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(RingTableRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RingTableRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  RingTableRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<RingTableRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const RingTableRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const RingTableRequest& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(RingTableRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "io.deephaven.proto.backplane.grpc.RingTableRequest";
+  }
+  protected:
+  explicit RingTableRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kResultIdFieldNumber = 1,
+    kSourceIdFieldNumber = 2,
+    kSizeFieldNumber = 3,
+    kInitializeFieldNumber = 4,
+  };
+  // .io.deephaven.proto.backplane.grpc.Ticket result_id = 1;
+  bool has_result_id() const;
+  private:
+  bool _internal_has_result_id() const;
+  public:
+  void clear_result_id();
+  const ::io::deephaven::proto::backplane::grpc::Ticket& result_id() const;
+  PROTOBUF_NODISCARD ::io::deephaven::proto::backplane::grpc::Ticket* release_result_id();
+  ::io::deephaven::proto::backplane::grpc::Ticket* mutable_result_id();
+  void set_allocated_result_id(::io::deephaven::proto::backplane::grpc::Ticket* result_id);
+  private:
+  const ::io::deephaven::proto::backplane::grpc::Ticket& _internal_result_id() const;
+  ::io::deephaven::proto::backplane::grpc::Ticket* _internal_mutable_result_id();
+  public:
+  void unsafe_arena_set_allocated_result_id(
+      ::io::deephaven::proto::backplane::grpc::Ticket* result_id);
+  ::io::deephaven::proto::backplane::grpc::Ticket* unsafe_arena_release_result_id();
+
+  // .io.deephaven.proto.backplane.grpc.TableReference source_id = 2;
+  bool has_source_id() const;
+  private:
+  bool _internal_has_source_id() const;
+  public:
+  void clear_source_id();
+  const ::io::deephaven::proto::backplane::grpc::TableReference& source_id() const;
+  PROTOBUF_NODISCARD ::io::deephaven::proto::backplane::grpc::TableReference* release_source_id();
+  ::io::deephaven::proto::backplane::grpc::TableReference* mutable_source_id();
+  void set_allocated_source_id(::io::deephaven::proto::backplane::grpc::TableReference* source_id);
+  private:
+  const ::io::deephaven::proto::backplane::grpc::TableReference& _internal_source_id() const;
+  ::io::deephaven::proto::backplane::grpc::TableReference* _internal_mutable_source_id();
+  public:
+  void unsafe_arena_set_allocated_source_id(
+      ::io::deephaven::proto::backplane::grpc::TableReference* source_id);
+  ::io::deephaven::proto::backplane::grpc::TableReference* unsafe_arena_release_source_id();
+
+  // int32 size = 3;
+  void clear_size();
+  int32_t size() const;
+  void set_size(int32_t value);
+  private:
+  int32_t _internal_size() const;
+  void _internal_set_size(int32_t value);
+  public:
+
+  // bool initialize = 4;
+  void clear_initialize();
+  bool initialize() const;
+  void set_initialize(bool value);
+  private:
+  bool _internal_initialize() const;
+  void _internal_set_initialize(bool value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:io.deephaven.proto.backplane.grpc.RingTableRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::io::deephaven::proto::backplane::grpc::Ticket* result_id_;
+  ::io::deephaven::proto::backplane::grpc::TableReference* source_id_;
+  int32_t size_;
+  bool initialize_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_deephaven_2fproto_2ftable_2eproto;
+};
+// -------------------------------------------------------------------
+
 class BatchTableRequest_Operation final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation) */ {
  public:
@@ -23096,6 +23294,7 @@ class BatchTableRequest_Operation final :
     kRangeJoin = 39,
     kAj = 40,
     kRaj = 41,
+    kRing = 42,
     OP_NOT_SET = 0,
   };
 
@@ -23104,7 +23303,7 @@ class BatchTableRequest_Operation final :
                &_BatchTableRequest_Operation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    117;
+    118;
 
   friend void swap(BatchTableRequest_Operation& a, BatchTableRequest_Operation& b) {
     a.Swap(&b);
@@ -23214,6 +23413,7 @@ class BatchTableRequest_Operation final :
     kRangeJoinFieldNumber = 39,
     kAjFieldNumber = 40,
     kRajFieldNumber = 41,
+    kRingFieldNumber = 42,
   };
   // .io.deephaven.proto.backplane.grpc.EmptyTableRequest empty_table = 1;
   bool has_empty_table() const;
@@ -23917,6 +24117,24 @@ class BatchTableRequest_Operation final :
       ::io::deephaven::proto::backplane::grpc::AjRajTablesRequest* raj);
   ::io::deephaven::proto::backplane::grpc::AjRajTablesRequest* unsafe_arena_release_raj();
 
+  // .io.deephaven.proto.backplane.grpc.RingTableRequest ring = 42;
+  bool has_ring() const;
+  private:
+  bool _internal_has_ring() const;
+  public:
+  void clear_ring();
+  const ::io::deephaven::proto::backplane::grpc::RingTableRequest& ring() const;
+  PROTOBUF_NODISCARD ::io::deephaven::proto::backplane::grpc::RingTableRequest* release_ring();
+  ::io::deephaven::proto::backplane::grpc::RingTableRequest* mutable_ring();
+  void set_allocated_ring(::io::deephaven::proto::backplane::grpc::RingTableRequest* ring);
+  private:
+  const ::io::deephaven::proto::backplane::grpc::RingTableRequest& _internal_ring() const;
+  ::io::deephaven::proto::backplane::grpc::RingTableRequest* _internal_mutable_ring();
+  public:
+  void unsafe_arena_set_allocated_ring(
+      ::io::deephaven::proto::backplane::grpc::RingTableRequest* ring);
+  ::io::deephaven::proto::backplane::grpc::RingTableRequest* unsafe_arena_release_ring();
+
   void clear_op();
   OpCase op_case() const;
   // @@protoc_insertion_point(class_scope:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation)
@@ -23961,6 +24179,7 @@ class BatchTableRequest_Operation final :
   void set_has_range_join();
   void set_has_aj();
   void set_has_raj();
+  void set_has_ring();
 
   inline bool has_op() const;
   inline void clear_has_op();
@@ -24010,6 +24229,7 @@ class BatchTableRequest_Operation final :
     ::io::deephaven::proto::backplane::grpc::RangeJoinTablesRequest* range_join_;
     ::io::deephaven::proto::backplane::grpc::AjRajTablesRequest* aj_;
     ::io::deephaven::proto::backplane::grpc::AjRajTablesRequest* raj_;
+    ::io::deephaven::proto::backplane::grpc::RingTableRequest* ring_;
   } op_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   uint32_t _oneof_case_[1];
@@ -24066,7 +24286,7 @@ class BatchTableRequest final :
                &_BatchTableRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    118;
+    119;
 
   friend void swap(BatchTableRequest& a, BatchTableRequest& b) {
     a.Swap(&b);
@@ -46692,6 +46912,225 @@ WhereInRequest::mutable_columns_to_match() {
 
 // -------------------------------------------------------------------
 
+// RingTableRequest
+
+// .io.deephaven.proto.backplane.grpc.Ticket result_id = 1;
+inline bool RingTableRequest::_internal_has_result_id() const {
+  return this != internal_default_instance() && result_id_ != nullptr;
+}
+inline bool RingTableRequest::has_result_id() const {
+  return _internal_has_result_id();
+}
+inline const ::io::deephaven::proto::backplane::grpc::Ticket& RingTableRequest::_internal_result_id() const {
+  const ::io::deephaven::proto::backplane::grpc::Ticket* p = result_id_;
+  return p != nullptr ? *p : reinterpret_cast<const ::io::deephaven::proto::backplane::grpc::Ticket&>(
+      ::io::deephaven::proto::backplane::grpc::_Ticket_default_instance_);
+}
+inline const ::io::deephaven::proto::backplane::grpc::Ticket& RingTableRequest::result_id() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.RingTableRequest.result_id)
+  return _internal_result_id();
+}
+inline void RingTableRequest::unsafe_arena_set_allocated_result_id(
+    ::io::deephaven::proto::backplane::grpc::Ticket* result_id) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(result_id_);
+  }
+  result_id_ = result_id;
+  if (result_id) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:io.deephaven.proto.backplane.grpc.RingTableRequest.result_id)
+}
+inline ::io::deephaven::proto::backplane::grpc::Ticket* RingTableRequest::release_result_id() {
+  
+  ::io::deephaven::proto::backplane::grpc::Ticket* temp = result_id_;
+  result_id_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::io::deephaven::proto::backplane::grpc::Ticket* RingTableRequest::unsafe_arena_release_result_id() {
+  // @@protoc_insertion_point(field_release:io.deephaven.proto.backplane.grpc.RingTableRequest.result_id)
+  
+  ::io::deephaven::proto::backplane::grpc::Ticket* temp = result_id_;
+  result_id_ = nullptr;
+  return temp;
+}
+inline ::io::deephaven::proto::backplane::grpc::Ticket* RingTableRequest::_internal_mutable_result_id() {
+  
+  if (result_id_ == nullptr) {
+    auto* p = CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::Ticket>(GetArenaForAllocation());
+    result_id_ = p;
+  }
+  return result_id_;
+}
+inline ::io::deephaven::proto::backplane::grpc::Ticket* RingTableRequest::mutable_result_id() {
+  ::io::deephaven::proto::backplane::grpc::Ticket* _msg = _internal_mutable_result_id();
+  // @@protoc_insertion_point(field_mutable:io.deephaven.proto.backplane.grpc.RingTableRequest.result_id)
+  return _msg;
+}
+inline void RingTableRequest::set_allocated_result_id(::io::deephaven::proto::backplane::grpc::Ticket* result_id) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(result_id_);
+  }
+  if (result_id) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(
+                reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(result_id));
+    if (message_arena != submessage_arena) {
+      result_id = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, result_id, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  result_id_ = result_id;
+  // @@protoc_insertion_point(field_set_allocated:io.deephaven.proto.backplane.grpc.RingTableRequest.result_id)
+}
+
+// .io.deephaven.proto.backplane.grpc.TableReference source_id = 2;
+inline bool RingTableRequest::_internal_has_source_id() const {
+  return this != internal_default_instance() && source_id_ != nullptr;
+}
+inline bool RingTableRequest::has_source_id() const {
+  return _internal_has_source_id();
+}
+inline void RingTableRequest::clear_source_id() {
+  if (GetArenaForAllocation() == nullptr && source_id_ != nullptr) {
+    delete source_id_;
+  }
+  source_id_ = nullptr;
+}
+inline const ::io::deephaven::proto::backplane::grpc::TableReference& RingTableRequest::_internal_source_id() const {
+  const ::io::deephaven::proto::backplane::grpc::TableReference* p = source_id_;
+  return p != nullptr ? *p : reinterpret_cast<const ::io::deephaven::proto::backplane::grpc::TableReference&>(
+      ::io::deephaven::proto::backplane::grpc::_TableReference_default_instance_);
+}
+inline const ::io::deephaven::proto::backplane::grpc::TableReference& RingTableRequest::source_id() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.RingTableRequest.source_id)
+  return _internal_source_id();
+}
+inline void RingTableRequest::unsafe_arena_set_allocated_source_id(
+    ::io::deephaven::proto::backplane::grpc::TableReference* source_id) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(source_id_);
+  }
+  source_id_ = source_id;
+  if (source_id) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:io.deephaven.proto.backplane.grpc.RingTableRequest.source_id)
+}
+inline ::io::deephaven::proto::backplane::grpc::TableReference* RingTableRequest::release_source_id() {
+  
+  ::io::deephaven::proto::backplane::grpc::TableReference* temp = source_id_;
+  source_id_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::io::deephaven::proto::backplane::grpc::TableReference* RingTableRequest::unsafe_arena_release_source_id() {
+  // @@protoc_insertion_point(field_release:io.deephaven.proto.backplane.grpc.RingTableRequest.source_id)
+  
+  ::io::deephaven::proto::backplane::grpc::TableReference* temp = source_id_;
+  source_id_ = nullptr;
+  return temp;
+}
+inline ::io::deephaven::proto::backplane::grpc::TableReference* RingTableRequest::_internal_mutable_source_id() {
+  
+  if (source_id_ == nullptr) {
+    auto* p = CreateMaybeMessage<::io::deephaven::proto::backplane::grpc::TableReference>(GetArenaForAllocation());
+    source_id_ = p;
+  }
+  return source_id_;
+}
+inline ::io::deephaven::proto::backplane::grpc::TableReference* RingTableRequest::mutable_source_id() {
+  ::io::deephaven::proto::backplane::grpc::TableReference* _msg = _internal_mutable_source_id();
+  // @@protoc_insertion_point(field_mutable:io.deephaven.proto.backplane.grpc.RingTableRequest.source_id)
+  return _msg;
+}
+inline void RingTableRequest::set_allocated_source_id(::io::deephaven::proto::backplane::grpc::TableReference* source_id) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete source_id_;
+  }
+  if (source_id) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(source_id);
+    if (message_arena != submessage_arena) {
+      source_id = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, source_id, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  source_id_ = source_id;
+  // @@protoc_insertion_point(field_set_allocated:io.deephaven.proto.backplane.grpc.RingTableRequest.source_id)
+}
+
+// int32 size = 3;
+inline void RingTableRequest::clear_size() {
+  size_ = 0;
+}
+inline int32_t RingTableRequest::_internal_size() const {
+  return size_;
+}
+inline int32_t RingTableRequest::size() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.RingTableRequest.size)
+  return _internal_size();
+}
+inline void RingTableRequest::_internal_set_size(int32_t value) {
+  
+  size_ = value;
+}
+inline void RingTableRequest::set_size(int32_t value) {
+  _internal_set_size(value);
+  // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.RingTableRequest.size)
+}
+
+// bool initialize = 4;
+inline void RingTableRequest::clear_initialize() {
+  initialize_ = false;
+}
+inline bool RingTableRequest::_internal_initialize() const {
+  return initialize_;
+}
+inline bool RingTableRequest::initialize() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.RingTableRequest.initialize)
+  return _internal_initialize();
+}
+inline void RingTableRequest::_internal_set_initialize(bool value) {
+  
+  initialize_ = value;
+}
+inline void RingTableRequest::set_initialize(bool value) {
+  _internal_set_initialize(value);
+  // @@protoc_insertion_point(field_set:io.deephaven.proto.backplane.grpc.RingTableRequest.initialize)
+}
+
+// -------------------------------------------------------------------
+
 // BatchTableRequest_Operation
 
 // .io.deephaven.proto.backplane.grpc.EmptyTableRequest empty_table = 1;
@@ -49580,6 +50019,80 @@ inline ::io::deephaven::proto::backplane::grpc::AjRajTablesRequest* BatchTableRe
   return _msg;
 }
 
+// .io.deephaven.proto.backplane.grpc.RingTableRequest ring = 42;
+inline bool BatchTableRequest_Operation::_internal_has_ring() const {
+  return op_case() == kRing;
+}
+inline bool BatchTableRequest_Operation::has_ring() const {
+  return _internal_has_ring();
+}
+inline void BatchTableRequest_Operation::set_has_ring() {
+  _oneof_case_[0] = kRing;
+}
+inline void BatchTableRequest_Operation::clear_ring() {
+  if (_internal_has_ring()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete op_.ring_;
+    }
+    clear_has_op();
+  }
+}
+inline ::io::deephaven::proto::backplane::grpc::RingTableRequest* BatchTableRequest_Operation::release_ring() {
+  // @@protoc_insertion_point(field_release:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.ring)
+  if (_internal_has_ring()) {
+    clear_has_op();
+    ::io::deephaven::proto::backplane::grpc::RingTableRequest* temp = op_.ring_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    op_.ring_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::io::deephaven::proto::backplane::grpc::RingTableRequest& BatchTableRequest_Operation::_internal_ring() const {
+  return _internal_has_ring()
+      ? *op_.ring_
+      : reinterpret_cast< ::io::deephaven::proto::backplane::grpc::RingTableRequest&>(::io::deephaven::proto::backplane::grpc::_RingTableRequest_default_instance_);
+}
+inline const ::io::deephaven::proto::backplane::grpc::RingTableRequest& BatchTableRequest_Operation::ring() const {
+  // @@protoc_insertion_point(field_get:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.ring)
+  return _internal_ring();
+}
+inline ::io::deephaven::proto::backplane::grpc::RingTableRequest* BatchTableRequest_Operation::unsafe_arena_release_ring() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.ring)
+  if (_internal_has_ring()) {
+    clear_has_op();
+    ::io::deephaven::proto::backplane::grpc::RingTableRequest* temp = op_.ring_;
+    op_.ring_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void BatchTableRequest_Operation::unsafe_arena_set_allocated_ring(::io::deephaven::proto::backplane::grpc::RingTableRequest* ring) {
+  clear_op();
+  if (ring) {
+    set_has_ring();
+    op_.ring_ = ring;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.ring)
+}
+inline ::io::deephaven::proto::backplane::grpc::RingTableRequest* BatchTableRequest_Operation::_internal_mutable_ring() {
+  if (!_internal_has_ring()) {
+    clear_op();
+    set_has_ring();
+    op_.ring_ = CreateMaybeMessage< ::io::deephaven::proto::backplane::grpc::RingTableRequest >(GetArenaForAllocation());
+  }
+  return op_.ring_;
+}
+inline ::io::deephaven::proto::backplane::grpc::RingTableRequest* BatchTableRequest_Operation::mutable_ring() {
+  ::io::deephaven::proto::backplane::grpc::RingTableRequest* _msg = _internal_mutable_ring();
+  // @@protoc_insertion_point(field_mutable:io.deephaven.proto.backplane.grpc.BatchTableRequest.Operation.ring)
+  return _msg;
+}
+
 inline bool BatchTableRequest_Operation::has_op() const {
   return op_case() != OP_NOT_SET;
 }
@@ -49636,6 +50149,8 @@ BatchTableRequest::ops() const {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

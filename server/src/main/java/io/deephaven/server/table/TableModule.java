@@ -32,6 +32,7 @@ import io.deephaven.server.table.ops.JoinTablesGrpcImpl;
 import io.deephaven.server.table.ops.MergeTablesGrpcImpl;
 import io.deephaven.server.table.ops.MetaTableGrpcImpl;
 import io.deephaven.server.table.ops.RangeJoinGrpcImpl;
+import io.deephaven.server.table.ops.RingTableGrpcImpl;
 import io.deephaven.server.table.ops.RunChartDownsampleGrpcImpl;
 import io.deephaven.server.table.ops.SelectDistinctGrpcImpl;
 import io.deephaven.server.table.ops.SnapshotTableGrpcImpl;
@@ -258,4 +259,8 @@ public interface TableModule {
     @BatchOpCode(BatchTableRequest.Operation.OpCase.META_TABLE)
     GrpcTableOperation<?> bindMeta(MetaTableGrpcImpl op);
 
+    @Binds
+    @IntoMap
+    @BatchOpCode(BatchTableRequest.Operation.OpCase.RING)
+    GrpcTableOperation<?> bindRing(RingTableGrpcImpl op);
 }

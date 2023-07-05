@@ -197,6 +197,11 @@ public class TableLabelVisitor extends TableVisitorGeneric<String> {
         return "snapshot()";
     }
 
+    @Override
+    public String visit(RingTable ringTable) {
+        return String.format("ring(%s, %b)", ringTable.size(), ringTable.initialize());
+    }
+
     private String join(String name, Join j) {
         return String.format("%s([%s],[%s])",
                 name,

@@ -320,6 +320,11 @@ class TableAdapterImpl<TOPS extends TableOperations<TOPS, TABLE>, TABLE> impleme
         return null;
     }
 
+    @Override
+    public Void visit(RingTable ringTable) {
+        throw new UnsupportedOperationException("RingTable unable to be as TableOperation");
+    }
+
     private final class OutputTable implements Output<TOPS, TABLE> {
         private final TABLE table;
 

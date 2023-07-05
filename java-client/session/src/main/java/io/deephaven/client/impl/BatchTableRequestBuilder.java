@@ -56,6 +56,7 @@ import io.deephaven.proto.backplane.grpc.NotCondition;
 import io.deephaven.proto.backplane.grpc.OrCondition;
 import io.deephaven.proto.backplane.grpc.RangeJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.Reference;
+import io.deephaven.proto.backplane.grpc.RingTableRequest;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
 import io.deephaven.proto.backplane.grpc.SelectOrUpdateRequest;
 import io.deephaven.proto.backplane.grpc.SnapshotTableRequest;
@@ -91,6 +92,7 @@ import io.deephaven.qst.table.NaturalJoinTable;
 import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.RangeJoinTable;
 import io.deephaven.qst.table.ReverseTable;
+import io.deephaven.qst.table.RingTable;
 import io.deephaven.qst.table.SelectDistinctTable;
 import io.deephaven.qst.table.SelectTable;
 import io.deephaven.qst.table.SingleParentTable;
@@ -569,6 +571,15 @@ class BatchTableRequestBuilder {
                 request.addColumnNames(dropColumn.name());
             }
             return op(Builder::setDropColumns, request);
+        }
+
+        @Override
+        public Operation visit(RingTable ringTable) {
+            return op(Builder::setRing, RingTableRequest.newBuilder()
+                    .setResultId(ticket)
+                    .setSourceId(ref(ringTable.parent()))
+                    .setSize(ringTable.size())
+                    .setInitialize(ringTable.initialize()));
         }
 
         private SelectOrUpdateRequest selectOrUpdate(SingleParentTable x,

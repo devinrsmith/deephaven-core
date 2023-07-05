@@ -139,6 +139,8 @@ type TableServiceClient interface {
 	SeekRow(ctx context.Context, in *SeekRowRequest, opts ...grpc.CallOption) (*SeekRowResponse, error)
 	// Returns the meta table of a table.
 	MetaTable(ctx context.Context, in *MetaTableRequest, opts ...grpc.CallOption) (*ExportedTableCreationResponse, error)
+	// Creates a ring table.
+	RingTable(ctx context.Context, in *RingTableRequest, opts ...grpc.CallOption) (*ExportedTableCreationResponse, error)
 }
 
 type tableServiceClient struct {
@@ -584,6 +586,15 @@ func (c *tableServiceClient) MetaTable(ctx context.Context, in *MetaTableRequest
 	return out, nil
 }
 
+func (c *tableServiceClient) RingTable(ctx context.Context, in *RingTableRequest, opts ...grpc.CallOption) (*ExportedTableCreationResponse, error) {
+	out := new(ExportedTableCreationResponse)
+	err := c.cc.Invoke(ctx, "/io.deephaven.proto.backplane.grpc.TableService/RingTable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TableServiceServer is the server API for TableService service.
 // All implementations must embed UnimplementedTableServiceServer
 // for forward compatibility
@@ -704,6 +715,8 @@ type TableServiceServer interface {
 	SeekRow(context.Context, *SeekRowRequest) (*SeekRowResponse, error)
 	// Returns the meta table of a table.
 	MetaTable(context.Context, *MetaTableRequest) (*ExportedTableCreationResponse, error)
+	// Creates a ring table.
+	RingTable(context.Context, *RingTableRequest) (*ExportedTableCreationResponse, error)
 	mustEmbedUnimplementedTableServiceServer()
 }
 
@@ -839,6 +852,9 @@ func (UnimplementedTableServiceServer) SeekRow(context.Context, *SeekRowRequest)
 }
 func (UnimplementedTableServiceServer) MetaTable(context.Context, *MetaTableRequest) (*ExportedTableCreationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MetaTable not implemented")
+}
+func (UnimplementedTableServiceServer) RingTable(context.Context, *RingTableRequest) (*ExportedTableCreationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RingTable not implemented")
 }
 func (UnimplementedTableServiceServer) mustEmbedUnimplementedTableServiceServer() {}
 
@@ -1633,6 +1649,24 @@ func _TableService_MetaTable_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TableService_RingTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RingTableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TableServiceServer).RingTable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/io.deephaven.proto.backplane.grpc.TableService/RingTable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TableServiceServer).RingTable(ctx, req.(*RingTableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TableService_ServiceDesc is the grpc.ServiceDesc for TableService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1803,6 +1837,10 @@ var TableService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MetaTable",
 			Handler:    _TableService_MetaTable_Handler,
+		},
+		{
+			MethodName: "RingTable",
+			Handler:    _TableService_RingTable_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

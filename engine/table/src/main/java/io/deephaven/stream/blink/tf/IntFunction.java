@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 @FunctionalInterface
-public interface IntFunction<T> extends TypedFunction<T>, ToIntFunction<T> {
+public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
 
     /**
      * Assumes the object value is directly castable to an int. Equivalent to {@code x -> (int)x}.

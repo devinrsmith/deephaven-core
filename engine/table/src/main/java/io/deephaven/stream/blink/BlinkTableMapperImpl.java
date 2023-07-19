@@ -12,11 +12,25 @@ import io.deephaven.chunk.WritableShortChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.qst.type.Type;
+import io.deephaven.qst.type.ArrayType;
+import io.deephaven.qst.type.BoxedBooleanType;
+import io.deephaven.qst.type.BoxedByteType;
+import io.deephaven.qst.type.BoxedCharType;
+import io.deephaven.qst.type.BoxedDoubleType;
+import io.deephaven.qst.type.BoxedFloatType;
+import io.deephaven.qst.type.BoxedIntType;
+import io.deephaven.qst.type.BoxedLongType;
+import io.deephaven.qst.type.BoxedShortType;
+import io.deephaven.qst.type.BoxedType;
+import io.deephaven.qst.type.CustomType;
+import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.InstantType;
+import io.deephaven.qst.type.StringType;
+import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
+import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -29,6 +43,8 @@ import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
+import io.deephaven.util.QueryConstants;
+import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -36,6 +52,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapBoolean;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapByte;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapChar;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapDouble;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapFloat;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapInstant;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapInt;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapLong;
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapShort;
 
 final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
@@ -59,8 +85,7 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         final StreamToBlinkTableAdapter adapter =
                 new StreamToBlinkTableAdapter(definition, this, config.updateSourceRegistrar(), config.name());
         this.table = adapter.table();
-        // this.chunks = StreamToBlinkTableAdapter.makeChunksForDefinition(definition, chunkSize);
-        this.chunks = null; // todo
+        this.chunks = StreamChunkUtils.makeChunksForDefinition(definition, chunkSize);
     }
 
     public Table table() {
@@ -116,8 +141,7 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
     private void flushInternal() {
         consumer.accept(chunks);
-        // chunks = StreamToBlinkTableAdapter.makeChunksForDefinition(definition, chunkSize);
-        chunks = null; // todo
+        chunks = StreamChunkUtils.makeChunksForDefinition(definition, chunkSize);
     }
 
     private class Adapter implements Visitor<T, Void> {
@@ -141,6 +165,11 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
         private WritableChunk<Values> chunk() {
             return chunks[index];
+        }
+
+        @Override
+        public Void visit(BooleanFunction<T> f) {
+            return visit(mapBoolean(f));
         }
 
         @Override
@@ -207,32 +236,90 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         }
 
         @Override
-        public Void visit(BoxedBooleanFunction<T> f) {
-            final WritableByteChunk<Values> c = chunk().asWritableByteChunk();
-            for (T value : values) {
-                c.add(BooleanUtils.booleanAsByte(f.applyAsBoolean(value)));
-            }
-            return null;
+        public Void visit(ObjectFunction<T, ?> f) {
+            return f.returnType().walk(new ObjectFunctionVisitor(f));
         }
 
-        @Override
-        public Void visit(ObjectFunction<T, ?> f) {
-            if (Type.instantType().equals(f.returnType())) {
-                // noinspection unchecked
-                visitInstant((ObjectFunction<T, Instant>) f);
-                return null;
-            }
-            final WritableObjectChunk<Object, Values> c = chunk().asWritableObjectChunk();
+        private <X> void visitGeneric(ObjectFunction<T, X> f) {
+            final WritableObjectChunk<X, Values> c = chunk().asWritableObjectChunk();
             for (T value : values) {
                 c.add(f.apply(value));
             }
-            return null;
         }
 
-        private void visitInstant(ObjectFunction<T, Instant> instantMapp) {
-            final WritableLongChunk<Values> c = chunk().asWritableLongChunk();
-            for (T value : values) {
-                c.add(DateTimeUtils.epochNanos(instantMapp.apply(value)));
+        private class ObjectFunctionVisitor implements GenericType.Visitor<Void>, BoxedType.Visitor<Void> {
+            private final ObjectFunction<T, ?> f;
+
+            public ObjectFunctionVisitor(ObjectFunction<T, ?> f) {
+                this.f = Objects.requireNonNull(f);
+            }
+
+            @Override
+            public Void visit(BoxedType<?> boxedType) {
+                return boxedType.walk((BoxedType.Visitor<Void>) this);
+            }
+
+            @Override
+            public Void visit(StringType stringType) {
+                visitGeneric(f);
+                return null;
+            }
+
+            @Override
+            public Void visit(InstantType instantType) {
+                return Adapter.this.visit(mapInstant(f.as(instantType)));
+            }
+
+            @Override
+            public Void visit(ArrayType<?, ?> arrayType) {
+                visitGeneric(f);
+                return null;
+            }
+
+            @Override
+            public Void visit(CustomType<?> customType) {
+                visitGeneric(f);
+                return null;
+            }
+
+            @Override
+            public Void visit(BoxedBooleanType booleanType) {
+                return Adapter.this.visit(mapBoolean(f.as(booleanType)));
+            }
+
+            @Override
+            public Void visit(BoxedByteType byteType) {
+                return Adapter.this.visit(mapByte(f.as(byteType)));
+            }
+
+            @Override
+            public Void visit(BoxedCharType charType) {
+                return Adapter.this.visit(mapChar(f.as(charType)));
+            }
+
+            @Override
+            public Void visit(BoxedShortType shortType) {
+                return Adapter.this.visit(mapShort(f.as(shortType)));
+            }
+
+            @Override
+            public Void visit(BoxedIntType intType) {
+                return Adapter.this.visit(mapInt(f.as(intType)));
+            }
+
+            @Override
+            public Void visit(BoxedLongType longType) {
+                return Adapter.this.visit(mapLong(f.as(longType)));
+            }
+
+            @Override
+            public Void visit(BoxedFloatType floatType) {
+                return Adapter.this.visit(mapFloat(f.as(floatType)));
+            }
+
+            @Override
+            public Void visit(BoxedDoubleType doubleType) {
+                return Adapter.this.visit(mapDouble(f.as(doubleType)));
             }
         }
     }

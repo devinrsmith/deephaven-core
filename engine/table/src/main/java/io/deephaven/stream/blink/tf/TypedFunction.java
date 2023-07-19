@@ -20,7 +20,7 @@ public interface TypedFunction<T> {
     TypedFunction<T> mapInput(Function<T, T> f);
 
     interface Visitor<T, R> {
-        R visit(BoxedBooleanFunction<T> f);
+        R visit(BooleanFunction<T> f);
 
         R visit(CharFunction<T> f);
 

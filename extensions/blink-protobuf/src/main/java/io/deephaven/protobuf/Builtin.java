@@ -20,7 +20,7 @@ import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
+import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
@@ -124,7 +124,7 @@ class Builtin {
         }
 
         @Override
-        public BoxedBooleanFunction<Message> parser(ProtobufOptions options) {
+        public BooleanFunction<Message> parser(ProtobufOptions options) {
             return message(IN_TYPE).mapBoolean(BoolValue::getValue);
         }
     }

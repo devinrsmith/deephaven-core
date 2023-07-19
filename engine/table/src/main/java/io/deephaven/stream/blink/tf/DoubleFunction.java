@@ -1,5 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
+import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
@@ -7,8 +8,10 @@ import io.deephaven.util.QueryConstants;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
+import static io.deephaven.stream.blink.tf.MapToPrimitives.mapDouble;
+
 @FunctionalInterface
-public interface DoubleFunction<T> extends TypedFunction<T>, ToDoubleFunction<T> {
+public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunction<T> {
 
     /**
      * Assumes the object value is directly castable to a double. Equivalent to {@code x -> (double)x}.
@@ -30,8 +33,7 @@ public interface DoubleFunction<T> extends TypedFunction<T>, ToDoubleFunction<T>
      * @see NullGuard#of(DoubleFunction)
      */
     static <T> DoubleFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (DoubleFunction<T>) Functions.DOUBLE_GUARDED;
+        return mapDouble(ObjectFunction.doubleObject());
     }
 
     @Override
@@ -59,5 +61,9 @@ public interface DoubleFunction<T> extends TypedFunction<T>, ToDoubleFunction<T>
      */
     default DoubleFunction<T> onNullInput(double onNull) {
         return x -> x == null ? onNull : applyAsDouble(x);
+    }
+
+    default ObjectFunction<T, Double> onNull() {
+        return ObjectFunction.of(t -> t == null ? null : applyAsDouble(t), BoxedDoubleType.of());
     }
 }

@@ -7,7 +7,7 @@ import io.deephaven.util.QueryConstants;
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface FloatFunction<T> extends TypedFunction<T> {
+public interface FloatFunction<T> extends PrimitiveFunction<T> {
     /**
      * Assumes the object value is directly castable to a float. Equivalent to {@code x -> (float)x}.
      *

@@ -7,7 +7,7 @@ import io.deephaven.util.QueryConstants;
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface CharFunction<T> extends TypedFunction<T> {
+public interface CharFunction<T> extends PrimitiveFunction<T> {
     /**
      * Assumes the object value is directly castable to a char. Equivalent to {@code x -> (char)x}.
      *

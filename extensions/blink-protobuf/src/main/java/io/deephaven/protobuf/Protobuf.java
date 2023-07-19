@@ -7,13 +7,17 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
 import com.google.protobuf.UnknownFieldSet;
-import io.deephaven.protobuf.Protobuf.Unmapped;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
+import io.deephaven.qst.type.BoxedBooleanType;
+import io.deephaven.qst.type.BoxedDoubleType;
+import io.deephaven.qst.type.BoxedFloatType;
+import io.deephaven.qst.type.BoxedIntType;
+import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.ApplyVisitor;
-import io.deephaven.stream.blink.tf.BoxedBooleanFunction;
+import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -72,7 +76,8 @@ class Protobuf {
     }
 
     private TypedFunction<Message> parser(SingleValuedMessageParser svmp) {
-        return NullGuard.of(svmp.parser(options));
+        // return NullGuard.of(svmp.parser(options));
+        return svmp.parser(options);
     }
 
     private class DescriptorContext {
@@ -202,71 +207,35 @@ class Protobuf {
             private ProtobufFunctions functions() {
                 switch (fd.getJavaType()) {
                     case INT:
-                        return namedField(asInt());
+                        return namedField(as(BoxedIntType.of()));
                     case LONG:
-                        return namedField(asLong());
+                        return namedField(as(BoxedLongType.of()));
                     case FLOAT:
-                        return namedField(asFloat());
+                        return namedField(as(BoxedFloatType.of()));
                     case DOUBLE:
-                        return namedField(asDouble());
+                        return namedField(as(BoxedDoubleType.of()));
                     case BOOLEAN:
-                        return namedField(asBoolean());
+                        return namedField(as(BoxedBooleanType.of()));
                     case STRING:
-                        return namedField(asString());
+                        return namedField(as(Type.stringType()));
                     case BYTE_STRING:
-                        return namedField(asBytes());
+                        return namedField(as(BYTE_STRING_TYPE).mapObj(bytes_()));
                     case ENUM:
-                        return namedField(asEnum());
+                        return namedField(as(ENUM_VALUE_DESCRIPTOR_TYPE));
                     case MESSAGE:
-                        final Function<Message, Message> messageF = asMessage()::apply;
+                        final Function<Message, Message> messageF = as(MESSAGE_TYPE)::apply;
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions subF = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();
                         for (Entry<List<String>, TypedFunction<Message>> e : subF.columns().entrySet()) {
                             final List<String> key = e.getKey();
-                            final TypedFunction<Message> value = e.getValue();
+                            final TypedFunction<Message> value = OnNullWrapper.of(e.getValue());
                             builder.putColumns(prefix(fd.getName(), key), value.mapInput(messageF));
                         }
                         return builder.build();
                     default:
                         throw new IllegalStateException();
                 }
-            }
-
-            private IntFunction<Message> asInt() {
-                return mapInt(IntFunction.guardedPrimitive());
-            }
-
-            private LongFunction<Message> asLong() {
-                return mapLong(LongFunction.guardedPrimitive());
-            }
-
-            private FloatFunction<Message> asFloat() {
-                return mapFloat(FloatFunction.guardedPrimitive());
-            }
-
-            private DoubleFunction<Message> asDouble() {
-                return mapDouble(DoubleFunction.guardedPrimitive());
-            }
-
-            private BoxedBooleanFunction<Message> asBoolean() {
-                return mapBoolean(boolean_());
-            }
-
-            private ObjectFunction<Message, String> asString() {
-                return as(Type.stringType());
-            }
-
-            private ObjectFunction<Message, byte[]> asBytes() {
-                return as(BYTE_STRING_TYPE).mapObj(bytes_());
-            }
-
-            private ObjectFunction<Message, EnumValueDescriptor> asEnum() {
-                return as(ENUM_VALUE_DESCRIPTOR_TYPE);
-            }
-
-            private ObjectFunction<Message, Message> asMessage() {
-                return as(MESSAGE_TYPE);
             }
         }
 
@@ -366,8 +335,8 @@ class Protobuf {
 
             private class ToRepeatedType implements Visitor<Message, ObjectFunction<Message, ?>> {
                 @Override
-                public ObjectFunction<Message, ?> visit(BoxedBooleanFunction<Message> f) {
-                    return asUnmapped();
+                public ObjectFunction<Message, ?> visit(BooleanFunction<Message> f) {
+                    return asBooleans(f);
                 }
 
                 @Override
@@ -496,6 +465,28 @@ class Protobuf {
                 return array;
             }
 
+            private ObjectFunction<Message, boolean[]> asBooleans() {
+                return ObjectFunction.of(this::toBooleans, Type.booleanType().arrayType());
+            }
+
+            private ObjectFunction<Message, boolean[]> asBooleans(BooleanFunction<Message> f) {
+                return ObjectFunction.of(m -> toBooleans(m, CAST_MESSAGE_TYPE.mapBoolean(f)),
+                        Type.booleanType().arrayType());
+            }
+
+            private boolean[] toBooleans(Message message) {
+                return toBooleans(message, BooleanFunction.primitive());
+            }
+
+            private boolean[] toBooleans(Message message, BooleanFunction<Object> f) {
+                final int count = message.getRepeatedFieldCount(fd);
+                final boolean[] array = new boolean[count];
+                for (int i = 0; i < count; ++i) {
+                    array[i] = f.applyAsBoolean(message.getRepeatedField(fd, i));
+                }
+                return array;
+            }
+
             private <T> ObjectFunction<Message, T[]> asArray(ObjectFunction<Message, T> f) {
                 return ObjectFunction.of(message -> toArray(message, CAST_MESSAGE_TYPE.mapObj(f)),
                         f.returnType().arrayType());
@@ -507,19 +498,6 @@ class Protobuf {
                 final T[] array = (T[]) Array.newInstance(f.returnType().clazz(), count);
                 for (int i = 0; i < count; ++i) {
                     array[i] = f.apply(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private ObjectFunction<Message, boolean[]> asBooleans() {
-                return ObjectFunction.of(this::toBooleans, Type.booleanType().arrayType());
-            }
-
-            private boolean[] toBooleans(Message message) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final boolean[] array = new boolean[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = (boolean) message.getRepeatedField(fd, i);
                 }
                 return array;
             }
@@ -614,9 +592,9 @@ class Protobuf {
         }
     }
 
-    private static BoxedBooleanFunction<Object> boolean_() {
-        return NullGuard.of((BoxedBooleanFunction<Object>) x -> (boolean) x);
-    }
+    // private static BooleanFunction<Object> boolean_() {
+    // return NullGuard.of((BooleanFunction<Object>) x -> (boolean) x);
+    // }
 
     private static ObjectFunction<ByteString, byte[]> bytes_() {
         return NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));

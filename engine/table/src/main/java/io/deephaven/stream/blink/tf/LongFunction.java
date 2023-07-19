@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
 @FunctionalInterface
-public interface LongFunction<T> extends TypedFunction<T>, ToLongFunction<T> {
+public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T> {
     /**
      * Assumes the object value is directly castable to a long. Equivalent to {@code x -> (long)x}.
      *

@@ -11,9 +11,9 @@ public enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>>
         return (TypedFunction<T>) f.walk((Visitor<T, ?>) INSTANCE);
     }
 
-    public static <T> BoxedBooleanFunction<T> of(BoxedBooleanFunction<T> f) {
-        return f.onNullInput(null);
-    }
+    // public static <T> BooleanFunction<T> of(BooleanFunction<T> f) {
+    // return f.onNullInput(false);
+    // }
 
     public static <T> CharFunction<T> of(CharFunction<T> f) {
         return f.onNullInput(QueryConstants.NULL_CHAR);
@@ -56,7 +56,7 @@ public enum NullGuard implements TypedFunction.Visitor<Object, TypedFunction<?>>
     }
 
     @Override
-    public TypedFunction<?> visit(BoxedBooleanFunction<Object> f) {
+    public TypedFunction<?> visit(BooleanFunction<Object> f) {
         return of(f);
     }
 

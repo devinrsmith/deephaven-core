@@ -7,7 +7,7 @@ import io.deephaven.util.QueryConstants;
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface ShortFunction<T> extends TypedFunction<T> {
+public interface ShortFunction<T> extends PrimitiveFunction<T> {
 
     /**
      * Assumes the object value is directly castable to a short. Equivalent to {@code x -> (short)x}.

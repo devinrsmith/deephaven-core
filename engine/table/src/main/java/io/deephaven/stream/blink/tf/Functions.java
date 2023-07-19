@@ -1,6 +1,19 @@
 package io.deephaven.stream.blink.tf;
 
+import io.deephaven.qst.type.BoxedDoubleType;
+import io.deephaven.qst.type.BoxedLongType;
+import io.deephaven.qst.type.GenericType;
+
 class Functions {
+
+    enum PrimitiveBoolean implements BooleanFunction<Object> {
+        INSTANCE;
+
+        @Override
+        public boolean applyAsBoolean(Object value) {
+            return (boolean) value;
+        }
+    }
 
     enum PrimitiveChar implements CharFunction<Object> {
         INSTANCE;
@@ -64,6 +77,35 @@ class Functions {
             return (double) value;
         }
     }
+
+    enum BoxedLong implements ObjectFunction<Object, Long> {
+        INSTANCE;
+
+        @Override
+        public BoxedLongType returnType() {
+            return BoxedLongType.of();
+        }
+
+        @Override
+        public Long apply(Object value) {
+            return (Long) value;
+        }
+    }
+
+    enum BoxedDouble implements ObjectFunction<Object, Double> {
+        INSTANCE;
+
+        @Override
+        public BoxedDoubleType returnType() {
+            return BoxedDoubleType.of();
+        }
+
+        @Override
+        public Double apply(Object value) {
+            return (Double) value;
+        }
+    }
+
 
     static CharFunction<Object> CHAR_GUARDED = NullGuard.of(PrimitiveChar.INSTANCE);
 

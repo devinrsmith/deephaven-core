@@ -2,6 +2,7 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 
 import java.util.function.Function;
 

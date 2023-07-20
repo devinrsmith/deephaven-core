@@ -1,14 +1,10 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
-
-import static io.deephaven.stream.blink.tf.MapToPrimitives.mapDouble;
 
 @FunctionalInterface
 public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunction<T> {

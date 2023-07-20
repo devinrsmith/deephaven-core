@@ -38,6 +38,7 @@ import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
@@ -144,7 +145,7 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
         chunks = StreamChunkUtils.makeChunksForDefinition(definition, chunkSize);
     }
 
-    private class Adapter implements Visitor<T, Void> {
+    private class Adapter implements Visitor<T, Void>, PrimitiveFunction.Visitor<T, Void> {
         private final TypedFunction<T> tf;
         private final int index;
         private Collection<? extends T> values;
@@ -165,6 +166,16 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
         private WritableChunk<Values> chunk() {
             return chunks[index];
+        }
+
+        @Override
+        public Void visit(ObjectFunction<T, ?> f) {
+            return f.returnType().walk(new ObjectFunctionVisitor(f));
+        }
+
+        @Override
+        public Void visit(PrimitiveFunction<T> f) {
+            return f.walk((PrimitiveFunction.Visitor<T, Void>) this);
         }
 
         @Override
@@ -233,11 +244,6 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
                 c.add(f.applyAsDouble(value));
             }
             return null;
-        }
-
-        @Override
-        public Void visit(ObjectFunction<T, ?> f) {
-            return f.returnType().walk(new ObjectFunctionVisitor(f));
         }
 
         private <X> void visitGeneric(ObjectFunction<T, X> f) {

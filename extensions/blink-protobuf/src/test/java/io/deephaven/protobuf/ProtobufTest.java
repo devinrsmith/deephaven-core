@@ -17,6 +17,8 @@ import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
 import io.deephaven.protobuf.test.ADuration;
+import io.deephaven.protobuf.test.ALongNestedTimestampMap;
+import io.deephaven.protobuf.test.ALongTimestampMap;
 import io.deephaven.protobuf.test.AMultiNested;
 import io.deephaven.protobuf.test.AMultiNested.SubMessage1;
 import io.deephaven.protobuf.test.AMultiNested.SubMessage1.SubMessage2;
@@ -26,13 +28,18 @@ import io.deephaven.protobuf.test.AStringStringMap;
 import io.deephaven.protobuf.test.ATimestamp;
 import io.deephaven.protobuf.test.AnEnum;
 import io.deephaven.protobuf.test.AnEnum.TheEnum;
+import io.deephaven.protobuf.test.AnIntFooBarMap;
+import io.deephaven.protobuf.test.AnIntFooBarMap.FooBar;
+import io.deephaven.protobuf.test.AnIntIntMap;
 import io.deephaven.protobuf.test.AnyWrapper;
 import io.deephaven.protobuf.test.ByteWrapper;
 import io.deephaven.protobuf.test.ByteWrapperRepeated;
 import io.deephaven.protobuf.test.FieldMaskWrapper;
+import io.deephaven.protobuf.test.MultiRepeated;
 import io.deephaven.protobuf.test.NestedByteWrapper;
 import io.deephaven.protobuf.test.NestedRepeatedTimestamps;
 import io.deephaven.protobuf.test.NestedRepeatedTimestamps.Timestamps;
+import io.deephaven.protobuf.test.OptionalBasics;
 import io.deephaven.protobuf.test.RepeatedBasics;
 import io.deephaven.protobuf.test.RepeatedDuration;
 import io.deephaven.protobuf.test.RepeatedMessage;
@@ -48,9 +55,7 @@ import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.ApplyVisitor;
 import io.deephaven.stream.blink.tf.TypedFunction;
-import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -167,16 +172,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setBool(true).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isEqualTo(true);
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
-
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isEqualTo(true);
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -184,15 +188,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setInt32(42).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isEqualTo(42);
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isEqualTo(42);
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -200,15 +204,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setUint32(42).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isEqualTo(42);
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isEqualTo(42);
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -216,15 +220,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setInt64(42).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isEqualTo(42L);
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isEqualTo(42L);
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -232,15 +236,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setUint64(42).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isEqualTo(42L);
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isEqualTo(42L);
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -248,15 +252,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setFloat(42.0f).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isEqualTo(42.0f);
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isEqualTo(42.0f);
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -264,15 +268,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setDouble(42.0d).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isEqualTo(42.0d);
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isEqualTo(42.0d);
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -280,15 +284,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setString("hello").build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isEqualTo("hello");
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message))).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isEqualTo("hello");
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message)).isNull();
     }
 
     @Test
@@ -296,15 +300,15 @@ public class ProtobufTest {
         final Map<List<String>, TypedFunction<Message>> nf =
                 nf(UnionType.getDescriptor());
         final UnionType message = UnionType.newBuilder().setBytes(ByteString.copyFromUtf8("world")).build();
-        assertThat(nf.get(List.of("bool")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint32")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("int64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("uint64")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("float")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("double")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("string")).walk(new ApplyVisitor<>(message))).isNull();
-        assertThat(nf.get(List.of("bytes")).walk(new ApplyVisitor<>(message)))
+        assertThat(UpcastApply.apply(nf.get(List.of("bool")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint32")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("int64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("uint64")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("float")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("double")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("string")), message)).isNull();
+        assertThat(UpcastApply.apply(nf.get(List.of("bytes")), message))
                 .isEqualTo("world".getBytes(StandardCharsets.UTF_8));
     }
 
@@ -315,6 +319,79 @@ public class ProtobufTest {
                         .putProperties("foo", "bar")
                         .putProperties("hello", "world").build(),
                         Map.of("foo", "bar", "hello", "world")));
+    }
+
+    @Test
+    void intIntMap() {
+        checkKey(AnIntIntMap.getDescriptor(), List.of("properties"), Type.ofCustom(Map.class),
+                Map.of(AnIntIntMap.newBuilder()
+                        .putProperties(1, 2)
+                        .putProperties(3, 4).build(),
+                        Map.of(1, 2, 3, 4)));
+    }
+
+    @Test
+    void longTimestampMap() {
+        checkKey(ALongTimestampMap.getDescriptor(), List.of("properties"), Type.ofCustom(Map.class),
+                Map.of(ALongTimestampMap.newBuilder()
+                        .putProperties(1, Timestamp.newBuilder().setSeconds(42).build())
+                        .putProperties(2, Timestamp.newBuilder().setSeconds(43).build()).build(),
+                        Map.of(1L, Instant.ofEpochSecond(42),
+                                2L, Instant.ofEpochSecond(43))));
+    }
+
+    @Test
+    void longNestedTimestampMap() {
+        checkKey(ALongNestedTimestampMap.getDescriptor(), List.of("properties"), Type.ofCustom(Map.class),
+                Map.of(ALongNestedTimestampMap.newBuilder()
+                        .putProperties(1,
+                                ATimestamp.newBuilder().setTs(Timestamp.newBuilder().setSeconds(42).build()).build())
+                        .putProperties(2,
+                                ATimestamp.newBuilder().setTs(Timestamp.newBuilder().setSeconds(43).build()).build())
+                        .build(),
+                        Map.of(1L, Instant.ofEpochSecond(42),
+                                2L, Instant.ofEpochSecond(43))));
+    }
+
+    @Test
+    void intFooBarMap() {
+        // this test is exercising the case where the value is a complex type, and we default back to treating it as a
+        // repeating type instead of a map
+        final AnIntFooBarMap empty = AnIntFooBarMap.getDefaultInstance();
+        final AnIntFooBarMap map1 = AnIntFooBarMap.newBuilder()
+                .putProperties(1, FooBar.newBuilder().build())
+                .build();
+        final AnIntFooBarMap map2 = AnIntFooBarMap.newBuilder()
+                .putProperties(1, FooBar.newBuilder().build())
+                .putProperties(2, FooBar.newBuilder().setFoo("fighter").setBar(42).build())
+                .build();
+
+        checkKey(
+                AnIntFooBarMap.getDescriptor(),
+                List.of("properties", "key"),
+                Type.intType().arrayType(),
+                Map.of(
+                        empty, new int[0],
+                        map1, new int[] {1},
+                        map2, new int[] {1, 2}));
+
+        checkKey(
+                AnIntFooBarMap.getDescriptor(),
+                List.of("properties", "value", "foo"),
+                Type.stringType().arrayType(),
+                Map.of(
+                        empty, new String[0],
+                        map1, new String[] {""},
+                        map2, new String[] {"", "fighter"}));
+
+        checkKey(
+                AnIntFooBarMap.getDescriptor(),
+                List.of("properties", "value", "bar"),
+                Type.longType().arrayType(),
+                Map.of(
+                        empty, new long[0],
+                        map1, new long[] {0L},
+                        map2, new long[] {0L, 42L}));
     }
 
     @Test
@@ -343,6 +420,130 @@ public class ProtobufTest {
                 AnEnum.newBuilder().setFbb(TheEnum.BAZ).build(), TheEnum.BAZ.getValueDescriptor(),
                 AnEnum.newBuilder().setFbbValue(999).build(),
                 TheEnum.getDescriptor().findValueByNumberCreatingIfUnknown(999)));
+    }
+
+    @Test
+    void optionalBasics() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(OptionalBasics.getDescriptor());
+        assertThat(nf.keySet()).containsExactly(
+                List.of("bool"),
+                List.of("int32"),
+                List.of("uint32"),
+                List.of("int64"),
+                List.of("uint64"),
+                List.of("float"),
+                List.of("double"),
+                List.of("string"),
+                List.of("bytes"));
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("bool"),
+                BoxedBooleanType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setBool(false).build(), false);
+                        put(OptionalBasics.newBuilder().setBool(true).build(), true);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("int32"),
+                BoxedIntType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setInt32(0).build(), 0);
+                        put(OptionalBasics.newBuilder().setInt32(42).build(), 42);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("uint32"),
+                BoxedIntType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setUint32(0).build(), 0);
+                        put(OptionalBasics.newBuilder().setUint32(42).build(), 42);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("int64"),
+                BoxedLongType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setInt64(0).build(), 0L);
+                        put(OptionalBasics.newBuilder().setInt64(42).build(), 42L);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("uint64"),
+                BoxedLongType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setUint64(0).build(), 0L);
+                        put(OptionalBasics.newBuilder().setUint64(42).build(), 42L);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("float"),
+                BoxedFloatType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setFloat(0).build(), 0f);
+                        put(OptionalBasics.newBuilder().setFloat(42).build(), 42f);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("double"),
+                BoxedDoubleType.of(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setDouble(0).build(), 0d);
+                        put(OptionalBasics.newBuilder().setDouble(42).build(), 42d);
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("string"),
+                Type.stringType(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setString("").build(), "");
+                        put(OptionalBasics.newBuilder().setString("hello").build(), "hello");
+                    }
+                });
+
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                List.of("bytes"),
+                Type.byteType().arrayType(),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setBytes(ByteString.EMPTY).build(), new byte[0]);
+                        put(OptionalBasics.newBuilder().setBytes(ByteString.copyFromUtf8("hello")).build(),
+                                "hello".getBytes(StandardCharsets.UTF_8));
+                    }
+                });
     }
 
     @Test
@@ -518,14 +719,14 @@ public class ProtobufTest {
 
         final RepeatedWrappers allEmpty = RepeatedWrappers.getDefaultInstance();
 
-        // checkKey(
-        // RepeatedWrappers.getDescriptor(),
-        // "bool",
-        // BooleanVector.type(),
-        // Map.of(
-        // allEmpty, BooleanVector.empty(),
-        // RepeatedWrappers.newBuilder().addBool(BoolValue.of(true)).addBool(BoolValue.of(false)).build(),
-        // BooleanVector.proxy(new ObjectVectorDirect<>(true, false))));
+        checkKey(RepeatedWrappers.getDescriptor(), List.of("bool"), Type.booleanType().arrayType(), Map.of(
+                allEmpty, new boolean[] {},
+                RepeatedWrappers.newBuilder()
+                        .addBool(BoolValue.newBuilder().build())
+                        .addBool(BoolValue.newBuilder().setValue(false).build())
+                        .addBool(BoolValue.newBuilder().setValue(true).build())
+                        .build(),
+                new boolean[] {false, false, true}));
 
         checkKey(RepeatedWrappers.getDescriptor(), List.of("int32"), Type.intType().arrayType(), Map.of(
                 allEmpty, new int[] {},
@@ -570,6 +771,135 @@ public class ProtobufTest {
                 RepeatedWrappers.newBuilder().addBytes(BytesValue.of(ByteString.copyFromUtf8("hello")))
                         .addBytes(BytesValue.of(ByteString.copyFromUtf8("foo"))).build(),
                 new byte[][] {"hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
+    }
+
+    @Test
+    void multiRepeated() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(MultiRepeated.getDescriptor());
+        assertThat(nf.keySet()).containsExactly(
+                List.of("my_basics", "bool"),
+                List.of("my_basics", "int32"),
+                List.of("my_basics", "uint32"),
+                List.of("my_basics", "int64"),
+                List.of("my_basics", "uint64"),
+                List.of("my_basics", "float"),
+                List.of("my_basics", "double"),
+                List.of("my_basics", "string"),
+                List.of("my_basics", "bytes"),
+                List.of("my_wrappers", "bool"),
+                List.of("my_wrappers", "int32"),
+                List.of("my_wrappers", "uint32"),
+                List.of("my_wrappers", "int64"),
+                List.of("my_wrappers", "uint64"),
+                List.of("my_wrappers", "float"),
+                List.of("my_wrappers", "double"),
+                List.of("my_wrappers", "string"),
+                List.of("my_wrappers", "bytes"),
+                List.of("my_objects", "xyz", "x"),
+                List.of("my_objects", "xyz", "y"),
+                List.of("my_objects", "xyz", "z"));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "bool"),
+                Type.booleanType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new boolean[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "int32"),
+                Type.intType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new int[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "uint32"),
+                Type.intType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new int[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "int64"),
+                Type.longType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new long[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "uint64"),
+                Type.longType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new long[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "float"),
+                Type.floatType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new float[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_basics", "double"),
+                Type.doubleType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new double[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "bool"),
+                Type.booleanType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new boolean[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "int32"),
+                Type.intType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new int[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "uint32"),
+                Type.intType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new int[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "int64"),
+                Type.longType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new long[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "uint64"),
+                Type.longType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new long[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "float"),
+                Type.floatType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new float[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_wrappers", "double"),
+                Type.doubleType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new double[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_objects", "xyz", "x"),
+                Type.intType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new int[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_objects", "xyz", "y"),
+                Type.stringType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new String[][] {}));
+
+        checkKey(
+                MultiRepeated.getDescriptor(),
+                List.of("my_objects", "xyz", "z"),
+                Type.instantType().arrayType().arrayType(),
+                Map.of(MultiRepeated.getDefaultInstance(), new Instant[][] {}));
     }
 
     @Test
@@ -885,6 +1215,7 @@ public class ProtobufTest {
             Type<T> expectedType,
             Map<Message, T> expectedExamples) {
         final Map<List<String>, TypedFunction<Message>> map = nf(descriptor);
+        assertThat(map).containsKey(expectedPath);
         assertThat(map)
                 .extractingByKey(expectedPath)
                 .extracting(TypedFunction::returnType)
@@ -892,7 +1223,7 @@ public class ProtobufTest {
         for (Entry<Message, T> e : expectedExamples.entrySet()) {
             assertThat(map)
                     .extractingByKey(expectedPath)
-                    .extracting(t -> t.walk(new ApplyVisitor<>(e.getKey())))
+                    .extracting(t -> UpcastApply.apply(t, e.getKey()))
                     .isEqualTo(e.getValue());
         }
     }

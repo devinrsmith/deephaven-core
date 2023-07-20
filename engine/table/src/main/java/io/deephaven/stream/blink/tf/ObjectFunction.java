@@ -3,13 +3,11 @@ package io.deephaven.stream.blink.tf;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;
 import io.deephaven.qst.type.BoxedCharType;
-import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.BoxedShortType;
 import io.deephaven.qst.type.GenericType;
-import io.deephaven.stream.blink.tf.Functions.BoxedLong;
 
 import java.util.function.Function;
 
@@ -130,54 +128,5 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
 
     default <R2> ObjectFunction<T, R2> mapObj(ObjectFunction<R, R2> f) {
         return ObjectFunction.of(t -> f.apply(ObjectFunction.this.apply(t)), f.returnType());
-    }
-
-    default TypedFunction<T> map(TypedFunction<R> f) {
-        return f.walk(new Visitor<>() {
-            @Override
-            public TypedFunction<T> visit(BooleanFunction<R> f) {
-                return mapBoolean(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(CharFunction<R> f) {
-                return mapChar(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(ByteFunction<R> f) {
-                return mapByte(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(ShortFunction<R> f) {
-                return mapShort(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(IntFunction<R> f) {
-                return mapInt(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(LongFunction<R> f) {
-                return mapLong(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(FloatFunction<R> f) {
-                return mapFloat(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(DoubleFunction<R> f) {
-                return mapDouble(f);
-            }
-
-            @Override
-            public TypedFunction<T> visit(ObjectFunction<R, ?> f) {
-                return mapObj(f);
-            }
-        });
     }
 }

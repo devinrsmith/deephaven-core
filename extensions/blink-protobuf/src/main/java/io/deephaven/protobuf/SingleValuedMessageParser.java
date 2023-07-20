@@ -31,19 +31,6 @@ public interface SingleValuedMessageParser {
 
     String fullName();
 
+
     TypedFunction<Message> parser(ProtobufOptions options);
-
-    default GenericMessageParser asGenericMessageParser() {
-        return new GenericMessageParser() {
-            @Override
-            public String fullName() {
-                return SingleValuedMessageParser.this.fullName();
-            }
-
-            @Override
-            public Map<List<String>, TypedFunction<Message>> parser(ProtobufOptions options) {
-                return Map.of(List.of(), SingleValuedMessageParser.this.parser(options));
-            }
-        };
-    }
 }

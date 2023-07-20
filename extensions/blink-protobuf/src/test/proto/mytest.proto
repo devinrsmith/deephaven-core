@@ -32,6 +32,26 @@ message AStringStringMap {
   map<string, string> properties = 1;
 }
 
+message AnIntIntMap {
+  map<uint32, int32> properties = 1;
+}
+
+message ALongTimestampMap {
+  map<int64, google.protobuf.Timestamp> properties = 1;
+}
+
+message ALongNestedTimestampMap {
+  map<int64, ATimestamp> properties = 1;
+}
+
+message AnIntFooBarMap {
+  message FooBar {
+    string foo = 1;
+    int64 bar = 2;
+  }
+  map<int32, FooBar> properties = 1;
+}
+
 message ATimestamp {
   google.protobuf.Timestamp ts = 1;
 }
@@ -47,6 +67,18 @@ message AnEnum {
     BAZ = 2;
   }
   TheEnum fbb = 1;
+}
+
+message OptionalBasics {
+  optional bool bool = 1;
+  optional int32 int32 = 2;
+  optional uint32 uint32 = 3;
+  optional int64 int64 = 4;
+  optional uint64 uint64 = 5;
+  optional float float = 6;
+  optional double double = 7;
+  optional string string = 8;
+  optional bytes bytes = 9;
 }
 
 message TheWrappers {
@@ -83,6 +115,21 @@ message RepeatedWrappers {
   repeated google.protobuf.DoubleValue double = 7;
   repeated google.protobuf.StringValue string = 8;
   repeated google.protobuf.BytesValue bytes = 9;
+}
+
+message RepeatedObject {
+  message XYZ {
+    int32 x = 1;
+    string y = 2;
+    google.protobuf.Timestamp z = 3;
+  }
+  repeated XYZ xyz = 1;
+}
+
+message MultiRepeated {
+  repeated RepeatedBasics my_basics = 1;
+  repeated RepeatedWrappers my_wrappers = 2;
+  repeated RepeatedObject my_objects = 3;
 }
 
 message RepeatedTimestamp {

@@ -24,18 +24,6 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
         return (DoubleFunction<T>) Functions.PrimitiveDouble.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a double. On null, the function returns {@link QueryConstants#NULL_DOUBLE}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded double function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(DoubleFunction)
-     */
-    static <T> DoubleFunction<T> guardedPrimitive() {
-        return mapDouble(ObjectFunction.doubleObject());
-    }
-
     @Override
     double applyAsDouble(T value);
 
@@ -61,9 +49,5 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
      */
     default DoubleFunction<T> onNullInput(double onNull) {
         return x -> x == null ? onNull : applyAsDouble(x);
-    }
-
-    default ObjectFunction<T, Double> onNull() {
-        return ObjectFunction.of(t -> t == null ? null : applyAsDouble(t), BoxedDoubleType.of());
     }
 }

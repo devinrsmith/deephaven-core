@@ -24,7 +24,6 @@ import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.NullGuard;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -219,7 +218,7 @@ class Protobuf {
                     case STRING:
                         return namedField(as(Type.stringType()));
                     case BYTE_STRING:
-                        return namedField(as(BYTE_STRING_TYPE).mapObj(bytes_()));
+                        return namedField(as(BYTE_STRING_TYPE).mapObj(bytes_().onNullInput(null)));
                     case ENUM:
                         return namedField(as(ENUM_VALUE_DESCRIPTOR_TYPE));
                     case MESSAGE:
@@ -597,6 +596,6 @@ class Protobuf {
     // }
 
     private static ObjectFunction<ByteString, byte[]> bytes_() {
-        return NullGuard.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));
+        return ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType());
     }
 }

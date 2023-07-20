@@ -20,19 +20,6 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
         return (ShortFunction<T>) Functions.PrimitiveShort.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a short. On null, the function returns {@link QueryConstants#NULL_SHORT}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded short function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(ShortFunction)
-     */
-    static <T> ShortFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (ShortFunction<T>) Functions.SHORT_GUARDED;
-    }
-
     short applyAsShort(T value);
 
     @Override

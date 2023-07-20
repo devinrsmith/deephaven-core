@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.BoxedLongType;
-import io.deephaven.qst.type.GenericType;
 
 class Functions {
 
@@ -105,19 +104,4 @@ class Functions {
             return (Double) value;
         }
     }
-
-
-    static CharFunction<Object> CHAR_GUARDED = NullGuard.of(PrimitiveChar.INSTANCE);
-
-    static ByteFunction<Object> BYTE_GUARDED = NullGuard.of(PrimitiveByte.INSTANCE);
-
-    static ShortFunction<Object> SHORT_GUARDED = NullGuard.of(PrimitiveShort.INSTANCE);
-
-    static IntFunction<Object> INT_GUARDED = NullGuard.of(PrimitiveInt.INSTANCE);
-
-    static LongFunction<Object> LONG_GUARDED = NullGuard.of(PrimitiveLong.INSTANCE);
-
-    static FloatFunction<Object> FLOAT_GUARDED = NullGuard.of(PrimitiveFloat.INSTANCE);
-
-    static DoubleFunction<Object> DOUBLE_GUARDED = NullGuard.of(PrimitiveDouble.INSTANCE);
 }

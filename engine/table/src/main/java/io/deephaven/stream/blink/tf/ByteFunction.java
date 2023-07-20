@@ -20,19 +20,6 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
         return (ByteFunction<T>) Functions.PrimitiveByte.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a byte. On null, the function returns {@link QueryConstants#NULL_BYTE}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded byte function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(ByteFunction)
-     */
-    static <T> ByteFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (ByteFunction<T>) Functions.BYTE_GUARDED;
-    }
-
     byte applyAsByte(T value);
 
     @Override

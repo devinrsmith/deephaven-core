@@ -21,19 +21,6 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
         return (IntFunction<T>) Functions.PrimitiveInt.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to an int. On null, the function returns {@link QueryConstants#NULL_INT}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded int function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(IntFunction)
-     */
-    static <T> IntFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (IntFunction<T>) Functions.INT_GUARDED;
-    }
-
     @Override
     int applyAsInt(T value);
 

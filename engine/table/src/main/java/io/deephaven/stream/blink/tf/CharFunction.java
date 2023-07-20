@@ -19,19 +19,6 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
         return (CharFunction<T>) Functions.PrimitiveChar.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a char. On null, the function returns {@link QueryConstants#NULL_CHAR}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded char function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(CharFunction)
-     */
-    static <T> CharFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (CharFunction<T>) Functions.CHAR_GUARDED;
-    }
-
     char applyAsChar(T value);
 
     @Override

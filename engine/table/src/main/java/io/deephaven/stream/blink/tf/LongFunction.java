@@ -22,19 +22,6 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
         return (LongFunction<T>) Functions.PrimitiveLong.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a long. On null, the function returns {@link QueryConstants#NULL_LONG}. Equivalent to {@code NullGuard.of(primitive())}.
-     *
-     * @return the guarded long function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(LongFunction)
-     */
-    static <T> LongFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (LongFunction<T>) Functions.LONG_GUARDED;
-    }
-
     @Override
     long applyAsLong(T value);
 

@@ -19,19 +19,6 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
         return (FloatFunction<T>) Functions.PrimitiveFloat.INSTANCE;
     }
 
-    /**
-     * Assumes the object value is {@code null} or directly castable to a float. On null, the function returns {@link QueryConstants#NULL_FLOAT}. Equivalent to {@code NullGuard.of(primitive()}.
-     *
-     * @return the guarded float function
-     * @param <T> the value type
-     * @see #primitive()
-     * @see NullGuard#of(FloatFunction)
-     */
-    static <T> FloatFunction<T> guardedPrimitive() {
-        //noinspection unchecked
-        return (FloatFunction<T>) Functions.FLOAT_GUARDED;
-    }
-
     float applyAsFloat(T value);
 
     @Override

@@ -2,8 +2,8 @@ package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.stream.blink.tf.ChunkUtils;
 import io.deephaven.stream.blink.tf.LongFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.type.TypeUtils;
@@ -32,9 +32,6 @@ class LongFieldCopier implements FieldCopier {
             int sourceOffset,
             int destOffset,
             int length) {
-        final WritableLongChunk<Values> output = publisherChunk.asWritableLongChunk();
-        for (int ii = 0; ii < length; ++ii) {
-            output.set(ii + destOffset, f.applyAsLong(inputChunk.get(ii + sourceOffset)));
-        }
+        ChunkUtils.applyInto(f, inputChunk, sourceOffset, publisherChunk.asWritableLongChunk(), destOffset, length);
     }
 }

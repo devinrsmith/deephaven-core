@@ -14,6 +14,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.CommonTransform;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
@@ -62,7 +63,7 @@ public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
             final String fieldName, final ChunkType chunkType, final Class<?> dataType, final Class<?> componentType) {
         final TypedFunction<JsonNode> nodeFunction = jsonNodeFunction(fieldName, chunkType, dataType, componentType);
         final TypedFunction<Object> tf = JSON_NODE_OBJ.map(nodeFunction);
-        return FieldCopierAdapter.of(tf);
+        return FieldCopierAdapter.of(CommonTransform.of(tf));
     }
 
     private static TypedFunction<JsonNode> jsonNodeFunction(

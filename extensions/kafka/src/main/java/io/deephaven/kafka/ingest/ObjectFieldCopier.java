@@ -2,13 +2,13 @@ package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.stream.blink.tf.ChunkUtils;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 
 import java.util.Objects;
 
-public class ObjectFieldCopier implements FieldCopier {
+class ObjectFieldCopier implements FieldCopier {
     public static ObjectFieldCopier of(ObjectFunction<Object, ?> f) {
         return new ObjectFieldCopier(f);
     }
@@ -26,9 +26,6 @@ public class ObjectFieldCopier implements FieldCopier {
             int sourceOffset,
             int destOffset,
             int length) {
-        final WritableObjectChunk<Object, Values> output = publisherChunk.asWritableObjectChunk();
-        for (int ii = 0; ii < length; ++ii) {
-            output.set(ii + destOffset, f.apply(inputChunk.get(ii + sourceOffset)));
-        }
+        ChunkUtils.applyInto(f, inputChunk, sourceOffset, publisherChunk.asWritableObjectChunk(), destOffset, length);
     }
 }

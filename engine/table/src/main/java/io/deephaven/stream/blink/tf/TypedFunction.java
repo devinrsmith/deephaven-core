@@ -19,6 +19,10 @@ public interface TypedFunction<T> {
      */
     TypedFunction<T> mapInput(Function<T, T> f);
 
+    default <R> TypedFunction<R> andThen(Function<TypedFunction<T>, TypedFunction<R>> f) {
+        return f.apply(this);
+    }
+
     interface Visitor<T, R> {
         R visit(PrimitiveFunction<T> f);
 

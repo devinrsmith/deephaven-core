@@ -1,10 +1,10 @@
 package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableByteChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.ChunkUtils;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.BooleanUtils;
 import io.deephaven.util.type.TypeUtils;
@@ -37,9 +37,6 @@ class ByteFieldCopier implements FieldCopier {
             int sourceOffset,
             int destOffset,
             int length) {
-        final WritableByteChunk<Values> output = publisherChunk.asWritableByteChunk();
-        for (int ii = 0; ii < length; ++ii) {
-            output.set(ii + destOffset, f.applyAsByte(inputChunk.get(ii + sourceOffset)));
-        }
+        ChunkUtils.applyInto(f, inputChunk, sourceOffset, publisherChunk.asWritableByteChunk(), destOffset, length);
     }
 }

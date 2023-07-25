@@ -42,13 +42,8 @@ import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
-import io.deephaven.time.DateTimeUtils;
-import io.deephaven.util.BooleanUtils;
-import io.deephaven.util.QueryConstants;
-import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -273,7 +268,7 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
             @Override
             public Void visit(InstantType instantType) {
-                return Adapter.this.visit(mapInstant(f.as(instantType)));
+                return Adapter.this.visit(mapInstant(f.asChecked(instantType)));
             }
 
             @Override
@@ -290,42 +285,42 @@ final class BlinkTableMapperImpl<T> implements Producer<T>, StreamPublisher {
 
             @Override
             public Void visit(BoxedBooleanType booleanType) {
-                return Adapter.this.visit(mapBoolean(f.as(booleanType)));
+                return Adapter.this.visit(mapBoolean(f.asChecked(booleanType)));
             }
 
             @Override
             public Void visit(BoxedByteType byteType) {
-                return Adapter.this.visit(mapByte(f.as(byteType)));
+                return Adapter.this.visit(mapByte(f.asChecked(byteType)));
             }
 
             @Override
             public Void visit(BoxedCharType charType) {
-                return Adapter.this.visit(mapChar(f.as(charType)));
+                return Adapter.this.visit(mapChar(f.asChecked(charType)));
             }
 
             @Override
             public Void visit(BoxedShortType shortType) {
-                return Adapter.this.visit(mapShort(f.as(shortType)));
+                return Adapter.this.visit(mapShort(f.asChecked(shortType)));
             }
 
             @Override
             public Void visit(BoxedIntType intType) {
-                return Adapter.this.visit(mapInt(f.as(intType)));
+                return Adapter.this.visit(mapInt(f.asChecked(intType)));
             }
 
             @Override
             public Void visit(BoxedLongType longType) {
-                return Adapter.this.visit(mapLong(f.as(longType)));
+                return Adapter.this.visit(mapLong(f.asChecked(longType)));
             }
 
             @Override
             public Void visit(BoxedFloatType floatType) {
-                return Adapter.this.visit(mapFloat(f.as(floatType)));
+                return Adapter.this.visit(mapFloat(f.asChecked(floatType)));
             }
 
             @Override
             public Void visit(BoxedDoubleType doubleType) {
-                return Adapter.this.visit(mapDouble(f.as(doubleType)));
+                return Adapter.this.visit(mapDouble(f.asChecked(doubleType)));
             }
         }
     }

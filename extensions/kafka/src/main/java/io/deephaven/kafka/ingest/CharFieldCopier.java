@@ -1,10 +1,10 @@
 package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableCharChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.ChunkUtils;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.type.TypeUtils;
 
@@ -32,9 +32,6 @@ class CharFieldCopier implements FieldCopier {
             int sourceOffset,
             int destOffset,
             int length) {
-        final WritableCharChunk<Values> output = publisherChunk.asWritableCharChunk();
-        for (int ii = 0; ii < length; ++ii) {
-            output.set(ii + destOffset, f.applyAsChar(inputChunk.get(ii + sourceOffset)));
-        }
+        ChunkUtils.applyInto(f, inputChunk, sourceOffset, publisherChunk.asWritableCharChunk(), destOffset, length);
     }
 }

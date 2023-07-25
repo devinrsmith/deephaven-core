@@ -86,8 +86,13 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return ObjectFunction.of(x -> apply(f.apply(x)), returnType());
     }
 
-    default <R2> ObjectFunction<T, R2> as(GenericType<R2> type) {
+    default <R2> ObjectFunction<T, R2> asChecked(GenericType<R2> type) {
         return mapObj(cast(type));
+    }
+
+    default <R2> ObjectFunction<T, R2> as(@SuppressWarnings("unused") GenericType<R2> type) {
+        //noinspection unchecked
+        return (ObjectFunction<T, R2>) this;
     }
 
     default BooleanFunction<T> mapBoolean(BooleanFunction<R> f) {

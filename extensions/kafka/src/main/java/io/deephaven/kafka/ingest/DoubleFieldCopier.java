@@ -2,8 +2,8 @@ package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableDoubleChunk;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.stream.blink.tf.ChunkUtils;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.type.TypeUtils;
@@ -32,9 +32,6 @@ class DoubleFieldCopier implements FieldCopier {
             int sourceOffset,
             int destOffset,
             int length) {
-        final WritableDoubleChunk<Values> output = publisherChunk.asWritableDoubleChunk();
-        for (int ii = 0; ii < length; ++ii) {
-            output.set(ii + destOffset, f.applyAsDouble(inputChunk.get(ii + sourceOffset)));
-        }
+        ChunkUtils.applyInto(f, inputChunk, sourceOffset, publisherChunk.asWritableDoubleChunk(), destOffset, length);
     }
 }

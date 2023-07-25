@@ -4,13 +4,16 @@
 package io.deephaven.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.Descriptors.Descriptor;
 import gnu.trove.map.hash.TIntLongHashMap;
+import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
@@ -21,39 +24,60 @@ import io.deephaven.annotations.SingletonStyle;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.liveness.LivenessManager;
+import io.deephaven.engine.liveness.LivenessScope;
+import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.RowSetShiftData;
 import io.deephaven.engine.rowset.WritableRowSet;
-import io.deephaven.engine.table.*;
-import io.deephaven.engine.table.impl.*;
+import io.deephaven.engine.table.ColumnDefinition;
+import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.ModifiedColumnSet;
+import io.deephaven.engine.table.PartitionedTable;
+import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.table.WritableColumnSource;
+import io.deephaven.engine.table.impl.BaseTable;
+import io.deephaven.engine.table.impl.BlinkTableTools;
+import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.TableUpdateImpl;
 import io.deephaven.engine.table.impl.partitioned.PartitionedTableImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.updategraph.UpdateGraph;
 import io.deephaven.engine.updategraph.UpdateSourceCombiner;
+import io.deephaven.engine.util.BigDecimalUtils;
+import io.deephaven.internal.log.LoggerFactory;
+import io.deephaven.io.logger.Logger;
 import io.deephaven.kafka.KafkaTools.StreamConsumerRegistrarProvider.PerPartition;
 import io.deephaven.kafka.KafkaTools.StreamConsumerRegistrarProvider.Single;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
+import io.deephaven.kafka.ingest.ConsumerRecordToStreamPublisherAdapter;
+import io.deephaven.kafka.ingest.GenericRecordChunkAdapter;
+import io.deephaven.kafka.ingest.JsonNodeChunkAdapter;
+import io.deephaven.kafka.ingest.JsonNodeUtil;
+import io.deephaven.kafka.ingest.KafkaIngester;
+import io.deephaven.kafka.ingest.KafkaRecordConsumer;
+import io.deephaven.kafka.ingest.KafkaStreamPublisher;
+import io.deephaven.kafka.ingest.KeyOrValueProcessor;
+import io.deephaven.kafka.publish.GenericRecordKeyOrValueSerializer;
+import io.deephaven.kafka.publish.JsonKeyOrValueSerializer;
+import io.deephaven.kafka.publish.KafkaPublisherException;
+import io.deephaven.kafka.publish.KeyOrValueSerializer;
+import io.deephaven.kafka.publish.PublishToKafka;
+import io.deephaven.kafka.publish.SimpleKeyOrValueSerializer;
+import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
-import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.engine.liveness.LivenessScope;
-import io.deephaven.engine.liveness.LivenessScopeStack;
-import io.deephaven.engine.util.BigDecimalUtils;
-import io.deephaven.internal.log.LoggerFactory;
-import io.deephaven.io.logger.Logger;
-import io.deephaven.kafka.ingest.*;
-import io.deephaven.kafka.publish.*;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.ReferentialIntegrity;
 import io.deephaven.util.annotations.ScriptApi;
-import io.deephaven.vector.*;
+import io.deephaven.vector.ByteVector;
 import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -68,7 +92,24 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.*;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.ByteBufferDeserializer;
+import org.apache.kafka.common.serialization.ByteBufferSerializer;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.DoubleDeserializer;
+import org.apache.kafka.common.serialization.DoubleSerializer;
+import org.apache.kafka.common.serialization.FloatDeserializer;
+import org.apache.kafka.common.serialization.FloatSerializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
+import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.apache.kafka.common.serialization.LongDeserializer;
+import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.ShortDeserializer;
+import org.apache.kafka.common.serialization.ShortSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.utils.Utils;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
@@ -79,10 +120,24 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.*;
+import java.util.function.Function;
+import java.util.function.IntPredicate;
+import java.util.function.IntToLongFunction;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -127,7 +182,7 @@ public class KafkaTools {
     private static final Pattern NESTED_FIELD_NAME_SEPARATOR_PATTERN =
             Pattern.compile(Pattern.quote(NESTED_FIELD_NAME_SEPARATOR));
     public static final String NESTED_FIELD_COLUMN_NAME_SEPARATOR = "__";
-    public static final String AVRO_LATEST_VERSION = "latest";
+    public static final String LATEST_VERSION = "latest";
 
     private static final Logger log = LoggerFactory.getLogger(KafkaTools.class);
 
@@ -476,7 +531,7 @@ public class KafkaTools {
      * Enum to specify the expected processing (format) for Kafka KEY or VALUE fields.
      */
     public enum DataFormat {
-        IGNORE, SIMPLE, AVRO, JSON, RAW
+        IGNORE, SIMPLE, AVRO, JSON, PROTOBUF, RAW
     }
 
     public static class Consume {
@@ -766,7 +821,7 @@ public class KafkaTools {
         @SuppressWarnings("unused")
         public static KeyOrValueSpec avroSpec(final String schemaName,
                 final Function<String, String> fieldNameToColumnName) {
-            return new KeyOrValueSpec.Avro(schemaName, AVRO_LATEST_VERSION, fieldNameToColumnName);
+            return new KeyOrValueSpec.Avro(schemaName, LATEST_VERSION, fieldNameToColumnName);
         }
 
         /**
@@ -793,7 +848,7 @@ public class KafkaTools {
          */
         @SuppressWarnings("unused")
         public static KeyOrValueSpec avroSpec(final String schemaName) {
-            return new KeyOrValueSpec.Avro(schemaName, AVRO_LATEST_VERSION, DIRECT_MAPPING);
+            return new KeyOrValueSpec.Avro(schemaName, LATEST_VERSION, DIRECT_MAPPING);
         }
 
         @SuppressWarnings("unused")
@@ -887,10 +942,10 @@ public class KafkaTools {
                     this.schemaNamespace = schemaNamespace;
                     this.columnProperties = new MutableObject<>(columnProperties);
                     if (publishSchema) {
-                        if (schemaVersion != null && !AVRO_LATEST_VERSION.equals(schemaVersion)) {
+                        if (schemaVersion != null && !LATEST_VERSION.equals(schemaVersion)) {
                             throw new IllegalArgumentException(
                                     String.format("schemaVersion must be null or \"%s\" when publishSchema=true",
-                                            AVRO_LATEST_VERSION));
+                                            LATEST_VERSION));
                         }
                     }
                 }
@@ -2054,19 +2109,29 @@ public class KafkaTools {
         setIfNotSet(prop, propKey, value);
     }
 
-    static Schema getAvroSchema(final Properties kafkaProperties, final String schemaName, final String schemaVersion) {
+    private static ParsedSchema getParsedSchema(final Properties kafkaProperties, final String schemaName,
+            final String schemaVersion) {
+        final SchemaRegistryClient registryClient = createSchemaRegistryClient(kafkaProperties);
         try {
-            final SchemaRegistryClient registryClient = createSchemaRegistryClient(kafkaProperties);
             final SchemaMetadata schemaMetadata;
-            if (AVRO_LATEST_VERSION.equals(schemaVersion)) {
+            if (LATEST_VERSION.equals(schemaVersion)) {
                 schemaMetadata = registryClient.getLatestSchemaMetadata(schemaName);
             } else {
                 schemaMetadata = registryClient.getSchemaMetadata(schemaName, Integer.parseInt(schemaVersion));
             }
-            return (Schema) registryClient.getSchemaById(schemaMetadata.getId()).rawSchema();
+            return registryClient.getSchemaById(schemaMetadata.getId());
         } catch (RestClientException | IOException e) {
             throw new UncheckedDeephavenException(e);
         }
+    }
+
+    static Schema getAvroSchema(final Properties kafkaProperties, final String schemaName, final String schemaVersion) {
+        return ((AvroSchema) getParsedSchema(kafkaProperties, schemaName, schemaVersion)).rawSchema();
+    }
+
+    static Descriptor getProtobufDescriptor(final Properties kafkaProperties, final String schemaName,
+            final String schemaVersion) {
+        return ((ProtobufSchema) getParsedSchema(kafkaProperties, schemaName, schemaVersion)).toDescriptor();
     }
 
     private static SchemaRegistryClient createSchemaRegistryClient(Properties kafkaProperties) {

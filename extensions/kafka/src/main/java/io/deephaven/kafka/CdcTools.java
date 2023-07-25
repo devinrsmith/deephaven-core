@@ -163,7 +163,7 @@ public class CdcTools {
 
         @Override
         public String keySchemaVersion() {
-            return KafkaTools.AVRO_LATEST_VERSION;
+            return KafkaTools.LATEST_VERSION;
         }
 
         @Override
@@ -173,7 +173,7 @@ public class CdcTools {
 
         @Override
         public String valueSchemaVersion() {
-            return KafkaTools.AVRO_LATEST_VERSION;
+            return KafkaTools.LATEST_VERSION;
         }
     }
 
@@ -193,8 +193,8 @@ public class CdcTools {
             final String topic,
             final String keySchemaName,
             final String valueSchemaName) {
-        return new CdcSpecTopicSchemas(topic, keySchemaName, KafkaTools.AVRO_LATEST_VERSION, valueSchemaName,
-                KafkaTools.AVRO_LATEST_VERSION);
+        return new CdcSpecTopicSchemas(topic, keySchemaName, KafkaTools.LATEST_VERSION, valueSchemaName,
+                KafkaTools.LATEST_VERSION);
     }
 
     /**

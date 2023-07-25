@@ -129,4 +129,8 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
     default <R2> ObjectFunction<T, R2> mapObj(ObjectFunction<R, R2> f) {
         return ObjectFunction.of(t -> f.apply(ObjectFunction.this.apply(t)), f.returnType());
     }
+
+    default TypedFunction<T> map(TypedFunction<R> f) {
+        return MapVisitor.of(this, f);
+    }
 }

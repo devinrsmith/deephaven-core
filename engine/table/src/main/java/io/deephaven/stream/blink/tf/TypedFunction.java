@@ -1,6 +1,5 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.PrimitiveType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;

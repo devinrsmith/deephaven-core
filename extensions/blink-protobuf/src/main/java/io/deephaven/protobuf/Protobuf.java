@@ -189,8 +189,15 @@ class Protobuf {
             }
 
             @Override
-            public Object apply(Message value) {
-                return hasField(value, fd) ? value.getField(fd) : null;
+            public Object apply(Message message) {
+                if (message == null) {
+                    return null;
+                }
+                // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that the
+                // listening Kafka layer is using. This causes the dynamic schemas, while functionally equivalent, to be
+                // *not* equal. We should fix this at the kafka layer.
+                final FieldDescriptor real = message.getDescriptorForType().findFieldByNumber(fd.getNumber());
+                return hasField(message, real) ? message.getField(real) : null;
             }
 
             private ProtobufFunctions functions() {

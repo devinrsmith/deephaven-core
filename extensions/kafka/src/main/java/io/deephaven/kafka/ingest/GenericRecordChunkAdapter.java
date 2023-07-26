@@ -26,6 +26,7 @@ import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericArray;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.util.Utf8;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
@@ -165,7 +166,9 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                 return objectFunction.asChecked(BoxedDoubleType.of());
             case Object:
                 if (dataType == String.class) {
-                    return objectFunction.asChecked(Type.stringType());
+                    return objectFunction
+                            .asChecked(Type.ofCustom(Utf8.class))
+                            .mapObj(x -> x == null ? null : x.toString(), Type.stringType());
                 }
                 if (dataType == BigDecimal.class) {
                     final String[] fieldPath2 = GenericRecordUtil.getFieldPath(fieldPathStr, separator);

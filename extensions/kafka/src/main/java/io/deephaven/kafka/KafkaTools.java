@@ -5,6 +5,7 @@ package io.deephaven.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Message;
 import gnu.trove.map.hash.TIntLongHashMap;
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
@@ -14,10 +15,12 @@ import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema;
+import io.confluent.kafka.schemaregistry.protobuf.ProtobufSchemaProvider;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer;
 import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.annotations.SimpleStyle;
 import io.deephaven.annotations.SingletonStyle;
@@ -56,6 +59,8 @@ import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
 import io.deephaven.kafka.ingest.ConsumerRecordToStreamPublisherAdapter;
+import io.deephaven.kafka.ingest.FieldCopier;
+import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.GenericRecordChunkAdapter;
 import io.deephaven.kafka.ingest.JsonNodeChunkAdapter;
 import io.deephaven.kafka.ingest.JsonNodeUtil;
@@ -63,17 +68,23 @@ import io.deephaven.kafka.ingest.KafkaIngester;
 import io.deephaven.kafka.ingest.KafkaRecordConsumer;
 import io.deephaven.kafka.ingest.KafkaStreamPublisher;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
+import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
 import io.deephaven.kafka.publish.GenericRecordKeyOrValueSerializer;
 import io.deephaven.kafka.publish.JsonKeyOrValueSerializer;
 import io.deephaven.kafka.publish.KafkaPublisherException;
 import io.deephaven.kafka.publish.KeyOrValueSerializer;
 import io.deephaven.kafka.publish.PublishToKafka;
 import io.deephaven.kafka.publish.SimpleKeyOrValueSerializer;
+import io.deephaven.protobuf.ProtobufFunctions;
+import io.deephaven.protobuf.ProtobufOptions;
 import io.deephaven.qst.column.header.ColumnHeader;
+import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.ReferentialIntegrity;
 import io.deephaven.util.annotations.ScriptApi;
@@ -122,12 +133,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -185,6 +196,7 @@ public class KafkaTools {
     public static final String LATEST_VERSION = "latest";
 
     private static final Logger log = LoggerFactory.getLogger(KafkaTools.class);
+    private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ = ObjectFunction.cast(Type.ofCustom(Message.class));
 
     /**
      * Create an Avro schema object for a String containing a JSON encoded Avro schema definition.
@@ -539,7 +551,7 @@ public class KafkaTools {
         /**
          * Class to specify conversion of Kafka KEY or VALUE fields to table columns.
          */
-        static abstract class KeyOrValueSpec {
+        public static abstract class KeyOrValueSpec {
             /**
              * Data format for this Spec.
              *
@@ -547,7 +559,7 @@ public class KafkaTools {
              */
             abstract DataFormat dataFormat();
 
-            static final class Ignore extends KeyOrValueSpec {
+            public static final class Ignore extends KeyOrValueSpec {
                 @Override
                 DataFormat dataFormat() {
                     return DataFormat.IGNORE;
@@ -583,6 +595,29 @@ public class KafkaTools {
                 @Override
                 DataFormat dataFormat() {
                     return DataFormat.AVRO;
+                }
+            }
+
+            public static final class Protobuf extends KeyOrValueSpec {
+                final Descriptor descriptor;
+                final String schemaName;
+                final String schemaVersion;
+
+                public Protobuf(Descriptor descriptor) {
+                    this.descriptor = Objects.requireNonNull(descriptor);
+                    this.schemaName = null;
+                    this.schemaVersion = null;
+                }
+
+                public Protobuf(String schemaName, String schemaVersion) {
+                    this.descriptor = null;
+                    this.schemaName = Objects.requireNonNull(schemaName);
+                    this.schemaVersion = Objects.requireNonNull(schemaVersion);
+                }
+
+                @Override
+                DataFormat dataFormat() {
+                    return DataFormat.PROTOBUF;
                 }
             }
 
@@ -2077,6 +2112,8 @@ public class KafkaTools {
                         NESTED_FIELD_NAME_SEPARATOR_PATTERN,
                         (Schema) data.extra,
                         true);
+            case PROTOBUF:
+                return new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(tableDef, data.fieldPathToColumnName), (List<FieldCopier>)data.extra, false);
             case JSON:
                 return JsonNodeChunkAdapter.make(
                         tableDef,
@@ -2141,7 +2178,7 @@ public class KafkaTools {
         return new CachedSchemaRegistryClient(
                 config.getSchemaRegistryUrls(),
                 config.getMaxSchemasPerSubject(),
-                Collections.singletonList(new AvroSchemaProvider()),
+                List.of(new AvroSchemaProvider(), new ProtobufSchemaProvider()),
                 config.originalsWithPrefix(""),
                 config.requestHeaders());
     }
@@ -2176,6 +2213,30 @@ public class KafkaTools {
                 avroSchemaToColumnDefinitions(
                         columnDefinitions, data.fieldPathToColumnName, schema, avroSpec.fieldPathToColumnName);
                 data.extra = schema;
+                break;
+            }
+            case PROTOBUF: {
+                setDeserIfNotSet(kafkaConsumerProperties, keyOrValue, KafkaProtobufDeserializer.class.getName());
+                final Consume.KeyOrValueSpec.Protobuf protobufSpec = (Consume.KeyOrValueSpec.Protobuf) keyOrValueSpec;
+                // arguably, others should be LinkedHashMap as well.
+                data.fieldPathToColumnName = new LinkedHashMap<>();
+                final Descriptor descriptor = protobufSpec.descriptor != null
+                        ? protobufSpec.descriptor
+                        : getProtobufDescriptor(kafkaConsumerProperties, protobufSpec.schemaName, protobufSpec.schemaVersion);
+                final ProtobufOptions options = ProtobufOptions.defaults(); // todo: part of spec?
+                final ProtobufFunctions functions = ProtobufFunctions.parse(descriptor, options);
+                final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.columns().size());
+                for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
+                    final List<String> path = e.getKey();
+                    final TypedFunction<Message> function = e.getValue();
+                    final String columnName = String.join("_", path);
+                    data.fieldPathToColumnName.put(columnName, columnName);
+                    columnDefinitions.add(ColumnDefinition.of(columnName, function.returnType()));
+                    fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(function)));
+                }
+                // we don't have enough info at this time to create KeyOrValueProcessorImpl
+                //data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers, false);
+                data.extra = fieldCopiers;
                 break;
             }
             case JSON: {

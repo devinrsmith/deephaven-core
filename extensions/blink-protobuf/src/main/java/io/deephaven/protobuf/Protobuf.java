@@ -13,7 +13,6 @@ import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
-import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.BooleanFunction;
@@ -68,13 +67,6 @@ class Protobuf {
 
     public Protobuf(ProtobufOptions options) {
         this.options = Objects.requireNonNull(options);
-    }
-
-    // Note: in protobuf an actualized Message is never null.
-    // In the case of our translation layer though, the presence of a null Message means that the field, or some parent
-    // of the field, was not present; but we still need to translate the value for the specific column.
-    static boolean hasField(Message m, FieldDescriptor fd) {
-        return m != null && (m.hasField(fd) || !fd.hasPresence());
     }
 
     public ProtobufFunctions translate(Descriptor descriptor) {
@@ -189,22 +181,35 @@ class Protobuf {
                 return Type.ofCustom(Object.class);
             }
 
-            private void initRealFd(Message message) {
+            private void hackInitRealFd(Message message) {
                 if (realFd == null) {
-                    // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that the
-                    // listening Kafka layer is using. This causes the dynamic descriptors, while functionally equivalent,
-                    // to be *not* equals. We should fix this at the kafka layer.
+                    // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that
+                    // the listening Kafka layer is using. This causes the descriptors to be different instances. While
+                    // functionally equivalent, they are not reference-based equals (which proto uses as a check).
+                    // We should fix this at the kafka layer.
                     realFd = message.getDescriptorForType().findFieldByNumber(fd.getNumber());
+                    if (!fd.toProto().equals(realFd.toProto())) {
+                        throw new IllegalStateException("todo");
+                    }
                 }
             }
 
             @Override
             public Object apply(Message message) {
+                // Note: in protobuf an actualized Message is never null - getField will always return non-null (and
+                // thus, sub Messages will never be natively null).
+                //
+                // In the case of our translation layer though, the presence of a null Message means that this field, or
+                // some parent of this field, was "not present".
                 if (message == null) {
                     return null;
                 }
-                initRealFd(message);
-                return hasField(message, realFd) ? message.getField(realFd) : null;
+                hackInitRealFd(message);
+                // hasField only semantically meaningful when hasPresence == true
+                if (realFd.hasPresence() && !message.hasField(realFd)) {
+                    return null;
+                }
+                return message.getField(realFd);
             }
 
             private ProtobufFunctions functions() {

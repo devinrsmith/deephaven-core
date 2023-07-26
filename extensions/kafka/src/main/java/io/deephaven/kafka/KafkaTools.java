@@ -83,6 +83,7 @@ import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.stream.blink.tf.CommonTransform;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.SafeCloseable;
@@ -2231,8 +2232,12 @@ public class KafkaTools {
                     final TypedFunction<Message> function = e.getValue();
                     final String columnName = String.join("_", path);
                     data.fieldPathToColumnName.put(columnName, columnName);
+
+                    // Add function.returnType() first; this is the Type we want to return as the column
                     columnDefinitions.add(ColumnDefinition.of(columnName, function.returnType()));
-                    fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(function)));
+
+                    //
+                    fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(CommonTransform.of(function))));
                 }
                 // we don't have enough info at this time to create KeyOrValueProcessorImpl
                 //data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers, false);

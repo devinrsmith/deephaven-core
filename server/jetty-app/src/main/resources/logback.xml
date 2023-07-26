@@ -25,6 +25,8 @@
 
   <logger name="io.deephaven.sql.SqlAdapter" level="DEBUG"/>
 
+  <logger name="io.confluent.kafka.schemaregistry.protobuf.ProtobufSchema" level="TRACE"/>
+
   <root level="info">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="LOGBUFFER" />

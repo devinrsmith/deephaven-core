@@ -132,6 +132,7 @@ class Protobuf {
     private class FieldContext {
         private final DescriptorContext parent;
         private final FieldDescriptor fd;
+        private FieldDescriptor realFd;
 
         public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
             this.parent = Objects.requireNonNull(parent);
@@ -188,16 +189,22 @@ class Protobuf {
                 return Type.ofCustom(Object.class);
             }
 
+            private void initRealFd(Message message) {
+                if (realFd == null) {
+                    // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that the
+                    // listening Kafka layer is using. This causes the dynamic descriptors, while functionally equivalent,
+                    // to be *not* equals. We should fix this at the kafka layer.
+                    realFd = message.getDescriptorForType().findFieldByNumber(fd.getNumber());
+                }
+            }
+
             @Override
             public Object apply(Message message) {
                 if (message == null) {
                     return null;
                 }
-                // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that the
-                // listening Kafka layer is using. This causes the dynamic schemas, while functionally equivalent, to be
-                // *not* equal. We should fix this at the kafka layer.
-                final FieldDescriptor real = message.getDescriptorForType().findFieldByNumber(fd.getNumber());
-                return hasField(message, real) ? message.getField(real) : null;
+                initRealFd(message);
+                return hasField(message, realFd) ? message.getField(realFd) : null;
             }
 
             private ProtobufFunctions functions() {

@@ -600,6 +600,7 @@ public class KafkaTools {
                 }
             }
 
+            // todo make package
             public static final class Protobuf extends KeyOrValueSpec {
                 final Descriptor descriptor;
                 final String schemaName;

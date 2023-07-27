@@ -34,8 +34,8 @@ class Translator<T extends Message> implements SingleValuedMessageParser {
     }
 
     @Override
-    public TypedFunction<Message> parser(ProtobufOptions options) {
-        return delegate.parser(options).mapInput(this::mapInput);
+    public TypedFunction<Message> messageParser(ProtobufOptions options) {
+        return delegate.messageParser(options).mapInput(this::mapInput);
     }
 
     private T mapInput(Message message) {

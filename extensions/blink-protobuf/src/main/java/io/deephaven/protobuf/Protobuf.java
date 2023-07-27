@@ -5,6 +5,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.Parser;
 import com.google.protobuf.UnknownFieldSet;
@@ -65,9 +66,11 @@ class Protobuf {
             ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()).onNullInput(null);
 
     private final ProtobufOptions options;
+    private final Map<String, SingleValuedMessageParser> byFullName;
 
     public Protobuf(ProtobufOptions options) {
         this.options = Objects.requireNonNull(options);
+        this.byFullName = options.parsers().values().stream().collect(Collectors.toMap(x -> x.descriptor().getFullName(), Function.identity()));
     }
 
     public ProtobufFunctions translate(Descriptor descriptor) {
@@ -78,9 +81,9 @@ class Protobuf {
         return Stream.concat(Stream.of(name), rest.stream()).collect(Collectors.toList());
     }
 
-    private TypedFunction<Message> parser(SingleValuedMessageParser svmp) {
-        return svmp.parser(options);
-    }
+//    private TypedFunction<Message> parser(SingleValuedMessageParser svmp) {
+//        return svmp.parser(options);
+//    }
 
     private class DescriptorContext {
         private final List<FieldDescriptor> parents;
@@ -108,26 +111,30 @@ class Protobuf {
 
         private Optional<ProtobufFunctions> wellKnown() {
             // todo: eventually support cases that are >1 field
-            return svmp()
-                    .map(Protobuf.this::parser)
-                    .map(ProtobufFunctions::unnamed);
+            return tf().map(ProtobufFunctions::unnamed);
         }
 
-        private Optional<SingleValuedMessageParser> svmp() {
+        private Optional<TypedFunction<Message>> tf() {
             {
                 final SingleValuedMessageParser parser = options.parsers().get(descriptor);
                 if (parser != null) {
-                    return Optional.of(parser);
+                    return Optional.of(parser.messageParser(options));
                 }
             }
-            for (SingleValuedMessageParser parser : options.parsers().values()) {
-                // Ugh, a DynamicMessage that shouldn't be...
-                if (descriptor.getFullName().equals(parser.descriptor().getFullName())) {
-                    final Parser<Message> parser1 = null;
-                    return Optional.of(new Translator<>(parser, parser1));
+
+            // Note:
+            final SingleValuedMessageParser parser = byFullName.get(descriptor.getFullName());
+            final Descriptor realDescriptor = parser.descriptor();
+
+            final Parser<? extends Message> protoParser = null;
+            final TypedFunction<Message> mapin = parser.messageParser(options).mapInput(message -> {
+                try {
+                    return protoParser.parseFrom(message.toByteString());
+                } catch (InvalidProtocolBufferException e) {
+                    throw new RuntimeException(e);
                 }
-            }
-            return Optional.empty();
+            });
+            return Optional.of(mapin);
         }
 
         private List<FieldContext> fcs() {

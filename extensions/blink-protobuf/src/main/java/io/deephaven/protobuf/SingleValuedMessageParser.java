@@ -32,5 +32,5 @@ interface SingleValuedMessageParser {
 
     Descriptor descriptor();
 
-    TypedFunction<Message> parser(ProtobufOptions options);
+    TypedFunction<Message> messageParser(ProtobufOptions options);
 }

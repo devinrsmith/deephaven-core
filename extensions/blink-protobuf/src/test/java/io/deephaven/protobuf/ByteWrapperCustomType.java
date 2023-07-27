@@ -21,7 +21,7 @@ public class ByteWrapperCustomType implements SingleValuedMessageParser {
     }
 
     @Override
-    public TypedFunction<Message> parser(ProtobufOptions options) {
+    public TypedFunction<Message> messageParser(ProtobufOptions options) {
         return ObjectFunction.<Message, ByteWrapper>cast(IN_TYPE).mapByte(x -> (byte) x.getValue());
     }
 }

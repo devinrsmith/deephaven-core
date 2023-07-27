@@ -75,7 +75,7 @@ class Builtin {
         private static final InstantType OUT_TYPE = Type.instantType();
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, Timestamp.class, Timestamp.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -84,7 +84,7 @@ class Builtin {
         }
 
         @Override
-        public ObjectFunction<Message, Instant> parser(ProtobufOptions options) {
+        public ObjectFunction<Message, Instant> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapObj(this, OUT_TYPE);
         }
 
@@ -102,8 +102,7 @@ class Builtin {
         private static final CustomType<Duration> OUT_TYPE = Type.ofCustom(Duration.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, com.google.protobuf.Duration.class,
-                    com.google.protobuf.Duration.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -112,7 +111,7 @@ class Builtin {
         }
 
         @Override
-        public ObjectFunction<Message, Duration> parser(ProtobufOptions options) {
+        public ObjectFunction<Message, Duration> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapObj(this, OUT_TYPE);
         }
 
@@ -128,7 +127,7 @@ class Builtin {
         private static final CustomType<BoolValue> IN_TYPE = Type.ofCustom(BoolValue.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, BoolValue.class, BoolValue.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -137,7 +136,7 @@ class Builtin {
         }
 
         @Override
-        public BooleanFunction<Message> parser(ProtobufOptions options) {
+        public BooleanFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapBoolean(BoolValue::getValue);
         }
     }
@@ -148,7 +147,7 @@ class Builtin {
         private static final CustomType<Int32Value> IN_TYPE = Type.ofCustom(Int32Value.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, Int32Value.class, Int32Value.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -157,7 +156,7 @@ class Builtin {
         }
 
         @Override
-        public IntFunction<Message> parser(ProtobufOptions options) {
+        public IntFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapInt(Int32Value::getValue);
         }
     }
@@ -168,7 +167,7 @@ class Builtin {
         private static final CustomType<UInt32Value> IN_TYPE = Type.ofCustom(UInt32Value.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, UInt32Value.class, UInt32Value.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -177,7 +176,7 @@ class Builtin {
         }
 
         @Override
-        public IntFunction<Message> parser(ProtobufOptions options) {
+        public IntFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapInt(UInt32Value::getValue);
         }
     }
@@ -188,7 +187,7 @@ class Builtin {
         private static final CustomType<Int64Value> IN_TYPE = Type.ofCustom(Int64Value.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, Int64Value.class, Int64Value.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -197,7 +196,7 @@ class Builtin {
         }
 
         @Override
-        public LongFunction<Message> parser(ProtobufOptions options) {
+        public LongFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapLong(Int64Value::getValue);
         }
     }
@@ -208,7 +207,7 @@ class Builtin {
         private static final CustomType<UInt64Value> IN_TYPE = Type.ofCustom(UInt64Value.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, UInt64Value.class, UInt64Value.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -217,7 +216,7 @@ class Builtin {
         }
 
         @Override
-        public LongFunction<Message> parser(ProtobufOptions options) {
+        public LongFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapLong(UInt64Value::getValue);
         }
     }
@@ -228,7 +227,7 @@ class Builtin {
         private static final CustomType<FloatValue> IN_TYPE = Type.ofCustom(FloatValue.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, FloatValue.class, FloatValue.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -237,7 +236,7 @@ class Builtin {
         }
 
         @Override
-        public FloatFunction<Message> parser(ProtobufOptions options) {
+        public FloatFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapFloat(FloatValue::getValue);
         }
     }
@@ -248,7 +247,7 @@ class Builtin {
         private static final CustomType<DoubleValue> IN_TYPE = Type.ofCustom(DoubleValue.class);
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, DoubleValue.class, DoubleValue.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -257,7 +256,7 @@ class Builtin {
         }
 
         @Override
-        public DoubleFunction<Message> parser(ProtobufOptions options) {
+        public DoubleFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapDouble(DoubleValue::getValue);
         }
     }
@@ -269,7 +268,7 @@ class Builtin {
         private static final StringType OUT_TYPE = Type.stringType();
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, StringValue.class, StringValue.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -278,7 +277,7 @@ class Builtin {
         }
 
         @Override
-        public ObjectFunction<Message, String> parser(ProtobufOptions options) {
+        public ObjectFunction<Message, String> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapObj(StringValue::getValue, OUT_TYPE);
         }
     }
@@ -290,7 +289,7 @@ class Builtin {
         private static final NativeArrayType<byte[], Byte> OUT_TYPE = Type.byteType().arrayType();
 
         public static SingleValuedMessageParser of() {
-            return new Translator<>(INSTANCE, BytesValue.class, BytesValue.parser());
+            return INSTANCE;
         }
 
         @Override
@@ -299,7 +298,7 @@ class Builtin {
         }
 
         @Override
-        public TypedFunction<Message> parser(ProtobufOptions options) {
+        public TypedFunction<Message> messageParser(ProtobufOptions options) {
             return message(IN_TYPE).mapObj(BytesValueParser::toBytes, OUT_TYPE);
         }
 
@@ -323,7 +322,7 @@ class Builtin {
         }
 
         @Override
-        public TypedFunction<Message> parser(ProtobufOptions options) {
+        public TypedFunction<Message> messageParser(ProtobufOptions options) {
             return message(type);
         }
     }

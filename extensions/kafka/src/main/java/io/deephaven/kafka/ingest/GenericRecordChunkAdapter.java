@@ -49,7 +49,8 @@ import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_LONG_ARRAY;
  */
 public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
 
-    private static final ObjectFunction<Object, GenericRecord> GENERIC_RECORD_OBJ = ObjectFunction.cast(Type.ofCustom(GenericRecord.class));
+    private static final ObjectFunction<Object, GenericRecord> GENERIC_RECORD_OBJ =
+            ObjectFunction.cast(Type.ofCustom(GenericRecord.class));
 
     private GenericRecordChunkAdapter(
             final TableDefinition definition,
@@ -112,7 +113,8 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
             final ChunkType chunkType,
             final Class<?> dataType,
             final Class<?> componentType) {
-        final TypedFunction<GenericRecord> recordFunction = makeFunction(schema, fieldPathStr, separator, chunkType, dataType, componentType);
+        final TypedFunction<GenericRecord> recordFunction =
+                makeFunction(schema, fieldPathStr, separator, chunkType, dataType, componentType);
         final TypedFunction<Object> tf = GENERIC_RECORD_OBJ.map(recordFunction);
         return FieldCopierAdapter.of(CommonTransform.of(tf));
     }
@@ -125,7 +127,8 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
             final Class<?> dataType,
             final Class<?> componentType) {
         final int[] fieldPath = GenericRecordUtil.getFieldPath(fieldPathStr, separator, schema);
-        final ObjectFunction<GenericRecord, Object> objectFunction = ObjectFunction.of(r -> GenericRecordUtil.getPath(r, fieldPath), Type.ofCustom(Object.class));
+        final ObjectFunction<GenericRecord, Object> objectFunction =
+                ObjectFunction.of(r -> GenericRecordUtil.getPath(r, fieldPath), Type.ofCustom(Object.class));
         switch (chunkType) {
             case Char:
                 return objectFunction.asChecked(BoxedCharType.of());
@@ -176,14 +179,16 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                     final LogicalType logicalType = fieldSchema.getLogicalType();
                     if (logicalType instanceof LogicalTypes.Decimal) {
                         final LogicalTypes.Decimal decimalType = (LogicalTypes.Decimal) logicalType;
-                        return objectFunction.mapObj(new BigDecimalFunction(decimalType.getPrecision(), decimalType.getScale()));
+                        return objectFunction
+                                .mapObj(new BigDecimalFunction(decimalType.getPrecision(), decimalType.getScale()));
                     }
                     throw new IllegalArgumentException(
                             "Can not map field with non matching logical type to BigDecimal: " +
                                     "field=" + fieldPathStr + ", logical type=" + logicalType);
                 }
                 if (dataType.isArray()) {
-                    final ObjectFunction<GenericRecord, GenericArray> arrayFunction = objectFunction.asChecked(Type.ofCustom(GenericArray.class));
+                    final ObjectFunction<GenericRecord, GenericArray> arrayFunction =
+                            objectFunction.asChecked(Type.ofCustom(GenericArray.class));
                     if (Instant.class.isAssignableFrom(componentType)) {
                         final LogicalType logicalType = getArrayTypeLogicalType(schema, fieldPathStr, separator);
                         if (logicalType == null) {
@@ -205,7 +210,7 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
 
                     if (componentType.equals(byte.class)) {
                         return arrayFunction
-                                //.as((GenericType<GenericArray<Byte>>)null)
+                                // .as((GenericType<GenericArray<Byte>>)null)
                                 .mapObj(GenericRecordChunkAdapter::toByteArray, Type.byteType().arrayType());
                     }
                     // avro doesn't have short type
@@ -226,7 +231,7 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                                 .mapObj(GenericRecordChunkAdapter::toDoubleArray, Type.doubleType().arrayType());
                     }
                     final NativeArrayType<?, ?> arrayType = Type.find(componentType).arrayType();
-                    //noinspection unchecked,rawtypes
+                    // noinspection unchecked,rawtypes
                     return arrayFunction.mapObj(ga -> toArray(ga, componentType), (NativeArrayType) arrayType);
                 }
                 return objectFunction;
@@ -335,7 +340,7 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
         if (ga == null) {
             return null;
         }
-        //noinspection unchecked
+        // noinspection unchecked
         final T[] out = (T[]) Array.newInstance(componentType, ga.size());
         int i = 0;
         for (T o : ga) {

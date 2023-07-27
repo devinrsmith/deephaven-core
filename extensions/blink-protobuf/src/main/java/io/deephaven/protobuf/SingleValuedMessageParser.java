@@ -31,6 +31,5 @@ public interface SingleValuedMessageParser {
 
     String fullName();
 
-
     TypedFunction<Message> parser(ProtobufOptions options);
 }

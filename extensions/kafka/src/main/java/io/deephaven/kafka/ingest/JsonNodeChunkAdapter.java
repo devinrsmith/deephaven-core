@@ -73,7 +73,8 @@ public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
         final boolean allowNullValues = true;
         switch (chunkType) {
             case Boolean:
-                return (BooleanFunction<JsonNode>) (n -> JsonNodeUtil.getBoolean(n, ptr, allowMissingKeys, allowNullValues));
+                return (BooleanFunction<JsonNode>) (n -> JsonNodeUtil.getBoolean(n, ptr, allowMissingKeys,
+                        allowNullValues));
             case Char:
                 return (CharFunction<JsonNode>) (n -> JsonNodeUtil.getChar(n, ptr, allowMissingKeys, allowNullValues));
             case Byte:

@@ -197,7 +197,8 @@ public class KafkaTools {
     public static final String LATEST_VERSION = "latest";
 
     private static final Logger log = LoggerFactory.getLogger(KafkaTools.class);
-    private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ = ObjectFunction.cast(Type.ofCustom(Message.class));
+    private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
+            ObjectFunction.cast(Type.ofCustom(Message.class));
 
     /**
      * Create an Avro schema object for a String containing a JSON encoded Avro schema definition.
@@ -2114,7 +2115,9 @@ public class KafkaTools {
                         (Schema) data.extra,
                         true);
             case PROTOBUF:
-                return new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(tableDef, data.fieldPathToColumnName), (List<FieldCopier>)data.extra, false);
+                return new KeyOrValueProcessorImpl(
+                        MultiFieldChunkAdapter.chunkOffsets(tableDef, data.fieldPathToColumnName),
+                        (List<FieldCopier>) data.extra, false);
             case JSON:
                 return JsonNodeChunkAdapter.make(
                         tableDef,
@@ -2223,7 +2226,8 @@ public class KafkaTools {
                 data.fieldPathToColumnName = new LinkedHashMap<>();
                 final Descriptor descriptor = protobufSpec.descriptor != null
                         ? protobufSpec.descriptor
-                        : getProtobufDescriptor(kafkaConsumerProperties, protobufSpec.schemaName, protobufSpec.schemaVersion);
+                        : getProtobufDescriptor(kafkaConsumerProperties, protobufSpec.schemaName,
+                                protobufSpec.schemaVersion);
                 final ProtobufOptions options = ProtobufOptions.defaults(); // todo: part of spec?
                 final ProtobufFunctions functions = ProtobufFunctions.parse(descriptor, options);
                 final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.columns().size());
@@ -2240,7 +2244,8 @@ public class KafkaTools {
                     fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(CommonTransform.of(function))));
                 }
                 // we don't have enough info at this time to create KeyOrValueProcessorImpl
-                //data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers, false);
+                // data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null),
+                // fieldCopiers, false);
                 data.extra = fieldCopiers;
                 break;
             }

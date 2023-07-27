@@ -9,7 +9,9 @@ import com.google.protobuf.FieldMask;
 import com.google.protobuf.FloatValue;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Int64Value;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
+import com.google.protobuf.Parser;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
@@ -39,17 +41,17 @@ import java.util.function.Function;
 class Builtin {
     static List<SingleValuedMessageParser> parsers() {
         return List.of(
-                TimestampParser.INSTANCE,
-                DurationParser.INSTANCE,
-                BoolValueParser.INSTANCE,
-                Int32ValueParser.INSTANCE,
-                UInt32ValueParser.INSTANCE,
-                Int64ValueParser.INSTANCE,
-                UInt64ValueParser.INSTANCE,
-                FloatValueParser.INSTANCE,
-                DoubleValueParser.INSTANCE,
-                StringValueParser.INSTANCE,
-                BytesValueParser.INSTANCE,
+                TimestampParser.of(),
+                DurationParser.of(),
+                BoolValueParser.of(),
+                Int32ValueParser.of(),
+                UInt32ValueParser.of(),
+                Int64ValueParser.of(),
+                UInt64ValueParser.of(),
+                FloatValueParser.of(),
+                DoubleValueParser.of(),
+                StringValueParser.of(),
+                BytesValueParser.of(),
                 customParser(Any.class),
                 customParser(FieldMask.class));
     }
@@ -68,11 +70,55 @@ class Builtin {
         }
     }
 
+    // workaround for https://github.com/confluentinc/schema-registry/issues/2708
+    private static class Translator<T extends Message> implements SingleValuedMessageParser {
+        private final SingleValuedMessageParser delegate;
+        private final Class<T> clazz;
+        private final Parser<T> parser;
+
+        public Translator(SingleValuedMessageParser delegate, Class<T> clazz, Parser<T> parser) {
+            this.delegate = Objects.requireNonNull(delegate);
+            this.clazz = Objects.requireNonNull(clazz);
+            this.parser = Objects.requireNonNull(parser);
+        }
+
+        @Override
+        public String fullName() {
+            return delegate.fullName();
+        }
+
+        @Override
+        public TypedFunction<Message> parser(ProtobufOptions options) {
+            return delegate.parser(options).mapInput(this::mapInput);
+        }
+
+        private T mapInput(Message message) {
+            try {
+                return translate(clazz, parser, message);
+            } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static <T extends Message> T translate(Class<T> clazz, Parser<T> parser, Message message)
+                throws InvalidProtocolBufferException {
+            if (clazz.isInstance(message)) {
+                return clazz.cast(message);
+            }
+            // This is ugly.
+            return parser.parseFrom(message.toByteString());
+        }
+    }
+
     private enum TimestampParser implements SingleValuedMessageParser, Function<Timestamp, Instant> {
         INSTANCE;
 
         private static final CustomType<Timestamp> IN_TYPE = Type.ofCustom(Timestamp.class);
         private static final InstantType OUT_TYPE = Type.instantType();
+
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, Timestamp.class, Timestamp.parser());
+        }
 
         @Override
         public String fullName() {
@@ -97,6 +143,11 @@ class Builtin {
                 Type.ofCustom(com.google.protobuf.Duration.class);
         private static final CustomType<Duration> OUT_TYPE = Type.ofCustom(Duration.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, com.google.protobuf.Duration.class,
+                    com.google.protobuf.Duration.parser());
+        }
+
         @Override
         public String fullName() {
             return com.google.protobuf.Duration.getDescriptor().getFullName();
@@ -118,6 +169,10 @@ class Builtin {
 
         private static final CustomType<BoolValue> IN_TYPE = Type.ofCustom(BoolValue.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, BoolValue.class, BoolValue.parser());
+        }
+
         @Override
         public String fullName() {
             return BoolValue.getDescriptor().getFullName();
@@ -133,6 +188,10 @@ class Builtin {
         INSTANCE;
 
         private static final CustomType<Int32Value> IN_TYPE = Type.ofCustom(Int32Value.class);
+
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, Int32Value.class, Int32Value.parser());
+        }
 
         @Override
         public String fullName() {
@@ -150,6 +209,9 @@ class Builtin {
 
         private static final CustomType<UInt32Value> IN_TYPE = Type.ofCustom(UInt32Value.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, UInt32Value.class, UInt32Value.parser());
+        }
 
         @Override
         public String fullName() {
@@ -167,6 +229,9 @@ class Builtin {
 
         private static final CustomType<Int64Value> IN_TYPE = Type.ofCustom(Int64Value.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, Int64Value.class, Int64Value.parser());
+        }
 
         @Override
         public String fullName() {
@@ -184,6 +249,9 @@ class Builtin {
 
         private static final CustomType<UInt64Value> IN_TYPE = Type.ofCustom(UInt64Value.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, UInt64Value.class, UInt64Value.parser());
+        }
 
         @Override
         public String fullName() {
@@ -201,6 +269,10 @@ class Builtin {
 
         private static final CustomType<FloatValue> IN_TYPE = Type.ofCustom(FloatValue.class);
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, FloatValue.class, FloatValue.parser());
+        }
+
         @Override
         public String fullName() {
             return FloatValue.getDescriptor().getFullName();
@@ -216,6 +288,10 @@ class Builtin {
         INSTANCE;
 
         private static final CustomType<DoubleValue> IN_TYPE = Type.ofCustom(DoubleValue.class);
+
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, DoubleValue.class, DoubleValue.parser());
+        }
 
         @Override
         public String fullName() {
@@ -234,6 +310,10 @@ class Builtin {
         private static final CustomType<StringValue> IN_TYPE = Type.ofCustom(StringValue.class);
         private static final StringType OUT_TYPE = Type.stringType();
 
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, StringValue.class, StringValue.parser());
+        }
+
         @Override
         public String fullName() {
             return StringValue.getDescriptor().getFullName();
@@ -250,6 +330,10 @@ class Builtin {
 
         private static final CustomType<BytesValue> IN_TYPE = Type.ofCustom(BytesValue.class);
         private static final NativeArrayType<byte[], Byte> OUT_TYPE = Type.byteType().arrayType();
+
+        public static SingleValuedMessageParser of() {
+            return new Translator<>(INSTANCE, BytesValue.class, BytesValue.parser());
+        }
 
         @Override
         public String fullName() {

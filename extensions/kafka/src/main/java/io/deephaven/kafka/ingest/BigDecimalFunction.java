@@ -48,6 +48,7 @@ class BigDecimalFunction implements ObjectFunction<Object, BigDecimal> {
             }
             return new BigDecimal(bi, scale);
         }
-        throw new IllegalStateException("Object of type " + bytesObj.getClass().getName() + " not recognized for decimal type backing");
+        throw new IllegalStateException(
+                "Object of type " + bytesObj.getClass().getName() + " not recognized for decimal type backing");
     }
 }

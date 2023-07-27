@@ -1,6 +1,7 @@
 package io.deephaven.protobuf;
 
 import com.google.auto.service.AutoService;
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.protobuf.test.ByteWrapper;
 import io.deephaven.qst.type.CustomType;
@@ -15,8 +16,8 @@ public class ByteWrapperCustomType implements SingleValuedMessageParser {
     public ByteWrapperCustomType() {}
 
     @Override
-    public String fullName() {
-        return ByteWrapper.getDescriptor().getFullName();
+    public Descriptor descriptor() {
+        return ByteWrapper.getDescriptor();
     }
 
     @Override

@@ -9,9 +9,7 @@ import com.google.protobuf.FieldMask;
 import com.google.protobuf.FloatValue;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Int64Value;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.google.protobuf.Parser;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
@@ -70,46 +68,6 @@ class Builtin {
         }
     }
 
-    // workaround for https://github.com/confluentinc/schema-registry/issues/2708
-    private static class Translator<T extends Message> implements SingleValuedMessageParser {
-        private final SingleValuedMessageParser delegate;
-        private final Class<T> clazz;
-        private final Parser<T> parser;
-
-        public Translator(SingleValuedMessageParser delegate, Class<T> clazz, Parser<T> parser) {
-            this.delegate = Objects.requireNonNull(delegate);
-            this.clazz = Objects.requireNonNull(clazz);
-            this.parser = Objects.requireNonNull(parser);
-        }
-
-        @Override
-        public String fullName() {
-            return delegate.fullName();
-        }
-
-        @Override
-        public TypedFunction<Message> parser(ProtobufOptions options) {
-            return delegate.parser(options).mapInput(this::mapInput);
-        }
-
-        private T mapInput(Message message) {
-            try {
-                return translate(clazz, parser, message);
-            } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private static <T extends Message> T translate(Class<T> clazz, Parser<T> parser, Message message)
-                throws InvalidProtocolBufferException {
-            if (clazz.isInstance(message)) {
-                return clazz.cast(message);
-            }
-            // This is ugly.
-            return parser.parseFrom(message.toByteString());
-        }
-    }
-
     private enum TimestampParser implements SingleValuedMessageParser, Function<Timestamp, Instant> {
         INSTANCE;
 
@@ -121,8 +79,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return Timestamp.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return Timestamp.getDescriptor();
         }
 
         @Override
@@ -149,8 +107,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return com.google.protobuf.Duration.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return com.google.protobuf.Duration.getDescriptor();
         }
 
         @Override
@@ -174,8 +132,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return BoolValue.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return BoolValue.getDescriptor();
         }
 
         @Override
@@ -194,8 +152,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return Int32Value.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return Int32Value.getDescriptor();
         }
 
         @Override
@@ -214,8 +172,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return UInt32Value.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return UInt32Value.getDescriptor();
         }
 
         @Override
@@ -234,8 +192,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return Int64Value.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return Int64Value.getDescriptor();
         }
 
         @Override
@@ -254,8 +212,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return UInt64Value.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return UInt64Value.getDescriptor();
         }
 
         @Override
@@ -274,8 +232,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return FloatValue.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return FloatValue.getDescriptor();
         }
 
         @Override
@@ -294,8 +252,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return DoubleValue.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return DoubleValue.getDescriptor();
         }
 
         @Override
@@ -315,8 +273,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return StringValue.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return StringValue.getDescriptor();
         }
 
         @Override
@@ -336,8 +294,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return BytesValue.getDescriptor().getFullName();
+        public Descriptor descriptor() {
+            return BytesValue.getDescriptor();
         }
 
         @Override
@@ -360,8 +318,8 @@ class Builtin {
         }
 
         @Override
-        public String fullName() {
-            return descriptor.getFullName();
+        public Descriptor descriptor() {
+            return descriptor;
         }
 
         @Override

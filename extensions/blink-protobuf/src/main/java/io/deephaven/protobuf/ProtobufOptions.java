@@ -33,7 +33,7 @@ public abstract class ProtobufOptions {
 
 
     @Default
-    public Map<String, SingleValuedMessageParser> parsers() {
+    public Map<Descriptor, SingleValuedMessageParser> parsers() {
         return SingleValuedMessageParser.defaults();
     }
 
@@ -77,7 +77,7 @@ public abstract class ProtobufOptions {
 
         Builder addAllExcludePaths(Iterable<? extends List<String>> elements);
 
-        Builder parsers(Map<String, SingleValuedMessageParser> parsers);
+        Builder parsers(Map<Descriptor, SingleValuedMessageParser> parsers);
 
         ProtobufOptions build();
     }

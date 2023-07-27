@@ -1,5 +1,6 @@
 package io.deephaven.protobuf;
 
+import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.stream.blink.tf.TypedFunction;
 
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-public interface SingleValuedMessageParser {
+interface SingleValuedMessageParser {
 
     static List<SingleValuedMessageParser> builtin() {
         return Builtin.parsers();
@@ -18,18 +19,18 @@ public interface SingleValuedMessageParser {
         return ServiceLoader.load(SingleValuedMessageParser.class);
     }
 
-    static Map<String, SingleValuedMessageParser> defaults() {
-        Map<String, SingleValuedMessageParser> map = new HashMap<>();
+    static Map<Descriptor, SingleValuedMessageParser> defaults() {
+        Map<Descriptor, SingleValuedMessageParser> map = new HashMap<>();
         for (SingleValuedMessageParser parser : builtin()) {
-            map.put(parser.fullName(), parser);
+            map.put(parser.descriptor(), parser);
         }
         for (SingleValuedMessageParser parser : serviceLoaders()) {
-            map.put(parser.fullName(), parser);
+            map.put(parser.descriptor(), parser);
         }
         return map;
     }
 
-    String fullName();
+    Descriptor descriptor();
 
     TypedFunction<Message> parser(ProtobufOptions options);
 }

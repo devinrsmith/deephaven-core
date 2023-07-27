@@ -6,6 +6,7 @@ import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
+import com.google.protobuf.Parser;
 import com.google.protobuf.UnknownFieldSet;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.qst.type.BoxedBooleanType;
@@ -107,9 +108,26 @@ class Protobuf {
 
         private Optional<ProtobufFunctions> wellKnown() {
             // todo: eventually support cases that are >1 field
-            return Optional.ofNullable(options.parsers().get(descriptor.getFullName()))
+            return svmp()
                     .map(Protobuf.this::parser)
                     .map(ProtobufFunctions::unnamed);
+        }
+
+        private Optional<SingleValuedMessageParser> svmp() {
+            {
+                final SingleValuedMessageParser parser = options.parsers().get(descriptor);
+                if (parser != null) {
+                    return Optional.of(parser);
+                }
+            }
+            for (SingleValuedMessageParser parser : options.parsers().values()) {
+                // Ugh, a DynamicMessage that shouldn't be...
+                if (descriptor.getFullName().equals(parser.descriptor().getFullName())) {
+                    final Parser<Message> parser1 = null;
+                    return Optional.of(new Translator<>(parser, parser1));
+                }
+            }
+            return Optional.empty();
         }
 
         private List<FieldContext> fcs() {

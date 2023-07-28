@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-interface SingleValuedMessageParser {
+public interface SingleValuedMessageParser {
 
     static List<SingleValuedMessageParser> builtin() {
         return Builtin.parsers();
@@ -22,15 +22,15 @@ interface SingleValuedMessageParser {
     static Map<Descriptor, SingleValuedMessageParser> defaults() {
         Map<Descriptor, SingleValuedMessageParser> map = new HashMap<>();
         for (SingleValuedMessageParser parser : builtin()) {
-            map.put(parser.descriptor(), parser);
+            map.put(parser.canonicalDescriptor(), parser);
         }
         for (SingleValuedMessageParser parser : serviceLoaders()) {
-            map.put(parser.descriptor(), parser);
+            map.put(parser.canonicalDescriptor(), parser);
         }
         return map;
     }
 
-    Descriptor descriptor();
+    Descriptor canonicalDescriptor();
 
-    TypedFunction<Message> messageParser(ProtobufOptions options);
+    TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options);
 }

@@ -5,9 +5,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.google.protobuf.Parser;
 import com.google.protobuf.UnknownFieldSet;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.qst.type.BoxedBooleanType;
@@ -31,8 +29,6 @@ import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +69,7 @@ class Protobuf {
     public Protobuf(ProtobufOptions options) {
         this.options = Objects.requireNonNull(options);
         this.byFullName = options.parsers().values().stream()
-                .collect(Collectors.toMap(x -> x.descriptor().getFullName(), Function.identity()));
+                .collect(Collectors.toMap(x -> x.canonicalDescriptor().getFullName(), Function.identity()));
     }
 
     public ProtobufFunctions translate(Descriptor descriptor) {
@@ -110,37 +106,12 @@ class Protobuf {
 
         private Optional<ProtobufFunctions> wellKnown() {
             // todo: eventually support cases that are >1 field
-            return normalMessageFunction()
-                    .or(this::hackyMessageFunction)
-                    .map(ProtobufFunctions::unnamed);
-        }
 
-        private Optional<TypedFunction<Message>> normalMessageFunction() {
-            return Optional.ofNullable(options.parsers().get(descriptor))
-                    .map(this::normalMessageFunction);
-        }
-
-        private TypedFunction<Message> normalMessageFunction(SingleValuedMessageParser svmp) {
-            return svmp.messageParser(options);
-        }
-
-        private Optional<TypedFunction<Message>> hackyMessageFunction() {
-            // This is a big hack to work around
-            // https://github.com/confluentinc/schema-registry/issues/2708
-            return Optional.ofNullable(byFullName.get(descriptor.getFullName()))
-                    .map(this::hackyMessageFunction);
-        }
-
-        private TypedFunction<Message> hackyMessageFunction(SingleValuedMessageParser svmp) {
-            final Parser<? extends Message> protoParser = getParser(svmp.descriptor());
-            // We need to wash the DynamicMessage back into bytes, and then properly parse...
-            return svmp.messageParser(options).mapInput(message -> {
-                try {
-                    return protoParser.parseFrom(message.toByteString());
-                } catch (InvalidProtocolBufferException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            final SingleValuedMessageParser svmp = byFullName.get(descriptor.getFullName());
+            if (svmp == null) {
+                return Optional.empty();
+            }
+            return Optional.of(ProtobufFunctions.unnamed(svmp.messageParser(descriptor, options)));
         }
 
         private List<FieldContext> fcs() {
@@ -575,29 +546,5 @@ class Protobuf {
                         .build();
             }
         }
-    }
-
-    private static Parser<? extends Message> getParser(Descriptor descriptor) {
-        final String javaClassName = getJavaClassName(descriptor);
-        final Method parserMethod;
-        try {
-            parserMethod = Class.forName(javaClassName).getMethod("parser");
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            // noinspection unchecked
-            return (Parser<? extends Message>) parserMethod.invoke(null);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String getJavaClassName(Descriptor descriptor) {
-        final String javaPackage = descriptor.getFile().getOptions().getJavaPackage();
-        if (javaPackage == null) {
-            throw new RuntimeException("No java_package set for descriptor " + descriptor.getFullName());
-        }
-        return javaPackage + "." + descriptor.getName();
     }
 }

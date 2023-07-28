@@ -2,8 +2,11 @@ package io.deephaven.protobuf;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.BoolValue;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.BytesValue;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.DoubleValue;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.FloatValue;
@@ -16,9 +19,6 @@ import com.google.protobuf.UInt32Value;
 import com.google.protobuf.UInt64Value;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
-import io.deephaven.qst.type.InstantType;
-import io.deephaven.qst.type.NativeArrayType;
-import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.DoubleFunction;
@@ -34,9 +34,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 class Builtin {
+
+    // BoolValue, Int32Value, UInt32Value.value ...
+    private static final int VALUE_FIELD_ID = 1;
+
     static List<SingleValuedMessageParser> parsers() {
         return List.of(
                 TimestampParser.of(),
@@ -68,242 +71,213 @@ class Builtin {
         }
     }
 
-    private enum TimestampParser implements SingleValuedMessageParser, Function<Timestamp, Instant> {
+    private enum TimestampParser implements SingleValuedMessageParser {
         INSTANCE;
-
-        private static final CustomType<Timestamp> IN_TYPE = Type.ofCustom(Timestamp.class);
-        private static final InstantType OUT_TYPE = Type.instantType();
 
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return Timestamp.getDescriptor();
         }
 
         @Override
-        public ObjectFunction<Message, Instant> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapObj(this, OUT_TYPE);
-        }
-
-        @Override
-        public Instant apply(Timestamp t) {
-            return Instant.ofEpochSecond(t.getSeconds(), t.getNanos());
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return TimestampFunction.of(descriptor);
         }
     }
 
-    private enum DurationParser implements SingleValuedMessageParser, Function<com.google.protobuf.Duration, Duration> {
+    private enum DurationParser implements SingleValuedMessageParser {
         INSTANCE;
-
-        private static final CustomType<com.google.protobuf.Duration> IN_TYPE =
-                Type.ofCustom(com.google.protobuf.Duration.class);
-        private static final CustomType<Duration> OUT_TYPE = Type.ofCustom(Duration.class);
 
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return com.google.protobuf.Duration.getDescriptor();
         }
 
         @Override
-        public ObjectFunction<Message, Duration> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapObj(this, OUT_TYPE);
-        }
-
-        @Override
-        public Duration apply(com.google.protobuf.Duration d) {
-            return Duration.ofSeconds(d.getSeconds(), d.getNanos());
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return DurationFunction.of(descriptor);
         }
     }
 
     private enum BoolValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<BoolValue> IN_TYPE = Type.ofCustom(BoolValue.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return BoolValue.getDescriptor();
         }
 
         @Override
-        public BooleanFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapBoolean(BoolValue::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new BoolFieldFunction(descriptor.findFieldByNumber(BoolValue.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum Int32ValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<Int32Value> IN_TYPE = Type.ofCustom(Int32Value.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return Int32Value.getDescriptor();
         }
 
         @Override
-        public IntFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapInt(Int32Value::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new IntFieldFunction(descriptor.findFieldByNumber(Int32Value.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum UInt32ValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<UInt32Value> IN_TYPE = Type.ofCustom(UInt32Value.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return UInt32Value.getDescriptor();
         }
 
         @Override
-        public IntFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapInt(UInt32Value::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new IntFieldFunction(descriptor.findFieldByNumber(UInt32Value.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum Int64ValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<Int64Value> IN_TYPE = Type.ofCustom(Int64Value.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return Int64Value.getDescriptor();
         }
 
         @Override
-        public LongFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapLong(Int64Value::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new LongFieldFunction(descriptor.findFieldByNumber(Int64Value.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum UInt64ValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<UInt64Value> IN_TYPE = Type.ofCustom(UInt64Value.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return UInt64Value.getDescriptor();
         }
 
         @Override
-        public LongFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapLong(UInt64Value::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new LongFieldFunction(descriptor.findFieldByNumber(UInt64Value.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum FloatValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<FloatValue> IN_TYPE = Type.ofCustom(FloatValue.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return FloatValue.getDescriptor();
         }
 
         @Override
-        public FloatFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapFloat(FloatValue::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new FloatFieldFunction(descriptor.findFieldByNumber(FloatValue.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum DoubleValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<DoubleValue> IN_TYPE = Type.ofCustom(DoubleValue.class);
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return DoubleValue.getDescriptor();
         }
 
         @Override
-        public DoubleFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapDouble(DoubleValue::getValue);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new DoubleFieldFunction(descriptor.findFieldByNumber(DoubleValue.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum StringValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<StringValue> IN_TYPE = Type.ofCustom(StringValue.class);
-        private static final StringType OUT_TYPE = Type.stringType();
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return StringValue.getDescriptor();
         }
 
         @Override
-        public ObjectFunction<Message, String> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapObj(StringValue::getValue, OUT_TYPE);
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new StringFieldFunction(descriptor.findFieldByNumber(StringValue.VALUE_FIELD_NUMBER));
         }
     }
 
     private enum BytesValueParser implements SingleValuedMessageParser {
         INSTANCE;
 
-        private static final CustomType<BytesValue> IN_TYPE = Type.ofCustom(BytesValue.class);
-        private static final NativeArrayType<byte[], Byte> OUT_TYPE = Type.byteType().arrayType();
-
         public static SingleValuedMessageParser of() {
             return INSTANCE;
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return BytesValue.getDescriptor();
         }
 
         @Override
-        public TypedFunction<Message> messageParser(ProtobufOptions options) {
-            return message(IN_TYPE).mapObj(BytesValueParser::toBytes, OUT_TYPE);
-        }
-
-        private static byte[] toBytes(BytesValue bv) {
-            return bv.getValue().toByteArray();
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
+            return new ByteStringFieldFunction(descriptor.findFieldByNumber(BytesValue.VALUE_FIELD_NUMBER))
+                    .mapObj(ByteString::toByteArray, Type.byteType().arrayType());
         }
     }
 
@@ -317,13 +291,200 @@ class Builtin {
         }
 
         @Override
-        public Descriptor descriptor() {
+        public Descriptor canonicalDescriptor() {
             return descriptor;
         }
 
         @Override
-        public TypedFunction<Message> messageParser(ProtobufOptions options) {
+        public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+            checkCompatible(canonicalDescriptor(), descriptor);
             return message(type);
+        }
+    }
+
+    private static void checkCompatible(Descriptor expected, Descriptor actual) {
+        final String expectedName = expected.getFullName();
+        final String actualName = actual.getFullName();
+        if (!expectedName.equals(actualName)) {
+            throw new IllegalArgumentException(String.format("Incompatible descriptors, expected=%s, actual=%s", expectedName, actualName));
+        }
+    }
+
+    private static void checkCompatible(JavaType expected, FieldDescriptor actual) {
+        if (!expected.equals(actual.getJavaType())) {
+            throw new IllegalArgumentException(String.format("Incompatible field type, expected=%s, actual=%s (%s)", expected, actual.getJavaType(), actual.getFullName()));
+        }
+    }
+
+    private static final class TimestampFunction implements ObjectFunction<Message, Instant> {
+
+        public static ObjectFunction<Message, Instant> of(Descriptor descriptor) {
+            final FieldDescriptor secondsField = descriptor.findFieldByNumber(Timestamp.SECONDS_FIELD_NUMBER);
+            final FieldDescriptor nanosField = descriptor.findFieldByNumber(Timestamp.NANOS_FIELD_NUMBER);
+            return new TimestampFunction(secondsField, nanosField);
+        }
+
+        private final FieldDescriptor seconds;
+        private final FieldDescriptor nanos;
+
+        private TimestampFunction(FieldDescriptor seconds, FieldDescriptor nanos) {
+            checkCompatible(JavaType.LONG, seconds);
+            checkCompatible(JavaType.INT, nanos);
+            this.seconds = Objects.requireNonNull(seconds);
+            this.nanos = Objects.requireNonNull(nanos);
+        }
+
+        @Override
+        public GenericType<Instant> returnType() {
+            return Type.instantType();
+        }
+
+        @Override
+        public Instant apply(Message value) {
+            return Instant.ofEpochSecond((long) value.getField(seconds), (int) value.getField(nanos));
+        }
+    }
+
+    private static final class DurationFunction implements ObjectFunction<Message, Duration> {
+
+        private static final GenericType<Duration> RETURN_TYPE = Type.ofCustom(Duration.class);
+
+        public static ObjectFunction<Message, Duration> of(Descriptor descriptor) {
+            final FieldDescriptor secondsField = descriptor.findFieldByNumber(com.google.protobuf.Duration.SECONDS_FIELD_NUMBER);
+            final FieldDescriptor nanosField = descriptor.findFieldByNumber(com.google.protobuf.Duration.NANOS_FIELD_NUMBER);
+            return new DurationFunction(secondsField, nanosField);
+        }
+
+        private final FieldDescriptor seconds;
+        private final FieldDescriptor nanos;
+
+        private DurationFunction(FieldDescriptor seconds, FieldDescriptor nanos) {
+            checkCompatible(JavaType.LONG, seconds);
+            checkCompatible(JavaType.INT, nanos);
+            this.seconds = Objects.requireNonNull(seconds);
+            this.nanos = Objects.requireNonNull(nanos);
+        }
+
+        @Override
+        public GenericType<Duration> returnType() {
+            return RETURN_TYPE;
+        }
+
+        @Override
+        public Duration apply(Message value) {
+            return Duration.ofSeconds((long) value.getField(seconds), (int) value.getField(nanos));
+        }
+    }
+
+    private static final class BoolFieldFunction implements BooleanFunction<Message> {
+        private final FieldDescriptor valueField;
+
+        public BoolFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.BOOLEAN, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public boolean applyAsBoolean(Message value) {
+            return (boolean) value.getField(valueField);
+        }
+    }
+
+    private static final class IntFieldFunction implements IntFunction<Message> {
+
+        private final FieldDescriptor valueField;
+
+        public IntFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.INT, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public int applyAsInt(Message value) {
+            return (int)value.getField(valueField);
+        }
+    }
+
+    private static final class LongFieldFunction implements LongFunction<Message> {
+
+        private final FieldDescriptor valueField;
+
+        public LongFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.LONG, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public long applyAsLong(Message value) {
+            return (long)value.getField(valueField);
+        }
+    }
+
+    private static final class FloatFieldFunction implements FloatFunction<Message> {
+        private final FieldDescriptor valueField;
+
+        public FloatFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.FLOAT, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public float applyAsFloat(Message value) {
+            return (float)value.getField(valueField);
+        }
+    }
+
+    private static final class DoubleFieldFunction implements DoubleFunction<Message> {
+        private final FieldDescriptor valueField;
+
+        public DoubleFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.DOUBLE, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public double applyAsDouble(Message value) {
+            return (double) value.getField(valueField);
+        }
+    }
+
+    private static final class StringFieldFunction implements ObjectFunction<Message, String> {
+        private final FieldDescriptor valueField;
+
+        public StringFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.STRING, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public GenericType<String> returnType() {
+            return Type.stringType();
+        }
+
+        @Override
+        public String apply(Message value) {
+            return (String) value.getField(valueField);
+        }
+    }
+
+    private static final class ByteStringFieldFunction implements ObjectFunction<Message, ByteString> {
+        private static final CustomType<ByteString> RETURN_TYPE = Type.ofCustom(ByteString.class);
+
+        private final FieldDescriptor valueField;
+
+        public ByteStringFieldFunction(FieldDescriptor valueField) {
+            checkCompatible(JavaType.BYTE_STRING, valueField);
+            this.valueField = Objects.requireNonNull(valueField);
+        }
+
+        @Override
+        public GenericType<ByteString> returnType() {
+            return RETURN_TYPE;
+        }
+
+        @Override
+        public ByteString apply(Message value) {
+            return (ByteString) value.getField(valueField);
         }
     }
 }

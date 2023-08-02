@@ -36,10 +36,6 @@ import java.util.List;
 import java.util.Objects;
 
 class Builtin {
-
-    // BoolValue, Int32Value, UInt32Value.value ...
-    private static final int VALUE_FIELD_ID = 1;
-
     static List<SingleValuedMessageParser> parsers() {
         return List.of(
                 TimestampParser.of(),

@@ -306,13 +306,15 @@ class Builtin {
         final String expectedName = expected.getFullName();
         final String actualName = actual.getFullName();
         if (!expectedName.equals(actualName)) {
-            throw new IllegalArgumentException(String.format("Incompatible descriptors, expected=%s, actual=%s", expectedName, actualName));
+            throw new IllegalArgumentException(
+                    String.format("Incompatible descriptors, expected=%s, actual=%s", expectedName, actualName));
         }
     }
 
     private static void checkCompatible(JavaType expected, FieldDescriptor actual) {
         if (!expected.equals(actual.getJavaType())) {
-            throw new IllegalArgumentException(String.format("Incompatible field type, expected=%s, actual=%s (%s)", expected, actual.getJavaType(), actual.getFullName()));
+            throw new IllegalArgumentException(String.format("Incompatible field type, expected=%s, actual=%s (%s)",
+                    expected, actual.getJavaType(), actual.getFullName()));
         }
     }
 
@@ -350,8 +352,10 @@ class Builtin {
         private static final GenericType<Duration> RETURN_TYPE = Type.ofCustom(Duration.class);
 
         public static ObjectFunction<Message, Duration> of(Descriptor descriptor) {
-            final FieldDescriptor secondsField = descriptor.findFieldByNumber(com.google.protobuf.Duration.SECONDS_FIELD_NUMBER);
-            final FieldDescriptor nanosField = descriptor.findFieldByNumber(com.google.protobuf.Duration.NANOS_FIELD_NUMBER);
+            final FieldDescriptor secondsField =
+                    descriptor.findFieldByNumber(com.google.protobuf.Duration.SECONDS_FIELD_NUMBER);
+            final FieldDescriptor nanosField =
+                    descriptor.findFieldByNumber(com.google.protobuf.Duration.NANOS_FIELD_NUMBER);
             return new DurationFunction(secondsField, nanosField);
         }
 
@@ -401,7 +405,7 @@ class Builtin {
 
         @Override
         public int applyAsInt(Message value) {
-            return (int)value.getField(valueField);
+            return (int) value.getField(valueField);
         }
     }
 
@@ -416,7 +420,7 @@ class Builtin {
 
         @Override
         public long applyAsLong(Message value) {
-            return (long)value.getField(valueField);
+            return (long) value.getField(valueField);
         }
     }
 
@@ -430,7 +434,7 @@ class Builtin {
 
         @Override
         public float applyAsFloat(Message value) {
-            return (float)value.getField(valueField);
+            return (float) value.getField(valueField);
         }
     }
 

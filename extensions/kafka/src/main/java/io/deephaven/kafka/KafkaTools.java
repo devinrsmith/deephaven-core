@@ -53,6 +53,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
+import io.deephaven.kafka.ProtobufImpl.ProtobufConsume;
 import io.deephaven.kafka.RawImpl.RawConsume;
 import io.deephaven.kafka.RawImpl.RawProduce;
 import io.deephaven.kafka.SimpleImpl.SimpleConsume;
@@ -65,6 +66,7 @@ import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.publish.KafkaPublisherException;
 import io.deephaven.kafka.publish.KeyOrValueSerializer;
 import io.deephaven.kafka.publish.PublishToKafka;
+import io.deephaven.protobuf.ProtobufOptions;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
@@ -487,6 +489,11 @@ public class KafkaTools {
         public static KeyOrValueSpec avroSpec(final String schemaName) {
             return new AvroConsume(schemaName, AVRO_LATEST_VERSION, DIRECT_MAPPING);
         }
+
+        public static KeyOrValueSpec protobufSpec(final String schemaName) {
+            return new ProtobufConsume(ProtobufOptions.defaults(), schemaName, 0);
+        }
+
 
         @SuppressWarnings("unused")
         public static KeyOrValueSpec simpleSpec(final String columnName, final Class<?> dataType) {

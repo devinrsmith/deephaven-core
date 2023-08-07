@@ -3,6 +3,8 @@
  */
 package io.deephaven.client.impl;
 
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface ObjectService {
@@ -13,4 +15,12 @@ public interface ObjectService {
      * @return the future
      */
     CompletableFuture<FetchedObject> fetchObject(String type, HasTicketId ticket);
+
+    interface MessageStream {
+        void onData(ByteBuffer payload, List<? extends HasTicketId> references);
+
+        void onClose();
+    }
+
+    MessageStream messageStream(String type, HasTicketId ticket, MessageStream stream);
 }

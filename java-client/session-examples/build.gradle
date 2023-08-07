@@ -46,6 +46,7 @@ applicationDistribution.into('bin') {
     from(createApplication('fetch-object', 'io.deephaven.client.examples.FetchObject'))
     from(createApplication('subscribe-to-logs', 'io.deephaven.client.examples.SubscribeToLogs'))
     from(createApplication('publish', 'io.deephaven.client.examples.Publish'))
+    from(createApplication('interactive-message-stream', 'io.deephaven.client.examples.InteractiveMessageStream'))
     fileMode = 0755
 }
 

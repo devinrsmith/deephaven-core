@@ -12,6 +12,8 @@ import io.deephaven.proto.backplane.grpc.AuthenticationConstantsResponse;
 import io.deephaven.proto.backplane.grpc.ConfigValue;
 import io.deephaven.proto.backplane.grpc.ConfigurationConstantsRequest;
 import io.deephaven.proto.backplane.grpc.ConfigurationConstantsResponse;
+import io.deephaven.proto.backplane.grpc.ConnectRequest;
+import io.deephaven.proto.backplane.grpc.Data;
 import io.deephaven.proto.backplane.grpc.DeleteTableRequest;
 import io.deephaven.proto.backplane.grpc.FetchObjectRequest;
 import io.deephaven.proto.backplane.grpc.FieldsChangeUpdate;
@@ -19,6 +21,8 @@ import io.deephaven.proto.backplane.grpc.HandshakeRequest;
 import io.deephaven.proto.backplane.grpc.ListFieldsRequest;
 import io.deephaven.proto.backplane.grpc.PublishRequest;
 import io.deephaven.proto.backplane.grpc.ReleaseRequest;
+import io.deephaven.proto.backplane.grpc.StreamRequest;
+import io.deephaven.proto.backplane.grpc.StreamResponse;
 import io.deephaven.proto.backplane.grpc.Ticket;
 import io.deephaven.proto.backplane.grpc.TypedTicket;
 import io.deephaven.proto.backplane.script.grpc.BindTableToVariableRequest;
@@ -33,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.lang.model.SourceVersion;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -171,10 +176,7 @@ public final class SessionImpl extends SessionBase {
     @Override
     public CompletableFuture<FetchedObject> fetchObject(String type, HasTicketId ticketId) {
         final FetchObjectRequest request = FetchObjectRequest.newBuilder()
-                .setSourceId(TypedTicket.newBuilder()
-                        .setType(type)
-                        .setTicket(ticketId.ticketId().ticket())
-                        .build())
+                .setSourceId(toTypedTicket(type, ticketId))
                 .build();
 
         return UnaryGrpcFuture.of(request, channel().object()::fetchObject,
@@ -195,6 +197,70 @@ public final class SessionImpl extends SessionBase {
                             .collect(Collectors.toList());
                     return new FetchedObject(responseType, data, exportIds);
                 });
+    }
+
+    @Override
+    public MessageStream messageStream(String type, HasTicketId ticketId, MessageStream stream) {
+        final StreamObserver<StreamRequest> client =
+                channel().object().messageStream(new StreamObserver<StreamResponse>() {
+                    @Override
+                    public void onNext(StreamResponse value) {
+                        final List<ExportId> exportIds = value.getData().getExportedReferencesList().stream()
+                                .map(t -> {
+                                    final String ticketType;
+                                    if (t.getType().isEmpty()) {
+                                        ticketType = null;
+                                    } else {
+                                        ticketType = t.getType();
+                                    }
+                                    final int exportId = ExportTicketHelper.ticketToExportId(t.getTicket(), "exportId");
+                                    return new ExportId(ticketType, exportId);
+                                })
+                                .collect(Collectors.toList());
+                        stream.onData(value.getData().getPayload().asReadOnlyByteBuffer(), exportIds);
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        stream.onClose();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        stream.onClose();
+                    }
+                });
+        final StreamRequest connectRequest = StreamRequest.newBuilder()
+                .setConnect(ConnectRequest.newBuilder()
+                        .setSourceId(toTypedTicket(type, ticketId))
+                        .build())
+                .build();
+        client.onNext(connectRequest);
+        return new MessageStream() {
+            @Override
+            public void onData(ByteBuffer payload, List<? extends HasTicketId> references) {
+                final StreamRequest request = StreamRequest.newBuilder()
+                        .setData(Data.newBuilder()
+                                .setPayload(ByteString.copyFrom(payload))
+                                .addAllExportedReferences(
+                                        () -> references.stream().map(x -> toTypedTicket(type, x)).iterator())
+                                .build())
+                        .build();
+                client.onNext(request);
+            }
+
+            @Override
+            public void onClose() {
+                client.onCompleted();
+            }
+        };
+    }
+
+    private static TypedTicket toTypedTicket(String type, HasTicketId ticketId) {
+        return TypedTicket.newBuilder()
+                .setType(type)
+                .setTicket(ticketId.ticketId().ticket())
+                .build();
     }
 
     @Override

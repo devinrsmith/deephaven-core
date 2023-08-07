@@ -490,10 +490,27 @@ public class KafkaTools {
             return new AvroConsume(schemaName, AVRO_LATEST_VERSION, DIRECT_MAPPING);
         }
 
+        /**
+         * The latest protobuf spec for {@code schemaName}.
+         *
+         * @param schemaName the registered name for the schema on the schema registry server
+         * @return the protobuf spec
+         */
+        @SuppressWarnings("unused")
         public static KeyOrValueSpec protobufSpec(final String schemaName) {
-            return new ProtobufConsume(ProtobufOptions.defaults(), schemaName, 0);
+            return protobufSpec(schemaName, 0);
         }
 
+        /**
+         * The protobuf spec.
+         *
+         * @param schemaName the registered name for the schema on the schema registry server
+         * @param schemaVersion the version to fetch, or 0 for latest
+         * @return the protobuf spec
+         */
+        public static KeyOrValueSpec protobufSpec(final String schemaName, int schemaVersion) {
+            return new ProtobufConsume(ProtobufOptions.defaults(), schemaName, schemaVersion);
+        }
 
         @SuppressWarnings("unused")
         public static KeyOrValueSpec simpleSpec(final String columnName, final Class<?> dataType) {

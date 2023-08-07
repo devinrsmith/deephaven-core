@@ -31,7 +31,6 @@ public abstract class ProtobufOptions {
 
     public abstract Set<List<String>> excludePaths();
 
-
     @Default
     public Map<Descriptor, SingleValuedMessageParser> parsers() {
         return SingleValuedMessageParser.defaults();

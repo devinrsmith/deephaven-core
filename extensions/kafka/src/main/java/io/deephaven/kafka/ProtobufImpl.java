@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 class ProtobufImpl {
     static final class ProtobufConsume extends Consume.KeyOrValueSpec {
@@ -106,6 +107,49 @@ class ProtobufImpl {
             }
             // todo: we need to handle the dynamic case eventually, where protobuf descriptor is updated
             return ((ProtobufSchema) schemaRegistryClient.getSchemaBySubjectAndId(schemaSubject, metadata.getId())).toDescriptor();
+        }
+    }
+
+    private static class VersionedResults implements TypedFunction<Message> {
+        private final Map<Descriptor, ParsedResults> results;
+        private final List<String> path;
+
+        public VersionedResults(Map<Descriptor, ParsedResults> results, List<String> path) {
+            this.results = results;
+            this.path = path;
+        }
+
+        public TypedFunction<?> function(Descriptor descriptor) {
+            return results.get(descriptor).get(path);
+        }
+
+        @Override
+        public Type<?> returnType() {
+            return null;
+        }
+
+        @Override
+        public <R> R walk(Visitor<Message, R> visitor) {
+            return null;
+        }
+
+        @Override
+        public TypedFunction<Message> mapInput(Function<Message, Message> f) {
+            return null;
+        }
+    }
+
+    private static class ParsedResults {
+        private final Descriptor descriptor;
+        private final ProtobufFunctions functions;
+
+        public ParsedResults(Descriptor descriptor, ProtobufFunctions functions) {
+            this.descriptor = Objects.requireNonNull(descriptor);
+            this.functions = Objects.requireNonNull(functions);
+        }
+
+        public TypedFunction<?> get(List<String> path) {
+            return Objects.requireNonNull(functions.columns().get(path));
         }
     }
 }

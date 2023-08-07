@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -19,6 +18,10 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
     static <T> IntFunction<T> primitive() {
         //noinspection unchecked
         return (IntFunction<T>) Functions.PrimitiveInt.INSTANCE;
+    }
+
+    static <T> IntFunction<T> cast(TypedFunction<T> f) {
+        return (IntFunction<T>) f;
     }
 
     @Override

@@ -20,6 +20,10 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
         return (DoubleFunction<T>) Functions.PrimitiveDouble.INSTANCE;
     }
 
+    static <T> DoubleFunction<T> cast(TypedFunction<T> f) {
+        return (DoubleFunction<T>) f;
+    }
+
     @Override
     double applyAsDouble(T value);
 

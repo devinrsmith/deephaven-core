@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.FloatType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 
 import java.util.function.Function;
 
@@ -17,6 +16,10 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
     static <T> FloatFunction<T> primitive() {
         //noinspection unchecked
         return (FloatFunction<T>) Functions.PrimitiveFloat.INSTANCE;
+    }
+
+    static <T> FloatFunction<T> cast(TypedFunction<T> f) {
+        return (FloatFunction<T>) f;
     }
 
     float applyAsFloat(T value);

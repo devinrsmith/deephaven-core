@@ -14,6 +14,7 @@ import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.StringType;
+import io.deephaven.stream.blink.tf.PrimitiveFunction.Visitor;
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
 import io.deephaven.util.type.TypeUtils;
@@ -38,7 +39,47 @@ public class CommonTransform {
 
     public static <T> TypedFunction<T> of(PrimitiveFunction<T> f) {
         // no transform currently; maybe boolean -> byte?
-        return f;
+        return f.walk(new Visitor<>() {
+            @Override
+            public ObjectFunction<T, Boolean> visit(BooleanFunction<T> f) {
+                return ObjectFunction.of(f::applyAsBoolean, BoxedBooleanType.of());
+            }
+
+            @Override
+            public TypedFunction<T> visit(CharFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(ByteFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(ShortFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(IntFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(LongFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(FloatFunction<T> f) {
+                return f;
+            }
+
+            @Override
+            public TypedFunction<T> visit(DoubleFunction<T> f) {
+                return f;
+            }
+        });
     }
 
     /**

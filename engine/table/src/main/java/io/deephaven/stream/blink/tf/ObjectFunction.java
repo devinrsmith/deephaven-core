@@ -68,6 +68,10 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return (ObjectFunction<T, Double>) Functions.BoxedDouble.INSTANCE;
     }
 
+    static <T, R> ObjectFunction<T, R> cast(TypedFunction<T> f) {
+        return (ObjectFunction<T, R>) f;
+    }
+
     GenericType<R> returnType();
 
     R apply(T value);

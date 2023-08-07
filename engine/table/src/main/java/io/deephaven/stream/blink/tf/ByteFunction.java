@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.ByteType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 
 import java.util.function.Function;
 
@@ -18,6 +17,10 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
     static <T> ByteFunction<T> primitive() {
         //noinspection unchecked
         return (ByteFunction<T>) Functions.PrimitiveByte.INSTANCE;
+    }
+
+    static <T> ByteFunction<T> cast(TypedFunction<T> f) {
+        return (ByteFunction<T>) f;
     }
 
     byte applyAsByte(T value);

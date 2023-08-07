@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.TypedFunction.Visitor;
 
 import java.util.function.Function;
 
@@ -18,6 +17,10 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
     static <T> BooleanFunction<T> primitive() {
         //noinspection unchecked
         return (BooleanFunction<T>) Functions.PrimitiveBoolean.INSTANCE;
+    }
+
+    static <T> BooleanFunction<T> cast(TypedFunction<T> f) {
+        return (BooleanFunction<T>) f;
     }
 
     boolean applyAsBoolean(T value);

@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 
 import java.util.function.Function;
 
@@ -18,6 +17,10 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
     static <T> ShortFunction<T> primitive() {
         //noinspection unchecked
         return (ShortFunction<T>) Functions.PrimitiveShort.INSTANCE;
+    }
+
+    static <T> ShortFunction<T> cast(TypedFunction<T> f) {
+        return (ShortFunction<T>) f;
     }
 
     short applyAsShort(T value);

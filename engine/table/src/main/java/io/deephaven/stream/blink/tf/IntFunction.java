@@ -1,5 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;
 
@@ -49,5 +50,14 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
      */
     default IntFunction<T> onNullInput(int onNull) {
         return x -> x == null ? onNull : applyAsInt(x);
+    }
+
+    @FunctionalInterface
+    interface IntToObject<R> {
+        R apply(int value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(IntToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsInt(t)), returnType);
     }
 }

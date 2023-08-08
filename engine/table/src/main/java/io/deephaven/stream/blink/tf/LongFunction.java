@@ -52,15 +52,20 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
         return x -> x == null ? onNull : applyAsLong(x);
     }
 
-    default <X> ObjectFunction<T, X> andThen(java.util.function.LongFunction<X> f, GenericType<X> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsLong(t)), returnType);
-    }
-
     default ObjectFunction<T, Instant> ofEpochMilli() {
-        return andThen(Instant::ofEpochMilli, Type.instantType());
+        return mapObj(Instant::ofEpochMilli, Type.instantType());
     }
 
     default ObjectFunction<T, Instant> ofEpochSecond() {
-        return andThen(Instant::ofEpochSecond, Type.instantType());
+        return mapObj(Instant::ofEpochSecond, Type.instantType());
+    }
+
+    @FunctionalInterface
+    interface LongToObject<R> {
+        R apply(long value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(LongToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsLong(t)), returnType);
     }
 }

@@ -1,5 +1,6 @@
 package io.deephaven.kafka.ingest;
 
+import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
@@ -57,6 +58,9 @@ public enum FieldCopierAdapter
     }
 
     public static FieldCopier of(ObjectFunction<Object, ?> f) {
+        if (f.returnType().equals(BoxedBooleanType.of())) {
+            return ByteFieldCopier.ofBoolean(f.as(BoxedBooleanType.of()));
+        }
         return ObjectFieldCopier.of(f);
     }
 

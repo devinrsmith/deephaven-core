@@ -1,6 +1,7 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.DoubleType;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
@@ -49,5 +50,14 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
      */
     default DoubleFunction<T> onNullInput(double onNull) {
         return x -> x == null ? onNull : applyAsDouble(x);
+    }
+
+    @FunctionalInterface
+    interface DoubleToObject<R> {
+        R apply(double value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(DoubleToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsDouble(t)), returnType);
     }
 }

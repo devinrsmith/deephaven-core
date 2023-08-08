@@ -1,6 +1,7 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.CharType;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
@@ -46,5 +47,14 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
      */
     default CharFunction<T> onNullInput(char onNull) {
         return x -> x == null ? onNull : applyAsChar(x);
+    }
+
+    @FunctionalInterface
+    interface CharToObject<R> {
+        R apply(char value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(CharToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsChar(t)), returnType);
     }
 }

@@ -1,6 +1,7 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.FloatType;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
@@ -46,5 +47,14 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
      */
     default FloatFunction<T> onNullInput(float onNull) {
         return x -> x == null ? onNull : applyAsFloat(x);
+    }
+
+    @FunctionalInterface
+    interface FloatToObject<R> {
+        R apply(float value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(FloatToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsFloat(t)), returnType);
     }
 }

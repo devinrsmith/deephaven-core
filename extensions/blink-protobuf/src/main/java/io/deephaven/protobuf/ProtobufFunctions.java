@@ -21,7 +21,7 @@ public abstract class ProtobufFunctions {
         return builder().build();
     }
 
-    public static ProtobufFunctions parse(Descriptor descriptor, ProtobufOptions options) {
+    public static ProtobufFunctions parse(Descriptor descriptor, ProtobubdfOptions options) {
         return new Protobuf(options).translate(descriptor);
     }
 

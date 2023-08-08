@@ -20,7 +20,7 @@ public abstract class ProtobufOptions {
     }
 
     public static ProtobufOptions defaults() {
-        return builder().build();
+        return builder().unknownFieldSetName("UnknownFieldSet").build();
     }
 
     public abstract Optional<String> unknownFieldSetName();
@@ -38,28 +38,6 @@ public abstract class ProtobufOptions {
 
     final boolean include(List<String> path) {
         return !excludePaths().contains(path);
-    }
-
-    final boolean parseAdHocMessage(FieldDescriptor fd, ProtobufOptions options, List<String> context) {
-        return false;
-        // return parseAdHocMessage(); // todo
-    }
-
-    final boolean parseAdHocRepeatedMessage(FieldDescriptor fd, ProtobufOptions options, List<String> context) {
-        return false;
-        // return parseAdHocMessage(); // todo
-    }
-
-    final Optional<String> unknownFieldSetName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
-        return unknownFieldSetName(); // todo
-    }
-
-    final Optional<String> serializedSizeName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
-        return serializedSizeName(); // todo
-    }
-
-    final Optional<String> rawMessageName(Descriptor descriptor, ProtobufOptions options, List<String> context) {
-        return rawMessageName(); // todo
     }
 
     public interface Builder {

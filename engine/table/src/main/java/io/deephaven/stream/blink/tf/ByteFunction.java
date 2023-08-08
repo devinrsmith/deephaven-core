@@ -1,6 +1,7 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.ByteType;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
@@ -47,5 +48,14 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
      */
     default ByteFunction<T> onNullInput(byte onNull) {
         return x -> x == null ? onNull : applyAsByte(x);
+    }
+
+    @FunctionalInterface
+    interface ByteToObject<R> {
+        R apply(byte value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(ByteToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsByte(t)), returnType);
     }
 }

@@ -1,6 +1,11 @@
 package io.deephaven.stream.blink.tf;
 
+import io.deephaven.qst.type.PrimitiveType;
+
 public interface PrimitiveFunction<T> extends TypedFunction<T> {
+
+    @Override
+    PrimitiveType<?> returnType();
 
     <R> R walk(Visitor<T, R> visitor);
 

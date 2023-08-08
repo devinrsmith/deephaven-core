@@ -1,7 +1,9 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BooleanType;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.tf.CharFunction.CharToObject;
 
 import java.util.function.Function;
 
@@ -42,5 +44,14 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
 
     default BooleanFunction<T> onNullInput(boolean onNull) {
         return x -> x == null ? onNull : applyAsBoolean(x);
+    }
+
+    @FunctionalInterface
+    interface BoolToObject<R> {
+        R apply(boolean value);
+    }
+
+    default <R> ObjectFunction<T, R> mapObj(BoolToObject<R> f, GenericType<R> returnType) {
+        return ObjectFunction.of(t -> f.apply(applyAsBoolean(t)), returnType);
     }
 }

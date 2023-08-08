@@ -25,16 +25,21 @@ import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.protobuf.ProtobufOptions;
+import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
+import io.deephaven.qst.type.BoxedType;
 import io.deephaven.qst.type.ByteType;
 import io.deephaven.qst.type.CharType;
+import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.FloatType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.PrimitiveType;
 import io.deephaven.qst.type.ShortType;
+import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.qst.type.Type.Visitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
@@ -45,11 +50,11 @@ import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.NullFunctions;
 import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
-import io.deephaven.util.BooleanUtils;
-import io.deephaven.util.QueryConstants;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -107,10 +112,11 @@ class ProtobufImpl {
             for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
                 final List<String> path = e.getKey();
                 final TypedFunction<Message> function = e.getValue();
+                final TypedFunction<Message> transformedFunction = CommonTransform.of(function);
                 final String columnName = String.join("_", path);
                 data.fieldPathToColumnName.put(columnName, columnName);
                 columnDefinitionsOut.add(ColumnDefinition.of(columnName, function.returnType()));
-                fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(function)));
+                fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(transformedFunction)));
             }
             // we don't have enough info at this time to create KeyOrValueProcessorImpl
             // data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers,
@@ -142,22 +148,86 @@ class ProtobufImpl {
     }
 
     private static ProtobufFunctions parse(Descriptor descriptor, ProtobufOptions options) {
-        final ProtobufFunctions functions = withCommonTransforms(ProtobufFunctions.parse(descriptor, options));
+        final ProtobufFunctions functions = withSchemaSafeTypes(ProtobufFunctions.parse(descriptor, options));
         final Map<Descriptor, ProtobufFunctions> parsed = new HashMap<>();
         parsed.put(descriptor, functions);
         final Map<List<String>, Type<?>> types = new LinkedHashMap<>(functions.columns().size());
         for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
             types.put(e.getKey(), e.getValue().returnType());
         }
-        return new ParsedStates(options, parsed, types).adaptForSchemaChanges();
+        return new ParsedStates(options, parsed, types).functionsForSchemaChanges();
     }
 
-    private static ProtobufFunctions withCommonTransforms(ProtobufFunctions f) {
+    private static ProtobufFunctions withSchemaSafeTypes(ProtobufFunctions f) {
         final Builder builder = ProtobufFunctions.builder();
         for (Entry<List<String>, TypedFunction<Message>> e : f.columns().entrySet()) {
-            builder.putColumns(e.getKey(), CommonTransform.of(e.getValue()));
+            builder.putColumns(e.getKey(), withSchemaSafeTypes(e.getValue()));
         }
         return builder.build();
+    }
+
+    private static <X> TypedFunction<X> withSchemaSafeTypes(TypedFunction<X> f) {
+        // noinspection unchecked
+        return f.walk(
+                (TypedFunction.Visitor<X, TypedFunction<X>>) (TypedFunction.Visitor<?, ?>) SchemaSafeTypes.INSTANCE);
+    }
+
+    enum SchemaSafeTypes implements TypedFunction.Visitor<Object, TypedFunction<Object>>,
+            PrimitiveFunction.Visitor<Object, TypedFunction<Object>> {
+        INSTANCE;
+
+        @Override
+        public TypedFunction<Object> visit(PrimitiveFunction<Object> f) {
+            return f.walk((PrimitiveFunction.Visitor<Object, TypedFunction<Object>>) this);
+        }
+
+        @Override
+        public TypedFunction<Object> visit(ObjectFunction<Object, ?> f) {
+            return f;
+        }
+
+        @Override
+        public ObjectFunction<Object, Boolean> visit(BooleanFunction<Object> f) {
+            // BooleanFunction is the only function / primitive type that doesn't natively have a "null" type, and
+            // thus doesn't support schema changes which would remove this field. By boxing to
+            // ObjectFunction<Object, Boolean>, we can safely handle these types of schema changes.
+            return CommonTransform.box(f);
+        }
+
+        @Override
+        public TypedFunction<Object> visit(CharFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(ByteFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(ShortFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(IntFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(LongFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(FloatFunction<Object> f) {
+            return f;
+        }
+
+        @Override
+        public TypedFunction<Object> visit(DoubleFunction<Object> f) {
+            return f;
+        }
     }
 
     private static class ParsedStates {
@@ -172,7 +242,7 @@ class ProtobufImpl {
             this.types = Objects.requireNonNull(types);
         }
 
-        public ProtobufFunctions adaptForSchemaChanges() {
+        public ProtobufFunctions functionsForSchemaChanges() {
             final Builder builder = ProtobufFunctions.builder();
             for (Entry<List<String>, Type<?>> e : types.entrySet()) {
                 final List<String> path = e.getKey();
@@ -186,7 +256,7 @@ class ProtobufImpl {
         }
 
         private ProtobufFunctions parse(Descriptor d) {
-            return ProtobufFunctions.parse(d, options);
+            return withSchemaSafeTypes(ProtobufFunctions.parse(d, options));
         }
 
         private class ForPath {
@@ -202,67 +272,13 @@ class ProtobufImpl {
 
             private TypedFunction<Message> getMessageTypedFunction(Descriptor descriptor) {
                 final TypedFunction<Message> tf = ParsedStates.this.getOrCreate(descriptor).columns().get(path);
-                if (tf == null) {
-                    // todo: return null function?
-//                    throw new UncheckedDeephavenException(String.format(
-//                            "Incompatible schema change for %s, changed from %s to removed", path, type));
-                    return type.walk(new Visitor<>() {
-                        @Override
-                        public TypedFunction<Message> visit(PrimitiveType<?> primitiveType) {
-                            return primitiveType.walk(new PrimitiveType.Visitor<>() {
-                                @Override
-                                public ByteFunction<Message> visit(BooleanType booleanType) {
-                                    return m -> BooleanUtils.NULL_BOOLEAN_AS_BYTE;
-                                }
-
-                                @Override
-                                public ByteFunction<Message> visit(ByteType byteType) {
-                                    return m -> QueryConstants.NULL_BYTE;
-                                }
-
-                                @Override
-                                public CharFunction<Message> visit(CharType charType) {
-                                    return m -> QueryConstants.NULL_CHAR;
-                                }
-
-                                @Override
-                                public ShortFunction<Message> visit(ShortType shortType) {
-                                    return m -> QueryConstants.NULL_SHORT;
-                                }
-
-                                @Override
-                                public IntFunction<Message> visit(IntType intType) {
-                                    return m -> QueryConstants.NULL_INT;
-                                }
-
-                                @Override
-                                public LongFunction<Message> visit(LongType longType) {
-                                    return m -> QueryConstants.NULL_LONG;
-                                }
-
-                                @Override
-                                public FloatFunction<Message> visit(FloatType floatType) {
-                                    return m -> QueryConstants.NULL_FLOAT;
-                                }
-
-                                @Override
-                                public DoubleFunction<Message> visit(DoubleType doubleType) {
-                                    return m -> QueryConstants.NULL_DOUBLE;
-                                }
-                            });
-                        }
-
-                        @Override
-                        public TypedFunction<Message> visit(GenericType<?> genericType) {
-                            return ObjectFunction.of(x -> null, genericType);
-                        }
-                    });
+                final TypedFunction<Message> adaptedFunction = SchemaChangeAdaptFunction.of(tf, type).orElse(null);
+                if (adaptedFunction == null) {
+                    throw new UncheckedDeephavenException(
+                            String.format("Incompatible schema change for %s, expected=%s, actual=%s", path, type,
+                                    tf == null ? null : tf.returnType()));
                 }
-                if (!type.equals(tf.returnType())) {
-                    throw new UncheckedDeephavenException(String.format(
-                            "Incompatible schema change for %s, changed from %s to %s", path, type, tf.returnType()));
-                }
-                return tf;
+                return adaptedFunction;
             }
 
             public TypedFunction<Message> getOrCreate(Descriptor d) {
@@ -364,9 +380,105 @@ class ProtobufImpl {
                 return ObjectFunction.<Message, T>cast(getForType(value)).apply(value);
             }
         }
+    }
 
-        public TypedFunction<Message> of(List<String> path) {
-            return new ForPath(path, types.get(path)).adaptForSchemaChanges();
+    private static class SchemaChangeAdaptFunction<T> implements TypedFunction.Visitor<T, TypedFunction<T>> {
+
+        public static <T> Optional<TypedFunction<T>> of(TypedFunction<T> f, Type<?> desiredReturnType) {
+            if (f == null) {
+                return NullFunctions.of(desiredReturnType);
+            }
+            if (desiredReturnType.equals(f.returnType())) {
+                return Optional.of(f);
+            }
+            return Optional.ofNullable(f.walk(new SchemaChangeAdaptFunction<>(desiredReturnType)));
+        }
+
+        private final Type<?> desiredReturnType;
+
+        public SchemaChangeAdaptFunction(Type<?> desiredReturnType) {
+            this.desiredReturnType = Objects.requireNonNull(desiredReturnType);
+        }
+
+        @Override
+        public ObjectFunction<T, ?> visit(PrimitiveFunction<T> f) {
+            if (desiredReturnType.equals(f.returnType().boxedType())) {
+                return CommonTransform.box(f);
+            }
+            return null;
+        }
+
+        @Override
+        public TypedFunction<T> visit(ObjectFunction<T, ?> f) {
+            return f.returnType().walk(new GenericType.Visitor<>() {
+                @Override
+                public TypedFunction<T> visit(BoxedType<?> boxedType) {
+                    if (desiredReturnType.equals(boxedType.primitiveType())) {
+                        return boxedType.primitiveType().walk(new PrimitiveType.Visitor<>() {
+                            @Override
+                            public TypedFunction<T> visit(BooleanType booleanType) {
+                                return null;
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(ByteType byteType) {
+                                return CommonTransform.unboxByte(f.as(byteType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(CharType charType) {
+                                return CommonTransform.unboxChar(f.as(charType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(ShortType shortType) {
+                                return CommonTransform.unboxShort(f.as(shortType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(IntType intType) {
+                                return CommonTransform.unboxInt(f.as(intType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(LongType longType) {
+                                return CommonTransform.unboxLong(f.as(longType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(FloatType floatType) {
+                                return CommonTransform.unboxFloat(f.as(floatType.boxedType()));
+                            }
+
+                            @Override
+                            public TypedFunction<T> visit(DoubleType doubleType) {
+                                return CommonTransform.unboxDouble(f.as(doubleType.boxedType()));
+                            }
+                        });
+                    }
+                    return null;
+                }
+
+                @Override
+                public TypedFunction<T> visit(StringType stringType) {
+                    return null;
+                }
+
+                @Override
+                public TypedFunction<T> visit(InstantType instantType) {
+                    return null;
+                }
+
+                @Override
+                public TypedFunction<T> visit(ArrayType<?, ?> arrayType) {
+                    return null;
+                }
+
+                @Override
+                public TypedFunction<T> visit(CustomType<?> customType) {
+                    return null;
+                }
+            });
         }
     }
 }

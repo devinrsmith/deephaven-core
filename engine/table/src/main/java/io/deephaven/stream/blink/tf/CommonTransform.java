@@ -39,47 +39,48 @@ public class CommonTransform {
 
     public static <T> TypedFunction<T> of(PrimitiveFunction<T> f) {
         // no transform currently; maybe boolean -> byte?
-        return f.walk(new Visitor<>() {
-            @Override
-            public ObjectFunction<T, Boolean> visit(BooleanFunction<T> f) {
-                return ObjectFunction.of(f::applyAsBoolean, BoxedBooleanType.of());
-            }
-
-            @Override
-            public TypedFunction<T> visit(CharFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(ByteFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(ShortFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(IntFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(LongFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(FloatFunction<T> f) {
-                return f;
-            }
-
-            @Override
-            public TypedFunction<T> visit(DoubleFunction<T> f) {
-                return f;
-            }
-        });
+        return f;
+//        return f.walk(new Visitor<>() {
+//            @Override
+//            public ObjectFunction<T, Boolean> visit(BooleanFunction<T> f) {
+//                return ObjectFunction.of(f::applyAsBoolean, BoxedBooleanType.of());
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(CharFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(ByteFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(ShortFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(IntFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(LongFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(FloatFunction<T> f) {
+//                return f;
+//            }
+//
+//            @Override
+//            public TypedFunction<T> visit(DoubleFunction<T> f) {
+//                return f;
+//            }
+//        });
     }
 
     /**
@@ -208,6 +209,109 @@ public class CommonTransform {
      */
     public static <T> LongFunction<T> toEpochNanos(ObjectFunction<T, Instant> f) {
         return f.mapLong(DateTimeUtils::epochNanos);
+    }
+
+    public static <T> ObjectFunction<T, ?> box(TypedFunction<T> f) {
+        // noinspection unchecked
+        return f.walk(
+                (TypedFunction.Visitor<T, ObjectFunction<T, ?>>) (TypedFunction.Visitor<?, ?>) BoxedVisitor.INSTANCE);
+    }
+
+    public static <T, R> ObjectFunction<T, R> box(ObjectFunction<T, R> f) {
+        return f;
+    }
+
+    public static <T> ObjectFunction<T, ?> box(PrimitiveFunction<T> f) {
+        // noinspection unchecked
+        return f.walk(
+                (PrimitiveFunction.Visitor<T, ObjectFunction<T, ?>>) (PrimitiveFunction.Visitor<?, ?>) BoxedVisitor.INSTANCE);
+    }
+
+    public static <T> ObjectFunction<T, Boolean> box(BooleanFunction<T> f) {
+        return f.mapObj(x -> x, BoxedBooleanType.of());
+    }
+
+    public static <T> ObjectFunction<T, Character> box(CharFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedCharType.of());
+    }
+
+    public static <T> ObjectFunction<T, Byte> box(ByteFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedByteType.of());
+    }
+
+    public static <T> ObjectFunction<T, Short> box(ShortFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedShortType.of());
+    }
+
+    public static <T> ObjectFunction<T, Integer> box(IntFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedIntType.of());
+    }
+
+    public static <T> ObjectFunction<T, Long> box(LongFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedLongType.of());
+    }
+
+    public static <T> ObjectFunction<T, Float> box(FloatFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedFloatType.of());
+    }
+
+    public static <T> ObjectFunction<T, Double> box(DoubleFunction<T> f) {
+        return f.mapObj(TypeUtils::box, BoxedDoubleType.of());
+    }
+
+    private enum BoxedVisitor implements TypedFunction.Visitor<Object, ObjectFunction<Object, ?>>,
+            PrimitiveFunction.Visitor<Object, ObjectFunction<Object, ?>> {
+        INSTANCE;
+
+        @Override
+        public ObjectFunction<Object, ?> visit(PrimitiveFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(ObjectFunction<Object, ?> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(BooleanFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(CharFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(ByteFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(ShortFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(IntFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(LongFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(FloatFunction<Object> f) {
+            return box(f);
+        }
+
+        @Override
+        public ObjectFunction<Object, ?> visit(DoubleFunction<Object> f) {
+            return box(f);
+        }
     }
 
     private static class FunctionVisitor<T> implements TypedFunction.Visitor<T, TypedFunction<T>> {

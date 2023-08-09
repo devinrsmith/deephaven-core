@@ -20,7 +20,7 @@ public abstract class ProtobufOptions {
     }
 
     public static ProtobufOptions defaults() {
-        return builder().unknownFieldSetName("UnknownFieldSet").build();
+        return builder().build();
     }
 
     public abstract Optional<String> unknownFieldSetName();

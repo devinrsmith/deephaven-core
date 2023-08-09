@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'io.deephaven.project.register'
+    id 'com.google.protobuf' version '0.9.3'
 }
 
 description 'Kafka: Integrating Engine tables with Kafka'
@@ -39,6 +40,7 @@ spotless {
     java {
         targetExclude(
                 '**/**FieldCopier.java',
+                'build/generated/source/proto/test/java/**',
         )
     }
 }

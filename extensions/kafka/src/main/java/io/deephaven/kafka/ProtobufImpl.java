@@ -55,6 +55,7 @@ import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.util.annotations.VisibleForTesting;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -69,6 +70,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 class ProtobufImpl {
+
+    @VisibleForTesting
+    static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor, ProtobufOptions options) {
+        return new ParsedStates(descriptor, options).functionsForSchemaChanges();
+    }
+
     static final class ProtobufConsume extends Consume.KeyOrValueSpec {
 
         private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
@@ -104,7 +111,7 @@ class ProtobufImpl {
             } catch (RestClientException | IOException e) {
                 throw new UncheckedDeephavenException(e);
             }
-            final ProtobufFunctions functions = parse(descriptor, options);
+            final ProtobufFunctions functions = schemaChangeAwareFunctions(descriptor, options);
             final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.columns().size());
             final KeyOrValueIngestData data = new KeyOrValueIngestData();
             // arguably, others should be LinkedHashMap as well.
@@ -145,17 +152,6 @@ class ProtobufImpl {
             return ((ProtobufSchema) schemaRegistryClient.getSchemaBySubjectAndId(schemaSubject, metadata.getId()))
                     .toDescriptor();
         }
-    }
-
-    private static ProtobufFunctions parse(Descriptor descriptor, ProtobufOptions options) {
-        final ProtobufFunctions functions = withSchemaSafeTypes(ProtobufFunctions.parse(descriptor, options));
-        final Map<Descriptor, ProtobufFunctions> parsed = new HashMap<>();
-        parsed.put(descriptor, functions);
-        final Map<List<String>, Type<?>> types = new LinkedHashMap<>(functions.columns().size());
-        for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
-            types.put(e.getKey(), e.getValue().returnType());
-        }
-        return new ParsedStates(options, parsed, types).functionsForSchemaChanges();
     }
 
     private static ProtobufFunctions withSchemaSafeTypes(ProtobufFunctions f) {
@@ -231,153 +227,169 @@ class ProtobufImpl {
     }
 
     private static class ParsedStates {
+        private final Descriptor originalDescriptor;
         private final ProtobufOptions options;
         private final Map<Descriptor, ProtobufFunctions> parsed;
-        private final Map<List<String>, Type<?>> types;
 
-        private ParsedStates(ProtobufOptions options, Map<Descriptor, ProtobufFunctions> parsed,
-                Map<List<String>, Type<?>> types) {
+        private ParsedStates(Descriptor originalDescriptor, ProtobufOptions options) {
+            this.originalDescriptor = Objects.requireNonNull(originalDescriptor);
             this.options = Objects.requireNonNull(options);
-            this.parsed = Objects.requireNonNull(parsed);
-            this.types = Objects.requireNonNull(types);
+            this.parsed = new HashMap<>();
+            getOrCreate(originalDescriptor);
         }
 
         public ProtobufFunctions functionsForSchemaChanges() {
             final Builder builder = ProtobufFunctions.builder();
-            for (Entry<List<String>, Type<?>> e : types.entrySet()) {
+            for (Entry<List<String>, TypedFunction<Message>> e : getOrCreate(originalDescriptor).columns().entrySet()) {
                 final List<String> path = e.getKey();
-                builder.putColumns(path, new ForPath(path, e.getValue()).adaptForSchemaChanges());
+                builder.putColumns(path, new ForPath(path, e.getValue().returnType()).adaptForSchemaChanges());
             }
             return builder.build();
         }
 
         private ProtobufFunctions getOrCreate(Descriptor descriptor) {
-            return parsed.computeIfAbsent(descriptor, this::parse);
+            return parsed.computeIfAbsent(descriptor, this::create);
         }
 
-        private ProtobufFunctions parse(Descriptor d) {
-            return withSchemaSafeTypes(ProtobufFunctions.parse(d, options));
+        private ProtobufFunctions create(Descriptor newDescriptor) {
+            if (!originalDescriptor.getFullName().equals(newDescriptor.getFullName())) {
+                throw new IllegalArgumentException(String.format(
+                        "Expected descriptor names to match. originalDescriptor.getFullName()=%s, newDescriptor.getFullName()=%s",
+                        originalDescriptor.getFullName(), newDescriptor.getFullName()));
+            }
+            return withSchemaSafeTypes(ProtobufFunctions.parse(newDescriptor, options));
         }
 
         private class ForPath {
             private final List<String> path;
-            private final Type<?> type;
+            private final Type<?> originalType;
             private final Map<Descriptor, TypedFunction<Message>> functions;
 
-            public ForPath(List<String> path, Type<?> type) {
+            public ForPath(List<String> path, Type<?> originalType) {
                 this.path = Objects.requireNonNull(path);
-                this.type = Objects.requireNonNull(type);
+                this.originalType = Objects.requireNonNull(originalType);
                 this.functions = new HashMap<>();
             }
 
-            private TypedFunction<Message> getMessageTypedFunction(Descriptor descriptor) {
-                final TypedFunction<Message> tf = ParsedStates.this.getOrCreate(descriptor).columns().get(path);
-                final TypedFunction<Message> adaptedFunction = SchemaChangeAdaptFunction.of(tf, type).orElse(null);
+            public TypedFunction<Message> adaptForSchemaChanges() {
+                return originalType.walk(new AdaptForSchemaChanges());
+            }
+
+            private boolean applyAsBoolean(Message message) {
+                return BooleanFunction.cast(getOrCreateForType(message)).applyAsBoolean(message);
+            }
+
+            private char applyAsChar(Message message) {
+                return CharFunction.cast(getOrCreateForType(message)).applyAsChar(message);
+            }
+
+            private byte applyAsByte(Message message) {
+                return ByteFunction.cast(getOrCreateForType(message)).applyAsByte(message);
+            }
+
+            private short applyAsShort(Message message) {
+                return ShortFunction.cast(getOrCreateForType(message)).applyAsShort(message);
+            }
+
+            private int applyAsInt(Message message) {
+                return IntFunction.cast(getOrCreateForType(message)).applyAsInt(message);
+            }
+
+            private long applyAsLong(Message message) {
+                return LongFunction.cast(getOrCreateForType(message)).applyAsLong(message);
+            }
+
+            private float applyAsFloat(Message message) {
+                return FloatFunction.cast(getOrCreateForType(message)).applyAsFloat(message);
+            }
+
+            private double applyAsDouble(Message message) {
+                return DoubleFunction.cast(getOrCreateForType(message)).applyAsDouble(message);
+            }
+
+            private <T> T applyAsObject(Message message) {
+                return ObjectFunction.<Message, T>cast(getOrCreateForType(message)).apply(message);
+            }
+
+            private TypedFunction<Message> getOrCreateForType(Message message) {
+                return getOrCreate(message.getDescriptorForType());
+            }
+
+            private TypedFunction<Message> getOrCreate(Descriptor descriptor) {
+                return functions.computeIfAbsent(descriptor, this::createFunctionFor);
+            }
+
+            private TypedFunction<Message> createFunctionFor(Descriptor descriptor) {
+                final TypedFunction<Message> newFunction =
+                        ParsedStates.this.getOrCreate(descriptor).columns().get(path);
+                final TypedFunction<Message> adaptedFunction =
+                        SchemaChangeAdaptFunction.of(newFunction, originalType).orElse(null);
                 if (adaptedFunction == null) {
                     throw new UncheckedDeephavenException(
-                            String.format("Incompatible schema change for %s, expected=%s, actual=%s", path, type,
-                                    tf == null ? null : tf.returnType()));
+                            String.format("Incompatible schema change for %s, originalType=%s, newType=%s", path,
+                                    originalType, newFunction == null ? null : newFunction.returnType()));
+                }
+                if (!originalType.equals(adaptedFunction.returnType())) {
+                    // If this happens, must be a logical error in SchemaChangeAdaptFunction
+                    throw new IllegalStateException(String.format(
+                            "Expected adapted return types to be equal for %s, originalType=%s, adapatedType=%s", path,
+                            originalType, adaptedFunction.returnType()));
                 }
                 return adaptedFunction;
             }
 
-            public TypedFunction<Message> getOrCreate(Descriptor d) {
-                return functions.computeIfAbsent(d, this::getMessageTypedFunction);
-            }
+            class AdaptForSchemaChanges
+                    implements Visitor<TypedFunction<Message>>, PrimitiveType.Visitor<TypedFunction<Message>> {
+                @Override
+                public TypedFunction<Message> visit(PrimitiveType<?> primitiveType) {
+                    return primitiveType.walk((PrimitiveType.Visitor<TypedFunction<Message>>) this);
+                }
 
-            public TypedFunction<Message> getForType(Message d) {
-                return getOrCreate(d.getDescriptorForType());
-            }
+                @Override
+                public ObjectFunction<Message, Object> visit(GenericType<?> genericType) {
+                    // noinspection unchecked
+                    return ObjectFunction.of(ForPath.this::applyAsObject, (GenericType<Object>) genericType);
+                }
 
-            public TypedFunction<Message> adaptForSchemaChanges() {
-                return type.walk(new Visitor<>() {
-                    @Override
-                    public TypedFunction<Message> visit(PrimitiveType<?> primitiveType) {
-                        return primitiveType.walk(new PrimitiveType.Visitor<>() {
-                            @Override
-                            public BooleanFunction<Message> visit(BooleanType booleanType) {
-                                return ForPath.this::applyAsBoolean;
-                            }
+                @Override
+                public BooleanFunction<Message> visit(BooleanType booleanType) {
+                    return ForPath.this::applyAsBoolean;
+                }
 
-                            @Override
-                            public ByteFunction<Message> visit(ByteType byteType) {
-                                return ForPath.this::applyAsByte;
-                            }
+                @Override
+                public ByteFunction<Message> visit(ByteType byteType) {
+                    return ForPath.this::applyAsByte;
+                }
 
-                            @Override
-                            public CharFunction<Message> visit(CharType charType) {
-                                return ForPath.this::applyAsChar;
-                            }
+                @Override
+                public CharFunction<Message> visit(CharType charType) {
+                    return ForPath.this::applyAsChar;
+                }
 
-                            @Override
-                            public ShortFunction<Message> visit(ShortType shortType) {
-                                return ForPath.this::applyAsShort;
-                            }
+                @Override
+                public ShortFunction<Message> visit(ShortType shortType) {
+                    return ForPath.this::applyAsShort;
+                }
 
-                            @Override
-                            public IntFunction<Message> visit(IntType intType) {
-                                return ForPath.this::applyAsInt;
-                            }
+                @Override
+                public IntFunction<Message> visit(IntType intType) {
+                    return ForPath.this::applyAsInt;
+                }
 
-                            @Override
-                            public LongFunction<Message> visit(LongType longType) {
-                                return ForPath.this::applyAsLong;
-                            }
+                @Override
+                public LongFunction<Message> visit(LongType longType) {
+                    return ForPath.this::applyAsLong;
+                }
 
-                            @Override
-                            public FloatFunction<Message> visit(FloatType floatType) {
-                                return ForPath.this::applyAsFloat;
-                            }
+                @Override
+                public FloatFunction<Message> visit(FloatType floatType) {
+                    return ForPath.this::applyAsFloat;
+                }
 
-                            @Override
-                            public DoubleFunction<Message> visit(DoubleType doubleType) {
-                                return ForPath.this::applyAsDouble;
-                            }
-                        });
-                    }
-
-                    @Override
-                    public ObjectFunction<Message, Object> visit(GenericType<?> genericType) {
-                        // noinspection unchecked
-                        return ObjectFunction.of(ForPath.this::applyAsObject, (GenericType<Object>) genericType);
-                    }
-                });
-            }
-
-            private boolean applyAsBoolean(Message value) {
-                return BooleanFunction.cast(getForType(value)).applyAsBoolean(value);
-            }
-
-            private char applyAsChar(Message value) {
-                return CharFunction.cast(getForType(value)).applyAsChar(value);
-            }
-
-            private byte applyAsByte(Message value) {
-                return ByteFunction.cast(getForType(value)).applyAsByte(value);
-            }
-
-            private short applyAsShort(Message value) {
-                return ShortFunction.cast(getForType(value)).applyAsShort(value);
-            }
-
-            private int applyAsInt(Message value) {
-                return IntFunction.cast(getForType(value)).applyAsInt(value);
-            }
-
-            private long applyAsLong(Message value) {
-                return LongFunction.cast(getForType(value)).applyAsLong(value);
-            }
-
-            private float applyAsFloat(Message value) {
-                return FloatFunction.cast(getForType(value)).applyAsFloat(value);
-            }
-
-            private double applyAsDouble(Message value) {
-                return DoubleFunction.cast(getForType(value)).applyAsDouble(value);
-            }
-
-            private <T> T applyAsObject(Message value) {
-                return ObjectFunction.<Message, T>cast(getForType(value)).apply(value);
+                @Override
+                public DoubleFunction<Message> visit(DoubleType doubleType) {
+                    return ForPath.this::applyAsDouble;
+                }
             }
         }
     }

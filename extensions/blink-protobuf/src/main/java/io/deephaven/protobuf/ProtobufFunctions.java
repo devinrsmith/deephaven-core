@@ -7,7 +7,7 @@ import io.deephaven.stream.blink.tf.TypedFunction;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @Immutable
 @BuildableStyle
@@ -26,16 +26,36 @@ public abstract class ProtobufFunctions {
     }
 
     public static ProtobufFunctions unnamed(TypedFunction<Message> tf) {
-        return builder().putColumns(List.of(), tf).build();
+        return builder().addFunctions(ProtobufFunction.of(tf)).build();
     }
 
-    public abstract Map<List<String>, TypedFunction<Message>> columns();
+
+    public abstract List<ProtobufFunction> functions();
+
+    public final Optional<ProtobufFunction> find(int... fieldNumberPath) {
+        for (ProtobufFunction function : functions()) {
+            if (function.matches(fieldNumberPath)) {
+                return Optional.of(function);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public final Optional<ProtobufFunction> find(String... namePath) {
+        for (ProtobufFunction function : functions()) {
+            if (function.matches(namePath)) {
+                return Optional.of(function);
+            }
+        }
+        return Optional.empty();
+    }
 
     public interface Builder {
+        Builder addFunctions(ProtobufFunction element);
 
-        Builder putColumns(List<String> key, TypedFunction<Message> value);
+        Builder addFunctions(ProtobufFunction... elements);
 
-        Builder putAllColumns(Map<? extends List<String>, ? extends TypedFunction<Message>> entries);
+        Builder addAllFunctions(Iterable<? extends ProtobufFunction> elements);
 
         ProtobufFunctions build();
     }

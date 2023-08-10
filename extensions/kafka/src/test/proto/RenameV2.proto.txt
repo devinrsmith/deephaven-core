@@ -10,4 +10,5 @@ option optimize_for = SPEED;
 
 message Rename {
   string name_old = 1;
+  string name = 2;
 }

@@ -63,6 +63,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1206,7 +1207,12 @@ public class ProtobufTest {
     }
 
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
-        return ProtobufFunctions.parse(descriptor, ProtobufOptions.defaults()).columns();
+        final ProtobufFunctions results = ProtobufFunctions.parse(descriptor, ProtobufOptions.defaults());
+        final Map<List<String>, TypedFunction<Message>> out = new LinkedHashMap<>(results.functions().size());
+        for (ProtobufFunction function : results.functions()) {
+            out.put(ProtobufFunction.toNamedPath(function.path()), function.function());
+        }
+        return out;
     }
 
     private static <T> void checkKey(

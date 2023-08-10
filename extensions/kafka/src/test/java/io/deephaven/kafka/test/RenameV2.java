@@ -29,6 +29,18 @@ public final class RenameV2 {
      */
     com.google.protobuf.ByteString
         getNameOldBytes();
+
+    /**
+     * <code>string name = 2;</code>
+     * @return The name.
+     */
+    java.lang.String getName();
+    /**
+     * <code>string name = 2;</code>
+     * @return The bytes for name.
+     */
+    com.google.protobuf.ByteString
+        getNameBytes();
   }
   /**
    * Protobuf type {@code io.deephaven.kafka.test.Rename}
@@ -44,6 +56,7 @@ public final class RenameV2 {
     }
     private Rename() {
       nameOld_ = "";
+      name_ = "";
     }
 
     @java.lang.Override
@@ -109,6 +122,44 @@ public final class RenameV2 {
       }
     }
 
+    public static final int NAME_FIELD_NUMBER = 2;
+    private volatile java.lang.Object name_;
+    /**
+     * <code>string name = 2;</code>
+     * @return The name.
+     */
+    @java.lang.Override
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        name_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string name = 2;</code>
+     * @return The bytes for name.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getNameBytes() {
+      java.lang.Object ref = name_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        name_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -126,6 +177,9 @@ public final class RenameV2 {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(nameOld_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, nameOld_);
       }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, name_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -137,6 +191,9 @@ public final class RenameV2 {
       size = 0;
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(nameOld_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, nameOld_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, name_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
@@ -155,6 +212,8 @@ public final class RenameV2 {
 
       if (!getNameOld()
           .equals(other.getNameOld())) return false;
+      if (!getName()
+          .equals(other.getName())) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -168,6 +227,8 @@ public final class RenameV2 {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + NAME_OLD_FIELD_NUMBER;
       hash = (53 * hash) + getNameOld().hashCode();
+      hash = (37 * hash) + NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getName().hashCode();
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -298,6 +359,8 @@ public final class RenameV2 {
         super.clear();
         nameOld_ = "";
 
+        name_ = "";
+
         return this;
       }
 
@@ -325,6 +388,7 @@ public final class RenameV2 {
       public io.deephaven.kafka.test.RenameV2.Rename buildPartial() {
         io.deephaven.kafka.test.RenameV2.Rename result = new io.deephaven.kafka.test.RenameV2.Rename(this);
         result.nameOld_ = nameOld_;
+        result.name_ = name_;
         onBuilt();
         return result;
       }
@@ -377,6 +441,10 @@ public final class RenameV2 {
           nameOld_ = other.nameOld_;
           onChanged();
         }
+        if (!other.getName().isEmpty()) {
+          name_ = other.name_;
+          onChanged();
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
         return this;
@@ -408,6 +476,11 @@ public final class RenameV2 {
 
                 break;
               } // case 10
+              case 18: {
+                name_ = input.readStringRequireUtf8();
+
+                break;
+              } // case 18
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -499,6 +572,82 @@ public final class RenameV2 {
         onChanged();
         return this;
       }
+
+      private java.lang.Object name_ = "";
+      /**
+       * <code>string name = 2;</code>
+       * @return The name.
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          name_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string name = 2;</code>
+       * @return The bytes for name.
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string name = 2;</code>
+       * @param value The name to set.
+       * @return This builder for chaining.
+       */
+      public Builder setName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        name_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string name = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearName() {
+        
+        name_ = getDefaultInstance().getName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string name = 2;</code>
+       * @param value The bytes for name to set.
+       * @return This builder for chaining.
+       */
+      public Builder setNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        name_ = value;
+        onChanged();
+        return this;
+      }
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -578,8 +727,8 @@ public final class RenameV2 {
   static {
     java.lang.String[] descriptorData = {
       "\n\016RenameV2.proto\022\027io.deephaven.kafka.tes" +
-      "t\"\032\n\006Rename\022\020\n\010name_old\030\001 \001(\tB\004H\001P\000b\006pro" +
-      "to3"
+      "t\"(\n\006Rename\022\020\n\010name_old\030\001 \001(\t\022\014\n\004name\030\002 " +
+      "\001(\tB\004H\001P\000b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -590,7 +739,7 @@ public final class RenameV2 {
     internal_static_io_deephaven_kafka_test_Rename_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_io_deephaven_kafka_test_Rename_descriptor,
-        new java.lang.String[] { "NameOld", });
+        new java.lang.String[] { "NameOld", "Name", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

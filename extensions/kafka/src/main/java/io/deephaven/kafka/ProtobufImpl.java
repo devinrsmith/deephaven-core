@@ -4,6 +4,7 @@
 package io.deephaven.kafka;
 
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
@@ -22,6 +23,7 @@ import io.deephaven.kafka.ingest.FieldCopier;
 import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
+import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.protobuf.ProtobufOptions;
@@ -68,9 +70,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 class ProtobufImpl {
 
@@ -115,17 +117,16 @@ class ProtobufImpl {
                 throw new UncheckedDeephavenException(e);
             }
             final ProtobufFunctions functions = schemaChangeAwareFunctions(descriptor, options);
-            final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.columns().size());
+            final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.functions().size());
             final KeyOrValueIngestData data = new KeyOrValueIngestData();
             // arguably, others should be LinkedHashMap as well.
             data.fieldPathToColumnName = new LinkedHashMap<>();
-            for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
-                final List<String> path = e.getKey();
-                final TypedFunction<Message> function = e.getValue();
-                final TypedFunction<Message> transformedFunction = CommonTransform.of(function);
-                final String columnName = String.join("_", path);
+            for (ProtobufFunction f : functions.functions()) {
+                final TypedFunction<Message> transformedFunction = CommonTransform.of(f.function());
+                final String columnName =
+                        f.path().stream().map(FieldDescriptor::getName).collect(Collectors.joining("_"));
                 data.fieldPathToColumnName.put(columnName, columnName);
-                columnDefinitionsOut.add(ColumnDefinition.of(columnName, function.returnType()));
+                columnDefinitionsOut.add(ColumnDefinition.of(columnName, f.function().returnType()));
                 fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(transformedFunction)));
             }
             // we don't have enough info at this time to create KeyOrValueProcessorImpl
@@ -157,10 +158,10 @@ class ProtobufImpl {
         }
     }
 
-    private static ProtobufFunctions withBestTypes(ProtobufFunctions f) {
+    private static ProtobufFunctions withBestTypes(ProtobufFunctions functions) {
         final Builder builder = ProtobufFunctions.builder();
-        for (Entry<List<String>, TypedFunction<Message>> e : f.columns().entrySet()) {
-            builder.putColumns(e.getKey(), withBestTypes(e.getValue()));
+        for (ProtobufFunction f : functions.functions()) {
+            builder.addFunctions(ProtobufFunction.of(f.path(), withBestTypes(f.function())));
         }
         return builder.build();
     }
@@ -183,9 +184,9 @@ class ProtobufImpl {
 
         public ProtobufFunctions functionsForSchemaChanges() {
             final Builder builder = ProtobufFunctions.builder();
-            for (Entry<List<String>, TypedFunction<Message>> e : getOrCreate(originalDescriptor).columns().entrySet()) {
-                final List<String> path = e.getKey();
-                builder.putColumns(path, new ForPath(path, e.getValue().returnType()).adaptForSchemaChanges());
+            for (ProtobufFunction f : getOrCreate(originalDescriptor).functions()) {
+                builder.addFunctions(ProtobufFunction.of(f.path(),
+                        new ForPath(f.fieldNumberPath(), f.function().returnType()).adaptForSchemaChanges()));
             }
             return builder.build();
         }
@@ -204,12 +205,12 @@ class ProtobufImpl {
         }
 
         private class ForPath {
-            private final List<String> path;
+            private final int[] originalFieldNumberPath;
             private final Type<?> originalType;
             private final Map<Descriptor, TypedFunction<Message>> functions;
 
-            public ForPath(List<String> path, Type<?> originalType) {
-                this.path = Objects.requireNonNull(path);
+            public ForPath(int[] originalFieldNumberPath, Type<?> originalType) {
+                this.originalFieldNumberPath = Objects.requireNonNull(originalFieldNumberPath);
                 this.originalType = Objects.requireNonNull(originalType);
                 this.functions = new HashMap<>();
             }
@@ -263,19 +264,22 @@ class ProtobufImpl {
             }
 
             private TypedFunction<Message> createFunctionFor(Descriptor descriptor) {
-                final TypedFunction<Message> newFunction =
-                        ParsedStates.this.getOrCreate(descriptor).columns().get(path);
+                final TypedFunction<Message> newFunction = ParsedStates.this.getOrCreate(descriptor)
+                        .find(originalFieldNumberPath)
+                        .map(ProtobufFunction::function)
+                        .orElse(null);
                 final TypedFunction<Message> adaptedFunction =
                         SchemaChangeAdaptFunction.of(newFunction, originalType).orElse(null);
                 if (adaptedFunction == null) {
                     throw new UncheckedDeephavenException(
-                            String.format("Incompatible schema change for %s, originalType=%s, newType=%s", path,
+                            String.format("Incompatible schema change for %s, originalType=%s, newType=%s", "todo",
                                     originalType, newFunction == null ? null : newFunction.returnType()));
                 }
                 if (!originalType.equals(adaptedFunction.returnType())) {
                     // If this happens, must be a logical error in SchemaChangeAdaptFunction
                     throw new IllegalStateException(String.format(
-                            "Expected adapted return types to be equal for %s, originalType=%s, adapatedType=%s", path,
+                            "Expected adapted return types to be equal for %s, originalType=%s, adapatedType=%s",
+                            "todo",
                             originalType, adaptedFunction.returnType()));
                 }
                 return adaptedFunction;

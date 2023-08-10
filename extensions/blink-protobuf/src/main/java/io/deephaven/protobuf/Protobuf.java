@@ -32,7 +32,6 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -80,6 +79,10 @@ class Protobuf {
         return Stream.concat(Stream.of(name), rest.stream()).collect(Collectors.toList());
     }
 
+    private static List<FieldDescriptor> prefix(FieldDescriptor f, List<FieldDescriptor> rest) {
+        return Stream.concat(Stream.of(f), rest.stream()).collect(Collectors.toList());
+    }
+
     private class DescriptorContext {
         private final List<FieldDescriptor> parents;
         private final Descriptor descriptor;
@@ -96,11 +99,11 @@ class Protobuf {
             }
             final Builder builder = ProtobufFunctions.builder();
             for (FieldContext fc : fcs()) {
-                builder.putAllColumns(fc.functions().columns());
+                builder.addAllFunctions(fc.functions().functions());
             }
-            options.serializedSizeName().ifPresent(x -> builder.putColumns(List.of(x), SERIALIZED_SIZE_FUNCTION));
-            options.unknownFieldSetName().ifPresent(x -> builder.putColumns(List.of(x), UNKNOWN_FIELD_SET_FUNCTION));
-            options.rawMessageName().ifPresent(x -> builder.putColumns(List.of(x), MESSAGE_IDENTITY_FUNCTION));
+            // options.serializedSizeName().ifPresent(x -> builder.putColumns(List.of(x), SERIALIZED_SIZE_FUNCTION));
+            // options.unknownFieldSetName().ifPresent(x -> builder.putColumns(List.of(x), UNKNOWN_FIELD_SET_FUNCTION));
+            // options.rawMessageName().ifPresent(x -> builder.putColumns(List.of(x), MESSAGE_IDENTITY_FUNCTION));
             return builder.build();
         }
 
@@ -163,7 +166,7 @@ class Protobuf {
 
         private ProtobufFunctions namedField(TypedFunction<Message> tf) {
             return ProtobufFunctions.builder()
-                    .putColumns(List.of(fd.getName()), tf)
+                    .addFunctions(ProtobufFunction.of(List.of(fd), tf))
                     .build();
         }
 
@@ -250,16 +253,15 @@ class Protobuf {
 
                         final boolean parentFieldIsRepeated = !parent.parents.isEmpty()
                                 && parent.parents.get(parent.parents.size() - 1).isRepeated();
-
-                        for (Entry<List<String>, TypedFunction<Message>> e : subF.columns().entrySet()) {
-                            final List<String> key = e.getKey();
+                        for (ProtobufFunction e : subF.functions()) {
                             // The majority of the time, we need to BypassOnNull b/c the Message may be null. In the
                             // case where the message is part of a repeated field though, the Message is never null
                             // (it's always implicitly present based on the repeated count).
                             final TypedFunction<Message> value = parentFieldIsRepeated
-                                    ? e.getValue()
-                                    : BypassOnNull.of(e.getValue());
-                            builder.putColumns(prefix(fd.getName(), key), value.mapInput(fieldAsMessage));
+                                    ? e.function()
+                                    : BypassOnNull.of(e.function());
+                            builder.addFunctions(
+                                    ProtobufFunction.of(prefix(fd, e.path()), value.mapInput(fieldAsMessage)));
                         }
                         return builder.build();
                     default:
@@ -298,12 +300,12 @@ class Protobuf {
                         .collect(Collectors.toList());
                 final DescriptorContext dc = new DescriptorContext(parents, fd.getMessageType());
                 final ProtobufFunctions keyFunctions = new FieldContext(dc, keyFd).functions();
-                if (keyFunctions.columns().size() != 1) {
-                    throw new IllegalStateException("Expected map key to be single type");
+                if (keyFunctions.functions().size() != 1) {
+                    throw new IllegalStateException("Expected to be single type");
                 }
 
                 final ProtobufFunctions valueFunctions = new FieldContext(dc, valueFd).functions();
-                if (valueFunctions.columns().size() != 1) {
+                if (valueFunctions.functions().size() != 1) {
                     // We've parsed the value type as an entity that has multiple values (as opposed to a single value
                     // we can put into a map). We may wish to have more configuration options for these situations in
                     // the future (ie, throw an exception or something else). For now, we're going to treat this case as
@@ -311,8 +313,9 @@ class Protobuf {
                     return delegate();
                 }
 
-                final TypedFunction<Message> keyFunction = keyFunctions.columns().values().iterator().next();
-                final TypedFunction<Message> valueFunction = valueFunctions.columns().values().iterator().next();
+
+                final TypedFunction<Message> keyFunction = keyFunctions.functions().get(0).function();
+                final TypedFunction<Message> valueFunction = valueFunctions.functions().get(0).function();
                 return namedField(ObjectFunction.of(message -> {
                     final Map<Object, Object> map = new HashMap<>();
                     final int count = message.getRepeatedFieldCount(fd);
@@ -355,11 +358,9 @@ class Protobuf {
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions functions = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();
-                        for (Entry<List<String>, TypedFunction<Message>> e : functions.columns().entrySet()) {
-                            final List<String> path = e.getKey();
-                            final TypedFunction<Message> tf = e.getValue();
-                            final ObjectFunction<Message, ?> repeatedTf = tf.walk(new ToRepeatedType());
-                            builder.putColumns(prefix(fd.getName(), path), repeatedTf);
+                        for (ProtobufFunction f : functions.functions()) {
+                            final ObjectFunction<Message, ?> repeatedTf = f.function().walk(new ToRepeatedType());
+                            builder.addFunctions(ProtobufFunction.of(prefix(fd, f.path()), repeatedTf));
                         }
                         return builder.build();
                     default:
@@ -542,7 +543,7 @@ class Protobuf {
 
             private ProtobufFunctions namedField(TypedFunction<Message> tf) {
                 return ProtobufFunctions.builder()
-                        .putColumns(List.of(fd.getName()), tf)
+                        .addFunctions(ProtobufFunction.of(List.of(fd), tf))
                         .build();
             }
         }

@@ -9,6 +9,7 @@ import io.deephaven.kafka.test.MyMessageV3.MyMessage.FirstAndLast;
 import io.deephaven.kafka.test.MyMessageV4;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufOptions;
+import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.QueryConstants;
@@ -185,42 +186,38 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV4toV3() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV4.MyMessage.getDescriptor());
         assertThat(functions.columns()).hasSize(5);
-        final ObjectFunction<Message, String> nameFunction =
-                ObjectFunction.cast(functions.columns().get(List.of("name")));
-        // todo: let's have the DH layer adapt these to primitive functions
-        final ObjectFunction<Message, Integer> ageFunction =
-                ObjectFunction.cast(functions.columns().get(List.of("age")));
-        final ObjectFunction<Message, Float> agefFunction =
-                ObjectFunction.cast(functions.columns().get(List.of("agef")));
+        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(functions.columns().get(List.of("name")));
+        final IntFunction<Message> ageFunction = IntFunction.cast(functions.columns().get(List.of("age")));
+        final FloatFunction<Message> agefFunction = FloatFunction.cast(functions.columns().get(List.of("agef")));
         {
             final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.newBuilder().setName("v4").setAge(4).build();
             assertThat(nameFunction.apply(v4)).isEqualTo("v4");
-            assertThat(ageFunction.apply(v4)).isEqualTo(4);
-            assertThat(agefFunction.apply(v4)).isNull();
+            assertThat(ageFunction.applyAsInt(v4)).isEqualTo(4);
+            assertThat(agefFunction.applyAsFloat(v4)).isEqualTo(QueryConstants.NULL_FLOAT);
         }
         {
             final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.newBuilder().setName("v4").setAgef(4.4f).build();
             assertThat(nameFunction.apply(v4)).isEqualTo("v4");
-            assertThat(ageFunction.apply(v4)).isNull();
-            assertThat(agefFunction.apply(v4)).isEqualTo(4.4f);
+            assertThat(ageFunction.applyAsInt(v4)).isEqualTo(QueryConstants.NULL_INT);
+            assertThat(agefFunction.applyAsFloat(v4)).isEqualTo(4.4f);
         }
         {
             final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.newBuilder().setName("v4").build();
             assertThat(nameFunction.apply(v4)).isEqualTo("v4");
-            assertThat(ageFunction.apply(v4)).isNull();
-            assertThat(agefFunction.apply(v4)).isNull();
+            assertThat(ageFunction.applyAsInt(v4)).isEqualTo(QueryConstants.NULL_INT);
+            assertThat(agefFunction.applyAsFloat(v4)).isEqualTo(QueryConstants.NULL_FLOAT);
         }
         {
             final MyMessageV3.MyMessage v3 = MyMessageV3.MyMessage.newBuilder().setName("v3").setAge(3).build();
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
-            assertThat(ageFunction.apply(v3)).isEqualTo(3);
-            assertThat(agefFunction.apply(v3)).isNull();
+            assertThat(ageFunction.applyAsInt(v3)).isEqualTo(3);
+            assertThat(agefFunction.applyAsFloat(v3)).isEqualTo(QueryConstants.NULL_FLOAT);
         }
         {
             final MyMessageV3.MyMessage v3 = MyMessageV3.MyMessage.newBuilder().setName("v3").build();
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
-            assertThat(ageFunction.apply(v3)).isEqualTo(0);
-            assertThat(agefFunction.apply(v3)).isNull();
+            assertThat(ageFunction.applyAsInt(v3)).isEqualTo(0);
+            assertThat(agefFunction.applyAsFloat(v3)).isEqualTo(QueryConstants.NULL_FLOAT);
         }
     }
 

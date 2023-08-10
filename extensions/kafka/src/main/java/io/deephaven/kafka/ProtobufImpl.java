@@ -47,6 +47,7 @@ import io.deephaven.stream.blink.tf.BoxTransform;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.CommonTransform;
+import io.deephaven.stream.blink.tf.DhNullableTypeTransform;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
@@ -156,76 +157,16 @@ class ProtobufImpl {
         }
     }
 
-    private static ProtobufFunctions withSchemaSafeTypes(ProtobufFunctions f) {
+    private static ProtobufFunctions withBestTypes(ProtobufFunctions f) {
         final Builder builder = ProtobufFunctions.builder();
         for (Entry<List<String>, TypedFunction<Message>> e : f.columns().entrySet()) {
-            builder.putColumns(e.getKey(), withSchemaSafeTypes(e.getValue()));
+            builder.putColumns(e.getKey(), withBestTypes(e.getValue()));
         }
         return builder.build();
     }
 
-    private static <X> TypedFunction<X> withSchemaSafeTypes(TypedFunction<X> f) {
-        // noinspection unchecked
-        return f.walk(
-                (TypedFunction.Visitor<X, TypedFunction<X>>) (TypedFunction.Visitor<?, ?>) SchemaSafeTypes.INSTANCE);
-    }
-
-    enum SchemaSafeTypes implements TypedFunction.Visitor<Object, TypedFunction<Object>>,
-            PrimitiveFunction.Visitor<Object, TypedFunction<Object>> {
-        INSTANCE;
-
-        @Override
-        public TypedFunction<Object> visit(PrimitiveFunction<Object> f) {
-            return f.walk((PrimitiveFunction.Visitor<Object, TypedFunction<Object>>) this);
-        }
-
-        @Override
-        public TypedFunction<Object> visit(ObjectFunction<Object, ?> f) {
-            return f;
-        }
-
-        @Override
-        public ObjectFunction<Object, Boolean> visit(BooleanFunction<Object> f) {
-            // BooleanFunction is the only function / primitive type that doesn't natively have a "null" type, and
-            // thus doesn't support schema changes which would remove this field. By boxing to
-            // ObjectFunction<Object, Boolean>, we can safely handle these types of schema changes.
-            return BoxTransform.of(f);
-        }
-
-        @Override
-        public TypedFunction<Object> visit(CharFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(ByteFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(ShortFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(IntFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(LongFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(FloatFunction<Object> f) {
-            return f;
-        }
-
-        @Override
-        public TypedFunction<Object> visit(DoubleFunction<Object> f) {
-            return f;
-        }
+    private static <X> TypedFunction<X> withBestTypes(TypedFunction<X> f) {
+        return UnboxTransform.of(DhNullableTypeTransform.of(f));
     }
 
     private static class ParsedStates {
@@ -259,7 +200,7 @@ class ProtobufImpl {
                         "Expected descriptor names to match. originalDescriptor.getFullName()=%s, newDescriptor.getFullName()=%s",
                         originalDescriptor.getFullName(), newDescriptor.getFullName()));
             }
-            return withSchemaSafeTypes(ProtobufFunctions.parse(newDescriptor, options));
+            return withBestTypes(ProtobufFunctions.parse(newDescriptor, options));
         }
 
         private class ForPath {

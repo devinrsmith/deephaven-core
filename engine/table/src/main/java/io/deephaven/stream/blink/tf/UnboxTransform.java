@@ -142,16 +142,12 @@ public class UnboxTransform {
         return f.mapDouble(TypeUtils::unbox);
     }
 
-    enum UnboxFunctionVisitor implements TypedFunction.Visitor<Object, TypedFunction<Object>> {
+    private enum UnboxFunctionVisitor implements TypedFunction.Visitor<Object, TypedFunction<Object>> {
         INSTANCE;
 
-        public static <T> TypedFunction.Visitor<T, TypedFunction<T>> instance() {
-            // noinspection unchecked
-            return (TypedFunction.Visitor<T, TypedFunction<T>>) (TypedFunction.Visitor<?, ?>) INSTANCE;
-        }
-
         public static <T> TypedFunction<T> of(TypedFunction<T> f) {
-            return f.walk(instance());
+            //noinspection unchecked
+            return f.walk((TypedFunction.Visitor<T, TypedFunction<T>>) (TypedFunction.Visitor<?, ?>) INSTANCE);
         }
 
         @Override

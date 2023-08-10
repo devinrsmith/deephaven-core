@@ -9,7 +9,6 @@ import io.deephaven.kafka.test.MyMessageV3.MyMessage.FirstAndLast;
 import io.deephaven.kafka.test.MyMessageV4;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufOptions;
-import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.util.QueryConstants;
@@ -20,7 +19,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class ProtobufImplTest {
+/**
+ * See notes in TESTING.md for adding new tests here.
+ */
+public class ProtobufImplSchemaChangeTest {
 
     @Test
     public void myMessageV1toV2() {

@@ -31,9 +31,9 @@ public abstract class ProtobufFunctions {
 
     public abstract List<ProtobufFunction> functions();
 
-    public final Optional<ProtobufFunction> find(String... namePath) {
+    public final Optional<ProtobufFunction> find(List<String> namePath) {
         for (ProtobufFunction function : functions()) {
-            if (function.path().namePathMatches(namePath)) {
+            if (namePath.equals(function.path().namePath())) {
                 return Optional.of(function);
             }
         }

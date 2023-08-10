@@ -1,14 +1,11 @@
 package io.deephaven.protobuf;
 
-import com.google.protobuf.Descriptors.Descriptor;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.protobuf.ImmutableProtobufOptions.Builder;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,12 +21,6 @@ public abstract class ProtobufOptions {
         return builder().build();
     }
 
-    public abstract Optional<String> unknownFieldSetName();
-
-    public abstract Optional<String> serializedSizeName();
-
-    public abstract Optional<String> rawMessageName();
-
     public abstract Set<FieldNumberPath> includeNumberPaths();
 
     public abstract Set<List<String>> includeNamePaths();
@@ -43,6 +34,15 @@ public abstract class ProtobufOptions {
         return SingleValuedMessageParser.defaults();
     }
 
+    @Check
+    final void checkConditions() {
+        final boolean hasIncludes = !includeNamePaths().isEmpty() || !includeNumberPaths().isEmpty();
+        final boolean hasExcludes = !excludeNamePaths().isEmpty() || !excludeNumberPaths().isEmpty();
+        if (hasIncludes && hasExcludes) {
+            throw new IllegalArgumentException("ProtobufOptions may only have includes or excludes, not both");
+        }
+    }
+
     final boolean include(FieldPath fieldPath) {
         // empty checks save us from materializing numberPath / namePath unnecessarily
         if (!includeNumberPaths().isEmpty() && includeNumberPaths().contains(fieldPath.numberPath())) {
@@ -50,6 +50,10 @@ public abstract class ProtobufOptions {
         }
         if (!includeNamePaths().isEmpty() && includeNamePaths().contains(fieldPath.namePath())) {
             return true;
+        }
+        // If any includes were included but we didn't find them, return false.
+        if (!includeNumberPaths().isEmpty() || !includeNamePaths().isEmpty()) {
+            return false;
         }
         if (!excludeNumberPaths().isEmpty() && excludeNumberPaths().contains(fieldPath.numberPath())) {
             return false;
@@ -60,22 +64,7 @@ public abstract class ProtobufOptions {
         return true;
     }
 
-    @Check
-    final void checkConditions() {
-        final boolean hasIncludes = !includeNamePaths().isEmpty() || !includeNumberPaths().isEmpty();
-        final boolean hasExcludes = !excludeNamePaths().isEmpty() || !excludeNumberPaths().isEmpty();
-        if (hasIncludes && hasExcludes) {
-            throw new IllegalArgumentException("ProtobufOptions may only have includes or excludes, not both");
-        }
-    }
-
     public interface Builder {
-
-        Builder serializedSizeName(String serializedSizeName);
-
-        Builder unknownFieldSetName(String unknownFieldSetName);
-
-        Builder rawMessageName(String rawMessageName);
 
         Builder addIncludeNumberPaths(FieldNumberPath element);
 

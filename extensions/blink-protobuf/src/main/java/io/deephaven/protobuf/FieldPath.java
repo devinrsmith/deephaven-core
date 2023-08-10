@@ -9,6 +9,7 @@ import org.immutables.value.Value.Parameter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Immutable
 @SimpleStyle
@@ -39,16 +40,7 @@ public abstract class FieldPath {
         return path().stream().map(FieldDescriptor::getName).collect(Collectors.toList());
     }
 
-    public final boolean namePathMatches(String... namePath) {
-        final int L = namePath.length;
-        if (path().size() != L) {
-            return false;
-        }
-        for (int i = 0; i < L; ++i) {
-            if (!path().get(i).getName().equals(namePath[i])) {
-                return false;
-            }
-        }
-        return true;
+    public final FieldPath prefixWith(FieldDescriptor prefix) {
+        return FieldPath.of(Stream.concat(Stream.of(prefix), path().stream()).collect(Collectors.toList()));
     }
 }

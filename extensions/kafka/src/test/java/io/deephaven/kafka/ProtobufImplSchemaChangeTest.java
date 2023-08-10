@@ -19,6 +19,7 @@ import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -258,6 +259,6 @@ public class ProtobufImplSchemaChangeTest {
     }
 
     private static TypedFunction<Message> get(ProtobufFunctions functions, String... namePath) {
-        return functions.find(namePath).map(ProtobufFunction::function).get();
+        return functions.find(Arrays.asList(namePath)).map(ProtobufFunction::function).get();
     }
 }

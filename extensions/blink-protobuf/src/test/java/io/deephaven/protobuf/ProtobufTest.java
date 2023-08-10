@@ -1206,8 +1206,51 @@ public class ProtobufTest {
                 });
     }
 
+    @Test
+    void includeNamePaths() {
+        final Map<List<String>, TypedFunction<Message>> nf =
+                nf(UnionType.getDescriptor(), ProtobufOptions.builder().addIncludeNamePaths(List.of("float")).build());
+        assertThat(nf.keySet()).containsExactly(List.of("float"));
+    }
+
+    @Test
+    void includeNumberPaths() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
+                ProtobufOptions.builder().addIncludeNumberPaths(FieldNumberPath.of(new int[] {6})).build());
+        assertThat(nf.keySet()).containsExactly(List.of("float"));
+    }
+
+    @Test
+    void excludeNamePaths() {
+        final Map<List<String>, TypedFunction<Message>> nf =
+                nf(UnionType.getDescriptor(), ProtobufOptions.builder().addExcludeNamePaths(List.of("float")).build());
+        assertThat(nf).hasSize(8);
+        assertThat(nf.keySet()).doesNotContain(List.of("float"));
+    }
+
+    @Test
+    void excludeNumberPaths() {
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
+                ProtobufOptions.builder().addExcludeNumberPaths(FieldNumberPath.of(new int[] {6})).build());
+        assertThat(nf).hasSize(8);
+        assertThat(nf.keySet()).doesNotContain(List.of("float"));
+    }
+
+    @Test
+    void timestampNoParsers() {
+        final ProtobufOptions options = ProtobufOptions.builder().parsers(List.of()).build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(Timestamp.getDescriptor(), options);
+        assertThat(nf.keySet()).containsExactly(
+                List.of("seconds"),
+                List.of("nanos"));
+    }
+
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
-        final ProtobufFunctions results = ProtobufFunctions.parse(descriptor, ProtobufOptions.defaults());
+        return nf(descriptor, ProtobufOptions.defaults());
+    }
+
+    private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor, ProtobufOptions options) {
+        final ProtobufFunctions results = ProtobufFunctions.parse(descriptor, options);
         final Map<List<String>, TypedFunction<Message>> out = new LinkedHashMap<>(results.functions().size());
         for (ProtobufFunction function : results.functions()) {
             out.put(function.path().namePath(), function.function());

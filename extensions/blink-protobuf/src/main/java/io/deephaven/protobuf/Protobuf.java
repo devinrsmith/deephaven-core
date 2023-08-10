@@ -52,13 +52,6 @@ class Protobuf {
             ObjectFunction.cast(Type.ofCustom(ByteString.class));
     private static final ObjectFunction<Object, EnumValueDescriptor> ENUM_VALUE_DESCRIPTOR_OBJ =
             ObjectFunction.cast(Type.ofCustom(EnumValueDescriptor.class));
-
-    private static final IntFunction<Message> SERIALIZED_SIZE_FUNCTION = Message::getSerializedSize;
-    private static final ObjectFunction<Message, UnknownFieldSet> UNKNOWN_FIELD_SET_FUNCTION =
-            ObjectFunction.of(Message::getUnknownFields, Type.ofCustom(UnknownFieldSet.class));
-    private static final ObjectFunction<Message, Message> MESSAGE_IDENTITY_FUNCTION =
-            ObjectFunction.identity(Type.ofCustom(Message.class));
-
     private static final ObjectFunction<ByteString, byte[]> BYTE_STRING_FUNCTION =
             ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()).onNullInput(null);
 
@@ -131,7 +124,8 @@ class Protobuf {
         public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
             this.parent = Objects.requireNonNull(parent);
             this.fd = Objects.requireNonNull(fd);
-            this.fieldPath = FieldPath.of(Stream.concat(parent.parents.stream(), Stream.of(fd)).collect(Collectors.toList()));
+            this.fieldPath =
+                    FieldPath.of(Stream.concat(parent.parents.stream(), Stream.of(fd)).collect(Collectors.toList()));
         }
 
         private ProtobufFunctions functions() {
@@ -253,7 +247,7 @@ class Protobuf {
                                     ? e.function()
                                     : BypassOnNull.of(e.function());
                             builder.addFunctions(
-                                    ProtobufFunction.of(prefix(fd, e.path()), value.mapInput(fieldAsMessage)));
+                                    ProtobufFunction.of(e.path().prefixWith(fd), value.mapInput(fieldAsMessage)));
                         }
                         return builder.build();
                     default:
@@ -352,7 +346,7 @@ class Protobuf {
                         final Builder builder = ProtobufFunctions.builder();
                         for (ProtobufFunction f : functions.functions()) {
                             final ObjectFunction<Message, ?> repeatedTf = f.function().walk(new ToRepeatedType());
-                            builder.addFunctions(ProtobufFunction.of(prefix(fd, f.path()), repeatedTf));
+                            builder.addFunctions(ProtobufFunction.of(f.path().prefixWith(fd), repeatedTf));
                         }
                         return builder.build();
                     default:

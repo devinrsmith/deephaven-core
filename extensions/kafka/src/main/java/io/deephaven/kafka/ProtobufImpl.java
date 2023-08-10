@@ -92,6 +92,7 @@ class ProtobufImpl {
         private final String schemaSubject;
         private final int schemaVersion;
 
+
         ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion) {
             this.options = Objects.requireNonNull(options);
             this.schemaSubject = Objects.requireNonNull(schemaSubject);
@@ -124,11 +125,10 @@ class ProtobufImpl {
             // arguably, others should be LinkedHashMap as well.
             data.fieldPathToColumnName = new LinkedHashMap<>();
             for (ProtobufFunction f : functions.functions()) {
-                final TypedFunction<Message> transformedFunction = CommonTransform.of(f.function());
-                final String columnName = f.path().namePath().stream().collect(Collectors.joining("_"));
+                final String columnName = String.join("_", f.path().namePath());
                 data.fieldPathToColumnName.put(columnName, columnName);
                 columnDefinitionsOut.add(ColumnDefinition.of(columnName, f.function().returnType()));
-                fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(transformedFunction)));
+                fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(CommonTransform.of(f.function()))));
             }
             // we don't have enough info at this time to create KeyOrValueProcessorImpl
             // data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers,
@@ -168,7 +168,9 @@ class ProtobufImpl {
     }
 
     private static <X> TypedFunction<X> withBestTypes(TypedFunction<X> f) {
-        return UnboxTransform.of(DhNullableTypeTransform.of(f));
+        final TypedFunction<X> f2 = DhNullableTypeTransform.of(f);
+        final PrimitiveFunction<X> unboxed = UnboxTransform.of(f2).orElse(null);
+        return unboxed != null ? unboxed : f2;
     }
 
     private static class ParsedStates {
@@ -306,7 +308,7 @@ class ProtobufImpl {
                 if (!originalReturnType.equals(adaptedFunction.returnType())) {
                     // If this happens, must be a logical error in SchemaChangeAdaptFunction
                     throw new IllegalStateException(String.format(
-                            "Expected adapted return types to be equal for %s, originalType=%s, adapatedType=%s",
+                            "Expected adapted return types to be equal for %s, originalType=%s, adaptedType=%s",
                             originalFunction.path().namePath(), originalReturnType, adaptedFunction.returnType()));
                 }
                 return adaptedFunction;
@@ -397,51 +399,15 @@ class ProtobufImpl {
 
         @Override
         public TypedFunction<T> visit(ObjectFunction<T, ?> f) {
+            UnboxTransform.of(f);
             return f.returnType().walk(new GenericType.Visitor<>() {
                 @Override
                 public TypedFunction<T> visit(BoxedType<?> boxedType) {
                     if (desiredReturnType.equals(boxedType.primitiveType())) {
-                        return boxedType.primitiveType().walk(new PrimitiveType.Visitor<>() {
-                            @Override
-                            public TypedFunction<T> visit(BooleanType booleanType) {
-                                return null;
-                            }
 
-                            @Override
-                            public TypedFunction<T> visit(ByteType byteType) {
-                                return UnboxTransform.unboxByte(f.as(byteType.boxedType()));
-                            }
+                        UnboxTransform.of(f);
 
-                            @Override
-                            public TypedFunction<T> visit(CharType charType) {
-                                return UnboxTransform.unboxChar(f.as(charType.boxedType()));
-                            }
 
-                            @Override
-                            public TypedFunction<T> visit(ShortType shortType) {
-                                return UnboxTransform.unboxShort(f.as(shortType.boxedType()));
-                            }
-
-                            @Override
-                            public TypedFunction<T> visit(IntType intType) {
-                                return UnboxTransform.unboxInt(f.as(intType.boxedType()));
-                            }
-
-                            @Override
-                            public TypedFunction<T> visit(LongType longType) {
-                                return UnboxTransform.unboxLong(f.as(longType.boxedType()));
-                            }
-
-                            @Override
-                            public TypedFunction<T> visit(FloatType floatType) {
-                                return UnboxTransform.unboxFloat(f.as(floatType.boxedType()));
-                            }
-
-                            @Override
-                            public TypedFunction<T> visit(DoubleType doubleType) {
-                                return UnboxTransform.unboxDouble(f.as(doubleType.boxedType()));
-                            }
-                        });
                     }
                     return null;
                 }

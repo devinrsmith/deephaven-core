@@ -15,12 +15,12 @@ public class DhNullableTypeTransform {
         INSTANCE;
 
         public static <X> TypedFunction<X> of(TypedFunction<X> f) {
-            //noinspection unchecked
+            // noinspection unchecked
             return f.walk((TypedFunction.Visitor<X, TypedFunction<X>>) (TypedFunction.Visitor<?, ?>) INSTANCE);
         }
 
         public static <X> TypedFunction<X> of(PrimitiveFunction<X> f) {
-            //noinspection unchecked
+            // noinspection unchecked
             return f.walk((PrimitiveFunction.Visitor<X, TypedFunction<X>>) (PrimitiveFunction.Visitor<?, ?>) INSTANCE);
         }
 

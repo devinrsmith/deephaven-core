@@ -146,7 +146,7 @@ public class UnboxTransform {
         INSTANCE;
 
         public static <T> TypedFunction<T> of(TypedFunction<T> f) {
-            //noinspection unchecked
+            // noinspection unchecked
             return f.walk((TypedFunction.Visitor<T, TypedFunction<T>>) (TypedFunction.Visitor<?, ?>) INSTANCE);
         }
 

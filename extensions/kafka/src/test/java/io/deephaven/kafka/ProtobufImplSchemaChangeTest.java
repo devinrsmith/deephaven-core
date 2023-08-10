@@ -7,11 +7,14 @@ import io.deephaven.kafka.test.MyMessageV2;
 import io.deephaven.kafka.test.MyMessageV3;
 import io.deephaven.kafka.test.MyMessageV3.MyMessage.FirstAndLast;
 import io.deephaven.kafka.test.MyMessageV4;
+import io.deephaven.kafka.test.RenameV1;
+import io.deephaven.kafka.test.RenameV2;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufOptions;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import org.junit.Test;
 
@@ -186,7 +189,8 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV4toV3() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV4.MyMessage.getDescriptor());
         assertThat(functions.columns()).hasSize(5);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(functions.columns().get(List.of("name")));
+        final ObjectFunction<Message, String> nameFunction =
+                ObjectFunction.cast(functions.columns().get(List.of("name")));
         final IntFunction<Message> ageFunction = IntFunction.cast(functions.columns().get(List.of("age")));
         final FloatFunction<Message> agefFunction = FloatFunction.cast(functions.columns().get(List.of("agef")));
         {
@@ -218,6 +222,38 @@ public class ProtobufImplSchemaChangeTest {
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
             assertThat(ageFunction.applyAsInt(v3)).isEqualTo(0);
             assertThat(agefFunction.applyAsFloat(v3)).isEqualTo(QueryConstants.NULL_FLOAT);
+        }
+    }
+
+    @Test
+    public void renameV1toV2() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(RenameV1.Rename.getDescriptor());
+        final ObjectFunction<Message, String> nameFunction =
+                ObjectFunction.cast(functions.columns().get(List.of("name")));
+        assertThat(functions.columns()).hasSize(1);
+        {
+            final RenameV1.Rename v1 = RenameV1.Rename.newBuilder().setName("v1").build();
+            assertThat(nameFunction.apply(v1)).isEqualTo("v1");
+        }
+        {
+            final RenameV2.Rename v2 = RenameV2.Rename.newBuilder().setNameOld("v2").build();
+            assertThat(nameFunction.apply(v2)).isEqualTo("v2");
+        }
+    }
+
+    @Test
+    public void renameV2toV1() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(RenameV2.Rename.getDescriptor());
+        final ObjectFunction<Message, String> nameFunction =
+                ObjectFunction.cast(functions.columns().get(List.of("name_old")));
+        assertThat(functions.columns()).hasSize(1);
+        {
+            final RenameV2.Rename v2 = RenameV2.Rename.newBuilder().setNameOld("v2").build();
+            assertThat(nameFunction.apply(v2)).isEqualTo("v2");
+        }
+        {
+            final RenameV1.Rename v1 = RenameV1.Rename.newBuilder().setName("v1").build();
+            assertThat(nameFunction.apply(v1)).isEqualTo("v1");
         }
     }
 

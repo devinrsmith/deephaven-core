@@ -43,6 +43,7 @@ import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.qst.type.Type.Visitor;
 import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxTransform;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.CommonTransform;
@@ -55,6 +56,7 @@ import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.stream.blink.tf.UnboxTransform;
 import io.deephaven.util.annotations.VisibleForTesting;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -187,7 +189,7 @@ class ProtobufImpl {
             // BooleanFunction is the only function / primitive type that doesn't natively have a "null" type, and
             // thus doesn't support schema changes which would remove this field. By boxing to
             // ObjectFunction<Object, Boolean>, we can safely handle these types of schema changes.
-            return CommonTransform.box(f);
+            return BoxTransform.of(f);
         }
 
         @Override
@@ -415,7 +417,7 @@ class ProtobufImpl {
         @Override
         public ObjectFunction<T, ?> visit(PrimitiveFunction<T> f) {
             if (desiredReturnType.equals(f.returnType().boxedType())) {
-                return CommonTransform.box(f);
+                return BoxTransform.of(f);
             }
             return null;
         }
@@ -434,37 +436,37 @@ class ProtobufImpl {
 
                             @Override
                             public TypedFunction<T> visit(ByteType byteType) {
-                                return CommonTransform.unboxByte(f.as(byteType.boxedType()));
+                                return UnboxTransform.unboxByte(f.as(byteType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(CharType charType) {
-                                return CommonTransform.unboxChar(f.as(charType.boxedType()));
+                                return UnboxTransform.unboxChar(f.as(charType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(ShortType shortType) {
-                                return CommonTransform.unboxShort(f.as(shortType.boxedType()));
+                                return UnboxTransform.unboxShort(f.as(shortType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(IntType intType) {
-                                return CommonTransform.unboxInt(f.as(intType.boxedType()));
+                                return UnboxTransform.unboxInt(f.as(intType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(LongType longType) {
-                                return CommonTransform.unboxLong(f.as(longType.boxedType()));
+                                return UnboxTransform.unboxLong(f.as(longType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(FloatType floatType) {
-                                return CommonTransform.unboxFloat(f.as(floatType.boxedType()));
+                                return UnboxTransform.unboxFloat(f.as(floatType.boxedType()));
                             }
 
                             @Override
                             public TypedFunction<T> visit(DoubleType doubleType) {
-                                return CommonTransform.unboxDouble(f.as(doubleType.boxedType()));
+                                return UnboxTransform.unboxDouble(f.as(doubleType.boxedType()));
                             }
                         });
                     }

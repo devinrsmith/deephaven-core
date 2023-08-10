@@ -22,6 +22,14 @@ import io.deephaven.util.type.TypeUtils;
 import java.time.Instant;
 import java.util.Objects;
 
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxByte;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxChar;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxDouble;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxFloat;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxInt;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxLong;
+import static io.deephaven.stream.blink.tf.UnboxTransform.unboxShort;
+
 public class CommonTransform {
 
     /**
@@ -116,90 +124,6 @@ public class CommonTransform {
     }
 
     /**
-     * Equivalent to {@code f.mapByte(TypeUtils::unbox)}.
-     *
-     * @param f the Byte function
-     * @return the byte function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Byte)
-     */
-    public static <T> ByteFunction<T> unboxByte(ObjectFunction<T, Byte> f) {
-        return f.mapByte(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapChar(TypeUtils::unbox)}.
-     *
-     * @param f the Character function
-     * @return the char function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Character)
-     */
-    public static <T> CharFunction<T> unboxChar(ObjectFunction<T, Character> f) {
-        return f.mapChar(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapShort(TypeUtils::unbox)}.
-     *
-     * @param f the Short function
-     * @return the short function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Short)
-     */
-    public static <T> ShortFunction<T> unboxShort(ObjectFunction<T, Short> f) {
-        return f.mapShort(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapInt(TypeUtils::unbox)}.
-     *
-     * @param f the Integer function
-     * @return the int function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Integer)
-     */
-    public static <T> IntFunction<T> unboxInt(ObjectFunction<T, Integer> f) {
-        return f.mapInt(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapLong(TypeUtils::unbox)}.
-     *
-     * @param f the Long function
-     * @return the long function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Long)
-     */
-    public static <T> LongFunction<T> unboxLong(ObjectFunction<T, Long> f) {
-        return f.mapLong(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapFloat(TypeUtils::unbox)}.
-     *
-     * @param f the Float function
-     * @return the float function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Float)
-     */
-    public static <T> FloatFunction<T> unboxFloat(ObjectFunction<T, Float> f) {
-        return f.mapFloat(TypeUtils::unbox);
-    }
-
-    /**
-     * Equivalent to {@code f.mapDouble(TypeUtils::unbox)}.
-     *
-     * @param f the Double function
-     * @return the double function
-     * @param <T> the input type
-     * @see TypeUtils#unbox(Double)
-     */
-    public static <T> DoubleFunction<T> unboxDouble(ObjectFunction<T, Double> f) {
-        return f.mapDouble(TypeUtils::unbox);
-    }
-
-    /**
      * Equivalent to {@code f.mapLong(DateTimeUtils::epochNanos)}.
      *
      * @param f the instant function
@@ -209,109 +133,6 @@ public class CommonTransform {
      */
     public static <T> LongFunction<T> toEpochNanos(ObjectFunction<T, Instant> f) {
         return f.mapLong(DateTimeUtils::epochNanos);
-    }
-
-    public static <T> ObjectFunction<T, ?> box(TypedFunction<T> f) {
-        // noinspection unchecked
-        return f.walk(
-                (TypedFunction.Visitor<T, ObjectFunction<T, ?>>) (TypedFunction.Visitor<?, ?>) BoxedVisitor.INSTANCE);
-    }
-
-    public static <T, R> ObjectFunction<T, R> box(ObjectFunction<T, R> f) {
-        return f;
-    }
-
-    public static <T> ObjectFunction<T, ?> box(PrimitiveFunction<T> f) {
-        // noinspection unchecked
-        return f.walk(
-                (PrimitiveFunction.Visitor<T, ObjectFunction<T, ?>>) (PrimitiveFunction.Visitor<?, ?>) BoxedVisitor.INSTANCE);
-    }
-
-    public static <T> ObjectFunction<T, Boolean> box(BooleanFunction<T> f) {
-        return f.mapObj(x -> x, BoxedBooleanType.of());
-    }
-
-    public static <T> ObjectFunction<T, Character> box(CharFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedCharType.of());
-    }
-
-    public static <T> ObjectFunction<T, Byte> box(ByteFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedByteType.of());
-    }
-
-    public static <T> ObjectFunction<T, Short> box(ShortFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedShortType.of());
-    }
-
-    public static <T> ObjectFunction<T, Integer> box(IntFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedIntType.of());
-    }
-
-    public static <T> ObjectFunction<T, Long> box(LongFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedLongType.of());
-    }
-
-    public static <T> ObjectFunction<T, Float> box(FloatFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedFloatType.of());
-    }
-
-    public static <T> ObjectFunction<T, Double> box(DoubleFunction<T> f) {
-        return f.mapObj(TypeUtils::box, BoxedDoubleType.of());
-    }
-
-    private enum BoxedVisitor implements TypedFunction.Visitor<Object, ObjectFunction<Object, ?>>,
-            PrimitiveFunction.Visitor<Object, ObjectFunction<Object, ?>> {
-        INSTANCE;
-
-        @Override
-        public ObjectFunction<Object, ?> visit(PrimitiveFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(ObjectFunction<Object, ?> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(BooleanFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(CharFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(ByteFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(ShortFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(IntFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(LongFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(FloatFunction<Object> f) {
-            return box(f);
-        }
-
-        @Override
-        public ObjectFunction<Object, ?> visit(DoubleFunction<Object> f) {
-            return box(f);
-        }
     }
 
     private static class FunctionVisitor<T> implements TypedFunction.Visitor<T, TypedFunction<T>> {

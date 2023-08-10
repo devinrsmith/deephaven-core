@@ -29,21 +29,20 @@ public abstract class ProtobufFunctions {
         return builder().addFunctions(ProtobufFunction.of(tf)).build();
     }
 
-
     public abstract List<ProtobufFunction> functions();
 
-    public final Optional<ProtobufFunction> find(int... fieldNumberPath) {
+    public final Optional<ProtobufFunction> find(String... namePath) {
         for (ProtobufFunction function : functions()) {
-            if (function.matches(fieldNumberPath)) {
+            if (function.path().namePathMatches(namePath)) {
                 return Optional.of(function);
             }
         }
         return Optional.empty();
     }
 
-    public final Optional<ProtobufFunction> find(String... namePath) {
+    public final Optional<ProtobufFunction> find(FieldNumberPath numberPath) {
         for (ProtobufFunction function : functions()) {
-            if (function.matches(namePath)) {
+            if (numberPath.equals(function.path().numberPath())) {
                 return Optional.of(function);
             }
         }

@@ -4,6 +4,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.stream.blink.tf.TypedFunction;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,15 +20,12 @@ public interface SingleValuedMessageParser {
         return ServiceLoader.load(SingleValuedMessageParser.class);
     }
 
-    static Map<Descriptor, SingleValuedMessageParser> defaults() {
-        Map<Descriptor, SingleValuedMessageParser> map = new HashMap<>();
-        for (SingleValuedMessageParser parser : builtin()) {
-            map.put(parser.canonicalDescriptor(), parser);
-        }
+    static List<SingleValuedMessageParser> defaults() {
+        final List<SingleValuedMessageParser> out = new ArrayList<>(builtin());
         for (SingleValuedMessageParser parser : serviceLoaders()) {
-            map.put(parser.canonicalDescriptor(), parser);
+            out.add(parser);
         }
-        return map;
+        return out;
     }
 
     Descriptor canonicalDescriptor();

@@ -67,7 +67,7 @@ class Protobuf {
 
     public Protobuf(ProtobufOptions options) {
         this.options = Objects.requireNonNull(options);
-        this.byFullName = options.parsers().values().stream()
+        this.byFullName = options.parsers().stream()
                 .collect(Collectors.toMap(x -> x.canonicalDescriptor().getFullName(), Function.identity()));
     }
 
@@ -75,12 +75,8 @@ class Protobuf {
         return new DescriptorContext(List.of(), descriptor).functions();
     }
 
-    private static List<String> prefix(String name, List<String> rest) {
-        return Stream.concat(Stream.of(name), rest.stream()).collect(Collectors.toList());
-    }
-
-    private static List<FieldDescriptor> prefix(FieldDescriptor f, List<FieldDescriptor> rest) {
-        return Stream.concat(Stream.of(f), rest.stream()).collect(Collectors.toList());
+    private static FieldPath prefix(FieldDescriptor f, FieldPath rest) {
+        return FieldPath.of(Stream.concat(Stream.of(f), rest.path().stream()).collect(Collectors.toList()));
     }
 
     private class DescriptorContext {
@@ -129,15 +125,17 @@ class Protobuf {
     private class FieldContext {
         private final DescriptorContext parent;
         private final FieldDescriptor fd;
+        private final FieldPath fieldPath;
         private FieldDescriptor realFd;
 
         public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
             this.parent = Objects.requireNonNull(parent);
             this.fd = Objects.requireNonNull(fd);
+            this.fieldPath = FieldPath.of(Stream.concat(parent.parents.stream(), Stream.of(fd)).collect(Collectors.toList()));
         }
 
         private ProtobufFunctions functions() {
-            if (!options.include(fullPath())) {
+            if (!options.include(fieldPath)) {
                 return ProtobufFunctions.empty();
             }
             final ProtobufFunctions wellKnown = wellKnown().orElse(null);
@@ -153,12 +151,6 @@ class Protobuf {
             return new FieldObject().functions();
         }
 
-        private List<String> fullPath() {
-            return Stream.concat(parent.parents.stream(), Stream.of(fd))
-                    .map(FieldDescriptor::getName)
-                    .collect(Collectors.toList());
-        }
-
         private Optional<ProtobufFunctions> wellKnown() {
             // todo: eventually have support for parsing specific fields in specific ways
             return Optional.empty();
@@ -166,7 +158,7 @@ class Protobuf {
 
         private ProtobufFunctions namedField(TypedFunction<Message> tf) {
             return ProtobufFunctions.builder()
-                    .addFunctions(ProtobufFunction.of(List.of(fd), tf))
+                    .addFunctions(ProtobufFunction.of(FieldPath.of(fd), tf))
                     .build();
         }
 
@@ -543,7 +535,7 @@ class Protobuf {
 
             private ProtobufFunctions namedField(TypedFunction<Message> tf) {
                 return ProtobufFunctions.builder()
-                        .addFunctions(ProtobufFunction.of(List.of(fd), tf))
+                        .addFunctions(ProtobufFunction.of(FieldPath.of(fd), tf))
                         .build();
             }
         }

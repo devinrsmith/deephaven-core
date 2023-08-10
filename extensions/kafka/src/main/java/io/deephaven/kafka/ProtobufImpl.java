@@ -23,6 +23,8 @@ import io.deephaven.kafka.ingest.FieldCopier;
 import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
+import io.deephaven.protobuf.FieldNumberPath;
+import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
@@ -123,8 +125,7 @@ class ProtobufImpl {
             data.fieldPathToColumnName = new LinkedHashMap<>();
             for (ProtobufFunction f : functions.functions()) {
                 final TypedFunction<Message> transformedFunction = CommonTransform.of(f.function());
-                final String columnName =
-                        f.path().stream().map(FieldDescriptor::getName).collect(Collectors.joining("_"));
+                final String columnName = f.path().namePath().stream().collect(Collectors.joining("_"));
                 data.fieldPathToColumnName.put(columnName, columnName);
                 columnDefinitionsOut.add(ColumnDefinition.of(columnName, f.function().returnType()));
                 fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(transformedFunction)));
@@ -185,8 +186,7 @@ class ProtobufImpl {
         public ProtobufFunctions functionsForSchemaChanges() {
             final Builder builder = ProtobufFunctions.builder();
             for (ProtobufFunction f : getOrCreate(originalDescriptor).functions()) {
-                builder.addFunctions(ProtobufFunction.of(f.path(),
-                        new ForPath(f.fieldNumberPath(), f.function().returnType()).adaptForSchemaChanges()));
+                builder.addFunctions(ProtobufFunction.of(f.path(), new ForPath(f).adaptForSchemaChanges()));
             }
             return builder.build();
         }
@@ -201,22 +201,48 @@ class ProtobufImpl {
                         "Expected descriptor names to match. originalDescriptor.getFullName()=%s, newDescriptor.getFullName()=%s",
                         originalDescriptor.getFullName(), newDescriptor.getFullName()));
             }
-            return withBestTypes(ProtobufFunctions.parse(newDescriptor, options));
+            if (newDescriptor == originalDescriptor) {
+                return withBestTypes(ProtobufFunctions.parse(newDescriptor, options));
+            }
+
+            // We only need to include the field numbers that were part of the original descriptor
+            final List<FieldNumberPath> includePaths = parsed.get(originalDescriptor)
+                    .functions()
+                    .stream()
+                    .map(ProtobufFunction::path)
+                    .map(FieldPath::numberPath)
+                    .collect(Collectors.toList());
+
+            final ProtobufOptions adaptedOptions = ProtobufOptions.builder()
+                    .parsers(options.parsers())
+                    .addAllIncludeNumberPaths(includePaths)
+                    .build();
+
+            return withBestTypes(ProtobufFunctions.parse(newDescriptor, adaptedOptions));
         }
 
         private class ForPath {
-            private final int[] originalFieldNumberPath;
-            private final Type<?> originalType;
+            private final ProtobufFunction originalFunction;
             private final Map<Descriptor, TypedFunction<Message>> functions;
 
-            public ForPath(int[] originalFieldNumberPath, Type<?> originalType) {
-                this.originalFieldNumberPath = Objects.requireNonNull(originalFieldNumberPath);
-                this.originalType = Objects.requireNonNull(originalType);
+            public ForPath(ProtobufFunction originalFunction) {
+                this.originalFunction = Objects.requireNonNull(originalFunction);
                 this.functions = new HashMap<>();
             }
 
             public TypedFunction<Message> adaptForSchemaChanges() {
-                return originalType.walk(new AdaptForSchemaChanges());
+                final Type<?> originalReturnType = originalReturnType();
+                final TypedFunction<Message> out = originalReturnType.walk(new AdaptForSchemaChanges());
+                if (!originalReturnType.equals(out.returnType())) {
+                    throw new IllegalStateException(String.format(
+                            "AdaptForSchemaChanges error, mismatched types for %s. expected=%s, actual=%s",
+                            originalFunction.path().namePath(), originalReturnType, out.returnType()));
+                }
+                return out;
+            }
+
+            private Type<?> originalReturnType() {
+                return originalFunction.function().returnType();
             }
 
             private boolean applyAsBoolean(Message message) {
@@ -264,29 +290,31 @@ class ProtobufImpl {
             }
 
             private TypedFunction<Message> createFunctionFor(Descriptor descriptor) {
+                final Type<?> originalReturnType = originalReturnType();
                 final TypedFunction<Message> newFunction = ParsedStates.this.getOrCreate(descriptor)
-                        .find(originalFieldNumberPath)
+                        .find(originalFunction.path().numberPath())
                         .map(ProtobufFunction::function)
                         .orElse(null);
                 final TypedFunction<Message> adaptedFunction =
-                        SchemaChangeAdaptFunction.of(newFunction, originalType).orElse(null);
+                        SchemaChangeAdaptFunction.of(newFunction, originalReturnType).orElse(null);
                 if (adaptedFunction == null) {
                     throw new UncheckedDeephavenException(
-                            String.format("Incompatible schema change for %s, originalType=%s, newType=%s", "todo",
-                                    originalType, newFunction == null ? null : newFunction.returnType()));
+                            String.format("Incompatible schema change for %s, originalType=%s, newType=%s",
+                                    originalFunction.path().namePath(), originalReturnType,
+                                    newFunction == null ? null : newFunction.returnType()));
                 }
-                if (!originalType.equals(adaptedFunction.returnType())) {
+                if (!originalReturnType.equals(adaptedFunction.returnType())) {
                     // If this happens, must be a logical error in SchemaChangeAdaptFunction
                     throw new IllegalStateException(String.format(
                             "Expected adapted return types to be equal for %s, originalType=%s, adapatedType=%s",
-                            "todo",
-                            originalType, adaptedFunction.returnType()));
+                            originalFunction.path().namePath(), originalReturnType, adaptedFunction.returnType()));
                 }
                 return adaptedFunction;
             }
 
             class AdaptForSchemaChanges
                     implements Visitor<TypedFunction<Message>>, PrimitiveType.Visitor<TypedFunction<Message>> {
+
                 @Override
                 public TypedFunction<Message> visit(PrimitiveType<?> primitiveType) {
                     return primitiveType.walk((PrimitiveType.Visitor<TypedFunction<Message>>) this);

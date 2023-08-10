@@ -1210,7 +1210,7 @@ public class ProtobufTest {
         final ProtobufFunctions results = ProtobufFunctions.parse(descriptor, ProtobufOptions.defaults());
         final Map<List<String>, TypedFunction<Message>> out = new LinkedHashMap<>(results.functions().size());
         for (ProtobufFunction function : results.functions()) {
-            out.put(ProtobufFunction.toNamedPath(function.path()), function.function());
+            out.put(function.path().namePath(), function.function());
         }
         return out;
     }

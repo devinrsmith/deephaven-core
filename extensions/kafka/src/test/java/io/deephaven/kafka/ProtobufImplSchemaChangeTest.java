@@ -299,8 +299,7 @@ public class ProtobufImplSchemaChangeTest {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(BoolV1.MyBool.getDescriptor());
         assertThat(functions.functions()).hasSize(1);
         // Note: it's important that this is parsed as ObjectFunction<Message, Boolean> instead of
-        // BooleanFunction<Message>
-        // because we need to be able to handle schema changes which might remove the field
+        // BooleanFunction<Message> because we need to be able to handle schema changes which might remove the field
         final ObjectFunction<Message, Boolean> myBoolFunction = ObjectFunction.cast(get(functions, "my_bool"));
         {
             final BoolV1.MyBool v1 = BoolV1.MyBool.newBuilder().setMyBool(true).build();

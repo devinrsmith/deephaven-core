@@ -25,4 +25,5 @@ public class CommonFunctions {
     public static ObjectFunction<Message, Message> messageIdentity() {
         return MESSAGE_IDENTITY;
     }
+
 }

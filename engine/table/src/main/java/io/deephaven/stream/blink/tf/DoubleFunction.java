@@ -25,6 +25,22 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
         return (DoubleFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsDouble(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the double function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> DoubleFunction<T> map(Function<T, R> f, DoubleFunction<R> g) {
+        return new DoubleComposition<>(f, g);
+    }
+
     @Override
     double applyAsDouble(T value);
 
@@ -57,7 +73,16 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
         R apply(double value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(DoubleToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsDouble(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsDouble(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(DoubleToObject<R> g, GenericType<R> returnType) {
+        return new DoubleToObjectMap<>(this, g, returnType);
     }
 }

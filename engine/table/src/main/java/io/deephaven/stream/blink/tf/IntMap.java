@@ -3,27 +3,29 @@ package io.deephaven.stream.blink.tf;
 import java.util.Objects;
 import java.util.function.Function;
 
-class BooleanMap<T, R> implements BooleanFunction<T> {
+class IntMap<T, R> implements IntFunction<T> {
     private final Function<T, R> f;
-    private final BooleanFunction<R> g;
+    private final IntFunction<R> g;
 
-    public BooleanMap(Function<T, R> f, BooleanFunction<R> g) {
+    public IntMap(Function<T, R> f, IntFunction<R> g) {
         this.f = Objects.requireNonNull(f);
         this.g = Objects.requireNonNull(g);
     }
 
     @Override
-    public boolean applyAsBoolean(T value) {
-        return g.applyAsBoolean(f.apply(value));
+    public int applyAsInt(T value) {
+        return g.applyAsInt(f.apply(value));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BooleanMap<?, ?> that = (BooleanMap<?, ?>) o;
-        if (!f.equals(that.f)) return false;
-        return g.equals(that.g);
+
+        IntMap<?, ?> intMap = (IntMap<?, ?>) o;
+
+        if (!f.equals(intMap.f)) return false;
+        return g.equals(intMap.g);
     }
 
     @Override

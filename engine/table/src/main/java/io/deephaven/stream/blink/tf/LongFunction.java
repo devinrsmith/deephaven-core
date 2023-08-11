@@ -25,6 +25,22 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
         return (LongFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsLong(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the long function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> LongFunction<T> map(Function<T, R> f, LongFunction<R> g) {
+        return new LongMap<>(f, g);
+    }
+
     @Override
     long applyAsLong(T value);
 
@@ -65,7 +81,16 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
         R apply(long value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(LongToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsLong(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsLong(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(LongToObject<R> g, GenericType<R> returnType) {
+        return new LongToObjectMap<>(this, g, returnType);
     }
 }

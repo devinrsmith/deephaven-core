@@ -24,6 +24,22 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
         return (ByteFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsBoolean(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the boolean function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> ByteFunction<T> map(Function<T, R> f, ByteFunction<R> g) {
+        return new ByteMap<>(f, g);
+    }
+
     byte applyAsByte(T value);
 
     @Override
@@ -55,7 +71,16 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
         R apply(byte value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(ByteToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsByte(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsByte(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(ByteToObject<R> g, GenericType<R> returnType) {
+        return new ByteToObjectMap<>(this, g, returnType);
     }
 }

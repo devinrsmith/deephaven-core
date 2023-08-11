@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 class ProtobufImpl {
@@ -91,14 +92,21 @@ class ProtobufImpl {
         private final ProtobufOptions options;
         private final String schemaSubject;
         private final int schemaVersion;
-
-        private String serializedSizeColumnName;
+        private final Function<FieldPath, String> pathToColumnName;
+        private final String serializedSizeColumnName;
 
 
         ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion) {
+            this(options, schemaSubject, schemaVersion, ProtobufImpl::toColumnName, null);
+        }
+
+        ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion,
+                Function<FieldPath, String> pathToColumnName, String serializedSizeColumnName) {
             this.options = Objects.requireNonNull(options);
             this.schemaSubject = Objects.requireNonNull(schemaSubject);
             this.schemaVersion = schemaVersion;
+            this.pathToColumnName = Objects.requireNonNull(pathToColumnName);
+            this.serializedSizeColumnName = serializedSizeColumnName;
         }
 
         @Override
@@ -131,8 +139,7 @@ class ProtobufImpl {
                 add(serializedSizeColumnName, serializedSize, data, columnDefinitionsOut, fieldCopiers);
             }
             for (ProtobufFunction f : functions.functions()) {
-                final String columnName = String.join("_", f.path().namePath());
-                add(columnName, f.function(), data, columnDefinitionsOut, fieldCopiers);
+                add(pathToColumnName.apply(f.path()), f.function(), data, columnDefinitionsOut, fieldCopiers);
             }
             // we don't have enough info at this time to create KeyOrValueProcessorImpl
             // data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers,
@@ -186,6 +193,10 @@ class ProtobufImpl {
         final TypedFunction<X> f2 = DhNullableTypeTransform.of(f);
         final PrimitiveFunction<X> unboxed = UnboxTransform.of(f2).orElse(null);
         return unboxed != null ? unboxed : f2;
+    }
+
+    private static String toColumnName(FieldPath path) {
+        return String.join("_", path.namePath());
     }
 
     private static class ParsedStates {

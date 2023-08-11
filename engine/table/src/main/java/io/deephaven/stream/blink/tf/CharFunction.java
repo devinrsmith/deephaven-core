@@ -23,6 +23,22 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
         return (CharFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsBoolean(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the char function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> CharFunction<T> map(Function<T, R> f, CharFunction<R> g) {
+        return new CharMap<>(f, g);
+    }
+
     char applyAsChar(T value);
 
     @Override
@@ -54,7 +70,16 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
         R apply(char value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(CharToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsChar(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsChar(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(CharToObject<R> g, GenericType<R> returnType) {
+        return new CharToObjectMap<>(this, g, returnType);
     }
 }

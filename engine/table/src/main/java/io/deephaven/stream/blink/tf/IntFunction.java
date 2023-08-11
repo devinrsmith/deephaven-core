@@ -25,6 +25,22 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
         return (IntFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsInt(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the int function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> IntFunction<T> map(Function<T, R> f, IntFunction<R> g) {
+        return new IntMap<>(f, g);
+    }
+
     @Override
     int applyAsInt(T value);
 
@@ -57,7 +73,16 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
         R apply(int value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(IntToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsInt(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsInt(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(IntToObject<R> g, GenericType<R> returnType) {
+        return new IntToObjectMap<>(this, g, returnType);
     }
 }

@@ -2,66 +2,25 @@ package io.deephaven.stream.blink.tf;
 
 import java.util.Objects;
 
-public class MapVisitor<T, R>
-        implements TypedFunction.Visitor<T, TypedFunction<R>>, PrimitiveFunction.Visitor<T, TypedFunction<R>> {
+class MapVisitor<T, R> implements TypedFunction.Visitor<T, TypedFunction<R>> {
 
-    public static <T, R> TypedFunction<R> of(ObjectFunction<R, T> objectFunction, TypedFunction<T> tf) {
-        return tf.walk(new MapVisitor<>(objectFunction));
+    public static <T, R> TypedFunction<R> of(ObjectFunction<R, T> f, TypedFunction<T> g) {
+        return g.walk(new MapVisitor<>(f));
     }
 
-    private final ObjectFunction<R, T> obj;
+    private final ObjectFunction<R, T> f;
 
-    private MapVisitor(ObjectFunction<R, T> objectFunction) {
-        this.obj = Objects.requireNonNull(objectFunction);
-    }
-
-    @Override
-    public TypedFunction<R> visit(PrimitiveFunction<T> f) {
-        return f.walk((PrimitiveFunction.Visitor<T, TypedFunction<R>>) this);
+    private MapVisitor(ObjectFunction<R, T> f) {
+        this.f = Objects.requireNonNull(f);
     }
 
     @Override
-    public TypedFunction<R> visit(ObjectFunction<T, ?> f) {
-        return obj.mapObj(f);
+    public TypedFunction<R> visit(PrimitiveFunction<T> g) {
+        return f.mapPrimitive(g);
     }
 
     @Override
-    public TypedFunction<R> visit(BooleanFunction<T> f) {
-        return obj.mapBoolean(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(CharFunction<T> f) {
-        return obj.mapChar(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(ByteFunction<T> f) {
-        return obj.mapByte(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(ShortFunction<T> f) {
-        return obj.mapShort(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(io.deephaven.stream.blink.tf.IntFunction<T> f) {
-        return obj.mapInt(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(LongFunction<T> f) {
-        return obj.mapLong(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(FloatFunction<T> f) {
-        return obj.mapFloat(f);
-    }
-
-    @Override
-    public TypedFunction<R> visit(DoubleFunction<T> f) {
-        return obj.mapDouble(f);
+    public TypedFunction<R> visit(ObjectFunction<T, ?> g) {
+        return f.mapObj(g);
     }
 }

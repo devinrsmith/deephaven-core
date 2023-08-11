@@ -23,6 +23,22 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
         return (FloatFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsFloat(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the float function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> FloatFunction<T> map(Function<T, R> f, FloatFunction<R> g) {
+        return new FloatMap<>(f, g);
+    }
+
     float applyAsFloat(T value);
 
     @Override
@@ -54,7 +70,16 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
         R apply(float value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(FloatToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsFloat(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsFloat(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(FloatToObject<R> g, GenericType<R> returnType) {
+        return new FloatToObjectMap<>(this, g, returnType);
     }
 }

@@ -5,7 +5,6 @@ import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 @FunctionalInterface
@@ -34,20 +33,24 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
         return What.ofFalse();
     }
 
-    static <T, R> BooleanFunction<T> map(Function<T, R> f1, BooleanFunction<R> f2) {
-        return new BooleanMap<>(f1, f2);
-    }
-
-    static <T> BooleanFunction<T> or(BooleanFunction<T>... functions) {
-        return or(List.of(functions));
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsBoolean(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the boolean function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> BooleanFunction<T> map(Function<T, R> f, BooleanFunction<R> g) {
+        return new BooleanMap<>(f, g);
     }
 
     static <T> BooleanFunction<T> or(Collection<BooleanFunction<T>> functions) {
         return new BooleanOr<>(functions);
-    }
-
-    static <T> BooleanFunction<T> and(BooleanFunction<T>... functions) {
-        return and(List.of(functions));
     }
 
     static <T> BooleanFunction<T> and(Collection<BooleanFunction<T>> functions) {
@@ -84,7 +87,16 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
         R apply(boolean value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(BoolToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsBoolean(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsBoolean(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(BoolToObject<R> g, GenericType<R> returnType) {
+        return new BooleanToObjectMap<>(this, g, returnType);
     }
 }

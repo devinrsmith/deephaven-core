@@ -24,6 +24,22 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
         return (ShortFunction<T>) f;
     }
 
+    /**
+     * Creates the function composition {@code g ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.applyAsShort(f.apply(x))}.
+     *
+     * @param f the inner function
+     * @param g the outer function
+     * @return the short function
+     * @param <T> the input type
+     * @param <R> the intermediate type
+     */
+    static <T, R> ShortFunction<T> map(Function<T, R> f, ShortFunction<R> g) {
+        return new ShortMap<>(f, g);
+    }
+
     short applyAsShort(T value);
 
     @Override
@@ -55,7 +71,16 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
         R apply(short value);
     }
 
-    default <R> ObjectFunction<T, R> mapObj(ShortToObject<R> f, GenericType<R> returnType) {
-        return ObjectFunction.of(t -> f.apply(applyAsShort(t)), returnType);
+    /**
+     * Creates the function composition {@code g ∘ this}.
+     *
+     * <p>
+     * Equivalent to {@code x -> g.apply(this.applyAsShort(x))}.
+     *
+     * @param g the outer function
+     * @return the object function
+     */
+    default <R> ObjectFunction<T, R> mapObj(ShortToObject<R> g, GenericType<R> returnType) {
+        return new ShortToObjectMap<>(this, g, returnType);
     }
 }

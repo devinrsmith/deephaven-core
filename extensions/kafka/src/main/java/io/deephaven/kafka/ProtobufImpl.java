@@ -232,7 +232,7 @@ class ProtobufImpl {
 
             final ProtobufOptions adaptedOptions = ProtobufOptions.builder()
                     .parsers(options.parsers())
-                    .addAllIncludeNumberPaths(includePaths)
+                    .include(FieldPath.anyNumberPathStartsWith(includePaths))
                     .build();
 
             return withBestTypes(ProtobufFunctions.parse(newDescriptor, adaptedOptions));

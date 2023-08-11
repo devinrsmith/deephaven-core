@@ -100,7 +100,7 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
     }
 
     default BooleanFunction<T> mapBoolean(BooleanFunction<R> f) {
-        return value -> f.applyAsBoolean(apply(value));
+        return BooleanFunction.map(this::apply, f);
     }
 
     default CharFunction<T> mapChar(CharFunction<R> f) {

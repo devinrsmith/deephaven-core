@@ -1216,7 +1216,7 @@ public class ProtobufTest {
     @Test
     void includeNumberPaths() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
-                ProtobufOptions.builder().addIncludeNumberPaths(FieldNumberPath.of(new int[] {6})).build());
+                ProtobufOptions.builder().addIncludeNumberPaths(FieldNumberPath.of(6)).build());
         assertThat(nf.keySet()).containsExactly(List.of("float"));
     }
 
@@ -1231,7 +1231,7 @@ public class ProtobufTest {
     @Test
     void excludeNumberPaths() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
-                ProtobufOptions.builder().addExcludeNumberPaths(FieldNumberPath.of(new int[] {6})).build());
+                ProtobufOptions.builder().addExcludeNumberPaths(FieldNumberPath.of(6)).build());
         assertThat(nf).hasSize(8);
         assertThat(nf.keySet()).doesNotContain(List.of("float"));
     }

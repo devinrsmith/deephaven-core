@@ -3,6 +3,8 @@ package io.deephaven.kafka;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.UncheckedDeephavenException;
+import io.deephaven.kafka.test.BoolV1;
+import io.deephaven.kafka.test.BoolV2;
 import io.deephaven.kafka.test.MyMessageV1;
 import io.deephaven.kafka.test.MyMessageV2;
 import io.deephaven.kafka.test.MyMessageV3;
@@ -290,6 +292,34 @@ public class ProtobufImplSchemaChangeTest {
             assertThat(nameOldFunction.apply(v1)).isEqualTo("v1");
             assertThat(nameFunction.apply(v1)).isNull();
         }
+    }
+
+    @Test
+    public void boolV1toV2() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(BoolV1.MyBool.getDescriptor());
+        assertThat(functions.functions()).hasSize(1);
+        // Note: it's important that this is parsed as ObjectFunction<Message, Boolean> instead of
+        // BooleanFunction<Message>
+        // because we need to be able to handle schema changes which might remove the field
+        final ObjectFunction<Message, Boolean> myBoolFunction = ObjectFunction.cast(get(functions, "my_bool"));
+        {
+            final BoolV1.MyBool v1 = BoolV1.MyBool.newBuilder().setMyBool(true).build();
+            assertThat(myBoolFunction.apply(v1)).isTrue();
+        }
+        {
+            final BoolV1.MyBool v1 = BoolV1.MyBool.newBuilder().setMyBool(false).build();
+            assertThat(myBoolFunction.apply(v1)).isFalse();
+        }
+        {
+            final BoolV2.MyBool v2 = BoolV2.MyBool.getDefaultInstance();
+            assertThat(myBoolFunction.apply(v2)).isNull();
+        }
+    }
+
+    @Test
+    public void boolV2IsEmpty() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(BoolV2.MyBool.getDescriptor());
+        assertThat(functions.functions()).isEmpty();
     }
 
     private static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor) {

@@ -43,4 +43,22 @@ public abstract class FieldPath {
     public final FieldPath prefixWith(FieldDescriptor prefix) {
         return FieldPath.of(Stream.concat(Stream.of(prefix), path().stream()).collect(Collectors.toList()));
     }
+
+    public final boolean startsWith(FieldNumberPath other) {
+        return numberPath().startsWith(other);
+    }
+
+//    public final boolean startsWith(List<String> other) {
+//        return namePath().subList(0, Math.min(namePath().size(), other.size())).equals(other);
+//    }
+//
+//    public final boolean startsWithUs(FieldNumberPath other) {
+//        return other.startsWith(numberPath());
+//    }
+
+    public final boolean startsWithUs(List<String> other) {
+        // this is an "inversion" of startsWith; but helps us b/c we can't extend List
+        final List<String> us = namePath();
+        return other.subList(0, Math.min(other.size(), us.size())).equals(us);
+    }
 }

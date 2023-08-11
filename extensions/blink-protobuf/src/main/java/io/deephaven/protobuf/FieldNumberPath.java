@@ -5,6 +5,7 @@ import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Immutable
@@ -26,4 +27,9 @@ public abstract class FieldNumberPath {
 
     @Parameter
     public abstract int[] path();
+
+    public final boolean startsWith(FieldNumberPath other) {
+        final int[] otherPath = other.path();
+        return Arrays.equals(path(), 0, Math.min(path().length, otherPath.length), otherPath, 0, otherPath.length);
+    }
 }

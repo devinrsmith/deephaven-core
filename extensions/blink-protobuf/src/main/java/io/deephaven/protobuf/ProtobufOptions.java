@@ -6,7 +6,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Immutable
@@ -43,27 +42,6 @@ public abstract class ProtobufOptions {
         }
     }
 
-    final boolean include(FieldPath fieldPath) {
-        // empty checks save us from materializing numberPath / namePath unnecessarily
-        if (!includeNumberPaths().isEmpty() && includeNumberPaths().contains(fieldPath.numberPath())) {
-            return true;
-        }
-        if (!includeNamePaths().isEmpty() && includeNamePaths().contains(fieldPath.namePath())) {
-            return true;
-        }
-        // If any includes were included but we didn't find them, return false.
-        if (!includeNumberPaths().isEmpty() || !includeNamePaths().isEmpty()) {
-            return false;
-        }
-        if (!excludeNumberPaths().isEmpty() && excludeNumberPaths().contains(fieldPath.numberPath())) {
-            return false;
-        }
-        if (!excludeNamePaths().isEmpty() && excludeNamePaths().contains(fieldPath.namePath())) {
-            return false;
-        }
-        return true;
-    }
-
     public interface Builder {
 
         Builder addIncludeNumberPaths(FieldNumberPath element);
@@ -93,5 +71,67 @@ public abstract class ProtobufOptions {
         Builder parsers(List<SingleValuedMessageParser> parsers);
 
         ProtobufOptions build();
+    }
+
+    final boolean include(FieldPath fieldPath) {
+        if (hasIncludeNumberPathsStartsWith(fieldPath) || hasIncludeNamePathsStartsWith(fieldPath)) {
+            return true;
+        }
+        // empty checks save us from materializing numberPath / namePath unnecessarily
+        if (!includeNumberPaths().isEmpty() && includeNumberPaths().contains(fieldPath.numberPath())) {
+            return true;
+        }
+        if (hasExcludeNumberPathsStartsWith(fieldPath) || hasExcludeNamePathsStartsWith(fieldPath)) {
+            return false;
+        }
+        return true;
+    }
+
+    final boolean hasIncludeNumberPathsStartsWith(FieldPath other) {
+        if (includeNumberPaths().isEmpty()) {
+            return false;
+        }
+        for (FieldNumberPath numberPath : includeNumberPaths()) {
+            if (other.startsWithUs(numberPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    final boolean hasIncludeNamePathsStartsWith(FieldPath other) {
+        if (includeNamePaths().isEmpty()) {
+            return false;
+        }
+        for (List<String> namePath : includeNamePaths()) {
+            if (other.startsWithUs(namePath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    final boolean hasExcludeNumberPathsStartsWith(FieldPath other) {
+        if (excludeNumberPaths().isEmpty()) {
+            return false;
+        }
+        for (FieldNumberPath numberPath : excludeNumberPaths()) {
+            if (other.startsWithUs(numberPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    final boolean hasExcludeNamePathsStartsWith(FieldPath other) {
+        if (excludeNamePaths().isEmpty()) {
+            return false;
+        }
+        for (List<String> namePath : excludeNamePaths()) {
+            if (other.startsWithUs(namePath)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

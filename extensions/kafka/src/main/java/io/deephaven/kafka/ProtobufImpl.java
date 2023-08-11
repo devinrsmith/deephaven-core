@@ -4,7 +4,6 @@
 package io.deephaven.kafka;
 
 import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
@@ -23,6 +22,7 @@ import io.deephaven.kafka.ingest.FieldCopier;
 import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
+import io.deephaven.protobuf.CommonFunctions;
 import io.deephaven.protobuf.FieldNumberPath;
 import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufFunction;
@@ -92,6 +92,8 @@ class ProtobufImpl {
         private final String schemaSubject;
         private final int schemaVersion;
 
+        private String serializedSizeColumnName;
+
 
         ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion) {
             this.options = Objects.requireNonNull(options);
@@ -124,17 +126,30 @@ class ProtobufImpl {
             final KeyOrValueIngestData data = new KeyOrValueIngestData();
             // arguably, others should be LinkedHashMap as well.
             data.fieldPathToColumnName = new LinkedHashMap<>();
+            if (serializedSizeColumnName != null) {
+                final IntFunction<Message> serializedSize = CommonFunctions.serializedSize();
+                add(serializedSizeColumnName, serializedSize, data, columnDefinitionsOut, fieldCopiers);
+            }
             for (ProtobufFunction f : functions.functions()) {
                 final String columnName = String.join("_", f.path().namePath());
-                data.fieldPathToColumnName.put(columnName, columnName);
-                columnDefinitionsOut.add(ColumnDefinition.of(columnName, f.function().returnType()));
-                fieldCopiers.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(CommonTransform.of(f.function()))));
+                add(columnName, f.function(), data, columnDefinitionsOut, fieldCopiers);
             }
             // we don't have enough info at this time to create KeyOrValueProcessorImpl
             // data.extra = new KeyOrValueProcessorImpl(MultiFieldChunkAdapter.chunkOffsets(null, null), fieldCopiers,
             // false);
             data.extra = fieldCopiers;
             return data;
+        }
+
+        private void add(
+                String columnName,
+                TypedFunction<Message> function,
+                KeyOrValueIngestData data,
+                List<ColumnDefinition<?>> columnDefinitionsOut,
+                List<FieldCopier> fieldCopiersOut) {
+            data.fieldPathToColumnName.put(columnName, columnName);
+            columnDefinitionsOut.add(ColumnDefinition.of(columnName, function.returnType()));
+            fieldCopiersOut.add(FieldCopierAdapter.of(PROTOBUF_MESSAGE_OBJ.map(CommonTransform.of(function))));
         }
 
         @Override
@@ -390,7 +405,7 @@ class ProtobufImpl {
         }
 
         @Override
-        public ObjectFunction<T, ?> visit(PrimitiveFunction<T> f) {
+        public TypedFunction<T> visit(PrimitiveFunction<T> f) {
             if (desiredReturnType.equals(f.returnType().boxedType())) {
                 return BoxTransform.of(f);
             }
@@ -399,15 +414,11 @@ class ProtobufImpl {
 
         @Override
         public TypedFunction<T> visit(ObjectFunction<T, ?> f) {
-            UnboxTransform.of(f);
             return f.returnType().walk(new GenericType.Visitor<>() {
                 @Override
                 public TypedFunction<T> visit(BoxedType<?> boxedType) {
                     if (desiredReturnType.equals(boxedType.primitiveType())) {
-
-                        UnboxTransform.of(f);
-
-
+                        return UnboxTransform.of(f).orElse(null);
                     }
                     return null;
                 }

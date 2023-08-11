@@ -2,11 +2,13 @@ package io.deephaven.kafka;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
+import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.kafka.test.MyMessageV1;
 import io.deephaven.kafka.test.MyMessageV2;
 import io.deephaven.kafka.test.MyMessageV3;
 import io.deephaven.kafka.test.MyMessageV3.MyMessage.FirstAndLast;
 import io.deephaven.kafka.test.MyMessageV4;
+import io.deephaven.kafka.test.MyMessageV5;
 import io.deephaven.kafka.test.RenameV1;
 import io.deephaven.kafka.test.RenameV2;
 import io.deephaven.protobuf.ProtobufFunction;
@@ -14,15 +16,16 @@ import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufOptions;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
+import io.deephaven.stream.blink.tf.LongFunction;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 
 /**
@@ -218,6 +221,41 @@ public class ProtobufImplSchemaChangeTest {
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
             assertThat(ageFunction.applyAsInt(v3)).isEqualTo(0);
             assertThat(agefFunction.applyAsFloat(v3)).isEqualTo(QueryConstants.NULL_FLOAT);
+        }
+    }
+
+    @Test
+    public void myMessageV4toV5() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV4.MyMessage.getDescriptor());
+        assertThat(functions.functions()).hasSize(5);
+        final ObjectFunction<Message, String> lastNameFunction =
+                ObjectFunction.cast(get(functions, "first_and_last", "last_name"));
+        {
+            final MyMessageV5.MyMessage v5 = MyMessageV5.MyMessage.getDefaultInstance();
+            try {
+                lastNameFunction.apply(v5);
+                failBecauseExceptionWasNotThrown(UncheckedDeephavenException.class);
+            } catch (UncheckedDeephavenException e) {
+                assertThat(e).hasMessage(
+                        "Incompatible schema change for [first_and_last, last_name], originalType=io.deephaven.qst.type.StringType, newType=io.deephaven.qst.type.LongType");
+            }
+        }
+    }
+
+    @Test
+    public void myMessageV5toV4() {
+        final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV5.MyMessage.getDescriptor());
+        assertThat(functions.functions()).hasSize(5);
+        final LongFunction<Message> lastNameFunction = LongFunction.cast(get(functions, "first_and_last", "last_name"));
+        {
+            final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.getDefaultInstance();
+            try {
+                lastNameFunction.applyAsLong(v4);
+                failBecauseExceptionWasNotThrown(UncheckedDeephavenException.class);
+            } catch (UncheckedDeephavenException e) {
+                assertThat(e).hasMessage(
+                        "Incompatible schema change for [first_and_last, last_name], originalType=io.deephaven.qst.type.LongType, newType=io.deephaven.qst.type.StringType");
+            }
         }
     }
 

@@ -233,14 +233,6 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
      * @return the function
      * @see #mapPrimitive(PrimitiveFunction)
      * @see #mapObj(ObjectFunction)
-     * @see #mapBoolean(BooleanFunction)
-     * @see #mapChar(CharFunction)
-     * @see #mapByte(ByteFunction)
-     * @see #mapShort(ShortFunction)
-     * @see #mapInt(IntFunction)
-     * @see #mapLong(LongFunction)
-     * @see #mapFloat(FloatFunction)
-     * @see #mapDouble(DoubleFunction)
      */
     default TypedFunction<T> map(TypedFunction<R> g) {
         return MapVisitor.of(this, g);

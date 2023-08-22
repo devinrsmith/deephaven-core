@@ -6,6 +6,11 @@ import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
+/**
+ * A {@code char} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface CharFunction<T> extends PrimitiveFunction<T> {
     /**
@@ -54,15 +59,6 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
     @Override
     default CharFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsChar(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsChar(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsChar(x)}.
-     * @param onNull the value to return on null
-     * @return the new char function
-     */
-    default CharFunction<T> onNullInput(char onNull) {
-        return x -> x == null ? onNull : applyAsChar(x);
     }
 
     @FunctionalInterface

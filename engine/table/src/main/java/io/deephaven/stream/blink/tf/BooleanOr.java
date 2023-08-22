@@ -19,4 +19,19 @@ class BooleanOr<T> implements BooleanFunction<T> {
         }
         return false;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BooleanOr<?> booleanOr = (BooleanOr<?>) o;
+
+        return functions.equals(booleanOr.functions);
+    }
+
+    @Override
+    public int hashCode() {
+        return functions.hashCode();
+    }
 }

@@ -1,6 +1,19 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.kafka;
 
-public class DhNullableTypeTransform {
+import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.BoxTransform;
+import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.DoubleFunction;
+import io.deephaven.stream.blink.tf.FloatFunction;
+import io.deephaven.stream.blink.tf.IntFunction;
+import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.PrimitiveFunction;
+import io.deephaven.stream.blink.tf.ShortFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
+
+class DhNullableTypeTransform {
 
     public static <X> TypedFunction<X> of(TypedFunction<X> f) {
         return NullableTypeVisitor.of(f);

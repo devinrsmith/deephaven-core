@@ -8,6 +8,11 @@ import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
+/**
+ * A {@code long} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T> {
     /**
@@ -57,23 +62,6 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
     @Override
     default LongFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsLong(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsLong(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsLong(x)}.
-     * @param onNull the value to return on null
-     * @return the new long function
-     */
-    default LongFunction<T> onNullInput(long onNull) {
-        return x -> x == null ? onNull : applyAsLong(x);
-    }
-
-    default ObjectFunction<T, Instant> ofEpochMilli() {
-        return mapObj(Instant::ofEpochMilli, Type.instantType());
-    }
-
-    default ObjectFunction<T, Instant> ofEpochSecond() {
-        return mapObj(Instant::ofEpochSecond, Type.instantType());
     }
 
     @FunctionalInterface

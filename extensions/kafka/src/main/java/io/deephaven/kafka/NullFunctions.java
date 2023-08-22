@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.kafka;
 
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.ByteType;
@@ -11,11 +11,22 @@ import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.PrimitiveType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.stream.blink.tf.ByteFunction;
+import io.deephaven.stream.blink.tf.CharFunction;
+import io.deephaven.stream.blink.tf.DoubleFunction;
+import io.deephaven.stream.blink.tf.FloatFunction;
+import io.deephaven.stream.blink.tf.IntFunction;
+import io.deephaven.stream.blink.tf.LongFunction;
+import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.stream.blink.tf.PrimitiveFunction;
+import io.deephaven.stream.blink.tf.ShortFunction;
+import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 
 import java.util.Optional;
 
-public class NullFunctions {
+class NullFunctions {
 
     public static <T> Optional<TypedFunction<T>> of(Type<?> returnType) {
         // noinspection unchecked

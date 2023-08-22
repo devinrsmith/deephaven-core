@@ -7,6 +7,11 @@ import io.deephaven.qst.type.Type;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
+/**
+ * An {@code int} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
 
@@ -57,15 +62,6 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
     @Override
     default IntFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsInt(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsInt(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsInt(x)}.
-     * @param onNull the value to return on null
-     * @return the new int function
-     */
-    default IntFunction<T> onNullInput(int onNull) {
-        return x -> x == null ? onNull : applyAsInt(x);
     }
 
     @FunctionalInterface

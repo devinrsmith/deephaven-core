@@ -4,24 +4,34 @@ import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
+/**
+ * A common function interface that allows for differentiation based on the return type.
+ *
+ * @param <T> the input type
+ * @see PrimitiveFunction
+ * @see ObjectFunction
+ */
 public interface TypedFunction<T> {
 
+    /**
+     * This function's return type.
+     *
+     * @return the type
+     */
     Type<?> returnType();
 
-    <R> R walk(Visitor<T, R> visitor);
-
     /**
-     * Creates a new function whose value is first transformed into the same type by {@code f} before application. The
-     * semantics are equivalent to {@code x -> theApplyFunction(f.apply(x))}.
+     * Creates the function composition {@code this ∘ f}.
+     *
+     * <p>
+     * Equivalent to {@code x -> theApplyFunction(f.apply(x))}.
      *
      * @param f the input function
      * @return the new function
      */
     TypedFunction<T> mapInput(Function<T, T> f);
 
-    default <R> TypedFunction<R> andThen(Function<TypedFunction<T>, TypedFunction<R>> f) {
-        return f.apply(this);
-    }
+    <R> R walk(Visitor<T, R> visitor);
 
     interface Visitor<T, R> {
         R visit(PrimitiveFunction<T> f);

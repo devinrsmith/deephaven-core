@@ -89,15 +89,11 @@ class Protobuf {
             for (FieldContext fc : fcs()) {
                 builder.addAllFunctions(fc.functions().functions());
             }
-            // options.serializedSizeName().ifPresent(x -> builder.putColumns(List.of(x), SERIALIZED_SIZE_FUNCTION));
-            // options.unknownFieldSetName().ifPresent(x -> builder.putColumns(List.of(x), UNKNOWN_FIELD_SET_FUNCTION));
-            // options.rawMessageName().ifPresent(x -> builder.putColumns(List.of(x), MESSAGE_IDENTITY_FUNCTION));
             return builder.build();
         }
 
         private Optional<ProtobufFunctions> wellKnown() {
             // todo: eventually support cases that are >1 field
-
             final SingleValuedMessageParser svmp = byFullName.get(descriptor.getFullName());
             if (svmp == null) {
                 return Optional.empty();

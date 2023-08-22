@@ -21,6 +21,14 @@ import java.util.Optional;
 
 public class UnboxTransform {
 
+    private static final ByteFunction<Byte> UNBOX_BYTE = TypeUtils::unbox;
+    private static final CharFunction<Character> UNBOX_CHAR = TypeUtils::unbox;
+    private static final ShortFunction<Short> UNBOX_SHORT = TypeUtils::unbox;
+    private static final IntFunction<Integer> UNBOX_INT = TypeUtils::unbox;
+    private static final LongFunction<Long> UNBOX_LONG = TypeUtils::unbox;
+    private static final FloatFunction<Float> UNBOX_FLOAT = TypeUtils::unbox;
+    private static final DoubleFunction<Double> UNBOX_DOULE = TypeUtils::unbox;
+
     /**
      * Returns the Deephaven unboxed equivalent of {@code f}. Relevant for all {@link BoxedType boxed types} except the
      * {@link BoxedBooleanType boxed Boolean type}. All other functions will be return unchanged.
@@ -68,7 +76,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Byte)
      */
     public static <T> ByteFunction<T> unboxByte(ObjectFunction<T, Byte> f) {
-        return f.mapByte(TypeUtils::unbox);
+        return f.mapByte(UNBOX_BYTE);
     }
 
     /**
@@ -80,7 +88,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Character)
      */
     public static <T> CharFunction<T> unboxChar(ObjectFunction<T, Character> f) {
-        return f.mapChar(TypeUtils::unbox);
+        return f.mapChar(UNBOX_CHAR);
     }
 
     /**
@@ -92,7 +100,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Short)
      */
     public static <T> ShortFunction<T> unboxShort(ObjectFunction<T, Short> f) {
-        return f.mapShort(TypeUtils::unbox);
+        return f.mapShort(UNBOX_SHORT);
     }
 
     /**
@@ -104,7 +112,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Integer)
      */
     public static <T> IntFunction<T> unboxInt(ObjectFunction<T, Integer> f) {
-        return f.mapInt(TypeUtils::unbox);
+        return f.mapInt(UNBOX_INT);
     }
 
     /**
@@ -116,7 +124,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Long)
      */
     public static <T> LongFunction<T> unboxLong(ObjectFunction<T, Long> f) {
-        return f.mapLong(TypeUtils::unbox);
+        return f.mapLong(UNBOX_LONG);
     }
 
     /**
@@ -128,7 +136,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Float)
      */
     public static <T> FloatFunction<T> unboxFloat(ObjectFunction<T, Float> f) {
-        return f.mapFloat(TypeUtils::unbox);
+        return f.mapFloat(UNBOX_FLOAT);
     }
 
     /**
@@ -140,7 +148,7 @@ public class UnboxTransform {
      * @see TypeUtils#unbox(Double)
      */
     public static <T> DoubleFunction<T> unboxDouble(ObjectFunction<T, Double> f) {
-        return f.mapDouble(TypeUtils::unbox);
+        return f.mapDouble(UNBOX_DOULE);
     }
 
     private enum UnboxFunctionVisitor implements TypedFunction.Visitor<Object, PrimitiveFunction<Object>> {

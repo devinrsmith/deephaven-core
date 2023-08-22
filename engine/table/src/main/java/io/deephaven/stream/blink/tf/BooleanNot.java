@@ -13,4 +13,19 @@ class BooleanNot<T> implements BooleanFunction<T> {
     public boolean applyAsBoolean(T value) {
         return !function.applyAsBoolean(value);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BooleanNot<?> that = (BooleanNot<?>) o;
+
+        return function.equals(that.function);
+    }
+
+    @Override
+    public int hashCode() {
+        return function.hashCode();
+    }
 }

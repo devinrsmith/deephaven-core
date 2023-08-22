@@ -7,6 +7,11 @@ import io.deephaven.qst.type.Type;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
+/**
+ * A {@code double} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunction<T> {
 
@@ -38,7 +43,7 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
      * @param <R> the intermediate type
      */
     static <T, R> DoubleFunction<T> map(Function<T, R> f, DoubleFunction<R> g) {
-        return new DoubleComposition<>(f, g);
+        return new DoubleMap<>(f, g);
     }
 
     @Override
@@ -57,15 +62,6 @@ public interface DoubleFunction<T> extends PrimitiveFunction<T>, ToDoubleFunctio
     @Override
     default DoubleFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsDouble(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsDouble(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsDouble(x)}.
-     * @param onNull the value to return on null
-     * @return the new double function
-     */
-    default DoubleFunction<T> onNullInput(double onNull) {
-        return x -> x == null ? onNull : applyAsDouble(x);
     }
 
     @FunctionalInterface

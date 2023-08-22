@@ -6,6 +6,11 @@ import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
+/**
+ * A {@code float} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface FloatFunction<T> extends PrimitiveFunction<T> {
     /**
@@ -54,15 +59,6 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
     @Override
     default FloatFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsFloat(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsFloat(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsFloat(x)}.
-     * @param onNull the value to return on null
-     * @return the new float function
-     */
-    default FloatFunction<T> onNullInput(float onNull) {
-        return x -> x == null ? onNull : applyAsFloat(x);
     }
 
     @FunctionalInterface

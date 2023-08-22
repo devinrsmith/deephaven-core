@@ -7,6 +7,11 @@ import io.deephaven.qst.type.Type;
 import java.util.Collection;
 import java.util.function.Function;
 
+/**
+ * A {@code boolean} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface BooleanFunction<T> extends PrimitiveFunction<T> {
 
@@ -54,7 +59,7 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
     }
 
     static <T> BooleanFunction<T> and(Collection<BooleanFunction<T>> functions) {
-        return new BooleanOr<>(functions);
+        return new BooleanAnd<>(functions);
     }
 
     static <T> BooleanFunction<T> not(BooleanFunction<T> f) {
@@ -76,10 +81,6 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
     @Override
     default BooleanFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsBoolean(f.apply(x));
-    }
-
-    default BooleanFunction<T> onNullInput(boolean onNull) {
-        return x -> x == null ? onNull : applyAsBoolean(x);
     }
 
     @FunctionalInterface

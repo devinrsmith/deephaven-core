@@ -19,4 +19,19 @@ class BooleanAnd<T> implements BooleanFunction<T> {
         }
         return true;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BooleanAnd<?> that = (BooleanAnd<?>) o;
+
+        return functions.equals(that.functions);
+    }
+
+    @Override
+    public int hashCode() {
+        return functions.hashCode();
+    }
 }

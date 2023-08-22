@@ -14,10 +14,8 @@ import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.StringType;
-import io.deephaven.stream.blink.tf.PrimitiveFunction.Visitor;
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
-import io.deephaven.util.type.TypeUtils;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -31,6 +29,9 @@ import static io.deephaven.stream.blink.tf.UnboxTransform.unboxLong;
 import static io.deephaven.stream.blink.tf.UnboxTransform.unboxShort;
 
 public class CommonTransform {
+
+    private static final ByteFunction<Boolean> BOOLEAN_AS_BYTE = BooleanUtils::booleanAsByte;
+    private static final LongFunction<Instant> EPOCH_NANOS = DateTimeUtils::epochNanos;
 
     /**
      * Potentially transform the {@link TypedFunction function} {@code f} into a common... todo
@@ -46,49 +47,7 @@ public class CommonTransform {
     }
 
     public static <T> TypedFunction<T> of(PrimitiveFunction<T> f) {
-        // no transform currently; maybe boolean -> byte?
         return f;
-        // return f.walk(new Visitor<>() {
-        // @Override
-        // public ObjectFunction<T, Boolean> visit(BooleanFunction<T> f) {
-        // return ObjectFunction.of(f::applyAsBoolean, BoxedBooleanType.of());
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(CharFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(ByteFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(ShortFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(IntFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(LongFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(FloatFunction<T> f) {
-        // return f;
-        // }
-        //
-        // @Override
-        // public TypedFunction<T> visit(DoubleFunction<T> f) {
-        // return f;
-        // }
-        // });
     }
 
     /**
@@ -99,13 +58,13 @@ public class CommonTransform {
      * @param <T> the input type
      * @see #toEpochNanos(ObjectFunction)
      * @see #unboxBooleanAsByte(ObjectFunction)
-     * @see #unboxByte(ObjectFunction)
-     * @see #unboxChar(ObjectFunction)
-     * @see #unboxDouble(ObjectFunction)
-     * @see #unboxFloat(ObjectFunction)
-     * @see #unboxInt(ObjectFunction)
-     * @see #unboxLong(ObjectFunction)
-     * @see #unboxShort(ObjectFunction)
+     * @see UnboxTransform#unboxByte(ObjectFunction)
+     * @see UnboxTransform#unboxChar(ObjectFunction)
+     * @see UnboxTransform#unboxDouble(ObjectFunction)
+     * @see UnboxTransform#unboxFloat(ObjectFunction)
+     * @see UnboxTransform#unboxInt(ObjectFunction)
+     * @see UnboxTransform#unboxLong(ObjectFunction)
+     * @see UnboxTransform#unboxShort(ObjectFunction)
      */
     public static <T> TypedFunction<T> of(ObjectFunction<T, ?> f) {
         return ObjectFunctionVisitor.of(f);
@@ -120,7 +79,7 @@ public class CommonTransform {
      * @see BooleanUtils#booleanAsByte(Boolean)
      */
     public static <T> ByteFunction<T> unboxBooleanAsByte(ObjectFunction<T, Boolean> f) {
-        return f.mapByte(BooleanUtils::booleanAsByte);
+        return f.mapByte(BOOLEAN_AS_BYTE);
     }
 
     /**
@@ -132,7 +91,7 @@ public class CommonTransform {
      * @see DateTimeUtils#epochNanos(Instant)
      */
     public static <T> LongFunction<T> toEpochNanos(ObjectFunction<T, Instant> f) {
-        return f.mapLong(DateTimeUtils::epochNanos);
+        return f.mapLong(EPOCH_NANOS);
     }
 
     private static class FunctionVisitor<T> implements TypedFunction.Visitor<T, TypedFunction<T>> {

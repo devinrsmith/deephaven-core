@@ -2,17 +2,30 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.PrimitiveType;
 
+/**
+ * A function interface that allows for differentiation of primitive return types.
+ *
+ * @param <T> the input type
+ * @see BooleanFunction
+ * @see CharFunction
+ * @see ByteFunction
+ * @see ShortFunction
+ * @see IntFunction
+ * @see LongFunction
+ * @see FloatFunction
+ * @see DoubleFunction
+ */
 public interface PrimitiveFunction<T> extends TypedFunction<T> {
 
     @Override
     PrimitiveType<?> returnType();
 
-    <R> R walk(Visitor<T, R> visitor);
-
     @Override
     default <R> R walk(TypedFunction.Visitor<T, R> visitor) {
         return visitor.visit(this);
     }
+
+    <R> R walk(Visitor<T, R> visitor);
 
     interface Visitor<T, R> {
         R visit(BooleanFunction<T> f);

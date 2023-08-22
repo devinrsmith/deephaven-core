@@ -6,6 +6,11 @@ import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
+/**
+ * A {@code byte} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface ByteFunction<T> extends PrimitiveFunction<T> {
 
@@ -55,15 +60,6 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
     @Override
     default ByteFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsByte(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsByte(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsByte(x)}.
-     * @param onNull the value to return on null
-     * @return the new byte function
-     */
-    default ByteFunction<T> onNullInput(byte onNull) {
-        return x -> x == null ? onNull : applyAsByte(x);
     }
 
     @FunctionalInterface

@@ -51,12 +51,10 @@ import io.deephaven.stream.blink.tf.BoxTransform;
 import io.deephaven.stream.blink.tf.ByteFunction;
 import io.deephaven.stream.blink.tf.CharFunction;
 import io.deephaven.stream.blink.tf.CommonTransform;
-import io.deephaven.stream.blink.tf.DhNullableTypeTransform;
 import io.deephaven.stream.blink.tf.DoubleFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.NullFunctions;
 import io.deephaven.stream.blink.tf.ObjectFunction;
 import io.deephaven.stream.blink.tf.PrimitiveFunction;
 import io.deephaven.stream.blink.tf.ShortFunction;
@@ -181,15 +179,30 @@ class ProtobufImpl {
         }
     }
 
-    private static ProtobufFunctions withBestTypes(ProtobufFunctions functions) {
+
+    private static ProtobufFunctions withMostAppropriateType(ProtobufFunctions functions) {
         final Builder builder = ProtobufFunctions.builder();
         for (ProtobufFunction f : functions.functions()) {
-            builder.addFunctions(ProtobufFunction.of(f.path(), withBestTypes(f.function())));
+            builder.addFunctions(ProtobufFunction.of(f.path(), withMostAppropriateType(f.function())));
         }
         return builder.build();
     }
 
-    private static <X> TypedFunction<X> withBestTypes(TypedFunction<X> f) {
+    /**
+     * Adapts {@code f} to the most appropriate Deephaven equivalent / nullable type.
+     *
+     * <ul>
+     * <li>boolean -> Boolean</li>
+     * <li>Byte -> byte</li>
+     * <li>Character -> char</li>
+     * <li>Short -> short</li>
+     * <li>Integer -> int</li>
+     * <li>Long -> long</li>
+     * <li>Float -> float</li>
+     * <li>Double -> double</li>
+     * </ul>
+     */
+    private static <X> TypedFunction<X> withMostAppropriateType(TypedFunction<X> f) {
         final TypedFunction<X> f2 = DhNullableTypeTransform.of(f);
         final PrimitiveFunction<X> unboxed = UnboxTransform.of(f2).orElse(null);
         return unboxed != null ? unboxed : f2;
@@ -230,7 +243,7 @@ class ProtobufImpl {
                         originalDescriptor.getFullName(), newDescriptor.getFullName()));
             }
             if (newDescriptor == originalDescriptor) {
-                return withBestTypes(ProtobufFunctions.parse(newDescriptor, options));
+                return withMostAppropriateType(ProtobufFunctions.parse(newDescriptor, options));
             }
 
             // We only need to include the field numbers that were part of the original descriptor
@@ -246,7 +259,7 @@ class ProtobufImpl {
                     .include(FieldPath.anyNumberPathStartsWith(includePaths))
                     .build();
 
-            return withBestTypes(ProtobufFunctions.parse(newDescriptor, adaptedOptions));
+            return withMostAppropriateType(ProtobufFunctions.parse(newDescriptor, adaptedOptions));
         }
 
         private class ForPath {

@@ -6,6 +6,11 @@ import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
+/**
+ * A {@code short} function.
+ *
+ * @param <T> the input type
+ */
 @FunctionalInterface
 public interface ShortFunction<T> extends PrimitiveFunction<T> {
 
@@ -55,15 +60,6 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
     @Override
     default ShortFunction<T> mapInput(Function<T, T> f) {
         return x -> applyAsShort(f.apply(x));
-    }
-
-    /**
-     * Create a new function which returns {@code onNull} when the value is {@code null}, and otherwise calls {@link #applyAsShort(Object)}. Equivalent to {@code x -> x == null ? onNull : applyAsShort(x)}.
-     * @param onNull the value to return on null
-     * @return the new short function
-     */
-    default ShortFunction<T> onNullInput(short onNull) {
-        return x -> x == null ? onNull : applyAsShort(x);
     }
 
     @FunctionalInterface

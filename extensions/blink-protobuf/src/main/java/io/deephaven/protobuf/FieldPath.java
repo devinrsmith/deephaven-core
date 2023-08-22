@@ -48,6 +48,14 @@ public abstract class FieldPath {
         return or(namePaths.stream().map(FieldPath::namePathStartsWith).collect(Collectors.toList()));
     }
 
+    public static BooleanFunction<FieldPath> namePathEquals(List<String> namePath) {
+        return map(FieldPath::namePath, namePath::equals);
+    }
+
+    public static BooleanFunction<FieldPath> numberPathEquals(FieldNumberPath numberPath) {
+        return map(FieldPath::numberPath, numberPath::equals);
+    }
+
     @Parameter
     public abstract List<FieldDescriptor> path();
 

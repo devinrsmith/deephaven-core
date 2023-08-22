@@ -55,6 +55,7 @@ import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -1208,30 +1209,38 @@ public class ProtobufTest {
 
     @Test
     void includeNamePaths() {
-        final Map<List<String>, TypedFunction<Message>> nf =
-                nf(UnionType.getDescriptor(), ProtobufOptions.builder().addIncludeNamePaths(List.of("float")).build());
+        final ProtobufOptions options = ProtobufOptions.builder()
+                .include(FieldPath.namePathEquals(List.of("float")))
+                .build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
         assertThat(nf.keySet()).containsExactly(List.of("float"));
     }
 
     @Test
     void includeNumberPaths() {
-        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
-                ProtobufOptions.builder().addIncludeNumberPaths(FieldNumberPath.of(6)).build());
+        final ProtobufOptions options = ProtobufOptions.builder()
+                .include(FieldPath.numberPathEquals(FieldNumberPath.of(6)))
+                .build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
         assertThat(nf.keySet()).containsExactly(List.of("float"));
     }
 
     @Test
     void excludeNamePaths() {
-        final Map<List<String>, TypedFunction<Message>> nf =
-                nf(UnionType.getDescriptor(), ProtobufOptions.builder().addExcludeNamePaths(List.of("float")).build());
+        final ProtobufOptions options = ProtobufOptions.builder()
+                .include(BooleanFunction.not(FieldPath.namePathEquals(List.of("float"))))
+                .build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
         assertThat(nf).hasSize(8);
         assertThat(nf.keySet()).doesNotContain(List.of("float"));
     }
 
     @Test
     void excludeNumberPaths() {
-        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(),
-                ProtobufOptions.builder().addExcludeNumberPaths(FieldNumberPath.of(6)).build());
+        final ProtobufOptions options = ProtobufOptions.builder()
+                .include(BooleanFunction.not(FieldPath.numberPathEquals(FieldNumberPath.of(6))))
+                .build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
         assertThat(nf).hasSize(8);
         assertThat(nf.keySet()).doesNotContain(List.of("float"));
     }

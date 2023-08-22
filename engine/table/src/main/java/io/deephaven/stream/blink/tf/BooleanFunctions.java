@@ -1,6 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
-class What {
+class BooleanFunctions {
 
     public static <T> BooleanFunction<T> ofTrue() {
         // noinspection unchecked

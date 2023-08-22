@@ -26,11 +26,11 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
     }
 
     static <T> BooleanFunction<T> ofTrue() {
-        return What.ofTrue();
+        return BooleanFunctions.ofTrue();
     }
 
     static <T> BooleanFunction<T> ofFalse() {
-        return What.ofFalse();
+        return BooleanFunctions.ofFalse();
     }
 
     /**

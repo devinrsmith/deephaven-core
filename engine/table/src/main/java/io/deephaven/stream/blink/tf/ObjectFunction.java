@@ -21,51 +21,8 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
         return ObjectFunction.of(t -> expected.clazz().cast(t), expected);
     }
 
-    static <T, R> ObjectFunction<T, R> ofSingle(R sentinel, GenericType<R> type) {
-        return new ObjectFunctionImpl<>(m -> sentinel, type);
-    }
-
     static <R> ObjectFunction<R, R> identity(GenericType<R> type) {
         return ObjectFunction.of(Function.identity(), type);
-    }
-
-    static <T> ObjectFunction<T, Boolean> booleanObject() {
-        return ObjectFunction.of(x -> (Boolean) x, BoxedBooleanType.of());
-    }
-
-    static <T> ObjectFunction<T, Character> charObject() {
-        return ObjectFunction.of(x -> (Character) x, BoxedCharType.of());
-    }
-
-    static <T> ObjectFunction<T, Byte> byteObject() {
-        return ObjectFunction.of(x -> (Byte) x, BoxedByteType.of());
-    }
-
-    static <T> ObjectFunction<T, Short> shortObject() {
-        return ObjectFunction.of(x -> (Short) x, BoxedShortType.of());
-    }
-
-    static <T> ObjectFunction<T, Integer> intObject() {
-        return ObjectFunction.of(x -> (Integer) x, BoxedIntType.of());
-    }
-
-    static <T> ObjectFunction<T, Long> longObject() {
-        return ObjectFunction.of(x -> (Long) x, BoxedLongType.of());
-    }
-
-    static <T> ObjectFunction<T, Float> floatObject() {
-        return ObjectFunction.of(x -> (Float) x, BoxedFloatType.of());
-    }
-
-    /**
-     * Equivalent to {@code of(x -> (Double) x, BoxedDoubleType.of())}.
-     *
-     * @return the double object function
-     * @param <T> the type
-     */
-    static <T> ObjectFunction<T, Double> doubleObject() {
-        // noinspection unchecked
-        return (ObjectFunction<T, Double>) Functions.BoxedDouble.INSTANCE;
     }
 
     static <T, R> ObjectFunction<T, R> cast(TypedFunction<T> f) {

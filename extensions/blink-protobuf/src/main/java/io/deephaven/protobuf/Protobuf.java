@@ -6,7 +6,6 @@ import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Message;
-import com.google.protobuf.UnknownFieldSet;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedDoubleType;
@@ -119,7 +118,7 @@ class Protobuf {
         private final DescriptorContext parent;
         private final FieldDescriptor fd;
         private final FieldPath fieldPath;
-        private FieldDescriptor realFd;
+        // private FieldDescriptor realFd;
 
         public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
             this.parent = Objects.requireNonNull(parent);
@@ -129,7 +128,7 @@ class Protobuf {
         }
 
         private ProtobufFunctions functions() {
-            if (!options.include(fieldPath)) {
+            if (!options.include().applyAsBoolean(fieldPath)) {
                 return ProtobufFunctions.empty();
             }
             final ProtobufFunctions wellKnown = wellKnown().orElse(null);
@@ -172,19 +171,6 @@ class Protobuf {
                 return Type.ofCustom(Object.class);
             }
 
-            private void hackInitRealFd(Message message) {
-                if (realFd == null) {
-                    // Big hack. this is b/c the parsing Kafka layer isn't using the same schema registry instance that
-                    // the listening Kafka layer is using. This causes the descriptors to be different instances. While
-                    // functionally equivalent, they are not reference-based equals (which proto uses as a check).
-                    // We should fix this at the kafka layer.
-                    realFd = message.getDescriptorForType().findFieldByNumber(fd.getNumber());
-                    if (!fd.toProto().equals(realFd.toProto())) {
-                        throw new IllegalStateException("todo");
-                    }
-                }
-            }
-
             @Override
             public Object apply(Message message) {
                 // Note: in protobuf an actualized Message is never null - getField will always return non-null (and
@@ -195,12 +181,11 @@ class Protobuf {
                 if (message == null) {
                     return null;
                 }
-                hackInitRealFd(message);
                 // hasField only semantically meaningful when hasPresence == true
-                if (realFd.hasPresence() && !message.hasField(realFd)) {
+                if (fd.hasPresence() && !message.hasField(fd)) {
                     return null;
                 }
-                return message.getField(realFd);
+                return message.getField(fd);
             }
 
             private ProtobufFunctions functions() {
@@ -236,7 +221,6 @@ class Protobuf {
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions subF = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();
-
                         final boolean parentFieldIsRepeated = !parent.parents.isEmpty()
                                 && parent.parents.get(parent.parents.size() - 1).isRepeated();
                         for (ProtobufFunction e : subF.functions()) {
@@ -355,121 +339,39 @@ class Protobuf {
             }
 
             private ObjectFunction<Message, char[]> mapChars(CharFunction<Object> f) {
-                return ObjectFunction.of(m -> toChars(m, f), Type.charType().arrayType());
+                return ObjectFunction.of(m -> toChars(m, fd, f), Type.charType().arrayType());
             }
 
             private ObjectFunction<Message, byte[]> mapBytes(ByteFunction<Object> f) {
-                return ObjectFunction.of(m -> toBytes(m, f), Type.byteType().arrayType());
+                return ObjectFunction.of(m -> toBytes(m, fd, f), Type.byteType().arrayType());
             }
 
             private ObjectFunction<Message, short[]> mapShorts(ShortFunction<Object> f) {
-                return ObjectFunction.of(m -> toShorts(m, f), Type.shortType().arrayType());
+                return ObjectFunction.of(m -> toShorts(m, fd, f), Type.shortType().arrayType());
             }
 
             private ObjectFunction<Message, int[]> mapInts(IntFunction<Object> f) {
-                return ObjectFunction.of(m -> toInts(m, f), Type.intType().arrayType());
+                return ObjectFunction.of(m -> toInts(m, fd, f), Type.intType().arrayType());
             }
 
             private ObjectFunction<Message, long[]> mapLongs(LongFunction<Object> f) {
-                return ObjectFunction.of(m -> toLongs(m, f), Type.longType().arrayType());
+                return ObjectFunction.of(m -> toLongs(m, fd, f), Type.longType().arrayType());
             }
 
             private ObjectFunction<Message, float[]> mapFloats(FloatFunction<Object> f) {
-                return ObjectFunction.of(m -> toFloats(m, f), Type.floatType().arrayType());
+                return ObjectFunction.of(m -> toFloats(m, fd, f), Type.floatType().arrayType());
             }
 
             private ObjectFunction<Message, double[]> mapDoubles(DoubleFunction<Object> f) {
-                return ObjectFunction.of(m -> toDoubles(m, f), Type.doubleType().arrayType());
+                return ObjectFunction.of(m -> toDoubles(m, fd, f), Type.doubleType().arrayType());
             }
 
             private ObjectFunction<Message, boolean[]> mapBooleans(BooleanFunction<Object> f) {
-                return ObjectFunction.of(m -> toBooleans(m, f), Type.booleanType().arrayType());
+                return ObjectFunction.of(m -> toBooleans(m, fd, f), Type.booleanType().arrayType());
             }
 
             private <T> ObjectFunction<Message, T[]> mapGenerics(ObjectFunction<Object, T> f) {
-                return ObjectFunction.of(message -> toArray(message, f), f.returnType().arrayType());
-            }
-
-            private char[] toChars(Message message, CharFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final char[] array = new char[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsChar(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private byte[] toBytes(Message message, ByteFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final byte[] array = new byte[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsByte(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private short[] toShorts(Message message, ShortFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final short[] array = new short[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsShort(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private int[] toInts(Message message, IntFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final int[] array = new int[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsInt(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private long[] toLongs(Message message, LongFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final long[] array = new long[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsLong(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private float[] toFloats(Message message, FloatFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final float[] array = new float[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsFloat(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private double[] toDoubles(Message message, DoubleFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final double[] array = new double[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsDouble(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private boolean[] toBooleans(Message message, BooleanFunction<Object> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                final boolean[] array = new boolean[count];
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.applyAsBoolean(message.getRepeatedField(fd, i));
-                }
-                return array;
-            }
-
-            private <T> T[] toArray(Message message, ObjectFunction<Object, T> f) {
-                final int count = message.getRepeatedFieldCount(fd);
-                // noinspection unchecked
-                final T[] array = (T[]) Array.newInstance(f.returnType().clazz(), count);
-                for (int i = 0; i < count; ++i) {
-                    array[i] = f.apply(message.getRepeatedField(fd, i));
-                }
-                return array;
+                return ObjectFunction.of(message -> toArray(message, fd, f), f.returnType().arrayType());
             }
 
             private class ToRepeatedType implements
@@ -533,5 +435,87 @@ class Protobuf {
                         .build();
             }
         }
+    }
+
+    private static char[] toChars(Message message, FieldDescriptor fd, CharFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final char[] array = new char[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsChar(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static byte[] toBytes(Message message, FieldDescriptor fd, ByteFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final byte[] array = new byte[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsByte(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static short[] toShorts(Message message, FieldDescriptor fd, ShortFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final short[] array = new short[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsShort(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static int[] toInts(Message message, FieldDescriptor fd, IntFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final int[] array = new int[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsInt(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static long[] toLongs(Message message, FieldDescriptor fd, LongFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final long[] array = new long[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsLong(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static float[] toFloats(Message message, FieldDescriptor fd, FloatFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final float[] array = new float[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsFloat(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static double[] toDoubles(Message message, FieldDescriptor fd, DoubleFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final double[] array = new double[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsDouble(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static boolean[] toBooleans(Message message, FieldDescriptor fd, BooleanFunction<Object> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        final boolean[] array = new boolean[count];
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.applyAsBoolean(message.getRepeatedField(fd, i));
+        }
+        return array;
+    }
+
+    private static <T> T[] toArray(Message message, FieldDescriptor fd, ObjectFunction<Object, T> f) {
+        final int count = message.getRepeatedFieldCount(fd);
+        // noinspection unchecked
+        final T[] array = (T[]) Array.newInstance(f.returnType().clazz(), count);
+        for (int i = 0; i < count; ++i) {
+            array[i] = f.apply(message.getRepeatedField(fd, i));
+        }
+        return array;
     }
 }

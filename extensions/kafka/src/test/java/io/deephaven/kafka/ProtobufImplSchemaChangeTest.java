@@ -325,7 +325,7 @@ public class ProtobufImplSchemaChangeTest {
     }
 
     private static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor) {
-        return ProtobufConsumeImpl.schemaChangeAwareFunctions(descriptor, ProtobufDescriptorParserOptions.defaults());
+        return ProtobufImpl.schemaChangeAwareFunctions(descriptor, ProtobufDescriptorParserOptions.defaults());
     }
 
     private static TypedFunction<Message> get(ProtobufFunctions functions, String... namePath) {

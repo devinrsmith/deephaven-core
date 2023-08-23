@@ -22,6 +22,7 @@ import io.deephaven.kafka.ingest.FieldCopier;
 import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
+import io.deephaven.kafka.protobuf.ProtobufConsumeOptions;
 import io.deephaven.protobuf.FieldNumberPath;
 import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufDescriptorParser;
@@ -75,7 +76,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-class ProtobufConsumeImpl {
+class ProtobufImpl {
 
     @VisibleForTesting
     static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor,
@@ -83,14 +84,14 @@ class ProtobufConsumeImpl {
         return new ParsedStates(descriptor, options).functionsForSchemaChanges();
     }
 
-    static final class ProtobufConsume extends Consume.KeyOrValueSpec {
+    static final class ProtobufConsumeImpl extends Consume.KeyOrValueSpec {
 
         private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
                 ObjectFunction.cast(Type.ofCustom(Message.class));
 
         private final ProtobufConsumeOptions specs;
 
-        ProtobufConsume(ProtobufConsumeOptions specs) {
+        ProtobufConsumeImpl(ProtobufConsumeOptions specs) {
             this.specs = Objects.requireNonNull(specs);
         }
 

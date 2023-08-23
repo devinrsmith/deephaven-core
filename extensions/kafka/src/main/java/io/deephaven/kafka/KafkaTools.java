@@ -54,7 +54,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
-import io.deephaven.kafka.ProtobufConsumeImpl.ProtobufConsume;
+import io.deephaven.kafka.ProtobufImpl.ProtobufConsumeImpl;
 import io.deephaven.kafka.RawImpl.RawConsume;
 import io.deephaven.kafka.RawImpl.RawProduce;
 import io.deephaven.kafka.SimpleImpl.SimpleConsume;
@@ -64,6 +64,7 @@ import io.deephaven.kafka.ingest.KafkaIngester;
 import io.deephaven.kafka.ingest.KafkaRecordConsumer;
 import io.deephaven.kafka.ingest.KafkaStreamPublisher;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
+import io.deephaven.kafka.protobuf.ProtobufConsumeOptions;
 import io.deephaven.kafka.publish.KafkaPublisherException;
 import io.deephaven.kafka.publish.KeyOrValueSerializer;
 import io.deephaven.kafka.publish.PublishToKafka;
@@ -510,7 +511,7 @@ public class KafkaTools {
          *      protobuf serdes</a>
          */
         public static KeyOrValueSpec protobufSpec(ProtobufConsumeOptions options) {
-            return new ProtobufConsume(options);
+            return new ProtobufConsumeImpl(options);
         }
 
         /**

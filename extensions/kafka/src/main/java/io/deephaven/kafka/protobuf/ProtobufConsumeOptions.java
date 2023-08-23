@@ -1,7 +1,8 @@
-package io.deephaven.kafka;
+package io.deephaven.kafka.protobuf;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.kafka.KafkaTools.Consume;
 import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import org.immutables.value.Value.Default;
@@ -23,7 +24,7 @@ import java.util.function.Function;
  * table definition} will not change across restarts. This gives the caller an explicit opportunity to update any
  * downstream consumers when updating {@link #schemaVersion()} if necessary.
  *
- * @see KafkaTools.Consume#protobufSpec(ProtobufConsumeOptions)
+ * @see Consume#protobufSpec(ProtobufConsumeOptions)
  * @see <a href=
  *      "https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/serdes-protobuf.html">kafka
  *      protobuf serdes</a>

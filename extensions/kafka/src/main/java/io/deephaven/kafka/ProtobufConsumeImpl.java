@@ -24,11 +24,11 @@ import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
 import io.deephaven.protobuf.FieldNumberPath;
 import io.deephaven.protobuf.FieldPath;
+import io.deephaven.protobuf.ProtobufDescriptorParser;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
-import io.deephaven.protobuf.ProtobufDescriptorParser;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;
@@ -75,7 +75,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-class ProtobufImpl {
+class ProtobufConsumeImpl {
 
     @VisibleForTesting
     static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor,
@@ -88,22 +88,10 @@ class ProtobufImpl {
         private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
                 ObjectFunction.cast(Type.ofCustom(Message.class));
 
-        private final ProtobufDescriptorParserOptions options;
-        private final String schemaSubject;
-        private final int schemaVersion;
-        private final Function<FieldPath, String> pathToColumnName;
+        private final ProtobufConsumeOptions specs;
 
-
-        ProtobufConsume(ProtobufDescriptorParserOptions options, String schemaSubject, int schemaVersion) {
-            this(options, schemaSubject, schemaVersion, ProtobufImpl::toColumnName);
-        }
-
-        ProtobufConsume(ProtobufDescriptorParserOptions options, String schemaSubject, int schemaVersion,
-                Function<FieldPath, String> pathToColumnName) {
-            this.options = Objects.requireNonNull(options);
-            this.schemaSubject = Objects.requireNonNull(schemaSubject);
-            this.schemaVersion = schemaVersion;
-            this.pathToColumnName = Objects.requireNonNull(pathToColumnName);
+        ProtobufConsume(ProtobufConsumeOptions specs) {
+            this.specs = Objects.requireNonNull(specs);
         }
 
         @Override
@@ -126,11 +114,12 @@ class ProtobufImpl {
             } catch (RestClientException | IOException e) {
                 throw new UncheckedDeephavenException(e);
             }
-            final ProtobufFunctions functions = schemaChangeAwareFunctions(descriptor, options);
+            final ProtobufFunctions functions = schemaChangeAwareFunctions(descriptor, specs.parserOptions());
             final List<FieldCopier> fieldCopiers = new ArrayList<>(functions.functions().size());
             final KeyOrValueIngestData data = new KeyOrValueIngestData();
             // arguably, others should be LinkedHashMap as well.
             data.fieldPathToColumnName = new LinkedHashMap<>();
+            final Function<FieldPath, String> pathToColumnName = specs.pathToColumnName();
             for (ProtobufFunction f : functions.functions()) {
                 add(pathToColumnName.apply(f.path()), f.function(), data, columnDefinitionsOut, fieldCopiers);
             }
@@ -161,15 +150,16 @@ class ProtobufImpl {
 
         private Descriptor getDescriptor(SchemaRegistryClient schemaRegistryClient)
                 throws RestClientException, IOException {
-            final SchemaMetadata metadata = schemaVersion > 0
-                    ? schemaRegistryClient.getSchemaMetadata(schemaSubject, schemaVersion)
-                    : schemaRegistryClient.getLatestSchemaMetadata(schemaSubject);
+            final SchemaMetadata metadata = specs.schemaVersion().isPresent()
+                    ? schemaRegistryClient.getSchemaMetadata(specs.schemaSubject(), specs.schemaVersion().getAsInt())
+                    : schemaRegistryClient.getLatestSchemaMetadata(specs.schemaSubject());
             if (!ProtobufSchema.TYPE.equals(metadata.getSchemaType())) {
                 throw new IllegalStateException(String.format("Expected schema type %s but was %s", ProtobufSchema.TYPE,
                         metadata.getSchemaType()));
             }
             // todo: we need to handle the dynamic case eventually, where protobuf descriptor is updated
-            return ((ProtobufSchema) schemaRegistryClient.getSchemaBySubjectAndId(schemaSubject, metadata.getId()))
+            return ((ProtobufSchema) schemaRegistryClient.getSchemaBySubjectAndId(specs.schemaSubject(),
+                    metadata.getId()))
                     .toDescriptor();
         }
     }

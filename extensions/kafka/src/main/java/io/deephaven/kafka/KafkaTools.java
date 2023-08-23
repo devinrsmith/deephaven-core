@@ -4,6 +4,7 @@
 package io.deephaven.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.Descriptors.Descriptor;
 import gnu.trove.map.hash.TIntLongHashMap;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
@@ -53,7 +54,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.KafkaTools.TableType.Visitor;
-import io.deephaven.kafka.ProtobufImpl.ProtobufConsume;
+import io.deephaven.kafka.ProtobufConsumeImpl.ProtobufConsume;
 import io.deephaven.kafka.RawImpl.RawConsume;
 import io.deephaven.kafka.RawImpl.RawProduce;
 import io.deephaven.kafka.SimpleImpl.SimpleConsume;
@@ -486,25 +487,30 @@ public class KafkaTools {
         }
 
         /**
-         * The latest protobuf spec for {@code schemaName}.
+         * The kafka protobuf specs. This will fetch the {@link com.google.protobuf.Descriptors.Descriptor protobuf
+         * descriptor} for the {@link ProtobufConsumeOptions#schemaSubject() schema subject} from the schema registry
+         * using version {@link ProtobufConsumeOptions#schemaVersion() schema version} and create
+         * {@link com.google.protobuf.Message message} parsing functions according to
+         * {@link io.deephaven.protobuf.ProtobufDescriptorParser#parse(Descriptor, ProtobufDescriptorParserOptions)}.
+         * These functions will be adapted to handle schema changes.
          *
-         * @param schemaName the registered name for the schema on the schema registry server
-         * @return the protobuf spec
-         */
-        @SuppressWarnings("unused")
-        public static KeyOrValueSpec protobufSpec(final String schemaName) {
-            return protobufSpec(schemaName, 0);
-        }
-
-        /**
-         * The protobuf spec.
+         * <p>
+         * For purposes of reproducibility across restarts where schema changes may occur, it is advisable for callers
+         * to set a specific {@link ProtobufConsumeOptions#schemaVersion() schema version}. This will ensure the
+         * resulting {@link io.deephaven.engine.table.TableDefinition table definition} will not change across restarts.
+         * This gives the caller an explicit opportunity to update any downstream consumers when updating
+         * {@link ProtobufConsumeOptions#schemaVersion() schema version} if necessary.
          *
-         * @param schemaName the registered name for the schema on the schema registry server
-         * @param schemaVersion the version to fetch, or 0 for latest
-         * @return the protobuf spec
+         * @param options the options
+         * @return the key or value spec
+         * @see io.deephaven.protobuf.ProtobufDescriptorParser#parse(Descriptor, ProtobufDescriptorParserOptions)
+         *      parsing
+         * @see <a href=
+         *      "https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/serdes-protobuf.html">kafka
+         *      protobuf serdes</a>
          */
-        public static KeyOrValueSpec protobufSpec(final String schemaName, int schemaVersion) {
-            return new ProtobufConsume(ProtobufDescriptorParserOptions.defaults(), schemaName, schemaVersion);
+        public static KeyOrValueSpec protobufSpec(ProtobufConsumeOptions options) {
+            return new ProtobufConsume(options);
         }
 
         /**

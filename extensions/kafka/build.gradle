@@ -19,7 +19,7 @@ dependencies {
     api 'io.confluent:kafka-avro-serializer:7.4.0'
 
     api 'io.confluent:kafka-protobuf-serializer:7.4.0'
-    implementation project(':extensions-blink-protobuf')
+    api project(':extensions-blink-protobuf')
 
     implementation project(':Configuration')
     implementation project(':log-factory')

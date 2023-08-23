@@ -3,7 +3,7 @@
 #
 
 """ The kafka.consumer module supports consuming a Kakfa topic as a Deephaven live table. """
-from typing import Dict, Tuple, List, Callable, Union
+from typing import Dict, Tuple, List, Callable, Union, Optional
 from warnings import warn
 
 import jpy
@@ -18,6 +18,7 @@ from deephaven.table import Table, PartitionedTable
 
 _JKafkaTools = jpy.get_type("io.deephaven.kafka.KafkaTools")
 _JKafkaTools_Consume = jpy.get_type("io.deephaven.kafka.KafkaTools$Consume")
+_JProtobufConsumeOptions = jpy.get_type("io.deephaven.kafka.ProtobufConsumeOptions")
 _JPythonTools = jpy.get_type("io.deephaven.integrations.python.PythonTools")
 ALL_PARTITIONS = _JKafkaTools.ALL_PARTITIONS
 
@@ -280,9 +281,13 @@ def _consume(
     except Exception as e:
         raise DHError(e, "failed to consume a Kafka stream.") from e
 
-def protobuf_spec(schema: str, schema_version: int = 0) -> KeyValueSpec:
+def protobuf_spec(schema: str, schema_version: Optional[int] = None) -> KeyValueSpec:
+    """todo"""
+    pb_consume_builder = _JProtobufConsumeOptions.builder().schemaSubject(schema)
+    if schema_version:
+        pb_consume_builder.schemaVersion(schema_version)
     return KeyValueSpec(
-        j_spec=_JKafkaTools_Consume.protobufSpec(schema, schema_version)
+        j_spec=_JKafkaTools_Consume.protobufSpec(pb_consume_builder.build())
     )
 
 def avro_spec(

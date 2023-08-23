@@ -22,13 +22,13 @@ import io.deephaven.kafka.ingest.FieldCopier;
 import io.deephaven.kafka.ingest.FieldCopierAdapter;
 import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.ingest.MultiFieldChunkAdapter;
-import io.deephaven.protobuf.CommonFunctions;
 import io.deephaven.protobuf.FieldNumberPath;
 import io.deephaven.protobuf.FieldPath;
+import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
 import io.deephaven.protobuf.ProtobufFunctions.Builder;
-import io.deephaven.protobuf.ProtobufOptions;
+import io.deephaven.protobuf.ProtobufDescriptorParser;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;
@@ -78,7 +78,8 @@ import java.util.stream.Collectors;
 class ProtobufImpl {
 
     @VisibleForTesting
-    static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor, ProtobufOptions options) {
+    static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor,
+            ProtobufDescriptorParserOptions options) {
         return new ParsedStates(descriptor, options).functionsForSchemaChanges();
     }
 
@@ -87,24 +88,22 @@ class ProtobufImpl {
         private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
                 ObjectFunction.cast(Type.ofCustom(Message.class));
 
-        private final ProtobufOptions options;
+        private final ProtobufDescriptorParserOptions options;
         private final String schemaSubject;
         private final int schemaVersion;
         private final Function<FieldPath, String> pathToColumnName;
-        private final String serializedSizeColumnName;
 
 
-        ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion) {
-            this(options, schemaSubject, schemaVersion, ProtobufImpl::toColumnName, null);
+        ProtobufConsume(ProtobufDescriptorParserOptions options, String schemaSubject, int schemaVersion) {
+            this(options, schemaSubject, schemaVersion, ProtobufImpl::toColumnName);
         }
 
-        ProtobufConsume(ProtobufOptions options, String schemaSubject, int schemaVersion,
-                Function<FieldPath, String> pathToColumnName, String serializedSizeColumnName) {
+        ProtobufConsume(ProtobufDescriptorParserOptions options, String schemaSubject, int schemaVersion,
+                Function<FieldPath, String> pathToColumnName) {
             this.options = Objects.requireNonNull(options);
             this.schemaSubject = Objects.requireNonNull(schemaSubject);
             this.schemaVersion = schemaVersion;
             this.pathToColumnName = Objects.requireNonNull(pathToColumnName);
-            this.serializedSizeColumnName = serializedSizeColumnName;
         }
 
         @Override
@@ -132,10 +131,6 @@ class ProtobufImpl {
             final KeyOrValueIngestData data = new KeyOrValueIngestData();
             // arguably, others should be LinkedHashMap as well.
             data.fieldPathToColumnName = new LinkedHashMap<>();
-            if (serializedSizeColumnName != null) {
-                final IntFunction<Message> serializedSize = CommonFunctions.serializedSize();
-                add(serializedSizeColumnName, serializedSize, data, columnDefinitionsOut, fieldCopiers);
-            }
             for (ProtobufFunction f : functions.functions()) {
                 add(pathToColumnName.apply(f.path()), f.function(), data, columnDefinitionsOut, fieldCopiers);
             }
@@ -214,10 +209,10 @@ class ProtobufImpl {
 
     private static class ParsedStates {
         private final Descriptor originalDescriptor;
-        private final ProtobufOptions options;
+        private final ProtobufDescriptorParserOptions options;
         private final Map<Descriptor, ProtobufFunctions> parsed;
 
-        private ParsedStates(Descriptor originalDescriptor, ProtobufOptions options) {
+        private ParsedStates(Descriptor originalDescriptor, ProtobufDescriptorParserOptions options) {
             this.originalDescriptor = Objects.requireNonNull(originalDescriptor);
             this.options = Objects.requireNonNull(options);
             this.parsed = new HashMap<>();
@@ -243,7 +238,7 @@ class ProtobufImpl {
                         originalDescriptor.getFullName(), newDescriptor.getFullName()));
             }
             if (newDescriptor == originalDescriptor) {
-                return withMostAppropriateType(ProtobufFunctions.parse(newDescriptor, options));
+                return withMostAppropriateType(ProtobufDescriptorParser.parse(newDescriptor, options));
             }
 
             // We only need to include the field numbers that were part of the original descriptor
@@ -254,12 +249,12 @@ class ProtobufImpl {
                     .map(FieldPath::numberPath)
                     .collect(Collectors.toList());
 
-            final ProtobufOptions adaptedOptions = ProtobufOptions.builder()
+            final ProtobufDescriptorParserOptions adaptedOptions = ProtobufDescriptorParserOptions.builder()
                     .parsers(options.parsers())
                     .include(FieldPath.anyNumberPathStartsWith(includePaths))
                     .build();
 
-            return withMostAppropriateType(ProtobufFunctions.parse(newDescriptor, adaptedOptions));
+            return withMostAppropriateType(ProtobufDescriptorParser.parse(newDescriptor, adaptedOptions));
         }
 
         private class ForPath {

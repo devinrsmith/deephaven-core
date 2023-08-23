@@ -47,6 +47,7 @@ import io.deephaven.protobuf.test.RepeatedMessage.Person;
 import io.deephaven.protobuf.test.RepeatedTimestamp;
 import io.deephaven.protobuf.test.RepeatedWrappers;
 import io.deephaven.protobuf.test.TheWrappers;
+import io.deephaven.protobuf.test.TwoTs;
 import io.deephaven.protobuf.test.UnionType;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;
@@ -54,6 +55,7 @@ import io.deephaven.qst.type.BoxedDoubleType;
 import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
+import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -549,6 +551,26 @@ public class ProtobufTest {
     }
 
     @Test
+    void optionalBasicsByteString() {
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .parseAsBytes(BooleanFunction.ofFalse())
+                .build();
+        checkKey(
+                OptionalBasics.getDescriptor(),
+                options,
+                List.of("bytes"),
+                CustomType.of(ByteString.class),
+                new HashMap<>() {
+                    {
+                        put(OptionalBasics.getDefaultInstance(), null);
+                        put(OptionalBasics.newBuilder().setBytes(ByteString.EMPTY).build(), ByteString.EMPTY);
+                        final ByteString hello = ByteString.copyFromUtf8("hello");
+                        put(OptionalBasics.newBuilder().setBytes(hello).build(), hello);
+                    }
+                });
+    }
+
+    @Test
     void wrappers() {
         final Map<List<String>, TypedFunction<Message>> nf = nf(TheWrappers.getDescriptor());
         assertThat(nf.keySet()).containsExactly(
@@ -702,6 +724,24 @@ public class ProtobufTest {
                 RepeatedBasics.newBuilder().addBytes(ByteString.copyFromUtf8("hello"))
                         .addBytes(ByteString.copyFromUtf8("foo")).build(),
                 new byte[][] {"hello".getBytes(StandardCharsets.UTF_8), "foo".getBytes(StandardCharsets.UTF_8)}));
+    }
+
+    @Test
+    void repeatedByteString() {
+        final RepeatedBasics allEmpty = RepeatedBasics.getDefaultInstance();
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .parseAsBytes(BooleanFunction.ofFalse())
+                .build();
+        final ByteString hello = ByteString.copyFromUtf8("hello");
+        final ByteString foo = ByteString.copyFromUtf8("foo");
+        checkKey(RepeatedBasics.getDescriptor(),
+                options,
+                List.of("bytes"),
+                CustomType.of(ByteString.class).arrayType(),
+                Map.of(
+                        allEmpty, new ByteString[] {},
+                        RepeatedBasics.newBuilder().addBytes(hello).addBytes(foo).build(),
+                        new ByteString[] {hello, foo}));
     }
 
     @Test
@@ -1209,7 +1249,7 @@ public class ProtobufTest {
 
     @Test
     void includeNamePaths() {
-        final ProtobufOptions options = ProtobufOptions.builder()
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
                 .include(FieldPath.namePathEquals(List.of("float")))
                 .build();
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
@@ -1218,7 +1258,7 @@ public class ProtobufTest {
 
     @Test
     void includeNumberPaths() {
-        final ProtobufOptions options = ProtobufOptions.builder()
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
                 .include(FieldPath.numberPathEquals(FieldNumberPath.of(6)))
                 .build();
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
@@ -1227,7 +1267,7 @@ public class ProtobufTest {
 
     @Test
     void excludeNamePaths() {
-        final ProtobufOptions options = ProtobufOptions.builder()
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
                 .include(BooleanFunction.not(FieldPath.namePathEquals(List.of("float"))))
                 .build();
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
@@ -1237,7 +1277,7 @@ public class ProtobufTest {
 
     @Test
     void excludeNumberPaths() {
-        final ProtobufOptions options = ProtobufOptions.builder()
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
                 .include(BooleanFunction.not(FieldPath.numberPathEquals(FieldNumberPath.of(6))))
                 .build();
         final Map<List<String>, TypedFunction<Message>> nf = nf(UnionType.getDescriptor(), options);
@@ -1247,19 +1287,36 @@ public class ProtobufTest {
 
     @Test
     void timestampNoParsers() {
-        final ProtobufOptions options = ProtobufOptions.builder().parsers(List.of()).build();
+        final ProtobufDescriptorParserOptions options =
+                ProtobufDescriptorParserOptions.builder().parsers(List.of()).build();
         final Map<List<String>, TypedFunction<Message>> nf = nf(Timestamp.getDescriptor(), options);
         assertThat(nf.keySet()).containsExactly(
                 List.of("seconds"),
                 List.of("nanos"));
     }
 
-    private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
-        return nf(descriptor, ProtobufOptions.defaults());
+    @Test
+    void twoTimestampsOneAsWellKnown() {
+        // only treat t1 as well-known
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .parseAsWellKnown(FieldPath.namePathEquals(List.of("ts1")))
+                .build();
+        final Map<List<String>, TypedFunction<Message>> nf = nf(TwoTs.getDescriptor(), options);
+        assertThat(nf.keySet()).containsExactly(List.of("ts1"), List.of("ts2", "seconds"), List.of("ts2", "nanos"));
     }
 
-    private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor, ProtobufOptions options) {
-        final ProtobufFunctions results = ProtobufFunctions.parse(descriptor, options);
+    @Test
+    void byteString() {
+
+    }
+
+    private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {
+        return nf(descriptor, ProtobufDescriptorParserOptions.defaults());
+    }
+
+    private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor,
+            ProtobufDescriptorParserOptions options) {
+        final ProtobufFunctions results = ProtobufDescriptorParser.parse(descriptor, options);
         final Map<List<String>, TypedFunction<Message>> out = new LinkedHashMap<>(results.functions().size());
         for (ProtobufFunction function : results.functions()) {
             out.put(function.path().namePath(), function.function());
@@ -1272,7 +1329,16 @@ public class ProtobufTest {
             List<String> expectedPath,
             Type<T> expectedType,
             Map<Message, T> expectedExamples) {
-        final Map<List<String>, TypedFunction<Message>> map = nf(descriptor);
+        checkKey(descriptor, ProtobufDescriptorParserOptions.defaults(), expectedPath, expectedType, expectedExamples);
+    }
+
+    private static <T> void checkKey(
+            Descriptor descriptor,
+            ProtobufDescriptorParserOptions options,
+            List<String> expectedPath,
+            Type<T> expectedType,
+            Map<Message, T> expectedExamples) {
+        final Map<List<String>, TypedFunction<Message>> map = nf(descriptor, options);
         assertThat(map).containsKey(expectedPath);
         assertThat(map)
                 .extractingByKey(expectedPath)

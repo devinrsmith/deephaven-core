@@ -1,6 +1,5 @@
 package io.deephaven.protobuf;
 
-import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.stream.blink.tf.TypedFunction;
@@ -9,6 +8,9 @@ import org.immutables.value.Value.Immutable;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A list of {@link #functions()}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class ProtobufFunctions {
@@ -21,12 +23,12 @@ public abstract class ProtobufFunctions {
         return builder().build();
     }
 
-    public static ProtobufFunctions parse(Descriptor descriptor, ProtobufOptions options) {
-        return new Protobuf(options).translate(descriptor);
+    public static ProtobufFunctions unnamed(TypedFunction<Message> tf) {
+        return of(ProtobufFunction.of(tf));
     }
 
-    public static ProtobufFunctions unnamed(TypedFunction<Message> tf) {
-        return builder().addFunctions(ProtobufFunction.of(tf)).build();
+    public static ProtobufFunctions of(ProtobufFunction... functions) {
+        return builder().addFunctions(functions).build();
     }
 
     public abstract List<ProtobufFunction> functions();

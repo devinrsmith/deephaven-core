@@ -16,6 +16,13 @@ import java.util.stream.Stream;
 import static io.deephaven.stream.blink.tf.BooleanFunction.map;
 import static io.deephaven.stream.blink.tf.BooleanFunction.or;
 
+/**
+ * The {@link #path()} to a {@link com.google.protobuf.Descriptors.Descriptor Descriptor's} field.
+ *
+ * <p>
+ * {@link FieldDescriptor} objects are not equal across {@link com.google.protobuf.DynamicMessage dynamic messages}.
+ * Helpers {@link #numberPath()} and {@link #namePath()} may be used in lieu of direct equivalence depending on context.
+ */
 @Immutable
 @SimpleStyle
 public abstract class FieldPath {
@@ -69,8 +76,14 @@ public abstract class FieldPath {
         return path().stream().map(FieldDescriptor::getName).collect(Collectors.toList());
     }
 
+
+
     public final FieldPath prefixWith(FieldDescriptor prefix) {
         return FieldPath.of(Stream.concat(Stream.of(prefix), path().stream()).collect(Collectors.toList()));
+    }
+
+    public final FieldPath append(FieldDescriptor fieldDescriptor) {
+        return FieldPath.of(Stream.concat(path().stream(), Stream.of(fieldDescriptor)).collect(Collectors.toList()));
     }
 
     public final boolean startsWithUs(List<String> other) {

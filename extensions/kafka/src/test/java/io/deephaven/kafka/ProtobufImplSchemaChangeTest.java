@@ -15,7 +15,7 @@ import io.deephaven.kafka.test.RenameV1;
 import io.deephaven.kafka.test.RenameV2;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
-import io.deephaven.protobuf.ProtobufOptions;
+import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
@@ -325,7 +325,7 @@ public class ProtobufImplSchemaChangeTest {
     }
 
     private static ProtobufFunctions schemaChangeAwareFunctions(Descriptor descriptor) {
-        return ProtobufImpl.schemaChangeAwareFunctions(descriptor, ProtobufOptions.defaults());
+        return ProtobufImpl.schemaChangeAwareFunctions(descriptor, ProtobufDescriptorParserOptions.defaults());
     }
 
     private static TypedFunction<Message> get(ProtobufFunctions functions, String... namePath) {

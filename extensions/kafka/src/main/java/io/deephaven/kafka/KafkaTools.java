@@ -66,7 +66,7 @@ import io.deephaven.kafka.ingest.KeyOrValueProcessor;
 import io.deephaven.kafka.publish.KafkaPublisherException;
 import io.deephaven.kafka.publish.KeyOrValueSerializer;
 import io.deephaven.kafka.publish.PublishToKafka;
-import io.deephaven.protobuf.ProtobufOptions;
+import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
@@ -504,7 +504,7 @@ public class KafkaTools {
          * @return the protobuf spec
          */
         public static KeyOrValueSpec protobufSpec(final String schemaName, int schemaVersion) {
-            return new ProtobufConsume(ProtobufOptions.defaults(), schemaName, schemaVersion);
+            return new ProtobufConsume(ProtobufDescriptorParserOptions.defaults(), schemaName, schemaVersion);
         }
 
         /**

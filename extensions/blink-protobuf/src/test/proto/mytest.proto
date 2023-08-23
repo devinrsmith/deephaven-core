@@ -56,6 +56,11 @@ message ATimestamp {
   google.protobuf.Timestamp ts = 1;
 }
 
+message TwoTs {
+  google.protobuf.Timestamp ts1 = 1;
+  google.protobuf.Timestamp ts2 = 2;
+}
+
 message ADuration {
   google.protobuf.Duration dur = 1;
 }

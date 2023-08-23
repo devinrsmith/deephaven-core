@@ -35,9 +35,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-class Protobuf {
+class ProtobufDescriptorParserImpl {
 
     private static final ObjectFunction<Object, String> STRING_OBJ = ObjectFunction.cast(Type.stringType());
     private static final ObjectFunction<Object, Integer> BOXED_INT_OBJ = ObjectFunction.cast(BoxedIntType.of());
@@ -54,29 +53,29 @@ class Protobuf {
     private static final ObjectFunction<ByteString, byte[]> BYTE_STRING_FUNCTION =
             ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()).onNullInput(null);
 
-    private final ProtobufOptions options;
+    private final ProtobufDescriptorParserOptions options;
     private final Map<String, SingleValuedMessageParser> byFullName;
 
-    public Protobuf(ProtobufOptions options) {
+    public ProtobufDescriptorParserImpl(ProtobufDescriptorParserOptions options) {
         this.options = Objects.requireNonNull(options);
         this.byFullName = options.parsers().stream()
                 .collect(Collectors.toMap(x -> x.canonicalDescriptor().getFullName(), Function.identity()));
     }
 
     public ProtobufFunctions translate(Descriptor descriptor) {
-        return new DescriptorContext(List.of(), descriptor).functions();
+        return new DescriptorContext(FieldPath.empty(), descriptor).functions();
     }
 
-    private static FieldPath prefix(FieldDescriptor f, FieldPath rest) {
-        return FieldPath.of(Stream.concat(Stream.of(f), rest.path().stream()).collect(Collectors.toList()));
-    }
+    // private static FieldPath prefix(FieldDescriptor f, FieldPath rest) {
+    // return FieldPath.of(Stream.concat(Stream.of(f), rest.path().stream()).collect(Collectors.toList()));
+    // }
 
     private class DescriptorContext {
-        private final List<FieldDescriptor> parents;
+        private final FieldPath fieldPath;
         private final Descriptor descriptor;
 
-        public DescriptorContext(List<FieldDescriptor> parents, Descriptor descriptor) {
-            this.parents = Objects.requireNonNull(parents);
+        public DescriptorContext(FieldPath fieldPath, Descriptor descriptor) {
+            this.fieldPath = Objects.requireNonNull(fieldPath);
             this.descriptor = Objects.requireNonNull(descriptor);
         }
 
@@ -93,6 +92,9 @@ class Protobuf {
         }
 
         private Optional<ProtobufFunctions> wellKnown() {
+            if (!options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
+                return Optional.empty();
+            }
             // todo: eventually support cases that are >1 field
             final SingleValuedMessageParser svmp = byFullName.get(descriptor.getFullName());
             if (svmp == null) {
@@ -114,13 +116,11 @@ class Protobuf {
         private final DescriptorContext parent;
         private final FieldDescriptor fd;
         private final FieldPath fieldPath;
-        // private FieldDescriptor realFd;
 
         public FieldContext(DescriptorContext parent, FieldDescriptor fd) {
             this.parent = Objects.requireNonNull(parent);
             this.fd = Objects.requireNonNull(fd);
-            this.fieldPath =
-                    FieldPath.of(Stream.concat(parent.parents.stream(), Stream.of(fd)).collect(Collectors.toList()));
+            this.fieldPath = parent.fieldPath.append(fd);
         }
 
         private ProtobufFunctions functions() {
@@ -128,10 +128,10 @@ class Protobuf {
                 return ProtobufFunctions.empty();
             }
             final ProtobufFunctions wellKnown = wellKnown().orElse(null);
-            if (wellKnown != null) {
+            if (wellKnown != null && options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
                 return wellKnown;
             }
-            if (fd.isMapField()) {
+            if (fd.isMapField() && options.parseAsMap().applyAsBoolean(fieldPath)) {
                 return new MapFieldObject().functions();
             }
             if (fd.isRepeated()) {
@@ -146,18 +146,15 @@ class Protobuf {
         }
 
         private ProtobufFunctions namedField(TypedFunction<Message> tf) {
-            return ProtobufFunctions.builder()
-                    .addFunctions(ProtobufFunction.of(FieldPath.of(fd), tf))
-                    .build();
+            // todo: can we re-work this, so we can use fieldPath here instead and not use prefix later?
+            return ProtobufFunctions.of(ProtobufFunction.of(FieldPath.of(fd), tf));
         }
 
         private DescriptorContext toMessageContext() {
             if (fd.getJavaType() != JavaType.MESSAGE) {
                 throw new IllegalStateException();
             }
-            final List<FieldDescriptor> parents = Stream.concat(parent.parents.stream(), Stream.of(fd))
-                    .collect(Collectors.toList());
-            return new DescriptorContext(parents, fd.getMessageType());
+            return new DescriptorContext(fieldPath, fd.getMessageType());
         }
 
         private class FieldObject implements ObjectFunction<Message, Object> {
@@ -209,16 +206,18 @@ class Protobuf {
                     case STRING:
                         return namedField(mapObj(STRING_OBJ));
                     case BYTE_STRING:
-                        return namedField(mapObj(BYTE_STRING_OBJ).mapObj(BYTE_STRING_FUNCTION));
+                        return options.parseAsBytes().applyAsBoolean(fieldPath)
+                                ? namedField(mapObj(BYTE_STRING_OBJ).mapObj(BYTE_STRING_FUNCTION))
+                                : namedField(mapObj(BYTE_STRING_OBJ));
                     case ENUM:
                         return namedField(mapObj(ENUM_VALUE_DESCRIPTOR_OBJ));
-                    case MESSAGE:
+                    case MESSAGE: {
                         final Function<Message, Message> fieldAsMessage = mapObj(MESSAGE_OBJ)::apply;
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions subF = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();
-                        final boolean parentFieldIsRepeated = !parent.parents.isEmpty()
-                                && parent.parents.get(parent.parents.size() - 1).isRepeated();
+                        final boolean parentFieldIsRepeated = !parent.fieldPath.path().isEmpty()
+                                && parent.fieldPath.path().get(parent.fieldPath.path().size() - 1).isRepeated();
                         for (ProtobufFunction e : subF.functions()) {
                             // The majority of the time, we need to BypassOnNull b/c the Message may be null. In the
                             // case where the message is part of a repeated field though, the Message is never null
@@ -230,6 +229,7 @@ class Protobuf {
                                     ProtobufFunction.of(e.path().prefixWith(fd), value.mapInput(fieldAsMessage)));
                         }
                         return builder.build();
+                    }
                     default:
                         throw new IllegalStateException();
                 }
@@ -261,10 +261,7 @@ class Protobuf {
                 if (valueFd == null) {
                     throw new IllegalStateException("Expected map to have field descriptor number 2 (value)");
                 }
-
-                final List<FieldDescriptor> parents = Stream.concat(parent.parents.stream(), Stream.of(fd))
-                        .collect(Collectors.toList());
-                final DescriptorContext dc = new DescriptorContext(parents, fd.getMessageType());
+                final DescriptorContext dc = new DescriptorContext(parent.fieldPath.append(fd), fd.getMessageType());
                 final ProtobufFunctions keyFunctions = new FieldContext(dc, keyFd).functions();
                 if (keyFunctions.functions().size() != 1) {
                     throw new IllegalStateException("Expected to be single type");
@@ -278,7 +275,6 @@ class Protobuf {
                     // "simple" repeated type.
                     return delegate();
                 }
-
 
                 final TypedFunction<Message> keyFunction = keyFunctions.functions().get(0).function();
                 final TypedFunction<Message> valueFunction = valueFunctions.functions().get(0).function();
@@ -317,10 +313,12 @@ class Protobuf {
                     case STRING:
                         return namedField(mapGenerics(STRING_OBJ));
                     case BYTE_STRING:
-                        return namedField(mapGenerics(BYTE_STRING_OBJ.mapObj(BYTE_STRING_FUNCTION)));
+                        return options.parseAsBytes().applyAsBoolean(fieldPath)
+                                ? namedField(mapGenerics(BYTE_STRING_OBJ.mapObj(BYTE_STRING_FUNCTION)))
+                                : namedField(mapGenerics(BYTE_STRING_OBJ));
                     case ENUM:
                         return namedField(mapGenerics(ENUM_VALUE_DESCRIPTOR_OBJ));
-                    case MESSAGE:
+                    case MESSAGE: {
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions functions = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();
@@ -329,6 +327,7 @@ class Protobuf {
                             builder.addFunctions(ProtobufFunction.of(f.path().prefixWith(fd), repeatedTf));
                         }
                         return builder.build();
+                    }
                     default:
                         throw new IllegalStateException();
                 }
@@ -426,9 +425,7 @@ class Protobuf {
             }
 
             private ProtobufFunctions namedField(TypedFunction<Message> tf) {
-                return ProtobufFunctions.builder()
-                        .addFunctions(ProtobufFunction.of(FieldPath.of(fd), tf))
-                        .build();
+                return ProtobufFunctions.of(ProtobufFunction.of(FieldPath.of(fd), tf));
             }
         }
     }

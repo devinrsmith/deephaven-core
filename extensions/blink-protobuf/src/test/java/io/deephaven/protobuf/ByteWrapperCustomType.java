@@ -18,7 +18,7 @@ public class ByteWrapperCustomType implements SingleValuedMessageParser {
     }
 
     @Override
-    public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufOptions options) {
+    public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufDescriptorParserOptions options) {
         final FieldDescriptor field = descriptor.findFieldByNumber(ByteWrapper.VALUE_FIELD_NUMBER);
         return (ByteFunction<Message>) value -> (byte) (int) value.getField(field);
     }

@@ -9,8 +9,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.OptionalInt;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * The kafka protobuf options. This will fetch the {@link com.google.protobuf.Descriptors.Descriptor protobuf
@@ -51,12 +49,6 @@ public abstract class ProtobufConsumeOptions {
      */
     public static String joinNamePathWithUnderscore(FieldPath path) {
         return String.join("_", path.namePath());
-    }
-
-    public static String joinNumberPathWithUnderscore(FieldPath path) {
-        return IntStream.of(path.numberPath().path())
-                .mapToObj(Integer::toString)
-                .collect(Collectors.joining("_"));
     }
 
     /**

@@ -26,10 +26,6 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
         return (IntFunction<T>) Functions.PrimitiveInt.INSTANCE;
     }
 
-    static <T> IntFunction<T> cast(TypedFunction<T> f) {
-        return (IntFunction<T>) f;
-    }
-
     /**
      * Creates the function composition {@code g ∘ f}.
      *

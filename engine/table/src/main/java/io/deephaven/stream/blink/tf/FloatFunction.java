@@ -24,10 +24,6 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
         return (FloatFunction<T>) Functions.PrimitiveFloat.INSTANCE;
     }
 
-    static <T> FloatFunction<T> cast(TypedFunction<T> f) {
-        return (FloatFunction<T>) f;
-    }
-
     /**
      * Creates the function composition {@code g ∘ f}.
      *

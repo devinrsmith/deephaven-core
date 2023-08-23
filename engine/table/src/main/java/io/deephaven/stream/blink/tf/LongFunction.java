@@ -4,7 +4,6 @@ import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.Type;
 
-import java.time.Instant;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
@@ -24,10 +23,6 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
     static <T> LongFunction<T> primitive() {
         //noinspection unchecked
         return (LongFunction<T>) Functions.PrimitiveLong.INSTANCE;
-    }
-
-    static <T> LongFunction<T> cast(TypedFunction<T> f) {
-        return (LongFunction<T>) f;
     }
 
     /**

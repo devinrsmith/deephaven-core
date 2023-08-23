@@ -25,10 +25,6 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
         return (ShortFunction<T>) Functions.PrimitiveShort.INSTANCE;
     }
 
-    static <T> ShortFunction<T> cast(TypedFunction<T> f) {
-        return (ShortFunction<T>) f;
-    }
-
     /**
      * Creates the function composition {@code g ∘ f}.
      *

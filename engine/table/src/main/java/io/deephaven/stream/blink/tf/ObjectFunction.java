@@ -1,12 +1,5 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.BoxedBooleanType;
-import io.deephaven.qst.type.BoxedByteType;
-import io.deephaven.qst.type.BoxedCharType;
-import io.deephaven.qst.type.BoxedFloatType;
-import io.deephaven.qst.type.BoxedIntType;
-import io.deephaven.qst.type.BoxedLongType;
-import io.deephaven.qst.type.BoxedShortType;
 import io.deephaven.qst.type.GenericType;
 
 import java.util.function.Function;
@@ -23,10 +16,6 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
 
     static <R> ObjectFunction<R, R> identity(GenericType<R> type) {
         return ObjectFunction.of(Function.identity(), type);
-    }
-
-    static <T, R> ObjectFunction<T, R> cast(TypedFunction<T> f) {
-        return (ObjectFunction<T, R>) f;
     }
 
     /**

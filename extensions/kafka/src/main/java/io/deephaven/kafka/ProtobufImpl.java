@@ -287,39 +287,39 @@ class ProtobufImpl {
             }
 
             private boolean applyAsBoolean(Message message) {
-                return BooleanFunction.cast(getOrCreateForType(message)).applyAsBoolean(message);
+                return ((BooleanFunction<Message>) getOrCreateForType(message)).applyAsBoolean(message);
             }
 
             private char applyAsChar(Message message) {
-                return CharFunction.cast(getOrCreateForType(message)).applyAsChar(message);
+                return ((CharFunction<Message>) getOrCreateForType(message)).applyAsChar(message);
             }
 
             private byte applyAsByte(Message message) {
-                return ByteFunction.cast(getOrCreateForType(message)).applyAsByte(message);
+                return ((ByteFunction<Message>) getOrCreateForType(message)).applyAsByte(message);
             }
 
             private short applyAsShort(Message message) {
-                return ShortFunction.cast(getOrCreateForType(message)).applyAsShort(message);
+                return ((ShortFunction<Message>) getOrCreateForType(message)).applyAsShort(message);
             }
 
             private int applyAsInt(Message message) {
-                return IntFunction.cast(getOrCreateForType(message)).applyAsInt(message);
+                return ((IntFunction<Message>) getOrCreateForType(message)).applyAsInt(message);
             }
 
             private long applyAsLong(Message message) {
-                return LongFunction.cast(getOrCreateForType(message)).applyAsLong(message);
+                return ((LongFunction<Message>) getOrCreateForType(message)).applyAsLong(message);
             }
 
             private float applyAsFloat(Message message) {
-                return FloatFunction.cast(getOrCreateForType(message)).applyAsFloat(message);
+                return ((FloatFunction<Message>) getOrCreateForType(message)).applyAsFloat(message);
             }
 
             private double applyAsDouble(Message message) {
-                return DoubleFunction.cast(getOrCreateForType(message)).applyAsDouble(message);
+                return ((DoubleFunction<Message>) getOrCreateForType(message)).applyAsDouble(message);
             }
 
             private <T> T applyAsObject(Message message) {
-                return ObjectFunction.<Message, T>cast(getOrCreateForType(message)).apply(message);
+                return ((ObjectFunction<Message, T>) getOrCreateForType(message)).apply(message);
             }
 
             private TypedFunction<Message> getOrCreateForType(Message message) {

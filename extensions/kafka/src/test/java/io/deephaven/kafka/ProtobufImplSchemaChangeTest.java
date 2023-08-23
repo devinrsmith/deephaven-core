@@ -39,7 +39,7 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV1toV2() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV1.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(1);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
         {
             final MyMessageV1.MyMessage v1 = MyMessageV1.MyMessage.newBuilder().setName("v1").build();
             assertThat(nameFunction.apply(v1)).isEqualTo("v1");
@@ -54,8 +54,8 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV2toV1() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV2.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(2);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
-        final IntFunction<Message> ageFunction = IntFunction.cast(get(functions, "age"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
+        final IntFunction<Message> ageFunction = (IntFunction<Message>) get(functions, "age");
         {
             final MyMessageV2.MyMessage v2 = MyMessageV2.MyMessage.newBuilder().setName("v2").setAge(2).build();
             assertThat(nameFunction.apply(v2)).isEqualTo("v2");
@@ -72,8 +72,8 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV2toV3() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV2.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(2);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
-        final IntFunction<Message> ageFunction = IntFunction.cast(get(functions, "age"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
+        final IntFunction<Message> ageFunction = (IntFunction<Message>) get(functions, "age");
         {
             final MyMessageV2.MyMessage v2 = MyMessageV2.MyMessage.newBuilder().setName("v2").setAge(2).build();
             assertThat(nameFunction.apply(v2)).isEqualTo("v2");
@@ -108,12 +108,12 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV3toV2() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV3.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(4);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
         final ObjectFunction<Message, String> firstNameFunction =
-                ObjectFunction.cast(get(functions, "first_and_last", "first_name"));
+                (ObjectFunction<Message, String>) get(functions, "first_and_last", "first_name");
         final ObjectFunction<Message, String> lastNameFunction =
-                ObjectFunction.cast(get(functions, "first_and_last", "last_name"));
-        final IntFunction<Message> ageFunction = IntFunction.cast(get(functions, "age"));
+                (ObjectFunction<Message, String>) get(functions, "first_and_last", "last_name");
+        final IntFunction<Message> ageFunction = (IntFunction<Message>) get(functions, "age");
         {
             final MyMessageV3.MyMessage v3 = MyMessageV3.MyMessage.newBuilder().setName("v3").setAge(3).build();
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
@@ -158,8 +158,8 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV3toV4() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV3.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(4);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
-        final IntFunction<Message> ageFunction = IntFunction.cast(get(functions, "age"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
+        final IntFunction<Message> ageFunction = (IntFunction<Message>) get(functions, "age");
         {
             final MyMessageV3.MyMessage v3 = MyMessageV3.MyMessage.newBuilder().setName("v3").setAge(3).build();
             assertThat(nameFunction.apply(v3)).isEqualTo("v3");
@@ -191,9 +191,9 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV4toV3() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV4.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(5);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
-        final IntFunction<Message> ageFunction = IntFunction.cast(get(functions, "age"));
-        final FloatFunction<Message> agefFunction = FloatFunction.cast(get(functions, "agef"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
+        final IntFunction<Message> ageFunction = (IntFunction<Message>) get(functions, "age");
+        final FloatFunction<Message> agefFunction = (FloatFunction<Message>) get(functions, "agef");
         {
             final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.newBuilder().setName("v4").setAge(4).build();
             assertThat(nameFunction.apply(v4)).isEqualTo("v4");
@@ -231,7 +231,7 @@ public class ProtobufImplSchemaChangeTest {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV4.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(5);
         final ObjectFunction<Message, String> lastNameFunction =
-                ObjectFunction.cast(get(functions, "first_and_last", "last_name"));
+                (ObjectFunction<Message, String>) get(functions, "first_and_last", "last_name");
         {
             final MyMessageV5.MyMessage v5 = MyMessageV5.MyMessage.getDefaultInstance();
             try {
@@ -248,7 +248,8 @@ public class ProtobufImplSchemaChangeTest {
     public void myMessageV5toV4() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(MyMessageV5.MyMessage.getDescriptor());
         assertThat(functions.functions()).hasSize(5);
-        final LongFunction<Message> lastNameFunction = LongFunction.cast(get(functions, "first_and_last", "last_name"));
+        final LongFunction<Message> lastNameFunction =
+                (LongFunction<Message>) get(functions, "first_and_last", "last_name");
         {
             final MyMessageV4.MyMessage v4 = MyMessageV4.MyMessage.getDefaultInstance();
             try {
@@ -265,7 +266,7 @@ public class ProtobufImplSchemaChangeTest {
     public void renameV1toV2() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(RenameV1.Rename.getDescriptor());
         assertThat(functions.functions()).hasSize(1);
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
         {
             final RenameV1.Rename v1 = RenameV1.Rename.newBuilder().setName("v1").build();
             assertThat(nameFunction.apply(v1)).isEqualTo("v1");
@@ -280,8 +281,9 @@ public class ProtobufImplSchemaChangeTest {
     public void renameV2toV1() {
         final ProtobufFunctions functions = schemaChangeAwareFunctions(RenameV2.Rename.getDescriptor());
         assertThat(functions.functions()).hasSize(2);
-        final ObjectFunction<Message, String> nameOldFunction = ObjectFunction.cast(get(functions, "name_old"));
-        final ObjectFunction<Message, String> nameFunction = ObjectFunction.cast(get(functions, "name"));
+        final ObjectFunction<Message, String> nameOldFunction =
+                (ObjectFunction<Message, String>) get(functions, "name_old");
+        final ObjectFunction<Message, String> nameFunction = (ObjectFunction<Message, String>) get(functions, "name");
         {
             final RenameV2.Rename v2 = RenameV2.Rename.newBuilder().setNameOld("v2").setName("v2-new-name").build();
             assertThat(nameOldFunction.apply(v2)).isEqualTo("v2");
@@ -300,7 +302,8 @@ public class ProtobufImplSchemaChangeTest {
         assertThat(functions.functions()).hasSize(1);
         // Note: it's important that this is parsed as ObjectFunction<Message, Boolean> instead of
         // BooleanFunction<Message> because we need to be able to handle schema changes which might remove the field
-        final ObjectFunction<Message, Boolean> myBoolFunction = ObjectFunction.cast(get(functions, "my_bool"));
+        final ObjectFunction<Message, Boolean> myBoolFunction =
+                (ObjectFunction<Message, Boolean>) get(functions, "my_bool");
         {
             final BoolV1.MyBool v1 = BoolV1.MyBool.newBuilder().setMyBool(true).build();
             assertThat(myBoolFunction.apply(v1)).isTrue();

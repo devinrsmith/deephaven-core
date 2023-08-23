@@ -26,10 +26,6 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
         return (BooleanFunction<T>) Functions.PrimitiveBoolean.INSTANCE;
     }
 
-    static <T> BooleanFunction<T> cast(TypedFunction<T> f) {
-        return (BooleanFunction<T>) f;
-    }
-
     static <T> BooleanFunction<T> ofTrue() {
         return BooleanFunctions.ofTrue();
     }

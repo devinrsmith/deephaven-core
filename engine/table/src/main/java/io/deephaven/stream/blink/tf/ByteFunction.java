@@ -25,10 +25,6 @@ public interface ByteFunction<T> extends PrimitiveFunction<T> {
         return (ByteFunction<T>) Functions.PrimitiveByte.INSTANCE;
     }
 
-    static <T> ByteFunction<T> cast(TypedFunction<T> f) {
-        return (ByteFunction<T>) f;
-    }
-
     /**
      * Creates the function composition {@code g ∘ f}.
      *

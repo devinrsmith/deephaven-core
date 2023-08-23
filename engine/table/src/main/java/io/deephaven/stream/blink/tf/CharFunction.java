@@ -24,10 +24,6 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
         return (CharFunction<T>) Functions.PrimitiveChar.INSTANCE;
     }
 
-    static <T> CharFunction<T> cast(TypedFunction<T> f) {
-        return (CharFunction<T>) f;
-    }
-
     /**
      * Creates the function composition {@code g ∘ f}.
      *

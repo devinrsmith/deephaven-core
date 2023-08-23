@@ -399,6 +399,27 @@ public class ProtobufTest {
     }
 
     @Test
+    void longTimestampMapAsRepeated() {
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .parseAsMap(BooleanFunction.ofFalse())
+                .build();
+        final ALongTimestampMap e1 = ALongTimestampMap.newBuilder()
+                .putProperties(1, Timestamp.newBuilder().setSeconds(42).build())
+                .putProperties(2, Timestamp.newBuilder().setSeconds(43).build())
+                .build();
+        checkKey(ALongTimestampMap.getDescriptor(),
+                options,
+                List.of("properties", "key"),
+                Type.longType().arrayType(),
+                Map.of(e1, new long[] {1, 2}));
+        checkKey(ALongTimestampMap.getDescriptor(),
+                options,
+                List.of("properties", "value"),
+                Type.instantType().arrayType(),
+                Map.of(e1, new Instant[] {Instant.ofEpochSecond(42), Instant.ofEpochSecond(43)}));
+    }
+
+    @Test
     void aTimestamp() {
         checkKey(ATimestamp.getDescriptor(), List.of("ts"), Type.instantType(), Map.of(
                 ATimestamp.newBuilder().setTs(Timestamp.newBuilder().setSeconds(42).setNanos(43).build())

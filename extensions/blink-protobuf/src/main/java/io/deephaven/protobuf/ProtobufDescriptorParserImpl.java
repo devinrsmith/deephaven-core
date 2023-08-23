@@ -92,12 +92,12 @@ class ProtobufDescriptorParserImpl {
         }
 
         private Optional<ProtobufFunctions> wellKnown() {
-            if (!options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
-                return Optional.empty();
-            }
             // todo: eventually support cases that are >1 field
             final SingleValuedMessageParser svmp = byFullName.get(descriptor.getFullName());
             if (svmp == null) {
+                return Optional.empty();
+            }
+            if (!options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
                 return Optional.empty();
             }
             return Optional.of(ProtobufFunctions.unnamed(svmp.messageParser(descriptor, options)));

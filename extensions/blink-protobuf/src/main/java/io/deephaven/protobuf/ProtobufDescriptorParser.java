@@ -34,7 +34,7 @@ public final class ProtobufDescriptorParser {
      * <td>{@code int[]}</td>
      * </tr>
      * <tr>
-     * <td>{@link Type#UINT32 uint32}</td>
+     * <td>{@link Type#UINT32 uint32} (1)</td>
      * <td>{@code int}</td>
      * <td>{@link Integer}</td>
      * <td>{@code int[]}</td>
@@ -46,7 +46,7 @@ public final class ProtobufDescriptorParser {
      * <td>{@code int[]}</td>
      * </tr>
      * <tr>
-     * <td>{@link Type#FIXED32 fixed32}</td>
+     * <td>{@link Type#FIXED32 fixed32} (1)</td>
      * <td>{@code int}</td>
      * <td>{@link Integer}</td>
      * <td>{@code int[]}</td>
@@ -64,7 +64,7 @@ public final class ProtobufDescriptorParser {
      * <td>{@code long[]}</td>
      * </tr>
      * <tr>
-     * <td>{@link Type#UINT64 uint64}</td>
+     * <td>{@link Type#UINT64 uint64} (1)</td>
      * <td>{@code long}</td>
      * <td>{@link Long}</td>
      * <td>{@code long[]}</td>
@@ -76,7 +76,7 @@ public final class ProtobufDescriptorParser {
      * <td>{@code long[]}</td>
      * </tr>
      * <tr>
-     * <td>{@link Type#FIXED64 fixed64}</td>
+     * <td>{@link Type#FIXED64 fixed64} (1)</td>
      * <td>{@code long}</td>
      * <td>{@link Long}</td>
      * <td>{@code long[]}</td>
@@ -118,7 +118,7 @@ public final class ProtobufDescriptorParser {
      * <td>{@code byte[][]}</td>
      * </tr>
      * <tr>
-     * <td>{@link Type#BYTES bytes} (*)</td>
+     * <td>{@link Type#BYTES bytes} (2)</td>
      * <td>{@link com.google.protobuf.ByteString ByteString}</td>
      * <td>{@link com.google.protobuf.ByteString ByteString}</td>
      * <td>{@code ByteString[]}</td>
@@ -131,7 +131,12 @@ public final class ProtobufDescriptorParser {
      * </tr>
      * </table>
      *
-     * The default behavior for {@link Type#BYTES bytes} is {@code byte[]}. To parse as
+     * ^1 Unsigned 32-bit and 64-bit integers are represented using their signed counterpart, with the top bit being
+     * stored in the sign bit. This matches the Java protobuf behavior,
+     * <a href="https://protobuf.dev/programming-guides/proto3/#scalar">scalar</a>.
+     *
+     * <p>
+     * ^2 The default behavior for {@link Type#BYTES bytes} is {@code byte[]}. To parse as
      * {@link com.google.protobuf.ByteString ByteString} instead, configure
      * {@link ProtobufDescriptorParserOptions#parseAsBytes()} to {@code false} for the field.
      *

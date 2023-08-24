@@ -14,7 +14,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.functions.BooleanFunction;
 import io.deephaven.functions.ByteFunction;
 import io.deephaven.functions.CharFunction;
-import io.deephaven.functions.CommonTransform;
+import io.deephaven.kafka.CommonTransform;
 import io.deephaven.functions.DoubleFunction;
 import io.deephaven.functions.FloatFunction;
 import io.deephaven.functions.LongFunction;

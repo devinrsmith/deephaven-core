@@ -1,5 +1,16 @@
-package io.deephaven.functions;
+package io.deephaven.kafka;
 
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.IntFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.PrimitiveFunction;
+import io.deephaven.functions.ShortFunction;
+import io.deephaven.functions.TypedFunction;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;
 import io.deephaven.qst.type.BoxedCharType;
@@ -10,7 +21,7 @@ import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.BoxedShortType;
 import io.deephaven.util.type.TypeUtils;
 
-public class BoxTransform {
+class BoxTransform {
 
     /**
      * Creates the function composition {@code box ∘ f}.

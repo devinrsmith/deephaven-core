@@ -1,5 +1,10 @@
-package io.deephaven.functions;
+package io.deephaven.kafka;
 
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.PrimitiveFunction;
+import io.deephaven.functions.TypedFunction;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;
@@ -20,13 +25,13 @@ import io.deephaven.util.BooleanUtils;
 import java.time.Instant;
 import java.util.Objects;
 
-import static io.deephaven.functions.UnboxTransform.unboxByte;
-import static io.deephaven.functions.UnboxTransform.unboxChar;
-import static io.deephaven.functions.UnboxTransform.unboxDouble;
-import static io.deephaven.functions.UnboxTransform.unboxFloat;
-import static io.deephaven.functions.UnboxTransform.unboxInt;
-import static io.deephaven.functions.UnboxTransform.unboxLong;
-import static io.deephaven.functions.UnboxTransform.unboxShort;
+import static io.deephaven.kafka.UnboxTransform.unboxByte;
+import static io.deephaven.kafka.UnboxTransform.unboxChar;
+import static io.deephaven.kafka.UnboxTransform.unboxDouble;
+import static io.deephaven.kafka.UnboxTransform.unboxFloat;
+import static io.deephaven.kafka.UnboxTransform.unboxInt;
+import static io.deephaven.kafka.UnboxTransform.unboxLong;
+import static io.deephaven.kafka.UnboxTransform.unboxShort;
 
 public class CommonTransform {
 

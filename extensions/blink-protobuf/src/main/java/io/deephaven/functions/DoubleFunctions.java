@@ -6,7 +6,7 @@ import java.util.function.Function;
 class DoubleFunctions {
 
     static <T> DoubleFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (DoubleFunction<T>) PrimitiveDouble.INSTANCE;
     }
 
@@ -39,12 +39,15 @@ class DoubleFunctions {
 
         @Override
         public boolean equals(Object x) {
-            if (this == x) return true;
-            if (x == null || getClass() != x.getClass()) return false;
+            if (this == x)
+                return true;
+            if (x == null || getClass() != x.getClass())
+                return false;
 
             DoubleFunctionMap<?, ?> doubleMap = (DoubleFunctionMap<?, ?>) x;
 
-            if (!f.equals(doubleMap.f)) return false;
+            if (!f.equals(doubleMap.f))
+                return false;
             return g.equals(doubleMap.g);
         }
 

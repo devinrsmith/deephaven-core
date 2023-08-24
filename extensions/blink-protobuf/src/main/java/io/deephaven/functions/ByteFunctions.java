@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 class ByteFunctions {
     static <T> ByteFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (ByteFunction<T>) PrimitiveByte.INSTANCE;
     }
 
@@ -38,12 +38,15 @@ class ByteFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             ByteMap<?, ?> byteMap = (ByteMap<?, ?>) o;
 
-            if (!f.equals(byteMap.f)) return false;
+            if (!f.equals(byteMap.f))
+                return false;
             return g.equals(byteMap.g);
         }
 

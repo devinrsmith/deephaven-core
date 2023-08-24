@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 class CharFunctions {
     static <T> CharFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (CharFunction<T>) PrimitiveChar.INSTANCE;
     }
 
@@ -38,12 +38,15 @@ class CharFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             CharMap<?, ?> charMap = (CharMap<?, ?>) o;
 
-            if (!f.equals(charMap.f)) return false;
+            if (!f.equals(charMap.f))
+                return false;
             return g.equals(charMap.g);
         }
 

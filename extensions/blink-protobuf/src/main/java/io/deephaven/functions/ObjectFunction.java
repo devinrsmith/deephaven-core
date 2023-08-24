@@ -253,7 +253,7 @@ public interface ObjectFunction<T, R> extends TypedFunction<T>, Function<T, R> {
      * @param <R2> the return type
      */
     default <R2> ObjectFunction<T, R2> cast(GenericType<R2> returnType) {
-        //noinspection unchecked
+        // noinspection unchecked
         return returnType().equals(returnType)
                 ? (ObjectFunction<T, R2>) this
                 : mapObj(ObjectFunctions.cast(returnType));

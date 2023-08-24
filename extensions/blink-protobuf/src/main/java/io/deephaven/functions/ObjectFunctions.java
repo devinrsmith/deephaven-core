@@ -10,7 +10,7 @@ import java.util.function.Function;
 class ObjectFunctions {
 
     static <T> ObjectFunction<T, Object> identity() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (ObjectFunction<T, Object>) Identity.INSTANCE;
     }
 
@@ -134,8 +134,10 @@ class ObjectFunctions {
 
         @Override
         public boolean equals(Object x) {
-            if (this == x) return true;
-            if (x == null || getClass() != x.getClass()) return false;
+            if (this == x)
+                return true;
+            if (x == null || getClass() != x.getClass())
+                return false;
 
             Casted<?, ?> casted = (Casted<?, ?>) x;
 
@@ -169,12 +171,15 @@ class ObjectFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             FunctionImpl<?, ?> that = (FunctionImpl<?, ?>) o;
 
-            if (!returnType.equals(that.returnType)) return false;
+            if (!returnType.equals(that.returnType))
+                return false;
             return f.equals(that.f);
         }
 
@@ -207,12 +212,15 @@ class ObjectFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             ObjectMap<?, ?, ?> objectMap = (ObjectMap<?, ?, ?>) o;
 
-            if (!f.equals(objectMap.f)) return false;
+            if (!f.equals(objectMap.f))
+                return false;
             return g.equals(objectMap.g);
         }
 

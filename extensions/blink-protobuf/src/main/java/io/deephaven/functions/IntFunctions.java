@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 public class IntFunctions {
     static <T> IntFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (IntFunction<T>) IntFunctions.PrimitiveInt.INSTANCE;
     }
 
@@ -38,12 +38,15 @@ public class IntFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             IntMap<?, ?> intMap = (IntMap<?, ?>) o;
 
-            if (!f.equals(intMap.f)) return false;
+            if (!f.equals(intMap.f))
+                return false;
             return g.equals(intMap.g);
         }
 

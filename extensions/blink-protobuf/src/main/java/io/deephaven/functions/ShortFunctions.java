@@ -6,7 +6,7 @@ import java.util.function.Function;
 public class ShortFunctions {
 
     static <T> ShortFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (ShortFunction<T>) PrimitiveShort.INSTANCE;
     }
 
@@ -39,12 +39,15 @@ public class ShortFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             ShortMap<?, ?> shortMap = (ShortMap<?, ?>) o;
 
-            if (!f.equals(shortMap.f)) return false;
+            if (!f.equals(shortMap.f))
+                return false;
             return g.equals(shortMap.g);
         }
 

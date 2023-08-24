@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 class FloatFunctions {
     static <T> FloatFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (FloatFunction<T>) PrimitiveFloat.INSTANCE;
     }
 
@@ -38,12 +38,15 @@ class FloatFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             FloatMap<?, ?> floatMap = (FloatMap<?, ?>) o;
 
-            if (!f.equals(floatMap.f)) return false;
+            if (!f.equals(floatMap.f))
+                return false;
             return g.equals(floatMap.g);
         }
 

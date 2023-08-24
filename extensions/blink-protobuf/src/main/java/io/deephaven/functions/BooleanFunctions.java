@@ -8,7 +8,7 @@ import java.util.function.Function;
 class BooleanFunctions {
 
     static <T> BooleanFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (BooleanFunction<T>) PrimitiveBoolean.INSTANCE;
     }
 
@@ -27,7 +27,7 @@ class BooleanFunctions {
     }
 
     static <T> BooleanFunction<T> not(BooleanFunction<T> f) {
-        return f instanceof BooleanNot ? ((BooleanNot<T>)f).function() : new BooleanNot<>(f);
+        return f instanceof BooleanNot ? ((BooleanNot<T>) f).function() : new BooleanNot<>(f);
     }
 
     static <T> BooleanFunction<T> or(Collection<BooleanFunction<T>> functions) {
@@ -93,10 +93,13 @@ class BooleanFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             BooleanMap<?, ?> that = (BooleanMap<?, ?>) o;
-            if (!f.equals(that.f)) return false;
+            if (!f.equals(that.f))
+                return false;
             return g.equals(that.g);
         }
 
@@ -126,8 +129,10 @@ class BooleanFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             BooleanNot<?> that = (BooleanNot<?>) o;
 
@@ -159,8 +164,10 @@ class BooleanFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             BooleanAnd<?> that = (BooleanAnd<?>) o;
 
@@ -192,8 +199,10 @@ class BooleanFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             BooleanOr<?> booleanOr = (BooleanOr<?>) o;
 

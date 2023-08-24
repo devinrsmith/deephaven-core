@@ -15,7 +15,7 @@ import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.BoxedShortType;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.functions.CommonTransform;
+import io.deephaven.kafka.CommonTransform;
 import io.deephaven.functions.ObjectFunction;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.time.DateTimeUtils;

@@ -6,7 +6,7 @@ import java.util.function.Function;
 class LongFunctions {
 
     static <T> LongFunction<T> primitive() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (LongFunction<T>) PrimitiveLong.INSTANCE;
     }
 
@@ -39,12 +39,15 @@ class LongFunctions {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             LongMap<?, ?> longMap = (LongMap<?, ?>) o;
 
-            if (!f.equals(longMap.f)) return false;
+            if (!f.equals(longMap.f))
+                return false;
             return g.equals(longMap.g);
         }
 

@@ -1,7 +1,6 @@
 package io.deephaven.kafka;
 
 import io.deephaven.functions.BooleanFunction;
-import io.deephaven.functions.BoxTransform;
 import io.deephaven.functions.ByteFunction;
 import io.deephaven.functions.CharFunction;
 import io.deephaven.functions.DoubleFunction;

@@ -1,5 +1,15 @@
-package io.deephaven.functions;
+package io.deephaven.kafka;
 
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.IntFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.PrimitiveFunction;
+import io.deephaven.functions.ShortFunction;
+import io.deephaven.functions.TypedFunction;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;
@@ -19,7 +29,7 @@ import io.deephaven.util.type.TypeUtils;
 import java.util.Objects;
 import java.util.Optional;
 
-public class UnboxTransform {
+class UnboxTransform {
 
     private static final ByteFunction<Byte> UNBOX_BYTE = TypeUtils::unbox;
     private static final CharFunction<Character> UNBOX_CHAR = TypeUtils::unbox;

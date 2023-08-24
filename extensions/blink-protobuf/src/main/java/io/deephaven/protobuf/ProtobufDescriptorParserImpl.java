@@ -97,7 +97,7 @@ class ProtobufDescriptorParserImpl {
             if (svmp == null) {
                 return Optional.empty();
             }
-            if (!options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
+            if (!options.parseAsWellKnown().test(fieldPath)) {
                 return Optional.empty();
             }
             return Optional.of(ProtobufFunctions.unnamed(svmp.messageParser(descriptor, options)));
@@ -128,14 +128,14 @@ class ProtobufDescriptorParserImpl {
         }
 
         private ProtobufFunctions functions(boolean forceInclude) {
-            if (!forceInclude && !options.include().applyAsBoolean(fieldPath)) {
+            if (!forceInclude && !options.include().test(fieldPath)) {
                 return ProtobufFunctions.empty();
             }
             final ProtobufFunctions wellKnown = wellKnown().orElse(null);
-            if (wellKnown != null && options.parseAsWellKnown().applyAsBoolean(fieldPath)) {
+            if (wellKnown != null && options.parseAsWellKnown().test(fieldPath)) {
                 return wellKnown;
             }
-            if (fd.isMapField() && options.parseAsMap().applyAsBoolean(fieldPath)) {
+            if (fd.isMapField() && options.parseAsMap().test(fieldPath)) {
                 return new MapFieldObject().functions();
             }
             if (fd.isRepeated()) {
@@ -210,7 +210,7 @@ class ProtobufDescriptorParserImpl {
                     case STRING:
                         return namedField(mapObj(STRING_OBJ));
                     case BYTE_STRING:
-                        return options.parseAsBytes().applyAsBoolean(fieldPath)
+                        return options.parseAsBytes().test(fieldPath)
                                 ? namedField(mapObj(BYTE_STRING_OBJ).mapObj(BYTE_STRING_FUNCTION))
                                 : namedField(mapObj(BYTE_STRING_OBJ));
                     case ENUM:
@@ -335,7 +335,7 @@ class ProtobufDescriptorParserImpl {
                     case STRING:
                         return namedField(mapGenerics(STRING_OBJ));
                     case BYTE_STRING:
-                        return options.parseAsBytes().applyAsBoolean(fieldPath)
+                        return options.parseAsBytes().test(fieldPath)
                                 ? namedField(mapGenerics(BYTE_STRING_OBJ.mapObj(BYTE_STRING_FUNCTION)))
                                 : namedField(mapGenerics(BYTE_STRING_OBJ));
                     case ENUM:
@@ -519,7 +519,7 @@ class ProtobufDescriptorParserImpl {
         final int count = message.getRepeatedFieldCount(fd);
         final boolean[] array = new boolean[count];
         for (int i = 0; i < count; ++i) {
-            array[i] = f.applyAsBoolean(message.getRepeatedField(fd, i));
+            array[i] = f.test(message.getRepeatedField(fd, i));
         }
         return array;
     }

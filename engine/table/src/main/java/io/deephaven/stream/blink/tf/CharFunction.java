@@ -28,7 +28,7 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
      * Creates the function composition {@code g ∘ f}.
      *
      * <p>
-     * Equivalent to {@code x -> g.applyAsBoolean(f.apply(x))}.
+     * Equivalent to {@code x -> g.test(f.apply(x))}.
      *
      * @param f the inner function
      * @param g the outer function

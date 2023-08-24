@@ -2,7 +2,6 @@ package io.deephaven.stream.blink.tf;
 
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
-import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 
 import java.time.Instant;
@@ -11,7 +10,7 @@ import java.time.Instant;
 public class MapToPrimitives {
 
     public static <T> ByteFunction<T> mapBoolean(BooleanFunction<T> f) {
-        return x -> BooleanUtils.booleanAsByte(f.applyAsBoolean(x));
+        return x -> BooleanUtils.booleanAsByte(f.test(x));
     }
 
     public static <T> ByteFunction<T> mapBoolean(ObjectFunction<T, Boolean> f) {

@@ -40,7 +40,7 @@ class UpcastApply<T> implements Visitor<T, Object>, PrimitiveFunction.Visitor<T,
 
     @Override
     public Object visit(BooleanFunction<T> f) {
-        return f.applyAsBoolean(value);
+        return f.test(value);
     }
 
     @Override

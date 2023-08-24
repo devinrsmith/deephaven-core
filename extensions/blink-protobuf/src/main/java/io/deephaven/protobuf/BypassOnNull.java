@@ -46,7 +46,7 @@ enum BypassOnNull implements
 
     @Override
     public ObjectFunction<Object, Boolean> visit(BooleanFunction<Object> f) {
-        return ObjectFunction.of(t -> t == null ? null : f.applyAsBoolean(t), BoxedBooleanType.of());
+        return ObjectFunction.of(t -> t == null ? null : f.test(t), BoxedBooleanType.of());
     }
 
     @Override

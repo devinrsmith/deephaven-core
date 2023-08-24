@@ -65,7 +65,7 @@ public interface ObjectFunction<T, R> extends TypedFunction<T> {
      * Creates the function composition {@code g ∘ this}.
      *
      * <p>
-     * Equivalent to {@code x -> g.applyAsBoolean(this.apply(x))}.
+     * Equivalent to {@code x -> g.test(this.apply(x))}.
      *
      * @param g the outer function
      * @return the boolean function

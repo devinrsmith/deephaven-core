@@ -10,8 +10,8 @@ class BooleanNot<T> implements BooleanFunction<T> {
     }
 
     @Override
-    public boolean applyAsBoolean(T value) {
-        return !function.applyAsBoolean(value);
+    public boolean test(T value) {
+        return !function.test(value);
     }
 
     @Override

@@ -306,8 +306,8 @@ class ProtobufImpl {
                 return originalFunction.function().returnType();
             }
 
-            private boolean applyAsBoolean(Message message) {
-                return ((BooleanFunction<Message>) getOrCreateForType(message)).applyAsBoolean(message);
+            private boolean test(Message message) {
+                return ((BooleanFunction<Message>) getOrCreateForType(message)).test(message);
             }
 
             private char applyAsChar(Message message) {
@@ -389,7 +389,7 @@ class ProtobufImpl {
 
                 @Override
                 public BooleanFunction<Message> visit(BooleanType booleanType) {
-                    return ForPath.this::applyAsBoolean;
+                    return ForPath.this::test;
                 }
 
                 @Override

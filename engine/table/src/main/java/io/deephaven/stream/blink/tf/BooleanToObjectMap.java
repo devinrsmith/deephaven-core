@@ -23,7 +23,7 @@ class BooleanToObjectMap<T, R> implements ObjectFunction<T, R> {
 
     @Override
     public R apply(T value) {
-        return g.apply(f.applyAsBoolean(value));
+        return g.apply(f.test(value));
     }
 
     @Override

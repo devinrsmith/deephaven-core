@@ -6,6 +6,7 @@ import io.deephaven.qst.type.Type;
 
 import java.util.Collection;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A {@code boolean} function.
@@ -13,7 +14,7 @@ import java.util.function.Function;
  * @param <T> the input type
  */
 @FunctionalInterface
-public interface BooleanFunction<T> extends PrimitiveFunction<T> {
+public interface BooleanFunction<T> extends PrimitiveFunction<T>, Predicate<T> {
 
     /**
      * Assumes the object value is directly castable to a boolean. Equivalent to {@code x -> (boolean)x}.
@@ -38,7 +39,7 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
      * Creates the function composition {@code g ∘ f}.
      *
      * <p>
-     * Equivalent to {@code x -> g.applyAsBoolean(f.apply(x))}.
+     * Equivalent to {@code x -> g.test(f.apply(x))}.
      *
      * @param f the inner function
      * @param g the outer function
@@ -62,7 +63,8 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
         return new BooleanNot<>(f);
     }
 
-    boolean applyAsBoolean(T value);
+    @Override
+    boolean test(T value);
 
     @Override
     default BooleanType returnType() {
@@ -76,7 +78,7 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
 
     @Override
     default BooleanFunction<T> mapInput(Function<T, T> f) {
-        return x -> applyAsBoolean(f.apply(x));
+        return x -> test(f.apply(x));
     }
 
     @FunctionalInterface
@@ -88,7 +90,7 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T> {
      * Creates the function composition {@code g ∘ this}.
      *
      * <p>
-     * Equivalent to {@code x -> g.apply(this.applyAsBoolean(x))}.
+     * Equivalent to {@code x -> g.apply(this.test(x))}.
      *
      * @param g the outer function
      * @return the object function

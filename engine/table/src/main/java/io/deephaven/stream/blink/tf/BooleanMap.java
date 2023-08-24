@@ -13,8 +13,8 @@ class BooleanMap<T, R> implements BooleanFunction<T> {
     }
 
     @Override
-    public boolean applyAsBoolean(T value) {
-        return g.applyAsBoolean(f.apply(value));
+    public boolean test(T value) {
+        return g.test(f.apply(value));
     }
 
     @Override

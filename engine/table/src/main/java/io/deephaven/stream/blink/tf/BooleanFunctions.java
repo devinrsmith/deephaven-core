@@ -16,7 +16,7 @@ class BooleanFunctions {
         INSTANCE;
 
         @Override
-        public boolean applyAsBoolean(Object value) {
+        public boolean test(Object value) {
             return true;
         }
     }
@@ -25,7 +25,7 @@ class BooleanFunctions {
         INSTANCE;
 
         @Override
-        public boolean applyAsBoolean(Object value) {
+        public boolean test(Object value) {
             return false;
         }
     }

@@ -11,9 +11,9 @@ class BooleanOr<T> implements BooleanFunction<T> {
     }
 
     @Override
-    public boolean applyAsBoolean(T value) {
+    public boolean test(T value) {
         for (BooleanFunction<T> function : functions) {
-            if (function.applyAsBoolean(value)) {
+            if (function.test(value)) {
                 return true;
             }
         }

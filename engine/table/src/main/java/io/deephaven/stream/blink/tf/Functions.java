@@ -6,7 +6,7 @@ class Functions {
         INSTANCE;
 
         @Override
-        public boolean applyAsBoolean(Object value) {
+        public boolean test(Object value) {
             return (boolean) value;
         }
     }

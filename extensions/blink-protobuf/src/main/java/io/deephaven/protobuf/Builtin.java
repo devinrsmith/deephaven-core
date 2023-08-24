@@ -386,7 +386,7 @@ class Builtin {
         }
 
         @Override
-        public boolean applyAsBoolean(Message value) {
+        public boolean test(Message value) {
             return (boolean) value.getField(valueField);
         }
     }

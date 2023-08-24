@@ -21,7 +21,7 @@ public class ChunkUtils {
             int destOffset,
             int length) {
         for (int i = 0; i < length; ++i) {
-            dest.set(destOffset + i, booleanFunction.applyAsBoolean(src.get(i + srcOffset)));
+            dest.set(destOffset + i, booleanFunction.test(src.get(i + srcOffset)));
         }
     }
 

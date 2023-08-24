@@ -36,7 +36,7 @@ import static io.deephaven.kafka.UnboxTransform.unboxInt;
 import static io.deephaven.kafka.UnboxTransform.unboxLong;
 import static io.deephaven.kafka.UnboxTransform.unboxShort;
 
-class CommonTransform {
+public class CommonTransform {
 
     private static final ByteFunction<Boolean> BOOLEAN_AS_BYTE = BooleanUtils::booleanAsByte;
     private static final LongFunction<Instant> EPOCH_NANOS = DateTimeUtils::epochNanos;

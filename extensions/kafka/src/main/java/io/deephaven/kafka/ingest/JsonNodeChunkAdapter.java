@@ -3,15 +3,35 @@
  */
 package io.deephaven.kafka.ingest;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.deephaven.UncheckedDeephavenException;
-import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.chunk.ChunkType;
+import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.qst.type.BoxedBooleanType;
+import io.deephaven.qst.type.CustomType;
+import io.deephaven.qst.type.Type;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.kafka.CommonTransform;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.ShortFunction;
+import io.deephaven.functions.TypedFunction;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.IntFunction;
 
 public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
+
+    private static final CustomType<JsonNode> JSON_NODE_TYPE = Type.ofCustom(JsonNode.class);
+    private static final ObjectFunction<Object, JsonNode> JSON_NODE_OBJ = ObjectFunction.identity(JSON_NODE_TYPE);
+    private static final ObjectFunction<Object, Instant> INSTANT_OBJ = ObjectFunction.identity(Type.instantType());
+
     private JsonNodeChunkAdapter(
             final TableDefinition definition,
             final IntFunction<ChunkType> chunkTypeForIndex,
@@ -41,36 +61,88 @@ public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
 
     private static FieldCopier makeFieldCopier(
             final String fieldName, final ChunkType chunkType, final Class<?> dataType, final Class<?> componentType) {
+        final TypedFunction<JsonNode> nodeFunction = jsonNodeFunction(fieldName, chunkType, dataType, componentType);
+        final TypedFunction<Object> tf = JSON_NODE_OBJ.map(nodeFunction);
+        return FieldCopierAdapter.of(CommonTransform.of(tf));
+    }
+
+    private static TypedFunction<JsonNode> jsonNodeFunction(
+            final String fieldName, final ChunkType chunkType, final Class<?> dataType, final Class<?> componentType) {
+        final JsonPointer ptr = JsonPointer.compile(fieldName);
+        final boolean allowMissingKeys = true;
+        final boolean allowNullValues = true;
         switch (chunkType) {
+            case Boolean:
+                return (BooleanFunction<JsonNode>) (n -> JsonNodeUtil.getBoolean(n, ptr, allowMissingKeys,
+                        allowNullValues));
             case Char:
-                return new JsonNodeCharFieldCopier(fieldName);
+                return (CharFunction<JsonNode>) (n -> JsonNodeUtil.getChar(n, ptr, allowMissingKeys, allowNullValues));
             case Byte:
                 if (dataType == Boolean.class) {
-                    return new JsonNodeBooleanFieldCopier(fieldName);
+                    return strFunction(ptr, allowMissingKeys, allowNullValues)
+                            .mapObj(x -> toBoolean(x, ptr), BoxedBooleanType.of());
                 }
-                return new JsonNodeByteFieldCopier(fieldName);
+                return (ByteFunction<JsonNode>) (n -> JsonNodeUtil.getByte(n, ptr, allowMissingKeys, allowNullValues));
             case Short:
-                return new JsonNodeShortFieldCopier(fieldName);
+                return (ShortFunction<JsonNode>) (n -> JsonNodeUtil.getShort(n, ptr, allowMissingKeys,
+                        allowNullValues));
             case Int:
-                return new JsonNodeIntFieldCopier(fieldName);
+                return (io.deephaven.functions.IntFunction<JsonNode>) (n -> JsonNodeUtil.getInt(n, ptr,
+                        allowMissingKeys, allowNullValues));
             case Long:
                 if (dataType == Instant.class) {
-                    return new JsonNodeInstantFieldCopier(fieldName);
+                    return ObjectFunction.of(n -> JsonNodeUtil.getInstant(n, ptr, allowMissingKeys, allowNullValues),
+                            Type.instantType());
                 }
-                return new JsonNodeLongFieldCopier(fieldName);
+                return (LongFunction<JsonNode>) (n -> JsonNodeUtil.getLong(n, ptr, allowMissingKeys, allowNullValues));
             case Float:
-                return new JsonNodeFloatFieldCopier(fieldName);
+                return (FloatFunction<JsonNode>) (n -> JsonNodeUtil.getFloat(n, ptr, allowMissingKeys,
+                        allowNullValues));
             case Double:
-                return new JsonNodeDoubleFieldCopier(fieldName);
+                return (DoubleFunction<JsonNode>) (n -> JsonNodeUtil.getDouble(n, ptr, allowMissingKeys,
+                        allowNullValues));
             case Object:
                 if (dataType == String.class) {
-                    return new JsonNodeStringFieldCopier(fieldName);
+                    return strFunction(ptr, allowMissingKeys, allowNullValues);
                 }
-                if (dataType.isAssignableFrom(com.fasterxml.jackson.databind.JsonNode.class)) {
-                    return new JsonNodeJsonNodeFieldCopier(fieldName);
+                if (dataType.isAssignableFrom(JSON_NODE_TYPE.clazz())) {
+                    return ObjectFunction.of(n -> n == null ? null : n.at(ptr), JSON_NODE_TYPE);
                 }
                 throw new UncheckedDeephavenException("Type " + dataType.getSimpleName() + " not supported for JSON");
         }
         throw new IllegalArgumentException("Can not convert field of type " + dataType);
+    }
+
+    private static ObjectFunction<JsonNode, String> strFunction(JsonPointer ptr, boolean allowMissingKeys,
+            boolean allowNullValues) {
+        return ObjectFunction.of(n -> JsonNodeUtil.getString(n, ptr, allowMissingKeys, allowNullValues),
+                Type.stringType());
+    }
+
+    private static Boolean toBoolean(String valueAsString, JsonPointer ptr) {
+        if (valueAsString == null) {
+            return null;
+        } else {
+            switch (valueAsString.trim()) {
+                case "TRUE":
+                case "True":
+                case "true":
+                case "T":
+                case "t":
+                case "1":
+                    return true;
+                case "FALSE":
+                case "False":
+                case "false":
+                case "F":
+                case "f":
+                    return false;
+                case "":
+                    return null;
+                default:
+                    throw new UncheckedDeephavenException(
+                            "value " + valueAsString + " not recognized as Boolean for field " + ptr);
+            }
+        }
     }
 }

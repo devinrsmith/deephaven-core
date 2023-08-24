@@ -2,7 +2,7 @@
 
 ## ProtobufImpl schema change testing
 
-Most of the "simple" protobuf testing is done in the protobuf project, `project(':extensions-blink-protobuf')`. One of
+Most of the "simple" protobuf testing is done in the protobuf project, `project(':extensions-protobuf')`. One of
 the important parts with respect to the kafka integration is how schema changes are handled, and so that is tested here,
 [ProtobufImplSchemaChangeTest.java](src/test/java/io/deephaven/kafka/ProtobufImplSchemaChangeTest.java).
 

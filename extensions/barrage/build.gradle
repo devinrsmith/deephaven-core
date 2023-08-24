@@ -16,7 +16,7 @@ dependencies {
     implementation project(':Configuration')
     implementation depCommonsLang3
 
-    implementation project(':extensions-blink-protobuf')
+    implementation project(':extensions-protobuf')
 
     api project(':engine-table')
     implementation project(':proto:proto-backplane-grpc-flight')

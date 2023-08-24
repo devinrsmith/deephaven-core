@@ -5,8 +5,8 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import io.deephaven.protobuf.test.ByteWrapper;
-import io.deephaven.stream.blink.tf.ByteFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.TypedFunction;
 
 @AutoService(SingleValuedMessageParser.class)
 public class ByteWrapperCustomType implements SingleValuedMessageParser {

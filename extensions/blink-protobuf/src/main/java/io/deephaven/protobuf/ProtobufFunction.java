@@ -2,7 +2,7 @@ package io.deephaven.protobuf;
 
 import com.google.protobuf.Message;
 import io.deephaven.annotations.SimpleStyle;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.TypedFunction;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 

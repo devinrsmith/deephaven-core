@@ -2,7 +2,7 @@ package io.deephaven.protobuf;
 
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import io.deephaven.annotations.SimpleStyle;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.functions.BooleanFunction;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Lazy;
 import org.immutables.value.Value.Parameter;
@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.deephaven.stream.blink.tf.BooleanFunction.map;
-import static io.deephaven.stream.blink.tf.BooleanFunction.or;
+import static io.deephaven.functions.BooleanFunction.map;
+import static io.deephaven.functions.BooleanFunction.or;
 
 /**
  * The {@link #path()} to a {@link com.google.protobuf.Descriptors.Descriptor Descriptor's} field.

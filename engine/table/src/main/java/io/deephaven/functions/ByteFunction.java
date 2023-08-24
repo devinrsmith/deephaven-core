@@ -1,41 +1,42 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.functions;
 
-import io.deephaven.qst.type.CharType;
+import io.deephaven.qst.type.ByteType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
 /**
- * A {@code char} function.
+ * A {@code byte} function.
  *
  * @param <T> the input type
  */
 @FunctionalInterface
-public interface CharFunction<T> extends PrimitiveFunction<T> {
+public interface ByteFunction<T> extends PrimitiveFunction<T> {
+
     /**
-     * Assumes the object value is directly castable to a char. Equivalent to {@code x -> (char)x}.
+     * Assumes the object value is directly castable to a byte. Equivalent to {@code x -> (byte)x}.
      *
-     * @return the char function
+     * @return the byte function
      * @param <T> the value type
      */
-    static <T> CharFunction<T> primitive() {
-        return CharFunctions.primitive();
+    static <T> ByteFunction<T> primitive() {
+        return ByteFunctions.primitive();
     }
 
     /**
      * Creates the function composition {@code g ∘ f}.
      *
      * <p>
-     * Equivalent to {@code x -> g.applyAsChar(f.apply(x))}.
+     * Equivalent to {@code x -> g.applyAsByte(f.apply(x))}.
      *
      * @param f the inner function
      * @param g the outer function
-     * @return the char function
+     * @return the boolean function
      * @param <T> the input type
      * @param <R> the intermediate type
      */
-    static <T, R> CharFunction<T> map(Function<T, R> f, CharFunction<R> g) {
-        return CharFunctions.map(f, g);
+    static <T, R> ByteFunction<T> map(Function<T, R> f, ByteFunction<R> g) {
+        return ByteFunctions.map(f, g);
     }
 
     /**
@@ -44,15 +45,15 @@ public interface CharFunction<T> extends PrimitiveFunction<T> {
      * @param value the function argument
      * @return the function result
      */
-    char applyAsChar(T value);
+    byte applyAsByte(T value);
 
     @Override
-    default CharType returnType() {
-        return Type.charType();
+    default ByteType returnType() {
+        return Type.byteType();
     }
 
     @Override
-    default CharFunction<T> mapInput(Function<T, T> f) {
+    default ByteFunction<T> mapInput(Function<T, T> f) {
         return map(f, this);
     }
 

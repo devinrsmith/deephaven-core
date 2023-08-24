@@ -3,7 +3,7 @@ package io.deephaven.protobuf;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.Type;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.stream.blink.tf.BooleanFunction;
+import io.deephaven.functions.BooleanFunction;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 

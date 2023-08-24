@@ -57,8 +57,8 @@ import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.TypedFunction;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

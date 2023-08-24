@@ -21,12 +21,12 @@ import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.FloatFunction;
-import io.deephaven.stream.blink.tf.IntFunction;
-import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.ObjectFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.IntFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import org.junit.Test;
 
@@ -35,7 +35,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;

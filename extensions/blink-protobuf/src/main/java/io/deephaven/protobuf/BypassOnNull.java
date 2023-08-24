@@ -8,17 +8,17 @@ import io.deephaven.qst.type.BoxedFloatType;
 import io.deephaven.qst.type.BoxedIntType;
 import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.BoxedShortType;
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.ByteFunction;
-import io.deephaven.stream.blink.tf.CharFunction;
-import io.deephaven.stream.blink.tf.DoubleFunction;
-import io.deephaven.stream.blink.tf.FloatFunction;
-import io.deephaven.stream.blink.tf.IntFunction;
-import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.ObjectFunction;
-import io.deephaven.stream.blink.tf.PrimitiveFunction;
-import io.deephaven.stream.blink.tf.ShortFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.IntFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.PrimitiveFunction;
+import io.deephaven.functions.ShortFunction;
+import io.deephaven.functions.TypedFunction;
 
 enum BypassOnNull implements
         TypedFunction.Visitor<Object, ObjectFunction<Object, ?>>,

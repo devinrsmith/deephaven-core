@@ -3,8 +3,7 @@ package io.deephaven.kafka.ingest;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.ChunkUtils;
+import io.deephaven.functions.BooleanFunction;
 
 import java.util.Objects;
 

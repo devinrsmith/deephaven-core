@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableBooleanChunk;
@@ -10,8 +10,17 @@ import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.WritableShortChunk;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.IntFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.ShortFunction;
 
-public class ChunkUtils {
+class ChunkUtils {
 
     public static <T> void applyInto(
             BooleanFunction<T> booleanFunction,

@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.functions;
 
 import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.Type;

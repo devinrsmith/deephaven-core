@@ -6,7 +6,7 @@ package io.deephaven.kafka.ingest;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.ObjectFunction;
+import io.deephaven.functions.ObjectFunction;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

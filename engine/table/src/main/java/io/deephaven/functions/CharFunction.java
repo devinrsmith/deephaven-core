@@ -1,41 +1,41 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.functions;
 
-import io.deephaven.qst.type.FloatType;
+import io.deephaven.qst.type.CharType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
 
 /**
- * A {@code float} function.
+ * A {@code char} function.
  *
  * @param <T> the input type
  */
 @FunctionalInterface
-public interface FloatFunction<T> extends PrimitiveFunction<T> {
+public interface CharFunction<T> extends PrimitiveFunction<T> {
     /**
-     * Assumes the object value is directly castable to a float. Equivalent to {@code x -> (float)x}.
+     * Assumes the object value is directly castable to a char. Equivalent to {@code x -> (char)x}.
      *
-     * @return the float function
+     * @return the char function
      * @param <T> the value type
      */
-    static <T> FloatFunction<T> primitive() {
-        return FloatFunctions.primitive();
+    static <T> CharFunction<T> primitive() {
+        return CharFunctions.primitive();
     }
 
     /**
      * Creates the function composition {@code g ∘ f}.
      *
      * <p>
-     * Equivalent to {@code x -> g.applyAsFloat(f.apply(x))}.
+     * Equivalent to {@code x -> g.applyAsChar(f.apply(x))}.
      *
      * @param f the inner function
      * @param g the outer function
-     * @return the float function
+     * @return the char function
      * @param <T> the input type
      * @param <R> the intermediate type
      */
-    static <T, R> FloatFunction<T> map(Function<T, R> f, FloatFunction<R> g) {
-        return FloatFunctions.map(f, g);
+    static <T, R> CharFunction<T> map(Function<T, R> f, CharFunction<R> g) {
+        return CharFunctions.map(f, g);
     }
 
     /**
@@ -44,15 +44,15 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
      * @param value the function argument
      * @return the function result
      */
-    float applyAsFloat(T value);
+    char applyAsChar(T value);
 
     @Override
-    default FloatType returnType() {
-        return Type.floatType();
+    default CharType returnType() {
+        return Type.charType();
     }
 
     @Override
-    default FloatFunction<T> mapInput(Function<T, T> f) {
+    default CharFunction<T> mapInput(Function<T, T> f) {
         return map(f, this);
     }
 

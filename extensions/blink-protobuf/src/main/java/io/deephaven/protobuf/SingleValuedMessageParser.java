@@ -2,7 +2,7 @@ package io.deephaven.protobuf;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.TypedFunction;
 
 import java.util.ArrayList;
 import java.util.List;

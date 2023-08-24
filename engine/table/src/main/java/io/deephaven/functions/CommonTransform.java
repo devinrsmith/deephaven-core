@@ -1,4 +1,4 @@
-package io.deephaven.stream.blink.tf;
+package io.deephaven.functions;
 
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedBooleanType;
@@ -20,13 +20,13 @@ import io.deephaven.util.BooleanUtils;
 import java.time.Instant;
 import java.util.Objects;
 
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxByte;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxChar;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxDouble;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxFloat;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxInt;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxLong;
-import static io.deephaven.stream.blink.tf.UnboxTransform.unboxShort;
+import static io.deephaven.functions.UnboxTransform.unboxByte;
+import static io.deephaven.functions.UnboxTransform.unboxChar;
+import static io.deephaven.functions.UnboxTransform.unboxDouble;
+import static io.deephaven.functions.UnboxTransform.unboxFloat;
+import static io.deephaven.functions.UnboxTransform.unboxInt;
+import static io.deephaven.functions.UnboxTransform.unboxLong;
+import static io.deephaven.functions.UnboxTransform.unboxShort;
 
 public class CommonTransform {
 

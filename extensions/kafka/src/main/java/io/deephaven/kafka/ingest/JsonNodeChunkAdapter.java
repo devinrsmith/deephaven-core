@@ -11,16 +11,16 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.blink.tf.BooleanFunction;
-import io.deephaven.stream.blink.tf.ByteFunction;
-import io.deephaven.stream.blink.tf.CharFunction;
-import io.deephaven.stream.blink.tf.CommonTransform;
-import io.deephaven.stream.blink.tf.DoubleFunction;
-import io.deephaven.stream.blink.tf.FloatFunction;
-import io.deephaven.stream.blink.tf.LongFunction;
-import io.deephaven.stream.blink.tf.ObjectFunction;
-import io.deephaven.stream.blink.tf.ShortFunction;
-import io.deephaven.stream.blink.tf.TypedFunction;
+import io.deephaven.functions.BooleanFunction;
+import io.deephaven.functions.ByteFunction;
+import io.deephaven.functions.CharFunction;
+import io.deephaven.functions.CommonTransform;
+import io.deephaven.functions.DoubleFunction;
+import io.deephaven.functions.FloatFunction;
+import io.deephaven.functions.LongFunction;
+import io.deephaven.functions.ObjectFunction;
+import io.deephaven.functions.ShortFunction;
+import io.deephaven.functions.TypedFunction;
 
 import java.time.Instant;
 import java.util.Map;
@@ -87,7 +87,7 @@ public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
                 return (ShortFunction<JsonNode>) (n -> JsonNodeUtil.getShort(n, ptr, allowMissingKeys,
                         allowNullValues));
             case Int:
-                return (io.deephaven.stream.blink.tf.IntFunction<JsonNode>) (n -> JsonNodeUtil.getInt(n, ptr,
+                return (io.deephaven.functions.IntFunction<JsonNode>) (n -> JsonNodeUtil.getInt(n, ptr,
                         allowMissingKeys, allowNullValues));
             case Long:
                 if (dataType == Instant.class) {

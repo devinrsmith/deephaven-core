@@ -68,10 +68,6 @@ class ProtobufDescriptorParserImpl {
         return new DescriptorContext(FieldPath.empty(), descriptor).functions();
     }
 
-    // private static FieldPath prefix(FieldDescriptor f, FieldPath rest) {
-    // return FieldPath.of(Stream.concat(Stream.of(f), rest.path().stream()).collect(Collectors.toList()));
-    // }
-
     private class DescriptorContext {
         private final FieldPath fieldPath;
         private final Descriptor descriptor;
@@ -188,6 +184,10 @@ class ProtobufDescriptorParserImpl {
             }
 
             private ProtobufFunctions functions() {
+                // Note: we might be tempted at this layer to treat null boxed primitives as DH null primitives, but
+                // 1) this parsing layer doesn't / shouldn't need to know about DH nulls
+                // 2) protobuf already has the null object, so it doesn't harm us to propogate it to the calling layer,
+                // and for the calling layer to unbox if desired.
                 switch (fd.getJavaType()) {
                     case INT:
                         return fd.hasPresence()

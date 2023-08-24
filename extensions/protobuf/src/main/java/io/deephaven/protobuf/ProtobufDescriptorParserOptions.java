@@ -22,6 +22,11 @@ public abstract class ProtobufDescriptorParserOptions {
         return ImmutableProtobufDescriptorParserOptions.builder();
     }
 
+    /**
+     * Creates a default options instance.
+     *
+     * @return the options
+     */
     public static ProtobufDescriptorParserOptions defaults() {
         return builder().build();
     }

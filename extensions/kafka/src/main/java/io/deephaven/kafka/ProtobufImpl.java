@@ -193,10 +193,6 @@ class ProtobufImpl {
         return unboxed != null ? unboxed : f2;
     }
 
-    private static String toColumnName(FieldPath path) {
-        return String.join("_", path.namePath());
-    }
-
     private static class ParsedStates {
         private final Descriptor originalDescriptor;
         private final ProtobufDescriptorParserOptions options;

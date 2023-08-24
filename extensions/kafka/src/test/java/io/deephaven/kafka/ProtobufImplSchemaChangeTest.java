@@ -1,7 +1,9 @@
 package io.deephaven.kafka;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
+import com.google.protobuf.Timestamp;
 import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.kafka.test.BoolV1;
 import io.deephaven.kafka.test.BoolV2;
@@ -13,9 +15,13 @@ import io.deephaven.kafka.test.MyMessageV4;
 import io.deephaven.kafka.test.MyMessageV5;
 import io.deephaven.kafka.test.RenameV1;
 import io.deephaven.kafka.test.RenameV2;
+import io.deephaven.kafka.test.SpecialTypesV1;
+import io.deephaven.kafka.test.SpecialTypesV2;
+import io.deephaven.protobuf.FieldPath;
+import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.protobuf.ProtobufFunction;
 import io.deephaven.protobuf.ProtobufFunctions;
-import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
+import io.deephaven.stream.blink.tf.BooleanFunction;
 import io.deephaven.stream.blink.tf.FloatFunction;
 import io.deephaven.stream.blink.tf.IntFunction;
 import io.deephaven.stream.blink.tf.LongFunction;
@@ -24,7 +30,12 @@ import io.deephaven.stream.blink.tf.TypedFunction;
 import io.deephaven.util.QueryConstants;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -295,6 +306,148 @@ public class ProtobufImplSchemaChangeTest {
             assertThat(nameFunction.apply(v1)).isNull();
         }
     }
+
+    @Test
+    public void specialTypesWellKnown() {
+        final BooleanFunction<FieldPath> isTs = FieldPath.namePathEquals(List.of("ts"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(isTs)
+                .parseAsWellKnown(isTs)
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(1);
+        final ObjectFunction<Message, Instant> tsFunction = (ObjectFunction<Message, Instant>) get(functions, "ts");
+        final Timestamp ts = Timestamp.newBuilder().setSeconds(42).build();
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().setTs(ts).build();
+            assertThat(tsFunction.apply(v1)).isEqualTo(Instant.ofEpochSecond(42));
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 = SpecialTypesV2.SpecialTypes.newBuilder().setTsRenamed(ts).build();
+            assertThat(tsFunction.apply(v2)).isEqualTo(Instant.ofEpochSecond(42));
+        }
+    }
+
+    @Test
+    public void specialTypesAntiWellKnown() {
+        final BooleanFunction<FieldPath> startsWithTs = FieldPath.namePathStartsWith(List.of("ts"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(startsWithTs)
+                .parseAsWellKnown(BooleanFunction.not(startsWithTs))
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(2);
+        final LongFunction<Message> seconds = (LongFunction<Message>) get(functions, "ts", "seconds");
+        final IntFunction<Message> nanos = (IntFunction<Message>) get(functions, "ts", "nanos");
+        final Timestamp ts = Timestamp.newBuilder().setSeconds(42).setNanos(43).build();
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().setTs(ts).build();
+            assertThat(seconds.applyAsLong(v1)).isEqualTo(42L);
+            assertThat(nanos.applyAsInt(v1)).isEqualTo(43);
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 = SpecialTypesV2.SpecialTypes.newBuilder().setTsRenamed(ts).build();
+            assertThat(seconds.applyAsLong(v2)).isEqualTo(42L);
+            assertThat(nanos.applyAsInt(v2)).isEqualTo(43);
+        }
+    }
+
+    @Test
+    public void specialTypesBytes() {
+        final BooleanFunction<FieldPath> isBs = FieldPath.namePathEquals(List.of("bs"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(isBs)
+                .parseAsBytes(isBs)
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(1);
+        final ObjectFunction<Message, byte[]> bsFunction = (ObjectFunction<Message, byte[]>) get(functions, "bs");
+        final ByteString bs = ByteString.copyFromUtf8("foo");
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().setBs(bs).build();
+            assertThat(bsFunction.apply(v1)).isEqualTo("foo".getBytes(StandardCharsets.UTF_8));
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 = SpecialTypesV2.SpecialTypes.newBuilder().setBsRenamed(bs).build();
+            assertThat(bsFunction.apply(v2)).isEqualTo("foo".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    public void specialTypesByteString() {
+        final BooleanFunction<FieldPath> isBs = FieldPath.namePathEquals(List.of("bs"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(isBs)
+                .parseAsBytes(BooleanFunction.not(isBs))
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(1);
+        final ObjectFunction<Message, ByteString> bsFunction =
+                (ObjectFunction<Message, ByteString>) get(functions, "bs");
+        final ByteString bs = ByteString.copyFromUtf8("foo");
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().setBs(bs).build();
+            assertThat(bsFunction.apply(v1)).isEqualTo(bs);
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 = SpecialTypesV2.SpecialTypes.newBuilder().setBsRenamed(bs).build();
+            assertThat(bsFunction.apply(v2)).isEqualTo(bs);
+        }
+    }
+
+    @Test
+    public void specialTypesMap() {
+        final BooleanFunction<FieldPath> isMp = FieldPath.namePathEquals(List.of("mp"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(isMp)
+                .parseAsMap(isMp)
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(1);
+        final ObjectFunction<Message, Map<Object, Object>> mpFunction =
+                (ObjectFunction<Message, Map<Object, Object>>) get(functions, "mp");
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().putMp(42, 43).build();
+            assertThat(mpFunction.apply(v1)).isEqualTo(Map.of(42, 43));
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 =
+                    SpecialTypesV2.SpecialTypes.newBuilder().putMpRenamed(42, 43).build();
+            assertThat(mpFunction.apply(v2)).isEqualTo(Map.of(42, 43));
+        }
+    }
+
+    @Test
+    public void specialTypesAntiMap() {
+        final BooleanFunction<FieldPath> startsWithMp = FieldPath.namePathStartsWith(List.of("mp"));
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(startsWithMp)
+                .parseAsMap(BooleanFunction.not(startsWithMp))
+                .build();
+        final ProtobufFunctions functions =
+                ProtobufImpl.schemaChangeAwareFunctions(SpecialTypesV1.SpecialTypes.getDescriptor(), options);
+        assertThat(functions.functions()).hasSize(2);
+        final ObjectFunction<Message, int[]> keyFunction = (ObjectFunction<Message, int[]>) get(functions, "mp", "key");
+        final ObjectFunction<Message, int[]> valueFunction =
+                (ObjectFunction<Message, int[]>) get(functions, "mp", "value");
+        {
+            final SpecialTypesV1.SpecialTypes v1 = SpecialTypesV1.SpecialTypes.newBuilder().putMp(42, 43).build();
+            assertThat(keyFunction.apply(v1)).containsExactly(42);
+            assertThat(valueFunction.apply(v1)).containsExactly(43);
+        }
+        {
+            final SpecialTypesV2.SpecialTypes v2 =
+                    SpecialTypesV2.SpecialTypes.newBuilder().putMpRenamed(42, 43).build();
+            assertThat(keyFunction.apply(v2)).containsExactly(42);
+            assertThat(valueFunction.apply(v2)).containsExactly(43);
+        }
+    }
+    //
 
     @Test
     public void boolV1toV2() {

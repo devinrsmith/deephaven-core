@@ -39,16 +39,20 @@ public abstract class FieldPath {
         return ImmutableFieldPath.of(descriptors);
     }
 
-    public static BooleanFunction<FieldPath> numberPathStartsWith(FieldNumberPath numberPath) {
-        return map(FieldPath::numberPath, numberPath::startsWith);
+    public static BooleanFunction<FieldPath> numberPathStartsWith(FieldNumberPath prefix) {
+        return map(FieldPath::numberPath, x -> x.startsWith(prefix));
     }
 
-    public static BooleanFunction<FieldPath> anyNumberPathStartsWith(Collection<FieldNumberPath> numberPaths) {
-        return or(numberPaths.stream().map(FieldPath::numberPathStartsWith).collect(Collectors.toList()));
+    public static BooleanFunction<FieldPath> numberPathStartsWithUs(FieldNumberPath other) {
+        return map(FieldPath::numberPath, other::startsWith);
     }
 
-    public static BooleanFunction<FieldPath> namePathStartsWith(List<String> namePath) {
-        return fieldPath -> fieldPath.startsWithUs(namePath);
+    public static BooleanFunction<FieldPath> anyNumberPathStartsWithUs(Collection<FieldNumberPath> numberPaths) {
+        return or(numberPaths.stream().map(FieldPath::numberPathStartsWithUs).collect(Collectors.toList()));
+    }
+
+    public static BooleanFunction<FieldPath> namePathStartsWith(List<String> prefix) {
+        return fieldPath -> fieldPath.startsWith(prefix);
     }
 
     public static BooleanFunction<FieldPath> anyNamePathStartsWith(Collection<List<String>> namePaths) {
@@ -76,8 +80,6 @@ public abstract class FieldPath {
         return path().stream().map(FieldDescriptor::getName).collect(Collectors.toList());
     }
 
-
-
     public final FieldPath prefixWith(FieldDescriptor prefix) {
         return FieldPath.of(Stream.concat(Stream.of(prefix), path().stream()).collect(Collectors.toList()));
     }
@@ -90,5 +92,16 @@ public abstract class FieldPath {
         // this is an "inversion" of startsWith; but helps us b/c we can't extend List
         final List<String> us = namePath();
         return other.subList(0, Math.min(other.size(), us.size())).equals(us);
+    }
+
+    public final boolean startsWith(List<String> prefix) {
+        final List<String> us = namePath();
+        return us.subList(0, Math.min(prefix.size(), us.size())).equals(prefix);
+    }
+
+    public final boolean overlaps(List<String> other) {
+        final List<String> us = namePath();
+        final int minSize = Math.min(us.size(), other.size());
+        return us.subList(0, minSize).equals(other.subList(0, minSize));
     }
 }

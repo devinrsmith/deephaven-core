@@ -73,7 +73,7 @@ import java.util.Map.Entry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ProtobufTest {
+public class ProtobufDescriptorParserTest {
 
     @Test
     public void string() {
@@ -328,6 +328,18 @@ public class ProtobufTest {
     @Test
     void intIntMap() {
         checkKey(AnIntIntMap.getDescriptor(), List.of("properties"), Type.ofCustom(Map.class),
+                Map.of(AnIntIntMap.newBuilder()
+                        .putProperties(1, 2)
+                        .putProperties(3, 4).build(),
+                        Map.of(1, 2, 3, 4)));
+    }
+
+    @Test
+    void intIntMapRestrictiveInclude() {
+        final ProtobufDescriptorParserOptions options = ProtobufDescriptorParserOptions.builder()
+                .include(FieldPath.namePathEquals(List.of("properties")))
+                .build();
+        checkKey(AnIntIntMap.getDescriptor(), options, List.of("properties"), Type.ofCustom(Map.class),
                 Map.of(AnIntIntMap.newBuilder()
                         .putProperties(1, 2)
                         .putProperties(3, 4).build(),

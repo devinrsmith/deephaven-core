@@ -4,6 +4,7 @@
 package io.deephaven.kafka;
 
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
 import io.confluent.kafka.schemaregistry.SchemaProvider;
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
@@ -68,6 +69,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -231,21 +233,53 @@ class ProtobufImpl {
             if (newDescriptor == originalDescriptor) {
                 return withMostAppropriateType(ProtobufDescriptorParser.parse(newDescriptor, options));
             }
-
-            // We only need to include the field numbers that were part of the original descriptor
+            // We only need to include the field numbers that were parsed for the original descriptor
             final List<FieldNumberPath> includePaths = parsed.get(originalDescriptor)
                     .functions()
                     .stream()
                     .map(ProtobufFunction::path)
                     .map(FieldPath::numberPath)
                     .collect(Collectors.toList());
-
+            // While we could do
+            // .include(BooleanFunction.ofTrue()) or .include(adapt(options.include()))
+            // the version we are using
+            // .include(FieldPath.anyNumberPathStartsWithUs(includePaths))
+            // is more efficient / selective.
             final ProtobufDescriptorParserOptions adaptedOptions = ProtobufDescriptorParserOptions.builder()
                     .parsers(options.parsers())
-                    .include(FieldPath.anyNumberPathStartsWith(includePaths))
+                    .include(FieldPath.anyNumberPathStartsWithUs(includePaths))
+                    .parseAsWellKnown(adapt(options.parseAsWellKnown()))
+                    .parseAsBytes(adapt(options.parseAsBytes()))
+                    .parseAsMap(adapt(options.parseAsMap()))
                     .build();
-
             return withMostAppropriateType(ProtobufDescriptorParser.parse(newDescriptor, adaptedOptions));
+        }
+
+        private BooleanFunction<FieldPath> adapt(BooleanFunction<FieldPath> original) {
+            if (original == BooleanFunction.<FieldPath>ofTrue() || original == BooleanFunction.<FieldPath>ofFalse()) {
+                // Don't adapt FieldPath, original doesn't use FieldPath.
+                return original;
+            }
+            return original.mapInput(this::adaptFieldPath);
+        }
+
+        private FieldPath adaptFieldPath(FieldPath path) {
+            if (path.path().isEmpty()) {
+                return path;
+            }
+            final List<FieldDescriptor> originalFds = new ArrayList<>(path.path().size());
+            Descriptor descriptor = originalDescriptor;
+            final Iterator<FieldDescriptor> it = path.path().iterator();
+            while (true) {
+                final FieldDescriptor currentFd = it.next();
+                final FieldDescriptor originalFd = descriptor.findFieldByNumber(currentFd.getNumber());
+                originalFds.add(originalFd);
+                if (!it.hasNext()) {
+                    break;
+                }
+                descriptor = originalFd.getMessageType();
+            }
+            return FieldPath.of(originalFds);
         }
 
         private class ForPath {

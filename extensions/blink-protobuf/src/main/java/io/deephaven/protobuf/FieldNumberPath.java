@@ -17,8 +17,8 @@ public abstract class FieldNumberPath {
     @Parameter
     public abstract int[] path();
 
-    public final boolean startsWith(FieldNumberPath other) {
-        final int[] otherPath = other.path();
-        return Arrays.equals(path(), 0, Math.min(path().length, otherPath.length), otherPath, 0, otherPath.length);
+    public final boolean startsWith(FieldNumberPath prefix) {
+        final int[] prefixPath = prefix.path();
+        return Arrays.equals(path(), 0, Math.min(path().length, prefixPath.length), prefixPath, 0, prefixPath.length);
     }
 }

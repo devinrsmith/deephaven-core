@@ -124,7 +124,11 @@ class ProtobufDescriptorParserImpl {
         }
 
         private ProtobufFunctions functions() {
-            if (!options.include().applyAsBoolean(fieldPath)) {
+            return functions(false);
+        }
+
+        private ProtobufFunctions functions(boolean forceInclude) {
+            if (!forceInclude && !options.include().applyAsBoolean(fieldPath)) {
                 return ProtobufFunctions.empty();
             }
             final ProtobufFunctions wellKnown = wellKnown().orElse(null);
@@ -262,12 +266,30 @@ class ProtobufDescriptorParserImpl {
                     throw new IllegalStateException("Expected map to have field descriptor number 2 (value)");
                 }
                 final DescriptorContext dc = new DescriptorContext(parent.fieldPath.append(fd), fd.getMessageType());
-                final ProtobufFunctions keyFunctions = new FieldContext(dc, keyFd).functions();
+
+                // Note: maps are a "special" case, where even though we don't include the key / value FDs as a return
+                // io.deephaven.protobuf.ProtobufFunction#path, it's important that we force their inclusion if we've
+                // gotten this far.
+                //
+                // For example, if we have the schema:
+                // message MyMessage {
+                // map<int32, int32> my_map = 1;
+                // }
+                //
+                // The user should be able to use:
+                // ProtobufDescriptorParserOptions.builder()
+                // .include(FieldPath.namePathEquals(List.of("my_map")))
+                // .build()
+                //
+                // This involves parsing ["my_map", "key"] and ["my_map", "value"].
+                //
+                // See io.deephaven.protobuf.ProtobufDescriptorParserTest#intIntMapRestrictiveInclude
+                final ProtobufFunctions keyFunctions = new FieldContext(dc, keyFd).functions(true);
                 if (keyFunctions.functions().size() != 1) {
-                    throw new IllegalStateException("Expected to be single type");
+                    throw new IllegalStateException("Protobuf map keys must be a single type");
                 }
 
-                final ProtobufFunctions valueFunctions = new FieldContext(dc, valueFd).functions();
+                final ProtobufFunctions valueFunctions = new FieldContext(dc, valueFd).functions(true);
                 if (valueFunctions.functions().size() != 1) {
                     // We've parsed the value type as an entity that has multiple values (as opposed to a single value
                     // we can put into a map). We may wish to have more configuration options for these situations in

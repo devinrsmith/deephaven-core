@@ -1,7 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.FloatType;
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.function.Function;
@@ -20,8 +19,7 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
      * @param <T> the value type
      */
     static <T> FloatFunction<T> primitive() {
-        //noinspection unchecked
-        return (FloatFunction<T>) Functions.PrimitiveFloat.INSTANCE;
+        return FloatFunctions.primitive();
     }
 
     /**
@@ -37,9 +35,15 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
      * @param <R> the intermediate type
      */
     static <T, R> FloatFunction<T> map(Function<T, R> f, FloatFunction<R> g) {
-        return new FloatMap<>(f, g);
+        return FloatFunctions.map(f, g);
     }
 
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value the function argument
+     * @return the function result
+     */
     float applyAsFloat(T value);
 
     @Override
@@ -48,30 +52,12 @@ public interface FloatFunction<T> extends PrimitiveFunction<T> {
     }
 
     @Override
-    default <R> R walk(Visitor<T, R> visitor) {
-        return visitor.visit(this);
+    default FloatFunction<T> mapInput(Function<T, T> f) {
+        return map(f, this);
     }
 
     @Override
-    default FloatFunction<T> mapInput(Function<T, T> f) {
-        return x -> applyAsFloat(f.apply(x));
-    }
-
-    @FunctionalInterface
-    interface FloatToObject<R> {
-        R apply(float value);
-    }
-
-    /**
-     * Creates the function composition {@code g ∘ this}.
-     *
-     * <p>
-     * Equivalent to {@code x -> g.apply(this.applyAsFloat(x))}.
-     *
-     * @param g the outer function
-     * @return the object function
-     */
-    default <R> ObjectFunction<T, R> mapObj(FloatToObject<R> g, GenericType<R> returnType) {
-        return new FloatToObjectMap<>(this, g, returnType);
+    default <R> R walk(Visitor<T, R> visitor) {
+        return visitor.visit(this);
     }
 }

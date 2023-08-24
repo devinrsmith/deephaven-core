@@ -54,10 +54,6 @@ class Builtin {
                 customParser(FieldMask.class));
     }
 
-    private static <R extends Message> ObjectFunction<Message, R> message(GenericType<R> type) {
-        return ObjectFunction.cast(type);
-    }
-
     static <T extends Message> SingleValuedMessageParser customParser(Class<T> clazz) {
         try {
             final Method method = clazz.getDeclaredMethod("getDescriptor");
@@ -295,7 +291,7 @@ class Builtin {
         @Override
         public TypedFunction<Message> messageParser(Descriptor descriptor, ProtobufDescriptorParserOptions options) {
             checkCompatible(canonicalDescriptor(), descriptor);
-            return message(type);
+            return ObjectFunction.identity(type);
         }
     }
 

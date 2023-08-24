@@ -38,20 +38,22 @@ import java.util.stream.Collectors;
 
 class ProtobufDescriptorParserImpl {
 
-    private static final ObjectFunction<Object, String> STRING_OBJ = ObjectFunction.cast(Type.stringType());
-    private static final ObjectFunction<Object, Integer> BOXED_INT_OBJ = ObjectFunction.cast(BoxedIntType.of());
-    private static final ObjectFunction<Object, Long> BOXED_LONG_OBJ = ObjectFunction.cast(BoxedLongType.of());
-    private static final ObjectFunction<Object, Float> BOXED_FLOAT_OBJ = ObjectFunction.cast(BoxedFloatType.of());
-    private static final ObjectFunction<Object, Double> BOXED_DOUBLE_OBJ = ObjectFunction.cast(BoxedDoubleType.of());
-    private static final ObjectFunction<Object, Boolean> BOXED_BOOLEAN_OBJ = ObjectFunction.cast(BoxedBooleanType.of());
+    private static final ObjectFunction<Object, String> STRING_OBJ = ObjectFunction.identity(Type.stringType());
+    private static final ObjectFunction<Object, Integer> BOXED_INT_OBJ = ObjectFunction.identity(BoxedIntType.of());
+    private static final ObjectFunction<Object, Long> BOXED_LONG_OBJ = ObjectFunction.identity(BoxedLongType.of());
+    private static final ObjectFunction<Object, Float> BOXED_FLOAT_OBJ = ObjectFunction.identity(BoxedFloatType.of());
+    private static final ObjectFunction<Object, Double> BOXED_DOUBLE_OBJ =
+            ObjectFunction.identity(BoxedDoubleType.of());
+    private static final ObjectFunction<Object, Boolean> BOXED_BOOLEAN_OBJ =
+            ObjectFunction.identity(BoxedBooleanType.of());
     private static final ObjectFunction<Object, Message> MESSAGE_OBJ =
-            ObjectFunction.cast(Type.ofCustom(Message.class));
+            ObjectFunction.identity(Type.ofCustom(Message.class));
     private static final ObjectFunction<Object, ByteString> BYTE_STRING_OBJ =
-            ObjectFunction.cast(Type.ofCustom(ByteString.class));
+            ObjectFunction.identity(Type.ofCustom(ByteString.class));
     private static final ObjectFunction<Object, EnumValueDescriptor> ENUM_VALUE_DESCRIPTOR_OBJ =
-            ObjectFunction.cast(Type.ofCustom(EnumValueDescriptor.class));
+            ObjectFunction.identity(Type.ofCustom(EnumValueDescriptor.class));
     private static final ObjectFunction<ByteString, byte[]> BYTE_STRING_FUNCTION =
-            ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()).onNullInput(null);
+            BypassOnNull.of(ObjectFunction.of(ByteString::toByteArray, Type.byteType().arrayType()));
 
     private final ProtobufDescriptorParserOptions options;
     private final Map<String, SingleValuedMessageParser> byFullName;
@@ -216,7 +218,7 @@ class ProtobufDescriptorParserImpl {
                     case ENUM:
                         return namedField(mapObj(ENUM_VALUE_DESCRIPTOR_OBJ));
                     case MESSAGE: {
-                        final Function<Message, Message> fieldAsMessage = mapObj(MESSAGE_OBJ)::apply;
+                        final ObjectFunction<Message, Message> fieldAsMessage = mapObj(MESSAGE_OBJ);
                         final DescriptorContext messageContext = toMessageContext();
                         final ProtobufFunctions subF = messageContext.functions();
                         final Builder builder = ProtobufFunctions.builder();

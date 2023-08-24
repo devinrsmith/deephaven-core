@@ -1,6 +1,5 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.Type;
 
@@ -21,8 +20,7 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
      * @param <T> the value type
      */
     static <T> LongFunction<T> primitive() {
-        //noinspection unchecked
-        return (LongFunction<T>) Functions.PrimitiveLong.INSTANCE;
+        return LongFunctions.primitive();
     }
 
     /**
@@ -38,7 +36,7 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
      * @param <R> the intermediate type
      */
     static <T, R> LongFunction<T> map(Function<T, R> f, LongFunction<R> g) {
-        return new LongMap<>(f, g);
+        return LongFunctions.map(f, g);
     }
 
     @Override
@@ -50,30 +48,12 @@ public interface LongFunction<T> extends PrimitiveFunction<T>, ToLongFunction<T>
     }
 
     @Override
-    default <R> R walk(Visitor<T, R> visitor) {
-        return visitor.visit(this);
+    default LongFunction<T> mapInput(Function<T, T> f) {
+        return map(f, this);
     }
 
     @Override
-    default LongFunction<T> mapInput(Function<T, T> f) {
-        return x -> applyAsLong(f.apply(x));
-    }
-
-    @FunctionalInterface
-    interface LongToObject<R> {
-        R apply(long value);
-    }
-
-    /**
-     * Creates the function composition {@code g ∘ this}.
-     *
-     * <p>
-     * Equivalent to {@code x -> g.apply(this.applyAsLong(x))}.
-     *
-     * @param g the outer function
-     * @return the object function
-     */
-    default <R> ObjectFunction<T, R> mapObj(LongToObject<R> g, GenericType<R> returnType) {
-        return new LongToObjectMap<>(this, g, returnType);
+    default <R> R walk(Visitor<T, R> visitor) {
+        return visitor.visit(this);
     }
 }

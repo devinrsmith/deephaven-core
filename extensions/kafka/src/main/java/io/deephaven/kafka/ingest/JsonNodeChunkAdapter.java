@@ -29,8 +29,8 @@ import java.util.function.IntFunction;
 public class JsonNodeChunkAdapter extends MultiFieldChunkAdapter {
 
     private static final CustomType<JsonNode> JSON_NODE_TYPE = Type.ofCustom(JsonNode.class);
-    private static final ObjectFunction<Object, JsonNode> JSON_NODE_OBJ = ObjectFunction.cast(JSON_NODE_TYPE);
-    private static final ObjectFunction<Object, Instant> INSTANT_OBJ = ObjectFunction.cast(Type.instantType());
+    private static final ObjectFunction<Object, JsonNode> JSON_NODE_OBJ = ObjectFunction.identity(JSON_NODE_TYPE);
+    private static final ObjectFunction<Object, Instant> INSTANT_OBJ = ObjectFunction.identity(Type.instantType());
 
     private JsonNodeChunkAdapter(
             final TableDefinition definition,

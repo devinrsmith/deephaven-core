@@ -134,7 +134,7 @@ public class CommonTransform {
 
         @Override
         public TypedFunction<T> visit(InstantType instantType) {
-            return toEpochNanos(f.as(instantType));
+            return toEpochNanos(f.cast(instantType));
         }
 
         @Override
@@ -154,42 +154,42 @@ public class CommonTransform {
 
         @Override
         public TypedFunction<T> visit(BoxedBooleanType booleanType) {
-            return unboxBooleanAsByte(f.as(booleanType));
+            return unboxBooleanAsByte(f.cast(booleanType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedByteType byteType) {
-            return unboxByte(f.as(byteType));
+            return unboxByte(f.cast(byteType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedCharType charType) {
-            return unboxChar(f.as(charType));
+            return unboxChar(f.cast(charType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedShortType shortType) {
-            return unboxShort(f.as(shortType));
+            return unboxShort(f.cast(shortType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedIntType intType) {
-            return unboxInt(f.as(intType));
+            return unboxInt(f.cast(intType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedLongType longType) {
-            return unboxLong(f.as(longType));
+            return unboxLong(f.cast(longType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedFloatType floatType) {
-            return unboxFloat(f.as(floatType));
+            return unboxFloat(f.cast(floatType));
         }
 
         @Override
         public TypedFunction<T> visit(BoxedDoubleType doubleType) {
-            return unboxDouble(f.as(doubleType));
+            return unboxDouble(f.cast(doubleType));
         }
     }
 }

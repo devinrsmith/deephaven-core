@@ -1,7 +1,6 @@
 package io.deephaven.stream.blink.tf;
 
 import io.deephaven.qst.type.BooleanType;
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 
 import java.util.Collection;
@@ -23,14 +22,25 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T>, Predicate<T> {
      * @param <T> the value type
      */
     static <T> BooleanFunction<T> primitive() {
-        //noinspection unchecked
-        return (BooleanFunction<T>) Functions.PrimitiveBoolean.INSTANCE;
+        return BooleanFunctions.primitive();
     }
 
+    /**
+     * A function that always returns {@code true}.
+     *
+     * @return the true function
+     * @param <T> the input type
+     */
     static <T> BooleanFunction<T> ofTrue() {
         return BooleanFunctions.ofTrue();
     }
 
+    /**
+     * A function that always returns {@code false}.
+     *
+     * @return the false function
+     * @param <T> the input type
+     */
     static <T> BooleanFunction<T> ofFalse() {
         return BooleanFunctions.ofFalse();
     }
@@ -48,19 +58,42 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T>, Predicate<T> {
      * @param <R> the intermediate type
      */
     static <T, R> BooleanFunction<T> map(Function<T, R> f, BooleanFunction<R> g) {
-        return new BooleanMap<>(f, g);
+        return BooleanFunctions.map(f, g);
     }
 
+    /**
+     * Creates a function that returns {@code true} if any function in {@code functions} returns {@code true}. If
+     * {@code functions} is empty, returns {@link #ofFalse()}.
+     *
+     * @param functions the functions
+     * @return the or-function
+     * @param <T> the input type
+     */
     static <T> BooleanFunction<T> or(Collection<BooleanFunction<T>> functions) {
-        return new BooleanOr<>(functions);
+        return BooleanFunctions.or(functions);
     }
 
+    /**
+     * Creates a function that returns {@code true} if all functions in {@code functions} returns {@code true}. If
+     * {@code functions} is empty, returns {@link #ofTrue()}.
+     *
+     * @param functions the functions
+     * @return the and-function
+     * @param <T> the input type
+     */
     static <T> BooleanFunction<T> and(Collection<BooleanFunction<T>> functions) {
-        return new BooleanAnd<>(functions);
+        return BooleanFunctions.and(functions);
     }
 
+    /**
+     * Creates a function that is the opposite of {@code f}. Equivalent to {@code x -> !x}.
+     *
+     * @param f the function
+     * @return the not-function
+     * @param <T> the input type
+     */
     static <T> BooleanFunction<T> not(BooleanFunction<T> f) {
-        return new BooleanNot<>(f);
+        return BooleanFunctions.not(f);
     }
 
     @Override
@@ -72,30 +105,12 @@ public interface BooleanFunction<T> extends PrimitiveFunction<T>, Predicate<T> {
     }
 
     @Override
-    default <R> R walk(Visitor<T, R> visitor) {
-        return visitor.visit(this);
+    default BooleanFunction<T> mapInput(Function<T, T> f) {
+        return map(f, this);
     }
 
     @Override
-    default BooleanFunction<T> mapInput(Function<T, T> f) {
-        return x -> test(f.apply(x));
-    }
-
-    @FunctionalInterface
-    interface BoolToObject<R> {
-        R apply(boolean value);
-    }
-
-    /**
-     * Creates the function composition {@code g ∘ this}.
-     *
-     * <p>
-     * Equivalent to {@code x -> g.apply(this.test(x))}.
-     *
-     * @param g the outer function
-     * @return the object function
-     */
-    default <R> ObjectFunction<T, R> mapObj(BoolToObject<R> g, GenericType<R> returnType) {
-        return new BooleanToObjectMap<>(this, g, returnType);
+    default <R> R walk(Visitor<T, R> visitor) {
+        return visitor.visit(this);
     }
 }

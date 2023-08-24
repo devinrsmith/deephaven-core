@@ -89,7 +89,7 @@ class ProtobufImpl {
     static final class ProtobufConsumeImpl extends Consume.KeyOrValueSpec {
 
         private static final ObjectFunction<Object, Message> PROTOBUF_MESSAGE_OBJ =
-                ObjectFunction.cast(Type.ofCustom(Message.class));
+                ObjectFunction.identity(Type.ofCustom(Message.class));
 
         private final ProtobufConsumeOptions specs;
 

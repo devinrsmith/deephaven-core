@@ -50,7 +50,7 @@ import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_LONG_ARRAY;
 public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
 
     private static final ObjectFunction<Object, GenericRecord> GENERIC_RECORD_OBJ =
-            ObjectFunction.cast(Type.ofCustom(GenericRecord.class));
+            ObjectFunction.identity(Type.ofCustom(GenericRecord.class));
 
     private GenericRecordChunkAdapter(
             final TableDefinition definition,
@@ -131,16 +131,16 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                 ObjectFunction.of(r -> GenericRecordUtil.getPath(r, fieldPath), Type.ofCustom(Object.class));
         switch (chunkType) {
             case Char:
-                return objectFunction.asChecked(BoxedCharType.of());
+                return objectFunction.cast(BoxedCharType.of());
             case Byte:
                 if (dataType == Boolean.class || dataType == boolean.class) {
-                    return objectFunction.asChecked(BoxedBooleanType.of());
+                    return objectFunction.cast(BoxedBooleanType.of());
                 }
-                return objectFunction.asChecked(BoxedByteType.of());
+                return objectFunction.cast(BoxedByteType.of());
             case Short:
-                return objectFunction.asChecked(BoxedShortType.of());
+                return objectFunction.cast(BoxedShortType.of());
             case Int:
-                return objectFunction.asChecked(BoxedIntType.of());
+                return objectFunction.cast(BoxedIntType.of());
             case Long:
                 if (dataType == Instant.class) {
                     final LogicalType logicalType = getLogicalType(schema, fieldPathStr, separator);
@@ -150,27 +150,27 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                     }
                     if (logicalType instanceof LogicalTypes.TimestampMillis) {
                         return objectFunction
-                                .asChecked(BoxedLongType.of())
+                                .cast(BoxedLongType.of())
                                 .mapLong(x -> x == null ? QueryConstants.NULL_LONG : x * 1_000_000L);
                     }
                     if (logicalType instanceof LogicalTypes.TimestampMicros) {
                         return objectFunction
-                                .asChecked(BoxedLongType.of())
+                                .cast(BoxedLongType.of())
                                 .mapLong(x -> x == null ? QueryConstants.NULL_LONG : x * 1_000L);
                     }
                     throw new IllegalArgumentException(
                             "Can not map field with unknown logical type to Instant: field=" + fieldPathStr
                                     + ", logical type=" + logicalType);
                 }
-                return objectFunction.asChecked(BoxedLongType.of());
+                return objectFunction.cast(BoxedLongType.of());
             case Float:
-                return objectFunction.asChecked(BoxedFloatType.of());
+                return objectFunction.cast(BoxedFloatType.of());
             case Double:
-                return objectFunction.asChecked(BoxedDoubleType.of());
+                return objectFunction.cast(BoxedDoubleType.of());
             case Object:
                 if (dataType == String.class) {
                     return objectFunction
-                            .asChecked(Type.ofCustom(Utf8.class))
+                            .cast(Type.ofCustom(Utf8.class))
                             .mapObj(x -> x == null ? null : x.toString(), Type.stringType());
                 }
                 if (dataType == BigDecimal.class) {
@@ -188,7 +188,7 @@ public class GenericRecordChunkAdapter extends MultiFieldChunkAdapter {
                 }
                 if (dataType.isArray()) {
                     final ObjectFunction<GenericRecord, GenericArray> arrayFunction =
-                            objectFunction.asChecked(Type.ofCustom(GenericArray.class));
+                            objectFunction.cast(Type.ofCustom(GenericArray.class));
                     if (Instant.class.isAssignableFrom(componentType)) {
                         final LogicalType logicalType = getArrayTypeLogicalType(schema, fieldPathStr, separator);
                         if (logicalType == null) {

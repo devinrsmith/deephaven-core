@@ -59,7 +59,7 @@ public enum FieldCopierAdapter
 
     public static FieldCopier of(ObjectFunction<Object, ?> f) {
         if (f.returnType().equals(BoxedBooleanType.of())) {
-            return ByteFieldCopier.ofBoolean(f.as(BoxedBooleanType.of()));
+            return ByteFieldCopier.ofBoolean(f.cast(BoxedBooleanType.of()));
         }
         return ObjectFieldCopier.of(f);
     }

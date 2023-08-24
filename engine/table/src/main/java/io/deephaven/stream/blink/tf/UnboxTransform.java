@@ -218,37 +218,37 @@ public class UnboxTransform {
 
         @Override
         public PrimitiveFunction<T> visit(BoxedByteType byteType) {
-            return unboxByte(f.as(byteType));
+            return unboxByte(f.cast(byteType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedCharType charType) {
-            return unboxChar(f.as(charType));
+            return unboxChar(f.cast(charType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedShortType shortType) {
-            return unboxShort(f.as(shortType));
+            return unboxShort(f.cast(shortType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedIntType intType) {
-            return unboxInt(f.as(intType));
+            return unboxInt(f.cast(intType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedLongType longType) {
-            return unboxLong(f.as(longType));
+            return unboxLong(f.cast(longType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedFloatType floatType) {
-            return unboxFloat(f.as(floatType));
+            return unboxFloat(f.cast(floatType));
         }
 
         @Override
         public PrimitiveFunction<T> visit(BoxedDoubleType doubleType) {
-            return unboxDouble(f.as(doubleType));
+            return unboxDouble(f.cast(doubleType));
         }
     }
 }

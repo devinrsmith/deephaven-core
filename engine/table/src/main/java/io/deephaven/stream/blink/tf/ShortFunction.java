@@ -1,6 +1,5 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
 
@@ -21,8 +20,7 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
      * @param <T> the value type
      */
     static <T> ShortFunction<T> primitive() {
-        //noinspection unchecked
-        return (ShortFunction<T>) Functions.PrimitiveShort.INSTANCE;
+        return ShortFunctions.primitive();
     }
 
     /**
@@ -38,9 +36,15 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
      * @param <R> the intermediate type
      */
     static <T, R> ShortFunction<T> map(Function<T, R> f, ShortFunction<R> g) {
-        return new ShortMap<>(f, g);
+        return ShortFunctions.map(f, g);
     }
 
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value the function argument
+     * @return the function result
+     */
     short applyAsShort(T value);
 
     @Override
@@ -49,30 +53,12 @@ public interface ShortFunction<T> extends PrimitiveFunction<T> {
     }
 
     @Override
-    default <R> R walk(Visitor<T, R> visitor) {
-        return visitor.visit(this);
+    default ShortFunction<T> mapInput(Function<T, T> f) {
+        return map(f, this);
     }
 
     @Override
-    default ShortFunction<T> mapInput(Function<T, T> f) {
-        return x -> applyAsShort(f.apply(x));
-    }
-
-    @FunctionalInterface
-    interface ShortToObject<R> {
-        R apply(short value);
-    }
-
-    /**
-     * Creates the function composition {@code g ∘ this}.
-     *
-     * <p>
-     * Equivalent to {@code x -> g.apply(this.applyAsShort(x))}.
-     *
-     * @param g the outer function
-     * @return the object function
-     */
-    default <R> ObjectFunction<T, R> mapObj(ShortToObject<R> g, GenericType<R> returnType) {
-        return new ShortToObjectMap<>(this, g, returnType);
+    default <R> R walk(Visitor<T, R> visitor) {
+        return visitor.visit(this);
     }
 }

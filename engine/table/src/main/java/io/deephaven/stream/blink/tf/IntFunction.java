@@ -1,6 +1,5 @@
 package io.deephaven.stream.blink.tf;
 
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;
 
@@ -22,8 +21,7 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
      * @param <T> the value type
      */
     static <T> IntFunction<T> primitive() {
-        //noinspection unchecked
-        return (IntFunction<T>) Functions.PrimitiveInt.INSTANCE;
+        return IntFunctions.primitive();
     }
 
     /**
@@ -39,7 +37,7 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
      * @param <R> the intermediate type
      */
     static <T, R> IntFunction<T> map(Function<T, R> f, IntFunction<R> g) {
-        return new IntMap<>(f, g);
+        return IntFunctions.map(f, g);
     }
 
     @Override
@@ -51,30 +49,12 @@ public interface IntFunction<T> extends PrimitiveFunction<T>, ToIntFunction<T> {
     }
 
     @Override
-    default <R> R walk(Visitor<T, R> visitor) {
-        return visitor.visit(this);
+    default IntFunction<T> mapInput(Function<T, T> f) {
+        return map(f, this);
     }
 
     @Override
-    default IntFunction<T> mapInput(Function<T, T> f) {
-        return x -> applyAsInt(f.apply(x));
-    }
-
-    @FunctionalInterface
-    interface IntToObject<R> {
-        R apply(int value);
-    }
-
-    /**
-     * Creates the function composition {@code g ∘ this}.
-     *
-     * <p>
-     * Equivalent to {@code x -> g.apply(this.applyAsInt(x))}.
-     *
-     * @param g the outer function
-     * @return the object function
-     */
-    default <R> ObjectFunction<T, R> mapObj(IntToObject<R> g, GenericType<R> returnType) {
-        return new IntToObjectMap<>(this, g, returnType);
+    default <R> R walk(Visitor<T, R> visitor) {
+        return visitor.visit(this);
     }
 }

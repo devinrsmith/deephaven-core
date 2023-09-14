@@ -545,6 +545,10 @@ public class KafkaTools {
             return new ProtobufConsumeImpl(options);
         }
 
+        public static KeyOrValueSpec avroRawSpec(ProtobufConsumeOptions options) {
+            return new AvroRawImpl.ConsumeImpl(options);
+        }
+
         /**
          * If {@code columnName} is set, that column name will be used. Otherwise, the names for the key or value
          * columns can be provided in the properties as {@value KEY_COLUMN_NAME_PROPERTY} or

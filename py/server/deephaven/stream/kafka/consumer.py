@@ -326,6 +326,29 @@ def protobuf_spec(
         j_spec=_JKafkaTools_Consume.protobufSpec(pb_consume_builder.build())
     )
 
+def avro_raw_spec(
+        schema: str,
+        schema_version: Optional[int] = None,
+        include: Optional[List[str]] = None,
+) -> KeyValueSpec:
+    parser_options_builder = _JProtobufDescriptorParserOptions.builder()
+    if include is not None:
+        parser_options_builder.fieldOptions(
+            _JFieldOptions.includeIf(
+                _JFieldPath.anyMatches(j_array_list(include))
+            )
+        )
+    pb_consume_builder = (
+        _JProtobufConsumeOptions.builder()
+        .schemaSubject(schema)
+        .parserOptions(parser_options_builder.build())
+    )
+    if schema_version:
+        pb_consume_builder.schemaVersion(schema_version)
+    return KeyValueSpec(
+        j_spec=_JKafkaTools_Consume.avroRawSpec(pb_consume_builder.build())
+    )
+
 
 def avro_spec(
         schema: str,

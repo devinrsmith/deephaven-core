@@ -55,6 +55,22 @@ public interface Session
     // ----------------------------------------------------------
 
     /**
+     * Creates a client-managed table object from the table {@code ticketId}.
+     *
+     * @param ticketId the table ticket id
+     * @return the future
+     */
+    CompletableFuture<TableObject> exportTable(HasTicketId ticketId);
+
+    /**
+     * Creates a client-managed custom object from the {@code typedTicket}.
+     *
+     * @param typedTicket the table ticket id
+     * @return the future
+     */
+    CompletableFuture<CustomObject> exportCustom(HasTypedTicket typedTicket);
+
+    /**
      * Makes a copy from a source ticket and publishes to a result ticket. Neither the source ticket, nor the
      * destination ticket, need to be a client managed ticket.
      *

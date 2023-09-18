@@ -15,6 +15,7 @@ import io.deephaven.proto.backplane.grpc.ConfigurationConstantsResponse;
 import io.deephaven.proto.backplane.grpc.ConnectRequest;
 import io.deephaven.proto.backplane.grpc.Data;
 import io.deephaven.proto.backplane.grpc.DeleteTableRequest;
+import io.deephaven.proto.backplane.grpc.ExportRequest;
 import io.deephaven.proto.backplane.grpc.FetchObjectRequest;
 import io.deephaven.proto.backplane.grpc.FieldsChangeUpdate;
 import io.deephaven.proto.backplane.grpc.HandshakeRequest;
@@ -163,6 +164,35 @@ public final class SessionImpl extends SessionBase {
     }
 
     @Override
+    public CompletableFuture<TableObject> exportTable(HasTicketId ticketId) {
+        return export(ticketId.ticketId().toTypedTicket(TableObject.TYPE)).thenApply(this::toTableObject);
+    }
+
+    @Override
+    public CompletableFuture<CustomObject> exportCustom(HasTypedTicket typedTicket) {
+        CustomObject.checkType(typedTicket.typedTicket().type().orElse(null));
+        return export(typedTicket).thenApply(this::toCustomObject);
+    }
+
+    private CompletableFuture<ExportId> export(HasTypedTicket typedTicket) {
+        final String type = typedTicket.typedTicket().type().orElse(null);
+        final ExportId exportId = new ExportId(type, exportTicketCreator.createExportId());
+        final ExportRequest request = ExportRequest.newBuilder()
+                .setSourceId(typedTicket.ticketId().proto())
+                .setResultId(exportId.ticketId().proto())
+                .build();
+        return UnaryGrpcFuture.ignoreResponse(request, channel().session()::exportFromTicket).thenApply(x -> exportId);
+    }
+
+    private TableObject toTableObject(ExportId x) {
+        return new TableObject(this, x);
+    }
+
+    private CustomObject toCustomObject(ExportId x) {
+        return new CustomObject(this, x);
+    }
+
+    @Override
     public CompletableFuture<Void> publish(HasTicketId resultId, HasTicketId sourceId) {
         final PublishRequest request = PublishRequest.newBuilder()
                 .setSourceId(sourceId.ticketId().proto())
@@ -270,7 +300,7 @@ public final class SessionImpl extends SessionBase {
 
     @Override
     public ExportId newExportId() {
-        return new ExportId("Table", exportTicketCreator.createExportId());
+        return new ExportId(TableObject.TYPE, exportTicketCreator.createExportId());
     }
 
     @Override

@@ -28,7 +28,7 @@ class ConvertToTable extends FlightExampleBase {
 
     @Override
     protected void execute(FlightSession flight) throws Exception {
-        if ("Table".equals(type)) {
+        if (TableObject.TYPE.equals(type)) {
             showTable(flight, ticket);
         } else {
             try (final TableObject tableExport = fetchTableExport(flight)) {

@@ -149,9 +149,32 @@ public class ObjectServiceTest extends DeephavenSessionTestBase {
         final ScriptSession scriptSession = testComponent().scriptSessionProvider().get();
         scriptSession.setVariable("my_echo", EchoObjectType.INSTANCE);
         scriptSession.setVariable("my_objects", myObjects());
-        final TypedTicket echo = new TypedTicket(EchoObjectType.NAME, "s/my_echo".getBytes(StandardCharsets.UTF_8));
-        final TypedTicket myObjects =
-                new TypedTicket(MyObjectsObjectType.NAME, "s/my_objects".getBytes(StandardCharsets.UTF_8));
+        final TypedTicket echo = tt(EchoObjectType.NAME, "s/my_echo");
+        final TypedTicket myObjects = tt(MyObjectsObjectType.NAME, "s/my_objects");
+        messageStreamEchoTest(echo, myObjects);
+    }
+
+    @Test
+    public void messageStreamWithExportsTest() throws InterruptedException, ExecutionException, TimeoutException {
+        final ScriptSession scriptSession = testComponent().scriptSessionProvider().get();
+        scriptSession.setVariable("my_echo", EchoObjectType.INSTANCE);
+        scriptSession.setVariable("my_objects", myObjects());
+        try (
+                final CustomObject echo = session
+                        .exportCustom(tt(EchoObjectType.NAME, "s/my_echo"))
+                        .get(5, TimeUnit.SECONDS);
+                final CustomObject myObjects = session
+                        .exportCustom(tt(MyObjectsObjectType.NAME, "s/my_objects"))
+                        .get(5, TimeUnit.SECONDS)) {
+            messageStreamEchoTest(echo, myObjects);
+        }
+    }
+
+    private static TypedTicket tt(String name, String x) {
+        return new TypedTicket(name, x.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void messageStreamEchoTest(HasTypedTicket echo, HasTypedTicket myObjects) throws InterruptedException {
         final int times = 10;
         final BlockingQueue<Data> queue = new ArrayBlockingQueue<>(times);
         final CountDownLatch onClose = new CountDownLatch(1);

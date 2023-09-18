@@ -17,11 +17,19 @@ import io.deephaven.client.impl.ServerObject.Fetchable;
 public final class CustomObject extends ServerObjectBase
         implements ServerObject, Fetchable, Bidirectional {
 
-    CustomObject(Session session, ExportId exportId) {
-        super(session, exportId);
-        if (!exportId.type().isPresent()) {
+    static void checkType(String type) {
+        if (type == null) {
             throw new IllegalArgumentException("Expected type to be present, is not");
         }
+        if (TableObject.TYPE.equals(type)) {
+            throw new IllegalArgumentException(
+                    String.format("Must not construct CustomObject with type '%s'", TableObject.TYPE));
+        }
+    }
+
+    CustomObject(Session session, ExportId exportId) {
+        super(session, exportId);
+        checkType(exportId.type().orElse(null));
     }
 
     /**

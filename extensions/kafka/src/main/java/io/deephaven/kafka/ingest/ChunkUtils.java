@@ -23,7 +23,7 @@ import io.deephaven.functions.ToLongFunction;
 import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.ToShortFunction;
 
-class ChunkUtils {
+public class ChunkUtils {
 
     public static <T> void applyInto(
             ToBooleanFunction<T> booleanFunction,

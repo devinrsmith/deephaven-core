@@ -8,20 +8,22 @@ import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.functions.ToShortFunction;
 import io.deephaven.kafka.ingest.ChunkUtils;
-import io.deephaven.kafka.ingest.ChunkyMonkey;
+import io.deephaven.kafka.ingest.ChunkyMonkey1;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-final class KeyOrValueProcessorImpl2<T> implements ChunkyMonkey<T> {
+final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey1<T> {
 
     private final List<Appender<? super T>> appenders;
 
 
     interface Appender<T> {
         ChunkType chunkType();
+
         void add(WritableChunk<?> dest, T src);
+
         void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src);
     }
 
@@ -31,7 +33,7 @@ final class KeyOrValueProcessorImpl2<T> implements ChunkyMonkey<T> {
     }
 
     @Override
-    public void handle(T in, List<WritableChunk<?>> out) {
+    public void splay(T in, List<WritableChunk<?>> out) {
         checkChunks(out);
         final int L = appenders.size();
         for (int i = 0; i < L; ++i) {
@@ -40,7 +42,7 @@ final class KeyOrValueProcessorImpl2<T> implements ChunkyMonkey<T> {
     }
 
     @Override
-    public void handleChunk(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+    public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         checkChunks(out);
         final int L = appenders.size();
         for (int i = 0; i < L; ++i) {

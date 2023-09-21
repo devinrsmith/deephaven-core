@@ -25,9 +25,108 @@ import io.deephaven.functions.ToShortFunction;
 
 public class ChunkUtils {
 
+    // Ideally, these would be built into WritableChunk impls
+
+    public static <T> void append(
+            WritableBooleanChunk<?> dest,
+            ToBooleanFunction<? super T> booleanFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(booleanFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableByteChunk<?> dest,
+            ToByteFunction<? super T> byteFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(byteFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableCharChunk<?> dest,
+            ToCharFunction<? super T> charFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(charFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableShortChunk<?> dest,
+            ToShortFunction<? super T> shortFunction,
+            ObjectChunk<? extends T, ?> src) {
+        final int destSize = dest.size();
+        applyInto(shortFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
+    }
+
+    public static <T> void append(
+            WritableIntChunk<?> dest,
+            ToIntFunction<? super T> intFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(intFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableLongChunk<?> dest,
+            ToLongFunction<? super T> longFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(longFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableFloatChunk<?> dest,
+            ToFloatFunction<? super T> floatFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(floatFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T> void append(
+            WritableDoubleChunk<?> dest,
+            ToDoubleFunction<? super T> doubleFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(doubleFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
+    public static <T, R> void append(
+            WritableObjectChunk<R, ?> dest,
+            ToObjectFunction<T, R> objFunction,
+            ObjectChunk<? extends T, ?> src,
+            int srcOffset,
+            int length) {
+        final int destSize = dest.size();
+        applyInto(objFunction, src, srcOffset, dest, destSize, length);
+        dest.setSize(destSize + length);
+    }
+
     public static <T> void applyInto(
-            ToBooleanFunction<T> booleanFunction,
-            ObjectChunk<T, ?> src,
+            ToBooleanFunction<? super T> booleanFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableBooleanChunk<?> dest,
             int destOffset,
@@ -38,8 +137,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToByteFunction<T> byteFunction,
-            ObjectChunk<T, ?> src,
+            ToByteFunction<? super T> byteFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableByteChunk<?> dest,
             int destOffset,
@@ -50,8 +149,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToCharFunction<T> charFunction,
-            ObjectChunk<T, ?> src,
+            ToCharFunction<? super T> charFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableCharChunk<?> dest,
             int destOffset,
@@ -62,8 +161,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToShortFunction<T> shortFunction,
-            ObjectChunk<T, ?> src,
+            ToShortFunction<? super T> shortFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableShortChunk<?> dest,
             int destOffset,
@@ -74,8 +173,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToIntFunction<T> intFunction,
-            ObjectChunk<T, ?> src,
+            ToIntFunction<? super T> intFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableIntChunk<?> dest,
             int destOffset,
@@ -87,8 +186,8 @@ public class ChunkUtils {
 
 
     public static <T> void applyInto(
-            ToLongFunction<T> longFunction,
-            ObjectChunk<T, ?> src,
+            ToLongFunction<? super T> longFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableLongChunk<?> dest,
             int destOffset,
@@ -99,8 +198,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToFloatFunction<T> floatFunction,
-            ObjectChunk<T, ?> src,
+            ToFloatFunction<? super T> floatFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableFloatChunk<?> dest,
             int destOffset,
@@ -111,8 +210,8 @@ public class ChunkUtils {
     }
 
     public static <T> void applyInto(
-            ToDoubleFunction<T> doubleFunction,
-            ObjectChunk<T, ?> src,
+            ToDoubleFunction<? super T> doubleFunction,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableDoubleChunk<?> dest,
             int destOffset,
@@ -124,7 +223,7 @@ public class ChunkUtils {
 
     public static <T, R> void applyInto(
             ToObjectFunction<T, R> objFunction,
-            ObjectChunk<T, ?> src,
+            ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableObjectChunk<R, ?> dest,
             int destOffset,

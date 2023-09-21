@@ -19,9 +19,18 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
         this.maxChunkSize = maxChunkSize;
     }
 
+    ChunkyMonkey1<T> delegate() {
+        return delegate;
+    }
+
     @Override
     public List<ChunkType> chunkTypes() {
         return delegate.chunkTypes();
+    }
+
+    @Override
+    public int rowLimit() {
+        return maxChunkSize;
     }
 
     @Override
@@ -30,7 +39,7 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
     }
 
     @Override
-    public int splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-        return delegate.splay(in.slice(0, Math.min(maxChunkSize, in.size())), out);
+    public void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        delegate.splay(in.slice(0, Math.min(maxChunkSize, in.size())), out);
     }
 }

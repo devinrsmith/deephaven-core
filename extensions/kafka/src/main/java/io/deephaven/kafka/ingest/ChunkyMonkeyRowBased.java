@@ -6,7 +6,7 @@ import io.deephaven.chunk.WritableChunk;
 import java.util.List;
 
 /**
- * A base for row-oriented implementations. {@link #splayAll(ObjectChunk, List)} is implemented by repeaoted invocations
+ * A base for row-oriented implementations. {@link #splayAll(ObjectChunk, List)} is implemented by repeated invocations
  * of {@link #splay(Object, List)}.
  *
  * @param <T> the object type
@@ -14,9 +14,16 @@ import java.util.List;
 public abstract class ChunkyMonkeyRowBased<T> implements ChunkyMonkey1<T> {
 
     @Override
-    public final int splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-        splay(in.get(0), out);
+    public int rowLimit() {
         return 1;
+    }
+
+    @Override
+    public final void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        if (in.size() == 0) {
+            return;
+        }
+        splay(in.get(0), out);
     }
 
     @Override

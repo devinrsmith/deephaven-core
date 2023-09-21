@@ -8,24 +8,11 @@ import java.util.List;
 public abstract class ChunkyMonkeyBase<T> implements ChunkyMonkey1<T> {
 
     @Override
-    public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-        int remaining = in.size();
-        if (remaining == 0) {
-            return;
-        }
-        while (true) {
-            final int splayed = splay(in, out);
-            if (splayed == remaining) {
-                return;
-            }
-            if (splayed == 0) {
-                throw new IllegalStateException("splay on non-empty chunk returned 0");
-            }
-            if (splayed > remaining) {
-                throw new IllegalStateException("splay claims to have splayed more than remaining");
-            }
-            remaining -= splayed;
-            in = in.slice(splayed, remaining);
+    public final void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        final int maxChunkSize = rowLimit().orElse(Integer.MAX_VALUE);
+        final int inSize = in.size();
+        for (int i = 0; i < inSize; i += maxChunkSize) {
+            splay(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
         }
     }
 }

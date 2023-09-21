@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey1<T> {
 
-    private final List<Appender<? super T>> appenders;
+    private final List<Appender<? super T>> appenders = null;
 
 
     interface Appender<T> {
@@ -33,6 +33,11 @@ final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey1<T> {
     }
 
     @Override
+    public int rowLimit() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
     public void splay(T in, List<WritableChunk<?>> out) {
         checkChunks(out);
         final int L = appenders.size();
@@ -42,12 +47,17 @@ final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey1<T> {
     }
 
     @Override
-    public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+    public void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         checkChunks(out);
         final int L = appenders.size();
         for (int i = 0; i < L; ++i) {
             appenders.get(i).append(out.get(i), in);
         }
+    }
+
+    @Override
+    public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        splay(in, out);
     }
 
     private void checkChunks(List<WritableChunk<?>> out) {

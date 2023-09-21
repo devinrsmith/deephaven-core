@@ -8,6 +8,7 @@ import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 
 import java.util.List;
+import java.util.OptionalInt;
 
 /**
  * An interface for splaying data from one or more input objects into output chunks.
@@ -39,8 +40,9 @@ public interface ChunkyMonkey1<T> {
         if (maxChunkSize <= 0) {
             throw new IllegalArgumentException("maxChunkSize must be positive");
         }
-        if (delegate instanceof ChunkyMonkeyRowBased) {
-            // row-oriented
+        final int delegateRowLimit = delegate.rowLimit().orElse(Integer.MAX_VALUE);
+        if (delegateRowLimit <= maxChunkSize) {
+            // already limited
             return delegate;
         }
         if (maxChunkSize == 1) {
@@ -61,13 +63,22 @@ public interface ChunkyMonkey1<T> {
      */
     List<ChunkType> chunkTypes();
 
+
+    /**
+     * The row-limit {@code this} instance provides with respect to {@link #splay(ObjectChunk, List)}. If unlimited,
+     * returns {@link Integer#MAX_VALUE}.
+     *
+     * @return the row-limit
+     */
+    int rowLimit();
+
     /**
      * Splays {@code in} into {@code out} by appending the appropriate value to each chunk. The size of each {@code out}
      * chunk will be incremented by {@code 1}.
      *
      * <p>
      * If there is an exception thrown, either due to the logic of the implementation, or in callers' breaking of the
-     * contract for {@code out}, the output state
+     * contract for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input object
      * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
@@ -76,12 +87,14 @@ public interface ChunkyMonkey1<T> {
     void splay(T in, List<WritableChunk<?>> out);
 
     /**
+     * Splays {@code in} into {@code out} by appending the appropriate values to each chunk. The size of each
+     * {@code out} chunk will be incremented by {@code min(in.size(), rowLimit())}.
      *
-     * @param in
-     * @param out
-     * @return
+     * @param in the input objects
+     * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
+     *        have remaining capacity of at least {@code min(in.size(), rowLimit())}
      */
-    int splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
+    void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 
     /**
      * Splays {@code in} into {@code out} by appending the appropriate values to each chunk. The size of each

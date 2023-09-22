@@ -3,6 +3,7 @@ package io.deephaven.kafka.ingest;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,8 +25,8 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
     }
 
     @Override
-    public List<ChunkType> chunkTypes() {
-        return delegate.chunkTypes();
+    public List<Type<?>> types() {
+        return delegate.types();
     }
 
     @Override

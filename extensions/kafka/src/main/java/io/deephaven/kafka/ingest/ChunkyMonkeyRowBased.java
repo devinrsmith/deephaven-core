@@ -6,15 +6,14 @@ import io.deephaven.chunk.WritableChunk;
 import java.util.List;
 
 /**
- * A base for row-oriented implementations. {@link #splayAll(ObjectChunk, List)} is implemented by repeated invocations
- * of {@link #splay(Object, List)}.
+ * A base for row-oriented implementations.
  *
  * @param <T> the object type
  */
 public abstract class ChunkyMonkeyRowBased<T> implements ChunkyMonkey1<T> {
 
     @Override
-    public int rowLimit() {
+    public final int rowLimit() {
         return 1;
     }
 

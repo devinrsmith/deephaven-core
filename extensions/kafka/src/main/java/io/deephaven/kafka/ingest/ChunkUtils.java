@@ -13,15 +13,16 @@ import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.WritableShortChunk;
-import io.deephaven.functions.ToBooleanFunction;
 import io.deephaven.functions.ToByteFunction;
 import io.deephaven.functions.ToCharFunction;
-import io.deephaven.functions.ToDoubleFunction;
 import io.deephaven.functions.ToFloatFunction;
-import io.deephaven.functions.ToIntFunction;
-import io.deephaven.functions.ToLongFunction;
-import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.ToShortFunction;
+
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 public class ChunkUtils {
 
@@ -29,35 +30,29 @@ public class ChunkUtils {
 
     public static <T> void append(
             WritableBooleanChunk<?> dest,
-            ToBooleanFunction<? super T> booleanFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            Predicate<? super T> booleanFunction,
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(booleanFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(booleanFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
             WritableByteChunk<?> dest,
             ToByteFunction<? super T> byteFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(byteFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(byteFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
             WritableCharChunk<?> dest,
             ToCharFunction<? super T> charFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(charFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(charFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
@@ -72,60 +67,50 @@ public class ChunkUtils {
     public static <T> void append(
             WritableIntChunk<?> dest,
             ToIntFunction<? super T> intFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(intFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(intFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
             WritableLongChunk<?> dest,
             ToLongFunction<? super T> longFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(longFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(longFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
             WritableFloatChunk<?> dest,
             ToFloatFunction<? super T> floatFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(floatFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(floatFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void append(
             WritableDoubleChunk<?> dest,
             ToDoubleFunction<? super T> doubleFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(doubleFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(doubleFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T, R> void append(
             WritableObjectChunk<R, ?> dest,
-            ToObjectFunction<T, R> objFunction,
-            ObjectChunk<? extends T, ?> src,
-            int srcOffset,
-            int length) {
+            Function<? super T, ? extends R> objFunction,
+            ObjectChunk<? extends T, ?> src) {
         final int destSize = dest.size();
-        applyInto(objFunction, src, srcOffset, dest, destSize, length);
-        dest.setSize(destSize + length);
+        applyInto(objFunction, src, 0, dest, destSize, src.size());
+        dest.setSize(destSize + src.size());
     }
 
     public static <T> void applyInto(
-            ToBooleanFunction<? super T> booleanFunction,
+            Predicate<? super T> booleanFunction,
             ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableBooleanChunk<?> dest,
@@ -222,13 +207,14 @@ public class ChunkUtils {
     }
 
     public static <T, R> void applyInto(
-            ToObjectFunction<T, R> objFunction,
+            Function<? super T, ? extends R> objFunction,
             ObjectChunk<? extends T, ?> src,
             int srcOffset,
             WritableObjectChunk<R, ?> dest,
             int destOffset,
             int length) {
         for (int i = 0; i < length; ++i) {
+            final T t = src.get(srcOffset + i);
             dest.set(destOffset + i, objFunction.apply(src.get(srcOffset + i)));
         }
     }

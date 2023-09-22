@@ -6,12 +6,13 @@ package io.deephaven.kafka.ingest;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.OptionalInt;
 
 /**
- * An interface for splaying data from one or more input objects into output chunks.
+ * An interface for splaying data from one or more input objects into output chunks on a 1-to-1 input to output basis.
  *
  * <p>
  * Row-oriented implementations are advised to extend from {@link ChunkyMonkeyRowBased}.
@@ -61,7 +62,7 @@ public interface ChunkyMonkey1<T> {
      *
      * @return the chunk types
      */
-    List<ChunkType> chunkTypes();
+    List<Type<?>> types();
 
 
     /**
@@ -73,12 +74,12 @@ public interface ChunkyMonkey1<T> {
     int rowLimit();
 
     /**
-     * Splays {@code in} into {@code out} by appending the appropriate value to each chunk. The size of each {@code out}
-     * chunk will be incremented by {@code 1}.
+     * Splays {@code in} into {@code out} by appending the a value to each chunk. The size of each {@code out} chunk
+     * will be incremented by {@code 1}.
      *
      * <p>
-     * If there is an exception thrown, either due to the logic of the implementation, or in callers' breaking of the
-     * contract for {@code out}, the output chunks will be in an unspecified state.
+     * If an exception thrown, either due to the logic of the implementation, or in callers' breaking of the contract
+     * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input object
      * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
@@ -87,8 +88,14 @@ public interface ChunkyMonkey1<T> {
     void splay(T in, List<WritableChunk<?>> out);
 
     /**
-     * Splays {@code in} into {@code out} by appending the appropriate values to each chunk. The size of each
-     * {@code out} chunk will be incremented by {@code min(in.size(), rowLimit())}.
+     * Splays {@code in} into {@code out} by appending {@code min(in.size(), rowLimit())} values to each chunk. The size
+     * of each {@code out} chunk will be incremented by {@code min(in.size(), rowLimit())}. This is functionally
+     * equivalent to calling {@link #splay(Object, List)} with the first {@code in.size()} object from {@code in}.
+     * Implementations are free to splay the data in a row-oriented, column-oriented, or mix-oriented fashion.
+     *
+     * <p>
+     * If an exception thrown, either due to the logic of the implementation, or in callers' breaking of the contract
+     * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input objects
      * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
@@ -97,14 +104,14 @@ public interface ChunkyMonkey1<T> {
     void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 
     /**
-     * Splays {@code in} into {@code out} by appending the appropriate values to each chunk. The size of each
+     * Splays {@code in} into {@code out} by appending {@code in.size()} values to each chunk. The size of each
      * {@code out} chunk will be incremented by {@code in.size()}. This is functionally equivalent to calling
      * {@link #splay(Object, List)} with each object from {@code in}. Implementations are free to splay the data in a
      * row-oriented, column-oriented, or mix-oriented fashion.
      *
      * <p>
-     * If there is an exception thrown, either due to the logic of the implementation, or in callers' breaking of the
-     * contract for {@code out}, the
+     * If an exception thrown, either due to the logic of the implementation, or in callers' breaking of the contract
+     * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input objects
      * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must

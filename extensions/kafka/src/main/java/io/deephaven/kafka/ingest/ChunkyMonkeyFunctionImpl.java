@@ -16,7 +16,23 @@ import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.ToPrimitiveFunction;
 import io.deephaven.functions.ToShortFunction;
 import io.deephaven.functions.TypedFunction;
+import io.deephaven.qst.type.ArrayType;
+import io.deephaven.qst.type.BoxedBooleanType;
+import io.deephaven.qst.type.BoxedByteType;
+import io.deephaven.qst.type.BoxedCharType;
+import io.deephaven.qst.type.BoxedDoubleType;
+import io.deephaven.qst.type.BoxedFloatType;
+import io.deephaven.qst.type.BoxedIntType;
+import io.deephaven.qst.type.BoxedLongType;
+import io.deephaven.qst.type.BoxedShortType;
+import io.deephaven.qst.type.BoxedType;
+import io.deephaven.qst.type.CustomType;
+import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.GenericType.Visitor;
+import io.deephaven.qst.type.InstantType;
+import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.util.BooleanUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -76,13 +92,9 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
     private static class AppenderVisitor<T> implements
             TypedFunction.Visitor<T, Appender<T>>,
             ToPrimitiveFunction.Visitor<T, Appender<T>> {
+
         static <T> Appender<T> of(TypedFunction<T> f) {
             return f.walk(new AppenderVisitor<>());
-        }
-
-        @Override
-        public Appender<T> visit(ToObjectFunction<T, ?> f) {
-            return new ObjectAppender<>(f);
         }
 
         @Override
@@ -129,9 +141,80 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         public Appender<T> visit(ToDoubleFunction<T> f) {
             return new DoubleAppender<>(f);
         }
+
+        @Override
+        public Appender<T> visit(ToObjectFunction<T, ?> f) {
+            return f.returnType().walk(new Visitor<>() {
+                @Override
+                public Appender<T> visit(BoxedType<?> boxedType) {
+                    return boxedType.walk(new BoxedType.Visitor<>() {
+                        @Override
+                        public Appender<T> visit(BoxedBooleanType booleanType) {
+                            return ByteAppender.from(f.cast(booleanType));
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedByteType byteType) {
+                            return new ByteAppender<>(f.cast(boxedType));
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedCharType charType) {
+                            return null;
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedShortType shortType) {
+                            return null;
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedIntType intType) {
+                            return null;
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedLongType longType) {
+                            return null;
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedFloatType floatType) {
+                            return null;
+                        }
+
+                        @Override
+                        public Appender<T> visit(BoxedDoubleType doubleType) {
+                            return null;
+                        }
+                    });
+                }
+
+                @Override
+                public Appender<T> visit(StringType stringType) {
+                    return new ObjectAppender<>(f);
+                }
+
+                @Override
+                public Appender<T> visit(InstantType instantType) {
+                    // todo
+                    return null;
+                }
+
+                @Override
+                public Appender<T> visit(ArrayType<?, ?> arrayType) {
+                    return new ObjectAppender<>(f);
+                }
+
+                @Override
+                public Appender<T> visit(CustomType<?> customType) {
+                    return new ObjectAppender<>(f);
+                }
+            });
+        }
     }
 
-    private static class ObjectAppender<T, R> implements Appender<T> {
+    private static class ObjectAppender<T> implements Appender<T> {
         private final ToObjectFunction<? super T, ?> f;
 
         ObjectAppender(ToObjectFunction<? super T, ?> f) {
@@ -201,6 +284,11 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
     }
 
     private static class ByteAppender<T> implements Appender<T> {
+
+        static <T> ByteAppender<T> from(ToObjectFunction<? super T, ? extends Boolean> f) {
+            return new ByteAppender<>(f.mapToByte(BooleanUtils::booleanAsByte));
+        }
+
         private final ToByteFunction<? super T> f;
 
         ByteAppender(ToByteFunction<? super T> f) {

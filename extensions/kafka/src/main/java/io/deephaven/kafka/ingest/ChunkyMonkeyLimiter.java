@@ -1,6 +1,5 @@
 package io.deephaven.kafka.ingest;
 
-import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -14,6 +13,9 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
 
     public ChunkyMonkeyLimiter(ChunkyMonkey1<T> delegate, int maxChunkSize) {
         if (maxChunkSize <= 1) {
+            throw new IllegalArgumentException();
+        }
+        if (delegate.rowLimit() <= maxChunkSize) {
             throw new IllegalArgumentException();
         }
         this.delegate = Objects.requireNonNull(delegate);

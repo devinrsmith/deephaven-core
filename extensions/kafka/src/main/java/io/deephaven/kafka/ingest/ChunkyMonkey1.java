@@ -3,13 +3,11 @@
  */
 package io.deephaven.kafka.ingest;
 
-import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
-import java.util.OptionalInt;
 
 /**
  * An interface for splaying data from one or more input objects into output chunks on a 1-to-1 input to output basis.
@@ -41,7 +39,7 @@ public interface ChunkyMonkey1<T> {
         if (maxChunkSize <= 0) {
             throw new IllegalArgumentException("maxChunkSize must be positive");
         }
-        final int delegateRowLimit = delegate.rowLimit().orElse(Integer.MAX_VALUE);
+        final int delegateRowLimit = delegate.rowLimit();
         if (delegateRowLimit <= maxChunkSize) {
             // already limited
             return delegate;
@@ -58,7 +56,7 @@ public interface ChunkyMonkey1<T> {
     }
 
     /**
-     * The chunk types {@code this} instance expects.
+     * The types {@code this} instance produces.
      *
      * @return the chunk types
      */

@@ -27,12 +27,13 @@ import io.deephaven.qst.type.BoxedLongType;
 import io.deephaven.qst.type.BoxedShortType;
 import io.deephaven.qst.type.BoxedType;
 import io.deephaven.qst.type.CustomType;
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.GenericType.Visitor;
 import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
+import io.deephaven.util.type.TypeUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -147,6 +148,7 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
             return f.returnType().walk(new Visitor<>() {
                 @Override
                 public Appender<T> visit(BoxedType<?> boxedType) {
+                    // todo: we should have common unbox impls that handle this.
                     return boxedType.walk(new BoxedType.Visitor<>() {
                         @Override
                         public Appender<T> visit(BoxedBooleanType booleanType) {
@@ -155,37 +157,37 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
                         @Override
                         public Appender<T> visit(BoxedByteType byteType) {
-                            return new ByteAppender<>(f.cast(boxedType));
+                            return AppenderVisitor.this.visit(f.cast(byteType).mapToByte(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedCharType charType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(charType).mapToChar(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedShortType shortType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(shortType).mapToShort(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedIntType intType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(intType).mapToInt(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedLongType longType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(longType).mapToLong(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedFloatType floatType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(floatType).mapToFloat(TypeUtils::unbox));
                         }
 
                         @Override
                         public Appender<T> visit(BoxedDoubleType doubleType) {
-                            return null;
+                            return AppenderVisitor.this.visit(f.cast(doubleType).mapToDouble(TypeUtils::unbox));
                         }
                     });
                 }
@@ -197,8 +199,8 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
                 @Override
                 public Appender<T> visit(InstantType instantType) {
-                    // todo
-                    return null;
+                    // to long function
+                    return AppenderVisitor.this.visit(f.cast(instantType).mapToLong(DateTimeUtils::epochNanos));
                 }
 
                 @Override

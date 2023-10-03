@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @param <T> the object type
  */
-public abstract class ChunkyMonkeySingleRowBase<T> implements ChunkyMonkeyRowLimited<T> {
+public abstract class ObjectSplayerSingleRowBase<T> implements ObjectSplayerRowLimited<T> {
 
     @Override
     public final int rowLimit() {

@@ -72,7 +72,7 @@ import java.time.Instant;
  * </tr>
  * </table>
  */
-public final class ChunkyMonkeyTypes {
+public final class ObjectSplayerTypes {
 
     public static ChunkType of(Type<?> type) {
         return type.walk(Impl.INSTANCE);

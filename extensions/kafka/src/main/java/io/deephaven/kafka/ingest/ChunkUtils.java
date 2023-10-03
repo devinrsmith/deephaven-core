@@ -169,7 +169,6 @@ public class ChunkUtils {
         }
     }
 
-
     public static <T> void applyInto(
             ToLongFunction<? super T> longFunction,
             ObjectChunk<? extends T, ?> src,

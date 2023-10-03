@@ -39,27 +39,27 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey<T> {
+final class ObjectSplayerFunctionImpl<T> implements ObjectSplayer<T> {
 
     interface Appender<T> {
 
         void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src);
     }
 
-    static <T> ChunkyMonkeyFunctionImpl<T> of(List<TypedFunction<T>> functions) {
+    static <T> ObjectSplayerFunctionImpl<T> create(List<TypedFunction<? super T>> functions) {
         final List<Type<?>> logicalTypes = functions.stream()
                 .map(TypedFunction::returnType)
                 .collect(Collectors.toUnmodifiableList());
         final List<Appender<? super T>> appenders = functions.stream()
                 .map(AppenderVisitor::of)
                 .collect(Collectors.toList());
-        return new ChunkyMonkeyFunctionImpl<>(logicalTypes, appenders);
+        return new ObjectSplayerFunctionImpl<>(logicalTypes, appenders);
     }
 
     private final List<Type<?>> logicalTypes;
     private final List<Appender<? super T>> appenders;
 
-    private ChunkyMonkeyFunctionImpl(List<Type<?>> logicalTypes, List<Appender<? super T>> appenders) {
+    private ObjectSplayerFunctionImpl(List<Type<?>> logicalTypes, List<Appender<? super T>> appenders) {
         this.logicalTypes = Objects.requireNonNull(logicalTypes);
         this.appenders = Objects.requireNonNull(appenders);
     }

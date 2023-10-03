@@ -1,17 +1,19 @@
 package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.chunk.ResettableObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.attributes.Any;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.Objects;
 
-final class ChunkyMonkeyLimiter<T> implements ChunkyMonkeyRowLimited<T> {
-    private final ChunkyMonkey<T> delegate;
+final class ObjectSplayerRowLimitedImpl<T> implements ObjectSplayerRowLimited<T> {
+    private final ObjectSplayer<T> delegate;
     private final int maxChunkSize;
 
-    ChunkyMonkeyLimiter(ChunkyMonkey<T> delegate, int maxChunkSize) {
+    ObjectSplayerRowLimitedImpl(ObjectSplayer<T> delegate, int maxChunkSize) {
         if (maxChunkSize <= 0) {
             throw new IllegalArgumentException("maxChunkSize must be positive");
         }
@@ -22,7 +24,7 @@ final class ChunkyMonkeyLimiter<T> implements ChunkyMonkeyRowLimited<T> {
         this.maxChunkSize = maxChunkSize;
     }
 
-    ChunkyMonkey<T> delegate() {
+    ObjectSplayer<T> delegate() {
         return delegate;
     }
 
@@ -38,9 +40,13 @@ final class ChunkyMonkeyLimiter<T> implements ChunkyMonkeyRowLimited<T> {
 
     @Override
     public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        final ObjectChunk<T, ?> oc = in.asObjectChunk();
         final int inSize = in.size();
-        for (int i = 0; i < inSize; i += maxChunkSize) {
-            delegate.splayAll(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
+        try (final ResettableObjectChunk<T, Any> slice = ResettableObjectChunk.makeResettableChunk()) {
+            for (int i = 0; i < inSize; i += maxChunkSize) {
+                // delegate.splayAll(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
+                delegate.splayAll(slice.resetFromTypedChunk(oc, i, Math.min(maxChunkSize, inSize - i)), out);
+            }
         }
     }
 }

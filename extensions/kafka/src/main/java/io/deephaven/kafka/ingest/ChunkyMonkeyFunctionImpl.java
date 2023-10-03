@@ -39,11 +39,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
+final class ChunkyMonkeyFunctionImpl<T> implements ChunkyMonkey<T> {
 
     interface Appender<T> {
-
-        void add(WritableChunk<?> dest, T src);
 
         void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src);
     }
@@ -69,15 +67,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
     @Override
     public List<Type<?>> outputTypes() {
         return logicalTypes;
-    }
-
-    @Override
-    public void splay(T in, List<WritableChunk<?>> out) {
-        checkChunks(out);
-        final int L = appenders.size();
-        for (int i = 0; i < L; ++i) {
-            appenders.get(i).add(out.get(i), in);
-        }
     }
 
     @Override
@@ -230,11 +219,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableObjectChunk().add(f.apply(src));
-        }
-
-        @Override
         public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
             ChunkUtils.append(dest.asWritableObjectChunk(), f, src);
         }
@@ -271,11 +255,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableCharChunk().add(f.applyAsChar(src));
-        }
-
-        @Override
         public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
             ChunkUtils.append(dest.asWritableCharChunk(), f, src);
         }
@@ -293,15 +272,8 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         private final ToByteFunction<? super T> f;
 
-
         ByteAppender(ToByteFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-
-        @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableByteChunk().add(f.applyAsByte(src));
         }
 
         @Override
@@ -318,11 +290,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableShortChunk().add(f.applyAsShort(src));
-        }
-
-        @Override
         public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
             ChunkUtils.append(dest.asWritableShortChunk(), f, src);
         }
@@ -333,11 +300,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         IntAppender(java.util.function.ToIntFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableIntChunk().add(f.applyAsInt(src));
         }
 
         @Override
@@ -354,11 +316,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableLongChunk().add(f.applyAsLong(src));
-        }
-
-        @Override
         public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
             ChunkUtils.append(dest.asWritableLongChunk(), f, src);
         }
@@ -372,11 +329,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableFloatChunk().add(f.applyAsFloat(src));
-        }
-
-        @Override
         public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
             ChunkUtils.append(dest.asWritableFloatChunk(), f, src);
         }
@@ -387,11 +339,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         DoubleAppender(java.util.function.ToDoubleFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableDoubleChunk().add(f.applyAsDouble(src));
         }
 
         @Override

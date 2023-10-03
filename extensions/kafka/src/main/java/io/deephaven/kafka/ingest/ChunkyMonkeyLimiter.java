@@ -7,22 +7,22 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-final class ChunkyMonkeyLimiter<T> implements ChunkyMonkey1<T> {
-    private final ChunkyMonkey1<T> delegate;
+final class ChunkyMonkeyLimiter<T> implements ChunkyMonkeyRowLimited<T> {
+    private final ChunkyMonkey<T> delegate;
     private final int maxChunkSize;
 
-    public ChunkyMonkeyLimiter(ChunkyMonkey1<T> delegate, int maxChunkSize) {
-        if (maxChunkSize <= 1) {
-            throw new IllegalArgumentException();
+    ChunkyMonkeyLimiter(ChunkyMonkey<T> delegate, int maxChunkSize) {
+        if (maxChunkSize <= 0) {
+            throw new IllegalArgumentException("maxChunkSize must be positive");
         }
-        if (delegate.rowLimit() <= maxChunkSize) {
-            throw new IllegalArgumentException();
+        if (maxChunkSize == Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("maxChunkSize must be less than Integer.MAX_VALUE");
         }
         this.delegate = Objects.requireNonNull(delegate);
         this.maxChunkSize = maxChunkSize;
     }
 
-    ChunkyMonkey1<T> delegate() {
+    ChunkyMonkey<T> delegate() {
         return delegate;
     }
 
@@ -37,20 +37,10 @@ final class ChunkyMonkeyLimiter<T> implements ChunkyMonkey1<T> {
     }
 
     @Override
-    public void splay(T in, List<WritableChunk<?>> out) {
-        delegate.splay(in, out);
-    }
-
-    @Override
-    public void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-        delegate.splay(in.slice(0, Math.min(maxChunkSize, in.size())), out);
-    }
-
-    @Override
     public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         final int inSize = in.size();
         for (int i = 0; i < inSize; i += maxChunkSize) {
-            delegate.splay(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
+            delegate.splayAll(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
         }
     }
 }

@@ -40,8 +40,9 @@ final class ObjectSplayerRowLimitedImpl<T> implements ObjectSplayerRowLimited<T>
 
     @Override
     public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-        final ObjectChunk<T, ?> oc = in.asObjectChunk();
         final int inSize = in.size();
+        // Note: doing a cast since resetFromTypedChunk does not support ? extends T.
+        final ObjectChunk<T, ?> oc = in.asObjectChunk();
         try (final ResettableObjectChunk<T, Any> slice = ResettableObjectChunk.makeResettableChunk()) {
             for (int i = 0; i < inSize; i += maxChunkSize) {
                 // delegate.splayAll(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);

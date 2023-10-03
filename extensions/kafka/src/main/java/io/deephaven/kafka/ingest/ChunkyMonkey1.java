@@ -13,7 +13,8 @@ import java.util.List;
  * An interface for splaying data from one or more input objects into output chunks on a 1-to-1 input to output basis.
  *
  * <p>
- * Row-oriented implementations are advised to extend from {@link ChunkyMonkeyRowBased}.
+ * Row-oriented implementations are advised to extend from {@link ChunkyMonkeyRowBased}; otherwise extend from
+ * {@link ChunkyMonkeyNoLimitBase} and limit via {@link #rowLimit(ChunkyMonkey1, int)} if necessary.
  *
  * @param <T> the object type
  */
@@ -56,12 +57,14 @@ public interface ChunkyMonkey1<T> {
     }
 
     /**
-     * The types {@code this} instance produces.
+     * The logical output types {@code this} instance splays. The size and types directly correspond to the expected
+     * size and {@link io.deephaven.chunk.ChunkType chunk types} for {@link #splay(Object, List)},
+     * {@link #splay(ObjectChunk, List)}, and {@link #splayAll(ObjectChunk, List)} as specified by
+     * {@link ChunkyMonkeyTypes}.
      *
-     * @return the chunk types
+     * @return the output types
      */
-    List<Type<?>> types();
-
+    List<Type<?>> outputTypes();
 
     /**
      * The row-limit {@code this} instance provides with respect to {@link #splay(ObjectChunk, List)}. If unlimited,
@@ -72,23 +75,23 @@ public interface ChunkyMonkey1<T> {
     int rowLimit();
 
     /**
-     * Splays {@code in} into {@code out} by appending the a value to each chunk. The size of each {@code out} chunk
-     * will be incremented by {@code 1}.
+     * Splays {@code in} into {@code out} by appending the appropriate value to each chunk. The size of each {@code out}
+     * chunk will be incremented by {@code 1}.
      *
      * <p>
      * If an exception thrown, either due to the logic of the implementation, or in callers' breaking of the contract
      * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input object
-     * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
-     *        have remaining capacity of at least {@code 1}
+     * @param out the output chunks as specified by {@link #outputTypes()}; each chunk must have remaining capacity of
+     *        at least {@code 1}
      */
     void splay(T in, List<WritableChunk<?>> out);
 
     /**
      * Splays {@code in} into {@code out} by appending {@code min(in.size(), rowLimit())} values to each chunk. The size
      * of each {@code out} chunk will be incremented by {@code min(in.size(), rowLimit())}. This is functionally
-     * equivalent to calling {@link #splay(Object, List)} with the first {@code in.size()} object from {@code in}.
+     * equivalent to calling {@link #splay(Object, List)} with the first {@code in.size()} objects from {@code in}.
      * Implementations are free to splay the data in a row-oriented, column-oriented, or mix-oriented fashion.
      *
      * <p>
@@ -96,8 +99,10 @@ public interface ChunkyMonkey1<T> {
      * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input objects
-     * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
-     *        have remaining capacity of at least {@code min(in.size(), rowLimit())}
+     * @param out the output chunks as specified by {@link #outputTypes()}; each chunk must have remaining capacity of
+     *        at least {@code min(in.size(), rowLimit())}
+     * @deprecated Should we remove this? extraneous wrt callers just limiting and calling splayAll? That might mean
+     *             rowLimit() goes away? Maybe okay if it becomes an implementation detail of splay all.
      */
     void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 
@@ -112,8 +117,8 @@ public interface ChunkyMonkey1<T> {
      * for {@code out}, the output chunks will be in an unspecified state.
      *
      * @param in the input objects
-     * @param out the output chunks, must be exactly the size of and types of {@link #chunkTypes()}, and each chunk must
-     *        have remaining capacity of at least {@code in.size()}
+     * @param out the output chunks as specified by {@link #outputTypes()}; each chunk must have remaining capacity of
+     *        at least {@code in.size()}
      */
     void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 }

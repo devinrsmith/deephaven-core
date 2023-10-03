@@ -37,13 +37,11 @@ import io.deephaven.util.type.TypeUtils;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
     interface Appender<T> {
-        Type<?> returnType();
 
         void add(WritableChunk<?> dest, T src);
 
@@ -51,18 +49,26 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
     }
 
     static <T> ChunkyMonkeyFunctionImpl<T> of(List<TypedFunction<T>> functions) {
-        return new ChunkyMonkeyFunctionImpl<>(functions.stream().map(AppenderVisitor::of).collect(Collectors.toList()));
+        final List<Type<?>> logicalTypes = functions.stream()
+                .map(TypedFunction::returnType)
+                .collect(Collectors.toUnmodifiableList());
+        final List<Appender<? super T>> appenders = functions.stream()
+                .map(AppenderVisitor::of)
+                .collect(Collectors.toList());
+        return new ChunkyMonkeyFunctionImpl<>(logicalTypes, appenders);
     }
 
+    private final List<Type<?>> logicalTypes;
     private final List<Appender<? super T>> appenders;
 
-    private ChunkyMonkeyFunctionImpl(List<Appender<? super T>> appenders) {
+    private ChunkyMonkeyFunctionImpl(List<Type<?>> logicalTypes, List<Appender<? super T>> appenders) {
+        this.logicalTypes = Objects.requireNonNull(logicalTypes);
         this.appenders = Objects.requireNonNull(appenders);
     }
 
     @Override
-    public List<Type<?>> types() {
-        return appenders.stream().map(Appender::returnType).collect(Collectors.toList());
+    public List<Type<?>> outputTypes() {
+        return logicalTypes;
     }
 
     @Override
@@ -105,7 +111,7 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         @Override
         public Appender<T> visit(ToBooleanFunction<T> f) {
-            return new BooleanAppender<>(f);
+            return ByteAppender.from(f);
         }
 
         @Override
@@ -224,11 +230,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public Type<?> returnType() {
-            return f.returnType();
-        }
-
-        @Override
         public void add(WritableChunk<?> dest, T src) {
             dest.asWritableObjectChunk().add(f.apply(src));
         }
@@ -239,39 +240,34 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
     }
 
-    private static class BooleanAppender<T> implements Appender<T> {
-        private final Predicate<? super T> f;
-
-        BooleanAppender(Predicate<? super T> f) {
-            this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public Type<?> returnType() {
-            return Type.booleanType();
-        }
-
-        @Override
-        public void add(WritableChunk<?> dest, T src) {
-            dest.asWritableBooleanChunk().add(f.test(src));
-        }
-
-        @Override
-        public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
-            ChunkUtils.append(dest.asWritableBooleanChunk(), f, src);
-        }
-    }
+    // private static class BooleanAppender<T> implements Appender<T> {
+    // private final Predicate<? super T> f;
+    //
+    // BooleanAppender(Predicate<? super T> f) {
+    // this.f = Objects.requireNonNull(f);
+    // }
+    //
+    // @Override
+    // public Type<?> returnType() {
+    // return Type.booleanType();
+    // }
+    //
+    // @Override
+    // public void add(WritableChunk<?> dest, T src) {
+    // dest.asWritableBooleanChunk().add(f.test(src));
+    // }
+    //
+    // @Override
+    // public void append(WritableChunk<?> dest, ObjectChunk<? extends T, ?> src) {
+    // ChunkUtils.append(dest.asWritableBooleanChunk(), f, src);
+    // }
+    // }
 
     private static class CharAppender<T> implements Appender<T> {
         private final ToCharFunction<? super T> f;
 
         CharAppender(ToCharFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public Type<?> returnType() {
-            return Type.charType();
         }
 
         @Override
@@ -287,20 +283,21 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
     private static class ByteAppender<T> implements Appender<T> {
 
+        static <T> ByteAppender<T> from(ToBooleanFunction<? super T> f) {
+            return new ByteAppender<>(x -> BooleanUtils.booleanAsByte(f.test(x)));
+        }
+
         static <T> ByteAppender<T> from(ToObjectFunction<? super T, ? extends Boolean> f) {
             return new ByteAppender<>(f.mapToByte(BooleanUtils::booleanAsByte));
         }
 
         private final ToByteFunction<? super T> f;
 
+
         ByteAppender(ToByteFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
         }
 
-        @Override
-        public Type<?> returnType() {
-            return Type.byteType();
-        }
 
         @Override
         public void add(WritableChunk<?> dest, T src) {
@@ -318,11 +315,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         ShortAppender(ToShortFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public Type<?> returnType() {
-            return Type.shortType();
         }
 
         @Override
@@ -344,11 +336,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public Type<?> returnType() {
-            return Type.intType();
-        }
-
-        @Override
         public void add(WritableChunk<?> dest, T src) {
             dest.asWritableIntChunk().add(f.applyAsInt(src));
         }
@@ -364,11 +351,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         LongAppender(java.util.function.ToLongFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public Type<?> returnType() {
-            return Type.longType();
         }
 
         @Override
@@ -390,11 +372,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
         }
 
         @Override
-        public Type<?> returnType() {
-            return Type.floatType();
-        }
-
-        @Override
         public void add(WritableChunk<?> dest, T src) {
             dest.asWritableFloatChunk().add(f.applyAsFloat(src));
         }
@@ -410,11 +387,6 @@ final class ChunkyMonkeyFunctionImpl<T> extends ChunkyMonkeyNoLimitBase<T> {
 
         DoubleAppender(java.util.function.ToDoubleFunction<? super T> f) {
             this.f = Objects.requireNonNull(f);
-        }
-
-        @Override
-        public Type<?> returnType() {
-            return Type.doubleType();
         }
 
         @Override

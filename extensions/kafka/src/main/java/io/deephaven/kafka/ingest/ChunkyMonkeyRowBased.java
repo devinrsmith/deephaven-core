@@ -6,7 +6,8 @@ import io.deephaven.chunk.WritableChunk;
 import java.util.List;
 
 /**
- * A base for row-oriented implementations.
+ * A base implementation that implements {@link #splay(ObjectChunk, List)} and {@link #splayAll(ObjectChunk, List)} via
+ * calls to {@link #splay(Object, List)}.
  *
  * @param <T> the object type
  */

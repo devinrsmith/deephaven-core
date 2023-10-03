@@ -7,7 +7,7 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
+final class ChunkyMonkeyLimiter<T> implements ChunkyMonkey1<T> {
     private final ChunkyMonkey1<T> delegate;
     private final int maxChunkSize;
 
@@ -27,8 +27,8 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
     }
 
     @Override
-    public List<Type<?>> types() {
-        return delegate.types();
+    public List<Type<?>> outputTypes() {
+        return delegate.outputTypes();
     }
 
     @Override
@@ -44,5 +44,13 @@ final class ChunkyMonkeyLimiter<T> extends ChunkyMonkeyBase<T> {
     @Override
     public void splay(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         delegate.splay(in.slice(0, Math.min(maxChunkSize, in.size())), out);
+    }
+
+    @Override
+    public void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        final int inSize = in.size();
+        for (int i = 0; i < inSize; i += maxChunkSize) {
+            delegate.splay(in.slice(i, Math.min(maxChunkSize, inSize - i)), out);
+        }
     }
 }

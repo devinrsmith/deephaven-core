@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-2022 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.kafka.ingest;
+package io.deephaven.chunk;
 
-import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableChunk;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.qst.type.Type;
 

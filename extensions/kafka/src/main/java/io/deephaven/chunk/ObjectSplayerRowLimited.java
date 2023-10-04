@@ -1,6 +1,4 @@
-package io.deephaven.kafka.ingest;
-
-import io.deephaven.chunk.ObjectChunk;
+package io.deephaven.chunk;
 
 import java.util.List;
 

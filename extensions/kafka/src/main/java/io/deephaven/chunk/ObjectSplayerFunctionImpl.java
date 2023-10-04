@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.kafka.ingest;
+package io.deephaven.chunk;
 
-import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableChunk;
 import io.deephaven.functions.ToBooleanFunction;
 import io.deephaven.functions.ToByteFunction;
 import io.deephaven.functions.ToCharFunction;
@@ -16,6 +14,7 @@ import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.ToPrimitiveFunction;
 import io.deephaven.functions.ToShortFunction;
 import io.deephaven.functions.TypedFunction;
+import io.deephaven.kafka.ingest.ChunkUtils;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedBooleanType;
 import io.deephaven.qst.type.BoxedByteType;

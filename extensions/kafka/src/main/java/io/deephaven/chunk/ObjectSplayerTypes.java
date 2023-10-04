@@ -1,4 +1,4 @@
-package io.deephaven.kafka.ingest;
+package io.deephaven.chunk;
 
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.qst.type.ArrayType;

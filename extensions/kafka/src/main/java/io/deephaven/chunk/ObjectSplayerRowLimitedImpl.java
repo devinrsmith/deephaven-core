@@ -1,8 +1,5 @@
-package io.deephaven.kafka.ingest;
+package io.deephaven.chunk;
 
-import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.ResettableObjectChunk;
-import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.qst.type.Type;
@@ -11,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 final class ObjectSplayerRowLimitedImpl<T> implements ObjectSplayerRowLimited<T> {
     private final ObjectSplayer<T> delegate;

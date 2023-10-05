@@ -7,6 +7,9 @@ import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 
+/**
+ * @deprecated see {@link io.deephaven.chunk.ObjectSplayer}
+ */
 public interface KeyOrValueProcessor {
     /**
      * After consuming a set of generic records for a batch that are not raw objects, we pass the keys or values to an

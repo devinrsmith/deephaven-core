@@ -72,6 +72,8 @@ public interface ObjectSplayer<T> {
      */
     List<Type<?>> outputTypes();
 
+    // todo: impls may be threaded? but bad idea?
+
     /**
      * Splays {@code in} into {@code out} by appending {@code in.size()} values to each chunk. The size of each
      * {@code out} chunk will be incremented by {@code in.size()}. Implementations are free to splay the data in a

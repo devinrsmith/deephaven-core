@@ -23,18 +23,21 @@ public final class TransactionSafety implements Transaction {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Must complete outstanding chunk before taking a new one");
         }
         return delegate.take(minSize);
     }
 
     @Override
     public void complete(Chunks chunks, int outRows) {
+        if (chunks == null) {
+            throw new NullPointerException("Must not complete null chunks");
+        }
         if (closed) {
             throw new IllegalStateException();
         }
         if (chunks != outstanding) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Must only complete previously taken chunk");
         }
         delegate.complete(chunks, outRows);
         outstanding = null;
@@ -44,6 +47,9 @@ public final class TransactionSafety implements Transaction {
     public void commit(int inRows) {
         if (closed) {
             throw new IllegalStateException();
+        }
+        if (outstanding != null) {
+            throw new IllegalStateException("Outstanding chunk must be completed before committing");
         }
         delegate.commit(inRows);
     }

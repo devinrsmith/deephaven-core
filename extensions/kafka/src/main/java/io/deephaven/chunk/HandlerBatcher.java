@@ -6,21 +6,44 @@ import io.deephaven.chunk.MultiChunks.Transaction;
 
 import java.util.Objects;
 
-public class HandlerBatcher implements Handler {
-    private final Transaction rootTx;
-    private final TransactionImpl txImpl;
-    private int inRows = 0;
-    private int outRows = 0;
+/**
+ * A batched-implementation where
+ */
+public final class HandlerBatcher implements Handler {
+    private final Transaction delegate;
+    private int outstandingInRows = 0;
+    private int outstandingOutRows = 0;
+    private int committedInRows = 0;
+    private int committedOutRows = 0;
     private int openedTxs = 0;
     private int closedTxs = 0;
 
-    HandlerBatcher(Transaction rootTx) {
-        this.rootTx = Objects.requireNonNull(rootTx);
-        this.txImpl = new TransactionImpl();
+    public HandlerBatcher(Transaction delegate) {
+        this.delegate = Objects.requireNonNull(delegate);
     }
 
-    public void commitAll() {
-        rootTx.commit(inRows);
+    public void commitOutstanding() {
+        delegate.commit(outstandingInRows);
+        committedInRows += outstandingInRows;
+        committedOutRows += outstandingOutRows;
+        outstandingInRows = 0;
+        outstandingOutRows = 0;
+    }
+
+    public int outstandingInRows() {
+        return outstandingInRows;
+    }
+
+    public int outstandingOutRows() {
+        return outstandingOutRows;
+    }
+
+    public int committedInRows() {
+        return committedInRows;
+    }
+
+    public int committedOutRows() {
+        return committedOutRows;
     }
 
     @Override
@@ -29,34 +52,30 @@ public class HandlerBatcher implements Handler {
             throw new IllegalStateException();
         }
         openedTxs++;
-        return new TransactionSafety(txImpl);
+        return new TransactionSafety(new TransactionImpl());
     }
 
-    /**
-     * This implementation by itself is not correct, as it doesn't enforce error-after-close. Needs to be combined with
-     * something like {@link TransactionSafety}.
-     */
     private class TransactionImpl implements Transaction {
 
         @Override
         public Chunks take(int minSize) {
-            return rootTx.take(minSize);
+            return delegate.take(minSize);
         }
 
         @Override
         public void complete(Chunks chunks, int outRows) {
-            rootTx.complete(chunks, outRows);
-            HandlerBatcher.this.outRows += outRows;
+            delegate.complete(chunks, outRows);
+            outstandingOutRows += outRows;
         }
 
         @Override
         public void commit(int inRows) {
-            HandlerBatcher.this.inRows += inRows;
+            outstandingInRows += inRows;
         }
 
         @Override
         public void close() {
-            ++HandlerBatcher.this.closedTxs;
+            ++closedTxs;
         }
     }
 }

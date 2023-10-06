@@ -20,9 +20,9 @@ public class MultiChunksFullTx<T> implements MultiChunks<T> {
     @Override
     public void handleAll(ObjectChunk<? extends T, ?> in, Handler handler) {
         try (final Transaction rootTx = handler.tx()) {
-            final HandlerBatcher singleShot = new HandlerBatcher(rootTx);
-            impl.handleAll(in, singleShot);
-            singleShot.commitAll();
+            final HandlerBatcher batcher = new HandlerBatcher(rootTx);
+            impl.handleAll(in, batcher);
+            batcher.commitOutstanding();
         }
     }
 

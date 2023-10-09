@@ -11,6 +11,7 @@ import java.util.Objects;
 public final class TransactionSafety implements Transaction {
     private final Transaction delegate;
     private Chunks outstanding;
+    private boolean committed;
     private boolean closed;
 
     public TransactionSafety(Transaction delegate) {
@@ -19,7 +20,7 @@ public final class TransactionSafety implements Transaction {
 
     @Override
     public Chunks take(int minSize) {
-        if (closed) {
+        if (closed || committed) {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
@@ -33,7 +34,7 @@ public final class TransactionSafety implements Transaction {
         if (chunks == null) {
             throw new NullPointerException("Must not complete null chunks");
         }
-        if (closed) {
+        if (closed || committed) {
             throw new IllegalStateException();
         }
         if (chunks != outstanding) {
@@ -45,13 +46,14 @@ public final class TransactionSafety implements Transaction {
 
     @Override
     public void commit(int inRows) {
-        if (closed) {
+        if (closed || committed) {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
             throw new IllegalStateException("Outstanding chunk must be completed before committing");
         }
         delegate.commit(inRows);
+        committed = true;
     }
 
     @Override

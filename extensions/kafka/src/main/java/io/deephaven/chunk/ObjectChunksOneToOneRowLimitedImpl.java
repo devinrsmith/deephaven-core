@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-final class ObjectSplayerRowLimitedImpl<T> implements ObjectSplayerRowLimited<T> {
-    private final ObjectSplayer<T> delegate;
+final class ObjectChunksOneToOneRowLimitedImpl<T> implements ObjectChunksOneToOneRowLimited<T> {
+    private final ObjectChunksOneToOne<T> delegate;
     private final int chunkSize;
 
-    ObjectSplayerRowLimitedImpl(ObjectSplayer<T> delegate, int chunkSize) {
+    ObjectChunksOneToOneRowLimitedImpl(ObjectChunksOneToOne<T> delegate, int chunkSize) {
         if (chunkSize <= 0) {
             throw new IllegalArgumentException("chunkSize must be positive");
         }
@@ -24,7 +24,7 @@ final class ObjectSplayerRowLimitedImpl<T> implements ObjectSplayerRowLimited<T>
         this.chunkSize = chunkSize;
     }
 
-    ObjectSplayer<T> delegate() {
+    ObjectChunksOneToOne<T> delegate() {
         return delegate;
     }
 

@@ -8,7 +8,12 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 
 
-public interface MultiChunks<T> {
+/**
+ * More generalized version of {@link ObjectChunksOneToOne}
+ *
+ * @param <T>
+ */
+public interface ObjectChunksOneToMany<T> {
 
     /**
      * Creates a no-op implementation that consumes all of the input objects without producing any outputs.
@@ -17,8 +22,8 @@ public interface MultiChunks<T> {
      * @return the no-op implementation
      * @param <T> the object type
      */
-    static <T> MultiChunks<T> noop(List<Type<?>> outputTypes) {
-        return new MultiChunksNoOp<>(outputTypes);
+    static <T> ObjectChunksOneToMany<T> noop(List<Type<?>> outputTypes) {
+        return new ObjectChunksAdapterNoop<>(outputTypes);
     }
 
     List<Type<?>> outputTypes();
@@ -26,8 +31,8 @@ public interface MultiChunks<T> {
     /**
      *
      * @param in the input objects
-     * @param handler the handler
+     * @param out the chunks provider
      */
-    void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler);
+    void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider out);
 
 }

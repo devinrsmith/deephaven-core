@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @param <T> the object type
  */
-public abstract class ObjectSplayerSingleRowBase<T> implements ObjectSplayerRowLimited<T> {
+public abstract class ObjectSplayerSingleRowBase<T> implements ObjectChunksOneToOneRowLimited<T> {
 
     @Override
     public final int rowLimit() {

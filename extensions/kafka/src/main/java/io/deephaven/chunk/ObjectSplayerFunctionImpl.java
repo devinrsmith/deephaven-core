@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-final class ObjectSplayerFunctionImpl<T> implements ObjectSplayer<T> {
+final class ObjectSplayerFunctionImpl<T> implements ObjectChunksOneToOne<T> {
 
     interface Appender<T> {
 

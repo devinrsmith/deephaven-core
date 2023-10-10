@@ -4,11 +4,12 @@
 package io.deephaven.kafka.ingest;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.chunk.ObjectChunksOneToOne;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 
 /**
- * @deprecated see {@link io.deephaven.chunk.ObjectSplayer}
+ * @deprecated see {@link ObjectChunksOneToOne}
  */
 public interface KeyOrValueProcessor {
     /**

@@ -1,5 +1,6 @@
 package io.deephaven.chunk;
 
+import io.deephaven.chunk.ChunksProviderSimple.TransactionImpl;
 import io.deephaven.util.SafeCloseable;
 
 import java.util.ArrayList;
@@ -9,25 +10,35 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ChunksProviderSimple implements ChunksProvider {
+/**
+ *
+ */
+public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
 
     private final List<ChunkType> chunkTypes;
     private final Consumer<List<? extends Chunks>> onCommit;
     private final int desiredChunkSize;
 
-    public ChunksProviderSimple(List<ChunkType> chunkTypes, Consumer<List<? extends Chunks>> onCommit) {
+    public ChunksProviderSimple(List<ChunkType> chunkTypes, Consumer<List<? extends Chunks>> onCommit, int desiredChunkSize) {
         this.chunkTypes = Objects.requireNonNull(chunkTypes);
         this.onCommit = Objects.requireNonNull(onCommit);
+        this.desiredChunkSize = desiredChunkSize;
     }
 
     @Override
-    public Transaction tx() {
-        return new TransactionImpl();
+    protected TransactionImpl txImpl(Consumer<TransactionImpl> onClosed) {
+        return new TransactionImpl(onClosed);
     }
 
-    private class TransactionImpl extends TransactionBase<ChunksImpl> {
-        private final List<ChunksImpl> full = new ArrayList<>();
+    protected class TransactionImpl extends TransactionBase<ChunksImpl> {
+        private final Consumer<TransactionImpl> onClosed;
+        private final List<ChunksImpl> full;
         private ChunksImpl recent;
+
+        public TransactionImpl(Consumer<TransactionImpl> onClosed) {
+            this.onClosed = Objects.requireNonNull(onClosed);
+            this.full = new ArrayList<>();
+        }
 
         @Override
         protected ChunksImpl takeImpl(int minSize) {
@@ -42,6 +53,7 @@ public class ChunksProviderSimple implements ChunksProvider {
 
         @Override
         protected void completeImpl(ChunksImpl chunk, int outRows) {
+            // todo: should we think about Chunks being mutable like ByteBuffer?
             recent = new ChunksImpl(chunk.out(), chunk.pos() + outRows, chunk.size());
         }
 
@@ -66,31 +78,34 @@ public class ChunksProviderSimple implements ChunksProvider {
                 Throwable takeImplThrowable,
                 Throwable completeImplThrowable,
                 Throwable commitImplThrowable) {
+            // outstanding, if present, will have the same contents as recent; no need to release it.
             try {
                 SafeCloseable.closeAll(Stream.concat(
                         full.stream(),
-                        outstanding == null ? Stream.empty() : Stream.of(outstanding)));
+                        recent == null ? Stream.empty() : Stream.of(recent)));
             } finally {
+                recent = null;
                 full.clear();
             }
+            onClosed.accept(this);
         }
     }
 
-    private ChunksImpl makeChunks(int minSize) {
+    private ChunksImpl makeChunks(int size) {
         final List<WritableChunk<?>> chunks = chunkTypes.stream()
-                .map(c -> c.makeWritableChunk(minSize))
+                .map(c -> c.makeWritableChunk(size))
                 .collect(Collectors.toList());
         // todo: can we get a version of makeWritabhleChunk that returns the physical size instead of requested size?
         for (WritableChunk<?> chunk : chunks) {
-            if (chunk.size() != minSize) {
+            if (chunk.size() != size) {
                 throw new IllegalStateException("Expected making chunks to return the exact same size...");
             }
             chunk.setSize(0);
         }
-        return new ChunksImpl(chunks, 0, minSize);
+        return new ChunksImpl(chunks, 0, size);
     }
 
-    private static class ChunksImpl implements Chunks, SafeCloseable {
+    protected static class ChunksImpl implements Chunks, SafeCloseable {
         private final int pos;
         private final int size;
         private final List<WritableChunk<?>> out;

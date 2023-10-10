@@ -5,7 +5,7 @@ import io.deephaven.qst.type.Type;
 
 import java.util.List;
 
-class MultiChunksOtherExample implements MultiChunks<byte[]> {
+class MultiChunksOtherExample implements ObjectChunksOneToMany<byte[]> {
 
     @Override
     public List<Type<?>> outputTypes() {
@@ -13,11 +13,11 @@ class MultiChunksOtherExample implements MultiChunks<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider handler) {
+    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider out) {
         for (int i = 0; i < in.size(); ++i) {
             // just because we are committing at each row elements does _not_ mean we are handing off to publishing
             // one row at a time; the caller may be batching the chunks as they see fit.
-            try (final Transaction tx = handler.tx()) {
+            try (final Transaction tx = out.tx()) {
                 handle(tx, in.get(i));
                 tx.commit(1);
             }

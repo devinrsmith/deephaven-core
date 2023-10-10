@@ -14,10 +14,6 @@ public abstract class TransactionBase<C extends Chunks> implements Transaction {
     private Throwable completeImplThrowable;
     private Throwable commitImplThrowable;
 
-    protected C outstanding() {
-        return outstanding;
-    }
-
     @Override
     public final Chunks take(int minSize) {
         if (minSize < 0) {
@@ -88,6 +84,9 @@ public abstract class TransactionBase<C extends Chunks> implements Transaction {
             closeImpl(committed, outstanding, takeImplThrowable, completeImplThrowable, commitImplThrowable);
         } finally {
             outstanding = null;
+            takeImplThrowable = null;
+            completeImplThrowable = null;
+            commitImplThrowable = null;
             closed = true;
         }
     }

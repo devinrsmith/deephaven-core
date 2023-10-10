@@ -6,11 +6,11 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-class MultiChunksRowLimitedImpl<T> implements MultiChunks<T> {
-    private final ObjectSplayer<T> impl;
+class ObjectChunksOneToManyRowLimited<T> implements ObjectChunksOneToMany<T> {
+    private final ObjectChunksOneToOne<T> impl;
     private final int txSize;
 
-    public MultiChunksRowLimitedImpl(ObjectSplayer<T> impl, int maxChunkSize) {
+    public ObjectChunksOneToManyRowLimited(ObjectChunksOneToOne<T> impl, int maxChunkSize) {
         this.impl = Objects.requireNonNull(impl);
         this.txSize = maxChunkSize;
     }
@@ -21,14 +21,14 @@ class MultiChunksRowLimitedImpl<T> implements MultiChunks<T> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler) {
-        for (final ObjectChunk<? extends T, ?> slice : ObjectSplayerRowLimitedImpl.iterable(in, txSize)) {
-            try (final Transaction tx = handler.tx()) {
+    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider out) {
+        for (final ObjectChunk<? extends T, ?> slice : ObjectChunksOneToOneRowLimitedImpl.iterable(in, txSize)) {
+            try (final Transaction tx = out.tx()) {
                 final int sliceSize = slice.size();
                 final Chunks chunks = tx.take(sliceSize);
                 impl.splayAll(slice, chunks.out());
                 tx.complete(chunks, sliceSize);
-                tx.commit(sliceSize);
+                tx.commit();
             }
         }
     }

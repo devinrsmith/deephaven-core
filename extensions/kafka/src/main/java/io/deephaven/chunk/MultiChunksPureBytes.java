@@ -10,7 +10,7 @@ import java.util.List;
  * While this implementation is likely to be of little real-world value, it illustrates the proper implementation hooks
  * needed when the size of the output is known in advanced ({@code outDiscarded == 0}).
  */
-class MultiChunksPureBytes implements MultiChunks<byte[]> {
+class MultiChunksPureBytes implements ObjectChunksOneToMany<byte[]> {
 
     private final int chunkSize;
 
@@ -24,11 +24,11 @@ class MultiChunksPureBytes implements MultiChunks<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider handler) {
+    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider out) {
         for (int i = 0; i < in.size(); ++i) {
-            try (final Transaction tx = handler.tx()) {
+            try (final Transaction tx = out.tx()) {
                 handle(tx, in.get(i));
-                tx.commit(1);
+                tx.commit();
             }
         }
     }
@@ -39,8 +39,8 @@ class MultiChunksPureBytes implements MultiChunks<byte[]> {
             final Chunks chunks = tx.take(size);
             {
                 final WritableByteChunk<?> out = chunks.out().get(0).asWritableByteChunk();
-                out.copyFromTypedArray(bytes, i, out.size(), size);
-                out.setSize(out.size() + size);
+                out.copyFromTypedArray(bytes, i, chunks.pos(), size);
+                out.setSize(chunks.pos() + size);
             }
             tx.complete(chunks, size);
         }

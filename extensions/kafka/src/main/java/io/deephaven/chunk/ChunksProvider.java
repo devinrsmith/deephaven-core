@@ -5,17 +5,17 @@ import java.io.Closeable;
 public interface ChunksProvider {
 
     /**
-     * Create a transaction. Only one transaction
+     * Create a transaction. Only one transaction at a time.
      *
      * @return the transaction
      */
-    Transaction tx();
+    Transaction tx(); // todo: parent tx?
 
     /**
-     * A transaction represents the interface between the producer and consumer with respect to chunks. Chunks handed
-     * off in a transaction guarantees that the downstream consumer will receive all of those chunks in-order and at the
-     * same time. A transaction does not guarantee that only those chunks will be received by the consumer; ie,
-     * transactions may be combined.
+     * A transaction represents the interface between the producer and consumer with respect to chunks. Chunks completed
+     * as part of a committed transaction guarantees that the downstream consumer will receive all of those chunks
+     * in-order and at the same time. A transaction does not guarantee that only those chunks will be received by the
+     * consumer; ie, transactions may be combined.
      */
     interface Transaction extends Closeable {
 
@@ -29,8 +29,11 @@ public interface ChunksProvider {
          * know the number of output rows is small or has a small bound, and otherwise encouraged to take and complete
          * chunks in a buffered manner using a {@code minSize} of {@code min(bufferSize, precise)}.
          *
+         * <p>
+         * Implementations are encouraged to re-use chunks if there is enough space remaning.
+         *
          * @param minSize the minimum size
-         * @return the chunks, guaranteed to have {@link Chunks#size()} of at least {@code minSize}
+         * @return the chunks, guaranteed to have {@link Chunks#remaining()} of at least {@code minSize}
          */
         Chunks take(int minSize);
 
@@ -49,7 +52,7 @@ public interface ChunksProvider {
         void commit();
 
         /**
-         * Close this transaction.
+         * Close this transaction. Callers should ideally call this via a try-with-resources pattern.
          */
         void close();
     }

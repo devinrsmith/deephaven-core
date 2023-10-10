@@ -4,14 +4,13 @@ import io.deephaven.chunk.ChunksProvider.Transaction;
 
 import java.util.Objects;
 
-public class TransactionOnClose implements Transaction {
+public final class TransactionOnClose implements Transaction {
     private final Transaction delegate;
-    private final Runnable onClose;
+    private final Runnable onClosed;
 
-
-    public TransactionOnClose(Transaction delegate, Runnable onClose) {
+    public TransactionOnClose(Transaction delegate, Runnable onClosed) {
         this.delegate = Objects.requireNonNull(delegate);
-        this.onClose = Objects.requireNonNull(onClose);
+        this.onClosed = Objects.requireNonNull(onClosed);
     }
 
     @Override
@@ -34,7 +33,7 @@ public class TransactionOnClose implements Transaction {
         try {
             delegate.close();
         } finally {
-            onClose.run();
+            onClosed.run();
         }
     }
 }

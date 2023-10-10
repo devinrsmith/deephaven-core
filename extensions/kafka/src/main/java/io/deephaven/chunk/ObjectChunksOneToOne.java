@@ -13,11 +13,11 @@ import java.util.List;
  *
  * <p>
  * Row-oriented implementations are advised to extend from {@link ObjectSplayerSingleRowBase}; otherwise extend from
- * {@link ObjectSplayer} and limit via {@link #rowLimit(ObjectSplayer, int)} if necessary.
+ * {@link ObjectChunksOneToOne} and limit via {@link #rowLimit(ObjectChunksOneToOne, int)} if necessary.
  *
  * @param <T> the object type
  */
-public interface ObjectSplayer<T> {
+public interface ObjectChunksOneToOne<T> {
 
     /**
      * Creates a function-based splayer whose {@link #outputTypes()} is the {@link TypedFunction#returnType()} from each
@@ -31,7 +31,7 @@ public interface ObjectSplayer<T> {
      * @return the function splayer
      * @param <T> the object type
      */
-    static <T> ObjectSplayer<T> of(List<TypedFunction<? super T>> functions) {
+    static <T> ObjectChunksOneToOne<T> of(List<TypedFunction<? super T>> functions) {
         return ObjectSplayerFunctionImpl.create(functions);
     }
 
@@ -48,19 +48,19 @@ public interface ObjectSplayer<T> {
      * @return the row-limited splayer
      * @param <T> the object type
      */
-    static <T> ObjectSplayerRowLimited<T> rowLimit(ObjectSplayer<T> delegate, int maxChunkSize) {
-        if (delegate instanceof ObjectSplayerRowLimited) {
-            final ObjectSplayerRowLimited<T> limited = (ObjectSplayerRowLimited<T>) delegate;
+    static <T> ObjectChunksOneToOneRowLimited<T> rowLimit(ObjectChunksOneToOne<T> delegate, int maxChunkSize) {
+        if (delegate instanceof ObjectChunksOneToOneRowLimited) {
+            final ObjectChunksOneToOneRowLimited<T> limited = (ObjectChunksOneToOneRowLimited<T>) delegate;
             if (limited.rowLimit() <= maxChunkSize) {
                 // already limited greater than maxChunkSize
                 return limited;
             }
-            if (limited instanceof ObjectSplayerRowLimitedImpl) {
+            if (limited instanceof ObjectChunksOneToOneRowLimitedImpl) {
                 // don't want to wrap multiple times, so operate on the inner delegate
-                return rowLimit(((ObjectSplayerRowLimitedImpl<T>) limited).delegate(), maxChunkSize);
+                return rowLimit(((ObjectChunksOneToOneRowLimitedImpl<T>) limited).delegate(), maxChunkSize);
             }
         }
-        return new ObjectSplayerRowLimitedImpl<>(delegate, maxChunkSize);
+        return new ObjectChunksOneToOneRowLimitedImpl<>(delegate, maxChunkSize);
     }
 
     /**

@@ -20,16 +20,16 @@ public class MultiChunksLazyCommitter<T> implements MultiChunks<T> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends T, ?> in, Handler handler) {
-        try (final HandlerBatcher batcher = new MyBatcher(handler)) {
+    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProducer handler) {
+        try (final ChunksProducerBatch batcher = new MyBatcher(handler)) {
             impl.handleAll(in, batcher);
             batcher.commit();
         }
     }
 
-    private class MyBatcher extends HandlerBatcher {
+    private class MyBatcher extends ChunksProducerBatch {
 
-        public MyBatcher(Handler handler) {
+        public MyBatcher(ChunksProducer handler) {
             super(handler);
         }
 

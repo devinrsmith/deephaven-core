@@ -1,7 +1,6 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.MultiChunks.Chunks;
-import io.deephaven.chunk.MultiChunks.Transaction;
+import io.deephaven.chunk.ChunksProducer.Transaction;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.stream.StreamConsumer;
 
@@ -40,7 +39,7 @@ public class StreamConsumerTx implements Transaction {
     }
 
     @Override
-    public void commit(int inRows) {
+    public void commit() {
         consumer.accept(chunks.stream().map(c -> c.out).collect(Collectors.toList()));
     }
 

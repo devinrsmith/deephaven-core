@@ -1,5 +1,6 @@
 package io.deephaven.chunk;
 
+import io.deephaven.chunk.ChunksProducer.Transaction;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
@@ -18,7 +19,7 @@ final class MultiChunksNoOp<T> implements MultiChunks<T> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends T, ?> in, Handler handler) {
+    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProducer handler) {
         try (final Transaction tx = handler.tx()) {
             tx.commit(in.size());
         }

@@ -1,5 +1,6 @@
 package io.deephaven.chunk;
 
+import io.deephaven.chunk.ChunksProducer.Transaction;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
@@ -12,7 +13,7 @@ class MultiChunksOtherExample implements MultiChunks<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, Handler handler) {
+    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProducer handler) {
         for (int i = 0; i < in.size(); ++i) {
             // just because we are committing at each row elements does _not_ mean we are handing off to publishing
             // one row at a time; the caller may be batching the chunks as they see fit.

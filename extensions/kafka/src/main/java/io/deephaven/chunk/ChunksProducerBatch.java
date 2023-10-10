@@ -1,19 +1,14 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.MultiChunks.Chunks;
-import io.deephaven.chunk.MultiChunks.Handler;
-import io.deephaven.chunk.MultiChunks.Transaction;
-
-import javax.annotation.concurrent.ThreadSafe;
 import java.io.Closeable;
 import java.util.Objects;
 
 /**
  * A batched-implementation where
  */
-public class HandlerBatcher implements Handler, Closeable {
-    private final Handler handler;
-    private TransactionImpl currentTransaction;
+public class ChunksProducerBatch implements ChunksProducer, Closeable {
+    private final ChunksProducer handler;
+    private Transaction currentTransaction;
     private boolean closed;
 
 
@@ -22,8 +17,8 @@ public class HandlerBatcher implements Handler, Closeable {
     private int openedTxs = 0;
     private int closedTxs = 0;
 
-    public HandlerBatcher(Handler handler) {
-        this.handler = Objects.requireNonNull(handler);
+    public ChunksProducerBatch(ChunksProducer delegate) {
+        this.handler = Objects.requireNonNull(delegate);
     }
 
 
@@ -36,10 +31,34 @@ public class HandlerBatcher implements Handler, Closeable {
             throw new IllegalStateException();
         }
         openedTxs++;
-        if (currentTransaction == null) {
-            currentTransaction = new TransactionImpl(handler.tx());
-        }
-        return new TransactionSafety(currentTransaction);
+
+
+        final Transaction delegate = currentTransaction == null
+                ? currentTransaction = handler.tx()
+                : currentTransaction;
+
+        return new TransactionBase<Chunks>() {
+            @Override
+            protected Chunks takeImpl(int minSize) {
+                return delegate.take(minSize);
+            }
+
+            @Override
+            protected void completeImpl(Chunks chunk, int outRows) {
+                // don't complete it if there is still space
+            }
+
+            @Override
+            protected void commitImpl() {
+
+            }
+
+            @Override
+            protected void closeImpl(boolean committed, Chunks outstanding, Throwable takeImplThrowable, Throwable completeImplThrowable, Throwable commitImplThrowable) {
+
+            }
+        };
+        //return new TransactionOnClose(currentTransaction, null);
     }
 
     // todo: what
@@ -65,6 +84,30 @@ public class HandlerBatcher implements Handler, Closeable {
 
     protected boolean shouldCommit(TransactionImpl transaction) {
         return false;
+    }
+
+    class MyImpl extends TransactionBase<Chunks> {
+        private final Transaction delegate;
+
+        @Override
+        protected Chunks takeImpl(int minSize) {
+            return delegate.take(minSize);
+        }
+
+        @Override
+        protected void completeImpl(Chunks chunk, int outRows) {
+            delegate.complete(chunk, outRows);
+        }
+
+        @Override
+        protected void commitImpl() {
+
+        }
+
+        @Override
+        protected void closeImpl(boolean committed, Chunks outstanding, Throwable takeImplThrowable, Throwable completeImplThrowable, Throwable commitImplThrowable) {
+
+        }
     }
 
     protected final class TransactionImpl implements Transaction {
@@ -101,8 +144,8 @@ public class HandlerBatcher implements Handler, Closeable {
         }
 
         @Override
-        public void commit(int inRows) {
-            outstandingInRows += inRows;
+        public void commit() {
+            //outstandingInRows += inRows;
             outstandingOutRows += completedOutRows;
             completedOutRows = 0;
             if (shouldCommit(this)) {
@@ -119,7 +162,7 @@ public class HandlerBatcher implements Handler, Closeable {
         }
 
         private void delegateCommit() {
-            delegate.commit(outstandingInRows);
+            delegate.commit();
             committedInRows += outstandingInRows;
             committedOutRows += completedOutRows;
             committed = true;

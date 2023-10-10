@@ -1,7 +1,6 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.MultiChunks.Chunks;
-import io.deephaven.chunk.MultiChunks.Transaction;
+import io.deephaven.chunk.ChunksProducer.Transaction;
 
 import java.util.Objects;
 

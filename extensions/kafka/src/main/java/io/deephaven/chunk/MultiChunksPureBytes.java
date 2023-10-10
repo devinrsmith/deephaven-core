@@ -1,5 +1,6 @@
 package io.deephaven.chunk;
 
+import io.deephaven.chunk.ChunksProducer.Transaction;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
@@ -23,7 +24,7 @@ class MultiChunksPureBytes implements MultiChunks<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, Handler handler) {
+    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProducer handler) {
         for (int i = 0; i < in.size(); ++i) {
             try (final Transaction tx = handler.tx()) {
                 handle(tx, in.get(i));

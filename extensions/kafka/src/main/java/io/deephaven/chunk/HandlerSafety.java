@@ -1,17 +1,14 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.MultiChunks.Handler;
-import io.deephaven.chunk.MultiChunks.Transaction;
-
 import java.io.Closeable;
 import java.util.Objects;
 
-public final class HandlerSafety implements Handler, Closeable {
-    private final Handler delegate;
+public final class HandlerSafety implements ChunksProducer, Closeable {
+    private final ChunksProducer delegate;
     private Transaction outstanding;
     private boolean closed;
 
-    public HandlerSafety(Handler delegate) {
+    public HandlerSafety(ChunksProducer delegate) {
         this.delegate = Objects.requireNonNull(delegate);
     }
 

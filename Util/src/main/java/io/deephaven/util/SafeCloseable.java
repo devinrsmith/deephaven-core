@@ -28,6 +28,16 @@ public interface SafeCloseable extends AutoCloseable {
     }
 
     /**
+     * {@link #close() Close} all non-{@code null} SafeCloseable elements.
+     *
+     * @param iterable the iterable of SafeCloseables to {@link #close() close}
+     * @param <SCT> the safe closable type
+     */
+    static <SCT extends SafeCloseable> void closeAll(@NotNull final Iterable<SCT> iterable) {
+        closeAll(iterable.iterator());
+    }
+
+    /**
      * {@link #close() Close} all non-{@code null} SafeCloseable elements. Terminates the {@code stream}.
      *
      * @param stream the stream of SafeCloseables to {@link #close() close}

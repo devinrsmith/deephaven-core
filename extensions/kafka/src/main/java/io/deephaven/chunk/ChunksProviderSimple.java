@@ -9,12 +9,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ChunksProducerSimple implements ChunksProducer {
+public class ChunksProviderSimple implements ChunksProvider {
 
     private final List<ChunkType> chunkTypes;
     private final Consumer<List<? extends Chunks>> onCommit;
+    private final int desiredChunkSize;
 
-    public ChunksProducerSimple(List<ChunkType> chunkTypes, Consumer<List<? extends Chunks>> onCommit) {
+    public ChunksProviderSimple(List<ChunkType> chunkTypes, Consumer<List<? extends Chunks>> onCommit) {
         this.chunkTypes = Objects.requireNonNull(chunkTypes);
         this.onCommit = Objects.requireNonNull(onCommit);
     }
@@ -36,7 +37,7 @@ public class ChunksProducerSimple implements ChunksProducer {
                 }
                 full.add(recent);
             }
-            return recent = makeChunks(minSize);
+            return recent = makeChunks(Math.max(minSize, desiredChunkSize));
         }
 
         @Override

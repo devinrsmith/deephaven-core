@@ -3,12 +3,12 @@ package io.deephaven.chunk;
 import java.io.Closeable;
 import java.util.Objects;
 
-public final class HandlerSafety implements ChunksProducer, Closeable {
-    private final ChunksProducer delegate;
+public final class HandlerSafety implements ChunksProvider, Closeable {
+    private final ChunksProvider delegate;
     private Transaction outstanding;
     private boolean closed;
 
-    public HandlerSafety(ChunksProducer delegate) {
+    public HandlerSafety(ChunksProvider delegate) {
         this.delegate = Objects.requireNonNull(delegate);
     }
 

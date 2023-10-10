@@ -1,6 +1,6 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProducer.Transaction;
+import io.deephaven.chunk.ChunksProvider.Transaction;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.stream.StreamConsumer;
 

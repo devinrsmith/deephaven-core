@@ -1,6 +1,6 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProducer.Transaction;
+import io.deephaven.chunk.ChunksProvider.Transaction;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
@@ -21,7 +21,7 @@ class MultiChunksRowLimitedImpl<T> implements MultiChunks<T> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProducer handler) {
+    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler) {
         for (final ObjectChunk<? extends T, ?> slice : ObjectSplayerRowLimitedImpl.iterable(in, txSize)) {
             try (final Transaction tx = handler.tx()) {
                 final int sliceSize = slice.size();

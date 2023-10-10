@@ -28,6 +28,6 @@ public interface MultiChunks<T> {
      * @param in the input objects
      * @param handler the handler
      */
-    void handleAll(ObjectChunk<? extends T, ?> in, ChunksProducer handler);
+    void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler);
 
 }

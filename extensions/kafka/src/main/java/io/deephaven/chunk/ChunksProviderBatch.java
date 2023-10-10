@@ -6,8 +6,8 @@ import java.util.Objects;
 /**
  * A batched-implementation where
  */
-public class ChunksProducerBatch implements ChunksProducer, Closeable {
-    private final ChunksProducer handler;
+public class ChunksProviderBatch implements ChunksProvider, Closeable {
+    private final ChunksProvider handler;
     private Transaction currentTransaction;
     private boolean closed;
 
@@ -17,7 +17,7 @@ public class ChunksProducerBatch implements ChunksProducer, Closeable {
     private int openedTxs = 0;
     private int closedTxs = 0;
 
-    public ChunksProducerBatch(ChunksProducer delegate) {
+    public ChunksProviderBatch(ChunksProvider delegate) {
         this.handler = Objects.requireNonNull(delegate);
     }
 

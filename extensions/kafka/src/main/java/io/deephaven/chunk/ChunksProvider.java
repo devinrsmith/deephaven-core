@@ -2,7 +2,7 @@ package io.deephaven.chunk;
 
 import java.io.Closeable;
 
-public interface ChunksProducer {
+public interface ChunksProvider {
 
     /**
      * Create a transaction. Only one transaction

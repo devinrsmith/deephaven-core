@@ -1,6 +1,6 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProducer.Transaction;
+import io.deephaven.chunk.ChunksProvider.Transaction;
 
 import java.util.Objects;
 
@@ -13,6 +13,10 @@ public abstract class TransactionBase<C extends Chunks> implements Transaction {
     private Throwable takeImplThrowable;
     private Throwable completeImplThrowable;
     private Throwable commitImplThrowable;
+
+    protected C outstanding() {
+        return outstanding;
+    }
 
     @Override
     public final Chunks take(int minSize) {

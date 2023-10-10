@@ -52,6 +52,8 @@ public interface MultiChunks<T> {
         // todo: implementations _may_ use this in a "threaded" manner as long as they linearize take/complete/commit/close
         // or, they may
 
+        // todo: callers are advised to only take/complete multiple if they need that larger scope for transaction purposes
+
         /**
          * Creates chunks with at least {@code minSize} remaining space. Callers are encouraged to be precise when they
          * know the number of output rows is small or has a small bound, and otherwise encouraged to take and complete
@@ -90,6 +92,7 @@ public interface MultiChunks<T> {
          * @return
          */
         int size();
+
         List<WritableChunk<?>> out();
     }
 }

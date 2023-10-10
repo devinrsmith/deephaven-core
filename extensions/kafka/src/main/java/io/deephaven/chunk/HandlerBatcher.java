@@ -42,7 +42,7 @@ public class HandlerBatcher implements Handler, Closeable {
         return new TransactionSafety(currentTransaction);
     }
 
-    // thread safe, may be called from multiple threads
+    // todo: what
     public void commit() {
         if (closed) {
             throw new IllegalStateException();
@@ -60,6 +60,7 @@ public class HandlerBatcher implements Handler, Closeable {
         if (currentTransaction != null) {
             currentTransaction.delegateClose();
         }
+        closed = true;
     }
 
     protected boolean shouldCommit(TransactionImpl transaction) {

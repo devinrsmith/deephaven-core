@@ -10,29 +10,37 @@ import java.util.Objects;
  */
 public final class TransactionSafety implements Transaction {
     private final Transaction delegate;
+    private final Runnable onClose;
     private Chunks outstanding;
     private boolean committed;
     private boolean closed;
 
-    public TransactionSafety(Transaction delegate) {
+    public TransactionSafety(Transaction delegate, Runnable onClose) {
         this.delegate = Objects.requireNonNull(delegate);
+        this.onClose = onClose;
     }
 
     @Override
     public Chunks take(int minSize) {
+        if (minSize < 0) {
+            throw new IllegalArgumentException("minSize must be non-negative");
+        }
         if (closed || committed) {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
             throw new IllegalStateException("Must complete outstanding chunk before taking a new one");
         }
-        return delegate.take(minSize);
+        return outstanding = Objects.requireNonNull(delegate.take(minSize));
     }
 
     @Override
     public void complete(Chunks chunks, int outRows) {
         if (chunks == null) {
             throw new NullPointerException("Must not complete null chunks");
+        }
+        if (outRows < 0) {
+            throw new IllegalArgumentException("outRows must be non-negative");
         }
         if (closed || committed) {
             throw new IllegalStateException();
@@ -46,6 +54,9 @@ public final class TransactionSafety implements Transaction {
 
     @Override
     public void commit(int inRows) {
+        if (inRows < 0) {
+            throw new IllegalArgumentException("inRows must be non-negative");
+        }
         if (closed || committed) {
             throw new IllegalStateException();
         }
@@ -61,8 +72,11 @@ public final class TransactionSafety implements Transaction {
         if (closed) {
             return;
         }
-        delegate.close();
         outstanding = null;
+        delegate.close();
+        if (onClose != null) {
+            onClose.run();
+        }
         closed = true;
     }
 }

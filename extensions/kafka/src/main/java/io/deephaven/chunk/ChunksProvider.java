@@ -1,11 +1,8 @@
 package io.deephaven.chunk;
 
 import java.io.Closeable;
-import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Chunks provider is a pattern for producers or adapters to {@link Transaction#take(int) take},
@@ -69,7 +66,7 @@ public interface ChunksProvider {
      * @param desiredChunkSize the desired chunk size
      * @return the simple chunks provider
      */
-    static ChunksProvider ofSimple(
+    static ChunksProvider of(
             List<ChunkType> chunkTypes, Consumer<List<? extends WritableChunks>> onCommitConsumer,
             int desiredChunkSize) {
         return new ChunksProviderSimple(chunkTypes, onCommitConsumer, desiredChunkSize);
@@ -78,7 +75,7 @@ public interface ChunksProvider {
     /**
      * Creates a chunks provider implementation that provides {@link Transaction#take(int) chunk take} reuse and
      * buffered commit semantics - on {@link Transaction#commit() commit}, the chunks are registered, passed off to
-     * {@code onCommitConsumer} on a delayed basis. ... todo
+     * {@code onFlushConsumer} on a delayed basis. ... todo
      *
      * <p>
      * This implementation is well-suited for use-cases where the caller does not have buffering logic, and commits
@@ -86,9 +83,9 @@ public interface ChunksProvider {
      */
     static ChunksProviderBuffered ofBuffered(
             List<ChunkType> chunkTypes,
-            Consumer<List<? extends WritableChunks>> onCommitConsumer,
+            Consumer<List<? extends WritableChunks>> onFlushConsumer,
             int desiredChunkSize) {
-        return null;
+        return new ChunksProviderBuffered(chunkTypes, onFlushConsumer, desiredChunkSize);
     }
 
 

@@ -2,7 +2,8 @@ package io.deephaven.chunk;
 
 import java.util.List;
 
-public interface Chunks {
+// todo: should we call this "writable"?
+public interface WritableChunks {
 
     int pos();
 

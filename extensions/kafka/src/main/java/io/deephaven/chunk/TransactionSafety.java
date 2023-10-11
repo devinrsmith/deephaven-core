@@ -10,7 +10,7 @@ import java.util.Objects;
 public final class TransactionSafety implements Transaction {
     private final Transaction delegate;
     private final Runnable onClose;
-    private Chunks outstanding;
+    private WritableChunks outstanding;
     private boolean committed;
     private boolean closed;
 
@@ -20,7 +20,7 @@ public final class TransactionSafety implements Transaction {
     }
 
     @Override
-    public Chunks take(int minSize) {
+    public WritableChunks take(int minSize) {
         if (minSize < 0) {
             throw new IllegalArgumentException("minSize must be non-negative");
         }
@@ -34,7 +34,7 @@ public final class TransactionSafety implements Transaction {
     }
 
     @Override
-    public void complete(Chunks chunks, int outRows) {
+    public void complete(WritableChunks chunks, int outRows) {
         if (chunks == null) {
             throw new NullPointerException("Must not complete null chunks");
         }

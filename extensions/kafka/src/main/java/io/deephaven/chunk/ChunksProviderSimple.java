@@ -1,6 +1,5 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProviderSimple.TransactionImpl;
 import io.deephaven.util.SafeCloseable;
 
 import java.util.ArrayList;
@@ -10,33 +9,38 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- *
- */
-public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
-
+final class ChunksProviderSimple implements ChunksProvider {
     private final List<ChunkType> chunkTypes;
-    private final Consumer<List<? extends Chunks>> onCommit;
+    private final Consumer<List<? extends WritableChunks>> onCommit;
     private final int desiredChunkSize;
 
-    public ChunksProviderSimple(List<ChunkType> chunkTypes, Consumer<List<? extends Chunks>> onCommit, int desiredChunkSize) {
-        this.chunkTypes = Objects.requireNonNull(chunkTypes);
+    ChunksProviderSimple(
+            List<ChunkType> chunkTypes,
+            Consumer<List<? extends WritableChunks>> onCommit,
+            int desiredChunkSize) {
+        if (desiredChunkSize <= 0) {
+            throw new IllegalArgumentException("desiredChunkSize must be positive");
+        }
+        this.chunkTypes = List.copyOf(Objects.requireNonNull(chunkTypes));
         this.onCommit = Objects.requireNonNull(onCommit);
         this.desiredChunkSize = desiredChunkSize;
     }
 
     @Override
-    protected TransactionImpl txImpl(Consumer<TransactionImpl> onClosed) {
-        return new TransactionImpl(onClosed);
+    public List<ChunkType> chunkTypes() {
+        return chunkTypes;
+    }
+
+    @Override
+    public Transaction tx() {
+        return new TransactionImpl();
     }
 
     protected class TransactionImpl extends TransactionBase<ChunksImpl> {
-        private final Consumer<TransactionImpl> onClosed;
         private final List<ChunksImpl> full;
         private ChunksImpl recent;
 
-        public TransactionImpl(Consumer<TransactionImpl> onClosed) {
-            this.onClosed = Objects.requireNonNull(onClosed);
+        public TransactionImpl() {
             this.full = new ArrayList<>();
         }
 
@@ -48,13 +52,15 @@ public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
                 }
                 full.add(recent);
             }
-            return recent = makeChunks(Math.max(minSize, desiredChunkSize));
+            return recent = makeChunks(minSize);
         }
 
         @Override
         protected void completeImpl(ChunksImpl chunk, int outRows) {
             // todo: should we think about Chunks being mutable like ByteBuffer?
-            recent = new ChunksImpl(chunk.out(), chunk.pos() + outRows, chunk.size());
+            if (outRows > 0) {
+                recent = new ChunksImpl(chunk.out(), chunk.pos() + outRows, chunk.size());
+            }
         }
 
         @Override
@@ -63,8 +69,11 @@ public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
                 full.add(recent);
                 recent = null;
             }
+            final List<WritableChunks> flipped = full.stream()
+                    .map(ChunksImpl::flip)
+                    .collect(Collectors.toList());
             try {
-                onCommit.accept(full);
+                onCommit.accept(flipped);
             } finally {
                 // Even if accept fails, we assume that ownership has passed to the receiver.
                 full.clear();
@@ -87,12 +96,15 @@ public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
                 recent = null;
                 full.clear();
             }
-            onClosed.accept(this);
         }
     }
 
-    private ChunksImpl makeChunks(int size) {
-        final List<WritableChunk<?>> chunks = chunkTypes.stream()
+    private ChunksImpl makeChunks(int minSize) {
+        return makeChunks(chunkTypes, Math.max(minSize, desiredChunkSize));
+    }
+
+    static ChunksImpl makeChunks(List<ChunkType> types, int size) {
+        final List<WritableChunk<?>> chunks = types.stream()
                 .map(c -> c.makeWritableChunk(size))
                 .collect(Collectors.toList());
         // todo: can we get a version of makeWritabhleChunk that returns the physical size instead of requested size?
@@ -105,12 +117,12 @@ public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
         return new ChunksImpl(chunks, 0, size);
     }
 
-    protected static class ChunksImpl implements Chunks, SafeCloseable {
+    protected static class ChunksImpl implements WritableChunks, SafeCloseable {
         private final int pos;
         private final int size;
         private final List<WritableChunk<?>> out;
 
-        private ChunksImpl(List<WritableChunk<?>> out, int pos, int size) {
+        ChunksImpl(List<WritableChunk<?>> out, int pos, int size) {
             this.out = List.copyOf(out);
             this.pos = pos;
             this.size = size;
@@ -134,6 +146,10 @@ public class ChunksProviderSimple extends ChunksProviderBase<TransactionImpl> {
         @Override
         public void close() {
             SafeCloseable.closeAll(out);
+        }
+
+        WritableChunks flip() {
+            return new ChunksImpl(out, 0, pos);
         }
     }
 }

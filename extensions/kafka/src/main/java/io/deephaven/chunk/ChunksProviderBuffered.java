@@ -1,16 +1,14 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProviderBatch.MyImpl;
-import io.deephaven.chunk.ChunksProviderSimple.TransactionImpl;
+import io.deephaven.chunk.ChunksProviderBuffered.MyImpl;
 
-import java.io.Closeable;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
  * A batched-implementation where
  */
-public class ChunksProviderBatch extends ChunksProviderBase<MyImpl> {
+public class ChunksProviderBuffered extends ChunksProviderBase<MyImpl> {
     private final ChunksProvider handler;
     private Transaction currentDelegate;
     private boolean closed;
@@ -21,7 +19,7 @@ public class ChunksProviderBatch extends ChunksProviderBase<MyImpl> {
     private int openedTxs = 0;
     private int closedTxs = 0;
 
-    public ChunksProviderBatch(ChunksProvider delegate) {
+    public ChunksProviderBuffered(ChunksProvider delegate) {
         this.handler = Objects.requireNonNull(delegate);
     }
 
@@ -52,7 +50,7 @@ public class ChunksProviderBatch extends ChunksProviderBase<MyImpl> {
     }
 
 
-    protected class MyImpl extends TransactionBase<Chunks> {
+    protected class MyImpl extends TransactionBase<WritableChunks> {
         private final Transaction delegate;
         private final Consumer<MyImpl> onClosed;
 
@@ -62,12 +60,12 @@ public class ChunksProviderBatch extends ChunksProviderBase<MyImpl> {
         }
 
         @Override
-        protected Chunks takeImpl(int minSize) {
+        protected WritableChunks takeImpl(int minSize) {
             return delegate.take(minSize);
         }
 
         @Override
-        protected void completeImpl(Chunks chunk, int outRows) {
+        protected void completeImpl(WritableChunks chunk, int outRows) {
             delegate.complete(chunk, outRows);
         }
 
@@ -77,7 +75,7 @@ public class ChunksProviderBatch extends ChunksProviderBase<MyImpl> {
         }
 
         @Override
-        protected void closeImpl(boolean committed, Chunks outstanding, Throwable takeImplThrowable, Throwable completeImplThrowable, Throwable commitImplThrowable) {
+        protected void closeImpl(boolean committed, WritableChunks outstanding, Throwable takeImplThrowable, Throwable completeImplThrowable, Throwable commitImplThrowable) {
             onClosed.accept(this);
         }
     }

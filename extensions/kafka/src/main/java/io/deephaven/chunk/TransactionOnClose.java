@@ -14,12 +14,12 @@ public final class TransactionOnClose implements Transaction {
     }
 
     @Override
-    public Chunks take(int minSize) {
+    public WritableChunks take(int minSize) {
         return delegate.take(minSize);
     }
 
     @Override
-    public void complete(Chunks chunks, int outRows) {
+    public void complete(WritableChunks chunks, int outRows) {
         delegate.complete(chunks, outRows);
     }
 

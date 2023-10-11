@@ -25,7 +25,7 @@ class ObjectChunksOneToManyRowLimited<T> implements ObjectChunksOneToMany<T> {
         for (final ObjectChunk<? extends T, ?> slice : ObjectChunksOneToOneRowLimitedImpl.iterable(in, txSize)) {
             try (final Transaction tx = out.tx()) {
                 final int sliceSize = slice.size();
-                final Chunks chunks = tx.take(sliceSize);
+                final WritableChunks chunks = tx.take(sliceSize);
                 impl.splayAll(slice, chunks.out());
                 tx.complete(chunks, sliceSize);
                 tx.commit();

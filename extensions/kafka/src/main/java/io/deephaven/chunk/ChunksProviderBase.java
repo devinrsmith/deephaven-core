@@ -1,45 +1,41 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.ChunksProvider.Transaction;
-
 import java.io.Closeable;
-import java.util.Objects;
-import java.util.function.Consumer;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
 
-public abstract class ChunksProviderBase<T extends Transaction> implements ChunksProvider, Closeable {
+public abstract class ChunksProviderBase implements ChunksProvider, Closeable {
 
-    private T outstanding;
+    private final Set<Transaction> outstanding;
     private boolean closed;
 
     @Override
-    public Transaction tx() {
+    public synchronized Transaction tx() {
         if (closed) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("closed");
         }
-        if (outstanding != null) {
-            throw new IllegalStateException("Must close existing transaction");
-        }
-        return outstanding = Objects.requireNonNull(txImpl(this::onClosed));
+        final Transaction txn = txImpl();
+        outstanding.add(txn);
+        return txn;
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         if (closed) {
             return;
         }
-        closed = true;
-        if (outstanding != null) {
-            outstanding.close();
-            outstanding = null;
+        final Iterator<Transaction> it = outstanding.iterator();
+        while (it.hasNext()) {
+            final Transaction txn = it.next();
         }
     }
 
-    protected abstract T txImpl(Consumer<T> onClosed);
+    protected abstract Transaction txImpl();
 
-    protected void onClosed(T txn) {
-        if (outstanding != txn) {
-            throw new IllegalStateException();
+    protected void onClosed(Transaction txn) {
+        synchronized (outstanding) {
+            outstanding.remove(txn);
         }
-        outstanding = null;
     }
 }

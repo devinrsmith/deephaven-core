@@ -25,7 +25,7 @@ public class StreamConsumerTx implements Transaction {
     }
 
     @Override
-    public Chunks take(int minSize) {
+    public WritableChunks take(int minSize) {
         if (chunks.isEmpty()) {
             return newChunk(minSize);
         }
@@ -34,7 +34,7 @@ public class StreamConsumerTx implements Transaction {
     }
 
     @Override
-    public void complete(Chunks chunks, int outRows) {
+    public void complete(WritableChunks chunks, int outRows) {
         ((ChunksImpl) chunks).complete(outRows);
     }
 
@@ -55,7 +55,7 @@ public class StreamConsumerTx implements Transaction {
         return next;
     }
 
-    private static class ChunksImpl implements Chunks {
+    private static class ChunksImpl implements WritableChunks {
 
         private final int chunkSize;
         private final WritableChunk<Values>[] out;

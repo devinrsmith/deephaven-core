@@ -27,7 +27,7 @@ class MultiChunksOtherExample implements ObjectChunksOneToMany<byte[]> {
     private static void handle(Transaction tx, byte[] bytes) {
         final int numInts = bytes.length / Integer.BYTES;
         // If we expect numInts to be large, we should add a layer here that works on some max number of ints at a time.
-        final Chunks chunks = tx.take(numInts);
+        final WritableChunks chunks = tx.take(numInts);
         final WritableIntChunk<?> c = chunks.out().get(0).asWritableIntChunk();
         for (int i = 0; i < bytes.length; i += Integer.BYTES) {
             c.add(makeInt(bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]));

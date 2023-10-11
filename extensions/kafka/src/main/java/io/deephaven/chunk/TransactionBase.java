@@ -4,18 +4,19 @@ import io.deephaven.chunk.ChunksProvider.Transaction;
 
 import java.util.Objects;
 
-public abstract class TransactionBase<C extends Chunks> implements Transaction {
+public abstract class TransactionBase<C extends WritableChunks> implements Transaction {
 
     private C outstanding;
     private boolean closed;
     private boolean committed;
 
+    // note: is capturing all of these doing "too much" by default?
     private Throwable takeImplThrowable;
     private Throwable completeImplThrowable;
     private Throwable commitImplThrowable;
 
     @Override
-    public final Chunks take(int minSize) {
+    public final WritableChunks take(int minSize) {
         if (minSize < 0) {
             throw new IllegalArgumentException("minSize must be non-negative");
         }
@@ -34,7 +35,7 @@ public abstract class TransactionBase<C extends Chunks> implements Transaction {
     }
 
     @Override
-    public final void complete(Chunks chunks, int outRows) {
+    public final void complete(WritableChunks chunks, int outRows) {
         if (chunks == null) {
             throw new NullPointerException("Must not complete null chunks");
         }

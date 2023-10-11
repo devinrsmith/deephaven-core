@@ -54,7 +54,7 @@ public class ComplexStuff {
         handlePriceSizes(symEntry.bids(), bids);
         handlePriceSizes(symEntry.asks(), asks);
 
-        final Chunks chunks = tx.take(1);
+        final WritableChunks chunks = tx.take(1);
         chunks.out().get(0).asWritableLongChunk().add(DateTimeUtils.epochNanos(symEntry.timestamp()));
         chunks.out().get(1).<String>asWritableObjectChunk().add(symEntry.sym());
         tx.complete(chunks, 1);
@@ -64,7 +64,7 @@ public class ComplexStuff {
         // todo: parent tx
         try (final Transaction tx = provider.tx()) {
             for (PriceSize priceSize : priceSizes) {
-                final Chunks chunks = tx.take(1);
+                final WritableChunks chunks = tx.take(1);
                 chunks.out().get(0).asWritableDoubleChunk().add(priceSize.price());
                 chunks.out().get(1).asWritableIntChunk().add(priceSize.size());
                 tx.complete(chunks, 1);

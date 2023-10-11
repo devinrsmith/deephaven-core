@@ -36,7 +36,7 @@ class MultiChunksPureBytes implements ObjectChunksOneToMany<byte[]> {
     private void handle(Transaction tx, byte[] bytes) {
         for (int i = 0; i < bytes.length && i >= 0; i += chunkSize) {
             final int size = Math.min(chunkSize, bytes.length - i);
-            final Chunks chunks = tx.take(size);
+            final WritableChunks chunks = tx.take(size);
             {
                 final WritableByteChunk<?> out = chunks.out().get(0).asWritableByteChunk();
                 out.copyFromTypedArray(bytes, i, chunks.pos(), size);

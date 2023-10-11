@@ -20,7 +20,8 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
         if (minSize < 0) {
             throw new IllegalArgumentException("minSize must be non-negative");
         }
-        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null || commitImplThrowable != null) {
+        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null
+                || commitImplThrowable != null) {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
@@ -42,7 +43,8 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
         if (outRows < 0) {
             throw new IllegalArgumentException("outRows must be non-negative");
         }
-        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null || commitImplThrowable != null) {
+        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null
+                || commitImplThrowable != null) {
             throw new IllegalStateException();
         }
         if (chunks != outstanding) {
@@ -60,7 +62,8 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
 
     @Override
     public void commit() {
-        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null || commitImplThrowable != null) {
+        if (closed || committed || takeImplThrowable != null || completeImplThrowable != null
+                || commitImplThrowable != null) {
             throw new IllegalStateException();
         }
         if (outstanding != null) {
@@ -99,5 +102,6 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
 
     protected abstract void commitImpl();
 
-    protected abstract void closeImpl(boolean committed, C outstanding, Throwable takeImplThrowable, Throwable completeImplThrowable, Throwable commitImplThrowable);
+    protected abstract void closeImpl(boolean committed, C outstanding, Throwable takeImplThrowable,
+            Throwable completeImplThrowable, Throwable commitImplThrowable);
 }

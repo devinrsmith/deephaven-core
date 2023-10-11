@@ -19,23 +19,23 @@ public class MultiChunksLazyCommitter<T> implements ObjectChunksOneToMany<T> {
         return impl.outputTypes();
     }
 
-//    @Override
-//    public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler) {
-//        try (final ChunksProviderBatch batcher = new MyBatcher(handler)) {
-//            impl.handleAll(in, batcher);
-//            batcher.commit();
-//        }
-//    }
+    // @Override
+    // public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler) {
+    // try (final ChunksProviderBatch batcher = new MyBatcher(handler)) {
+    // impl.handleAll(in, batcher);
+    // batcher.commit();
+    // }
+    // }
 
-//    private class MyBatcher extends ChunksProviderBatch {
-//
-//        public MyBatcher(ChunksProvider handler) {
-//            super(handler);
-//        }
-//
-//        @Override
-//        protected boolean shouldCommit(TransactionImpl transaction) {
-//            return transaction.outstandingOutRows() >= minCommitSize;
-//        }
-//    }
+    // private class MyBatcher extends ChunksProviderBatch {
+    //
+    // public MyBatcher(ChunksProvider handler) {
+    // super(handler);
+    // }
+    //
+    // @Override
+    // protected boolean shouldCommit(TransactionImpl transaction) {
+    // return transaction.outstandingOutRows() >= minCommitSize;
+    // }
+    // }
 }

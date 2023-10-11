@@ -10,29 +10,29 @@ import java.util.Collection;
 public class ComplexStuff {
 
     // {
-    //  "timestamp": "...",
-    //  "sym": "sym1",
-    //  "bids": [[13.98, 100], [13.99, 25]],
-    //  "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
-    //}
-    //{
-    //  "timestamp": "...",
-    //  "sym": "sym2",
-    //  "bids": [[13.98, 100], [13.99, 25]],
-    //  "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
-    //}
-    //{
-    //  "timestamp": "...",
-    //  "sym": "sym3",
-    //  "bids": [[13.98, 100], [13.99, 25]],
-    //  "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
-    //}
-    //{
-    //  "timestamp": "...",
-    //  "sym": "sym4",
-    //  "bids": [[13.98, 100], [13.99, 25]],
-    //  "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
-    //}
+    // "timestamp": "...",
+    // "sym": "sym1",
+    // "bids": [[13.98, 100], [13.99, 25]],
+    // "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
+    // }
+    // {
+    // "timestamp": "...",
+    // "sym": "sym2",
+    // "bids": [[13.98, 100], [13.99, 25]],
+    // "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
+    // }
+    // {
+    // "timestamp": "...",
+    // "sym": "sym3",
+    // "bids": [[13.98, 100], [13.99, 25]],
+    // "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
+    // }
+    // {
+    // "timestamp": "...",
+    // "sym": "sym4",
+    // "bids": [[13.98, 100], [13.99, 25]],
+    // "asks": [[14.01, 33], [14.02, 200], [14.03, 500]]
+    // }
 
     public void handle(TopLevelMessage message, ChunksProvider base, ChunksProvider bids, ChunksProvider asks) {
         try (final Transaction tx = base.tx()) {
@@ -79,7 +79,9 @@ public class ComplexStuff {
 
     public interface SymEntry {
         Instant timestamp();
+
         String sym();
+
         Collection<PriceSize> bids();
 
         Collection<PriceSize> asks();
@@ -87,6 +89,7 @@ public class ComplexStuff {
 
     public interface PriceSize {
         double price();
+
         int size();
     }
 }

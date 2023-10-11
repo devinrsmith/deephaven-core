@@ -1,6 +1,7 @@
 package io.deephaven.chunk;
 
 import java.io.Closeable;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -24,6 +25,7 @@ import java.util.function.Supplier;
  * </pre>
  *
  * In pre-buffered use cases where the caller knows they have a large fixed or large variable size to fill:
+ * 
  * <pre>
  * try (final Transaction tx = chunksProvider.tx()) {
  *     while (remaining() > 0) {
@@ -37,8 +39,8 @@ import java.util.function.Supplier;
  *
  * TODO: should we even show this third case? it's a bit more esoteric, but _might_ be preferred?
  * <p>
- * In the case where the caller knows they have a large fixed or variable size and the full output doesn't need
- * to be transactional:
+ * In the case where the caller knows they have a large fixed or variable size and the full output doesn't need to be
+ * transactional:
  *
  * <pre>
  * while (remaining() > 0) {
@@ -68,7 +70,8 @@ public interface ChunksProvider {
      * @return the simple chunks provider
      */
     static ChunksProvider ofSimple(
-            List<ChunkType> chunkTypes, Consumer<List<? extends WritableChunks>> onCommitConsumer, int desiredChunkSize) {
+            List<ChunkType> chunkTypes, Consumer<List<? extends WritableChunks>> onCommitConsumer,
+            int desiredChunkSize) {
         return new ChunksProviderSimple(chunkTypes, onCommitConsumer, desiredChunkSize);
     }
 
@@ -81,11 +84,10 @@ public interface ChunksProvider {
      * This implementation is well-suited for use-cases where the caller does not have buffering logic, and commits
      * smaller sized transactions on-demand.
      */
-    static ChunksProvider ofBuffered(
+    static ChunksProviderBuffered ofBuffered(
             List<ChunkType> chunkTypes,
             Consumer<List<? extends WritableChunks>> onCommitConsumer,
-            int desiredChunkSize,
-            Supplier<CountDownLatch> onFlush) {
+            int desiredChunkSize) {
         return null;
     }
 
@@ -122,10 +124,12 @@ public interface ChunksProvider {
      */
     interface Transaction extends Closeable {
 
-        // todo: implementations _may_ use this in a "threaded" manner as long as they linearize take/complete/commit/close
+        // todo: implementations _may_ use this in a "threaded" manner as long as they linearize
+        // take/complete/commit/close
         // or, they may
 
-        // todo: callers are advised to only take/complete multiple if they need that larger scope for transaction purposes
+        // todo: callers are advised to only take/complete multiple if they need that larger scope for transaction
+        // purposes
 
         /**
          * Creates chunks with at least {@code minSize} remaining space to be populated by the caller. The chunks may be
@@ -149,7 +153,7 @@ public interface ChunksProvider {
         /**
          * Completes {@code chunks} as part of {@code this} transactions.
          *
-         * @param chunks  the chunks
+         * @param chunks the chunks
          * @param outRows the number of successful out rows appendend
          */
         void complete(WritableChunks chunks, int outRows);
@@ -159,6 +163,8 @@ public interface ChunksProvider {
          * Should be called once right before close.
          */
         void commit();
+
+        // tood: should we provide explicit abort? or, just the lack of calling commit to repr this?
 
         /**
          * Close this transaction. Callers should ideally call this via a try-with-resources pattern.

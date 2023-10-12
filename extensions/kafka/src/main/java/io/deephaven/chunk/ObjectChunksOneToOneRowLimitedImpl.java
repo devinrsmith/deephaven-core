@@ -48,29 +48,32 @@ final class ObjectChunksOneToOneRowLimitedImpl<T> implements ObjectChunksOneToOn
     // todo: consider adding this functionality into Chunks themselves; potentially useful abstraction.
 
     static <T, ATTR extends Any> Iterable<ObjectChunk<T, ATTR>> iterable(ObjectChunk<T, ATTR> source,
-            final int chunkSize) {
+            final int maxChunkSize) {
+        if (source.size() <= maxChunkSize) {
+            return List.of(source);
+        }
         // Note: we need to create the "for pool" version to guarantee we are getting a plain version; we know we don't
         // need to close them.
-        return () -> iterator(source, ResettableObjectChunk.makeResettableChunkForPool(), chunkSize);
+        return () -> iterator(source, ResettableObjectChunk.makeResettableChunkForPool(), maxChunkSize);
     }
 
     static <T, ATTR extends Any> Iterator<ObjectChunk<T, ATTR>> iterator(ObjectChunk<T, ATTR> source,
-            ResettableObjectChunk<T, ATTR> slice, final int chunkSize) {
-        return new ObjectChunkSliceIterator<>(source, slice, chunkSize);
+            ResettableObjectChunk<T, ATTR> slice, final int maxChunkSize) {
+        return new ObjectChunkSliceIterator<>(source, slice, maxChunkSize);
     }
 
     private static class ObjectChunkSliceIterator<T, ATTR extends Any>
             implements CloseableIterator<ObjectChunk<T, ATTR>> {
         private final ObjectChunk<T, ATTR> source;
         private final ResettableObjectChunk<T, ATTR> slice;
-        private final int chunkSize;
+        private final int maxChunkSize;
         private int ix = 0;
 
         private ObjectChunkSliceIterator(ObjectChunk<T, ATTR> source, ResettableObjectChunk<T, ATTR> slice,
-                int chunkSize) {
+                int maxChunkSize) {
             this.source = Objects.requireNonNull(source);
             this.slice = slice;
-            this.chunkSize = chunkSize;
+            this.maxChunkSize = maxChunkSize;
         }
 
         @Override
@@ -83,8 +86,8 @@ final class ObjectChunksOneToOneRowLimitedImpl<T> implements ObjectChunksOneToOn
             if (ix >= source.size() || ix < 0) {
                 throw new NoSuchElementException();
             }
-            slice.resetFromTypedChunk(source, ix, Math.min(chunkSize, source.size() - ix));
-            ix += chunkSize;
+            slice.resetFromTypedChunk(source, ix, Math.min(maxChunkSize, source.size() - ix));
+            ix += maxChunkSize;
             return slice;
         }
     }

@@ -3,7 +3,7 @@ package io.deephaven.chunk;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ChunksToStream  {
+public class ChunksToStream {
 
 
     class KeyConsumer implements Consumer<List<? extends WritableChunks>> {

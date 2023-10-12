@@ -34,18 +34,18 @@ public class ObjectChunksOneToOneKV<K, V> {
         final ChunksProvider keyProvider = key == null
                 ? null
                 : ChunksProvider.of(chunkTypes(key), keysOut::addAll, chunkSize);
-        final ObjectChunksOneToManyAdapter<K> keyHandler = key == null
+        final ObjectChunksOneToMany<K> keyHandler = key == null
                 ? null
-                : new ObjectChunksOneToManyAdapter<>(key, keyRowSize);
+                : ObjectChunksOneToMany.of(key, keyRowSize);
         final List<WritableChunks> valuesOut = value == null
                 ? null
                 : new ArrayList<>();
         final ChunksProvider valueProvider = value == null
                 ? null
                 : ChunksProvider.of(chunkTypes(value), valuesOut::addAll, chunkSize);
-        final ObjectChunksOneToManyAdapter<V> valueHandler = value == null
+        final ObjectChunksOneToMany<V> valueHandler = value == null
                 ? null
-                : new ObjectChunksOneToManyAdapter<>(value, valueRowSize);
+                : ObjectChunksOneToMany.of(value, valueRowSize);
         return new ObjectChunksOneToOneKV<>(keyProvider, keyHandler, keysOut, valueProvider, valueHandler, valuesOut);
     }
 
@@ -54,19 +54,19 @@ public class ObjectChunksOneToOneKV<K, V> {
     }
 
     private final ChunksProvider keyProvider;
-    private final ObjectChunksOneToManyAdapter<K> keyHandler;
+    private final ObjectChunksOneToMany<K> keyHandler;
     private final List<? extends WritableChunks> keysOut;
 
     private final ChunksProvider valueProviders;
-    private final ObjectChunksOneToManyAdapter<V> valueHandler;
+    private final ObjectChunksOneToMany<V> valueHandler;
     private final List<? extends WritableChunks> valuesOut;
 
     private ObjectChunksOneToOneKV(
             ChunksProvider keyProvider,
-            ObjectChunksOneToManyAdapter<K> keyHandler,
+            ObjectChunksOneToMany<K> keyHandler,
             List<? extends WritableChunks> keysOut,
             ChunksProvider valueProviders,
-            ObjectChunksOneToManyAdapter<V> valueHandler,
+            ObjectChunksOneToMany<V> valueHandler,
             List<? extends WritableChunks> valuesOut) {
         this.keyProvider = keyProvider;
         this.keyHandler = keyHandler;

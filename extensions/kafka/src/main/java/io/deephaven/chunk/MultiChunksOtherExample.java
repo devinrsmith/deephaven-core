@@ -13,13 +13,15 @@ class MultiChunksOtherExample implements ObjectChunksOneToMany<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider out) {
-        for (int i = 0; i < in.size(); ++i) {
-            // just because we are committing at each row elements does _not_ mean we are handing off to publishing
-            // one row at a time; the caller may be batching the chunks as they see fit.
-            try (final Transaction tx = out.tx()) {
-                handle(tx, in.get(i));
-                tx.submit();
+    public void handleAll(List<? extends ObjectChunk<? extends byte[], ?>> inChunks, ChunksProvider out) {
+        for (ObjectChunk<? extends byte[], ?> in : inChunks) {
+            for (int i = 0; i < in.size(); ++i) {
+                // just because we are committing at each row elements does _not_ mean we are handing off to publishing
+                // one row at a time; the caller may be batching the chunks as they see fit.
+                try (final Transaction tx = out.tx()) {
+                    handle(tx, in.get(i));
+                    tx.submit();
+                }
             }
         }
     }

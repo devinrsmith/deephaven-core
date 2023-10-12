@@ -24,11 +24,13 @@ class MultiChunksPureBytes implements ObjectChunksOneToMany<byte[]> {
     }
 
     @Override
-    public void handleAll(ObjectChunk<? extends byte[], ?> in, ChunksProvider out) {
-        for (int i = 0; i < in.size(); ++i) {
-            try (final Transaction tx = out.tx()) {
-                handle(tx, in.get(i));
-                tx.submit();
+    public void handleAll(List<? extends ObjectChunk<? extends byte[], ?>> inChunks, ChunksProvider out) {
+        for (ObjectChunk<? extends byte[], ?> in : inChunks) {
+            for (int i = 0; i < in.size(); ++i) {
+                try (final Transaction tx = out.tx()) {
+                    handle(tx, in.get(i));
+                    tx.submit();
+                }
             }
         }
     }

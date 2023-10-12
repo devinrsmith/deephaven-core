@@ -84,9 +84,8 @@ public interface ChunksProvider {
      */
     static ChunksProviderBuffered ofBuffered(
             List<ChunkType> chunkTypes,
-            Consumer<List<? extends WritableChunks>> onFlushConsumer,
             int desiredChunkSize) {
-        return new ChunksProviderBuffered(chunkTypes, onFlushConsumer, desiredChunkSize);
+        return new ChunksProviderBuffered(chunkTypes, desiredChunkSize);
     }
 
 

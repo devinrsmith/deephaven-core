@@ -8,15 +8,17 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.StampedLock;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
+    private static final Object CLOSED = new Object();
+
 
     private final List<ChunkType> chunkTypes;
-    private final Consumer<List<? extends WritableChunks>> onFlush;
     private final int desiredChunkSize;
 
     private final StampedLock sl;
@@ -25,10 +27,8 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
 
     ChunksProviderBuffered(
             List<ChunkType> chunkTypes,
-            Consumer<List<? extends WritableChunks>> onFlush,
             int desiredChunkSize) {
         this.chunkTypes = List.copyOf(Objects.requireNonNull(chunkTypes));
-        this.onFlush = Objects.requireNonNull(onFlush);
         this.desiredChunkSize = desiredChunkSize;
         this.sl = new StampedLock();
         this.buffer = new ArrayList<>();
@@ -54,24 +54,24 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
 
     // --------------------------------------------------------------------------
 
-    public void flush() {
+    public List<WritableChunks> take() {
         throwIfClosed();
-        runLocked(this::flushImpl);
+        return supplyLocked(this::takeImpl);
     }
 
-    public void flushInterruptibly() throws InterruptedException {
+    public List<WritableChunks> takeInterruptibly() throws InterruptedException {
         throwIfClosed();
-        runLockedInterruptibly(this::flushImpl);
+        return supplyLockedInterruptibly(this::takeImpl);
     }
 
-    public boolean tryFlush() {
+    public Optional<List<WritableChunks>> tryTake() {
         throwIfClosed();
-        return tryRunLocked(this::flushImpl);
+        return trySupplyLocked(this::takeImpl);
     }
 
-    public boolean tryFlush(Duration duration) throws InterruptedException {
+    public Optional<List<WritableChunks>> tryTake(Duration duration) throws InterruptedException {
         throwIfClosed();
-        return tryRunLocked(duration, this::flushImpl);
+        return trySupplyLocked(duration, this::takeImpl);
     }
 
     // --------------------------------------------------------------------------
@@ -81,28 +81,28 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
         if (closed) {
             return;
         }
-        runLocked(this::closeImpl);
+        supplyLocked(this::closeImpl);
     }
 
     public void closeInterruptibly() throws InterruptedException {
         if (closed) {
             return;
         }
-        runLockedInterruptibly(this::closeImpl);
+        supplyLockedInterruptibly(this::closeImpl);
     }
 
     public boolean tryClose() {
         if (closed) {
             return true;
         }
-        return tryRunLocked(this::closeImpl);
+        return trySupplyLocked(this::closeImpl).isPresent();
     }
 
     public boolean tryClose(Duration duration) throws InterruptedException {
         if (closed) {
             return true;
         }
-        return tryRunLocked(duration, this::closeImpl);
+        return trySupplyLocked(duration, this::closeImpl).isPresent();
     }
 
     // --------------------------------------------------------------------------
@@ -113,24 +113,20 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
         return new BufferedTransaction(stamp);
     }
 
-    private void flushImpl() {
+    private List<WritableChunks> takeImpl() {
         // Precondition, must have write lock
         throwIfClosed();
         final List<WritableChunks> flipped = buffer.stream()
                 .map(ChunksImpl::flip)
                 .collect(Collectors.toList());
-        try {
-            onFlush.accept(flipped);
-        } finally {
-            // Even if accept fails, we assume that ownership has passed to the receiver.
-            buffer.clear();
-        }
+        buffer.clear();
+        return flipped;
     }
 
-    private void closeImpl() {
+    private Object closeImpl() {
         // Precondition, must have write lock
         if (closed) {
-            return;
+            return CLOSED;
         }
         try {
             SafeCloseable.closeAll(buffer);
@@ -138,6 +134,7 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
             buffer.clear();
             closed = true;
         }
+        return CLOSED;
     }
 
     // --------------------------------------------------------------------------
@@ -148,48 +145,46 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
         }
     }
 
-    private void runLocked(Runnable r) {
+    private <T> T supplyLocked(Supplier<T> supplier) {
         final long stamp = sl.writeLock();
         try {
-            r.run();
+            return supplier.get();
         } finally {
             sl.unlockWrite(stamp);
         }
     }
 
-    private void runLockedInterruptibly(Runnable r) throws InterruptedException {
+    private <T> T supplyLockedInterruptibly(Supplier<T> supplier) throws InterruptedException {
         final long stamp = sl.writeLockInterruptibly();
         try {
-            r.run();
+            return supplier.get();
         } finally {
             sl.unlockWrite(stamp);
         }
     }
 
-    private boolean tryRunLocked(Runnable r) {
+    private <T> Optional<T> trySupplyLocked(Supplier<T> supplier) {
         final long stamp = sl.tryWriteLock();
         if (stamp == 0) {
-            return false;
+            return Optional.empty();
         }
         try {
-            r.run();
+            return Optional.of(supplier.get());
         } finally {
             sl.unlockWrite(stamp);
         }
-        return true;
     }
 
-    private boolean tryRunLocked(Duration duration, Runnable r) throws InterruptedException {
+    private <T> Optional<T> trySupplyLocked(Duration duration, Supplier<T> supplier) throws InterruptedException {
         final long stamp = sl.tryWriteLock(duration.toNanos(), TimeUnit.NANOSECONDS);
         if (stamp == 0) {
-            return false;
+            return Optional.empty();
         }
         try {
-            r.run();
+            return Optional.of(supplier.get());
         } finally {
             sl.unlockWrite(stamp);
         }
-        return true;
     }
 
     // --------------------------------------------------------------------------

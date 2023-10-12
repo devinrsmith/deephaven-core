@@ -192,6 +192,8 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
         return true;
     }
 
+    // --------------------------------------------------------------------------
+
     class BufferedTransaction extends TransactionBase<ChunksImpl> {
 
         private final long stamp;
@@ -223,7 +225,7 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
         }
 
         @Override
-        protected void commitImpl() {
+        protected void submitImpl() {
             // No-op.
             // We could consider some auto-commit threshold based on size of outRows / number of chunks, but then it
             // puts the burden of handling commit impl exceptions to us and what that means in the context of a

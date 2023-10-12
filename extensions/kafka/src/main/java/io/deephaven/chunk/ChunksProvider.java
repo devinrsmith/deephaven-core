@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 /**
  * Chunks provider is a pattern for producers or adapters to {@link Transaction#take(int) take},
- * {@link Transaction#complete(WritableChunks, int) complete}, and {@link Transaction#commit() commit}
+ * {@link Transaction#complete(WritableChunks, int) complete}, and {@link Transaction#submit() commit}
  * {@link WritableChunks chunks} in an efficient manner.
  *
  * <p>
@@ -54,7 +54,7 @@ public interface ChunksProvider {
 
     /**
      * Creates a chunks provider implementation that provides {@link Transaction#take(int) chunk take} reuse and simple
-     * commit semantics - on {@link Transaction#commit() commit}, the chunks are passed off to {@code onCommitConsumer}.
+     * commit semantics - on {@link Transaction#submit() commit}, the chunks are passed off to {@code onCommitConsumer}.
      * As such, any threading guarantees depend on {@code onCommitConsumer}.
      *
      * <p>
@@ -67,14 +67,15 @@ public interface ChunksProvider {
      * @return the simple chunks provider
      */
     static ChunksProvider of(
-            List<ChunkType> chunkTypes, Consumer<List<? extends WritableChunks>> onCommitConsumer,
+            List<ChunkType> chunkTypes,
+            Consumer<List<? extends WritableChunks>> onCommitConsumer,
             int desiredChunkSize) {
         return new ChunksProviderSimple(chunkTypes, onCommitConsumer, desiredChunkSize);
     }
 
     /**
      * Creates a chunks provider implementation that provides {@link Transaction#take(int) chunk take} reuse and
-     * buffered commit semantics - on {@link Transaction#commit() commit}, the chunks are registered, passed off to
+     * buffered commit semantics - on {@link Transaction#submit() commit}, the chunks are registered, passed off to
      * {@code onFlushConsumer} on a delayed basis. ... todo
      *
      * <p>
@@ -159,7 +160,7 @@ public interface ChunksProvider {
         /**
          * Should be called once right before close.
          */
-        void commit();
+        void submit();
 
         // tood: should we provide explicit abort? or, just the lack of calling commit to repr this?
 

@@ -35,4 +35,6 @@ public interface ObjectChunksOneToMany<T> {
      */
     void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider out);
 
+    // note: this *does* have the concept of submitting _less_ than the full chunk
+
 }

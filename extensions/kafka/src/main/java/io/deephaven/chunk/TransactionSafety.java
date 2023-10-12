@@ -62,7 +62,7 @@ public final class TransactionSafety implements Transaction {
         if (outstanding != null) {
             throw new IllegalStateException("Outstanding chunk must be completed before committing");
         }
-        delegate.commit(inRows);
+        delegate.submit(inRows);
         committed = true;
     }
 

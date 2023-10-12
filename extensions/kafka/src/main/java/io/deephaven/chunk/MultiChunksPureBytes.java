@@ -28,7 +28,7 @@ class MultiChunksPureBytes implements ObjectChunksOneToMany<byte[]> {
         for (int i = 0; i < in.size(); ++i) {
             try (final Transaction tx = out.tx()) {
                 handle(tx, in.get(i));
-                tx.commit();
+                tx.submit();
             }
         }
     }

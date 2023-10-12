@@ -22,7 +22,7 @@ final class ObjectChunksAdapterNoop<T> implements ObjectChunksOneToMany<T> {
     public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider out) {
         // todo: do we need to do this since we don't need to relay inRows anymore?
         try (final Transaction tx = out.tx()) {
-            tx.commit();
+            tx.submit();
         }
     }
 }

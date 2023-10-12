@@ -89,4 +89,6 @@ public interface ObjectChunksOneToOne<T> {
      *        at least {@code in.size()}
      */
     void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
+
+    // note: this doesn't have the concept of submitting _less_ than the full chunk
 }

@@ -64,7 +64,7 @@ final class ChunksProviderSimple implements ChunksProvider {
         }
 
         @Override
-        protected void commitImpl() {
+        protected void submitImpl() {
             if (recent != null) {
                 full.add(recent);
                 recent = null;

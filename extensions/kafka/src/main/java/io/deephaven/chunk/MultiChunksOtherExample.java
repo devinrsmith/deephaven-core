@@ -19,7 +19,7 @@ class MultiChunksOtherExample implements ObjectChunksOneToMany<byte[]> {
             // one row at a time; the caller may be batching the chunks as they see fit.
             try (final Transaction tx = out.tx()) {
                 handle(tx, in.get(i));
-                tx.commit(1);
+                tx.submit();
             }
         }
     }

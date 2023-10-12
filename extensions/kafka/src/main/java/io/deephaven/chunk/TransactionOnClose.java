@@ -24,8 +24,8 @@ public final class TransactionOnClose implements Transaction {
     }
 
     @Override
-    public void commit() {
-        delegate.commit();
+    public void submit() {
+        delegate.submit();
     }
 
     @Override

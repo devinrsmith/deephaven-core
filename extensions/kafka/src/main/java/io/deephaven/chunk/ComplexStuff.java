@@ -39,14 +39,14 @@ public class ComplexStuff {
             for (SymEntry entry : message.entries()) {
                 handleSymEntryImpl(tx, entry, bids, asks);
             }
-            tx.commit();
+            tx.submit();
         }
     }
 
     public void handleSymEntry(SymEntry symEntry, ChunksProvider base, ChunksProvider bids, ChunksProvider asks) {
         try (final Transaction tx = base.tx()) {
             handleSymEntryImpl(tx, symEntry, bids, asks);
-            tx.commit();
+            tx.submit();
         }
     }
 
@@ -69,7 +69,7 @@ public class ComplexStuff {
                 chunks.out().get(1).asWritableIntChunk().add(priceSize.size());
                 tx.complete(chunks, 1);
             }
-            tx.commit();
+            tx.submit();
         }
     }
 

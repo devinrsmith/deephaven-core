@@ -39,7 +39,7 @@ public class StreamConsumerTx implements Transaction {
     }
 
     @Override
-    public void commit() {
+    public void submit() {
         consumer.accept(chunks.stream().map(c -> c.out).collect(Collectors.toList()));
     }
 

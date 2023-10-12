@@ -6,11 +6,11 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-class ObjectChunksOneToManyRowLimited<T> implements ObjectChunksOneToMany<T> {
+class ObjectChunksOneToManyAdapter<T> implements ObjectChunksOneToMany<T> {
     private final ObjectChunksOneToOne<T> impl;
     private final int txSize;
 
-    public ObjectChunksOneToManyRowLimited(ObjectChunksOneToOne<T> impl, int maxChunkSize) {
+    public ObjectChunksOneToManyAdapter(ObjectChunksOneToOne<T> impl, int maxChunkSize) {
         this.impl = Objects.requireNonNull(impl);
         this.txSize = maxChunkSize;
     }
@@ -23,12 +23,12 @@ class ObjectChunksOneToManyRowLimited<T> implements ObjectChunksOneToMany<T> {
     @Override
     public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider out) {
         for (final ObjectChunk<? extends T, ?> slice : ObjectChunksOneToOneRowLimitedImpl.iterable(in, txSize)) {
+            final int sliceSize = slice.size();
             try (final Transaction tx = out.tx()) {
-                final int sliceSize = slice.size();
                 final WritableChunks chunks = tx.take(sliceSize);
                 impl.splayAll(slice, chunks.out());
                 tx.complete(chunks, sliceSize);
-                tx.commit();
+                tx.submit();
             }
         }
     }

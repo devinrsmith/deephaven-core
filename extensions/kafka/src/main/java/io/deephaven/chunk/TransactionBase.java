@@ -61,7 +61,7 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
     }
 
     @Override
-    public void commit() {
+    public void submit() {
         if (closed || committed || takeImplThrowable != null || completeImplThrowable != null
                 || commitImplThrowable != null) {
             throw new IllegalStateException();
@@ -70,7 +70,7 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
             throw new IllegalStateException("Outstanding chunk must be completed before committing");
         }
         try {
-            commitImpl();
+            submitImpl();
         } catch (Throwable t) {
             commitImplThrowable = t;
             throw t;
@@ -100,7 +100,7 @@ public abstract class TransactionBase<C extends WritableChunks> implements Trans
 
     protected abstract void completeImpl(C chunk, int outRows);
 
-    protected abstract void commitImpl();
+    protected abstract void submitImpl();
 
     protected abstract void closeImpl(boolean committed, C outstanding, Throwable takeImplThrowable,
             Throwable completeImplThrowable, Throwable commitImplThrowable);

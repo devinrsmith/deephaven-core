@@ -90,5 +90,7 @@ public interface ObjectChunksOneToOne<T> {
      */
     void splayAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 
+    // todo: input is object chunk as really a wrapper around T[], offset, len
+
     // note: this doesn't have the concept of submitting _less_ than the full chunk
 }

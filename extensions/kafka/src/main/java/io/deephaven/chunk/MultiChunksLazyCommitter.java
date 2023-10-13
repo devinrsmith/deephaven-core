@@ -19,6 +19,11 @@ public class MultiChunksLazyCommitter<T> implements ObjectChunksOneToMany<T> {
         return impl.outputTypes();
     }
 
+    @Override
+    public void handleAll(List<? extends ObjectChunk<? extends T, ?>> inChunks, ChunksProvider out) {
+
+    }
+
     // @Override
     // public void handleAll(ObjectChunk<? extends T, ?> in, ChunksProvider handler) {
     // try (final ChunksProviderBatch batcher = new MyBatcher(handler)) {

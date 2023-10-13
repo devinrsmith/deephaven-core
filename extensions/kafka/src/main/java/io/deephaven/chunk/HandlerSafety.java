@@ -1,6 +1,7 @@
 package io.deephaven.chunk;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.Objects;
 
 public final class HandlerSafety implements ChunksProvider, Closeable {
@@ -36,5 +37,10 @@ public final class HandlerSafety implements ChunksProvider, Closeable {
 
     private void clearOutstanding() {
         outstanding = null;
+    }
+
+    @Override
+    public List<ChunkType> chunkTypes() {
+        return null;
     }
 }

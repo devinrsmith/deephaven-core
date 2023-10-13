@@ -51,19 +51,25 @@ public final class TransactionSafety implements Transaction {
         outstanding = null;
     }
 
+    // @Override
+    // public void commit(int inRows) {
+    // if (inRows < 0) {
+    // throw new IllegalArgumentException("inRows must be non-negative");
+    // }
+    // if (closed || committed) {
+    // throw new IllegalStateException();
+    // }
+    // if (outstanding != null) {
+    // throw new IllegalStateException("Outstanding chunk must be completed before committing");
+    // }
+    // delegate.submit(inRows);
+    // committed = true;
+    // }
+
+
     @Override
-    public void commit(int inRows) {
-        if (inRows < 0) {
-            throw new IllegalArgumentException("inRows must be non-negative");
-        }
-        if (closed || committed) {
-            throw new IllegalStateException();
-        }
-        if (outstanding != null) {
-            throw new IllegalStateException("Outstanding chunk must be completed before committing");
-        }
-        delegate.submit(inRows);
-        committed = true;
+    public void submit() {
+
     }
 
     @Override

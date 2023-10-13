@@ -80,5 +80,10 @@ public class StreamConsumerTx implements Transaction {
         void complete(int outRows) {
             used += outRows;
         }
+
+        @Override
+        public int pos() {
+            return 0;
+        }
     }
 }

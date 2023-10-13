@@ -90,12 +90,12 @@ public class ObjectChunksOneToOneKV<K, V> {
                 throw new IllegalArgumentException();
             }
         }
-        if (keyHandler != null) {
-            keyHandler.handleAll(keys, keyProvider);
-        }
-        if (valueHandler != null) {
-            valueHandler.handleAll(values, valueProviders);
-        }
+        // if (keyHandler != null) {
+        // keyHandler.handleAll(keys, keyProvider);
+        // }
+        // if (valueHandler != null) {
+        // valueHandler.handleAll(values, valueProviders);
+        // }
     }
 
 }

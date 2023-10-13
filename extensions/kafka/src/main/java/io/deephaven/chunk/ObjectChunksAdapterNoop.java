@@ -19,7 +19,7 @@ final class ObjectChunksAdapterNoop<T> implements ObjectChunksOneToMany<T> {
     }
 
     @Override
-    public void handleAll(List<ObjectChunk<? extends T, ?>> in, ChunksProvider out) {
+    public void handleAll(List<? extends ObjectChunk<? extends T, ?>> inChunks, ChunksProvider out) {
         // todo: do we need to do this since we don't need to relay inRows anymore?
         try (final Transaction tx = out.tx()) {
             tx.submit();

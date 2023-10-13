@@ -129,7 +129,7 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
             return CLOSED;
         }
         try {
-            SafeCloseable.closeAll(buffer);
+            WritableChunks.closeAll(buffer);
         } finally {
             buffer.clear();
             closed = true;
@@ -250,7 +250,7 @@ public final class ChunksProviderBuffered implements ChunksProvider, Closeable {
             // Reset the state to what it was at beginning of transaction
             final List<ChunksImpl> newChunks = buffer.subList(previousBuffer.size(), buffer.size());
             try {
-                SafeCloseable.closeAll(newChunks);
+                WritableChunks.closeAll(newChunks);
             } finally {
                 buffer.clear();
                 buffer.addAll(previousBuffer);

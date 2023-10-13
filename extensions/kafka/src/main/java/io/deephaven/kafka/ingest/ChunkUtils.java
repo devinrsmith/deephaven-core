@@ -213,7 +213,6 @@ public class ChunkUtils {
             int destOffset,
             int length) {
         for (int i = 0; i < length; ++i) {
-            final T t = src.get(srcOffset + i);
             dest.set(destOffset + i, objFunction.apply(src.get(srcOffset + i)));
         }
     }

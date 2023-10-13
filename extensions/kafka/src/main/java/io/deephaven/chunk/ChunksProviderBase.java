@@ -2,12 +2,13 @@ package io.deephaven.chunk;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 public abstract class ChunksProviderBase implements ChunksProvider, Closeable {
 
-    private final Set<Transaction> outstanding;
+    private final Set<Transaction> outstanding = new HashSet<>();
     private boolean closed;
 
     @Override

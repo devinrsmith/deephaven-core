@@ -1,7 +1,5 @@
 package io.deephaven.chunk;
 
-import io.deephaven.util.SafeCloseable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -89,7 +87,7 @@ final class ChunksProviderSimple implements ChunksProvider {
                 Throwable commitImplThrowable) {
             // outstanding, if present, will have the same contents as recent; no need to release it.
             try {
-                SafeCloseable.closeAll(Stream.concat(
+                WritableChunks.closeAll(Stream.concat(
                         full.stream(),
                         recent == null ? Stream.empty() : Stream.of(recent)));
             } finally {
@@ -117,7 +115,7 @@ final class ChunksProviderSimple implements ChunksProvider {
         return new ChunksImpl(chunks, 0, size);
     }
 
-    protected static class ChunksImpl implements WritableChunks, SafeCloseable {
+    protected static class ChunksImpl implements WritableChunks {
         private final int pos;
         private final int size;
         private final List<WritableChunk<?>> out;
@@ -141,11 +139,6 @@ final class ChunksProviderSimple implements ChunksProvider {
         @Override
         public List<WritableChunk<?>> out() {
             return out;
-        }
-
-        @Override
-        public void close() {
-            SafeCloseable.closeAll(out);
         }
 
         WritableChunks flip() {

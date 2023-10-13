@@ -22,7 +22,8 @@ class ObjectChunksToListBuffered<T> implements ObjectChunkConveyor<T> {
 
         @Override
         public ObjectChunkConveyor<Object> of(ObjectChunksOneToMany<Object> delegate, int desiredChunkSize) {
-            return new ObjectChunksToListBuffered<>(delegate, ChunksProvider.ofBuffered(types(delegate), desiredChunkSize));
+            return new ObjectChunksToListBuffered<>(delegate,
+                    ChunksProvider.ofBuffered(types(delegate), desiredChunkSize));
         }
     }
 

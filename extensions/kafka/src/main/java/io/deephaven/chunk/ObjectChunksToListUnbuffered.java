@@ -77,7 +77,7 @@ class ObjectChunksToListUnbuffered<T> implements ObjectChunkConveyor<T> {
                 return;
             }
             try {
-                SafeCloseable.closeAll(out.stream().map(WritableChunks::out).flatMap(Collection::stream));
+                WritableChunks.closeAll(out);
             } finally {
                 out = null;
                 closed = true;

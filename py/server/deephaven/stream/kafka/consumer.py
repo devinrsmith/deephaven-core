@@ -332,6 +332,9 @@ def avro_spec(
         schema_version: str = "latest",
         mapping: Dict[str, str] = None,
         mapped_only: bool = False,
+        inline: bool = False,
+        config: Dict[str, str] = {},
+        row_limit: int = 2147483647,
 ) -> KeyValueSpec:
     """Creates a spec for how to use an Avro schema when consuming a Kafka stream to a Deephaven table.
 
@@ -375,9 +378,14 @@ def avro_spec(
                     j_spec=_JKafkaTools_Consume.avroSpec(schema, schema_version, mapping)
                 )
             else:
-                return KeyValueSpec(
-                    j_spec=_JKafkaTools_Consume.avroSpec(schema, schema_version)
-                )
+                if inline:
+                    return KeyValueSpec(
+                        j_spec=jpy.get_type("io.deephaven.avro.Avro").of(schema, 0 if schema_version == "latest" else int(schema_version), row_limit, j_hashmap(config))
+                    )
+                else:
+                    return KeyValueSpec(
+                        j_spec=_JKafkaTools_Consume.avroSpec(schema, schema_version)
+                    )
     except Exception as e:
         raise DHError(e, "failed to create a Kafka key/value spec") from e
 

@@ -90,7 +90,7 @@ class SplayerImpl<T> extends KeyOrValueSpec implements KeyOrValueProcessor {
         return offsets.length == 0
                 ? array -> Collections.emptyList()
                 : isInOrder(offsets)
-                        ? array -> Arrays.asList(array).subList(offsets[0], offsets.length)
+                        ? array -> Arrays.asList(array).subList(offsets[0], offsets[0] + offsets.length)
                         : array -> reorder(array, offsets);
     }
 

@@ -6,7 +6,6 @@ package io.deephaven.kafka.protobuf;
 import com.google.protobuf.Descriptors.Descriptor;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.api.ColumnName;
-import io.deephaven.kafka.KafkaTools.Consume;
 import io.deephaven.protobuf.FieldPath;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import org.immutables.value.Value.Default;
@@ -18,7 +17,7 @@ import org.immutables.value.Value.Immutable;
  * functions according to
  * {@link io.deephaven.protobuf.ProtobufDescriptorParser#parse(Descriptor, ProtobufDescriptorParserOptions)}.
  *
- * @see Consume#protobufSpec(ProtobufConsumeOptions)
+ * @see Protobuf#of(ProtobufConsumeOptions)
  * @see <a href=
  *      "https://docs.confluent.io/platform/current/schema-registry/fundamentals/serdes-develop/serdes-protobuf.html">kafka
  *      protobuf serdes</a>

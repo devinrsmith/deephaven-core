@@ -51,6 +51,12 @@ if (!hasProperty('excludeSql')) {
     }
 }
 
+if (!hasProperty('excludeKafkaProtobuf')) {
+    dependencies {
+        runtimeOnly project(':extensions-kafka-protobuf')
+    }
+}
+
 def authHandlers = []
 def authConfigs = ['AuthHandlers']
 if (hasProperty('anonymous')) {

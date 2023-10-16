@@ -220,6 +220,12 @@ project(':extensions-csv').projectDir = file('extensions/csv')
 include(':extensions-kafka')
 project(':extensions-kafka').projectDir = file('extensions/kafka')
 
+include(':extensions-protobuf')
+project(':extensions-protobuf').projectDir = file('extensions/protobuf')
+
+include(':extensions-kafka-protobuf')
+project(':extensions-kafka-protobuf').projectDir = file('extensions/kafka-protobuf')
+
 include(':extensions-parquet-base')
 project(':extensions-parquet-base').projectDir = file('extensions/parquet/base')
 
@@ -252,9 +258,6 @@ project(':extensions-performance').projectDir = file('extensions/performance')
 
 include(':extensions-source-support')
 project(':extensions-source-support').projectDir = file('extensions/source-support')
-
-include(':extensions-protobuf')
-project(':extensions-protobuf').projectDir = file('extensions/protobuf')
 
 include(':plugin')
 

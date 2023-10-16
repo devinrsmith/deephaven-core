@@ -1,4 +1,4 @@
-package io.deephaven.kafka;
+package io.deephaven.kafka.protobuf;
 
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.DynamicMessage;
@@ -6,7 +6,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.Parser;
 import io.confluent.kafka.serializers.protobuf.KafkaProtobufDeserializer;
-import io.deephaven.kafka.protobuf.Protocol;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.utils.ByteUtils;

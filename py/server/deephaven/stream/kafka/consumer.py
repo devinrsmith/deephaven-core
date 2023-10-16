@@ -17,13 +17,6 @@ from deephaven.table import Table, PartitionedTable
 
 _JKafkaTools = jpy.get_type("io.deephaven.kafka.KafkaTools")
 _JKafkaTools_Consume = jpy.get_type("io.deephaven.kafka.KafkaTools$Consume")
-_JProtobufConsumeOptions = jpy.get_type("io.deephaven.kafka.protobuf.ProtobufConsumeOptions")
-_JProtobufDescriptorParserOptions = jpy.get_type("io.deephaven.protobuf.ProtobufDescriptorParserOptions")
-_JDescriptorSchemaRegistry = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorSchemaRegistry")
-_JDescriptorMessageClass = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorMessageClass")
-_JProtocol = jpy.get_type("io.deephaven.kafka.protobuf.Protocol")
-_JFieldOptions = jpy.get_type("io.deephaven.protobuf.FieldOptions")
-_JFieldPath = jpy.get_type("io.deephaven.protobuf.FieldPath")
 _JPythonTools = jpy.get_type("io.deephaven.integrations.python.PythonTools")
 ALL_PARTITIONS = _JKafkaTools.ALL_PARTITIONS
 
@@ -278,22 +271,20 @@ def _consume(
     except Exception as e:
         raise DHError(e, "failed to consume a Kafka stream.") from e
 
-class ProtobufProtocol(JObjectWrapper):
+class ProtobufProtocol:
     """The protobuf serialization / deserialization protocol."""
-
-    j_object_type = jpy.get_type("io.deephaven.kafka.protobuf.Protocol")
 
     @staticmethod
     def serdes() -> 'ProtobufProtocol':
         """The Kafka Protobuf serdes protocol. The payload's first byte is the serdes magic byte, the next 4-bytes are
         the schema ID, the next variable-sized bytes are the message indexes, followed by the normal binary encoding of
         the Protobuf data."""
-        return ProtobufProtocol(ProtobufProtocol.j_object_type.serdes())
+        return ProtobufProtocol(jpy.get_type("io.deephaven.kafka.protobuf.Protocol").serdes())
 
     @staticmethod
     def raw() -> 'ProtobufProtocol':
         """The raw Protobuf protocol. The full payload is the normal binary encoding of the Protobuf data."""
-        return ProtobufProtocol(ProtobufProtocol.j_object_type.raw())
+        return ProtobufProtocol(jpy.get_type("io.deephaven.kafka.protobuf.Protocol").raw())
 
     def __init__(self, j_protocol: jpy.JType):
         self._j_protocol = j_protocol
@@ -310,6 +301,7 @@ def protobuf_spec(
         message_class: Optional[str] = None,
         include: Optional[List[str]] = None,
         protocol: Optional[ProtobufProtocol] = None,
+        config: Optional[Dict[str, str]] = None,
 ) -> KeyValueSpec:
     """Creates a spec for parsing a Kafka protobuf stream into a Deephaven table. Uses the schema, schema_version, and
     schema_message_name to fetch the schema from the schema registry; or uses message_class to to get the schema from
@@ -338,9 +330,19 @@ def protobuf_spec(
         protocol (Optional[ProtobufProtocol]): the wire protocol for this payload. When schema is set,
             ProtobufProtocol.serdes() will be used by default. When message_class is set, ProtobufProtocol.raw() will
             be used by default.
+        config (Optional[Dict[str, str]]): the kafka configuration necessary for connecting to the schema registry,
+            necessary when schema is set.
     Returns:
         a KeyValueSpec
     """
+    _JProtobuf = jpy.get_type("io.deephaven.kafka.protobuf.Protobuf")
+    _JProtobufConsumeOptions = jpy.get_type("io.deephaven.kafka.protobuf.ProtobufConsumeOptions")
+    _JProtobufDescriptorParserOptions = jpy.get_type("io.deephaven.protobuf.ProtobufDescriptorParserOptions")
+    _JDescriptorSchemaRegistry = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorSchemaRegistry")
+    _JDescriptorMessageClass = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorMessageClass")
+    _JFieldOptions = jpy.get_type("io.deephaven.protobuf.FieldOptions")
+    _JFieldPath = jpy.get_type("io.deephaven.protobuf.FieldPath")
+
     parser_options_builder = _JProtobufDescriptorParserOptions.builder()
     if include is not None:
         parser_options_builder.fieldOptions(
@@ -357,7 +359,11 @@ def protobuf_spec(
             raise DHError("Must only set schema information, or message_class, but not both.")
         pb_consume_builder.descriptorProvider(_JDescriptorMessageClass.of(jpy.get_type(message_class).jclass))
     elif schema:
+        if not config:
+            raise DHError("Must provide kafka configuration when schema is set")
         dsr = _JDescriptorSchemaRegistry.builder().subject(schema)
+        for k, v in config.items():
+            dsr.putConfig(k, v)
         if schema_version:
             dsr.version(schema_version)
         if schema_message_name:
@@ -368,7 +374,7 @@ def protobuf_spec(
     if protocol:
         pb_consume_builder.protocol(protocol.j_object)
     return KeyValueSpec(
-        j_spec=_JKafkaTools_Consume.protobufSpec(pb_consume_builder.build())
+        j_spec=_JProtobuf.of(pb_consume_builder.build())
     )
 
 

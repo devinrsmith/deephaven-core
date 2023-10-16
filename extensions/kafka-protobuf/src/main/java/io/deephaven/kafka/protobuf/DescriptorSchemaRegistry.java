@@ -4,6 +4,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -53,12 +54,23 @@ public abstract class DescriptorSchemaRegistry implements DescriptorProvider {
      */
     public abstract Optional<String> messageName();
 
+    /**
+     * The configuration options for connecting to the schema registry.
+     *
+     * @return the schema registry configuration
+     */
+    public abstract Map<String, String> config();
+
     public interface Builder {
         Builder subject(String subject);
 
         Builder version(int version);
 
         Builder messageName(String messageName);
+
+        Builder putConfig(String key, String value);
+
+        Builder putAllConfig(Map<String, ? extends String> config);
 
         DescriptorSchemaRegistry build();
     }

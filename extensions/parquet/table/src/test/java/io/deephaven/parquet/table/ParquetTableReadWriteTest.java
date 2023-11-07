@@ -15,6 +15,7 @@ import io.deephaven.engine.primitive.function.ShortConsumer;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.select.FunctionalColumn;
 import io.deephaven.engine.table.impl.select.SelectColumn;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
@@ -80,7 +81,6 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nullable;
 
-import static io.deephaven.engine.testutil.TstUtils.assertTableEquals;
 import static io.deephaven.util.QueryConstants.*;
 import static org.junit.Assert.*;
 
@@ -235,16 +235,14 @@ public final class ParquetTableReadWriteTest {
         final Table tableToSave = getTableFlat(size, includeSerializable, true);
         final File dest = new File(rootFile, "ParquetTest_" + tableName + "_test.parquet");
         ParquetTools.writeTable(tableToSave, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(maybeFixBigDecimal(tableToSave), fromDisk);
+        checkSingleTable(maybeFixBigDecimal(tableToSave), dest);
     }
 
     private void groupedTable(String tableName, int size, boolean includeSerializable) {
         final Table tableToSave = getGroupedTable(size, includeSerializable);
         final File dest = new File(rootFile, "ParquetTest_" + tableName + "_test.parquet");
         ParquetTools.writeTable(tableToSave, dest, tableToSave.getDefinition());
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(tableToSave, fromDisk);
+        checkSingleTable(tableToSave, dest);
     }
 
     private void groupedOneColumnTable(String tableName, int size) {
@@ -252,16 +250,14 @@ public final class ParquetTableReadWriteTest {
         TableTools.show(tableToSave, 50);
         final File dest = new File(rootFile, "ParquetTest_" + tableName + "_test.parquet");
         ParquetTools.writeTable(tableToSave, dest, tableToSave.getDefinition());
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(tableToSave, fromDisk);
+        checkSingleTable(tableToSave, dest);
     }
 
     private void testEmptyArrayStore(String tableName, int size) {
         final Table tableToSave = getEmptyArray(size);
         final File dest = new File(rootFile, "ParquetTest_" + tableName + "_test.parquet");
         ParquetTools.writeTable(tableToSave, dest, tableToSave.getDefinition());
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(tableToSave, fromDisk);
+        checkSingleTable(tableToSave, dest);
     }
 
     @Test
@@ -270,8 +266,7 @@ public final class ParquetTableReadWriteTest {
         assertEquals(int.class, t.getDefinition().getColumn("A").getDataType());
         final File dest = new File(rootFile, "ParquetTest_emptyTrivialTable.parquet");
         ParquetTools.writeTable(t, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(t, fromDisk);
+        final Table fromDisk = checkSingleTable(t, dest);
         assertEquals(t.getDefinition(), fromDisk.getDefinition());
     }
 
@@ -302,8 +297,7 @@ public final class ParquetTableReadWriteTest {
                         .groupBy("someLong").ungroup("someInt")).withDefinitionUnsafe(definition);
         final File dest = new File(rootFile, "ParquetTest_groupByLong_test.parquet");
         ParquetTools.writeTable(testTable, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(fromDisk, testTable);
+        final Table fromDisk = checkSingleTable(testTable, dest);
         TestCase.assertNotNull(fromDisk.getColumnSource("someLong").getGroupToRange());
     }
 
@@ -318,8 +312,7 @@ public final class ParquetTableReadWriteTest {
                         .withDefinitionUnsafe(definition);
         final File dest = new File(rootFile, "ParquetTest_groupByString_test.parquet");
         ParquetTools.writeTable(testTable, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(fromDisk, testTable);
+        final Table fromDisk = checkSingleTable(testTable, dest);
         TestCase.assertNotNull(fromDisk.getColumnSource("someString").getGroupToRange());
     }
 
@@ -334,8 +327,7 @@ public final class ParquetTableReadWriteTest {
                 .groupBy("someBigInt").ungroup("someInt")).withDefinitionUnsafe(definition);
         final File dest = new File(rootFile, "ParquetTest_groupByBigInt_test.parquet");
         ParquetTools.writeTable(testTable, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(fromDisk, testTable);
+        final Table fromDisk = checkSingleTable(testTable, dest);
         TestCase.assertNotNull(fromDisk.getColumnSource("someBigInt").getGroupToRange());
     }
 
@@ -344,8 +336,7 @@ public final class ParquetTableReadWriteTest {
         final Table table1 = getTableFlat(10000, false, true);
         ParquetTools.writeTable(table1, dest, codec);
         assertTrue(dest.length() > 0L);
-        final Table table2 = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(maybeFixBigDecimal(table1), table2);
+        checkSingleTable(maybeFixBigDecimal(table1), dest);
     }
 
     @Test
@@ -369,14 +360,14 @@ public final class ParquetTableReadWriteTest {
         File dest = new File(rootFile + File.separator + "Table.parquet");
         final Table table = getTableFlat(100, false, false);
         ParquetTools.writeTable(table, dest, ParquetTools.LZ4);
-        Table fromDisk = ParquetTools.readTable(dest).select();
-        TstUtils.assertTableEquals(fromDisk, table);
+
+        final Table fromDisk = checkSingleTable(table, dest).select();
 
         try {
             // The following file is tagged as LZ4 compressed based on its metadata, but is actually compressed with
             // LZ4_RAW. We should be able to read it anyway with no exceptions.
             String path = TestParquetTools.class.getResource("/sample_lz4_compressed.parquet").getFile();
-            fromDisk = ParquetTools.readTable(path).select();
+            ParquetTools.readSingleTable(new File(path), ParquetInstructions.EMPTY).select();
         } catch (RuntimeException e) {
             TestCase.fail("Failed to read parquet file sample_lz4_compressed.parquet");
         }
@@ -384,8 +375,7 @@ public final class ParquetTableReadWriteTest {
         ParquetTools.writeTable(fromDisk, randomDest, ParquetTools.LZ4_RAW);
 
         // Read the LZ4 compressed file again, to make sure we use a new adapter
-        fromDisk = ParquetTools.readTable(dest).select();
-        TstUtils.assertTableEquals(fromDisk, table);
+        checkSingleTable(table, randomDest);
     }
 
     @Test
@@ -426,7 +416,7 @@ public final class ParquetTableReadWriteTest {
                 .newTable(new ColumnHolder<>("MyBigDecimal", BigDecimal.class, null, false, myBigDecimal));
         final File dest = new File(rootFile, "ParquetTest_testBigDecimalPrecisionScale.parquet");
         ParquetTools.writeTable(table, dest);
-        final Table fromDisk = ParquetTools.readTable(dest);
+        final Table fromDisk = ParquetTools.readSingleTable(dest, ParquetInstructions.EMPTY);
         try (final CloseableIterator<BigDecimal> it = fromDisk.objectColumnIterator("MyBigDecimal")) {
             assertTrue(it.hasNext());
             final BigDecimal item = it.next();
@@ -442,8 +432,7 @@ public final class ParquetTableReadWriteTest {
     private static void writeReadTableTest(final Table table, final File dest,
             final ParquetInstructions writeInstructions) {
         ParquetTools.writeTable(table, dest, writeInstructions);
-        final Table fromDisk = ParquetTools.readTable(dest);
-        TstUtils.assertTableEquals(table, fromDisk);
+        checkSingleTable(table, dest);
     }
 
     @Test
@@ -620,9 +609,9 @@ public final class ParquetTableReadWriteTest {
         void writeTable(final Table table, final File destFile);
     }
 
-    TestParquetTableWriter singleWriter = (table, destFile) -> ParquetTools.writeTable(table, destFile);
-    TestParquetTableWriter multiWriter = (table, destFile) -> ParquetTools.writeTables(new Table[] {table},
-            table.getDefinition(), new File[] {destFile});
+    private static final TestParquetTableWriter SINGLE_WRITER = ParquetTools::writeTable;
+    private static final TestParquetTableWriter MULTI_WRITER = (table, destFile) ->
+            ParquetTools.writeTables(new Table[] {table}, table.getDefinition(), new File[] {destFile});
 
     /**
      * Verify that the parent directory contains the expected parquet files and index files in the right directory
@@ -665,8 +654,8 @@ public final class ParquetTableReadWriteTest {
      */
     @Test
     public void basicWriteTests() {
-        basicWriteTestsImpl(singleWriter);
-        basicWriteTestsImpl(multiWriter);
+        basicWriteTestsImpl(SINGLE_WRITER);
+        basicWriteTestsImpl(MULTI_WRITER);
     }
 
     private static void basicWriteTestsImpl(TestParquetTableWriter writer) {
@@ -681,8 +670,8 @@ public final class ParquetTableReadWriteTest {
         final File destFile = new File(parentDir, filename);
         writer.writeTable(tableToSave, destFile);
         verifyFilesInDir(parentDir, new String[] {filename}, null);
-        Table fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, tableToSave);
+
+        checkSingleTable(tableToSave, destFile);
 
         // This write should fail
         final Table badTable = TableTools.emptyTable(5)
@@ -696,15 +685,13 @@ public final class ParquetTableReadWriteTest {
 
         // Make sure that original file is preserved and no temporary files
         verifyFilesInDir(parentDir, new String[] {filename}, null);
-        fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, tableToSave);
+        checkSingleTable(tableToSave, destFile);
 
         // Write a new table successfully at the same path
         final Table newTableToSave = TableTools.emptyTable(5).update("A=(int)i");
         writer.writeTable(newTableToSave, destFile);
         verifyFilesInDir(parentDir, new String[] {filename}, null);
-        fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, newTableToSave);
+        checkSingleTable(newTableToSave, destFile);
         FileUtils.deleteRecursively(parentDir);
     }
 
@@ -734,8 +721,8 @@ public final class ParquetTableReadWriteTest {
         ParquetTools.writeTables(tablesToSave, firstTable.getDefinition(), destFiles);
 
         verifyFilesInDir(parentDir, new String[] {firstFilename, secondFilename}, null);
-        TstUtils.assertTableEquals(ParquetTools.readTable(firstDestFile), firstTable);
-        TstUtils.assertTableEquals(ParquetTools.readTable(secondDestFile), secondTable);
+        checkSingleTable(firstTable, firstDestFile);
+        checkSingleTable(secondTable, secondDestFile);
     }
 
     /**
@@ -777,8 +764,8 @@ public final class ParquetTableReadWriteTest {
      */
     @Test
     public void groupingColumnsBasicWriteTests() {
-        groupingColumnsBasicWriteTestsImpl(singleWriter);
-        groupingColumnsBasicWriteTestsImpl(multiWriter);
+        groupingColumnsBasicWriteTestsImpl(SINGLE_WRITER);
+        groupingColumnsBasicWriteTestsImpl(MULTI_WRITER);
     }
 
     public void groupingColumnsBasicWriteTestsImpl(TestParquetTableWriter writer) {
@@ -800,8 +787,7 @@ public final class ParquetTableReadWriteTest {
         String vvvIndexFilePath = ".dh_metadata/indexes/vvv/index_vvv_groupingColumnsWriteTests.parquet";
         verifyFilesInDir(parentDir, new String[] {destFilename}, Map.of("vvv", new String[] {vvvIndexFilePath}));
 
-        Table fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, tableToSave);
+        checkSingleTable(tableToSave, destFile);
 
         // Verify that the key-value metadata in the file has the correct name
         ParquetTableLocationKey tableLocationKey = new ParquetTableLocationKey(destFile, 0, null);
@@ -821,8 +807,7 @@ public final class ParquetTableReadWriteTest {
 
         // Make sure that original file is preserved and no temporary files
         verifyFilesInDir(parentDir, new String[] {destFilename}, Map.of("vvv", new String[] {vvvIndexFilePath}));
-        fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, tableToSave);
+        checkSingleTable(tableToSave, destFile);
         FileUtils.deleteRecursively(parentDir);
     }
 
@@ -835,7 +820,7 @@ public final class ParquetTableReadWriteTest {
         // Read the legacy file and verify that grouping column is read correctly
         final Table fromDisk;
         try {
-            fromDisk = ParquetTools.readTable(destFile);
+            fromDisk = ParquetTools.readSingleTable(destFile, ParquetInstructions.EMPTY);
         } catch (RuntimeException e) {
             if (e.getCause() instanceof InvalidParquetFileException) {
                 final String InvalidParquetFileErrorMsgString = "Invalid parquet file detected, please ensure the " +
@@ -886,7 +871,7 @@ public final class ParquetTableReadWriteTest {
         verifyFilesInDir(parentDir, new String[] {destFilename}, Map.of("vvv", new String[] {vvvIndexFilePath}));
 
         // Call readTable on parent directory
-        Table fromDisk = ParquetTools.readTable(parentDir);
+        Table fromDisk = ParquetTools.readFlatPartitionedTable(parentDir, ParquetInstructions.EMPTY);
         TstUtils.assertTableEquals(fromDisk, tableToSave);
 
         // Add an empty dot file and dot directory (with valid parquet files) in the parent directory
@@ -896,14 +881,14 @@ public final class ParquetTableReadWriteTest {
         assertTrue(dotDir.mkdir());
         final Table someTable = TableTools.emptyTable(5).update("A=(int)i");
         ParquetTools.writeTable(someTable, new File(dotDir, "data.parquet"));
-        fromDisk = ParquetTools.readTable(parentDir);
+        fromDisk = ParquetTools.readFlatPartitionedTable(parentDir, ParquetInstructions.EMPTY);
         TstUtils.assertTableEquals(fromDisk, tableToSave);
 
         // Add a dot parquet in parent directory
         final Table anotherTable = TableTools.emptyTable(5).update("A=(int)i");
         final File pqDotFile = new File(parentDir, ".dotFile.parquet");
         ParquetTools.writeTable(anotherTable, pqDotFile);
-        fromDisk = ParquetTools.readTable(parentDir);
+        fromDisk = ParquetTools.readFlatPartitionedTable(parentDir, ParquetInstructions.EMPTY);
         TstUtils.assertTableEquals(fromDisk, tableToSave);
     }
 
@@ -923,7 +908,7 @@ public final class ParquetTableReadWriteTest {
         ParquetTools.writeTable(someTable, firstDataFile);
         ParquetTools.writeTable(someTable, secondDataFile);
 
-        Table partitionedTable = ParquetTools.readTable(parentDir).select();
+        Table partitionedTable = ParquetTools.readKeyValuePartitionedTable(parentDir, ParquetInstructions.EMPTY).select();
         final Set<?> columnsSet = partitionedTable.getColumnSourceMap().keySet();
         assertTrue(columnsSet.size() == 2 && columnsSet.contains("A") && columnsSet.contains("X"));
 
@@ -933,14 +918,14 @@ public final class ParquetTableReadWriteTest {
         final File dotDir = new File(firstPartition, ".dotDir");
         assertTrue(dotDir.mkdir());
         ParquetTools.writeTable(someTable, new File(dotDir, "data.parquet"));
-        Table fromDisk = ParquetTools.readTable(parentDir);
+        Table fromDisk = ParquetTools.readKeyValuePartitionedTable(parentDir, ParquetInstructions.EMPTY);
         TstUtils.assertTableEquals(fromDisk, partitionedTable);
 
         // Add a dot parquet file in one of the partitions directory
         final Table anotherTable = TableTools.emptyTable(5).update("B=(int)i");
         final File pqDotFile = new File(secondPartition, ".dotFile.parquet");
         ParquetTools.writeTable(anotherTable, pqDotFile);
-        fromDisk = ParquetTools.readTable(parentDir);
+        fromDisk = ParquetTools.readKeyValuePartitionedTable(parentDir, ParquetInstructions.EMPTY);
         TstUtils.assertTableEquals(fromDisk, partitionedTable);
     }
 
@@ -985,14 +970,14 @@ public final class ParquetTableReadWriteTest {
         assertTrue(metadataString.contains(secondIndexFilePath));
 
         // Read back the files and verify contents match
-        TstUtils.assertTableEquals(ParquetTools.readTable(firstDestFile), firstTable);
-        TstUtils.assertTableEquals(ParquetTools.readTable(secondDestFile), secondTable);
+        checkSingleTable(firstTable, firstDestFile);
+        checkSingleTable(secondTable, secondDestFile);
     }
 
     @Test
     public void groupingColumnsOverwritingTests() {
-        groupingColumnsOverwritingTestsImpl(singleWriter);
-        groupingColumnsOverwritingTestsImpl(multiWriter);
+        groupingColumnsOverwritingTestsImpl(SINGLE_WRITER);
+        groupingColumnsOverwritingTestsImpl(MULTI_WRITER);
     }
 
     public void groupingColumnsOverwritingTestsImpl(TestParquetTableWriter writer) {
@@ -1025,8 +1010,7 @@ public final class ParquetTableReadWriteTest {
                 Map.of("vvv", new String[] {vvvIndexFilePath},
                         "xxx", new String[] {xxxIndexFilePath}));
 
-        Table fromDisk = ParquetTools.readTable(destFile);
-        TstUtils.assertTableEquals(fromDisk, anotherTableToSave);
+        checkSingleTable(anotherTableToSave, destFile);
 
         ParquetTableLocationKey tableLocationKey = new ParquetTableLocationKey(destFile, 0, null);
         String metadataString = tableLocationKey.getMetadata().getFileMetaData().toString();
@@ -1053,8 +1037,8 @@ public final class ParquetTableReadWriteTest {
 
     @Test
     public void readChangedUnderlyingFileTests() {
-        readChangedUnderlyingFileTestsImpl(singleWriter);
-        readChangedUnderlyingFileTestsImpl(multiWriter);
+        readChangedUnderlyingFileTestsImpl(SINGLE_WRITER);
+        readChangedUnderlyingFileTestsImpl(MULTI_WRITER);
     }
 
     public void readChangedUnderlyingFileTestsImpl(TestParquetTableWriter writer) {
@@ -1063,31 +1047,31 @@ public final class ParquetTableReadWriteTest {
         final String filename = "readChangedUnderlyingFileTests.parquet";
         final File destFile = new File(rootFile, filename);
         writer.writeTable(tableToSave, destFile);
-        Table fromDisk = ParquetTools.readTable(destFile);
+        Table fromDisk = ParquetTools.readSingleTable(destFile, ParquetInstructions.EMPTY);
         // At this point, fromDisk is not fully materialized in the memory and would be read from the file on demand
 
         // Change the underlying file
         final Table stringTable = TableTools.emptyTable(5).update("InputString = Long.toString(ii)");
         writer.writeTable(stringTable, destFile);
-        Table stringFromDisk = ParquetTools.readTable(destFile).select();
+        Table stringFromDisk = ParquetTools.readSingleTable(destFile, ParquetInstructions.EMPTY).select();
         TstUtils.assertTableEquals(stringTable, stringFromDisk);
 
         // Close all the file handles so that next time when fromDisk is accessed, we need to reopen the file handle
         TrackedFileHandleFactory.getInstance().closeAll();
 
-        // Read back fromDisk and compare it with original table. Since the underlying file has changed,
-        // assertTableEquals will try to read the file and would crash
+        // Read back fromDisk. Since the underlying file has changed, we expect this to fail.
         try {
-            TstUtils.assertTableEquals(tableToSave, fromDisk);
-            TestCase.fail();
-        } catch (Exception ignored) {
+            fromDisk.coalesce();
+            TestCase.fail("Expected TableDataException");
+        } catch (TableDataException ignored) {
+            // expected
         }
     }
 
     @Test
     public void readModifyWriteTests() {
-        readModifyWriteTestsImpl(singleWriter);
-        readModifyWriteTestsImpl(multiWriter);
+        readModifyWriteTestsImpl(SINGLE_WRITER);
+        readModifyWriteTestsImpl(MULTI_WRITER);
     }
 
     public void readModifyWriteTestsImpl(TestParquetTableWriter writer) {
@@ -1096,7 +1080,7 @@ public final class ParquetTableReadWriteTest {
         final String filename = "readModifyWriteTests.parquet";
         final File destFile = new File(rootFile, filename);
         writer.writeTable(tableToSave, destFile);
-        Table fromDisk = ParquetTools.readTable(destFile);
+        Table fromDisk = ParquetTools.readSingleTable(destFile, ParquetInstructions.EMPTY);
         // At this point, fromDisk is not fully materialized in the memory and would be read from the file on demand
 
         // Create a view table on fromDisk which should fail on writing, and try to write at the same location
@@ -1132,8 +1116,7 @@ public final class ParquetTableReadWriteTest {
         final Table stringTable = TableTools.emptyTable(numRows).select(Selectable.from(columns));
         final File dest = new File(rootFile + File.separator + "dictEncoding.parquet");
         ParquetTools.writeTable(stringTable, dest, writeInstructions);
-        Table fromDisk = ParquetTools.readTable(dest);
-        assertTableEquals(stringTable, fromDisk);
+        checkSingleTable(stringTable, dest);
 
         // Verify that string columns are properly dictionary encoded
         final ParquetMetadata metadata = new ParquetTableLocationKey(dest, 0, null).getMetadata();
@@ -1188,8 +1171,7 @@ public final class ParquetTableReadWriteTest {
         Table stringTable = TableTools.emptyTable(numRows).select(Selectable.from(columns));
         final File dest = new File(rootFile + File.separator + "overflowingStringsTest.parquet");
         ParquetTools.writeTable(stringTable, dest, writeInstructions);
-        Table fromDisk = ParquetTools.readTable(dest).select();
-        assertTableEquals(stringTable, fromDisk);
+        checkSingleTable(stringTable, dest);
 
         ParquetMetadata metadata = new ParquetTableLocationKey(dest, 0, null).getMetadata();
         ColumnChunkMetaData columnMetadata = metadata.getBlocks().get(0).getColumns().get(0);
@@ -1213,8 +1195,7 @@ public final class ParquetTableReadWriteTest {
 
         final File dest = new File(rootFile + File.separator + "overflowingCodecsTest.parquet");
         ParquetTools.writeTable(table, dest, writeInstructions);
-        Table fromDisk = ParquetTools.readTable(dest).select();
-        assertTableEquals(table, fromDisk);
+        checkSingleTable(table, dest);
 
         final ParquetMetadata metadata = new ParquetTableLocationKey(dest, 0, null).getMetadata();
         final String metadataStr = metadata.getFileMetaData().getKeyValueMetaData().get("deephaven");
@@ -1241,8 +1222,7 @@ public final class ParquetTableReadWriteTest {
         final File simpleTableDest = new File(rootFile, "ParquetTest_simple_statistics_test.parquet");
         ParquetTools.writeTable(simpleTable, simpleTableDest);
 
-        final Table simpleFromDisk = ParquetTools.readTable(simpleTableDest);
-        TstUtils.assertTableEquals(simpleTable, simpleFromDisk);
+        checkSingleTable(simpleTable, simpleTableDest);
 
         assertTableStatistics(simpleTable, simpleTableDest);
 
@@ -1251,8 +1231,7 @@ public final class ParquetTableReadWriteTest {
         final File flatTableDest = new File(rootFile, "ParquetTest_flat_statistics_test.parquet");
         ParquetTools.writeTable(flatTableToSave, flatTableDest);
 
-        final Table flatFromDisk = ParquetTools.readTable(flatTableDest);
-        TstUtils.assertTableEquals(maybeFixBigDecimal(flatTableToSave), flatFromDisk);
+        checkSingleTable(maybeFixBigDecimal(flatTableToSave), flatTableDest);
 
         assertTableStatistics(flatTableToSave, flatTableDest);
 
@@ -1261,8 +1240,7 @@ public final class ParquetTableReadWriteTest {
         final File groupedTableDest = new File(rootFile, "ParquetTest_grouped_statistics_test.parquet");
         ParquetTools.writeTable(groupedTableToSave, groupedTableDest, groupedTableToSave.getDefinition());
 
-        final Table groupedFromDisk = ParquetTools.readTable(groupedTableDest);
-        TstUtils.assertTableEquals(groupedTableToSave, groupedFromDisk);
+        checkSingleTable(groupedTableToSave, groupedTableDest);
 
         assertTableStatistics(groupedTableToSave, groupedTableDest);
     }
@@ -1331,7 +1309,7 @@ public final class ParquetTableReadWriteTest {
         final File pyarrowDest = new File(path);
         final Table pyarrowFromDisk;
         try {
-            pyarrowFromDisk = ParquetTools.readTable(pyarrowDest);
+            pyarrowFromDisk = ParquetTools.readSingleTable(pyarrowDest, ParquetInstructions.EMPTY);
         } catch (RuntimeException e) {
             if (e.getCause() instanceof InvalidParquetFileException) {
                 final String InvalidParquetFileErrorMsgString = "Invalid parquet file detected, please ensure the " +
@@ -1348,11 +1326,7 @@ public final class ParquetTableReadWriteTest {
         final File dhDest = new File(rootFile, "ParquetTest_statistics_test.parquet");
         ParquetTools.writeTable(pyarrowFromDisk, dhDest);
 
-        // Read the table back in using our code.
-        final Table dhFromDisk = ParquetTools.readTable(dhDest);
-
-        // Verify the two tables loaded from disk are equal.
-        TstUtils.assertTableEquals(pyarrowFromDisk, dhFromDisk);
+        final Table dhFromDisk = checkSingleTable(pyarrowFromDisk, dhDest);
 
         // Run the verification code against DHC writer stats.
         assertTableStatistics(pyarrowFromDisk, dhDest);
@@ -1360,17 +1334,71 @@ public final class ParquetTableReadWriteTest {
     }
 
     @Test
-    public void inferParquetOrderLastKey() {
+    public void inferFlatPartitionedOrderLastKey() {
         // Create an empty parent directory
-        final File parentDir = new File(rootFile, "inferParquetOrder");
+        final File parentDir = new File(rootFile, "inferFlatPartitionedOrderLastKey");
         parentDir.mkdir();
-        final TableDefinition td1 = TableDefinition.of(ColumnDefinition.ofInt("Foo"));
-        final TableDefinition td2 =
-                TableDefinition.of(ColumnDefinition.ofInt("Foo"), ColumnDefinition.ofString("Bar"));
+
+        final ColumnDefinition<Integer> foo = ColumnDefinition.ofInt("Foo");
+        final ColumnDefinition<String> bar = ColumnDefinition.ofString("Bar");
+        final TableDefinition td1 = TableDefinition.of(foo);
+        final TableDefinition td2 = TableDefinition.of(foo, bar);
         ParquetTools.writeTable(TableTools.newTable(td1), new File(parentDir, "01.parquet"));
         ParquetTools.writeTable(TableTools.newTable(td2), new File(parentDir, "02.parquet"));
-        final Table table = ParquetTools.readTable(parentDir);
+        final Table table = ParquetTools.readFlatPartitionedTable(parentDir, ParquetInstructions.EMPTY);
         assertEquals(td2, table.getDefinition());
+    }
+
+    @Test
+    public void inferKVPartitionedOrderLastKey() {
+        // Create an empty parent directory
+        final File parentDir = new File(rootFile, "inferKVPartitionedOrderLastKey");
+        parentDir.mkdir();
+
+        final ColumnDefinition<Integer> partition = ColumnDefinition.ofInt("Partition").withPartitioning();
+        final ColumnDefinition<Integer> foo = ColumnDefinition.ofInt("Foo");
+        final ColumnDefinition<String> bar = ColumnDefinition.ofString("Bar");
+
+        final TableDefinition td1 = TableDefinition.of(foo);
+        final TableDefinition td2 = TableDefinition.of(foo, bar);
+
+        final File p1 = new File(parentDir, "Partition=1");
+        p1.mkdir();
+
+        final File p2 = new File(parentDir, "Partition=2");
+        p2.mkdir();
+
+        ParquetTools.writeTable(TableTools.newTable(td1), new File(p1, "z.parquet"));
+        ParquetTools.writeTable(TableTools.newTable(td2), new File(p2, "a.parquet"));
+
+        final TableDefinition expected = TableDefinition.of(partition, foo, bar);
+
+        final Table table = ParquetTools.readKeyValuePartitionedTable(parentDir, ParquetInstructions.EMPTY);
+        assertEquals(expected, table.getDefinition());
+    }
+
+    @Test
+    public void readSingleTableSubset() {
+        final File source = new File(rootFile, "readSingleTableSubset.parquet");
+        final ColumnHolder<Integer> col1 = TableTools.intCol("Foo", 1, 2, 3);
+        final Table subsetTable = TableTools.newTable(col1);
+        final Table table = TableTools.newTable(col1, TableTools.stringCol("Bar", "Zip", "Zap", "Zoop"));
+        ParquetTools.writeTable(table, source);
+        checkSingleTable(table, source);
+        TstUtils.assertTableEquals(subsetTable,
+                ParquetTools.readSingleTable(source, ParquetInstructions.EMPTY, subsetTable.getDefinition()));
+    }
+
+    @Test
+    public void readSingleTableSuperset() {
+        final File source = new File(rootFile, "readSingleTableSuperset.parquet");
+        final ColumnHolder<Integer> col1 = TableTools.intCol("Foo", 1, 2, 3);
+        final Table table = TableTools.newTable(col1);
+        final Table supersetTable = TableTools.newTable(col1, TableTools.stringCol("Bar", null, null, null));
+        ParquetTools.writeTable(table, source);
+        checkSingleTable(table, source);
+        TstUtils.assertTableEquals(supersetTable,
+                ParquetTools.readSingleTable(source, ParquetInstructions.EMPTY, supersetTable.getDefinition()));
     }
 
     private void assertTableStatistics(Table inputTable, File dest) {
@@ -2700,4 +2728,16 @@ public final class ParquetTableReadWriteTest {
         }
     }
     // endregion Column Statistics Assertions
+
+    private static Table checkSingleTable(Table expected, File source) {
+        return checkSingleTable(expected, source, ParquetInstructions.EMPTY);
+    }
+
+    private static Table checkSingleTable(Table expected, File source, ParquetInstructions instructions) {
+        final Table singleTable = ParquetTools.readSingleTable(source, instructions);
+        TstUtils.assertTableEquals(expected, singleTable);
+        // TstUtils.assertTableEquals(expected, ParquetTools.readTable(source, instructions));
+        // TstUtils.assertTableEquals(expected, ParquetTools.readSingleTable(source, instructions, expected.getDefinition()));
+        return singleTable;
+    }
 }

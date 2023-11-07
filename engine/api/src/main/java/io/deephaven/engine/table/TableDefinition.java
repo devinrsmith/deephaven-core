@@ -28,6 +28,12 @@ public class TableDefinition implements LogOutputAppendable {
     private static final OpenAddressedCanonicalizationCache INTERNED_DEFINITIONS =
             new OpenAddressedCanonicalizationCache();
 
+    private static final TableDefinition EMPTY = new TableDefinition(Collections.emptyList());
+
+    public static TableDefinition empty() {
+        return EMPTY;
+    }
+
     public static TableDefinition of(ColumnDefinition<?>... columnDefinitions) {
         return new TableDefinition(new ArrayList<>(Arrays.asList(columnDefinitions)));
     }

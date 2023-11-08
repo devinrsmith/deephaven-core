@@ -723,7 +723,7 @@ public class ParquetTools {
         // In the case of a static output table, we can re-use the already fetched inference keys
         final TableDefinition tableDefinition = inference.getFirst();
         if (TableDefinition.empty().equals(tableDefinition)) {
-            return TableTools.emptyTable(0); // todo: this isn't partitioned...
+            return TableTools.emptyTable(0); // todo: this isn't partitioned... but it matches the old behavior...
         }
         return readPartitionedTable(
                 readInstructions.isRefreshing() ? locationKeyFinder : inferenceKeys,
@@ -881,6 +881,9 @@ public class ParquetTools {
             @NotNull final File directory,
             @NotNull final ParquetInstructions readInstructions,
             @NotNull final TableDefinition tableDefinition) {
+        if (tableDefinition.getColumnStream().noneMatch(ColumnDefinition::isPartitioning)) {
+            throw new IllegalArgumentException("No partitioning columns");
+        }
         return readPartitionedTable(new ParquetKeyValuePartitionedLayout(directory, tableDefinition), readInstructions,
                 tableDefinition);
     }
@@ -942,7 +945,8 @@ public class ParquetTools {
         final ParquetSingleFileLayout keyFinder = new ParquetSingleFileLayout(file);
         final KnownLocationKeyFinder<ParquetTableLocationKey> inferenceKeys = toKnownKeys(keyFinder);
         final Pair<TableDefinition, ParquetInstructions> inference = infer(inferenceKeys, readInstructions);
-        return readSingleFileTable(inferenceKeys.getFirstKey().orElseThrow(), inference.getSecond(), inference.getFirst());
+        return readSingleFileTable(inferenceKeys.getFirstKey().orElseThrow(), inference.getSecond(),
+                inference.getFirst());
     }
 
     /**

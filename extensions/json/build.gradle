@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+dependencies {
+    Classpaths.inheritImmutables(project)
+    Classpaths.inheritJacksonPlatform(project)
+    implementation 'com.fasterxml.jackson.dataformat:jackson-core'
+
+    implementation project(':engine-query-constants')
+
+    // todo: we want to move processor somewhere general
+    api project(':extensions-kafka')
+}
+
+test {
+    useJUnitPlatform()
+}

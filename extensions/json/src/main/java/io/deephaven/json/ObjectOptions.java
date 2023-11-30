@@ -21,13 +21,11 @@ import java.util.stream.Stream;
 public abstract class ObjectOptions extends ValueOptions {
 
     public enum RepeatedFieldBehavior {
-        USE_FIRST,
-        USE_LAST,
-        ERROR
+        USE_FIRST, USE_LAST, ERROR
     }
 
     public static Builder builder() {
-        return null;
+        return ImmutableObjectOptions.builder();
     }
 
     public abstract Map<String, ValueOptions> fieldProcessors();
@@ -45,7 +43,8 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     /**
-     * To be more selective, individual fields can be added with {@link ValueOptions#skip()} to {@link #fieldProcessors()}.
+     * To be more selective, individual fields can be added with {@link ValueOptions#skip()} to
+     * {@link #fieldProcessors()}.
      *
      * @return if unknown fields are allowed for {@code this} object
      */
@@ -83,7 +82,8 @@ public abstract class ObjectOptions extends ValueOptions {
             final String fieldName = e.getKey();
             final ValueOptions opts = e.getValue();
             final int numTypes = opts.numColumns();
-            final ValueProcessor fieldProcessor = opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
+            final ValueProcessor fieldProcessor =
+                    opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
             processors.put(fieldName, fieldProcessor);
             ix += numTypes;
         }
@@ -103,5 +103,11 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
+
+        Builder putFieldProcessors(String key, ValueOptions value);
+
+        Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
+
+        Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
     }
 }

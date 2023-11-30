@@ -11,7 +11,8 @@ import java.math.BigDecimal;
 
 final class BigDecimalChunkValueProcessor extends ObjectChunkValueProcessorBase<BigDecimal> {
 
-    public BigDecimalChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<BigDecimal, ?> chunk) {
+    public BigDecimalChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<BigDecimal, ?> chunk) {
         super(contextPrefix, allowNull, allowMissing, chunk);
     }
 

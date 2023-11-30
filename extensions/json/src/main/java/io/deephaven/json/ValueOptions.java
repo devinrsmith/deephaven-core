@@ -21,6 +21,12 @@ public abstract class ValueOptions {
 
     public abstract boolean allowMissing();
 
+    public final ArrayOptions array() {
+        return ArrayOptions.builder()
+                .element(this)
+                .build();
+    }
+
     // todo: what about multivariate?
     abstract Stream<Type<?>> outputTypes();
 

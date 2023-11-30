@@ -44,8 +44,6 @@ public class IntOptions extends ValueOptions {
         return new IntChunkValueProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableIntChunk());
     }
 
-
-
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
 
     }

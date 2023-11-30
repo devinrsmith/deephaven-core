@@ -7,11 +7,12 @@ import io.deephaven.chunk.WritableObjectChunk;
 
 import java.util.Objects;
 
-abstract class ArrayObjectChunkValueProcessorBase<A, T extends ValueProcessor> extends ArrayValueProcessorBase<T> {
+abstract class ArrayObjectChunkValueProcessorBase<A, V extends ValueProcessor> extends ArrayValueProcessorBase<V> {
 
     protected final WritableObjectChunk<A, ?> chunk;
 
-    public ArrayObjectChunkValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<A, ?> chunk) {
+    public ArrayObjectChunkValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<A, ?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

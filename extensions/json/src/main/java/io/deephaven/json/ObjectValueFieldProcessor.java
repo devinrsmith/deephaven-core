@@ -20,7 +20,9 @@ final class ObjectValueFieldProcessor extends ValueProcessorBase {
     private final ValueProcessor onUnknownFieldProcessor;
     private final ValueProcessor onRepeatedFieldProcessor;
 
-    ObjectValueFieldProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, Map<String, ValueProcessor> fieldProcessors, ValueProcessor onUnknownFieldProcessor, ValueProcessor onRepeatedFieldProcessor) {
+    ObjectValueFieldProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            Map<String, ValueProcessor> fieldProcessors, ValueProcessor onUnknownFieldProcessor,
+            ValueProcessor onRepeatedFieldProcessor) {
         super(contextPrefix, allowNull, allowMissing);
         this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
         this.onUnknownFieldProcessor = onUnknownFieldProcessor;

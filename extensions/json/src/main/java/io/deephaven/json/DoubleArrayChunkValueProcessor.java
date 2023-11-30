@@ -6,17 +6,17 @@ package io.deephaven.json;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.IntArrayChunkValueProcessor.ElementProcessor;
+import io.deephaven.json.DoubleArrayChunkValueProcessor.ElementProcessor;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 
-class IntArrayChunkValueProcessor extends ArrayObjectChunkValueProcessorBase<int[], ElementProcessor> {
-    private static final int[] EMPTY = new int[0];
+class DoubleArrayChunkValueProcessor extends ArrayObjectChunkValueProcessorBase<double[], ElementProcessor> {
+    private static final double[] EMPTY = new double[0];
     private final boolean allowNullElements;
 
-    public IntArrayChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
-            WritableObjectChunk<int[], ?> chunk, boolean allowNullElements) {
+    public DoubleArrayChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<double[], ?> chunk, boolean allowNullElements) {
         super(contextPrefix, allowNull, allowMissing, chunk);
         this.allowNullElements = allowNullElements;
     }
@@ -32,38 +32,43 @@ class IntArrayChunkValueProcessor extends ArrayObjectChunkValueProcessorBase<int
     }
 
     class ElementProcessor extends ValueProcessorBase {
-        private int[] array;
+        private double[] array;
         private int len;
 
         public ElementProcessor() {
             // missing doesn't make sense in context of array
-            super(IntArrayChunkValueProcessor.this.context + "[.]", allowNullElements, false);
+            super(DoubleArrayChunkValueProcessor.this.context + "[.]", allowNullElements, false);
             this.array = EMPTY;
             this.len = 0;
         }
 
-        public int[] toArray() {
+        public double[] toArray() {
             if (array.length == len) {
                 return array;
             }
-            final int[] properSize = new int[len];
+            final double[] properSize = new double[len];
             System.arraycopy(array, 0, properSize, 0, len);
             return properSize;
         }
 
-        private void put(int value) {
+        private void put(double value) {
             array = ArrayUtil.put(array, len, value);
             ++len;
         }
 
         @Override
         protected void handleValueNumberInt(JsonParser parser) throws IOException {
-            put(parser.getIntValue());
+            put(parser.getDoubleValue());
+        }
+
+        @Override
+        protected void handleValueNumberFloat(JsonParser parser) throws IOException {
+            put(parser.getDoubleValue());
         }
 
         @Override
         protected void handleNull() {
-            put(QueryConstants.NULL_INT);
+            put(QueryConstants.NULL_DOUBLE);
         }
 
         @Override

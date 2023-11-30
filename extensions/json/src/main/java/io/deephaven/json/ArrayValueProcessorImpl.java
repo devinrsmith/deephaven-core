@@ -11,7 +11,8 @@ class ArrayValueProcessorImpl<V extends ValueProcessor> extends ArrayValueProces
     private final Supplier<V> supplier;
     private final Consumer<V> consumer;
 
-    public ArrayValueProcessorImpl(String contextPrefix, boolean allowNull, boolean allowMissing, Supplier<V> supplier, Consumer<V> consumer) {
+    public ArrayValueProcessorImpl(String contextPrefix, boolean allowNull, boolean allowMissing, Supplier<V> supplier,
+            Consumer<V> consumer) {
         super(contextPrefix, allowNull, allowMissing);
         this.supplier = supplier;
         this.consumer = consumer;

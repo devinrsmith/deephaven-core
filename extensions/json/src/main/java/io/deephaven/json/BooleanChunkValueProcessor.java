@@ -13,7 +13,8 @@ final class BooleanChunkValueProcessor extends ValueProcessorBase {
 
     private final WritableByteChunk<?> chunk;
 
-    BooleanChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableByteChunk<?> chunk) {
+    BooleanChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableByteChunk<?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

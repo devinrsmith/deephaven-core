@@ -10,7 +10,8 @@ import java.util.Objects;
 abstract class ObjectChunkValueProcessorBase<T> extends ValueProcessorBase {
     protected final WritableObjectChunk<T, ?> chunk;
 
-    ObjectChunkValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<T, ?> chunk) {
+    ObjectChunkValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<T, ?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

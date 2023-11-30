@@ -13,7 +13,8 @@ import java.util.Objects;
 final class ShortChunkValueProcessor extends ValueProcessorBase {
     private final WritableShortChunk<?> chunk;
 
-    ShortChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableShortChunk<?> chunk) {
+    ShortChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableShortChunk<?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

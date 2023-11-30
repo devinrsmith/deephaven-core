@@ -11,7 +11,8 @@ import java.math.BigInteger;
 
 final class BigIntegerChunkValueProcessor extends ObjectChunkValueProcessorBase<BigInteger> {
 
-    public BigIntegerChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<BigInteger, ?> chunk, BigInteger onNull, BigInteger onMissing) {
+    public BigIntegerChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<BigInteger, ?> chunk, BigInteger onNull, BigInteger onMissing) {
         super(contextPrefix, allowNull, allowMissing, chunk);
     }
 

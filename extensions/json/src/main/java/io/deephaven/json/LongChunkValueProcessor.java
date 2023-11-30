@@ -15,7 +15,8 @@ final class LongChunkValueProcessor extends ValueProcessorBase {
 
     private final WritableLongChunk<?> chunk;
 
-    LongChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableLongChunk<?> chunk, long onNull, long onMissing) {
+    LongChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableLongChunk<?> chunk,
+            long onNull, long onMissing) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

@@ -47,7 +47,8 @@ abstract class ValueProcessorBase implements ValueProcessor {
                 break;
             case VALUE_NULL:
                 if (!allowNull) {
-                    throw new IllegalStateException(String.format("[%s]: Unexpected null value, allowNull=false", context));
+                    throw new IllegalStateException(
+                            String.format("[%s]: Unexpected null value, allowNull=false", context));
                 }
                 handleNull();
                 break;
@@ -59,7 +60,8 @@ abstract class ValueProcessorBase implements ValueProcessor {
     @Override
     public final void processMissing() {
         if (!allowMissing) {
-            throw new IllegalStateException(String.format("[%s]: Unexpected missing value, allowMissing=false", context));
+            throw new IllegalStateException(
+                    String.format("[%s]: Unexpected missing value, allowMissing=false", context));
         }
         handleMissing();
     }
@@ -95,7 +97,7 @@ abstract class ValueProcessorBase implements ValueProcessor {
     protected void handleValueFalse(JsonParser parser) {
         throw unexpected(JsonToken.VALUE_FALSE);
     }
-    
+
     private IllegalStateException unexpected(JsonToken token) {
         return new IllegalStateException(String.format("[%s]: Unexpected token %s", context, token));
     }

@@ -14,7 +14,8 @@ import java.util.Objects;
 final class DoubleChunkValueProcessor extends ValueProcessorBase {
     private final WritableDoubleChunk<?> chunk;
 
-    DoubleChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableDoubleChunk<?> chunk) {
+    DoubleChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableDoubleChunk<?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

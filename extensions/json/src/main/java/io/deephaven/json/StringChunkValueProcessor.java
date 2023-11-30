@@ -9,7 +9,8 @@ import io.deephaven.chunk.WritableObjectChunk;
 import java.io.IOException;
 
 final class StringChunkValueProcessor extends ObjectChunkValueProcessorBase<String> {
-    public StringChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<String, ?> chunk) {
+    public StringChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableObjectChunk<String, ?> chunk) {
         super(contextPrefix, allowNull, allowMissing, chunk);
     }
 

@@ -15,7 +15,8 @@ final class FloatChunkValueProcessor extends ValueProcessorBase {
 
     private final WritableFloatChunk<?> chunk;
 
-    FloatChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableFloatChunk<?> chunk) {
+    FloatChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
+            WritableFloatChunk<?> chunk) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
     }

@@ -7,14 +7,15 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
+import java.util.Objects;
 
 abstract class ValueProcessorBase implements ValueProcessor {
-    protected final String contextPrefix;
+    protected final String context;
     private final boolean allowNull;
     private final boolean allowMissing;
 
-    ValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing) {
-        this.contextPrefix = contextPrefix;
+    ValueProcessorBase(String context, boolean allowNull, boolean allowMissing) {
+        this.context = Objects.requireNonNull(context);
         this.allowNull = allowNull;
         this.allowMissing = allowMissing;
     }
@@ -46,13 +47,21 @@ abstract class ValueProcessorBase implements ValueProcessor {
                 break;
             case VALUE_NULL:
                 if (!allowNull) {
-                    throw new IllegalStateException(String.format("%sUnexpected null, allowNull=false", contextPrefix));
+                    throw new IllegalStateException(String.format("[%s]: Unexpected null value, allowNull=false", context));
                 }
                 handleNull();
                 break;
             default:
-                throw new IllegalStateException(String.format("%sUnexpected token %s, expected VALUE_NUMBER_INT or VALUE_NULL", contextPrefix, token));
+                throw unexpected(token);
         }
+    }
+
+    @Override
+    public final void processMissing() {
+        if (!allowMissing) {
+            throw new IllegalStateException(String.format("[%s]: Unexpected missing value, allowMissing=false", context));
+        }
+        handleMissing();
     }
 
     protected abstract void handleNull();
@@ -60,38 +69,34 @@ abstract class ValueProcessorBase implements ValueProcessor {
     protected abstract void handleMissing();
 
     protected void handleValueObject(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_OBJECT", contextPrefix));
+        throw unexpected(JsonToken.START_OBJECT);
     }
 
     protected void handleValueArray(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_ARRAY", contextPrefix));
+        throw unexpected(JsonToken.START_ARRAY);
     }
 
     protected void handleValueString(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_STRING", contextPrefix));
+        throw unexpected(JsonToken.VALUE_STRING);
     }
 
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_NUMBER_INT", contextPrefix));
+        throw unexpected(JsonToken.VALUE_NUMBER_INT);
     }
 
     protected void handleValueNumberFloat(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_NUMBER_FLOAT", contextPrefix));
+        throw unexpected(JsonToken.VALUE_NUMBER_FLOAT);
     }
 
-    protected void handleValueTrue(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_TRUE", contextPrefix));
+    protected void handleValueTrue(JsonParser parser) {
+        throw unexpected(JsonToken.VALUE_TRUE);
     }
 
-    protected void handleValueFalse(JsonParser parser) throws IOException {
-        throw new IllegalStateException(String.format("%sUnexpected type VALUE_FALSE", contextPrefix));
+    protected void handleValueFalse(JsonParser parser) {
+        throw unexpected(JsonToken.VALUE_FALSE);
     }
-
-    @Override
-    public final void processMissing() {
-        if (!allowMissing) {
-            throw new IllegalStateException(String.format("%sUnexpected missing, allowMissing=false", contextPrefix));
-        }
-        handleMissing();
+    
+    private IllegalStateException unexpected(JsonToken token) {
+        return new IllegalStateException(String.format("[%s]: Unexpected token %s", context, token));
     }
 }

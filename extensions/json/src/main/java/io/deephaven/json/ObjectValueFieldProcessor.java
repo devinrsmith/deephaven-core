@@ -10,20 +10,21 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import static io.deephaven.json.Helpers.assertCurrentToken;
 
-final class ObjectValueProcessor extends ValueProcessorBase {
+final class ObjectValueFieldProcessor extends ValueProcessorBase {
     private final Map<String, ValueProcessor> fieldProcessors;
     private final ValueProcessor onUnknownFieldProcessor;
-    private final ValueProcessor onMultipleFieldProcessor;
+    private final ValueProcessor onRepeatedFieldProcessor;
 
-    ObjectValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, Map<String, ValueProcessor> fieldProcessors, ValueProcessor onUnknownFieldProcessor, ValueProcessor onMultipleFieldProcessor) {
+    ObjectValueFieldProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, Map<String, ValueProcessor> fieldProcessors, ValueProcessor onUnknownFieldProcessor, ValueProcessor onRepeatedFieldProcessor) {
         super(contextPrefix, allowNull, allowMissing);
-        this.fieldProcessors = Map.copyOf(fieldProcessors);
+        this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
         this.onUnknownFieldProcessor = onUnknownFieldProcessor;
-        this.onMultipleFieldProcessor = onMultipleFieldProcessor;
+        this.onRepeatedFieldProcessor = onRepeatedFieldProcessor;
     }
 
     @Override
@@ -38,9 +39,9 @@ final class ObjectValueProcessor extends ValueProcessorBase {
                     if (visited.add(fieldName)) {
                         // first time seeing this field name, process normally.
                         processor = knownProcessor;
-                    } else if (onMultipleFieldProcessor != null) {
+                    } else if (onRepeatedFieldProcessor != null) {
                         // todo: we could consider adding ValueProcessor#processMultiple(...)
-                        processor = onMultipleFieldProcessor;
+                        processor = onRepeatedFieldProcessor;
                     } else {
                         throw new IllegalStateException(String.format("Repeated field '%s'", fieldName));
                     }

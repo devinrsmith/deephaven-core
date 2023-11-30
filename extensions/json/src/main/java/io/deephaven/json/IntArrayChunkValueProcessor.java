@@ -6,26 +6,18 @@ package io.deephaven.json;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.IntArrayValueProcessor.ElementProcessor;
+import io.deephaven.json.IntArrayChunkValueProcessor.ElementProcessor;
+import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 
-class IntArrayValueProcessor extends ArrayValueProcessor<ElementProcessor> {
-    private static final int[] EMPTY_INT_ARRAY = new int[0];
-
-    private final WritableObjectChunk<int[], ?> chunk;
-    private final int[] onNull;
-    private final int[] onMissing;
+class IntArrayChunkValueProcessor extends ArrayObjectChunkValueProcessorBase<int[], ElementProcessor> {
+    private static final int[] EMPTY = new int[0];
     private final boolean allowNullElements;
-    private final int onNullElement;
 
-    IntArrayValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<int[], ?> chunk, int[] onNull, int[] onMissing, boolean allowNullElements, int onNullElement) {
-        super(contextPrefix, allowNull, allowMissing);
-        this.chunk = chunk;
-        this.onNull = onNull;
-        this.onMissing = onMissing;
+    public IntArrayChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableObjectChunk<int[], ?> chunk, boolean allowNullElements) {
+        super(contextPrefix, allowNull, allowMissing, chunk);
         this.allowNullElements = allowNullElements;
-        this.onNullElement = onNullElement;
     }
 
     @Override
@@ -38,24 +30,14 @@ class IntArrayValueProcessor extends ArrayValueProcessor<ElementProcessor> {
         chunk.add(valueProcessor.toArray());
     }
 
-    @Override
-    protected void handleNull() {
-        chunk.add(onNull);
-    }
-
-    @Override
-    protected void handleMissing() {
-        chunk.add(onMissing);
-    }
-
     class ElementProcessor extends ValueProcessorBase {
         private int[] array;
         private int len;
 
         public ElementProcessor() {
             // missing doesn't make sense in context of array
-            super("element." + IntArrayValueProcessor.this.contextPrefix, allowNullElements, false);
-            this.array = EMPTY_INT_ARRAY;
+            super(IntArrayChunkValueProcessor.this.context + "[.]", allowNullElements, false);
+            this.array = EMPTY;
             this.len = 0;
         }
 
@@ -68,16 +50,19 @@ class IntArrayValueProcessor extends ArrayValueProcessor<ElementProcessor> {
             return properSize;
         }
 
-        @Override
-        protected void handleValueNumberInt(JsonParser parser) throws IOException {
-            array = ArrayUtil.put(array, len, parser.getIntValue());
+        private void put(int value) {
+            array = ArrayUtil.put(array, len, value);
             ++len;
         }
 
         @Override
+        protected void handleValueNumberInt(JsonParser parser) throws IOException {
+            put(parser.getIntValue());
+        }
+
+        @Override
         protected void handleNull() {
-            array = ArrayUtil.put(array, len, onNullElement);
-            ++len;
+            put(QueryConstants.NULL_INT);
         }
 
         @Override

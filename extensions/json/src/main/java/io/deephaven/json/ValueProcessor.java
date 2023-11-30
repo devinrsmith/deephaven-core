@@ -9,6 +9,10 @@ import java.io.IOException;
 
 interface ValueProcessor {
 
+    static ValueProcessor skip() {
+        return SkipProcessor.INSTANCE;
+    }
+
     void processCurrentValue(JsonParser parser) throws IOException;
 
     void processMissing();

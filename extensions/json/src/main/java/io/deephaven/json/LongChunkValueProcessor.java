@@ -5,35 +5,33 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableIntChunk;
+import io.deephaven.chunk.WritableLongChunk;
+import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 import java.util.Objects;
 
-final class IntValueProcessorChunk extends ValueProcessorBase {
+final class LongChunkValueProcessor extends ValueProcessorBase {
 
-    private final WritableIntChunk<?> chunk;
-    private final int onNull;
-    private final int onMissing;
+    private final WritableLongChunk<?> chunk;
 
-    IntValueProcessorChunk(String contextPrefix, boolean allowNull, boolean allowMissing, WritableIntChunk<?> chunk, int onNull, int onMissing) {
+    LongChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing, WritableLongChunk<?> chunk, long onNull, long onMissing) {
         super(contextPrefix, allowNull, allowMissing);
         this.chunk = Objects.requireNonNull(chunk);
-        this.onNull = onNull;
-        this.onMissing = onMissing;
     }
 
     @Override
     public void handleValueNumberInt(JsonParser parser) throws IOException {
-        chunk.add(parser.getIntValue());
+        chunk.add(parser.getLongValue());
     }
 
     @Override
     public void handleNull() {
-        chunk.add(onNull);
+        chunk.add(QueryConstants.NULL_LONG);
     }
 
     @Override
     public void handleMissing() {
-        chunk.add(onMissing);
+        chunk.add(QueryConstants.NULL_LONG);
     }
 }

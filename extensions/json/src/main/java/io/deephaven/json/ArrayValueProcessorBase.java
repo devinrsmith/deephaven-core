@@ -8,19 +8,19 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
 
-abstract class ArrayValueProcessor<T extends ValueProcessor> extends ValueProcessorBase {
+abstract class ArrayValueProcessorBase<P extends ValueProcessor> extends ValueProcessorBase {
 
-    ArrayValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing) {
+    ArrayValueProcessorBase(String contextPrefix, boolean allowNull, boolean allowMissing) {
         super(contextPrefix, allowNull, allowMissing);
     }
 
-    protected abstract T start();
+    protected abstract P start();
 
-    protected abstract void end(T valueProcessor);
+    protected abstract void end(P valueProcessor);
 
     @Override
-    protected void handleValueArray(JsonParser parser) throws IOException {
-        final T elementProcessor = start();
+    protected final void handleValueArray(JsonParser parser) throws IOException {
+        final P elementProcessor = start();
         while (parser.nextToken() != JsonToken.END_ARRAY) {
             elementProcessor.processCurrentValue(parser);
         }

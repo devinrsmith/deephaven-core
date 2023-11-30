@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 // no builder
-final class SkipOpts extends FieldOptions {
+final class SkipOpts extends ValueOptions {
     @Override
     public boolean allowNull() {
         return true;

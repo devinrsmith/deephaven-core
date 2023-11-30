@@ -3,15 +3,17 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-public abstract class FieldOptions {
+public abstract class ValueOptions {
 
-    public static FieldOptions skip() {
+    public static ValueOptions skip() {
         return new SkipOpts();
     }
 
@@ -19,15 +21,18 @@ public abstract class FieldOptions {
 
     public abstract boolean allowMissing();
 
-    abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
-
+    // todo: what about multivariate?
     abstract Stream<Type<?>> outputTypes();
+
+    abstract Map<JsonToken, JsonToken> startEndTokens();
+
+    abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
 
     final int numColumns() {
         return (int) outputTypes().count();
     }
 
-    interface Builder<V extends FieldOptions, B extends Builder<V, B>> {
+    interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
         B allowNull(boolean allowNull);
 
         B allowMissing(boolean allowMissing);

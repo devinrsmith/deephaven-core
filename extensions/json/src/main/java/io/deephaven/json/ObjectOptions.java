@@ -3,6 +3,7 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class ObjectOpts extends FieldOptions {
+public abstract class ObjectOptions extends ValueOptions {
 
     public enum RepeatedFieldBehavior {
         USE_FIRST,
@@ -29,7 +30,7 @@ public abstract class ObjectOpts extends FieldOptions {
         return null;
     }
 
-    public abstract Map<String, FieldOptions> fieldProcessors();
+    public abstract Map<String, ValueOptions> fieldProcessors();
 
     @Override
     @Default
@@ -44,7 +45,7 @@ public abstract class ObjectOpts extends FieldOptions {
     }
 
     /**
-     * To be more selective, individual fields can be added with {@link FieldOptions#skip()} to {@link #fieldProcessors()}.
+     * To be more selective, individual fields can be added with {@link ValueOptions#skip()} to {@link #fieldProcessors()}.
      *
      * @return if unknown fields are allowed for {@code this} object
      */
@@ -63,8 +64,13 @@ public abstract class ObjectOpts extends FieldOptions {
     }
 
     @Override
+    final Map<JsonToken, JsonToken> startEndTokens() {
+        return Map.of(JsonToken.START_OBJECT, JsonToken.END_ARRAY);
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
-        return fieldProcessors().values().stream().flatMap(FieldOptions::outputTypes);
+        return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
     }
 
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
@@ -73,9 +79,9 @@ public abstract class ObjectOpts extends FieldOptions {
         }
         final Map<String, ValueProcessor> processors = new LinkedHashMap<>(fieldProcessors().size());
         int ix = 0;
-        for (Entry<String, FieldOptions> e : fieldProcessors().entrySet()) {
+        for (Entry<String, ValueOptions> e : fieldProcessors().entrySet()) {
             final String fieldName = e.getKey();
-            final FieldOptions opts = e.getValue();
+            final ValueOptions opts = e.getValue();
             final int numTypes = opts.numColumns();
             final ValueProcessor fieldProcessor = opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
             processors.put(fieldName, fieldProcessor);
@@ -93,7 +99,7 @@ public abstract class ObjectOpts extends FieldOptions {
                 repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
     }
 
-    public interface Builder extends FieldOptions.Builder<ObjectOpts, Builder> {
+    public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);

@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 import static io.deephaven.json.Helpers.assertCurrentToken;
 import static io.deephaven.json.Helpers.assertNextToken;
 
-public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> {
+public final class ObjectProcessorOptions implements ObjectProcessor<byte[]> {
     private final JsonFactory jsonFactory;
-    private final ObjectOptions opts;
+    private final ValueOptions opts;
 
-    public ObjectProcessorJsonObject(ObjectOptions opts, JsonFactory jsonFactory) {
+    public ObjectProcessorOptions(ValueOptions opts, JsonFactory jsonFactory) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory);
         this.opts = Objects.requireNonNull(opts);
     }
@@ -39,9 +39,13 @@ public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> 
         final ValueProcessor objectProcessor = opts.processor("<root>", out);
         for (int i = 0; i < in.size(); ++i) {
             try (final JsonParser parser = jsonFactory.createParser(in.get(i))) {
-                assertNextToken(parser, JsonToken.START_OBJECT);
+                final JsonToken startToken = parser.nextToken();
+                final JsonToken endToken = opts.startEndTokens().get(startToken);
+                if (endToken == null) {
+                    throw new IllegalStateException();
+                }
                 objectProcessor.processCurrentValue(parser);
-                assertCurrentToken(parser, JsonToken.END_OBJECT);
+                assertCurrentToken(parser, endToken);
                 assertNextToken(parser, null);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

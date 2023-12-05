@@ -16,6 +16,10 @@ import java.util.function.Function;
  */
 public interface TypedFunction<T> {
 
+    static <T, R> TypedFunction<T> map(Function<? super T, ? extends R> f, TypedFunction<? super R> g) {
+        return TypedFunctions.map2(f, g);
+    }
+
     /**
      * This function's return type.
      *

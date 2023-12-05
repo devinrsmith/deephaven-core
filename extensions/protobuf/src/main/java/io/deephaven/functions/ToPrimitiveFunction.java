@@ -5,6 +5,8 @@ package io.deephaven.functions;
 
 import io.deephaven.qst.type.PrimitiveType;
 
+import java.util.function.Function;
+
 /**
  * A function interface that allows for differentiation of primitive return types.
  *
@@ -19,6 +21,10 @@ import io.deephaven.qst.type.PrimitiveType;
  * @see ToDoubleFunction
  */
 public interface ToPrimitiveFunction<T> extends TypedFunction<T> {
+
+    static <T, R> ToPrimitiveFunction<T> map(Function<? super T, ? extends R> f, ToPrimitiveFunction<? super R> g) {
+        return PrimitiveFunctions.map2(f, g);
+    }
 
     @Override
     PrimitiveType<?> returnType();

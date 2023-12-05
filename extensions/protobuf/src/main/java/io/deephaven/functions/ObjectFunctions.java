@@ -76,7 +76,6 @@ class ObjectFunctions {
             return BooleanFunctions.of(g);
         }
 
-
         @Override
         public <T2> ToCharFunction<T2> mapToChar(ToCharFunction<? super Object> g) {
             return CharFunctions.cast(g);

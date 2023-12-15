@@ -10,7 +10,7 @@ class GenericArrayChunkValueProcessor<T> extends ArrayObjectChunkValueProcessorB
     private final boolean allowNullElements;
 
     public GenericArrayChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
-                                           WritableObjectChunk<T[], ?> chunk, boolean allowNullElements) {
+            WritableObjectChunk<T[], ?> chunk, boolean allowNullElements) {
         super(contextPrefix, allowNull, allowMissing, chunk);
         this.allowNullElements = allowNullElements;
     }
@@ -25,15 +25,15 @@ class GenericArrayChunkValueProcessor<T> extends ArrayObjectChunkValueProcessorB
 
     }
 
-    //    @Override
-//    protected ElementProcessor start() {
-//        return new ElementProcessor();
-//    }
-//
-//    @Override
-//    protected void end(ElementProcessor valueProcessor) {
-//        chunk.add(valueProcessor.toArray());
-//    }
+    // @Override
+    // protected ElementProcessor start() {
+    // return new ElementProcessor();
+    // }
+    //
+    // @Override
+    // protected void end(ElementProcessor valueProcessor) {
+    // chunk.add(valueProcessor.toArray());
+    // }
 
     static class ElementProcessor2 extends ValueProcessorBase {
         public ElementProcessor2(String context, boolean allowNull, boolean allowMissing) {

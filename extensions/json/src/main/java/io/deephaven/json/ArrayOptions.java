@@ -83,16 +83,16 @@ public abstract class ArrayOptions extends ValueOptions {
         }
 
 
-//        if (element() instanceof ObjectOptions) {
-//            final ObjectOptions elementObject = (ObjectOptions) element();
-//            final ObjectOptions.Builder builder = ObjectOptions.builder()
-//                    .allowNull(allowNull())
-//                    .allowMissing(allowMissing());
-//            for (Entry<String, ValueOptions> e : elementObject.fieldProcessors().entrySet()) {
-//                builder.putFieldProcessors(e.getKey(), e.getValue().toArrayOptions());
-//            }
-//            return builder.build().processor(context, out);
-//        }
+        // if (element() instanceof ObjectOptions) {
+        // final ObjectOptions elementObject = (ObjectOptions) element();
+        // final ObjectOptions.Builder builder = ObjectOptions.builder()
+        // .allowNull(allowNull())
+        // .allowMissing(allowMissing());
+        // for (Entry<String, ValueOptions> e : elementObject.fieldProcessors().entrySet()) {
+        // builder.putFieldProcessors(e.getKey(), e.getValue().toArrayOptions());
+        // }
+        // return builder.build().processor(context, out);
+        // }
 
 
         // todo: we should be abel to work w/ ObjectOptions and do arrays for each individual type
@@ -107,7 +107,8 @@ public abstract class ArrayOptions extends ValueOptions {
         Builder element(ValueOptions options);
     }
 
-    private class What implements Visitor<ValueProcessor>, PrimitiveType.Visitor<ValueProcessor>, GenericType.Visitor<ValueProcessor> {
+    private class What implements Visitor<ValueProcessor>, PrimitiveType.Visitor<ValueProcessor>,
+            GenericType.Visitor<ValueProcessor> {
         private final String context;
         private final List<WritableChunk<?>> out;
 

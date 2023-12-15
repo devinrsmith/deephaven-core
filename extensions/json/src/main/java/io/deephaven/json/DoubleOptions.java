@@ -4,15 +4,24 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonToken;
+import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
+import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class DoubleOptions extends ValueOptions {
+@Immutable
+@BuildableStyle
+public abstract class DoubleOptions extends ValueOptions {
+
+    public static DoubleOptions of() {
+        return builder().build();
+    }
+
     public static Builder builder() {
         return null;
     }

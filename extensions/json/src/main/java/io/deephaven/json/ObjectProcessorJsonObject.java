@@ -21,10 +21,19 @@ import static io.deephaven.json.Helpers.assertCurrentToken;
 import static io.deephaven.json.Helpers.assertNextToken;
 
 public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> {
+
+    public static ObjectProcessorJsonObject example() {
+        return new ObjectProcessorJsonObject(new JsonFactory(), ObjectOptions.builder()
+                .putFieldProcessors("timestamp", TimestampOptions.of())
+                .putFieldProcessors("age", IntOptions.of())
+                .putFieldProcessors("height", DoubleOptions.of())
+                .build());
+    }
+
     private final JsonFactory jsonFactory;
     private final ObjectOptions opts;
 
-    public ObjectProcessorJsonObject(ObjectOptions opts, JsonFactory jsonFactory) {
+    public ObjectProcessorJsonObject(JsonFactory jsonFactory, ObjectOptions opts) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory);
         this.opts = Objects.requireNonNull(opts);
     }

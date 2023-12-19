@@ -24,7 +24,7 @@ public final class ObjectProcessorJsonObjectArray implements ObjectProcessor<byt
     private final JsonFactory jsonFactory;
     private final ObjectOptions opts;
 
-    public ObjectProcessorJsonObjectArray(ObjectOptions opts, JsonFactory jsonFactory) {
+    public ObjectProcessorJsonObjectArray(JsonFactory jsonFactory, ObjectOptions opts) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory);
         this.opts = Objects.requireNonNull(opts);
     }
@@ -37,8 +37,6 @@ public final class ObjectProcessorJsonObjectArray implements ObjectProcessor<byt
     @Override
     public void processAll(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) {
         final ValueProcessor objectProcessor = opts.processor("<root>", out);
-
-
         for (int i = 0; i < in.size(); ++i) {
             try (final JsonParser parser = jsonFactory.createParser(in.get(i))) {
                 assertNextToken(parser, JsonToken.START_ARRAY);

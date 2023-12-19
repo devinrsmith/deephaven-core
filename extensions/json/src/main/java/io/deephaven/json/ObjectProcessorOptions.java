@@ -24,7 +24,7 @@ public final class ObjectProcessorOptions implements ObjectProcessor<byte[]> {
     private final JsonFactory jsonFactory;
     private final ValueOptions opts;
 
-    public ObjectProcessorOptions(ValueOptions opts, JsonFactory jsonFactory) {
+    public ObjectProcessorOptions(JsonFactory jsonFactory, ValueOptions opts) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory);
         this.opts = Objects.requireNonNull(opts);
     }

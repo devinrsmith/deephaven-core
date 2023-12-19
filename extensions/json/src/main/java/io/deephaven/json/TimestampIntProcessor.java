@@ -40,6 +40,7 @@ final class TimestampIntProcessor extends ValueProcessorBase {
 
     @Override
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
+        // todo: overflow?
         final long epochNanos = parser.getLongValue() * scale;
         chunk.add(epochNanos);
     }

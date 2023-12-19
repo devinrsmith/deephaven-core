@@ -16,14 +16,14 @@ import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class DoubleOptions extends ValueOptions {
+public abstract class StringOptions extends ValueOptions {
 
-    public static DoubleOptions of() {
+    public static StringOptions of() {
         return builder().build();
     }
 
     public static Builder builder() {
-        return ImmutableDoubleOptions.builder();
+        return ImmutableStringOptions.builder();
     }
 
     @Override
@@ -40,24 +40,20 @@ public abstract class DoubleOptions extends ValueOptions {
 
     @Override
     final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.doubleType());
+        return Stream.of(Type.stringType());
     }
 
     @Override
     final Map<JsonToken, JsonToken> startEndTokens() {
-        return Map.of(
-                JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_NUMBER_FLOAT,
-                JsonToken.VALUE_NUMBER_INT, JsonToken.VALUE_NUMBER_INT);
+        return Map.of(JsonToken.VALUE_STRING, JsonToken.VALUE_STRING);
     }
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new DoubleChunkValueProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableDoubleChunk());
+        return new StringChunkValueProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableObjectChunk());
     }
 
-
-
-    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
+    public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
 
     }
 }

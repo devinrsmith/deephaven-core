@@ -56,8 +56,12 @@ public abstract class TimestampOptions extends ValueOptions {
     }
 
     /**
-     * The date-time formatter to use, only applicable when {@link #format()} is {@link Format#DATE_TIME}. When not
-     * specified and {@code format() == DATE_TIME}, defaults to {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME}.
+     * The date-time formatter to use for {@link DateTimeFormatter#parse(CharSequence) parsing}, only applicable when
+     * {@link #format()} is {@link Format#DATE_TIME}. The parsed result must support extracting
+     * {@link java.time.temporal.ChronoField#INSTANT_SECONDS INSTANT_SECONDS} and
+     * {@link java.time.temporal.ChronoField#NANO_OF_SECOND NANO_OF_SECOND} fields. When not specified and
+     * {@code format() == DATE_TIME}, the implementation will default to using
+     * {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME}.
      *
      * @return the date-time formatter
      */

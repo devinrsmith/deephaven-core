@@ -10,6 +10,7 @@ import io.deephaven.util.QueryConstants;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.text.ParsePosition;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -33,9 +34,9 @@ final class TimestampProcessor extends ValueProcessorBase {
     }
 
     private long parseToEpochNanos(JsonParser parser) throws IOException {
-        final TemporalAccessor parsed = formatter.parse(textAsCharSequence(parser));
-        final long epochSeconds = parsed.getLong(ChronoField.INSTANT_SECONDS);
-        final int nanoOfSecond = parsed.get(ChronoField.NANO_OF_SECOND);
+        final TemporalAccessor accessor = formatter.parse(textAsCharSequence(parser));
+        final long epochSeconds = accessor.getLong(ChronoField.INSTANT_SECONDS);
+        final int nanoOfSecond = accessor.get(ChronoField.NANO_OF_SECOND);
         // todo: overflow
         // io.deephaven.time.DateTimeUtils.safeComputeNanos
         return epochSeconds * 1_000_000_000L + nanoOfSecond;

@@ -21,8 +21,8 @@ final class ObjectProcessorFilteredImpl<T> implements ObjectProcessorFiltered<T>
     private final int rowLimit;
 
     ObjectProcessorFilteredImpl(ObjectProcessor<T> delegate, Predicate<T> filter, int rowLimit) {
-        this.delegate = delegate;
-        this.filter = filter;
+        this.delegate = Objects.requireNonNull(delegate);
+        this.filter = Objects.requireNonNull(filter);
         this.rowLimit = rowLimit;
     }
 

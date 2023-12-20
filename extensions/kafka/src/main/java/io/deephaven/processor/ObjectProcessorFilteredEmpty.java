@@ -14,7 +14,7 @@ final class ObjectProcessorFilteredEmpty<T> implements ObjectProcessorFiltered<T
     private final List<Type<?>> types;
 
     ObjectProcessorFilteredEmpty(List<Type<?>> types) {
-        this.types = Objects.requireNonNull(types);
+        this.types = List.copyOf(types);
     }
 
     @Override

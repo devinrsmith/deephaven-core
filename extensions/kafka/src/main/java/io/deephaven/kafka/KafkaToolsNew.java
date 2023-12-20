@@ -3,6 +3,7 @@
  */
 package io.deephaven.kafka;
 
+import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.TypedFunction;
@@ -52,12 +53,30 @@ public class KafkaToolsNew {
     }
 
 
-    public static <K, V> Table of(KafkaOptions options, ObjectProcessor<ConsumerRecord<K, V>> processor,
+    public static <K, V> Table of(
+            KafkaOptions options,
+            ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;
     }
 
-    public static <K, V> Table of(KafkaOptions options, ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
+    public static <K, V> Table of(
+            KafkaOptions options,
+            ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
+            List<String> columnNames) {
+        return null;
+    }
+
+    public static <K, V> PartitionedTable ofPartitioned(
+            KafkaOptions options,
+            ObjectProcessor<ConsumerRecord<K, V>> processor,
+            List<String> columnNames) {
+        return null;
+    }
+
+    public static <K, V> PartitionedTable ofPartitioned(
+            KafkaOptions options,
+            ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;
     }

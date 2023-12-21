@@ -98,6 +98,7 @@ public interface ObjectProcessor<T> {
 
     /**
      * Creates a "map" object processor.
+     * 
      * @param f
      * @param delegate
      * @return the map object processor

@@ -23,7 +23,8 @@ public class What {
                 (ToLongFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::offset,
                 (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::leaderEpoch));
 
-        final ObjectProcessor<ConsumerRecord<?, V>> crv = ObjectProcessor.map(ConsumerRecordFunctions::value, valueProcessor);
+        final ObjectProcessor<ConsumerRecord<?, V>> crv =
+                ObjectProcessor.map(ConsumerRecordFunctions::value, valueProcessor);
 
         return ObjectProcessor.combined(List.of(common, crv));
     }

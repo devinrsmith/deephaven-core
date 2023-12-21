@@ -12,27 +12,19 @@ import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 public class What {
 
-    static <V> ObjectProcessor<ConsumerRecord<?, V>> test(
-            Predicate<ConsumerRecord<?, V>> predicate,
-            ObjectProcessor<ConsumerRecord<?, V>> valueProcessor) {
+    static <V> ObjectProcessor<ConsumerRecord<?, V>> test(ObjectProcessor<V> valueProcessor) {
 
-        final ObjectProcessor<ConsumerRecord<?, ?>> x = ObjectProcessorFunctions.of(List.of(
+        final ObjectProcessor<ConsumerRecord<?, ?>> common = ObjectProcessorFunctions.of(List.of(
                 ToObjectFunction.of(ConsumerRecordFunctions::topic, Type.stringType()),
                 (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::partition,
                 (ToLongFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::offset,
                 (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::leaderEpoch));
 
+        final ObjectProcessor<ConsumerRecord<?, V>> crv = ObjectProcessor.map(ConsumerRecordFunctions::value, valueProcessor);
 
-
-        final List<ObjectProcessor<? super ConsumerRecord<?, V>>> z = List.of(x, ToObjectFunction.map(null, null));
-        final ObjectProcessor<ConsumerRecord<?, V>> ret = ObjectProcessor.combined(z);
-        return ret;
-
-        // return ObjectProcessor.<ConsumerRecord<?, V>>combined(List.<ConsumerRecord<?, ? super V>>of(x,
-        // valueProcessor));
+        return ObjectProcessor.combined(List.of(common, crv));
     }
 }

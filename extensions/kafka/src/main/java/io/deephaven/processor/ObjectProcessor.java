@@ -21,6 +21,7 @@ import io.deephaven.qst.type.Type;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * An interface for processing data from one or more input objects into output chunks on a 1-to-1 input record to output
@@ -93,6 +94,18 @@ public interface ObjectProcessor<T> {
      */
     static <T> ObjectProcessor<T> combined(List<ObjectProcessor<? super T>> processors) {
         return new ObjectProcessorCombined<>(processors);
+    }
+
+    /**
+     * Creates a "map" object processor.
+     * @param f
+     * @param delegate
+     * @return the map object processor
+     * @param <T> the in
+     * @param <R>
+     */
+    static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
+        return new ObjectProcessorMap<>(f, delegate);
     }
 
     /**

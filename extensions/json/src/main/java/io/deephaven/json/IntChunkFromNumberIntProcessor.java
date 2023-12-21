@@ -4,27 +4,27 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import io.deephaven.chunk.WritableLongChunk;
-import io.deephaven.json.Functions.ToLong;
+import io.deephaven.chunk.WritableIntChunk;
+import io.deephaven.json.Functions.ToInt;
 
 import java.io.IOException;
 import java.util.Objects;
 
-final class LongChunkFromNumberIntProcessor extends LongChunkBase {
-    private final ToLong f;
+final class IntChunkFromNumberIntProcessor extends IntChunkBase {
+    private final ToInt f;
 
-    LongChunkFromNumberIntProcessor(
+    IntChunkFromNumberIntProcessor(
             String contextPrefix,
             boolean allowNull,
             boolean allowMissing,
-            WritableLongChunk<?> chunk,
-            long onNull, long onMissing, ToLong f) {
+            WritableIntChunk<?> chunk,
+            int onNull, int onMissing, ToInt f) {
         super(contextPrefix, allowNull, allowMissing, chunk, onNull, onMissing);
         this.f = Objects.requireNonNull(f);
     }
 
     @Override
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
-        chunk.add(f.applyAsLong(parser));
+        chunk.add(f.applyAsInt(parser));
     }
 }

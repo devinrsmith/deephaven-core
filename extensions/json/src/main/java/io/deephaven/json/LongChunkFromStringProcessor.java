@@ -18,13 +18,15 @@ final class LongChunkFromStringProcessor extends LongChunkBase {
             boolean allowNull,
             boolean allowMissing,
             WritableLongChunk<?> chunk,
-            long onNull, long onMissing, ToLong f) {
+            long onNull,
+            long onMissing,
+            ToLong f) {
         super(contextPrefix, allowNull, allowMissing, chunk, onNull, onMissing);
         this.f = Objects.requireNonNull(f);
     }
 
     @Override
     protected void handleValueString(JsonParser parser) throws IOException {
-        chunk.add(f.apply(parser));
+        chunk.add(f.applyAsLong(parser));
     }
 }

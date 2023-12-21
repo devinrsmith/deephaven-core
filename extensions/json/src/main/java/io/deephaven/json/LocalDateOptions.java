@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -24,7 +25,6 @@ import java.util.stream.Stream;
 @Immutable
 @BuildableStyle
 public abstract class LocalDateOptions extends ValueOptions {
-
 
     public static LocalDateOptions of() {
         return builder().build();
@@ -77,6 +77,20 @@ public abstract class LocalDateOptions extends ValueOptions {
         // TODO: consider improving this to long (like we do w/ Instant)
         return new ObjectChunkFromStringProcessor<>(context, allowNull(), allowMissing(),
                 out.get(0).asWritableObjectChunk(), onNull().orElse(null), onMissing().orElse(null), this::parse);
+    }
+
+    @Check
+    final void checkOnNull() {
+        if (!allowNull() && onNull().isPresent()) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void checkOnMissing() {
+        if (!allowMissing() && onMissing().isPresent()) {
+            throw new IllegalArgumentException();
+        }
     }
 
     private LocalDate parse(JsonParser parser) throws IOException {

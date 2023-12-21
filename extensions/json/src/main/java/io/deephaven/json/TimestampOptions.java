@@ -9,26 +9,22 @@ import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.Functions.ToLong;
 import io.deephaven.json.Functions.ToLong.Plain;
-import io.deephaven.json.LocalDateOptions.Builder;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
-import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class TimestampOptions2 extends ValueOptions {
+public abstract class TimestampOptions extends ValueOptions {
 
     public enum Format {
         EPOCH_SECONDS {
@@ -59,12 +55,12 @@ public abstract class TimestampOptions2 extends ValueOptions {
         abstract ToLong function();
     }
 
-    public static TimestampOptions2 of() {
+    public static TimestampOptions of() {
         return builder().build();
     }
 
     public static Builder builder() {
-        return ImmutableTimestampOptions2.builder();
+        return ImmutableTimestampOptions.builder();
     }
 
     @Override
@@ -114,7 +110,7 @@ public abstract class TimestampOptions2 extends ValueOptions {
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new LongChunkFromNumberIntProcessor(context, allowNull(), allowMissing(),
-                out.get(0).asWritableLongChunk(), format().function(), onNullOrDefault(), onMissingOrDefault());
+                out.get(0).asWritableLongChunk(), onNullOrDefault(), onMissingOrDefault(), format().function());
     }
 
     @Check
@@ -134,28 +130,28 @@ public abstract class TimestampOptions2 extends ValueOptions {
     enum ToNanos implements ToLong {
         FROM_SECONDS {
             @Override
-            public long apply(JsonParser parser) throws IOException {
+            public long applyAsLong(JsonParser parser) throws IOException {
                 // todo overflow
                 return parser.getLongValue() * 1_000_000_000;
             }
         },
         FROM_MILLIS {
             @Override
-            public long apply(JsonParser parser) throws IOException {
+            public long applyAsLong(JsonParser parser) throws IOException {
                 // todo overflow
                 return parser.getLongValue() * 1_000_000;
             }
         },
         FROM_MICROS {
             @Override
-            public long apply(JsonParser parser) throws IOException {
+            public long applyAsLong(JsonParser parser) throws IOException {
                 // todo overflow
                 return parser.getLongValue() * 1_000;
             }
         }
     }
 
-    public interface Builder extends ValueOptions.Builder<TimestampOptions2, Builder> {
+    public interface Builder extends ValueOptions.Builder<TimestampOptions, Builder> {
         Builder format(Format format);
 
         Builder onNull(Instant onNull);

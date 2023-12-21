@@ -46,6 +46,14 @@ public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
 
     @Override
     public void processAll(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) {
+        try {
+            processAllImpl(in, out);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void processAllImpl(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) throws IOException {
         final ValueProcessor objectProcessor = opts.processor("<root>", out);
         final Set<JsonToken> startTokens = opts.startTokens();
         for (int i = 0; i < in.size(); ++i) {
@@ -63,8 +71,6 @@ public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
                 objectProcessor.processCurrentValue(parser);
                 assertCurrentToken(parser, endToken(startToken));
                 assertNextToken(parser, null);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         }
     }

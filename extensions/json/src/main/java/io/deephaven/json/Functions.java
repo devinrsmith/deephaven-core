@@ -9,15 +9,29 @@ import java.io.IOException;
 
 public final class Functions {
 
+    public interface ToInt {
+
+        int applyAsInt(JsonParser parser) throws IOException;
+
+        enum Plain implements ToInt {
+            INT_VALUE;
+
+            @Override
+            public int applyAsInt(JsonParser parser) throws IOException {
+                return parser.getIntValue();
+            }
+        }
+    }
+
     public interface ToLong {
 
-        long apply(JsonParser parser) throws IOException;
+        long applyAsLong(JsonParser parser) throws IOException;
 
         enum Plain implements ToLong {
             LONG_VALUE;
 
             @Override
-            public long apply(JsonParser parser) throws IOException {
+            public long applyAsLong(JsonParser parser) throws IOException {
                 return parser.getLongValue();
             }
         }

@@ -3,17 +3,26 @@
  */
 package io.deephaven.kafka.v2;
 
-import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ObjectProcessorFiltered;
 import io.deephaven.processor.functions.ObjectProcessorFunctions;
+import io.deephaven.qst.column.header.ColumnHeader;
+import io.deephaven.qst.type.Type;
+import io.deephaven.stream.StreamPublisher;
+import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class KafkaToolsNew {
 
@@ -36,6 +45,15 @@ public class KafkaToolsNew {
             Options<K, V> options,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
+
+
+        final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());
+        final StreamPublisher streamPublisher = null;
+        final UpdateSourceRegistrar updateSourceRegistrar = null;
+        final String name = null;
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, streamPublisher, updateSourceRegistrar, name);
+
+
         return null;
     }
 
@@ -46,17 +64,18 @@ public class KafkaToolsNew {
         return null;
     }
 
-    public static <K, V> PartitionedTable ofPartitioned(
-            Options<K, V> options,
-            ObjectProcessor<ConsumerRecord<K, V>> processor,
-            List<String> columnNames) {
-        return null;
-    }
+    public static TableDefinition of(Map<String, Type<?>> map) {
 
-    public static <K, V> PartitionedTable ofPartitioned(
-            Options<K, V> options,
-            ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
-            List<String> columnNames) {
-        return null;
+        final Iterator<? extends ColumnHeader<?>> it = map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
+
+        final Iterable<? extends ColumnHeader<?>> headers = new Iterable<ColumnHeader<?>>() {
+            @NotNull
+            @Override
+            public Iterator<ColumnHeader<?>> iterator() {
+                final Iterator<? extends ColumnHeader<?>> actual = map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
+                return actual;
+            }
+        };
+        return TableDefinition.from(headers);
     }
 }

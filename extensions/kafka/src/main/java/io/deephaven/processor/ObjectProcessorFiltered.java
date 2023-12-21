@@ -26,5 +26,6 @@ public interface ObjectProcessorFiltered<T> {
 
     List<Type<?>> outputTypes();
 
+    // todo: should we return a bitset? probably not?
     int processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 }

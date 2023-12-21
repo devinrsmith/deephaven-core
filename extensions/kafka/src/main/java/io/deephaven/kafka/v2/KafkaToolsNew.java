@@ -1,42 +1,21 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.kafka;
+package io.deephaven.kafka.v2;
 
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
-import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ObjectProcessorFiltered;
 import io.deephaven.processor.functions.ObjectProcessorFunctions;
-import io.deephaven.qst.type.GenericType;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 public class KafkaToolsNew {
-
-    public abstract class KafkaOptions {
-        /*
-         * @NotNull final Properties kafkaProperties,
-         * 
-         * @NotNull final String topic,
-         * 
-         * @NotNull final IntPredicate partitionFilter,
-         * 
-         * @NotNull final IntToLongFunction partitionToInitialOffset,
-         * 
-         * @NotNull final Consume.KeyOrValueSpec keySpec,
-         * 
-         * @NotNull final Consume.KeyOrValueSpec valueSpec,
-         * 
-         * @NotNull final TableType tableType
-         */
-    }
 
     public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> of(
             Collection<TypedFunction<? super ConsumerRecord<?, ?>>> recordFunctions,
@@ -54,28 +33,28 @@ public class KafkaToolsNew {
 
 
     public static <K, V> Table of(
-            KafkaOptions options,
+            Options<K, V> options,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;
     }
 
     public static <K, V> Table of(
-            KafkaOptions options,
+            Options<K, V> options,
             ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;
     }
 
     public static <K, V> PartitionedTable ofPartitioned(
-            KafkaOptions options,
+            Options<K, V> options,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;
     }
 
     public static <K, V> PartitionedTable ofPartitioned(
-            KafkaOptions options,
+            Options<K, V> options,
             ObjectProcessorFiltered<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         return null;

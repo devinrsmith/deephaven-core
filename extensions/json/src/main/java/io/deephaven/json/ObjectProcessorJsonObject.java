@@ -20,11 +20,15 @@ import java.util.stream.Collectors;
 import static io.deephaven.json.Helpers.assertCurrentToken;
 import static io.deephaven.json.Helpers.assertNextToken;
 
+/**
+ * @deprecated see {@link ObjectProcessorJsonValue}
+ */
+@Deprecated
 public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> {
 
     public static ObjectProcessorJsonObject example() {
         return new ObjectProcessorJsonObject(new JsonFactory(), ObjectOptions.builder()
-                .putFieldProcessors("timestamp", TimestampOptions.of())
+                .putFieldProcessors("timestamp", DateTimeOptions.of())
                 .putFieldProcessors("age", IntOptions.of())
                 .putFieldProcessors("height", DoubleOptions.of())
                 .build());

@@ -9,11 +9,11 @@ import io.deephaven.chunk.WritableObjectChunk;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-final class BigDecimalChunkValueProcessor extends ObjectChunkValueProcessorBase<BigDecimal> {
+final class BigDecimalChunkValueProcessor extends ObjectChunkBase<BigDecimal> {
 
     public BigDecimalChunkValueProcessor(String contextPrefix, boolean allowNull, boolean allowMissing,
-            WritableObjectChunk<BigDecimal, ?> chunk) {
-        super(contextPrefix, allowNull, allowMissing, chunk);
+            WritableObjectChunk<BigDecimal, ?> chunk, BigDecimal onNull, BigDecimal onMissing) {
+        super(contextPrefix, allowNull, allowMissing, chunk, onNull, onMissing);
     }
 
     @Override

@@ -12,6 +12,10 @@ dependencies {
 
     // todo: we want to move processor somewhere general
     api project(':extensions-kafka')
+
+    Classpaths.inheritJUnitPlatform(project)
+    Classpaths.inheritAssertJ(project)
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {

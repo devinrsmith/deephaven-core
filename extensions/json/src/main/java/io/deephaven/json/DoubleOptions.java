@@ -12,6 +12,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -44,10 +45,8 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     @Override
-    final Map<JsonToken, JsonToken> startEndTokens() {
-        return Map.of(
-                JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_NUMBER_FLOAT,
-                JsonToken.VALUE_NUMBER_INT, JsonToken.VALUE_NUMBER_INT);
+    final Set<JsonToken> startTokens() {
+        return Set.of(JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_NUMBER_INT);
     }
 
     @Override

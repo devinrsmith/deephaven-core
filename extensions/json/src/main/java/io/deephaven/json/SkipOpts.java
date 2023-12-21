@@ -9,20 +9,15 @@ import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 // no builder
 final class SkipOpts extends ValueOptions {
 
-    private static final Map<JsonToken, JsonToken> TOKENS = Map.of(
-            JsonToken.START_OBJECT, JsonToken.END_OBJECT,
-            JsonToken.START_ARRAY, JsonToken.END_ARRAY,
-            JsonToken.VALUE_STRING, JsonToken.VALUE_STRING,
-            JsonToken.VALUE_NUMBER_INT, JsonToken.VALUE_NUMBER_INT,
-            JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_NUMBER_FLOAT,
-            JsonToken.VALUE_TRUE, JsonToken.VALUE_TRUE,
-            JsonToken.VALUE_FALSE, JsonToken.VALUE_FALSE,
-            JsonToken.VALUE_NULL, JsonToken.VALUE_NULL);
+    private static final Set<JsonToken> START_TOKENS =
+            Set.of(JsonToken.START_OBJECT, JsonToken.START_ARRAY, JsonToken.VALUE_STRING, JsonToken.VALUE_NUMBER_INT,
+                    JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_TRUE, JsonToken.VALUE_FALSE, JsonToken.VALUE_NULL);
 
     @Override
     public boolean allowNull() {
@@ -40,8 +35,8 @@ final class SkipOpts extends ValueOptions {
     }
 
     @Override
-    Map<JsonToken, JsonToken> startEndTokens() {
-        return TOKENS;
+    Set<JsonToken> startTokens() {
+        return START_TOKENS;
     }
 
     @Override

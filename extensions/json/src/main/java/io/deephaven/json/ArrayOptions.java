@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -72,8 +73,8 @@ public abstract class ArrayOptions extends ValueOptions {
     }
 
     @Override
-    final Map<JsonToken, JsonToken> startEndTokens() {
-        return Map.of(JsonToken.START_ARRAY, JsonToken.END_ARRAY);
+    final Set<JsonToken> startTokens() {
+        return Set.of(JsonToken.START_ARRAY);
     }
 
     @Override

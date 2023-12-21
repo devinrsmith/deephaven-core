@@ -9,6 +9,7 @@ import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public abstract class ValueOptions {
@@ -30,7 +31,7 @@ public abstract class ValueOptions {
     // todo: what about multivariate?
     abstract Stream<Type<?>> outputTypes();
 
-    abstract Map<JsonToken, JsonToken> startEndTokens();
+    abstract Set<JsonToken> startTokens();
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
 

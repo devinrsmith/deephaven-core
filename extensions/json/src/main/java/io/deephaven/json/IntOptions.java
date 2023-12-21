@@ -12,6 +12,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -20,6 +21,10 @@ public abstract class IntOptions extends ValueOptions {
 
     public static IntOptions of() {
         return builder().build();
+    }
+
+    public static IntOptions ofStrict() {
+        return builder().allowNull(false).allowMissing(false).build();
     }
 
     public static Builder builder() {
@@ -44,8 +49,8 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     @Override
-    final Map<JsonToken, JsonToken> startEndTokens() {
-        return Map.of(JsonToken.VALUE_NUMBER_INT, JsonToken.VALUE_NUMBER_INT);
+    final Set<JsonToken> startTokens() {
+        return Set.of(JsonToken.VALUE_NUMBER_INT);
     }
 
     @Override

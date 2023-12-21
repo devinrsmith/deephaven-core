@@ -27,8 +27,8 @@ public class HomeAssistant {
                 .putFieldProcessors("entity_id", StringOptions.of())
                 .putFieldProcessors("state", StringOptions.of())
                 .putFieldProcessors("attributes", attributes())
-                .putFieldProcessors("last_changed", TimestampOptions.of())
-                .putFieldProcessors("last_updated", TimestampOptions.of())
+                .putFieldProcessors("last_changed", DateTimeOptions.of())
+                .putFieldProcessors("last_updated", DateTimeOptions.of())
                 .putFieldProcessors("context", context())
                 .build();
     }

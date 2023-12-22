@@ -6,12 +6,15 @@ package io.deephaven.json;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.Functions.ToDouble.Plain;
 import io.deephaven.qst.type.Type;
+import io.deephaven.util.QueryConstants;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -21,6 +24,10 @@ public abstract class DoubleOptions extends ValueOptions {
 
     public static DoubleOptions of() {
         return builder().build();
+    }
+
+    public static DoubleOptions ofStrict() {
+        return builder().allowNull(false).allowMissing(false).build();
     }
 
     public static Builder builder() {
@@ -39,6 +46,10 @@ public abstract class DoubleOptions extends ValueOptions {
         return true;
     }
 
+    public abstract OptionalDouble onNull();
+
+    public abstract OptionalDouble onMissing();
+
     @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.doubleType());
@@ -51,12 +62,30 @@ public abstract class DoubleOptions extends ValueOptions {
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new DoubleChunkValueProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableDoubleChunk());
+        return new DoubleChunkFromNumberFloatProcessor(context, allowNull(), allowMissing(),
+                out.get(0).asWritableDoubleChunk(), onNull().orElse(QueryConstants.NULL_DOUBLE),
+                onMissing().orElse(QueryConstants.NULL_DOUBLE), Plain.DOUBLE_VALUE);
     }
 
+    @Check
+    final void checkOnNull() {
+        if (!allowNull() && onNull().isPresent()) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void checkOnMissing() {
+        if (!allowMissing() && onMissing().isPresent()) {
+            throw new IllegalArgumentException();
+        }
+    }
 
 
     public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
 
+        Builder onNull(double onNull);
+
+        Builder onMissing(double onMissing);
     }
 }

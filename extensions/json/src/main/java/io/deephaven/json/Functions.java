@@ -37,6 +37,20 @@ public final class Functions {
         }
     }
 
+    public interface ToDouble {
+
+        double applyAsDouble(JsonParser parser) throws IOException;
+
+        enum Plain implements ToDouble {
+            DOUBLE_VALUE;
+
+            @Override
+            public double applyAsDouble(JsonParser parser) throws IOException {
+                return parser.getDoubleValue();
+            }
+        }
+    }
+
     public interface ToObject<T> {
 
         T apply(JsonParser parser) throws IOException;

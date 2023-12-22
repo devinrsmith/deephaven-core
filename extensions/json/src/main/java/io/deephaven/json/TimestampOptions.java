@@ -109,6 +109,11 @@ public abstract class TimestampOptions extends ValueOptions {
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+
+        ToLongImpl.builder()
+                .onNumberInt(format().function())
+                .build();
+
         return new LongChunkFromNumberIntProcessor(context, allowNull(), allowMissing(),
                 out.get(0).asWritableLongChunk(), onNullOrDefault(), onMissingOrDefault(), format().function());
     }

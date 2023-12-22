@@ -14,12 +14,12 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
+import java.lang.Runtime.Version;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 @BuildableStyle
 public abstract class DateTimeOptions extends ValueOptions {
 
+    private static final Version VERSION_12 = Version.parse("12");
 
     public static DateTimeOptions of() {
         return builder().build();
@@ -65,13 +66,18 @@ public abstract class DateTimeOptions extends ValueOptions {
      * The date-time formatter to use for {@link DateTimeFormatter#parse(CharSequence) parsing}. The parsed result must
      * support extracting {@link java.time.temporal.ChronoField#INSTANT_SECONDS INSTANT_SECONDS} and
      * {@link java.time.temporal.ChronoField#NANO_OF_SECOND NANO_OF_SECOND} fields. Defaults to
-     * {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME}.
+     * {@link DateTimeFormatter#ISO_INSTANT} for java versions 12+, and {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME}
+     * otherwise. These defaults will parse offsets, converting to UTC as necessary.
      *
      * @return the date-time formatter
      */
     @Default
     public DateTimeFormatter dateTimeFormatter() {
-        return DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+        // ISO_INSTANT became more versatile in 12+ (handling the parsing of offsets), and is likely more efficient, so
+        // we should choose to use it when we can.
+        return Runtime.version().compareTo(VERSION_12) >= 0
+                ? DateTimeFormatter.ISO_INSTANT
+                : DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     }
 
     @Override
@@ -95,6 +101,12 @@ public abstract class DateTimeOptions extends ValueOptions {
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+
+        ToLongImpl.builder()
+                .onNumberInt(null)
+                .onString(this::parse)
+                .build();
+
         return new LongChunkFromStringProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableLongChunk(),
                 onNullOrDefault(), onMissingOrDefault(), this::parse);
     }

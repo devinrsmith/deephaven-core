@@ -73,7 +73,6 @@ public abstract class ObjectOptions extends ValueOptions {
         return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
     }
 
-
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();

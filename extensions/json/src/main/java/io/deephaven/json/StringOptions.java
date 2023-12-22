@@ -3,10 +3,10 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Functions.ToObject.Plain;
+import io.deephaven.json.Function.ToObject;
+import io.deephaven.json.Function.ToObject.Plain;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -14,25 +14,19 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class StringOptions extends ValueOptions {
+public abstract class StringOptions extends SingleValueOptions<String, ToObject<String>> {
 
     public static StringOptions of() {
         return builder().build();
     }
 
     public static Builder builder() {
-        return ImmutableStringOptions.builder();
-    }
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
+        return null;
+        // return ImmutableStringOptions.builder();
     }
 
     @Override
@@ -43,7 +37,6 @@ public abstract class StringOptions extends ValueOptions {
 
     public abstract Optional<String> onNull();
 
-    public abstract Optional<String> onMissing();
 
     @Override
     final Stream<Type<?>> outputTypes() {
@@ -51,32 +44,28 @@ public abstract class StringOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.VALUE_STRING);
-    }
-
-    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectChunkFromStringProcessor<>(context, allowMissing(), allowMissing(),
-                out.get(0).asWritableObjectChunk(), onNull().orElse(null), onMissing().orElse(null),
-                Plain.STRING_VALUE);
+        return null;
+        // return new ObjectChunkFromStringProcessor<>(context, allowMissing(), allowMissing(),
+        // out.get(0).asWritableObjectChunk(), onNull().orElse(null), onMissing().orElse(null),
+        // Plain.STRING_VALUE);
     }
 
     @Check
     final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
+        // if (!allowNull() && onNull().isPresent()) {
+        // throw new IllegalArgumentException();
+        // }
     }
 
     @Check
     final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
+        // if (!allowMissing() && onMissing().isPresent()) {
+        // throw new IllegalArgumentException();
+        // }
     }
 
-    public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
+    public interface Builder extends SingleValueOptions.Builder<String, ToObject<String>, StringOptions, Builder> {
 
     }
 }

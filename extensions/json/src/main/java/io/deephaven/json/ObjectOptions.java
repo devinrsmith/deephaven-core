@@ -3,7 +3,6 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -14,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -30,12 +28,6 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     public abstract Map<String, ValueOptions> fieldProcessors();
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
-    }
 
     @Override
     @Default
@@ -64,11 +56,6 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.START_OBJECT);
-    }
-
-    @Override
     final Stream<Type<?>> outputTypes() {
         return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
     }
@@ -91,13 +78,14 @@ public abstract class ObjectOptions extends ValueOptions {
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
-        return new ObjectValueFieldProcessor(
-                context,
-                allowNull(),
-                allowMissing(),
-                processors,
-                allowUnknownFields() ? ValueProcessor.skip() : null,
-                repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
+        return null;
+        // return new ObjectValueFieldProcessor(
+        // context,
+        // allowNull(),
+        // allowMissing(),
+        // processors,
+        // allowUnknownFields() ? ValueProcessor.skip() : null,
+        // repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
     }
 
     public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {

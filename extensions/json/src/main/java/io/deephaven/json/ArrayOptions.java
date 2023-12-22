@@ -3,10 +3,8 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ObjectOptions.Builder;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;
@@ -28,10 +26,7 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -39,16 +34,11 @@ import java.util.stream.Stream;
 public abstract class ArrayOptions extends ValueOptions {
 
     public static Builder builder() {
-        return ImmutableArrayOptions.builder();
+        return null;
+        // return ImmutableArrayOptions.builder();
     }
 
     public abstract ValueOptions element();
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
-    }
 
     @Override
     @Default
@@ -70,11 +60,6 @@ public abstract class ArrayOptions extends ValueOptions {
             throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");
         }
         return element().outputTypes().map(Type::arrayType);
-    }
-
-    @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.START_ARRAY);
     }
 
     @Override
@@ -150,8 +135,9 @@ public abstract class ArrayOptions extends ValueOptions {
 
         @Override
         public ValueProcessor visit(IntType intType) {
-            return new IntArrayChunkValueProcessor(
-                    context, allowNull(), allowMissing(), out.get(0).asWritableObjectChunk(), element().allowNull());
+            return null;
+            // return new IntArrayChunkValueProcessor(
+            // context, allowNull(), allowMissing(), out.get(0).asWritableObjectChunk(), element().allowNull());
         }
 
         @Override
@@ -166,8 +152,9 @@ public abstract class ArrayOptions extends ValueOptions {
 
         @Override
         public ValueProcessor visit(DoubleType doubleType) {
-            return new DoubleArrayChunkValueProcessor(
-                    context, allowNull(), allowMissing(), out.get(0).asWritableObjectChunk(), element().allowNull());
+            return null;
+            // return new DoubleArrayChunkValueProcessor(
+            // context, allowNull(), allowMissing(), out.get(0).asWritableObjectChunk(), element().allowNull());
         }
 
         @Override

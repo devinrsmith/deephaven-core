@@ -3,8 +3,11 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.json.GenericArrayChunkValueProcessor.ElementProcessor2;
+
+import java.io.IOException;
 
 class GenericArrayChunkValueProcessor<T> extends ArrayObjectChunkValueProcessorBase<T[], ElementProcessor2> {
     private final boolean allowNullElements;
@@ -41,12 +44,12 @@ class GenericArrayChunkValueProcessor<T> extends ArrayObjectChunkValueProcessorB
         }
 
         @Override
-        protected void handleNull() {
+        protected void handleNull(JsonParser parser) throws IOException {
 
         }
 
         @Override
-        protected void handleMissing() {
+        protected void handleMissing(JsonParser parser) throws IOException {
 
         }
     }

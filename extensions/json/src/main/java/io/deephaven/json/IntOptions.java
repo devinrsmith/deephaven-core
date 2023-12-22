@@ -3,10 +3,9 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Functions.ToInt.Plain;
+import io.deephaven.json.Function.ToInt.Plain;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
@@ -15,7 +14,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -27,17 +25,13 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     public static IntOptions ofStrict() {
-        return builder().allowNull(false).allowMissing(false).build();
+        return null;
+        // return builder().allowNull(false).allowMissing(false).build();
     }
 
     public static Builder builder() {
-        return ImmutableIntOptions.builder();
-    }
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
+        return null;
+        // return ImmutableIntOptions.builder();
     }
 
     @Override
@@ -58,29 +52,26 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.VALUE_NUMBER_INT);
-    }
-
-    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new IntChunkFromNumberIntProcessor(context, allowNull(), allowMissing(), out.get(0).asWritableIntChunk(),
-                onNull().orElse(QueryConstants.NULL_INT), onMissing().orElse(QueryConstants.NULL_INT), Plain.INT_VALUE);
+        return null;
+        // return new IntChunkFromNumberIntProcessor(context, allowNull(), allowMissing(),
+        // out.get(0).asWritableIntChunk(),
+        // onNull().orElse(QueryConstants.NULL_INT), onMissing().orElse(QueryConstants.NULL_INT), Plain.INT_VALUE);
     }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
+    // @Check
+    // final void checkOnNull() {
+    // if (!allowNull() && onNull().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
+    //
+    // @Check
+    // final void checkOnMissing() {
+    // if (!allowMissing() && onMissing().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
 
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
 

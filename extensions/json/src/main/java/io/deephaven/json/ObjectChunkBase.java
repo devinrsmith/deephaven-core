@@ -3,8 +3,10 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableObjectChunk;
 
+import java.io.IOException;
 import java.util.Objects;
 
 abstract class ObjectChunkBase<T> extends ValueProcessorBase {
@@ -21,12 +23,12 @@ abstract class ObjectChunkBase<T> extends ValueProcessorBase {
     }
 
     @Override
-    public final void handleNull() {
+    public final void handleNull(JsonParser parser) throws IOException {
         chunk.add(onNull);
     }
 
     @Override
-    public final void handleMissing() {
+    public final void handleMissing(JsonParser parser) throws IOException {
         chunk.add(onMissing);
     }
 }

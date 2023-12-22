@@ -3,9 +3,8 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.exc.InputCoercionException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.chunk.DoubleChunk;
-import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -19,102 +18,97 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 public class DoubleOptionsTest {
 
     @Test
-    void of() throws IOException {
-        parse(DoubleOptions.of(), List.of("42", "42.42"), DoubleChunk.chunkWrap(new double[] {42, 42.42}));
+    void standard() throws IOException {
+        parse(DoubleOptions.standard(), List.of("42", "42.42"), DoubleChunk.chunkWrap(new double[] {42, 42.42}));
     }
 
     @Test
-    void ofMissing() throws IOException {
-        parse(DoubleOptions.of(), "", DoubleChunk.chunkWrap(new double[] {QueryConstants.NULL_DOUBLE}));
+    void standardMissing() throws IOException {
+        parse(DoubleOptions.standard(), "", DoubleChunk.chunkWrap(new double[] {QueryConstants.NULL_DOUBLE}));
     }
 
     @Test
-    void ofNull() throws IOException {
-        parse(DoubleOptions.of(), "null", DoubleChunk.chunkWrap(new double[] {QueryConstants.NULL_DOUBLE}));
+    void standardNull() throws IOException {
+        parse(DoubleOptions.standard(), "null", DoubleChunk.chunkWrap(new double[] {QueryConstants.NULL_DOUBLE}));
     }
 
     @Test
-    void ofMissingCustom() throws IOException {
-        parse(DoubleOptions.builder().onMissing(-1).build(), "", DoubleChunk.chunkWrap(new double[] {-1}));
+    void customMissing() throws IOException {
+        parse(DoubleOptions.builder().onMissing(-1.0).build(), "", DoubleChunk.chunkWrap(new double[] {-1}));
     }
 
     @Test
-    void ofNullCustom() throws IOException {
-        parse(DoubleOptions.builder().onNull(-2).build(), "null", DoubleChunk.chunkWrap(new double[] {-2}));
+    void strict() throws IOException {
+        parse(DoubleOptions.strict(), "42", DoubleChunk.chunkWrap(new double[] {42}));
     }
 
     @Test
-    void ofStrict() throws IOException {
-        parse(DoubleOptions.ofStrict(), "42", DoubleChunk.chunkWrap(new double[] {42}));
-    }
-
-    @Test
-    void ofStrictMissing() throws IOException {
+    void strictMissing() throws IOException {
         try {
-            parse(DoubleOptions.ofStrict(), "", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("[<root>]: Unexpected missing value, allowMissing=false");
+            parse(DoubleOptions.strict(), "", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Missing token");
         }
     }
 
     @Test
-    void ofStrictNull() throws IOException {
+    void strictNull() throws IOException {
         try {
-            parse(DoubleOptions.ofStrict(), "null", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("[<root>]: Unexpected null value, allowNull=false");
+            parse(DoubleOptions.strict(), "null", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_NULL'");
         }
     }
 
     @Test
-    void ofString() throws IOException {
+    void standardString() throws IOException {
         try {
-            parse(DoubleOptions.of(), "\"42\"", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("Unexpected start token 'VALUE_STRING'");
+            parse(DoubleOptions.standard(), "\"42\"", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_STRING'");
         }
     }
 
     @Test
-    void ofTrue() throws IOException {
+    void standardTrue() throws IOException {
         try {
-            parse(DoubleOptions.of(), "true", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("Unexpected start token 'VALUE_TRUE'");
+            parse(DoubleOptions.standard(), "true", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_TRUE'");
         }
     }
 
     @Test
-    void ofFalse() throws IOException {
+    void standardFalse() throws IOException {
         try {
-            parse(DoubleOptions.of(), "false", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("Unexpected start token 'VALUE_FALSE'");
+            parse(DoubleOptions.standard(), "false", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_FALSE'");
         }
     }
 
     @Test
-    void ofObject() throws IOException {
+    void standardObject() throws IOException {
         try {
-            parse(DoubleOptions.of(), "{}", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("Unexpected start token 'START_OBJECT'");
+            parse(DoubleOptions.standard(), "{}", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'START_OBJECT'");
         }
     }
 
     @Test
-    void ofArray() throws IOException {
+    void standardArray() throws IOException {
         try {
-            parse(DoubleOptions.of(), "[]", DoubleChunk.chunkWrap(new double[1]));
-            failBecauseExceptionWasNotThrown(IllegalStateException.class);
-        } catch (IllegalStateException e) {
-            assertThat(e).hasMessageContaining("Unexpected start token 'START_ARRAY'");
+            parse(DoubleOptions.standard(), "[]", DoubleChunk.chunkWrap(new double[1]));
+            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
+        } catch (MismatchedInputException e) {
+            assertThat(e).hasMessageContaining("Not expecting token 'START_ARRAY'");
         }
     }
 }

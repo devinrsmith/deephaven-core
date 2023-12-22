@@ -4,14 +4,12 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Functions.ToLong;
-import io.deephaven.json.Functions.ToLong.Plain;
+import io.deephaven.json.Function.ToLong;
+import io.deephaven.json.Function.ToLong.Parser;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -19,7 +17,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -48,7 +45,7 @@ public abstract class TimestampOptions extends ValueOptions {
         EPOCH_NANOS {
             @Override
             ToLong function() {
-                return Plain.LONG_VALUE;
+                return Parser.LONG_VALUE;
             }
         };
 
@@ -60,13 +57,8 @@ public abstract class TimestampOptions extends ValueOptions {
     }
 
     public static Builder builder() {
-        return ImmutableTimestampOptions.builder();
-    }
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
+        return null;
+        // return ImmutableTimestampOptions.builder();
     }
 
     @Override
@@ -103,34 +95,30 @@ public abstract class TimestampOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.VALUE_NUMBER_INT);
-    }
-
-    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
 
-        ToLongImpl.builder()
-                .onNumberInt(format().function())
-                .build();
-
-        return new LongChunkFromNumberIntProcessor(context, allowNull(), allowMissing(),
-                out.get(0).asWritableLongChunk(), onNullOrDefault(), onMissingOrDefault(), format().function());
+        return null;
+        // ToLongImpl.builder()
+        // .onNumberInt(format().function())
+        // .build();
+        //
+        // return new LongChunkFromNumberIntProcessor(context, allowNull(), allowMissing(),
+        // out.get(0).asWritableLongChunk(), onNullOrDefault(), onMissingOrDefault(), format().function());
     }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
+    // @Check
+    // final void checkOnNull() {
+    // if (!allowNull() && onNull().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
+    //
+    // @Check
+    // final void checkOnMissing() {
+    // if (!allowMissing() && onMissing().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
 
     enum ToNanos implements ToLong {
         FROM_SECONDS {

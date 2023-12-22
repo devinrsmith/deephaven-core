@@ -67,12 +67,12 @@ class DoubleArrayChunkValueProcessor extends ArrayObjectChunkValueProcessorBase<
         }
 
         @Override
-        protected void handleNull() {
+        protected void handleNull(JsonParser parser) throws IOException {
             put(QueryConstants.NULL_DOUBLE);
         }
 
         @Override
-        protected void handleMissing() {
+        protected void handleMissing(JsonParser parser) throws IOException {
             throw new IllegalStateException();
         }
     }

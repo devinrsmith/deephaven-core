@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableFloatChunk;
-import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
@@ -32,12 +31,12 @@ final class FloatChunkValueProcessor extends ValueProcessorBase {
     }
 
     @Override
-    public void handleNull() {
+    public void handleNull(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_FLOAT);
     }
 
     @Override
-    public void handleMissing() {
+    public void handleMissing(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_FLOAT);
     }
 }

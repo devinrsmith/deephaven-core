@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.deephaven.json.Helpers.assertCurrentToken;
@@ -24,11 +23,12 @@ import static io.deephaven.json.Helpers.endToken;
 
 public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
     public static ObjectProcessorJsonValue example() {
-        return new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
-                .putFieldProcessors("timestamp", DateTimeOptions.of())
-                .putFieldProcessors("age", IntOptions.of())
-                .putFieldProcessors("height", DoubleOptions.of())
-                .build());
+        return null;
+        // return new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
+        // .putFieldProcessors("timestamp", DateTimeOptions.of())
+        // .putFieldProcessors("age", IntOptions.of())
+        // .putFieldProcessors("height", DoubleOptions.standard())
+        // .build());
     }
 
     private final JsonFactory jsonFactory;
@@ -53,20 +53,14 @@ public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
         }
     }
 
-    public void processAllImpl(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) throws IOException {
+    void processAllImpl(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) throws IOException {
         final ValueProcessor objectProcessor = opts.processor("<root>", out);
-        final Set<JsonToken> startTokens = opts.startTokens();
         for (int i = 0; i < in.size(); ++i) {
             try (final JsonParser parser = jsonFactory.createParser(in.get(i))) {
                 final JsonToken startToken = parser.nextToken();
                 if (startToken == null) {
-                    // MISSING will be handled by the processor
-                    objectProcessor.processMissing();
+                    objectProcessor.processMissing(parser);
                     continue;
-                }
-                if (startToken != JsonToken.VALUE_NULL && !startTokens.contains(startToken)) {
-                    // NULL checking is handled by the processor
-                    throw new IllegalStateException(String.format("Unexpected start token '%s'", startToken));
                 }
                 objectProcessor.processCurrentValue(parser);
                 assertCurrentToken(parser, endToken(startToken));

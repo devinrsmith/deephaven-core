@@ -5,7 +5,7 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.Functions.ToObject;
+import io.deephaven.json.Function.ToObject;
 
 import java.io.IOException;
 import java.util.Objects;

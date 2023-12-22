@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableByteChunk;
 import io.deephaven.util.BooleanUtils;
 
+import java.io.IOException;
 import java.util.Objects;
 
 final class BooleanChunkValueProcessor extends ValueProcessorBase {
@@ -30,12 +31,12 @@ final class BooleanChunkValueProcessor extends ValueProcessorBase {
     }
 
     @Override
-    public void handleNull() {
+    public void handleNull(JsonParser parser) throws IOException {
         chunk.add(BooleanUtils.NULL_BOOLEAN_AS_BYTE);
     }
 
     @Override
-    public void handleMissing() {
+    public void handleMissing(JsonParser parser) throws IOException {
         chunk.add(BooleanUtils.NULL_BOOLEAN_AS_BYTE);
     }
 }

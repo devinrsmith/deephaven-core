@@ -16,7 +16,7 @@ enum SkipProcessor implements ValueProcessor {
     }
 
     @Override
-    public void processMissing() {
+    public void processMissing(JsonParser parser) throws IOException {
 
     }
 }

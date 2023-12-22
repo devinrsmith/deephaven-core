@@ -3,52 +3,95 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Functions.ToDouble.Plain;
+import io.deephaven.json.Function.ToDouble;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import javax.annotation.Nullable;
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class DoubleOptions extends ValueOptions {
+public abstract class DoubleOptions extends SingleValueOptions<Double, ToDouble> {
 
-    public static DoubleOptions of() {
-        return builder().build();
-    }
-
-    public static DoubleOptions ofStrict() {
-        return builder().allowNull(false).allowMissing(false).build();
-    }
+    private static final DoubleOptions STANDARD = builder().build();
+    private static final DoubleOptions STRICT = builder()
+            .onValue(ToDoubleImpl.strict())
+            .allowMissing(false)
+            .build();
+    private static final DoubleOptions LENIENT = builder()
+            .onValue(ToDoubleImpl.lenient())
+            .build();
 
     public static Builder builder() {
         return ImmutableDoubleOptions.builder();
     }
 
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
+    /**
+     * The standard double options, equivalent to {@code builder().build()}.
+     *
+     * @return the standard double options
+     */
+    public static DoubleOptions standard() {
+        return STANDARD;
     }
 
+    /**
+     * The strict double options, equivalent to
+     * {@code builder().onValue(ToDoubleImpl.strict()).allowMissing(false).build()}.
+     *
+     * @return the strict double options
+     */
+    public static DoubleOptions strict() {
+        return STRICT;
+    }
+
+    /**
+     * The lenient double options, equivalent to {@code builder().onValue(ToDoubleImpl.lenient()).build()}.
+     *
+     * @return the lenient double options
+     */
+    public static DoubleOptions lenient() {
+        return LENIENT;
+    }
+
+    /**
+     * The onValue, defaults to {@link ToDoubleImpl#standard()}.
+     *
+     * @return
+     */
+    @Default
+    public ToDouble onValue() {
+        return ToDoubleImpl.standard();
+    }
+
+    /**
+     * If missing values are allowed, defaults to {@code true}.
+     *
+     * @return allow missing
+     */
     @Override
     @Default
     public boolean allowMissing() {
         return true;
     }
 
-    public abstract OptionalDouble onNull();
+    /**
+     * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
+     **/
+    @Nullable
+    public abstract Double onMissing();
 
-    public abstract OptionalDouble onMissing();
+    private double onMissingOrDefault() {
+        final Double onMissing = onMissing();
+        return onMissing == null ? QueryConstants.NULL_DOUBLE : onMissing;
+    }
 
     @Override
     final Stream<Type<?>> outputTypes() {
@@ -56,36 +99,23 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_NUMBER_INT);
-    }
-
-    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new DoubleChunkFromNumberFloatProcessor(context, allowNull(), allowMissing(),
-                out.get(0).asWritableDoubleChunk(), onNull().orElse(QueryConstants.NULL_DOUBLE),
-                onMissing().orElse(QueryConstants.NULL_DOUBLE), Plain.DOUBLE_VALUE);
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
+        // todo: wrapper w/ context
+        return new DoubleImpl(
+                out.get(0).asWritableDoubleChunk(),
+                onValue(),
+                allowMissing(),
+                onMissingOrDefault());
     }
 
     @Check
     final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
+        if (!allowMissing() && onMissing() != null) {
             throw new IllegalArgumentException();
         }
     }
 
+    public interface Builder extends SingleValueOptions.Builder<Double, ToDouble, DoubleOptions, Builder> {
 
-    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
-
-        Builder onNull(double onNull);
-
-        Builder onMissing(double onMissing);
     }
 }

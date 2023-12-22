@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableByteChunk;
-import io.deephaven.chunk.WritableShortChunk;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
@@ -25,12 +24,12 @@ final class ByteChunkValueProcessor extends ValueProcessorBase {
     }
 
     @Override
-    public void handleNull() {
+    public void handleNull(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_BYTE);
     }
 
     @Override
-    public void handleMissing() {
+    public void handleMissing(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_BYTE);
     }
 }

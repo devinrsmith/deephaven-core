@@ -25,12 +25,12 @@ final class ShortChunkValueProcessor extends ValueProcessorBase {
     }
 
     @Override
-    public void handleNull() {
+    public void handleNull(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_SHORT);
     }
 
     @Override
-    public void handleMissing() {
+    public void handleMissing(JsonParser parser) throws IOException {
         chunk.add(QueryConstants.NULL_SHORT);
     }
 }

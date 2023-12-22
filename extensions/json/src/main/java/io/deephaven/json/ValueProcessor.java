@@ -15,5 +15,5 @@ interface ValueProcessor {
 
     void processCurrentValue(JsonParser parser) throws IOException;
 
-    void processMissing();
+    void processMissing(JsonParser parser) throws IOException;
 }

@@ -4,12 +4,13 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 
-public final class Functions {
+public interface Function {
 
-    public interface ToInt {
+    interface ToInt extends Function {
 
         int applyAsInt(JsonParser parser) throws IOException;
 
@@ -23,11 +24,11 @@ public final class Functions {
         }
     }
 
-    public interface ToLong {
+    interface ToLong extends Function {
 
         long applyAsLong(JsonParser parser) throws IOException;
 
-        enum Plain implements ToLong {
+        enum Parser implements ToLong {
             LONG_VALUE;
 
             @Override
@@ -35,13 +36,28 @@ public final class Functions {
                 return parser.getLongValue();
             }
         }
+
+        enum DhNull implements ToLong {
+            /**
+             * Equivalent to the constant {@link QueryConstants#NULL_LONG}.
+             */
+            DH_NULL;
+
+            @Override
+            public long applyAsLong(JsonParser parser) {
+                return QueryConstants.NULL_LONG;
+            }
+        }
     }
 
-    public interface ToDouble {
+    interface ToDouble extends Function {
 
         double applyAsDouble(JsonParser parser) throws IOException;
 
-        enum Plain implements ToDouble {
+        enum Parser implements ToDouble {
+            /**
+             * Equivalent to {@link JsonParser#getDoubleValue()}.
+             */
             DOUBLE_VALUE;
 
             @Override
@@ -49,9 +65,21 @@ public final class Functions {
                 return parser.getDoubleValue();
             }
         }
+
+        enum DhNull implements ToDouble {
+            /**
+             * Equivalent to the constant {@link QueryConstants#NULL_DOUBLE}.
+             */
+            DH_NULL;
+
+            @Override
+            public double applyAsDouble(JsonParser parser) {
+                return QueryConstants.NULL_DOUBLE;
+            }
+        }
     }
 
-    public interface ToObject<T> {
+    interface ToObject<T> extends Function {
 
         T apply(JsonParser parser) throws IOException;
 

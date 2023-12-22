@@ -3,6 +3,9 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
+
+import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -30,13 +33,13 @@ class ArrayValueProcessorImpl<V extends ValueProcessor> extends ArrayValueProces
 
 
     @Override
-    protected void handleNull() {
+    protected void handleNull(JsonParser parser) throws IOException {
         // same as empty array
         consumer.accept(supplier.get());
     }
 
     @Override
-    protected void handleMissing() {
+    protected void handleMissing(JsonParser parser) throws IOException {
         // same as empty array
         consumer.accept(supplier.get());
     }

@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -19,7 +18,6 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 @Immutable
@@ -31,13 +29,8 @@ public abstract class LocalDateOptions extends ValueOptions {
     }
 
     public static Builder builder() {
-        return ImmutableLocalDateOptions.builder();
-    }
-
-    @Override
-    @Default
-    public boolean allowNull() {
-        return true;
+        return null;
+        // return ImmutableLocalDateOptions.builder();
     }
 
     @Override
@@ -68,30 +61,26 @@ public abstract class LocalDateOptions extends ValueOptions {
     }
 
     @Override
-    final Set<JsonToken> startTokens() {
-        return Set.of(JsonToken.VALUE_STRING);
-    }
-
-    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+        return null;
         // TODO: consider improving this to long (like we do w/ Instant)
-        return new ObjectChunkFromStringProcessor<>(context, allowNull(), allowMissing(),
-                out.get(0).asWritableObjectChunk(), onNull().orElse(null), onMissing().orElse(null), this::parse);
+        // return new ObjectChunkFromStringProcessor<>(context, allowNull(), allowMissing(),
+        // out.get(0).asWritableObjectChunk(), onNull().orElse(null), onMissing().orElse(null), this::parse);
     }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
+    // @Check
+    // final void checkOnNull() {
+    // if (!allowNull() && onNull().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
+    //
+    // @Check
+    // final void checkOnMissing() {
+    // if (!allowMissing() && onMissing().isPresent()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
 
     private LocalDate parse(JsonParser parser) throws IOException {
         final TemporalAccessor accessor = dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));

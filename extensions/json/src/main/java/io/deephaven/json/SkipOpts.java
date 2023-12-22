@@ -8,7 +8,6 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -20,11 +19,6 @@ final class SkipOpts extends ValueOptions {
                     JsonToken.VALUE_NUMBER_FLOAT, JsonToken.VALUE_TRUE, JsonToken.VALUE_FALSE, JsonToken.VALUE_NULL);
 
     @Override
-    public boolean allowNull() {
-        return true;
-    }
-
-    @Override
     public boolean allowMissing() {
         return true;
     }
@@ -32,11 +26,6 @@ final class SkipOpts extends ValueOptions {
     @Override
     ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return ValueProcessor.skip();
-    }
-
-    @Override
-    Set<JsonToken> startTokens() {
-        return START_TOKENS;
     }
 
     @Override

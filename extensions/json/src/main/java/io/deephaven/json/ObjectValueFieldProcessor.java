@@ -59,28 +59,28 @@ final class ObjectValueFieldProcessor extends ValueProcessorBase {
         assertCurrentToken(parser, JsonToken.END_OBJECT);
         for (Entry<String, ValueProcessor> e : fieldProcessors.entrySet()) {
             if (!visited.contains(e.getKey())) {
-                e.getValue().processMissing();
+                e.getValue().processMissing(parser);
             }
         }
     }
 
     @Override
-    protected void handleNull() {
+    protected void handleNull(JsonParser parser) throws IOException {
         // Note: we are treating a null object the same as an empty object
         // field_name: null
         // field_name: {}
         for (ValueProcessor value : fieldProcessors.values()) {
-            value.processMissing();
+            value.processMissing(parser);
         }
     }
 
     @Override
-    protected void handleMissing() {
+    protected void handleMissing(JsonParser parser) throws IOException {
         // Note: we are treating a missing object the same as an empty object
         // # field_name: ...
         // field_name: {}
         for (ValueProcessor value : fieldProcessors.values()) {
-            value.processMissing();
+            value.processMissing(parser);
         }
     }
 }

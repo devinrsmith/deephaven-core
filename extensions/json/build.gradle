@@ -6,7 +6,9 @@ plugins {
 dependencies {
     Classpaths.inheritImmutables(project)
     Classpaths.inheritJacksonPlatform(project)
-    implementation 'com.fasterxml.jackson.core:jackson-core'
+
+    // currently api, can we make impl?
+    api 'com.fasterxml.jackson.core:jackson-core'
 
     implementation project(':engine-query-constants')
 

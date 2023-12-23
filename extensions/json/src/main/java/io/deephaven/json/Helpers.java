@@ -5,9 +5,13 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.io.NumberInput;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
@@ -114,5 +118,38 @@ final class Helpers {
                 return startToken;
         }
         throw new IllegalStateException("Unexpected startToken: " + startToken);
+    }
+
+    static MismatchedInputException mismatch(JsonParser parser, Class<?> clazz) {
+        return MismatchedInputException.from(parser, clazz,
+                String.format("Unexpected token '%s'", parser.currentToken()));
+    }
+
+    static MismatchedInputException mismatchMissing(JsonParser parser, Class<?> clazz) {
+        return MismatchedInputException.from(parser, clazz, "Unexpected missing token");
+    }
+
+    static long parseStringAsLong(JsonParser parser) throws IOException {
+        if (parser.hasTextCharacters()) {
+            // If parser supports this, saves us from allocating
+            return NumberInput.parseLong(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
+        } else {
+            return NumberInput.parseLong(parser.getText());
+        }
+    }
+
+    static BigDecimal parseStringAsBigDecimal(JsonParser parser) throws IOException {
+        if (parser.hasTextCharacters()) {
+            // If parser supports this, saves us from allocating string
+            return NumberInput.parseBigDecimal(parser.getTextCharacters(), parser.getTextOffset(),
+                    parser.getTextLength());
+        } else {
+            return NumberInput.parseBigDecimal(parser.getText());
+        }
+    }
+
+    static BigInteger parseStringAsBigInteger(JsonParser parser) throws IOException {
+        // Todo: PR to jackson to accept textChars version
+        return NumberInput.parseBigInteger(parser.getText());
     }
 }

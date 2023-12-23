@@ -27,11 +27,11 @@ final class DoubleChunkFromNumberFloatProcessor extends DoubleChunkBase {
 
     @Override
     protected void handleValueNumberFloat(JsonParser parser) throws IOException {
-        chunk.add(f.applyAsDouble(parser));
+        chunk.add(f.parseValue(parser));
     }
 
     @Override
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
-        chunk.add(f.applyAsDouble(parser));
+        chunk.add(f.parseValue(parser));
     }
 }

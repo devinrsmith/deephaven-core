@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableLongChunk;
-import io.deephaven.json.Function.ToLong;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -25,6 +24,6 @@ final class LongChunkFromNumberIntProcessor extends LongChunkBase {
 
     @Override
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
-        chunk.add(f.applyAsLong(parser));
+        chunk.add(f.parseValue(parser));
     }
 }

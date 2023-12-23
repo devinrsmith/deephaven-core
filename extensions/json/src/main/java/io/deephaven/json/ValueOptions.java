@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
+import org.immutables.value.Value.Default;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -16,7 +17,16 @@ public abstract class ValueOptions {
     }
 
 
-    public abstract boolean allowMissing();
+    @Default
+    public boolean allowNull() {
+        return true;
+    }
+
+    @Default
+    public boolean allowMissing() {
+        return true;
+    }
+
 
 
     public final ArrayOptions array() {
@@ -36,6 +46,8 @@ public abstract class ValueOptions {
     }
 
     interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
+
+        B allowNull(boolean allowNull);
 
         B allowMissing(boolean allowMissing);
 

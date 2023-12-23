@@ -3,33 +3,32 @@
  */
 package io.deephaven.json;
 
+import java.util.Map;
+
 public class HomeAssistant {
 
     public static ObjectOptions attributes() {
-        return ObjectOptions.builder()
-                .putFieldProcessors("unit_of_measurement", StringOptions.of())
-                .putFieldProcessors("device_class", StringOptions.of())
-                .putFieldProcessors("icon", StringOptions.of())
-                .putFieldProcessors("friendly_name", StringOptions.of())
-                .build();
+        return ObjectOptions.of(Map.of(
+                "unit_standard_measurement", StringOptions.standard(),
+                "device_class", StringOptions.standard(),
+                "icon", StringOptions.standard(),
+                "friendly_name", StringOptions.standard()));
     }
 
     public static ObjectOptions context() {
-        return ObjectOptions.builder()
-                .putFieldProcessors("id", StringOptions.of())
-                .putFieldProcessors("parent_id", StringOptions.of())
-                .putFieldProcessors("user_id", StringOptions.of())
-                .build();
+        return ObjectOptions.of(Map.of(
+                "id", StringOptions.standard(),
+                "parent_id", StringOptions.standard(),
+                "user_id", StringOptions.standard()));
     }
 
     public static ObjectOptions full() {
-        return ObjectOptions.builder()
-                .putFieldProcessors("entity_id", StringOptions.of())
-                .putFieldProcessors("state", StringOptions.of())
-                .putFieldProcessors("attributes", attributes())
-                .putFieldProcessors("last_changed", DateTimeOptions.of())
-                .putFieldProcessors("last_updated", DateTimeOptions.of())
-                .putFieldProcessors("context", context())
-                .build();
+        return ObjectOptions.of(Map.of(
+                "entity_id", StringOptions.standard(),
+                "state", StringOptions.standard(),
+                "attributes", attributes(),
+                "last_changed", InstantOptions.standard(),
+                "last_updated", InstantOptions.standard(),
+                "context", context()));
     }
 }

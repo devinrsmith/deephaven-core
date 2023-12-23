@@ -119,14 +119,14 @@ public abstract class ToDoubleImpl extends PerJsonType<ToDouble> implements ToDo
      * @throws IOException if a low-level IO exception occurs
      */
     @Override
-    public final double applyAsDouble(JsonParser parser) throws IOException {
+    public final double parseValue(JsonParser parser) throws IOException {
         final JsonToken token = Objects.requireNonNull(parser.currentToken());
         final ToDouble delegate = onToken(token);
         if (delegate == null) {
             throw MismatchedInputException.from(parser, double.class,
                     String.format("Not expecting token '%s', %s", token, this));
         }
-        return delegate.applyAsDouble(parser);
+        return delegate.parseValue(parser);
     }
 
     public interface Builder extends PerJsonType.Builder<ToDouble, Builder> {

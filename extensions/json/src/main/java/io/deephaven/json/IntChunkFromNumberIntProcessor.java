@@ -25,6 +25,6 @@ final class IntChunkFromNumberIntProcessor extends IntChunkBase {
 
     @Override
     protected void handleValueNumberInt(JsonParser parser) throws IOException {
-        chunk.add(f.applyAsInt(parser));
+        chunk.add(f.parseValue(parser));
     }
 }

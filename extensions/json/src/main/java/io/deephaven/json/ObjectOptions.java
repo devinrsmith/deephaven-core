@@ -27,13 +27,11 @@ public abstract class ObjectOptions extends ValueOptions {
         return ImmutableObjectOptions.builder();
     }
 
-    public abstract Map<String, ValueOptions> fieldProcessors();
-
-    @Override
-    @Default
-    public boolean allowMissing() {
-        return true;
+    public static ObjectOptions of(Map<String, ValueOptions> fields) {
+        return builder().putAllFieldProcessors(fields).build();
     }
+
+    public abstract Map<String, ValueOptions> fieldProcessors();
 
     /**
      * To be more selective, individual fields can be added with {@link ValueOptions#skip()} to

@@ -27,7 +27,7 @@ final class DoubleImpl implements ValueProcessor {
 
     @Override
     public void processCurrentValue(JsonParser parser) throws IOException {
-        out.add(onValue.applyAsDouble(parser));
+        out.add(onValue.parseValue(parser));
     }
 
     @Override

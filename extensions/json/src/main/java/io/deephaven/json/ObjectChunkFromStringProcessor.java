@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.Function.ToObject;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -28,6 +27,6 @@ final class ObjectChunkFromStringProcessor<T> extends ObjectChunkBase<T> {
 
     @Override
     protected void handleValueString(JsonParser parser) throws IOException {
-        chunk.add(f.apply(parser));
+        chunk.add(f.parseValue(parser));
     }
 }

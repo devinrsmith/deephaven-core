@@ -3,30 +3,33 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Function.ToLong;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class LongOptions extends SingleValueOptions<Long, ToLong> {
+public abstract class LongOptions extends ValueOptions {
 
     private static final LongOptions STANDARD = builder().build();
     private static final LongOptions STRICT = builder()
-            .onValue(ToLongImpl.strict())
+            .allowNull(false)
             .allowMissing(false)
             .build();
     private static final LongOptions LENIENT = builder()
-            .onValue(ToLongImpl.lenient())
+            .allowNumberFloat(true)
+            .allowString(true)
             .build();
 
     public static Builder builder() {
@@ -43,8 +46,7 @@ public abstract class LongOptions extends SingleValueOptions<Long, ToLong> {
     }
 
     /**
-     * The strict Long options, equivalent to
-     * {@code builder().onValue(ToLongImpl.strict()).allowMissing(false).build()}.
+     * The strict Long options, equivalent to ....
      *
      * @return the strict Long options
      */
@@ -53,7 +55,7 @@ public abstract class LongOptions extends SingleValueOptions<Long, ToLong> {
     }
 
     /**
-     * The lenient Long options, equivalent to {@code builder().onValue(ToLongImpl.lenient()).build()}.
+     * The lenient Long options, equivalent to ....
      *
      * @return the lenient Long options
      */
@@ -62,35 +64,85 @@ public abstract class LongOptions extends SingleValueOptions<Long, ToLong> {
     }
 
     /**
-     * The onValue, defaults to {@link ToLongImpl#standard()}.
+     * If parsing {@link JsonToken#VALUE_NUMBER_INT} is supported. By default, is {@code true}.
      *
-     * @return
+     * @return allow number int
+     * @see #parseNumberInt(JsonParser)
      */
     @Default
-    public ToLong onValue() {
-        return ToLongImpl.standard();
+    public boolean allowNumberInt() {
+        return true;
     }
 
     /**
-     * If missing values are allowed, defaults to {@code true}.
+     * If parsing {@link JsonToken#VALUE_NUMBER_FLOAT} is supported. By default, is {@code false}.
+     *
+     * @return allow number float
+     * @see #parseNumberFloat(JsonParser)
+     */
+    @Default
+    public boolean allowNumberFloat() {
+        return false;
+    }
+
+    /**
+     * If parsing {@link JsonToken#VALUE_STRING} is supported. By default, is {@code false}.
+     *
+     * @return allow string
+     * @see #parseString(JsonParser)
+     */
+    @Default
+    public boolean allowString() {
+        return false;
+    }
+
+    /**
+     * If parsing {@link JsonToken#VALUE_NULL} is supported. By default, is {@code true}.
+     *
+     * @return allow null
+     * @see #parseNull(JsonParser)
+     */
+    @Default
+    public boolean allowNull() {
+        return true;
+    }
+
+    /**
+     * If parsing a missing value is supported. By default, is {@code true}.
      *
      * @return allow missing
+     * @see #parseMissing(JsonParser)
      */
-    @Override
     @Default
     public boolean allowMissing() {
         return true;
     }
 
     /**
-     * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
-     **/
-    @Nullable
-    public abstract Long onMissing();
+     * The on-null value.
+     *
+     * @return the on-null value
+     */
+    public abstract OptionalLong onNull();
 
-    private Long onMissingOrDefault() {
-        final Long onMissing = onMissing();
-        return onMissing == null ? QueryConstants.NULL_LONG : onMissing;
+    /**
+     * The on-missing value.
+     *
+     * @return the on-missing value
+     */
+    public abstract OptionalLong onMissing();
+
+    public interface Builder extends ValueOptions.Builder<LongOptions, Builder> {
+
+        Builder allowNumberInt(boolean allowNumberInt);
+
+        Builder allowNumberFloat(boolean allowNumberFloat);
+
+        Builder allowString(boolean allowString);
+
+        Builder onNull(long onNull);
+
+        Builder onMissing(long onMissing);
     }
 
     @Override
@@ -100,21 +152,78 @@ public abstract class LongOptions extends SingleValueOptions<Long, ToLong> {
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new LongImpl(
-                out.get(0).asWritableLongChunk(),
-                onValue(),
-                allowMissing(),
-                onMissingOrDefault());
+        return new LongValueProcessor(out.get(0).asWritableLongChunk(), new Impl());
     }
 
     @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing() != null) {
+    final void checkOnNull() {
+        if (!allowNull() && onNull().isPresent()) {
             throw new IllegalArgumentException();
         }
     }
 
-    public interface Builder extends SingleValueOptions.Builder<Long, ToLong, LongOptions, Builder> {
+    @Check
+    final void checkOnMissing() {
+        if (!allowMissing() && onMissing().isPresent()) {
+            throw new IllegalArgumentException();
+        }
+    }
 
+    private long parseNumberInt(JsonParser parser) throws IOException {
+        if (!allowNumberInt()) {
+            throw Helpers.mismatch(parser, long.class);
+        }
+        return parser.getLongValue();
+    }
+
+    private long parseNumberFloat(JsonParser parser) throws IOException {
+        if (!allowNumberFloat()) {
+            throw Helpers.mismatch(parser, long.class);
+        }
+        // May lose info
+        return parser.getLongValue();
+    }
+
+    private long parseString(JsonParser parser) throws IOException {
+        if (!allowString()) {
+            throw Helpers.mismatch(parser, long.class);
+        }
+        return Helpers.parseStringAsLong(parser);
+    }
+
+    private long parseNull(JsonParser parser) throws IOException {
+        if (!allowNull()) {
+            throw Helpers.mismatch(parser, long.class);
+        }
+        return onNull().orElse(QueryConstants.NULL_LONG);
+    }
+
+    private long parseMissing(JsonParser parser) throws IOException {
+        if (!allowMissing()) {
+            throw Helpers.mismatchMissing(parser, long.class);
+        }
+        return onMissing().orElse(QueryConstants.NULL_LONG);
+    }
+
+    private class Impl implements ToLong {
+        @Override
+        public long parseValue(JsonParser parser) throws IOException {
+            switch (parser.currentToken()) {
+                case VALUE_NUMBER_INT:
+                    return parseNumberInt(parser);
+                case VALUE_NUMBER_FLOAT:
+                    return parseNumberFloat(parser);
+                case VALUE_STRING:
+                    return parseString(parser);
+                case VALUE_NULL:
+                    return parseNull(parser);
+            }
+            throw Helpers.mismatch(parser, long.class);
+        }
+
+        @Override
+        public long parseMissing(JsonParser parser) throws IOException {
+            return LongOptions.this.parseMissing(parser);
+        }
     }
 }

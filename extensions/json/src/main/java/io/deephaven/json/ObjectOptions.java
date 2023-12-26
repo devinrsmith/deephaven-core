@@ -3,17 +3,25 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
+
+import static io.deephaven.json.Helpers.assertCurrentToken;
 
 @Immutable
 @BuildableStyle
@@ -85,6 +93,18 @@ public abstract class ObjectOptions extends ValueOptions {
                 repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
     }
 
+    class Impl implements ValueProcessor {
+        @Override
+        public void processCurrentValue(JsonParser parser) throws IOException {
+
+        }
+
+        @Override
+        public void processMissing(JsonParser parser) throws IOException {
+
+        }
+    }
+
     public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
@@ -95,5 +115,91 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
 
         Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
+    }
+
+    private class ObjectValueFieldProcessor implements ValueProcessor {
+        private final Map<String, ValueProcessor> fieldProcessors;
+
+        ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {
+            this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
+        }
+
+        @Override
+        public void processCurrentValue(JsonParser parser) throws IOException {
+            switch (parser.currentToken()) {
+                case START_OBJECT:
+                    parseObject(parser);
+                    return;
+                case VALUE_NULL:
+                    parseNull(parser);
+                    return;
+                default:
+                    throw Helpers.mismatch(parser, Object.class);
+            }
+        }
+
+        @Override
+        public void processMissing(JsonParser parser) throws IOException {
+            parseMissing(parser);
+        }
+
+        private void parseObject(JsonParser parser) throws IOException {
+            // Note: we could try to build a stricter implementation that doesn't use Set; if the user can guarantee
+            // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
+            // counter to ensure all field processors were invoked.
+            final Set<String> visited = new HashSet<>(fieldProcessors.size());
+            while (parser.nextToken() == JsonToken.FIELD_NAME) {
+                final String fieldName = parser.currentName();
+                final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
+
+                if (knownProcessor == null) {
+                    if (!allowUnknownFields()) {
+                        // todo json exception
+                        throw new IllegalStateException(String.format("Unexpected field '%s'", fieldName));
+                    }
+                    parser.nextToken();
+                    parser.skipChildren();
+                } else if (visited.add(fieldName)) {
+                    // First time seeing field
+                    parser.nextToken();
+                    knownProcessor.processCurrentValue(parser);
+                } else if (repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
+                    parser.nextToken();
+                    parser.skipChildren();
+                } else {
+                    throw new IllegalStateException("todo");
+                }
+            }
+            assertCurrentToken(parser, JsonToken.END_OBJECT);
+            for (Entry<String, ValueProcessor> e : fieldProcessors.entrySet()) {
+                if (!visited.contains(e.getKey())) {
+                    e.getValue().processMissing(parser);
+                }
+            }
+        }
+
+        private void parseNull(JsonParser parser) throws IOException {
+            if (!allowNull()) {
+                throw Helpers.mismatch(parser, Object.class);
+            }
+            // Note: we are treating a null object the same as an empty object
+            // null ~= {}
+            for (ValueProcessor value : fieldProcessors.values()) {
+                value.processMissing(parser);
+            }
+        }
+
+        private void parseMissing(JsonParser parser) throws IOException {
+            if (!allowMissing()) {
+                throw Helpers.mismatchMissing(parser, Object.class);
+            }
+            // Note: we are treating a missing object the same as an empty object
+            // # field_name: <not-present>
+            // field_name: {}
+            for (ValueProcessor value : fieldProcessors.values()) {
+                value.processMissing(parser);
+            }
+        }
+
     }
 }

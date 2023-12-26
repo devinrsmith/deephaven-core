@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -62,6 +63,16 @@ public abstract class FloatOptions extends ValueOptions {
         return LENIENT;
     }
 
+    @Default
+    public boolean allowNumber() {
+        return true;
+    }
+
+    @Default
+    public boolean allowString() {
+        return false;
+    }
+
     @Nullable
     public abstract Float onNull();
 
@@ -71,10 +82,6 @@ public abstract class FloatOptions extends ValueOptions {
     @Nullable
     public abstract Float onMissing();
 
-    @Default
-    public boolean allowString() {
-        return false;
-    }
 
     @Override
     final Stream<Type<?>> outputTypes() {
@@ -110,37 +117,58 @@ public abstract class FloatOptions extends ValueOptions {
         return onMissing != null ? onMissing : QueryConstants.NULL_FLOAT;
     }
 
+    private float parseNumberIntOrFloat(JsonParser parser) throws IOException {
+        if (!allowNumber()) {
+            throw Helpers.mismatch(parser, float.class);
+        }
+        return parser.getFloatValue();
+    }
+
+    private float parseString(JsonParser parser) throws IOException {
+        if (!allowString()) {
+            throw Helpers.mismatch(parser, float.class);
+        }
+        return Helpers.parseStringAsFloat(parser);
+    }
+
+    private float parseNull(JsonParser parser) throws MismatchedInputException {
+        if (!allowNull()) {
+            throw Helpers.mismatch(parser, float.class);
+        }
+        return onNullOrDefault();
+    }
+
+    private float parseMissing(JsonParser parser) throws MismatchedInputException {
+        if (!allowMissing()) {
+            throw Helpers.mismatchMissing(parser, float.class);
+        }
+        return onMissingOrDefault();
+    }
+
     class Impl implements ToFloat {
         @Override
         public float parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
-                case VALUE_NULL:
-                    if (!allowNull()) {
-                        throw Helpers.mismatch(parser, float.class);
-                    }
-                    return onNullOrDefault();
-                case VALUE_NUMBER_FLOAT:
                 case VALUE_NUMBER_INT:
-                    return parser.getFloatValue();
+                case VALUE_NUMBER_FLOAT:
+                    return parseNumberIntOrFloat(parser);
                 case VALUE_STRING:
-                    if (!allowString()) {
-                        throw Helpers.mismatch(parser, float.class);
-                    }
-                    return Helpers.parseStringAsFloat(parser);
+                    return parseString(parser);
+                case VALUE_NULL:
+                    return parseNull(parser);
             }
             throw Helpers.mismatch(parser, float.class);
         }
 
         @Override
         public float parseMissing(JsonParser parser) throws IOException {
-            if (!allowMissing()) {
-                throw Helpers.mismatchMissing(parser, float.class);
-            }
-            return onMissingOrDefault();
+            return FloatOptions.this.parseMissing(parser);
         }
     }
 
     public interface Builder extends ValueOptions.Builder<FloatOptions, Builder> {
+        Builder allowNumber(boolean allowNumber);
+
         Builder allowString(boolean allowString);
 
         Builder onNull(Float onNull);

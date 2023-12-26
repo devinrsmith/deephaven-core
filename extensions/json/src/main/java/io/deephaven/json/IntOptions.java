@@ -29,11 +29,15 @@ public abstract class IntOptions extends ValueOptions {
             .build();
     private static final IntOptions LENIENT = builder()
             .allowNumberFloat(true)
-            .allowString(true)
+            .allowString(StringFormat.FLOAT)
             .build();
 
     public static Builder builder() {
         return ImmutableIntOptions.builder();
+    }
+
+    public enum StringFormat {
+        NONE, INT, FLOAT
     }
 
     /**
@@ -92,8 +96,8 @@ public abstract class IntOptions extends ValueOptions {
      * @see #parseString(JsonParser)
      */
     @Default
-    public boolean allowString() {
-        return false;
+    public StringFormat allowString() {
+        return StringFormat.NONE;
     }
 
     /**
@@ -116,7 +120,7 @@ public abstract class IntOptions extends ValueOptions {
 
         Builder allowNumberFloat(boolean allowNumberFloat);
 
-        Builder allowString(boolean allowString);
+        Builder allowString(StringFormat allowString);
 
         Builder onNull(int onNull);
 
@@ -163,10 +167,16 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     private int parseString(JsonParser parser) throws IOException {
-        if (!allowString()) {
-            throw Helpers.mismatch(parser, int.class);
+        switch (allowString()) {
+            case NONE:
+                throw Helpers.mismatch(parser, int.class);
+            case INT:
+                return Helpers.parseStringAsInt(parser);
+            case FLOAT:
+                // Need to parse as double to have 32-bit int range
+                return (int) Helpers.parseStringAsDouble(parser);
         }
-        return Helpers.parseStringAsInt(parser);
+        throw new IllegalStateException();
     }
 
     private int parseNull(JsonParser parser) throws IOException {

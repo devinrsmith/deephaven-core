@@ -29,7 +29,7 @@ public abstract class LongOptions extends ValueOptions {
             .build();
     private static final LongOptions LENIENT = builder()
             .allowNumberFloat(true)
-            .allowString(true)
+            .allowString(StringFormat.FLOAT)
             .build();
 
     public static Builder builder() {
@@ -63,6 +63,10 @@ public abstract class LongOptions extends ValueOptions {
         return LENIENT;
     }
 
+    public enum StringFormat {
+        NONE, INT, FLOAT
+    }
+
     /**
      * If parsing {@link JsonToken#VALUE_NUMBER_INT} is supported. By default, is {@code true}.
      *
@@ -92,8 +96,8 @@ public abstract class LongOptions extends ValueOptions {
      * @see #parseString(JsonParser)
      */
     @Default
-    public boolean allowString() {
-        return false;
+    public StringFormat allowString() {
+        return StringFormat.NONE;
     }
 
     /**
@@ -116,7 +120,7 @@ public abstract class LongOptions extends ValueOptions {
 
         Builder allowNumberFloat(boolean allowNumberFloat);
 
-        Builder allowString(boolean allowString);
+        Builder allowString(StringFormat allowString);
 
         Builder onNull(long onNull);
 
@@ -163,10 +167,16 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     private long parseString(JsonParser parser) throws IOException {
-        if (!allowString()) {
-            throw Helpers.mismatch(parser, long.class);
+        switch (allowString()) {
+            case NONE:
+                throw Helpers.mismatch(parser, long.class);
+            case INT:
+                return Helpers.parseStringAsLong(parser);
+            case FLOAT:
+                // Need to parse as BigDecimal to have 64-bit long range
+                return Helpers.parseStringAsBigDecimal(parser).longValue();
         }
-        return Helpers.parseStringAsLong(parser);
+        throw new IllegalStateException();
     }
 
     private long parseNull(JsonParser parser) throws IOException {

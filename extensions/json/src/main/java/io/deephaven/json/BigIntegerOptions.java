@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -22,7 +23,8 @@ import java.util.stream.Stream;
 public abstract class BigIntegerOptions extends ValueOptions {
     private static final BigIntegerOptions STANDARD = builder().build();
     private static final BigIntegerOptions STRICT = builder().allowNull(false).allowMissing(false).build();
-    private static final BigIntegerOptions LENIENT = builder().allowNumberFloat(true).allowString(true).build();
+    private static final BigIntegerOptions LENIENT =
+            builder().allowNumberFloat(true).allowString(StringFormat.FLOAT).build();
 
     public static Builder builder() {
         return ImmutableBigIntegerOptions.builder();
@@ -40,6 +42,10 @@ public abstract class BigIntegerOptions extends ValueOptions {
         return LENIENT;
     }
 
+    public enum StringFormat {
+        NONE, INT, FLOAT
+    }
+
     @Default
     public boolean allowNumberInt() {
         return true;
@@ -51,8 +57,8 @@ public abstract class BigIntegerOptions extends ValueOptions {
     }
 
     @Default
-    public boolean allowString() {
-        return false;
+    public StringFormat allowString() {
+        return StringFormat.NONE;
     }
 
     public abstract Optional<BigInteger> onNull();
@@ -64,7 +70,7 @@ public abstract class BigIntegerOptions extends ValueOptions {
 
         Builder allowNumberFloat(boolean allowNumberFloat);
 
-        Builder allowString(boolean allowString);
+        Builder allowString(StringFormat allowString);
 
         Builder onNull(BigInteger onNull);
 
@@ -102,42 +108,65 @@ public abstract class BigIntegerOptions extends ValueOptions {
         }
     }
 
+    private BigInteger parseNumberInt(JsonParser parser) throws IOException {
+        if (!allowNumberInt()) {
+            throw Helpers.mismatch(parser, BigInteger.class);
+        }
+        return parser.getBigIntegerValue();
+    }
+
+    private BigInteger parseNumberFloat(JsonParser parser) throws IOException {
+        if (!allowNumberFloat()) {
+            throw Helpers.mismatch(parser, BigInteger.class);
+        }
+        return parser.getBigIntegerValue();
+    }
+
+    private BigInteger parseString(JsonParser parser) throws IOException {
+        switch (allowString()) {
+            case NONE:
+                throw Helpers.mismatch(parser, BigInteger.class);
+            case INT:
+                return Helpers.parseStringAsBigInteger(parser);
+            case FLOAT:
+                return Helpers.parseStringAsBigDecimal(parser).toBigInteger();
+        }
+        throw new IllegalStateException();
+    }
+
+    private BigInteger parseNull(JsonParser parser) throws MismatchedInputException {
+        if (!allowNull()) {
+            throw Helpers.mismatch(parser, BigInteger.class);
+        }
+        return onNull().orElse(null);
+    }
+
+    private BigInteger parseMissing(JsonParser parser) throws MismatchedInputException {
+        if (!allowMissing()) {
+            throw Helpers.mismatchMissing(parser, BigInteger.class);
+        }
+        return onMissing().orElse(null);
+    }
+
     private class Impl implements ToObject<BigInteger> {
         @Override
         public BigInteger parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
-                    if (!allowNumberInt()) {
-                        throw Helpers.mismatch(parser, BigInteger.class);
-                    }
-                    return parser.getBigIntegerValue();
+                    return parseNumberInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    if (!allowNumberFloat()) {
-                        throw Helpers.mismatch(parser, BigInteger.class);
-                    }
-                    return parser.getBigIntegerValue();
+                    return parseNumberFloat(parser);
                 case VALUE_STRING:
-                    if (!allowString()) {
-                        throw Helpers.mismatch(parser, BigInteger.class);
-                    }
-                    return allowNumberFloat()
-                            ? Helpers.parseStringAsBigDecimal(parser).toBigInteger()
-                            : Helpers.parseStringAsBigInteger(parser);
+                    return parseString(parser);
                 case VALUE_NULL:
-                    if (!allowNull()) {
-                        throw Helpers.mismatch(parser, BigInteger.class);
-                    }
-                    return onNull().orElse(null);
+                    return parseNull(parser);
             }
             throw Helpers.mismatch(parser, BigInteger.class);
         }
 
         @Override
         public BigInteger parseMissing(JsonParser parser) throws IOException {
-            if (!allowMissing()) {
-                throw Helpers.mismatchMissing(parser, BigInteger.class);
-            }
-            return onMissing().orElse(null);
+            return BigIntegerOptions.this.parseMissing(parser);
         }
     }
 }

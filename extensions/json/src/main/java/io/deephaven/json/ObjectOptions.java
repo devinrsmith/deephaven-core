@@ -76,14 +76,13 @@ public abstract class ObjectOptions extends ValueOptions {
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
-        return null;
-        // return new ObjectValueFieldProcessor(
-        // context,
-        // allowNull(),
-        // allowMissing(),
-        // processors,
-        // allowUnknownFields() ? ValueProcessor.skip() : null,
-        // repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
+        return new ObjectValueFieldProcessor(
+                context,
+                allowNull(),
+                allowMissing(),
+                processors,
+                allowUnknownFields() ? ValueProcessor.skip() : null,
+                repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
     }
 
     public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {

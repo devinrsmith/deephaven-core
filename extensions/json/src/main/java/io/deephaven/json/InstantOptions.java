@@ -129,15 +129,14 @@ public abstract class InstantOptions extends ValueOptions {
 
     private long parseNull(JsonParser parser) throws IOException {
         if (!allowNull()) {
-            throw MismatchedInputException.from(parser, Instant.class, "Not lenient");
+            throw Helpers.mismatch(parser, Instant.class);
         }
         return onNullOrDefault();
-
     }
 
     private long parseMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
-            throw MismatchedInputException.from(parser, Instant.class, "Not lenient");
+            throw Helpers.mismatch(parser, Instant.class);
         }
         return onMissingOrDefault();
     }
@@ -151,7 +150,7 @@ public abstract class InstantOptions extends ValueOptions {
                 case VALUE_NULL:
                     return parseNull(parser);
             }
-            throw MismatchedInputException.from(parser, Instant.class, "Not lenient");
+            throw Helpers.mismatch(parser, Instant.class);
         }
 
         @Override

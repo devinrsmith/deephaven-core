@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -70,6 +71,11 @@ public abstract class DoubleOptions extends ValueOptions {
     public abstract OptionalDouble onMissing();
 
     @Default
+    public boolean allowNumber() {
+        return true;
+    }
+
+    @Default
     public boolean allowString() {
         return false;
     }
@@ -106,37 +112,58 @@ public abstract class DoubleOptions extends ValueOptions {
         return onMissing().orElse(QueryConstants.NULL_DOUBLE);
     }
 
+    private double parseNumberIntOrFloat(JsonParser parser) throws IOException {
+        if (!allowNumber()) {
+            throw Helpers.mismatch(parser, double.class);
+        }
+        return parser.getDoubleValue();
+    }
+
+    private double parseString(JsonParser parser) throws IOException {
+        if (!allowString()) {
+            throw Helpers.mismatch(parser, double.class);
+        }
+        return Helpers.parseStringAsDouble(parser);
+    }
+
+    private double parseNull(JsonParser parser) throws MismatchedInputException {
+        if (!allowNull()) {
+            throw Helpers.mismatch(parser, double.class);
+        }
+        return onNullOrDefault();
+    }
+
+    private double parseMissing(JsonParser parser) throws MismatchedInputException {
+        if (!allowMissing()) {
+            throw Helpers.mismatchMissing(parser, double.class);
+        }
+        return onMissingOrDefault();
+    }
+
     class Impl implements ToDouble {
         @Override
         public double parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
-                case VALUE_NULL:
-                    if (!allowNull()) {
-                        throw Helpers.mismatch(parser, double.class);
-                    }
-                    return onNullOrDefault();
-                case VALUE_NUMBER_FLOAT:
                 case VALUE_NUMBER_INT:
-                    return parser.getDoubleValue();
+                case VALUE_NUMBER_FLOAT:
+                    return parseNumberIntOrFloat(parser);
                 case VALUE_STRING:
-                    if (!allowString()) {
-                        throw Helpers.mismatch(parser, double.class);
-                    }
-                    return Helpers.parseStringAsDouble(parser);
+                    return parseString(parser);
+                case VALUE_NULL:
+                    return parseNull(parser);
             }
             throw Helpers.mismatch(parser, double.class);
         }
 
         @Override
         public double parseMissing(JsonParser parser) throws IOException {
-            if (!allowMissing()) {
-                throw Helpers.mismatchMissing(parser, double.class);
-            }
-            return onMissingOrDefault();
+            return DoubleOptions.this.parseMissing(parser);
         }
     }
 
     public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
+        Builder allowNumber(boolean allowNumber);
+
         Builder allowString(boolean allowString);
 
         Builder onNull(double onNull);

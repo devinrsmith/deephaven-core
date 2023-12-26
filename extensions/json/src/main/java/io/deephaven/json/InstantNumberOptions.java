@@ -50,9 +50,13 @@ public abstract class InstantNumberOptions extends ValueOptions {
             return builder()
                     .format(this)
                     .allowNumberFloat(true)
-                    .allowString(true)
+                    .allowString(StringFormat.FLOAT)
                     .build();
         }
+    }
+
+    public enum StringFormat {
+        NONE, INT, FLOAT
     }
 
     public static Builder builder() {
@@ -92,8 +96,8 @@ public abstract class InstantNumberOptions extends ValueOptions {
      * @return
      */
     @Default
-    public boolean allowString() {
-        return false;
+    public StringFormat allowString() {
+        return StringFormat.NONE;
     }
 
     public abstract Optional<Instant> onNull();
@@ -111,7 +115,7 @@ public abstract class InstantNumberOptions extends ValueOptions {
 
         Builder allowNumberFloat(boolean allowNumberFloat);
 
-        Builder allowString(boolean allowString);
+        Builder allowString(StringFormat allowString);
     }
 
     @Derived
@@ -194,12 +198,15 @@ public abstract class InstantNumberOptions extends ValueOptions {
                     }
                     return parseNumberFloat(parser);
                 case VALUE_STRING:
-                    if (!allowString()) {
-                        throw Helpers.mismatch(parser, Instant.class);
+                    switch (allowString()) {
+                        case NONE:
+                            throw Helpers.mismatch(parser, Instant.class);
+                        case INT:
+                            return parseStringAsNumberInt(parser);
+                        case FLOAT:
+                            return parseStringAsNumberFloat(parser);
                     }
-                    return allowNumberFloat()
-                            ? parseStringAsNumberFloat(parser)
-                            : parseStringAsNumberInt(parser);
+                    throw new IllegalStateException();
                 case VALUE_NULL:
                     if (!allowNull()) {
                         throw Helpers.mismatch(parser, Instant.class);

@@ -133,25 +133,15 @@ final class Helpers {
     }
 
     static int parseStringAsInt(JsonParser parser) throws IOException {
+        // Note: NumberInput#parseInt has different semantics
         final CharSequence cs = textAsCharSequence(parser);
         return Integer.parseInt(cs, 0, cs.length(), 10);
-        // if (parser.hasTextCharacters()) {
-        // // If parser supports this, saves us from allocating
-        // return NumberInput.parseInt(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
-        // } else {
-        // return NumberInput.parseInt(parser.getText());
-        // }
     }
 
     static long parseStringAsLong(JsonParser parser) throws IOException {
+        // Note: NumberInput#parseLong has different semantics
         final CharSequence cs = textAsCharSequence(parser);
         return Long.parseLong(cs, 0, cs.length(), 10);
-        // if (parser.hasTextCharacters()) {
-        // // If parser supports this, saves us from allocating
-        // return NumberInput.parseLong(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
-        // } else {
-        // return NumberInput.parseLong(parser.getText());
-        // }
     }
 
     static float parseStringAsFloat(JsonParser parser) throws IOException {

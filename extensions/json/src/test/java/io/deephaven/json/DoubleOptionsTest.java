@@ -48,7 +48,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.strict(), "", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Missing token");
+            assertThat(e).hasMessageContaining("Unexpected missing token");
         }
     }
 
@@ -58,7 +58,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.strict(), "null", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_NULL'");
+            assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
         }
     }
 
@@ -68,7 +68,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.standard(), "\"42\"", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_STRING'");
+            assertThat(e).hasMessageContaining("Unexpected token 'VALUE_STRING'");
         }
     }
 
@@ -78,7 +78,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.standard(), "true", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_TRUE'");
+            assertThat(e).hasMessageContaining("Unexpected token 'VALUE_TRUE'");
         }
     }
 
@@ -88,7 +88,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.standard(), "false", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'VALUE_FALSE'");
+            assertThat(e).hasMessageContaining("Unexpected token 'VALUE_FALSE'");
         }
     }
 
@@ -98,7 +98,7 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.standard(), "{}", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'START_OBJECT'");
+            assertThat(e).hasMessageContaining("Unexpected token 'START_OBJECT'");
         }
     }
 
@@ -108,7 +108,12 @@ public class DoubleOptionsTest {
             parse(DoubleOptions.standard(), "[]", DoubleChunk.chunkWrap(new double[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Not expecting token 'START_ARRAY'");
+            assertThat(e).hasMessageContaining("Unexpected token 'START_ARRAY'");
         }
+    }
+
+    @Test
+    void lenientString() throws IOException {
+        parse(DoubleOptions.lenient(), List.of("\"42\"", "\"42.42\""), DoubleChunk.chunkWrap(new double[] {42, 42.42}));
     }
 }

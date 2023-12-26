@@ -39,11 +39,19 @@ public abstract class InstantNumberOptions extends ValueOptions {
         }
 
         public InstantNumberOptions strict() {
-            return builder().format(this).allowNull(false).allowMissing(false).build();
+            return builder()
+                    .format(this)
+                    .allowNull(false)
+                    .allowMissing(false)
+                    .build();
         }
 
         public InstantNumberOptions lenient() {
-            return builder().format(this).allowNumberFloat(true).allowString(true).build();
+            return builder()
+                    .format(this)
+                    .allowNumberFloat(true)
+                    .allowString(true)
+                    .build();
         }
     }
 
@@ -56,7 +64,6 @@ public abstract class InstantNumberOptions extends ValueOptions {
      *
      * @return the format
      */
-    @Default
     public abstract Format format();
 
     /**

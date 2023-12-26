@@ -3,9 +3,8 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.exc.InputCoercionException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import io.deephaven.chunk.LongChunk;
+import io.deephaven.chunk.FloatChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -16,37 +15,37 @@ import static io.deephaven.json.TestHelper.parse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
-public class LongOptionsTest {
+public class FloatOptionsTest {
 
     @Test
     void standard() throws IOException {
-        parse(LongOptions.standard(), List.of("42", "43"), LongChunk.chunkWrap(new long[] {42, 43}));
+        parse(FloatOptions.standard(), List.of("42", "42.42"), FloatChunk.chunkWrap(new float[] {42, 42.42f}));
     }
 
     @Test
     void standardMissing() throws IOException {
-        parse(LongOptions.standard(), "", LongChunk.chunkWrap(new long[] {QueryConstants.NULL_LONG}));
+        parse(FloatOptions.standard(), "", FloatChunk.chunkWrap(new float[] {QueryConstants.NULL_FLOAT}));
     }
 
     @Test
     void standardNull() throws IOException {
-        parse(LongOptions.standard(), "null", LongChunk.chunkWrap(new long[] {QueryConstants.NULL_LONG}));
+        parse(FloatOptions.standard(), "null", FloatChunk.chunkWrap(new float[] {QueryConstants.NULL_FLOAT}));
     }
 
     @Test
     void customMissing() throws IOException {
-        parse(LongOptions.builder().onMissing(-1L).build(), "", LongChunk.chunkWrap(new long[] {-1}));
+        parse(FloatOptions.builder().onMissing(-1.0f).build(), "", FloatChunk.chunkWrap(new float[] {-1}));
     }
 
     @Test
     void strict() throws IOException {
-        parse(LongOptions.strict(), "42", LongChunk.chunkWrap(new long[] {42}));
+        parse(FloatOptions.strict(), "42", FloatChunk.chunkWrap(new float[] {42}));
     }
 
     @Test
     void strictMissing() throws IOException {
         try {
-            parse(LongOptions.strict(), "", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.strict(), "", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected missing token");
@@ -56,7 +55,7 @@ public class LongOptionsTest {
     @Test
     void strictNull() throws IOException {
         try {
-            parse(LongOptions.strict(), "null", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.strict(), "null", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
@@ -64,19 +63,9 @@ public class LongOptionsTest {
     }
 
     @Test
-    void strictOverflow() throws IOException {
-        try {
-            parse(LongOptions.strict(), "9223372036854775808", LongChunk.chunkWrap(new long[1]));
-        } catch (InputCoercionException e) {
-            assertThat(e).hasMessageContaining(
-                    "Numeric value (9223372036854775808) out of range of long (-9223372036854775808 - 9223372036854775807)");
-        }
-    }
-
-    @Test
     void standardString() throws IOException {
         try {
-            parse(LongOptions.standard(), "\"42\"", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.standard(), "\"42\"", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_STRING'");
@@ -86,7 +75,7 @@ public class LongOptionsTest {
     @Test
     void standardTrue() throws IOException {
         try {
-            parse(LongOptions.standard(), "true", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.standard(), "true", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_TRUE'");
@@ -96,7 +85,7 @@ public class LongOptionsTest {
     @Test
     void standardFalse() throws IOException {
         try {
-            parse(LongOptions.standard(), "false", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.standard(), "false", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_FALSE'");
@@ -104,19 +93,9 @@ public class LongOptionsTest {
     }
 
     @Test
-    void standardFloat() throws IOException {
-        try {
-            parse(LongOptions.standard(), "42.0", LongChunk.chunkWrap(new long[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
-            assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NUMBER_FLOAT'");
-        }
-    }
-
-    @Test
     void standardObject() throws IOException {
         try {
-            parse(LongOptions.standard(), "{}", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.standard(), "{}", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_OBJECT'");
@@ -126,7 +105,7 @@ public class LongOptionsTest {
     @Test
     void standardArray() throws IOException {
         try {
-            parse(LongOptions.standard(), "[]", LongChunk.chunkWrap(new long[1]));
+            parse(FloatOptions.standard(), "[]", FloatChunk.chunkWrap(new float[1]));
             failBecauseExceptionWasNotThrown(MismatchedInputException.class);
         } catch (MismatchedInputException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_ARRAY'");
@@ -134,12 +113,7 @@ public class LongOptionsTest {
     }
 
     @Test
-    void lenientFloat() throws IOException {
-        parse(LongOptions.lenient(), List.of("42.42", "43.43"), LongChunk.chunkWrap(new long[] {42, 43}));
-    }
-
-    @Test
     void lenientString() throws IOException {
-        parse(LongOptions.lenient(), List.of("\"42\"", "\"43.43\""), LongChunk.chunkWrap(new long[] {42, 43}));
+        parse(FloatOptions.lenient(), List.of("\"42\"", "\"42.42\""), FloatChunk.chunkWrap(new float[] {42, 42.42f}));
     }
 }

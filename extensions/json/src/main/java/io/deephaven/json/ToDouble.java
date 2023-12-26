@@ -4,10 +4,12 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 
-public interface Function {
+interface ToDouble extends Function {
 
+    double parseValue(JsonParser parser) throws IOException;
+
+    double parseMissing(JsonParser parser) throws IOException;
 }

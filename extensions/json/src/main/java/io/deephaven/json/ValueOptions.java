@@ -27,8 +27,6 @@ public abstract class ValueOptions {
         return true;
     }
 
-
-
     public final ArrayOptions array() {
         return null;
         // return ArrayOptions.builder()

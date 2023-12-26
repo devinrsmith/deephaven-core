@@ -3,30 +3,31 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.Function.ToDouble;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class DoubleOptions extends SingleValueOptions<Double, ToDouble> {
+public abstract class DoubleOptions extends ValueOptions {
 
     private static final DoubleOptions STANDARD = builder().build();
     private static final DoubleOptions STRICT = builder()
-            .onValue(ToDoubleImpl.strict())
+            .allowNull(false)
             .allowMissing(false)
             .build();
     private static final DoubleOptions LENIENT = builder()
-            .onValue(ToDoubleImpl.lenient())
+            .allowString(true)
             .build();
 
     public static Builder builder() {
@@ -61,36 +62,16 @@ public abstract class DoubleOptions extends SingleValueOptions<Double, ToDouble>
         return LENIENT;
     }
 
-    /**
-     * The onValue, defaults to {@link ToDoubleImpl#standard()}.
-     *
-     * @return
-     */
-    @Default
-    public ToDouble onValue() {
-        return ToDoubleImpl.standard();
-    }
-
-    /**
-     * If missing values are allowed, defaults to {@code true}.
-     *
-     * @return allow missing
-     */
-    @Override
-    @Default
-    public boolean allowMissing() {
-        return true;
-    }
+    public abstract OptionalDouble onNull();
 
     /**
      * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
      **/
-    @Nullable
-    public abstract Double onMissing();
+    public abstract OptionalDouble onMissing();
 
-    private double onMissingOrDefault() {
-        final Double onMissing = onMissing();
-        return onMissing == null ? QueryConstants.NULL_DOUBLE : onMissing;
+    @Default
+    public boolean allowString() {
+        return false;
     }
 
     @Override
@@ -100,22 +81,66 @@ public abstract class DoubleOptions extends SingleValueOptions<Double, ToDouble>
 
     @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        // todo: wrapper w/ context
-        return new DoubleImpl(
-                out.get(0).asWritableDoubleChunk(),
-                onValue(),
-                allowMissing(),
-                onMissingOrDefault());
+        return new DoubleValueProcessor(out.get(0).asWritableDoubleChunk(), new Impl());
     }
 
     @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing() != null) {
+    final void checkOnNull() {
+        if (!allowNull() && onNull().isPresent()) {
             throw new IllegalArgumentException();
         }
     }
 
-    public interface Builder extends SingleValueOptions.Builder<Double, ToDouble, DoubleOptions, Builder> {
+    @Check
+    final void checkOnMissing() {
+        if (!allowMissing() && onMissing().isPresent()) {
+            throw new IllegalArgumentException();
+        }
+    }
 
+    private double onNullOrDefault() {
+        return onNull().orElse(QueryConstants.NULL_DOUBLE);
+    }
+
+    private double onMissingOrDefault() {
+        return onMissing().orElse(QueryConstants.NULL_DOUBLE);
+    }
+
+    class Impl implements ToDouble {
+        @Override
+        public double parseValue(JsonParser parser) throws IOException {
+            switch (parser.currentToken()) {
+                case VALUE_NULL:
+                    if (!allowNull()) {
+                        throw Helpers.mismatch(parser, double.class);
+                    }
+                    return onNullOrDefault();
+                case VALUE_NUMBER_FLOAT:
+                case VALUE_NUMBER_INT:
+                    return parser.getDoubleValue();
+                case VALUE_STRING:
+                    if (!allowString()) {
+                        throw Helpers.mismatch(parser, double.class);
+                    }
+                    return Helpers.parseStringAsDouble(parser);
+            }
+            throw Helpers.mismatch(parser, double.class);
+        }
+
+        @Override
+        public double parseMissing(JsonParser parser) throws IOException {
+            if (!allowMissing()) {
+                throw Helpers.mismatchMissing(parser, double.class);
+            }
+            return onMissingOrDefault();
+        }
+    }
+
+    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
+        Builder allowString(boolean allowString);
+
+        Builder onNull(double onNull);
+
+        Builder onMissing(double onMissing);
     }
 }

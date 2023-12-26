@@ -4,10 +4,12 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 
-public interface Function {
+interface ToInt extends Function {
 
+    int parseValue(JsonParser parser) throws IOException;
+
+    int parseMissing(JsonParser parser) throws IOException;
 }

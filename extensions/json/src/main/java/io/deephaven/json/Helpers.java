@@ -5,7 +5,10 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.io.NumberInput;
+import com.fasterxml.jackson.core.io.doubleparser.FastDoubleParser;
+import com.fasterxml.jackson.core.io.doubleparser.FastFloatParser;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import java.io.IOException;
@@ -129,12 +132,51 @@ final class Helpers {
         return MismatchedInputException.from(parser, clazz, "Unexpected missing token");
     }
 
+    static int parseStringAsInt(JsonParser parser) throws IOException {
+        final CharSequence cs = textAsCharSequence(parser);
+        return Integer.parseInt(cs, 0, cs.length(), 10);
+        // if (parser.hasTextCharacters()) {
+        // // If parser supports this, saves us from allocating
+        // return NumberInput.parseInt(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
+        // } else {
+        // return NumberInput.parseInt(parser.getText());
+        // }
+    }
+
     static long parseStringAsLong(JsonParser parser) throws IOException {
-        if (parser.hasTextCharacters()) {
-            // If parser supports this, saves us from allocating
-            return NumberInput.parseLong(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
+        final CharSequence cs = textAsCharSequence(parser);
+        return Long.parseLong(cs, 0, cs.length(), 10);
+        // if (parser.hasTextCharacters()) {
+        // // If parser supports this, saves us from allocating
+        // return NumberInput.parseLong(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
+        // } else {
+        // return NumberInput.parseLong(parser.getText());
+        // }
+    }
+
+    static float parseStringAsFloat(JsonParser parser) throws IOException {
+        if (parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)) {
+            if (parser.hasTextCharacters()) {
+                return FastFloatParser.parseFloat(parser.getTextCharacters(), parser.getTextOffset(),
+                        parser.getTextLength());
+            } else {
+                return FastFloatParser.parseFloat(parser.getText());
+            }
         } else {
-            return NumberInput.parseLong(parser.getText());
+            return Float.parseFloat(parser.getText());
+        }
+    }
+
+    static double parseStringAsDouble(JsonParser parser) throws IOException {
+        if (parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)) {
+            if (parser.hasTextCharacters()) {
+                return FastDoubleParser.parseDouble(parser.getTextCharacters(), parser.getTextOffset(),
+                        parser.getTextLength());
+            } else {
+                return FastDoubleParser.parseDouble(parser.getText());
+            }
+        } else {
+            return Double.parseDouble(parser.getText());
         }
     }
 

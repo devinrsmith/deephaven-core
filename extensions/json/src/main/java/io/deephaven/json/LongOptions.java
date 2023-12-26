@@ -97,28 +97,6 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * If parsing {@link JsonToken#VALUE_NULL} is supported. By default, is {@code true}.
-     *
-     * @return allow null
-     * @see #parseNull(JsonParser)
-     */
-    @Default
-    public boolean allowNull() {
-        return true;
-    }
-
-    /**
-     * If parsing a missing value is supported. By default, is {@code true}.
-     *
-     * @return allow missing
-     * @see #parseMissing(JsonParser)
-     */
-    @Default
-    public boolean allowMissing() {
-        return true;
-    }
-
-    /**
      * The on-null value.
      *
      * @return the on-null value

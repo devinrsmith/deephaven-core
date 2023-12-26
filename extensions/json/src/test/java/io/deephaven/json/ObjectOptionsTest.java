@@ -5,9 +5,6 @@ package io.deephaven.json;
 
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableIntChunk;
-import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.chunk.attributes.Any;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -18,12 +15,12 @@ import static io.deephaven.json.TestHelper.parse;
 public class ObjectOptionsTest {
 
     public static final ObjectOptions OBJECT_AGE_FIELD = ObjectOptions.builder()
-            .putFieldProcessors("age", IntOptions.of())
+            .putFieldProcessors("age", IntOptions.standard())
             .build();
 
     private static final ObjectOptions OBJECT_NAME_AGE_FIELD = ObjectOptions.builder()
-            .putFieldProcessors("name", StringOptions.of())
-            .putFieldProcessors("age", IntOptions.of())
+            .putFieldProcessors("name", StringOptions.standard())
+            .putFieldProcessors("age", IntOptions.standard())
             .build();
 
     @Test

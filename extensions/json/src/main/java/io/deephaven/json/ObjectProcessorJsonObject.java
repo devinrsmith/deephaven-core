@@ -29,7 +29,7 @@ public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> 
     public static ObjectProcessorJsonObject example() {
         return new ObjectProcessorJsonObject(new JsonFactory(), ObjectOptions.builder()
                 .putFieldProcessors("timestamp", InstantOptions.standard())
-                .putFieldProcessors("age", IntOptions.of())
+                .putFieldProcessors("age", IntOptions.standard())
                 .putFieldProcessors("height", DoubleOptions.standard())
                 .build());
     }

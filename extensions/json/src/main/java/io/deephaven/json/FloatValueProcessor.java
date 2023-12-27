@@ -28,4 +28,11 @@ final class FloatValueProcessor implements ValueProcessor {
     public void processMissing(JsonParser parser) throws IOException {
         out.add(toFloat.parseMissing(parser));
     }
+
+    interface ToFloat {
+
+        float parseValue(JsonParser parser) throws IOException;
+
+        float parseMissing(JsonParser parser) throws IOException;
+    }
 }

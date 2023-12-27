@@ -22,7 +22,6 @@ import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.qst.type.Type.Visitor;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
@@ -39,12 +38,6 @@ public abstract class ArrayOptions extends ValueOptions {
     }
 
     public abstract ValueOptions element();
-
-    @Override
-    @Default
-    public boolean allowMissing() {
-        return true;
-    }
 
     final boolean asArray() {
         // todo, expose to user, provide option to use ChunkProvider (ie, multiple rows)

@@ -162,7 +162,7 @@ public abstract class StringOptions extends ValueOptions {
         return onMissing().orElse(null);
     }
 
-    private class Impl implements ToObject<String> {
+    private class Impl implements ObjectValueProcessor.ToObject<String> {
         @Override
         public String parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

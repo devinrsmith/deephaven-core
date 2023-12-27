@@ -159,7 +159,7 @@ public abstract class InstantNumberOptions extends ValueOptions {
         }
     }
 
-    private ToLong function() {
+    private LongValueProcessor.ToLong function() {
         switch (format()) {
             case EPOCH_SECONDS:
                 return new EpochSeconds();
@@ -174,7 +174,7 @@ public abstract class InstantNumberOptions extends ValueOptions {
         }
     }
 
-    private abstract class Base implements ToLong {
+    private abstract class Base implements LongValueProcessor.ToLong {
 
         abstract long parseNumberInt(JsonParser parser) throws IOException;
 

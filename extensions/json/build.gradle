@@ -8,7 +8,7 @@ dependencies {
     Classpaths.inheritJacksonPlatform(project)
 
     // currently api, can we make impl?
-    api 'com.fasterxml.jackson.core:jackson-core'
+    implementation 'com.fasterxml.jackson.core:jackson-core'
 
     implementation project(':engine-query-constants')
 

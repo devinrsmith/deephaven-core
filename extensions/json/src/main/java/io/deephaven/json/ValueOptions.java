@@ -39,7 +39,7 @@ public abstract class ValueOptions {
         return (int) outputTypes().count();
     }
 
-    interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
+    public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
 
         B allowNull(boolean allowNull);
 

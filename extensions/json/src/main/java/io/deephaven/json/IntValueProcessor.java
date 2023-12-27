@@ -28,4 +28,11 @@ final class IntValueProcessor implements ValueProcessor {
     public void processMissing(JsonParser parser) throws IOException {
         out.add(toInt.parseMissing(parser));
     }
+
+    interface ToInt {
+
+        int parseValue(JsonParser parser) throws IOException;
+
+        int parseMissing(JsonParser parser) throws IOException;
+    }
 }

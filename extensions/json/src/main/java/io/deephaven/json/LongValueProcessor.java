@@ -28,4 +28,11 @@ final class LongValueProcessor implements ValueProcessor {
     public void processMissing(JsonParser parser) throws IOException {
         out.add(toLong.parseMissing(parser));
     }
+
+    interface ToLong {
+
+        long parseValue(JsonParser parser) throws IOException;
+
+        long parseMissing(JsonParser parser) throws IOException;
+    }
 }

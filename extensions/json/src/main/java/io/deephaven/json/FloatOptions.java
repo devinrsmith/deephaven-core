@@ -145,7 +145,7 @@ public abstract class FloatOptions extends ValueOptions {
         return onMissingOrDefault();
     }
 
-    class Impl implements ToFloat {
+    class Impl implements FloatValueProcessor.ToFloat {
         @Override
         public float parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

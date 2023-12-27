@@ -27,23 +27,6 @@ import static io.deephaven.json.Helpers.assertCurrentToken;
 @BuildableStyle
 public abstract class ObjectOptions extends ValueOptions {
 
-    public enum RepeatedFieldBehavior {
-        /**
-         * Throws an error if a repeated field is encountered
-         */
-        ERROR,
-
-        /**
-         * Uses the first field of a given name, ignores the rest
-         */
-        USE_FIRST,
-
-        // /**
-        // * Uses the last field of a given name, ignores the rest. Not currently supported.
-        // */
-        // USE_LAST
-    }
-
     public static Builder builder() {
         return ImmutableObjectOptions.builder();
     }
@@ -99,6 +82,23 @@ public abstract class ObjectOptions extends ValueOptions {
 
     // Note: Builder does not extend ValueOptions.Builder b/c allowNull / allowMissing is implicitly set
 
+    public enum RepeatedFieldBehavior {
+        /**
+         * Throws an error if a repeated field is encountered
+         */
+        ERROR,
+
+        /**
+         * Uses the first field of a given name, ignores the rest
+         */
+        USE_FIRST,
+
+        // /**
+        // * Uses the last field of a given name, ignores the rest. Not currently supported.
+        // */
+        // USE_LAST
+    }
+
     public interface Builder {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
@@ -138,7 +138,6 @@ public abstract class ObjectOptions extends ValueOptions {
         }
         return new ObjectValueFieldProcessor(processors);
     }
-
 
     private class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;

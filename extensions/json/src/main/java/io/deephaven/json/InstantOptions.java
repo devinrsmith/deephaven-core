@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -141,7 +140,7 @@ public abstract class InstantOptions extends ValueOptions {
         return onMissingOrDefault();
     }
 
-    private class ToLongImpl implements ToLong {
+    private class ToLongImpl implements LongValueProcessor.ToLong {
         @Override
         public long parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

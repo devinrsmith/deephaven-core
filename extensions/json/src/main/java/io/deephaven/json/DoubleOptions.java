@@ -150,7 +150,7 @@ public abstract class DoubleOptions extends ValueOptions {
         return onMissingOrDefault();
     }
 
-    class Impl implements ToDouble {
+    class Impl implements DoubleValueProcessor.ToDouble {
         @Override
         public double parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

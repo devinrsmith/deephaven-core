@@ -117,7 +117,7 @@ public abstract class BigDecimalOptions extends ValueOptions {
         return onMissing().orElse(null);
     }
 
-    private class Impl implements ToObject<BigDecimal> {
+    private class Impl implements ObjectValueProcessor.ToObject<BigDecimal> {
         @Override
         public BigDecimal parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

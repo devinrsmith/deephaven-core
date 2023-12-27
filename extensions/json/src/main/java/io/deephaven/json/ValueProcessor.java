@@ -14,10 +14,6 @@ import static io.deephaven.json.Helpers.endToken;
 
 interface ValueProcessor {
 
-    static ValueProcessor skip() {
-        return SkipProcessor.INSTANCE;
-    }
-
     static void processFullJson(ValueProcessor processor, JsonParser parser) throws IOException {
         assertNoCurrentToken(parser);
         final JsonToken startToken = parser.nextToken();

@@ -206,7 +206,7 @@ public abstract class IntOptions extends ValueOptions {
         return onMissing().orElse(QueryConstants.NULL_INT);
     }
 
-    private class Impl implements ToInt {
+    private class Impl implements IntValueProcessor.ToInt {
         @Override
         public int parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

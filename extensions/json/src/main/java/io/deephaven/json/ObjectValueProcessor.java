@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 
 import java.io.IOException;
@@ -28,5 +27,12 @@ final class ObjectValueProcessor<T> implements ValueProcessor {
     @Override
     public void processMissing(JsonParser parser) throws IOException {
         out.add(toObj.parseMissing(parser));
+    }
+
+    interface ToObject<T> {
+
+        T parseValue(JsonParser parser) throws IOException;
+
+        T parseMissing(JsonParser parser) throws IOException;
     }
 }

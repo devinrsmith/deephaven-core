@@ -148,7 +148,7 @@ public abstract class BigIntegerOptions extends ValueOptions {
         return onMissing().orElse(null);
     }
 
-    private class Impl implements ToObject<BigInteger> {
+    private class Impl implements ObjectValueProcessor.ToObject<BigInteger> {
         @Override
         public BigInteger parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

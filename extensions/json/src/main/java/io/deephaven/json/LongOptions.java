@@ -193,7 +193,7 @@ public abstract class LongOptions extends ValueOptions {
         return onMissing().orElse(QueryConstants.NULL_LONG);
     }
 
-    private class Impl implements ToLong {
+    private class Impl implements LongValueProcessor.ToLong {
         @Override
         public long parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

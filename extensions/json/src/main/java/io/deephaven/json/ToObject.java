@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import java.io.IOException;
 
-interface ToObject<T> extends Function {
+interface ToObject<T> {
 
     T parseValue(JsonParser parser) throws IOException;
 

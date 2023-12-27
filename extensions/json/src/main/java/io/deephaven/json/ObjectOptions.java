@@ -28,7 +28,20 @@ import static io.deephaven.json.Helpers.assertCurrentToken;
 public abstract class ObjectOptions extends ValueOptions {
 
     public enum RepeatedFieldBehavior {
-        USE_FIRST, USE_LAST, ERROR
+        /**
+         * Throws an error if a repeated field is encountered
+         */
+        ERROR,
+
+        /**
+         * Uses the first field of a given name, ignores the rest
+         */
+        USE_FIRST,
+
+        // /**
+        // * Uses the last field of a given name, ignores the rest. Not currently supported.
+        // */
+        // USE_LAST
     }
 
     public static Builder builder() {
@@ -42,7 +55,11 @@ public abstract class ObjectOptions extends ValueOptions {
     public abstract Map<String, ValueOptions> fieldProcessors();
 
     /**
-     * To be more selective, individual fields can be added with {@link ValueOptions#skip()} to
+     * ...
+     *
+     * <p>
+     * If the caller wants to throw an error on unknown fields, but knows there are fields they want to skip, the can be
+     * e todo To be more selective, individual fields can be added with {@link SkipOptions} ... todoeueou
      * {@link #fieldProcessors()}.
      *
      * @return if unknown fields are allowed for {@code this} object
@@ -59,6 +76,27 @@ public abstract class ObjectOptions extends ValueOptions {
     @Default
     public RepeatedFieldBehavior repeatedFieldBehavior() {
         return RepeatedFieldBehavior.USE_FIRST;
+    }
+
+    public final SkipOptions skip() {
+        // todo: this doesn't make sense on this object
+        return SkipOptions.builder()
+                .allowObject(true)
+                .allowNull(allowNull())
+                .allowMissing(allowMissing())
+                .build();
+    }
+
+    public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
+        Builder allowUnknownFields(boolean allowUnknownFields);
+
+        Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
+
+        Builder putFieldProcessors(String key, ValueOptions value);
+
+        Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
+
+        Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
     }
 
     @Override
@@ -84,38 +122,9 @@ public abstract class ObjectOptions extends ValueOptions {
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
-        return new ObjectValueFieldProcessor(
-                context,
-                allowNull(),
-                allowMissing(),
-                processors,
-                allowUnknownFields() ? ValueProcessor.skip() : null,
-                repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST ? ValueProcessor.skip() : null);
+        return new ObjectValueFieldProcessor(processors);
     }
 
-    class Impl implements ValueProcessor {
-        @Override
-        public void processCurrentValue(JsonParser parser) throws IOException {
-
-        }
-
-        @Override
-        public void processMissing(JsonParser parser) throws IOException {
-
-        }
-    }
-
-    public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
-        Builder allowUnknownFields(boolean allowUnknownFields);
-
-        Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
-
-        Builder putFieldProcessors(String key, ValueOptions value);
-
-        Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
-
-        Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
-    }
 
     private class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;
@@ -151,7 +160,6 @@ public abstract class ObjectOptions extends ValueOptions {
             while (parser.nextToken() == JsonToken.FIELD_NAME) {
                 final String fieldName = parser.currentName();
                 final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
-
                 if (knownProcessor == null) {
                     if (!allowUnknownFields()) {
                         // todo json exception
@@ -200,6 +208,5 @@ public abstract class ObjectOptions extends ValueOptions {
                 value.processMissing(parser);
             }
         }
-
     }
 }

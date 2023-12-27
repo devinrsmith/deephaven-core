@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import java.io.IOException;
 
-interface ToFloat extends Function {
+interface ToFloat {
 
     float parseValue(JsonParser parser) throws IOException;
 

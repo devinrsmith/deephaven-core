@@ -114,6 +114,19 @@ public abstract class IntOptions extends ValueOptions {
      */
     public abstract OptionalInt onMissing();
 
+    public final SkipOptions skip() {
+        return SkipOptions.builder()
+                .allowNumberInt(allowNumberInt())
+                .allowNumberFloat(allowNumberFloat())
+                .allowString(allowString() != StringFormat.NONE)
+                .allowNull(allowNull())
+                .allowMissing(allowMissing())
+                .allowBoolean(false)
+                .allowObject(false)
+                .allowArray(false)
+                .build();
+    }
+
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
 
         Builder allowNumberInt(boolean allowNumberInt);

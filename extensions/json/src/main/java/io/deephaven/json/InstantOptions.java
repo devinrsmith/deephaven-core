@@ -136,7 +136,7 @@ public abstract class InstantOptions extends ValueOptions {
 
     private long parseMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
-            throw Helpers.mismatch(parser, Instant.class);
+            throw Helpers.mismatchMissing(parser, Instant.class);
         }
         return onMissingOrDefault();
     }

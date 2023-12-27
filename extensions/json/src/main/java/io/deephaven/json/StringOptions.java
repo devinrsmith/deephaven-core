@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -70,6 +71,17 @@ public abstract class StringOptions extends ValueOptions {
 
     public abstract Optional<String> onMissing();
 
+    public final SkipOptions skip() {
+        return SkipOptions.builder()
+                .allowString(allowString())
+                .allowNumberInt(allowNumberInt())
+                .allowNumberFloat(allowNumberFloat())
+                .allowBoolean(allowBoolean())
+                .allowNull(allowNull())
+                .allowMissing(allowMissing())
+                .build();
+    }
+
     public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
         Builder allowString(boolean allowString);
 
@@ -108,46 +120,70 @@ public abstract class StringOptions extends ValueOptions {
         }
     }
 
+    private String parseString(JsonParser parser) throws IOException {
+        if (!allowString()) {
+            throw Helpers.mismatch(parser, String.class);
+        }
+        return parser.getText();
+    }
+
+    private String parseNumberInt(JsonParser parser) throws IOException {
+        if (!allowNumberInt()) {
+            throw Helpers.mismatch(parser, String.class);
+        }
+        return parser.getText();
+    }
+
+    private String parseNumberFloat(JsonParser parser) throws IOException {
+        if (!allowNumberFloat()) {
+            throw Helpers.mismatch(parser, String.class);
+        }
+        return parser.getText();
+    }
+
+    private String parseBoolean(JsonParser parser) throws IOException {
+        if (!allowBoolean()) {
+            throw Helpers.mismatch(parser, String.class);
+        }
+        return parser.getText();
+    }
+
+    private String parseNull(JsonParser parser) throws MismatchedInputException {
+        if (!allowNull()) {
+            throw Helpers.mismatch(parser, String.class);
+        }
+        return onNull().orElse(null);
+    }
+
+    private String parseMissing(JsonParser parser) throws MismatchedInputException {
+        if (!allowMissing()) {
+            throw Helpers.mismatchMissing(parser, String.class);
+        }
+        return onMissing().orElse(null);
+    }
+
     private class Impl implements ToObject<String> {
         @Override
         public String parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_STRING:
-                    if (!allowString()) {
-                        throw Helpers.mismatch(parser, String.class);
-                    }
-                    return parser.getText();
+                    return parseString(parser);
                 case VALUE_NUMBER_INT:
-                    if (!allowNumberInt()) {
-                        throw Helpers.mismatch(parser, String.class);
-                    }
-                    return parser.getText();
+                    return parseNumberInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    if (!allowNumberFloat()) {
-                        throw Helpers.mismatch(parser, String.class);
-                    }
-                    return parser.getText();
+                    return parseNumberFloat(parser);
                 case VALUE_TRUE:
                 case VALUE_FALSE:
-                    if (!allowBoolean()) {
-                        throw Helpers.mismatch(parser, String.class);
-                    }
-                    return parser.getText();
+                    return parseBoolean(parser);
                 case VALUE_NULL:
-                    if (!allowNull()) {
-                        throw Helpers.mismatch(parser, String.class);
-                    }
-                    return onNull().orElse(null);
+                    return parseNull(parser);
             }
             throw Helpers.mismatch(parser, String.class);
         }
 
         @Override
         public String parseMissing(JsonParser parser) throws IOException {
-            if (!allowMissing()) {
-                throw Helpers.mismatchMissing(parser, String.class);
-            }
-            return onMissing().orElse(null);
+            return StringOptions.this.parseMissing(parser);
         }
     }
 }

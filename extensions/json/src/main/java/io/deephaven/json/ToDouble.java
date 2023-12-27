@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 
 import java.io.IOException;
 
-interface ToDouble extends Function {
+interface ToDouble {
 
     double parseValue(JsonParser parser) throws IOException;
 

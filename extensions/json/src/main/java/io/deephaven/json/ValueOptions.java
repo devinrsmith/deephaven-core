@@ -12,10 +12,6 @@ import java.util.stream.Stream;
 
 public abstract class ValueOptions {
 
-    public static ValueOptions skip() {
-        return new SkipOpts();
-    }
-
 
     @Default
     public boolean allowNull() {

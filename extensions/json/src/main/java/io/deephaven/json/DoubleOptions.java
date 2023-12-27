@@ -80,6 +80,16 @@ public abstract class DoubleOptions extends ValueOptions {
         return false;
     }
 
+    public final SkipOptions skip() {
+        return SkipOptions.builder()
+                .allowNumberFloat(allowNumber())
+                .allowNumberInt(allowNumber())
+                .allowString(allowString())
+                .allowNull(allowNull())
+                .allowMissing(allowMissing())
+                .build();
+    }
+
     @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.doubleType());

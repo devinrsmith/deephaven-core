@@ -33,31 +33,31 @@ public class TestHelper {
         parse(options, List.of(json), expected);
     }
 
-    static void parse(ValueOptions options, List<String> jsons, Chunk<?>... expected) throws IOException {
+    static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
         final ObjectProcessorJsonValue processor = new ObjectProcessorJsonValue(new JsonFactory(), options);
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()
                 .map(ObjectProcessor::chunkType)
-                .map(x -> x.makeWritableChunk(1))
+                .map(x -> x.makeWritableChunk(jsonRows.size()))
                 .collect(Collectors.toList());
         try {
-            assertThat(out.size()).isEqualTo(expected.length);
+            assertThat(out.size()).isEqualTo(expectedCols.length);
             assertThat(out.stream().map(Chunk::getChunkType).collect(Collectors.toList()))
-                    .isEqualTo(Stream.of(expected).map(Chunk::getChunkType).collect(Collectors.toList()));
+                    .isEqualTo(Stream.of(expectedCols).map(Chunk::getChunkType).collect(Collectors.toList()));
             for (WritableChunk<?> wc : out) {
                 wc.setSize(0);
             }
-            try (final WritableObjectChunk<byte[], Any> in = WritableObjectChunk.makeWritableChunk(jsons.size())) {
+            try (final WritableObjectChunk<byte[], Any> in = WritableObjectChunk.makeWritableChunk(jsonRows.size())) {
                 int i = 0;
-                for (String json : jsons) {
+                for (String json : jsonRows) {
                     in.set(i, json.getBytes(StandardCharsets.UTF_8));
                     ++i;
                 }
                 processor.processAllImpl(in, out);
             }
-            for (int i = 0; i < expected.length; ++i) {
-                check(out.get(i), expected[i]);
+            for (int i = 0; i < expectedCols.length; ++i) {
+                check(out.get(i), expectedCols[i]);
             }
         } finally {
             for (WritableChunk<?> wc : out) {

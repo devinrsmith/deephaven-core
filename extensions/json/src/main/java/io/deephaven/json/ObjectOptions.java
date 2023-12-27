@@ -78,6 +78,16 @@ public abstract class ObjectOptions extends ValueOptions {
         return RepeatedFieldBehavior.USE_FIRST;
     }
 
+    @Override
+    public final boolean allowNull() {
+        return fieldProcessors().values().stream().allMatch(ValueOptions::allowNull);
+    }
+
+    @Override
+    public final boolean allowMissing() {
+        return fieldProcessors().values().stream().allMatch(ValueOptions::allowMissing);
+    }
+
     public final SkipOptions skip() {
         // todo: this doesn't make sense on this object
         return SkipOptions.builder()
@@ -87,7 +97,9 @@ public abstract class ObjectOptions extends ValueOptions {
                 .build();
     }
 
-    public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
+    // Note: Builder does not extend ValueOptions.Builder b/c allowNull / allowMissing is implicitly set
+
+    public interface Builder {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
@@ -97,6 +109,8 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
 
         Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
+
+        ObjectOptions build();
     }
 
     @Override
@@ -190,10 +204,8 @@ public abstract class ObjectOptions extends ValueOptions {
             if (!allowNull()) {
                 throw Helpers.mismatch(parser, Object.class);
             }
-            // Note: we are treating a null object the same as an empty object
-            // null ~= {}
             for (ValueProcessor value : fieldProcessors.values()) {
-                value.processMissing(parser);
+                value.processCurrentValue(parser);
             }
         }
 
@@ -201,9 +213,6 @@ public abstract class ObjectOptions extends ValueOptions {
             if (!allowMissing()) {
                 throw Helpers.mismatchMissing(parser, Object.class);
             }
-            // Note: we are treating a missing object the same as an empty object
-            // # field_name: <not-present>
-            // field_name: {}
             for (ValueProcessor value : fieldProcessors.values()) {
                 value.processMissing(parser);
             }

@@ -78,11 +78,13 @@ public abstract class SkipOptions extends ValueOptions {
                     if (!allowObject()) {
                         throw Helpers.mismatch(parser, void.class);
                     }
+                    parser.skipChildren();
                     break;
                 case START_ARRAY:
                     if (!allowArray()) {
                         throw Helpers.mismatch(parser, void.class);
                     }
+                    parser.skipChildren();
                     break;
                 case VALUE_STRING:
                     if (!allowString()) {
@@ -113,7 +115,6 @@ public abstract class SkipOptions extends ValueOptions {
                 default:
                     throw Helpers.mismatch(parser, void.class);
             }
-            parser.skipChildren();
         }
 
         @Override

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
@@ -26,19 +27,37 @@ public abstract class TupleOptions extends ValueOptions {
         return ImmutableTupleOptions.builder();
     }
 
-    public static TupleOptions of(List<ValueOptions> values) {
+    public static TupleOptions of(ValueOptions... values) {
+        return builder().addValues(values).build();
+    }
+
+    public static TupleOptions of(Iterable<? extends ValueOptions> values) {
         return builder().addAllValues(values).build();
     }
 
     public abstract List<ValueOptions> values();
 
-    public interface Builder extends ValueOptions.Builder<TupleOptions, Builder> {
+    @Override
+    public final boolean allowNull() {
+        return values().stream().allMatch(ValueOptions::allowNull);
+    }
+
+    @Override
+    public final boolean allowMissing() {
+        return values().stream().allMatch(ValueOptions::allowMissing);
+    }
+
+    // Note: Builder does not extend ValueOptions.Builder b/c allowNull / allowMissing is implicitly set
+
+    public interface Builder {
 
         Builder addValues(ValueOptions element);
 
         Builder addValues(ValueOptions... elements);
 
         Builder addAllValues(Iterable<? extends ValueOptions> elements);
+
+        TupleOptions build();
     }
 
     @Override
@@ -46,6 +65,7 @@ public abstract class TupleOptions extends ValueOptions {
         return values().stream().flatMap(ValueOptions::outputTypes);
     }
 
+    @Override
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
@@ -61,13 +81,13 @@ public abstract class TupleOptions extends ValueOptions {
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
-        return new PI(processors);
+        return new TupleProcessor(processors);
     }
 
-    private class PI implements ValueProcessor {
+    private class TupleProcessor implements ValueProcessor {
         private final List<ValueProcessor> values;
 
-        public PI(List<ValueProcessor> values) {
+        public TupleProcessor(List<ValueProcessor> values) {
             this.values = Objects.requireNonNull(values);
         }
 
@@ -114,11 +134,11 @@ public abstract class TupleOptions extends ValueOptions {
             if (!allowMissing()) {
                 throw Helpers.mismatchMissing(parser, Object.class);
             }
-            // Note: we are treating a missing tuple the same as a tuple of null objects
-            // # field_name: <not-present>
-            // field_name: [null, ..., null]
+            // Note: we are treating a missing tuple the same as a tuple of missing objects (which, is technically
+            // impossible w/ native json, but it's the semantics we are exposing).
+            // <missing> ~= [<missing>, ..., <missing>]
             for (ValueProcessor value : values) {
-                value.processCurrentValue(parser);
+                value.processMissing(parser);
             }
         }
     }

@@ -20,6 +20,14 @@ import java.util.function.Function;
 import java.util.function.ToLongFunction;
 
 final class Helpers {
+
+    static void assertNoCurrentToken(JsonParser parser) {
+        if (parser.hasCurrentToken()) {
+            throw new IllegalStateException(
+                    String.format("Expected no current token. actual=%s", parser.currentToken()));
+        }
+    }
+
     static void assertNextToken(JsonParser parser, JsonToken expected) throws IOException {
         final JsonToken actual = parser.nextToken();
         if (actual != expected) {
@@ -111,7 +119,6 @@ final class Helpers {
                 return JsonToken.END_OBJECT;
             case START_ARRAY:
                 return JsonToken.END_ARRAY;
-            case FIELD_NAME:
             case VALUE_STRING:
             case VALUE_NUMBER_INT:
             case VALUE_NUMBER_FLOAT:

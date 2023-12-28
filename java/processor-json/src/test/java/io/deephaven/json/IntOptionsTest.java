@@ -4,9 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.exc.InputCoercionException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.chunk.IntChunk;
-import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -53,8 +51,8 @@ public class IntOptionsTest {
     void strictMissing() throws IOException {
         try {
             parse(IntOptions.strict(), "", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected missing token");
         }
     }
@@ -63,8 +61,8 @@ public class IntOptionsTest {
     void strictNull() throws IOException {
         try {
             parse(IntOptions.strict(), "null", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
         }
     }
@@ -83,8 +81,8 @@ public class IntOptionsTest {
     void standardString() throws IOException {
         try {
             parse(IntOptions.standard(), "\"42\"", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_STRING'");
         }
     }
@@ -93,8 +91,8 @@ public class IntOptionsTest {
     void standardTrue() throws IOException {
         try {
             parse(IntOptions.standard(), "true", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_TRUE'");
         }
     }
@@ -103,8 +101,8 @@ public class IntOptionsTest {
     void standardFalse() throws IOException {
         try {
             parse(IntOptions.standard(), "false", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_FALSE'");
         }
     }
@@ -113,8 +111,8 @@ public class IntOptionsTest {
     void standardFloat() throws IOException {
         try {
             parse(IntOptions.standard(), "42.0", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NUMBER_FLOAT'");
         }
     }
@@ -123,8 +121,8 @@ public class IntOptionsTest {
     void standardObject() throws IOException {
         try {
             parse(IntOptions.standard(), "{}", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_OBJECT'");
         }
     }
@@ -133,8 +131,8 @@ public class IntOptionsTest {
     void standardArray() throws IOException {
         try {
             parse(IntOptions.standard(), "[]", IntChunk.chunkWrap(new int[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_ARRAY'");
         }
     }

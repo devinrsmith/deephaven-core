@@ -3,7 +3,6 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.chunk.FloatChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -46,8 +45,8 @@ public class FloatOptionsTest {
     void strictMissing() throws IOException {
         try {
             parse(FloatOptions.strict(), "", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected missing token");
         }
     }
@@ -56,8 +55,8 @@ public class FloatOptionsTest {
     void strictNull() throws IOException {
         try {
             parse(FloatOptions.strict(), "null", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
         }
     }
@@ -66,8 +65,8 @@ public class FloatOptionsTest {
     void standardString() throws IOException {
         try {
             parse(FloatOptions.standard(), "\"42\"", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_STRING'");
         }
     }
@@ -76,8 +75,8 @@ public class FloatOptionsTest {
     void standardTrue() throws IOException {
         try {
             parse(FloatOptions.standard(), "true", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_TRUE'");
         }
     }
@@ -86,8 +85,8 @@ public class FloatOptionsTest {
     void standardFalse() throws IOException {
         try {
             parse(FloatOptions.standard(), "false", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_FALSE'");
         }
     }
@@ -96,8 +95,8 @@ public class FloatOptionsTest {
     void standardObject() throws IOException {
         try {
             parse(FloatOptions.standard(), "{}", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_OBJECT'");
         }
     }
@@ -106,8 +105,8 @@ public class FloatOptionsTest {
     void standardArray() throws IOException {
         try {
             parse(FloatOptions.standard(), "[]", FloatChunk.chunkWrap(new float[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'START_ARRAY'");
         }
     }

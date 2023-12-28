@@ -3,13 +3,14 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.io.NumberInput;
 import com.fasterxml.jackson.core.io.doubleparser.FastDoubleParser;
 import com.fasterxml.jackson.core.io.doubleparser.FastFloatParser;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -130,13 +131,22 @@ final class Helpers {
         throw new IllegalStateException("Unexpected startToken: " + startToken);
     }
 
-    static MismatchedInputException mismatch(JsonParser parser, Class<?> clazz) {
-        return MismatchedInputException.from(parser, clazz,
-                String.format("Unexpected token '%s'", parser.currentToken()));
+    static class UnexpectedToken extends JsonProcessingException {
+        public UnexpectedToken(String msg, JsonLocation loc) {
+            super(msg, loc);
+        }
     }
 
-    static MismatchedInputException mismatchMissing(JsonParser parser, Class<?> clazz) {
-        return MismatchedInputException.from(parser, clazz, "Unexpected missing token");
+    static IOException mismatch(JsonParser parser, Class<?> clazz) {
+        final JsonLocation location = parser.currentLocation();
+        final String msg = String.format("Unexpected token '%s' at '%s'", parser.currentToken(), location);
+        return new UnexpectedToken(msg, location);
+    }
+
+    static IOException mismatchMissing(JsonParser parser, Class<?> clazz) {
+        final JsonLocation location = parser.currentLocation();
+        final String msg = String.format("Unexpected missing token at '%s'", location);
+        return new UnexpectedToken(msg, location);
     }
 
     static int parseStringAsInt(JsonParser parser) throws IOException {

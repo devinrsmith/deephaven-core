@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.node.MissingNode;
 import io.deephaven.annotations.SimpleStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ObjectValueProcessor.ToObject;
@@ -57,7 +56,7 @@ public abstract class AnyOptions extends ValueOptions {
 
         @Override
         public TreeNode parseMissing(JsonParser parser) {
-            return MissingNode.getInstance();
+            return parser.getCodec().missingNode();
         }
     }
 }

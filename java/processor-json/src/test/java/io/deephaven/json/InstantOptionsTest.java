@@ -3,8 +3,6 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -45,8 +43,8 @@ public class InstantOptionsTest {
     void strictNull() throws IOException {
         try {
             parse(InstantOptions.strict(), "null", LongChunk.chunkWrap(new long[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
         }
     }
@@ -55,8 +53,8 @@ public class InstantOptionsTest {
     void strictMissing() throws IOException {
         try {
             parse(InstantOptions.strict(), "", LongChunk.chunkWrap(new long[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected missing token");
         }
     }

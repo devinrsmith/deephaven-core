@@ -4,22 +4,20 @@ plugins {
 }
 
 dependencies {
-    Classpaths.inheritImmutables(project)
     Classpaths.inheritJacksonPlatform(project)
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
-    // currently api, can we make impl?
+    api project(':processor')
     implementation 'com.fasterxml.jackson.core:jackson-core'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
-
     implementation project(':engine-query-constants')
-
-    // todo: we want to move processor somewhere general
-    api project(':extensions-kafka')
+    implementation project(':engine-time')
+    Classpaths.inheritImmutables(project)
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     Classpaths.inheritJUnitPlatform(project)
     Classpaths.inheritAssertJ(project)
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 test {

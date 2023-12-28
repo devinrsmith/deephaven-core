@@ -3,14 +3,10 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import io.deephaven.chunk.LongChunk;
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDate;
 
 import static io.deephaven.json.TestHelper.parse;
@@ -41,8 +37,8 @@ public class LocalDateOptionsTest {
     void strictNull() throws IOException {
         try {
             parse(LocalDateOptions.strict(), "null", ObjectChunk.chunkWrap(new LocalDate[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected token 'VALUE_NULL'");
         }
     }
@@ -51,8 +47,8 @@ public class LocalDateOptionsTest {
     void strictMissing() throws IOException {
         try {
             parse(LocalDateOptions.strict(), "", ObjectChunk.chunkWrap(new LocalDate[1]));
-            failBecauseExceptionWasNotThrown(MismatchedInputException.class);
-        } catch (MismatchedInputException e) {
+            failBecauseExceptionWasNotThrown(IOException.class);
+        } catch (IOException e) {
             assertThat(e).hasMessageContaining("Unexpected missing token");
         }
     }

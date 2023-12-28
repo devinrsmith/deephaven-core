@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
@@ -134,14 +133,14 @@ public abstract class BigIntegerOptions extends ValueOptions {
         throw new IllegalStateException();
     }
 
-    private BigInteger parseNull(JsonParser parser) throws MismatchedInputException {
+    private BigInteger parseNull(JsonParser parser) throws IOException {
         if (!allowNull()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
         return onNull().orElse(null);
     }
 
-    private BigInteger parseMissing(JsonParser parser) throws MismatchedInputException {
+    private BigInteger parseMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
             throw Helpers.mismatchMissing(parser, BigInteger.class);
         }

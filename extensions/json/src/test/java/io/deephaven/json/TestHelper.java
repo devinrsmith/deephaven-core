@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.deephaven.chunk.BooleanChunk;
 import io.deephaven.chunk.ByteChunk;
 import io.deephaven.chunk.CharChunk;
@@ -34,7 +35,8 @@ public class TestHelper {
     }
 
     static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-        final ObjectProcessorJsonValue processor = new ObjectProcessorJsonValue(new JsonFactory(), options);
+        final ObjectProcessorJsonValue processor =
+                new ObjectProcessorJsonValue(new JsonFactory(new ObjectMapper()), options);
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()

@@ -21,6 +21,30 @@ public abstract class SkipOptions extends ValueOptions {
         return ImmutableSkipOptions.builder();
     }
 
+    public static SkipOptions numberInt() {
+        return builder().allowNumberInt(true).build();
+    }
+
+    public static SkipOptions numberFloat() {
+        return builder().allowNumberFloat(true).build();
+    }
+
+    public static SkipOptions string() {
+        return builder().allowString(true).build();
+    }
+
+    public static SkipOptions _boolean() {
+        return builder().allowBoolean(true).build();
+    }
+
+    public static SkipOptions object() {
+        return builder().allowObject(true).build();
+    }
+
+    public static SkipOptions array() {
+        return builder().allowArray(true).build();
+    }
+
     public static SkipOptions lenient() {
         return builder()
                 .allowNumberInt(true)

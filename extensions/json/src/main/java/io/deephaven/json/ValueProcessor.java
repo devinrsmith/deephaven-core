@@ -22,10 +22,18 @@ interface ValueProcessor {
             return;
         }
         processor.processCurrentValue(parser);
-        assertCurrentToken(parser, endToken(startToken));
+        // note: AnyOptions impl which is based on com.fasterxml.jackson.core.JsonParser.readValueAsTree
+        // clears out the token, so we can't necessarily check it.
+        // parser.getLastClearedToken()
+        // assertCurrentToken(parser, endToken(startToken));
         parser.nextToken();
         assertNoCurrentToken(parser);
     }
+
+    // semantically _similar_ to
+    // com.fasterxml.jackson.databind.JsonDeserializer.deserialize(com.fasterxml.jackson.core.JsonParser,
+    // com.fasterxml.jackson.databind.DeserializationContext),
+    // but not functional (want to destructure efficiently)
 
     /**
      * Called when the JSON value is present; the current token should be one of {@link JsonToken#START_OBJECT},
@@ -40,6 +48,7 @@ interface ValueProcessor {
      * @throws IOException if an IOException occurs
      */
     void processCurrentValue(JsonParser parser) throws IOException;
+
 
     /**
      * Called when the JSON value is missing; the current token may or may <b>not</b> be {@code null}. For example, if a

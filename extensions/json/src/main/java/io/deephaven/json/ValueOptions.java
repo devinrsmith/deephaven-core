@@ -23,7 +23,7 @@ public abstract class ValueOptions {
         return true;
     }
 
-    public final ArrayOptions array() {
+    public final ArrayOptions toArrayOptions() {
         return null;
         // return ArrayOptions.builder()
         // .element(this)

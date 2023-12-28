@@ -10,7 +10,7 @@ configurations {
 dependencies {
     implementation project(':server-jetty')
 
-    runtimeOnly project(':extensions-json')
+    runtimeOnly project(':processor-json')
 
     runtimeOnly project(':log-to-slf4j')
     runtimeOnly project(':logback-print-stream-globals')

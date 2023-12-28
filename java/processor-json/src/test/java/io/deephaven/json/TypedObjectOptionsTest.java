@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import io.deephaven.chunk.DoubleChunk;
-import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -14,26 +13,25 @@ import java.util.List;
 
 import static io.deephaven.json.TestHelper.parse;
 
-public class TypeDescriminatedObjectOptionsTest {
+public class TypedObjectOptionsTest {
 
     // todo: enum side
-    private static final TypeDescriminatedObjectOptions OPTS = TypeDescriminatedObjectOptions.builder()
+    private static final TypedObjectOptions OPTS = TypedObjectOptions.builder()
             .typeFieldName("type")
             .putTypes("quote", ObjectOptions.builder()
-                    .putFieldProcessors("symbol", StringOptions.standard()) // todo: add strict support
+                    .putFieldProcessors("symbol", StringOptions.strict())
                     .putFieldProcessors("bid", DoubleOptions.standard())
                     .putFieldProcessors("ask", DoubleOptions.standard())
                     .build())
             .putTypes("trade", ObjectOptions.builder()
-                    .putFieldProcessors("symbol", StringOptions.standard()) // todo: add strict support
+                    .putFieldProcessors("symbol", StringOptions.strict())
                     .putFieldProcessors("price", DoubleOptions.standard())
                     .putFieldProcessors("size", DoubleOptions.standard())
                     .build())
             .build();
 
     @Test
-    void name() throws IOException {
-
+    void typeDiscriminationQuoteTrade() throws IOException {
         parse(OPTS, List.of(
                 // "",
                 // "null",

@@ -139,14 +139,13 @@ final class Helpers {
 
     static IOException mismatch(JsonParser parser, Class<?> clazz) {
         final JsonLocation location = parser.currentLocation();
-        final String msg = String.format("Unexpected token '%s' at '%s'", parser.currentToken(), location);
+        final String msg = String.format("Unexpected token '%s'", parser.currentToken());
         return new UnexpectedToken(msg, location);
     }
 
     static IOException mismatchMissing(JsonParser parser, Class<?> clazz) {
         final JsonLocation location = parser.currentLocation();
-        final String msg = String.format("Unexpected missing token at '%s'", location);
-        return new UnexpectedToken(msg, location);
+        return new UnexpectedToken("Unexpected missing token", location);
     }
 
     static int parseStringAsInt(JsonParser parser) throws IOException {

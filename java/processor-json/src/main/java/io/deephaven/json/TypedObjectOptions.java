@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.ObjectOptions.ObjectValueFieldProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -22,12 +21,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * A type-discriminated object.
+ */
 @Immutable
 @BuildableStyle
-public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
+public abstract class TypedObjectOptions extends ValueOptions {
 
     public static Builder builder() {
-        return ImmutableTypeDescriminatedObjectOptions.builder();
+        return ImmutableTypedObjectOptions.builder();
     }
 
     public abstract String typeFieldName();
@@ -41,7 +43,7 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
         return true;
     }
 
-    public interface Builder extends ValueOptions.Builder<TypeDescriminatedObjectOptions, Builder> {
+    public interface Builder extends ValueOptions.Builder<TypedObjectOptions, Builder> {
         Builder typeFieldName(String typeFieldName);
 
         Builder putTypes(String key, ObjectOptions value);
@@ -69,19 +71,16 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
 
     @Override
     ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        final Map<String, ObjectValueFieldProcessor> processors = new LinkedHashMap<>(types().size());
-        final Map<String, ObjectValueFieldProcessor> alts = new LinkedHashMap<>(types().size());
+        final Map<String, Processor> processors = new LinkedHashMap<>(types().size());
         // Note: ix = 1; ix = 0 is for typeOut
         int ix = 1;
         for (Entry<String, ObjectOptions> e : types().entrySet()) {
             final String type = e.getKey();
             final ObjectOptions opts = e.getValue();
             final int numTypes = opts.numColumns();
-
-            // opts.withMissingSupport();
-            final ObjectValueFieldProcessor processor =
-                    opts.processor(context + "[" + type + "]", out.subList(ix, ix + numTypes));
-            processors.put(type, processor);
+            final List<WritableChunk<?>> chunksOut = out.subList(ix, ix + numTypes);
+            final ValueProcessor processor = opts.processor(context + "[" + type + "]", chunksOut);
+            processors.put(type, new Processor(processor, chunksOut));
             ix += numTypes;
         }
         if (ix != out.size()) {
@@ -110,13 +109,34 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
         }
     }
 
+    private static class Processor {
+        private final ValueProcessor valueProcessor;
+        private final List<WritableChunk<?>> out;
+
+        public Processor(ValueProcessor valueProcessor, List<WritableChunk<?>> out) {
+            this.valueProcessor = valueProcessor;
+            this.out = out;
+        }
+
+        ValueProcessor processor() {
+            return valueProcessor;
+        }
+
+        void notApplicable() {
+            for (WritableChunk<?> wc : out) {
+                final int size = wc.size();
+                wc.fillWithNullValue(size, 1);
+                wc.setSize(size + 1);
+            }
+        }
+    }
+
     class DescriminatedProcessor implements ValueProcessor {
 
         private final WritableObjectChunk<String, ?> typeOut;
-        private final Map<String, ObjectValueFieldProcessor> processors;
+        private final Map<String, Processor> processors;
 
-        public DescriminatedProcessor(WritableObjectChunk<String, ?> typeOut,
-                Map<String, ObjectValueFieldProcessor> processors) {
+        public DescriminatedProcessor(WritableObjectChunk<String, ?> typeOut, Map<String, Processor> processors) {
             this.typeOut = Objects.requireNonNull(typeOut);
             this.processors = Objects.requireNonNull(processors);
         }
@@ -151,8 +171,8 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
             }
             // onMissingType()?
             typeOut.add(null);
-            for (ValueProcessor processor : processors.values()) {
-                processor.processMissing(parser);
+            for (Processor processor : processors.values()) {
+                processor.notApplicable();
             }
         }
 
@@ -162,8 +182,8 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
             }
             // onNullType()?
             typeOut.add(null);
-            for (ValueProcessor value : processors.values()) {
-                value.processCurrentValue(parser);
+            for (Processor processor : processors.values()) {
+                processor.notApplicable();
             }
         }
 
@@ -182,20 +202,20 @@ public abstract class TypeDescriminatedObjectOptions extends ValueOptions {
             }
             typeOut.add(typeFieldValue);
             if (parser.nextToken() == JsonToken.END_OBJECT) {
-                for (ObjectValueFieldProcessor value : processors.values()) {
-                    value.processEmptyObject(parser);
+                for (Processor processor : processors.values()) {
+                    processor.notApplicable();
                 }
             }
             if (parser.currentToken() != JsonToken.FIELD_NAME) {
                 throw new IllegalStateException();
             }
-            for (Entry<String, ObjectValueFieldProcessor> e : processors.entrySet()) {
+            for (Entry<String, Processor> e : processors.entrySet()) {
                 final String processorType = e.getKey();
-                final ValueProcessor processor = e.getValue();
+                final Processor processor = e.getValue();
                 if (processorType.equals(typeFieldValue)) {
-                    processor.processCurrentValue(parser);
+                    processor.processor().processCurrentValue(parser);
                 } else {
-                    processor.processMissing(parser);
+                    processor.notApplicable();
                 }
             }
         }

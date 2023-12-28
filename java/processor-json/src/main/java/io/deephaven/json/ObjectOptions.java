@@ -118,7 +118,7 @@ public abstract class ObjectOptions extends ValueOptions {
         return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
     }
 
-    final ObjectValueFieldProcessor processor(String context, List<WritableChunk<?>> out) {
+    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
@@ -139,7 +139,7 @@ public abstract class ObjectOptions extends ValueOptions {
         return new ObjectValueFieldProcessor(processors);
     }
 
-    class ObjectValueFieldProcessor implements ValueProcessor {
+    private class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;
 
         ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {
@@ -191,7 +191,7 @@ public abstract class ObjectOptions extends ValueOptions {
             }
         }
 
-        void processEmptyObject(JsonParser parser) throws IOException {
+        private void processEmptyObject(JsonParser parser) throws IOException {
             // This logic should be equivalent to processObjectFields, but where we know there are no fields
             for (ValueProcessor value : fieldProcessors.values()) {
                 value.processMissing(parser);

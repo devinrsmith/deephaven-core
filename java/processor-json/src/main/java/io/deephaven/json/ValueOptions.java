@@ -35,6 +35,14 @@ public abstract class ValueOptions {
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
 
+    // for nested / typedescr cases
+    ValueOptions withMissingSupport() {
+        if (allowMissing()) {
+            return this;
+        }
+        throw new UnsupportedOperationException(); // todo
+    }
+
     final int numColumns() {
         return (int) outputTypes().count();
     }

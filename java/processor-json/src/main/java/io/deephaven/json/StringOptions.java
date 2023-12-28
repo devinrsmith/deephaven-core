@@ -105,6 +105,22 @@ public abstract class StringOptions extends ValueOptions {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
+    @Override
+    StringOptions withMissingSupport() {
+        if (allowMissing()) {
+            return this;
+        }
+        final Builder builder = builder()
+                .allowString(allowString())
+                .allowNumberInt(allowNumberInt())
+                .allowNumberFloat(allowNumberFloat())
+                .allowNull(allowNull())
+                .allowMissing(true);
+        onNull().ifPresent(builder::onNull);
+        // todo: option for onMissing?
+        return builder.build();
+    }
+
     @Check
     final void checkOnNull() {
         if (!allowNull() && onNull().isPresent()) {

@@ -72,11 +72,14 @@ public abstract class TupleOptions extends ValueOptions {
         }
         final List<ValueProcessor> processors = new ArrayList<>(values().size());
         int ix = 0;
+        int processorIx = 0;
         for (ValueOptions value : values()) {
             final int numTypes = value.numColumns();
-            final ValueProcessor processor = value.processor(context + "[" + ix + "]", out.subList(ix, ix + numTypes));
+            final ValueProcessor processor =
+                    value.processor(context + "[" + processorIx + "]", out.subList(ix, ix + numTypes));
             processors.add(processor);
             ix += numTypes;
+            ++processorIx;
         }
         if (ix != out.size()) {
             throw new IllegalStateException();

@@ -61,15 +61,15 @@ public abstract class ObjectOptions extends ValueOptions {
         return RepeatedFieldBehavior.USE_FIRST;
     }
 
-    @Override
-    public final boolean allowNull() {
-        return fieldProcessors().values().stream().allMatch(ValueOptions::allowNull);
-    }
-
-    @Override
-    public final boolean allowMissing() {
-        return fieldProcessors().values().stream().allMatch(ValueOptions::allowMissing);
-    }
+    // @Override
+    // public final boolean allowNull() {
+    // return fieldProcessors().values().stream().allMatch(ValueOptions::allowNull);
+    // }
+    //
+    // @Override
+    // public final boolean allowMissing() {
+    // return fieldProcessors().values().stream().allMatch(ValueOptions::allowMissing);
+    // }
 
     public final SkipOptions skip() {
         // todo: this doesn't make sense on this object
@@ -118,7 +118,7 @@ public abstract class ObjectOptions extends ValueOptions {
         return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
     }
 
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+    final ObjectValueFieldProcessor processor(String context, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
@@ -139,7 +139,7 @@ public abstract class ObjectOptions extends ValueOptions {
         return new ObjectValueFieldProcessor(processors);
     }
 
-    private class ObjectValueFieldProcessor implements ValueProcessor {
+    class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;
 
         ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {
@@ -148,12 +148,24 @@ public abstract class ObjectOptions extends ValueOptions {
 
         @Override
         public void processCurrentValue(JsonParser parser) throws IOException {
+            // see com.fasterxml.jackson.databind.JsonDeserializer.deserialize(com.fasterxml.jackson.core.JsonParser,
+            // com.fasterxml.jackson.databind.DeserializationContext)
+            // for notes on FIELD_NAME
             switch (parser.currentToken()) {
                 case START_OBJECT:
-                    parseObject(parser);
+                    if (parser.nextToken() == JsonToken.END_OBJECT) {
+                        processEmptyObject(parser);
+                        return;
+                    }
+                    if (parser.currentToken() != JsonToken.FIELD_NAME) {
+                        throw new IllegalStateException();
+                    }
+                    // fall-through
+                case FIELD_NAME:
+                    processObjectFields(parser);
                     return;
                 case VALUE_NULL:
-                    parseNull(parser);
+                    processNullObject(parser);
                     return;
                 default:
                     throw Helpers.mismatch(parser, Object.class);
@@ -162,15 +174,36 @@ public abstract class ObjectOptions extends ValueOptions {
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
-            parseMissing(parser);
+            if (!allowMissing()) {
+                throw Helpers.mismatchMissing(parser, Object.class);
+            }
+            for (ValueProcessor value : fieldProcessors.values()) {
+                value.processMissing(parser);
+            }
         }
 
-        private void parseObject(JsonParser parser) throws IOException {
+        private void processNullObject(JsonParser parser) throws IOException {
+            if (!allowNull()) {
+                throw Helpers.mismatch(parser, Object.class);
+            }
+            for (ValueProcessor value : fieldProcessors.values()) {
+                value.processCurrentValue(parser);
+            }
+        }
+
+        void processEmptyObject(JsonParser parser) throws IOException {
+            // This logic should be equivalent to processObjectFields, but where we know there are no fields
+            for (ValueProcessor value : fieldProcessors.values()) {
+                value.processMissing(parser);
+            }
+        }
+
+        private void processObjectFields(JsonParser parser) throws IOException {
             // Note: we could try to build a stricter implementation that doesn't use Set; if the user can guarantee
             // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
             // counter to ensure all field processors were invoked.
             final Set<String> visited = new HashSet<>(fieldProcessors.size());
-            while (parser.nextToken() == JsonToken.FIELD_NAME) {
+            while (parser.currentToken() == JsonToken.FIELD_NAME) {
                 final String fieldName = parser.currentName();
                 final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
                 if (knownProcessor == null) {
@@ -190,30 +223,13 @@ public abstract class ObjectOptions extends ValueOptions {
                 } else {
                     throw new IllegalStateException("todo");
                 }
+                parser.nextToken();
             }
             assertCurrentToken(parser, JsonToken.END_OBJECT);
             for (Entry<String, ValueProcessor> e : fieldProcessors.entrySet()) {
                 if (!visited.contains(e.getKey())) {
                     e.getValue().processMissing(parser);
                 }
-            }
-        }
-
-        private void parseNull(JsonParser parser) throws IOException {
-            if (!allowNull()) {
-                throw Helpers.mismatch(parser, Object.class);
-            }
-            for (ValueProcessor value : fieldProcessors.values()) {
-                value.processCurrentValue(parser);
-            }
-        }
-
-        private void parseMissing(JsonParser parser) throws IOException {
-            if (!allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Object.class);
-            }
-            for (ValueProcessor value : fieldProcessors.values()) {
-                value.processMissing(parser);
             }
         }
     }

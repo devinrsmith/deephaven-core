@@ -9,11 +9,11 @@ import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.qst.type.Type;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +34,9 @@ public abstract class TypedObjectOptions extends ValueOptions {
 
     public abstract String typeFieldName();
 
-    // todo: shared fields?
+    public abstract Map<String, ValueOptions> sharedFields();
 
-    public abstract Map<String, ObjectOptions> types();
+    public abstract Map<String, ObjectOptions> objects();
 
     @Default
     public boolean allowUnknownTypes() {
@@ -46,47 +46,78 @@ public abstract class TypedObjectOptions extends ValueOptions {
     public interface Builder extends ValueOptions.Builder<TypedObjectOptions, Builder> {
         Builder typeFieldName(String typeFieldName);
 
-        Builder putTypes(String key, ObjectOptions value);
+        Builder putSharedFields(String key, ValueOptions value);
 
-        Builder putTypes(Map.Entry<String, ? extends ObjectOptions> entry);
+        Builder putSharedFields(Map.Entry<String, ? extends ValueOptions> entry);
 
-        Builder putAllTypes(Map<String, ? extends ObjectOptions> entries);
+        Builder putAllSharedFields(Map<String, ? extends ValueOptions> entries);
+
+        Builder putObjects(String key, ObjectOptions value);
+
+        Builder putObjects(Map.Entry<String, ? extends ObjectOptions> entry);
+
+        Builder putAllObjects(Map<String, ? extends ObjectOptions> entries);
 
         Builder allowUnknownTypes(boolean allowUnknownTypes);
-    }
-
-    @Check
-    final void checkProcessorsSupportMissing() {
-        if (!types().values().stream().allMatch(ObjectOptions::allowMissing)) {
-            throw new IllegalArgumentException("Must support missing todo...");
-        }
     }
 
     @Override
     Stream<Type<?>> outputTypes() {
         return Stream.concat(
                 Stream.of(Type.stringType()),
-                types().values().stream().flatMap(ObjectOptions::outputTypes));
+                Stream.concat(
+                        sharedFields().values().stream().flatMap(ValueOptions::outputTypes),
+                        objects().values().stream().flatMap(ObjectOptions::outputTypes)));
     }
 
     @Override
     ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        final Map<String, Processor> processors = new LinkedHashMap<>(types().size());
-        // Note: ix = 1; ix = 0 is for typeOut
-        int ix = 1;
-        for (Entry<String, ObjectOptions> e : types().entrySet()) {
+        final WritableObjectChunk<String, ?> typeOut = out.get(0).asWritableObjectChunk();
+        final List<WritableChunk<?>> sharedFields = out.subList(1, 1 + sharedFields().size());
+        final Map<String, Processor> processors = new LinkedHashMap<>(objects().size());
+        int outIx = 1 + sharedFields.size();
+        for (Entry<String, ObjectOptions> e : objects().entrySet()) {
             final String type = e.getKey();
-            final ObjectOptions opts = e.getValue();
-            final int numTypes = opts.numColumns();
-            final List<WritableChunk<?>> chunksOut = out.subList(ix, ix + numTypes);
-            final ValueProcessor processor = opts.processor(context + "[" + type + "]", chunksOut);
-            processors.put(type, new Processor(processor, chunksOut));
-            ix += numTypes;
+            final ObjectOptions specificOpts = e.getValue();
+            final int numSpecificFields = specificOpts.numColumns();
+            final List<WritableChunk<?>> specificChunks = out.subList(outIx, outIx + numSpecificFields);
+            final List<WritableChunk<?>> allChunks = concat(sharedFields, specificChunks);
+            final ObjectOptions combinedObject = combinedObject(specificOpts);
+            final ValueProcessor processor = combinedObject.processor(context + "[" + type + "]", allChunks);
+            processors.put(type, new Processor(processor, specificChunks));
+            outIx += numSpecificFields;
         }
-        if (ix != out.size()) {
+        if (outIx != out.size()) {
             throw new IllegalStateException();
         }
-        return new DescriminatedProcessor(out.get(0).asWritableObjectChunk(), processors);
+        return new DescriminatedProcessor(typeOut, processors);
+    }
+
+    private static <T> List<T> concat(List<T> x, List<T> y) {
+        if (x.isEmpty()) {
+            return y;
+        }
+        if (y.isEmpty()) {
+            return x;
+        }
+        final List<T> out = new ArrayList<>(x.size() + y.size());
+        out.addAll(x);
+        out.addAll(y);
+        return out;
+    }
+
+    private ObjectOptions combinedObject(ObjectOptions objectOpts) {
+        final Map<String, ValueOptions> sharedFields = sharedFields();
+        if (sharedFields.isEmpty()) {
+            return objectOpts;
+        }
+        final ObjectOptions.Builder builder = ObjectOptions.builder()
+                .allowUnknownFields(objectOpts.allowUnknownFields())
+                .allowNull(objectOpts.allowNull())
+                .allowMissing(objectOpts.allowMissing());
+        builder.putAllFields(sharedFields);
+        builder.putAllFields(objectOpts.fields());
+        return builder.build();
     }
 
     private String parseTypeField(JsonParser parser) throws IOException {
@@ -111,11 +142,11 @@ public abstract class TypedObjectOptions extends ValueOptions {
 
     private static class Processor {
         private final ValueProcessor valueProcessor;
-        private final List<WritableChunk<?>> out;
+        private final List<WritableChunk<?>> specificChunks;
 
-        public Processor(ValueProcessor valueProcessor, List<WritableChunk<?>> out) {
-            this.valueProcessor = valueProcessor;
-            this.out = out;
+        public Processor(ValueProcessor valueProcessor, List<WritableChunk<?>> specificChunks) {
+            this.valueProcessor = Objects.requireNonNull(valueProcessor);
+            this.specificChunks = Objects.requireNonNull(specificChunks);
         }
 
         ValueProcessor processor() {
@@ -123,9 +154,14 @@ public abstract class TypedObjectOptions extends ValueOptions {
         }
 
         void notApplicable() {
-            for (WritableChunk<?> wc : out) {
+            // We should be able to set this to false depending on the context - users should use the type to
+            // discriminate.
+            boolean nullOutput = true;
+            for (WritableChunk<?> wc : specificChunks) {
                 final int size = wc.size();
-                wc.fillWithNullValue(size, 1);
+                if (nullOutput) {
+                    wc.fillWithNullValue(size, 1);
+                }
                 wc.setSize(size + 1);
             }
         }

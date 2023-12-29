@@ -16,12 +16,12 @@ import static io.deephaven.json.TestHelper.parse;
 public class ObjectOptionsTest {
 
     public static final ObjectOptions OBJECT_AGE_FIELD = ObjectOptions.builder()
-            .putFieldProcessors("age", IntOptions.standard())
+            .putFields("age", IntOptions.standard())
             .build();
 
     private static final ObjectOptions OBJECT_NAME_AGE_FIELD = ObjectOptions.builder()
-            .putFieldProcessors("name", StringOptions.standard())
-            .putFieldProcessors("age", IntOptions.standard())
+            .putFields("name", StringOptions.standard())
+            .putFields("age", IntOptions.standard())
             .build();
 
     @Test

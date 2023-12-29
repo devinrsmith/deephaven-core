@@ -32,10 +32,10 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     public static ObjectOptions of(Map<String, ValueOptions> fields) {
-        return builder().putAllFieldProcessors(fields).build();
+        return builder().putAllFields(fields).build();
     }
 
-    public abstract Map<String, ValueOptions> fieldProcessors();
+    public abstract Map<String, ValueOptions> fields();
 
     /**
      * ...
@@ -43,7 +43,7 @@ public abstract class ObjectOptions extends ValueOptions {
      * <p>
      * If the caller wants to throw an error on unknown fields, but knows there are fields they want to skip, the can be
      * e todo To be more selective, individual fields can be added with {@link SkipOptions} ... todoeueou
-     * {@link #fieldProcessors()}.
+     * {@link #fields()}.
      *
      * @return if unknown fields are allowed for {@code this} object
      */
@@ -99,32 +99,30 @@ public abstract class ObjectOptions extends ValueOptions {
         // USE_LAST
     }
 
-    public interface Builder {
+    public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
 
-        Builder putFieldProcessors(String key, ValueOptions value);
+        Builder putFields(String key, ValueOptions value);
 
-        Builder putFieldProcessors(Map.Entry<String, ? extends ValueOptions> entry);
+        Builder putFields(Map.Entry<String, ? extends ValueOptions> entry);
 
-        Builder putAllFieldProcessors(Map<String, ? extends ValueOptions> entries);
-
-        ObjectOptions build();
+        Builder putAllFields(Map<String, ? extends ValueOptions> entries);
     }
 
     @Override
     final Stream<Type<?>> outputTypes() {
-        return fieldProcessors().values().stream().flatMap(ValueOptions::outputTypes);
+        return fields().values().stream().flatMap(ValueOptions::outputTypes);
     }
 
     final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(fieldProcessors().size());
+        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(fields().size());
         int ix = 0;
-        for (Entry<String, ValueOptions> e : fieldProcessors().entrySet()) {
+        for (Entry<String, ValueOptions> e : fields().entrySet()) {
             final String fieldName = e.getKey();
             final ValueOptions opts = e.getValue();
             final int numTypes = opts.numColumns();

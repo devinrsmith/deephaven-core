@@ -17,10 +17,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
-    public static ObjectProcessorJsonValue example() {
-        return null;
-    }
-
     private final JsonFactory jsonFactory;
     private final ValueOptions opts;
 

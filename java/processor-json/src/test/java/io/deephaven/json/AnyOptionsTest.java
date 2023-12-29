@@ -86,9 +86,9 @@ public class AnyOptionsTest {
     @Test
     void anyInObject() throws IOException {
         final ObjectOptions options = ObjectOptions.builder()
-                .putFieldProcessors("foo", IntOptions.standard())
-                .putFieldProcessors("bar", AnyOptions.of())
-                .putFieldProcessors("baz", DoubleOptions.standard())
+                .putFields("foo", IntOptions.standard())
+                .putFields("bar", AnyOptions.of())
+                .putFields("baz", DoubleOptions.standard())
                 .build();
         parse(options, List.of("", "{\"foo\": 42, \"bar\": {\"zip\": 43}, \"baz\": 44.44}"),
                 IntChunk.chunkWrap(new int[] {QueryConstants.NULL_INT, 42}),

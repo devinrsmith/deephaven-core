@@ -100,6 +100,15 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
+
+        // python needs these overloaded...
+
+        @Override
+        Builder allowNull(boolean allowNull);
+
+        @Override
+        Builder allowMissing(boolean allowMissing);
+
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);

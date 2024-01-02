@@ -28,6 +28,9 @@ dependencies {
 
     api project(':extensions-protobuf')
 
+    // todo: remove this
+    api project(':processor-json')
+
     implementation project(':Configuration')
     implementation project(':log-factory')
     implementation depTrove3

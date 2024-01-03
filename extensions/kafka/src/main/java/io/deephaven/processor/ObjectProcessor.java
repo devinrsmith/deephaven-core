@@ -168,6 +168,10 @@ public interface ObjectProcessor<T> {
         return ObjectProcessorTypes.of(type);
     }
 
+    default int numOutputs() {
+        return outputTypes().size();
+    }
+
     /**
      * The logical output types {@code this} instance processes. The size and types correspond to the expected size and
      * {@link io.deephaven.chunk.ChunkType chunk types} for {@link #processAll(ObjectChunk, List)} as specified by

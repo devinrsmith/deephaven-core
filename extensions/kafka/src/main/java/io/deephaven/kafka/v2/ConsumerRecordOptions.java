@@ -26,7 +26,25 @@ import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class SimpleConsumerRecordOptions {
+public abstract class ConsumerRecordOptions {
+
+    public static Builder builder() {
+        return ImmutableConsumerRecordOptions.builder();
+    }
+
+    public static ConsumerRecordOptions classic() {
+        // todo: configuration properties?
+        return builder()
+                .topic(null)
+                .partition("KafkaPartition")
+                .offset("KafkaOffset")
+                .leaderEpoch(null)
+                .timestampType(null)
+                .timestamp("KafkaTimestamp")
+                .serializedKeySize(null)
+                .serializedValueSize(null)
+                .build();
+    }
 
     @Default
     @Nullable
@@ -76,9 +94,14 @@ public abstract class SimpleConsumerRecordOptions {
         return "SerializedValueSize";
     }
 
+    // todo: headers? num headers?
+
     /**
+     * Creates a stream the contains the non-{@code null} of {@link #topic()}, {@link #partition()}, {@link #offset()},
+     * {@link #leaderEpoch()}, {@link #timestampType()}, {@link #timestamp()}, {@link #serializedKeySize()}, and
+     * {@link #serializedValueSize()}. This corresponds with the output types of {@link #processor()}.
      *
-     * @return
+     * @return the column names
      */
     public final Stream<String> columnNames() {
         // noinspection RedundantTypeArguments
@@ -148,13 +171,27 @@ public abstract class SimpleConsumerRecordOptions {
      * @return the object processor
      */
     public final ObjectProcessor<ConsumerRecord<?, ?>> processor() {
-        return new BasicConsumerRecordImpl();
+        return new ConsumerRecordOptionsProcessor();
     }
 
     public interface Builder {
         Builder topic(String topic);
 
-        SimpleConsumerRecordOptions build();
+        Builder partition(String partition);
+
+        Builder offset(String offset);
+
+        Builder leaderEpoch(String leaderEpoch);
+
+        Builder timestampType(String timestampType);
+
+        Builder timestamp(String timestamp);
+
+        Builder serializedKeySize(String serializedKeySize);
+
+        Builder serializedValueSize(String serializedValueSize);
+
+        ConsumerRecordOptions build();
     }
 
     @Derived
@@ -219,10 +256,10 @@ public abstract class SimpleConsumerRecordOptions {
         return serializedValueSize() != null;
     }
 
-    private class BasicConsumerRecordImpl implements ObjectProcessor<ConsumerRecord<?, ?>> {
+    private class ConsumerRecordOptionsProcessor implements ObjectProcessor<ConsumerRecord<?, ?>> {
         @Override
         public List<Type<?>> outputTypes() {
-            return SimpleConsumerRecordOptions.this.outputTypes();
+            return ConsumerRecordOptions.this.outputTypes();
         }
 
         @Override

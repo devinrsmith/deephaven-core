@@ -22,6 +22,11 @@ final class ObjectProcessorMap<T, R> implements ObjectProcessor<T> {
     }
 
     @Override
+    public int numOutputs() {
+        return delegate.numOutputs();
+    }
+
+    @Override
     public List<Type<?>> outputTypes() {
         return delegate.outputTypes();
     }

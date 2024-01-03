@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class KafkaToolsNew {
 
@@ -38,6 +37,20 @@ public class KafkaToolsNew {
             functions.add(TypedFunction.map(ConsumerRecord::value, valueFunction));
         }
         return ObjectProcessorFunctions.of(functions);
+    }
+
+    public static <K> ObjectProcessor<ConsumerRecord<K, ?>> key(ObjectProcessor<K> keyProcessor) {
+        return ObjectProcessor.map(ConsumerRecord::key, keyProcessor);
+    }
+
+    public static <V> ObjectProcessor<ConsumerRecord<?, V>> value(ObjectProcessor<V> valueProcessor) {
+        return ObjectProcessor.map(ConsumerRecord::value, valueProcessor);
+    }
+
+    public static <V> ObjectProcessor<ConsumerRecord<?, V>> what(ObjectProcessor<V> valueProcessor) {
+        return ObjectProcessor.combined(List.of(
+                ConsumerRecordOptions.classic().processor(),
+                value(valueProcessor)));
     }
 
 

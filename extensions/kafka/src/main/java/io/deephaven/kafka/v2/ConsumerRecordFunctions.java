@@ -17,7 +17,7 @@ public final class ConsumerRecordFunctions {
     // todo timestamp
 
     /**
-     * Returns the last record value for {@code key} if it exists, otherwise returns {@code null}.
+     * Returns the last header value for {@code key} if it exists, otherwise returns {@code null}.
      *
      * @param record the record
      * @param key the key

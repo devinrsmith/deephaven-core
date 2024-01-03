@@ -7,6 +7,7 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.functions.TypedFunction;
+import io.deephaven.kafka.KafkaTools;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ObjectProcessorFiltered;
 import io.deephaven.processor.functions.ObjectProcessorFunctions;
@@ -50,6 +51,8 @@ public class KafkaToolsNew {
             Options<K, V> options,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
+
+        KafkaTools.consumeToTable(null, null, )
 
 
         final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());

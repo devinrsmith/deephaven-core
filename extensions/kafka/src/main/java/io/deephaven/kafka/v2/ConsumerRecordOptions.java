@@ -96,84 +96,6 @@ public abstract class ConsumerRecordOptions {
 
     // todo: headers? num headers?
 
-    /**
-     * Creates a stream the contains the non-{@code null} of {@link #topic()}, {@link #partition()}, {@link #offset()},
-     * {@link #leaderEpoch()}, {@link #timestampType()}, {@link #timestamp()}, {@link #serializedKeySize()}, and
-     * {@link #serializedValueSize()}. This corresponds with the output types of {@link #processor()}.
-     *
-     * @return the column names
-     */
-    public final Stream<String> columnNames() {
-        // noinspection RedundantTypeArguments
-        return Stream.of(
-                Stream.ofNullable(topic()),
-                Stream.ofNullable(partition()),
-                Stream.ofNullable(offset()),
-                Stream.ofNullable(leaderEpoch()),
-                Stream.ofNullable(timestampType()),
-                Stream.ofNullable(timestamp()),
-                Stream.ofNullable(serializedKeySize()),
-                Stream.ofNullable(serializedValueSize()))
-                .flatMap(Function.<Stream<String>>identity());
-    }
-
-    /**
-     * Creates an {@link ObjectProcessor} that contains the following output types and logic:
-     *
-     * <table>
-     * <tr>
-     * <th>If not {@code null}</th>
-     * <th>Type</th>
-     * <th>Logic</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #topic()}</th>
-     * <th>{@link Type#stringType()}</th>
-     * <th>{@link ConsumerRecord#topic()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #partition()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecord#partition()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #offset()}</th>
-     * <th>{@link Type#longType()}</th>
-     * <th>{@link ConsumerRecord#offset()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #leaderEpoch()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#leaderEpoch(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #timestampType()}</th>
-     * <th>{@link Type#ofCustom(Class) Type.ofCustom(TimestampType.class)}</th>
-     * <th>{@link ConsumerRecord#timestampType()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #timestamp()}</th>
-     * <th>{@link Type#instantType()}</th>
-     * <th>{@link ConsumerRecordFunctions#timestampEpochNanos(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #serializedKeySize()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#serializedKeySize(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link #serializedValueSize()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#serializedValueSize(ConsumerRecord)}</th>
-     * </tr>
-     * </table>
-     *
-     * @return the object processor
-     */
-    public final ObjectProcessor<ConsumerRecord<?, ?>> processor() {
-        return new ConsumerRecordOptionsProcessor();
-    }
-
     public interface Builder {
         Builder topic(String topic);
 
@@ -222,6 +144,31 @@ public abstract class ConsumerRecordOptions {
             types.add(Type.intType());
         }
         return Collections.unmodifiableList(types);
+    }
+
+    /**
+     * Creates a stream the contains the non-{@code null} of {@link #topic()}, {@link #partition()}, {@link #offset()},
+     * {@link #leaderEpoch()}, {@link #timestampType()}, {@link #timestamp()}, {@link #serializedKeySize()}, and
+     * {@link #serializedValueSize()}. This corresponds with the output types of {@link #processor()}.
+     *
+     * @return the column names
+     */
+    final Stream<String> columnNames() {
+        // noinspection RedundantTypeArguments
+        return Stream.of(
+                        Stream.ofNullable(topic()),
+                        Stream.ofNullable(partition()),
+                        Stream.ofNullable(offset()),
+                        Stream.ofNullable(leaderEpoch()),
+                        Stream.ofNullable(timestampType()),
+                        Stream.ofNullable(timestamp()),
+                        Stream.ofNullable(serializedKeySize()),
+                        Stream.ofNullable(serializedValueSize()))
+                .flatMap(Function.<Stream<String>>identity());
+    }
+
+    final ObjectProcessor<ConsumerRecord<?, ?>> processor() {
+        return new ConsumerRecordOptionsProcessor();
     }
 
     private boolean outputTopic() {

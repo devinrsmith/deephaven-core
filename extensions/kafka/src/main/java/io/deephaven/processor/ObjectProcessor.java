@@ -97,13 +97,14 @@ public interface ObjectProcessor<T> {
     }
 
     /**
-     * Creates a "map" object processor.
+     * Creates a mapped object processor by applying the function {@code f} to the in chunk of type {@code T} to produce
+     * a mapped in chunk of type {@code R}, and then delegates to {@code delegate} for processing.
      * 
-     * @param f
-     * @param delegate
-     * @return the map object processor
-     * @param <T> the in
-     * @param <R>
+     * @param f the function
+     * @param delegate the delegate
+     * @return the mapped object processor
+     * @param <T> the in type
+     * @param <R> the mapped in type
      */
     static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
         return new ObjectProcessorMap<>(f, delegate);

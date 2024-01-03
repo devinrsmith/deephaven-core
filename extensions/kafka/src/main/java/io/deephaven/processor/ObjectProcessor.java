@@ -168,7 +168,12 @@ public interface ObjectProcessor<T> {
         return ObjectProcessorTypes.of(type);
     }
 
-    default int numOutputs() {
+    /**
+     * The number of outputs. Equivalent to {@code outputTypes().size()}.
+     *
+     * @return the number of outputs
+     */
+    default int size() {
         return outputTypes().size();
     }
 

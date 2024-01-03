@@ -18,13 +18,13 @@ public class What {
     static <V> ObjectProcessor<ConsumerRecord<?, V>> test(ObjectProcessor<V> valueProcessor) {
 
         final ObjectProcessor<ConsumerRecord<?, ?>> common = ObjectProcessorFunctions.of(List.of(
-                ToObjectFunction.of(ConsumerRecordFunctions::topic, Type.stringType()),
-                (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::partition,
-                (ToLongFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::offset,
+                ToObjectFunction.of(ConsumerRecord::topic, Type.stringType()),
+                (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecord::partition,
+                (ToLongFunction<ConsumerRecord<?, ?>>) ConsumerRecord::offset,
                 (ToIntFunction<ConsumerRecord<?, ?>>) ConsumerRecordFunctions::leaderEpoch));
 
         final ObjectProcessor<ConsumerRecord<?, V>> crv =
-                ObjectProcessor.map(ConsumerRecordFunctions::value, valueProcessor);
+                ObjectProcessor.map(ConsumerRecord::value, valueProcessor);
 
         return ObjectProcessor.combined(List.of(common, crv));
     }

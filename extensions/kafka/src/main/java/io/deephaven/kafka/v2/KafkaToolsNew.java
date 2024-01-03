@@ -39,18 +39,10 @@ public class KafkaToolsNew {
         return ObjectProcessorFunctions.of(functions);
     }
 
-    public static <K> ObjectProcessor<ConsumerRecord<K, ?>> key(ObjectProcessor<K> keyProcessor) {
-        return ObjectProcessor.map(ConsumerRecord::key, keyProcessor);
-    }
-
-    public static <V> ObjectProcessor<ConsumerRecord<?, V>> value(ObjectProcessor<V> valueProcessor) {
-        return ObjectProcessor.map(ConsumerRecord::value, valueProcessor);
-    }
-
     public static <V> ObjectProcessor<ConsumerRecord<?, V>> what(ObjectProcessor<V> valueProcessor) {
         return ObjectProcessor.combined(List.of(
                 ConsumerRecordOptions.classic().processor(),
-                value(valueProcessor)));
+                Processors.value(valueProcessor)));
     }
 
 

@@ -27,14 +27,14 @@ final class ObjectProcessorStrict<T> implements ObjectProcessor<T> {
     ObjectProcessorStrict(ObjectProcessor<T> delegate) {
         this.delegate = Objects.requireNonNull(delegate);
         this.outputTypes = List.copyOf(delegate.outputTypes());
-        if (delegate.numOutputs() != outputTypes.size()) {
-            throw new IllegalArgumentException(String.format("Inconsistent numOutputs. delegate.numOutputs()=%d, delegate.outputTypes().size()=%d", delegate.numOutputs(), outputTypes.size()));
+        if (delegate.size() != outputTypes.size()) {
+            throw new IllegalArgumentException(String.format("Inconsistent size. delegate.size()=%d, delegate.outputTypes().size()=%d", delegate.size(), outputTypes.size()));
         }
     }
 
     @Override
-    public int numOutputs() {
-        return delegate.numOutputs();
+    public int size() {
+        return delegate.size();
     }
 
     @Override

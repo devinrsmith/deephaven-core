@@ -9,35 +9,26 @@ import org.apache.kafka.common.header.Header;
 
 import java.util.Optional;
 
-class ConsumerRecordFunctions {
+public final class ConsumerRecordFunctions {
 
-    public static String topic(ConsumerRecord<?, ?> record) {
-        return record.topic();
-    }
 
-    public static int partition(ConsumerRecord<?, ?> record) {
-        return record.partition();
-    }
 
-    public static long offset(ConsumerRecord<?, ?> record) {
-        return record.offset();
-    }
 
     // todo timestamp
 
-    public static byte[] header(ConsumerRecord<?, ?> record, String key) {
+    /**
+     * Returns the last record value for {@code key} if it exists, otherwise returns {@code null}.
+     *
+     * @param record the record
+     * @param key the key
+     * @return the value for the last header, may be null
+     * @see ConsumerRecord#headers()
+     * @see org.apache.kafka.common.header.Headers#lastHeader(String)
+     */
+    public static byte[] lastHeader(ConsumerRecord<?, ?> record, String key) {
         final Header header = record.headers().lastHeader(key);
         return header == null ? null : header.value();
     }
-
-    public static <K> K key(ConsumerRecord<K, ?> record) {
-        return record.key();
-    }
-
-    public static <V> V value(ConsumerRecord<?, V> record) {
-        return record.value();
-    }
-
 
     public static int leaderEpoch(ConsumerRecord<?, ?> record) {
         final Optional<Integer> leaderEpoch = record.leaderEpoch();

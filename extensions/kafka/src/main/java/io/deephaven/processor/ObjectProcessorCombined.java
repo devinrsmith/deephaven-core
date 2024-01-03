@@ -19,8 +19,8 @@ final class ObjectProcessorCombined<T> implements ObjectProcessor<T> {
     }
 
     @Override
-    public int numOutputs() {
-        return processors.stream().mapToInt(ObjectProcessor::numOutputs).sum();
+    public int size() {
+        return processors.stream().mapToInt(ObjectProcessor::size).sum();
     }
 
     @Override

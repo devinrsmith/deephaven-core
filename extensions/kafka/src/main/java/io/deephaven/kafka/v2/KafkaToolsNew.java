@@ -51,7 +51,8 @@ public class KafkaToolsNew {
         final StreamPublisher streamPublisher = null;
         final UpdateSourceRegistrar updateSourceRegistrar = null;
         final String name = null;
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, streamPublisher, updateSourceRegistrar, name);
+        final StreamToBlinkTableAdapter adapter =
+                new StreamToBlinkTableAdapter(tableDefinition, streamPublisher, updateSourceRegistrar, name);
 
 
         return null;
@@ -66,14 +67,17 @@ public class KafkaToolsNew {
 
     public static TableDefinition of(Map<String, Type<?>> map) {
 
-        final Iterator<? extends ColumnHeader<?>> it = map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
+        final Iterator<? extends ColumnHeader<?>> it =
+                map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
 
         final Iterable<? extends ColumnHeader<?>> headers = new Iterable<ColumnHeader<?>>() {
             @NotNull
             @Override
             public Iterator<ColumnHeader<?>> iterator() {
-                final Iterator<? extends ColumnHeader<?>> actual = map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
-                return actual;
+                final Iterator<? extends ColumnHeader<?>> actual =
+                        map.entrySet().stream().map(e -> ColumnHeader.of(e.getKey(), e.getValue())).iterator();
+                // return actual;
+                return null;
             }
         };
         return TableDefinition.from(headers);

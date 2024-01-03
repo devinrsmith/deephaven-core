@@ -7,6 +7,8 @@ import io.deephaven.util.QueryConstants;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 
+import java.util.Optional;
+
 class ConsumerRecordFunctions {
 
     public static String topic(ConsumerRecord<?, ?> record) {
@@ -36,17 +38,32 @@ class ConsumerRecordFunctions {
         return record.value();
     }
 
+
+    public static int leaderEpoch(ConsumerRecord<?, ?> record) {
+        final Optional<Integer> leaderEpoch = record.leaderEpoch();
+        // noinspection OptionalIsPresent
+        if (leaderEpoch.isPresent()) {
+            return leaderEpoch.get();
+        }
+        return QueryConstants.NULL_INT;
+    }
+
     public static int serializedKeySize(ConsumerRecord<?, ?> record) {
-        final int keySize = record.serializedKeySize();
-        return keySize == -1 ? QueryConstants.NULL_INT : keySize;
+        final int size = record.serializedKeySize();
+        return size == ConsumerRecord.NULL_SIZE ? QueryConstants.NULL_INT : size;
     }
 
     public static int serializedValueSize(ConsumerRecord<?, ?> record) {
-        final int recordSize = record.serializedValueSize();
-        return recordSize == -1 ? QueryConstants.NULL_INT : recordSize;
+        final int size = record.serializedValueSize();
+        return size == ConsumerRecord.NULL_SIZE ? QueryConstants.NULL_INT : size;
     }
 
-    public static int leaderEpoch(ConsumerRecord<?, ?> record) {
-        return record.leaderEpoch().orElse(QueryConstants.NULL_INT);
+    public static long timestampEpochNanos(ConsumerRecord<?, ?> record) {
+        // Technically, very old kafka APIs didn't have timestamps.
+        // Kafka 0.10.0.0, released May 22, 2016, was the first release to have timestamps.
+        // Unlikely to encounter? The ConsumerRecord#timestamp doesn't even mention.
+        final long timestampEpochMillis = record.timestamp();
+        // todo: overflow checking?
+        return timestampEpochMillis * 1_000_000L;
     }
 }

@@ -10,7 +10,7 @@ import org.immutables.value.Value.Immutable;
 @BuildableStyle
 public abstract class Options<K, V> {
 
-    public abstract ConsumerOptions<K, V> consumer();
+    public abstract ClientOptions<K, V> consumer();
 
     public abstract SubscribeOptions subscribe();
 

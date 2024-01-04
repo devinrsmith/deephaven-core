@@ -3,17 +3,15 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.functions.TypedFunction;
-import io.deephaven.kafka.KafkaTools;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ObjectProcessorFiltered;
 import io.deephaven.processor.functions.ObjectProcessorFunctions;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.type.Type;
-import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.jetbrains.annotations.NotNull;
@@ -47,23 +45,28 @@ public class KafkaToolsNew {
     }
 
 
-    public static <K, V> Table of(
-            Options<K, V> options,
+    public static class What {
+
+    }
+
+    public static <K, V> KafkaPublisher<K, V> of(
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
-
-        KafkaTools.consumeToTable(null, null, )
-
-
         final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());
-        final StreamPublisher streamPublisher = null;
-        final UpdateSourceRegistrar updateSourceRegistrar = null;
-        final String name = null;
-        final StreamToBlinkTableAdapter adapter =
-                new StreamToBlinkTableAdapter(tableDefinition, streamPublisher, updateSourceRegistrar, name);
+        final KafkaStreamPublisherImpl<K, V> publisher = new KafkaStreamPublisherImpl<>(processor);
+        final ExecutionContext executionContext = ExecutionContext.getContext();
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher, executionContext.getUpdateGraph(), "todo");
 
 
-        return null;
+        return new KafkaPublisher<>(publisher, adapter);
+    }
+
+    public static void example() {
+
+        final ObjectProcessor<ConsumerRecord<String, String>> processor = ObjectProcessor.combined(List.of(
+                Processors.basic(ConsumerRecordOptions.builder().build()),
+                Processors.key(ObjectProcessor.noop())));
+
     }
 
     public static <K, V> Table of(

@@ -110,6 +110,10 @@ public interface ObjectProcessor<T> {
         return new ObjectProcessorMap<>(f, delegate);
     }
 
+    static <T> ObjectProcessor<T> copy(GenericType<T> type) {
+        return new ObjectProcessorCopy<>(type);
+    }
+
     /**
      * The relationship between {@link #outputTypes() output types} and the {@link #processAll(ObjectChunk, List)
      * processAll out param} {@link WritableChunk#getChunkType()}.

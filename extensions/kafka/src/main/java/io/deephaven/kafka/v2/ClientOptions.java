@@ -12,7 +12,7 @@ import java.util.Properties;
 
 @Immutable
 @BuildableStyle
-public abstract class ConsumerOptions<K, V> {
+public abstract class ClientOptions<K, V> {
 
     public abstract Properties config();
 
@@ -20,7 +20,7 @@ public abstract class ConsumerOptions<K, V> {
 
     public abstract Deserializer<V> valueDeserializer();
 
-    final KafkaConsumer<K, V> createKafkaConsumer() {
-        return null;
+    final KafkaConsumer<K, V> createClient() {
+        return new KafkaConsumer<>(config(), keyDeserializer(), valueDeserializer());
     }
 }

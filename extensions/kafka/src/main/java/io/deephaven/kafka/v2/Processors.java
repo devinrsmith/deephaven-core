@@ -3,14 +3,28 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.processor.functions.ObjectProcessorFunctions;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Headers;
 
+import java.util.List;
 import java.util.function.Function;
 
 public final class Processors {
+
+    // /**
+    // *
+    // * @return
+    // * @param <K>
+    // * @param <V>
+    // */
+    // public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> basic() {
+    // return basic(ConsumerRecordOptions.of());
+    // }
 
     /**
      * Creates an {@link ObjectProcessor} that contains the following output types and logic:
@@ -65,8 +79,12 @@ public final class Processors {
      *
      * @return the object processor
      */
-    public static ObjectProcessor<ConsumerRecord<?, ?>> basic(ConsumerRecordOptions options) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> basic(ConsumerRecordOptions options) {
         return options.processor();
+    }
+
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(GenericType<K> keyType) {
+        return ObjectProcessorFunctions.of(List.of(ToObjectFunction.of(ConsumerRecord::key, keyType)));
     }
 
     /**
@@ -78,8 +96,12 @@ public final class Processors {
      * @see ConsumerRecord#key()
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static <K> ObjectProcessor<ConsumerRecord<K, ?>> key(ObjectProcessor<K> keyProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(ObjectProcessor<K> keyProcessor) {
         return ObjectProcessor.map(ConsumerRecord::key, keyProcessor);
+    }
+
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> value(GenericType<V> valueType) {
+        return ObjectProcessorFunctions.of(List.of(ToObjectFunction.of(ConsumerRecord::value, valueType)));
     }
 
     /**
@@ -91,7 +113,7 @@ public final class Processors {
      * @see ConsumerRecord#value()
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static <V> ObjectProcessor<ConsumerRecord<?, V>> value(ObjectProcessor<V> valueProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> value(ObjectProcessor<V> valueProcessor) {
         return ObjectProcessor.map(ConsumerRecord::value, valueProcessor);
     }
 
@@ -103,19 +125,21 @@ public final class Processors {
      * @see ConsumerRecord#headers()
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static ObjectProcessor<ConsumerRecord<?, ?>> headers(ObjectProcessor<Headers> headersProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> headers(ObjectProcessor<Headers> headersProcessor) {
         return ObjectProcessor.map(ConsumerRecord::headers, headersProcessor);
     }
 
     /**
-     * Creates a ... Equivalent to {@code ObjectProcessor.map(record -> ConsumerRecordFunctions.lastHeader(record, key), headerProcessor)}.
+     * Creates a ... Equivalent to
+     * {@code ObjectProcessor.map(record -> ConsumerRecordFunctions.lastHeader(record, key), headerProcessor)}.
      *
      * @param headerProcessor the header processor
      * @return the consumer record processor
      * @see ConsumerRecordFunctions#lastHeader(ConsumerRecord, String)
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static ObjectProcessor<ConsumerRecord<?, ?>> lastHeader(String key, ObjectProcessor<byte[]> headerProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> lastHeader(String key,
+            ObjectProcessor<byte[]> headerProcessor) {
         return ObjectProcessor.map(record -> ConsumerRecordFunctions.lastHeader(record, key), headerProcessor);
     }
 }

@@ -24,12 +24,19 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * Provides options for processing the common fields of {@link ConsumerRecord}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class ConsumerRecordOptions {
 
     public static Builder builder() {
         return ImmutableConsumerRecordOptions.builder();
+    }
+
+    public static ConsumerRecordOptions of() {
+        return builder().build();
     }
 
     public static ConsumerRecordOptions classic() {
@@ -153,22 +160,22 @@ public abstract class ConsumerRecordOptions {
      *
      * @return the column names
      */
-    final Stream<String> columnNames() {
+    public final Stream<String> columnNames() {
         // noinspection RedundantTypeArguments
         return Stream.of(
-                        Stream.ofNullable(topic()),
-                        Stream.ofNullable(partition()),
-                        Stream.ofNullable(offset()),
-                        Stream.ofNullable(leaderEpoch()),
-                        Stream.ofNullable(timestampType()),
-                        Stream.ofNullable(timestamp()),
-                        Stream.ofNullable(serializedKeySize()),
-                        Stream.ofNullable(serializedValueSize()))
+                Stream.ofNullable(topic()),
+                Stream.ofNullable(partition()),
+                Stream.ofNullable(offset()),
+                Stream.ofNullable(leaderEpoch()),
+                Stream.ofNullable(timestampType()),
+                Stream.ofNullable(timestamp()),
+                Stream.ofNullable(serializedKeySize()),
+                Stream.ofNullable(serializedValueSize()))
                 .flatMap(Function.<Stream<String>>identity());
     }
 
-    final ObjectProcessor<ConsumerRecord<?, ?>> processor() {
-        return new ConsumerRecordOptionsProcessor();
+    final <K, V> ObjectProcessor<ConsumerRecord<K, V>> processor() {
+        return new ConsumerRecordOptionsProcessor<>();
     }
 
     private boolean outputTopic() {
@@ -203,14 +210,14 @@ public abstract class ConsumerRecordOptions {
         return serializedValueSize() != null;
     }
 
-    private class ConsumerRecordOptionsProcessor implements ObjectProcessor<ConsumerRecord<?, ?>> {
+    private class ConsumerRecordOptionsProcessor<K, V> implements ObjectProcessor<ConsumerRecord<K, V>> {
         @Override
         public List<Type<?>> outputTypes() {
             return ConsumerRecordOptions.this.outputTypes();
         }
 
         @Override
-        public void processAll(ObjectChunk<? extends ConsumerRecord<?, ?>, ?> in, List<WritableChunk<?>> out) {
+        public void processAll(ObjectChunk<? extends ConsumerRecord<K, V>, ?> in, List<WritableChunk<?>> out) {
             int ix = 0;
             final WritableObjectChunk<String, ?> topics = outputTopic() ? out.get(ix++).asWritableObjectChunk() : null;
             final WritableIntChunk<?> partitions = outputPartition() ? out.get(ix++).asWritableIntChunk() : null;

@@ -8,6 +8,8 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
+import org.apache.kafka.common.errors.WakeupException;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -31,21 +33,41 @@ public final class KafkaPublisher<K, V> {
         return adapter.table();
     }
 
-    public void start(ClientOptions<K, V> options, Collection<TopicPartition> topicPartitions) {
-        // todo
+    public Runnable start(ClientOptions<K, V> options, Collection<TopicPartition> topicPartitions) {
+        // todo catch exception
         final KafkaConsumer<K, V> client = options.createClient();
-        client.assign(topicPartitions);
-        client.seekToEnd(topicPartitions);
         final Thread thread = new Thread(() -> {
-            while (true) {
-                final ConsumerRecords<K, V> records = client.poll(Duration.ofSeconds(1));
-                if (records.isEmpty()) {
-                    continue;
+            try {
+                client.assign(topicPartitions);
+                client.seekToEnd(topicPartitions);
+                while (true) {
+                    final ConsumerRecords<K, V> records;
+                    try {
+                        records = client.poll(Duration.ofSeconds(1));
+                    } catch (WakeupException e) {
+                        notifyFailure(new RuntimeException("closed by Runnable"));
+                        return;
+                    }
+                    if (records.isEmpty()) {
+                        continue;
+                    }
+                    publisher.fill(records);
                 }
-                publisher.fill(records);
+            } catch (Throwable t) {
+                notifyFailure(t);
+                throw t;
             }
         });
         thread.setDaemon(true);
         thread.start();
+        return client::wakeup;
+    }
+
+    private void notifyFailure(Throwable t) {
+        try {
+            publisher.acceptFailure(t);
+        } catch (Throwable t2) {
+            t.addSuppressed(t2);
+        }
     }
 }

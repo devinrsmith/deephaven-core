@@ -38,12 +38,6 @@ public class KafkaToolsNew {
         return ObjectProcessorFunctions.of(functions);
     }
 
-    public static <V> ObjectProcessor<ConsumerRecord<?, V>> what(ObjectProcessor<V> valueProcessor) {
-        return ObjectProcessor.combined(List.of(
-                ConsumerRecordOptions.classic().processor(),
-                Processors.value(valueProcessor)));
-    }
-
 
     public static class What {
 
@@ -55,19 +49,11 @@ public class KafkaToolsNew {
         final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());
         final KafkaStreamPublisherImpl<K, V> publisher = new KafkaStreamPublisherImpl<>(processor);
         final ExecutionContext executionContext = ExecutionContext.getContext();
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher, executionContext.getUpdateGraph(), "todo");
-
-
+        final StreamToBlinkTableAdapter adapter =
+                new StreamToBlinkTableAdapter(tableDefinition, publisher, executionContext.getUpdateGraph(), "todo");
         return new KafkaPublisher<>(publisher, adapter);
     }
 
-    public static void example() {
-
-        final ObjectProcessor<ConsumerRecord<String, String>> processor = ObjectProcessor.combined(List.of(
-                Processors.basic(ConsumerRecordOptions.builder().build()),
-                Processors.key(ObjectProcessor.noop())));
-
-    }
 
     public static <K, V> Table of(
             Options<K, V> options,

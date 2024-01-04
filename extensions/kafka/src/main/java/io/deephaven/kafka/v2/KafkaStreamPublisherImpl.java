@@ -33,6 +33,10 @@ class KafkaStreamPublisherImpl<K, V> implements StreamPublisher {
         pipe.fill(records);
     }
 
+    public void acceptFailure(Throwable cause) {
+        pipe.acceptFailure(cause);
+    }
+
     @Override
     public void flush() {
         pipe.flush();

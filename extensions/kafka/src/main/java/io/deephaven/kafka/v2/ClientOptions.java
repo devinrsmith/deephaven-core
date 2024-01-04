@@ -8,19 +8,43 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Immutable;
 
-import java.util.Properties;
+import java.util.Map;
+import java.util.Optional;
 
 @Immutable
 @BuildableStyle
 public abstract class ClientOptions<K, V> {
 
-    public abstract Properties config();
+    public static <K, V> Builder<K, V> builder() {
+        return ImmutableClientOptions.builder();
+    }
 
-    public abstract Deserializer<K> keyDeserializer();
+    public abstract Map<String, String> config();
 
-    public abstract Deserializer<V> valueDeserializer();
+    public abstract Optional<Deserializer<K>> keyDeserializer();
+
+    public abstract Optional<Deserializer<V>> valueDeserializer();
+
+    public interface Builder<K, V> {
+
+        Builder<K, V> putConfig(String key, String value);
+
+        Builder<K, V> putConfig(Map.Entry<String, ? extends String> entry);
+
+        Builder<K, V> putAllConfig(Map<String, ? extends String> entries);
+
+        Builder<K, V> keyDeserializer(Deserializer<K> keyDeserializer);
+
+        Builder<K, V> valueDeserializer(Deserializer<V> valueDeserializer);
+
+        ClientOptions<K, V> build();
+    }
 
     final KafkaConsumer<K, V> createClient() {
-        return new KafkaConsumer<>(config(), keyDeserializer(), valueDeserializer());
+        // noinspection unchecked,rawtypes
+        return new KafkaConsumer<>(
+                (Map<String, Object>) (Map) config(),
+                keyDeserializer().orElse(null),
+                valueDeserializer().orElse(null));
     }
 }

@@ -13,7 +13,6 @@ public final class ConsumerRecordFunctions {
 
 
 
-
     // todo timestamp
 
     /**

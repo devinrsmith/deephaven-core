@@ -28,7 +28,9 @@ final class ObjectProcessorStrict<T> implements ObjectProcessor<T> {
         this.delegate = Objects.requireNonNull(delegate);
         this.outputTypes = List.copyOf(delegate.outputTypes());
         if (delegate.size() != outputTypes.size()) {
-            throw new IllegalArgumentException(String.format("Inconsistent size. delegate.size()=%d, delegate.outputTypes().size()=%d", delegate.size(), outputTypes.size()));
+            throw new IllegalArgumentException(
+                    String.format("Inconsistent size. delegate.size()=%d, delegate.outputTypes().size()=%d",
+                            delegate.size(), outputTypes.size()));
         }
     }
 

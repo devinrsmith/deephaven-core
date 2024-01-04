@@ -12,6 +12,7 @@ import io.deephaven.util.SafeCloseable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,6 +57,10 @@ class KafkaPipe<K, V> {
         }
     }
 
+    public synchronized void acceptFailure(Throwable cause) {
+        streamConsumer.acceptFailure(cause);
+    }
+
     private void fillImpl(TopicPartition topicPartition, List<ConsumerRecord<K, V>> records) {
         final Iterator<ConsumerRecord<K, V>> it = records.iterator();
         boolean didFlush = false;
@@ -65,7 +70,7 @@ class KafkaPipe<K, V> {
                     // todo: assert topic / partition?
                     chunk.set(chunkPos, it.next());
                 }
-                if (chunkPos < chunkPos) {
+                if (chunkPos < chunkSize) {
                     break;
                 }
                 doFlush();
@@ -80,13 +85,16 @@ class KafkaPipe<K, V> {
 
     private void doFlush() {
         chunk.setSize(chunkPos);
-        //noinspection unchecked
+        // noinspection unchecked
         final WritableChunk<Values>[] out = processor
                 .outputTypes()
                 .stream()
                 .map(ObjectProcessor::chunkType)
                 .map(chunkType -> chunkType.makeWritableChunk(chunkPos))
                 .toArray(WritableChunk[]::new);
+        for (WritableChunk<Values> wc : out) {
+            wc.setSize(0);
+        }
         try {
             processor.processAll(chunk, Arrays.asList(out));
         } catch (Throwable t) {

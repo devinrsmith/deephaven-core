@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-class KafkaPipe2<K, V> {
+class KafkaStreamConsumerAdapter<K, V> {
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
     private final WritableObjectChunk<ConsumerRecord<K, V>, ?> chunk;
     private final int chunkSize;
@@ -27,7 +27,7 @@ class KafkaPipe2<K, V> {
     private StreamConsumer streamConsumer;
 
 
-    KafkaPipe2(
+    KafkaStreamConsumerAdapter(
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             int chunkSize) {
         this.processor = Objects.requireNonNull(processor);
@@ -35,12 +35,15 @@ class KafkaPipe2<K, V> {
         this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize); // todo: close?
     }
 
-    public void init(StreamConsumer streamConsumer) {
+    void init(StreamConsumer streamConsumer) {
         this.streamConsumer = Objects.requireNonNull(streamConsumer);
     }
 
-    public synchronized void fill(ConsumerRecords<K, V> records) {
-        // todo: or, make sure caller is synced? wrt driver, need to make sure records are delivered in order
+    boolean hasStreamConsumer() {
+        return streamConsumer != null;
+    }
+
+    public synchronized void accept(ConsumerRecords<K, V> records) {
         for (TopicPartition partition : records.partitions()) {
             fillImpl(partition, records.records(partition));
         }

@@ -15,10 +15,12 @@ import java.util.Objects;
 class KafkaStreamPublisherImpl<K, V> implements StreamPublisher {
 
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
+    private final Runnable onShutdownCallback;
     private KafkaPipe<K, V> pipe;
 
-    KafkaStreamPublisherImpl(ObjectProcessor<ConsumerRecord<K, V>> processor) {
+    KafkaStreamPublisherImpl(ObjectProcessor<ConsumerRecord<K, V>> processor, Runnable onShutdownCallback) {
         this.processor = Objects.requireNonNull(processor);
+        this.onShutdownCallback = onShutdownCallback;
     }
 
     @Override
@@ -44,8 +46,8 @@ class KafkaStreamPublisherImpl<K, V> implements StreamPublisher {
 
     @Override
     public void shutdown() {
-        // todo, callback for driver?
-        // for example, unsubscribe to these ConsumerRecords
-        // todo
+        if (onShutdownCallback != null) {
+            onShutdownCallback.run();
+        }
     }
 }

@@ -6,14 +6,18 @@ package io.deephaven.kafka.v2;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ObjectProcessorFiltered;
 import io.deephaven.processor.functions.ObjectProcessorFunctions;
 import io.deephaven.qst.column.header.ColumnHeader;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.StreamPublisher;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -21,6 +25,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static io.deephaven.processor.ObjectProcessor.strict;
 
 public class KafkaToolsNew {
 
@@ -39,19 +48,20 @@ public class KafkaToolsNew {
     }
 
 
-    public static class What {
-
-    }
-
     public static <K, V> KafkaPublisher<K, V> of(
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             List<String> columnNames) {
         final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());
-        final KafkaStreamPublisherImpl<K, V> publisher = new KafkaStreamPublisherImpl<>(processor);
+        final Runnable onShutdownCallback = null;
+        final KafkaStreamPublisherImpl<K, V> publisher = new KafkaStreamPublisherImpl<>(processor, onShutdownCallback);
         final ExecutionContext executionContext = ExecutionContext.getContext();
         final StreamToBlinkTableAdapter adapter =
                 new StreamToBlinkTableAdapter(tableDefinition, publisher, executionContext.getUpdateGraph(), "todo");
         return new KafkaPublisher<>(publisher, adapter);
+    }
+
+    public static Table ofTable(TableDefinition tableDefinition, StreamPublisher publisher) {
+
     }
 
 
@@ -78,5 +88,24 @@ public class KafkaToolsNew {
             }
         };
         return TableDefinition.from(headers);
+    }
+
+    public static <K, V> Table what2(
+            ClientOptions<K, V> clientOptions,
+            ObjectProcessor<ConsumerRecord<K, V>> processor,
+            List<String> columnNames) {
+        final Collection<TopicPartition> topicPartitions = null;
+        final int chunkSize = 1024;
+        final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(clientOptions, processor, chunkSize, topicPartitions);
+        //noinspection resource
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(
+                TableDefinition.from(columnNames, processor.outputTypes()),
+                publisher,
+                null,
+                "todo");
+        // todo config
+        publisher.start();
+        return BlinkTableTools.blinkToAppendOnly(adapter.table());
+
     }
 }

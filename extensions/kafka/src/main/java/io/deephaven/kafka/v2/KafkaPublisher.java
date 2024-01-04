@@ -20,6 +20,7 @@ public final class KafkaPublisher<K, V> {
     private final KafkaStreamPublisherImpl<K, V> publisher;
     private final StreamToBlinkTableAdapter adapter;
 
+
     KafkaPublisher(KafkaStreamPublisherImpl<K, V> publisher, StreamToBlinkTableAdapter adapter) {
         this.publisher = publisher;
         this.adapter = adapter;

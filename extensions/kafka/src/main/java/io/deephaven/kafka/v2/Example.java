@@ -4,9 +4,11 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
+import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -35,15 +37,34 @@ public class Example {
                         strict(Processors.basic(basicOptions)),
                         strict(Processors.key(Type.stringType())),
                         strict(Processors.value(Type.stringType())))));
-        final List<String> columnNames =
-                Stream.concat(basicOptions.columnNames(), Stream.of("Key", "Value")).collect(Collectors.toList());
-        final KafkaPublisher<String, String> publisher = KafkaToolsNew.of(processor, columnNames);
+
+        final KafkaPublisherDriver<String, String> driver;
         {
             final ClientOptions<String, String> clientOptions = ClientOptions.<String, String>builder()
                     .putAllConfig(kafkaClientConfig)
                     .keyDeserializer(new StringDeserializer())
                     .valueDeserializer(new StringDeserializer())
                     .build();
+            driver = KafkaPublisherDriver.of(clientOptions, processor, 1024);
+        }
+
+        final StreamToBlinkTableAdapter adapter;
+        {
+            final List<String> columnNames =
+                    Stream.concat(basicOptions.columnNames(), Stream.of("Key", "Value")).collect(Collectors.toList());
+            final TableDefinition tableDefinition = TableDefinition.from(columnNames, processor.outputTypes());
+
+            adapter = new StreamToBlinkTableAdapter(tableDefinition, driver, null, "todo");
+        }
+
+
+
+        // don't start it yet driver.start();
+
+
+        final KafkaPublisher<String, String> publisher = KafkaToolsNew.of(processor, columnNames);
+        {
+
             final Collection<TopicPartition> topicPartitions = Set.of(new TopicPartition(topic, 0));
             publisher.start(clientOptions, topicPartitions);
         }

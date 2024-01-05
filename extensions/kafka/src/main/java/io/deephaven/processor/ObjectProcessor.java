@@ -93,7 +93,7 @@ public interface ObjectProcessor<T> {
      * @param <T> the object type
      */
     static <T> ObjectProcessor<T> combined(List<ObjectProcessor<? super T>> processors) {
-        return new ObjectProcessorCombined<>(processors);
+        return ObjectProcessorCombined.of(processors);
     }
 
     /**
@@ -108,6 +108,10 @@ public interface ObjectProcessor<T> {
      */
     static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
         return new ObjectProcessorMap<>(f, delegate);
+    }
+
+    static <T> ObjectProcessor<T> empty() {
+        return ObjectProcessorEmpty.of();
     }
 
     /**

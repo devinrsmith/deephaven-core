@@ -10,6 +10,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.immutables.value.Value.Check;
@@ -18,12 +19,14 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
 public abstract class TableOptions<K, V> {
 
-    public static <K, V> Builder<K, V> builder( ){
+    public static <K, V> Builder<K, V> builder() {
         return ImmutableTableOptions.builder();
     }
 
@@ -51,6 +54,11 @@ public abstract class TableOptions<K, V> {
     @Default
     public int chunkSize() {
         return ArrayBackedColumnSource.BLOCK_SIZE;
+    }
+
+    @Default
+    public boolean receiveTimestamp() {
+        return true;
     }
 
     public interface Builder<K, V> {
@@ -95,25 +103,33 @@ public abstract class TableOptions<K, V> {
         }
     }
 
-    final Table subscribe() {
+    final StreamToBlinkTableAdapter adapter() {
+        final TableDefinition definition = receiveTimestamp()
+                ? TableDefinition.from(Stream.concat(
+                        Stream.of("ReceiveTimestamp"), columnNames().stream()).collect(Collectors.toList()),
+                        Stream.concat(Stream.of(Type.instantType()), processor().outputTypes().stream()).collect(Collectors.toList()))
+                : TableDefinition.from(columnNames(), processor().outputTypes());
         final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(
                 clientOptions(),
                 subscribeOptions(),
-                new KafkaStreamConsumerAdapter<>(processor(), chunkSize()));
-        final StreamToBlinkTableAdapter adapter;
+                new KafkaStreamConsumerAdapter<>(processor(), chunkSize(), receiveTimestamp()));
         try {
-            // noinspection resource
-            adapter = new StreamToBlinkTableAdapter(
-                    TableDefinition.from(columnNames(), processor().outputTypes()),
+            final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(
+                    definition,
                     publisher,
                     updateSourceRegistrar(),
-                    "todo",
+                    name(),
                     extraAttributes());
             publisher.start();
+            return adapter;
         } catch (Throwable t) {
             publisher.startError(t);
             throw t;
         }
-        return adapter.table();
+    }
+
+    final Table table() {
+        // noinspection resource
+        return adapter().table();
     }
 }

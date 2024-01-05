@@ -3,6 +3,7 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.base.clock.Clock;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

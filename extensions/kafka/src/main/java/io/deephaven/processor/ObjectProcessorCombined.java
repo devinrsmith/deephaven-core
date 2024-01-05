@@ -9,13 +9,30 @@ import io.deephaven.qst.type.Type;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class ObjectProcessorCombined<T> implements ObjectProcessor<T> {
+
+    public static <T> ObjectProcessorCombined<T> of(List<ObjectProcessor<? super T>> processors) {
+        //noinspection Convert2Diamond
+        return new ObjectProcessorCombined<T>(processors.stream()
+                .flatMap(ObjectProcessorCombined::destructure)
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
+    private static <T> Stream<ObjectProcessor<? super T>> destructure(ObjectProcessor<T> processor) {
+        return processor instanceof ObjectProcessorCombined
+                ? ((ObjectProcessorCombined<T>) processor).processors.stream()
+                : Stream.of(processor);
+    }
+
+
     private final List<ObjectProcessor<? super T>> processors;
 
-    ObjectProcessorCombined(List<ObjectProcessor<? super T>> processors) {
-        this.processors = List.copyOf(processors);
+    private ObjectProcessorCombined(List<ObjectProcessor<? super T>> processors) {
+        this.processors = Objects.requireNonNull(processors);
     }
 
     @Override

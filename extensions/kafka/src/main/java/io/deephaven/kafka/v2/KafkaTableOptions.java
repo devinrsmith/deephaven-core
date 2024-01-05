@@ -194,7 +194,8 @@ public abstract class KafkaTableOptions<K, V> {
         final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(
                 useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
                 offsets(),
-                new KafkaStreamConsumerAdapter<>(processor(), chunkSize(), receiveTimestamp()));
+                new KafkaStreamConsumerAdapter<>(processor(), chunkSize(), receiveTimestamp()),
+                null);
         try {
             final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(
                     definition,

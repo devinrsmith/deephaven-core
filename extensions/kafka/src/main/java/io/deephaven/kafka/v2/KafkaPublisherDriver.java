@@ -3,31 +3,34 @@
  */
 package io.deephaven.kafka.v2;
 
-import io.deephaven.base.clock.Clock;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ThreadFactory;
 
-import static io.deephaven.kafka.v2.KafkaToolsNew.safeCloseClient;
+import static io.deephaven.kafka.v2.ClientHelper.safeCloseClient;
 
 final class KafkaPublisherDriver<K, V> implements StreamPublisher {
 
     public static <K, V> KafkaPublisherDriver<K, V> of(
             ClientOptions<K, V> clientOptions,
-            SubscribeOptions subscribeOptions,
-            KafkaStreamConsumerAdapter<K, V> pipe) {
-        final KafkaConsumer<K, V> client = clientOptions.createClient();
+            Offsets offsets,
+            KafkaStreamConsumerAdapter<K, V> streamConsumerAdapter) {
+        final KafkaConsumer<K, V> client =
+                clientOptions.createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
         try {
-            ClientHelper.assignAndSeek(client, subscribeOptions);
-            return new KafkaPublisherDriver<>(client, pipe);
+            ClientHelper.assignAndSeek(client, offsets);
+            return new KafkaPublisherDriver<>(client, streamConsumerAdapter);
         } catch (Throwable t) {
-            safeCloseClient(t, client);
+            safeCloseClient(client, t);
             throw t;
         }
     }
@@ -40,39 +43,17 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         this.streamConsumerAdapter = Objects.requireNonNull(streamConsumerAdapter);
     }
 
-    void start() {
-        final Thread thread = new Thread(() -> {
-            try {
-                while (true) {
-                    final ConsumerRecords<K, V> records;
-                    try {
-                        records = client.poll(Duration.ofMinutes(1));
-                    } catch (WakeupException e) {
-                        notifyFailure(new RuntimeException("shutdown"));
-                        return;
-                    }
-                    if (records.isEmpty()) {
-                        continue;
-                    }
-                    streamConsumerAdapter.accept(records);
-                }
-            } catch (Throwable t) {
-                notifyFailure(t);
-                throw t;
-            } finally {
-                client.close();
-            }
-        });
-        // todo name
+    void start(ThreadFactory factory) {
+        final Thread thread = factory.newThread(this::run);
         thread.setDaemon(true);
         thread.start();
     }
 
     void startError(Throwable t) {
         if (streamConsumerAdapter.hasStreamConsumer()) {
-            notifyFailure(t);
+            safeNotifyFailure(t);
         }
-        safeCloseClient(t, client);
+        safeCloseClient(client, t);
     }
 
     @Override
@@ -90,11 +71,43 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         client.wakeup();
     }
 
-    private void notifyFailure(Throwable t) {
+    private void run() {
+        try {
+            while (true) {
+                if (!runOnce()) {
+                    return;
+                }
+            }
+        } catch (Throwable t) {
+            safeNotifyFailure(t);
+            throw t;
+        } finally {
+            streamConsumerAdapter.close();
+            client.close();
+        }
+    }
+
+    private boolean runOnce() {
+        final ConsumerRecords<K, V> records;
+        try {
+            records = client.poll(Duration.ofMinutes(1));
+        } catch (WakeupException e) {
+            safeNotifyFailure(new RuntimeException(KafkaPublisherDriver.class.getName() + ".shutdown() called"));
+            return false;
+        }
+        if (records.isEmpty()) {
+            return true;
+        }
+        streamConsumerAdapter.accept(records);
+        return true;
+    }
+
+    private void safeNotifyFailure(Throwable t) {
         try {
             streamConsumerAdapter.acceptFailure(t);
         } catch (Throwable t2) {
             t.addSuppressed(t2);
         }
     }
+
 }

@@ -16,13 +16,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-class KafkaStreamConsumerAdapter<K, V> {
+final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
     private final WritableObjectChunk<ConsumerRecord<K, V>, ?> chunk;
     private final int chunkSize;
@@ -36,8 +37,8 @@ class KafkaStreamConsumerAdapter<K, V> {
             boolean receiveTimestamp) {
         this.processor = Objects.requireNonNull(processor);
         this.chunkSize = chunkSize;
+        this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize);
         this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
-        this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize); // todo: close?
     }
 
     void init(StreamConsumer streamConsumer) {
@@ -75,6 +76,14 @@ class KafkaStreamConsumerAdapter<K, V> {
         streamConsumer.acceptFailure(cause);
     }
 
+    @Override
+    public void close() {
+        if (receiveTimestampChunk != null) {
+            receiveTimestampChunk.close();
+        }
+        chunk.close();
+    }
+
     private void fillImpl(long receiveTimeEpochNanos, TopicPartition topicPartition,
             List<ConsumerRecord<K, V>> records) {
         final Iterator<ConsumerRecord<K, V>> it = records.iterator();
@@ -107,8 +116,9 @@ class KafkaStreamConsumerAdapter<K, V> {
             receiveTimestampChunk.setSize(chunkPos);
             // Already called by makeWritableChunk
             // receiveTimestampChunk.setSize(chunkPos);
-            //noinspection unchecked
-            allChunks = Stream.concat(Stream.of(receiveTimestampChunk), newProcessorChunks()).toArray(WritableChunk[]::new);
+            // noinspection unchecked
+            allChunks =
+                    Stream.concat(Stream.of(receiveTimestampChunk), newProcessorChunks()).toArray(WritableChunk[]::new);
             processorChunks = Arrays.<WritableChunk<?>>asList(allChunks).subList(1, allChunks.length);
         } else {
             // noinspection unchecked

@@ -17,13 +17,13 @@ import static io.deephaven.kafka.v2.ClientHelper.topicPartitions;
 
 @Immutable
 @SimpleStyle
-abstract class OffsetsTopicAllPartitionsEnd extends OffsetsBase {
+abstract class OffsetsEarliest extends OffsetsBase {
 
     @Parameter
     public abstract String topic();
 
     @Override
     final Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client) {
-        return topicPartitions(client, topic()).collect(Collectors.toMap(Function.identity(), tp -> Offset.end()));
+        return topicPartitions(client, topic()).collect(Collectors.toMap(Function.identity(), tp -> Offset.earliest()));
     }
 }

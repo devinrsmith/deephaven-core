@@ -4,14 +4,30 @@
 package io.deephaven.kafka.v2;
 
 public interface Offset {
-    static Offset beginning() {
-        return OffsetDir.BEGINNING;
+    /**
+     * The earliest offset.
+     *
+     * @return the earliest offset
+     */
+    static Offset earliest() {
+        return OffsetDir.EARLIEST;
     }
 
-    static Offset end() {
-        return OffsetDir.END;
+    /**
+     * The latest offset.
+     *
+     * @return the latest offset
+     */
+    static Offset latest() {
+        return OffsetDir.LATEST;
     }
 
+    /**
+     * The offset.
+     *
+     * @param offset the offset
+     * @return the offset
+     */
     static Offset of(long offset) {
         return ImmutableOffsetReal.of(offset);
     }

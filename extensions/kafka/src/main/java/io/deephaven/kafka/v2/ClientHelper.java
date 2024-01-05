@@ -8,21 +8,15 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class ClientHelper {
+final class ClientHelper {
 
-
-    // earliest, latest
-
-
-    public static void assignAndSeek(KafkaConsumer<?, ?> client, SubscribeOptions options) {
-        final Map<TopicPartition, Offset> offsets = ClientHelper.offsets(client, options.offsets());
+    public static void assignAndSeek(KafkaConsumer<?, ?> client, Offsets options) {
+        final Map<TopicPartition, Offset> offsets = ((OffsetsBase) options).offsets(client);
         client.assign(offsets.keySet());
         ClientHelper.seek(client, offsets);
     }
@@ -32,9 +26,9 @@ class ClientHelper {
         final List<TopicPartition> endTopicPartitions = new ArrayList<>();
         for (Entry<TopicPartition, Offset> e : offsets.entrySet()) {
             final Offset offset = e.getValue();
-            if (offset == Offset.beginning()) {
+            if (offset == Offset.earliest()) {
                 beginningTopicPartitions.add(e.getKey());
-            } else if (offset == Offset.end()) {
+            } else if (offset == Offset.latest()) {
                 endTopicPartitions.add(e.getKey());
             } else {
                 client.seek(e.getKey(), ((OffsetReal) offset).offset());
@@ -59,12 +53,11 @@ class ClientHelper {
         return new TopicPartition(p.topic(), p.partition());
     }
 
-    static Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client, List<Offsets> subscribes) {
-        return subscribes.stream()
-                .map(OffsetsBase.class::cast)
-                .map(offsetsBase -> offsetsBase.offsets(client))
-                .map(Map::entrySet)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+    static void safeCloseClient(KafkaConsumer<?, ?> client, Throwable t) {
+        try {
+            client.close();
+        } catch (Throwable t2) {
+            t.addSuppressed(t2);
+        }
     }
 }

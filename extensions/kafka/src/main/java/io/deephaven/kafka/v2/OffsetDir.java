@@ -4,5 +4,5 @@
 package io.deephaven.kafka.v2;
 
 enum OffsetDir implements Offset {
-    BEGINNING, END
+    EARLIEST, LATEST
 }

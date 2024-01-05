@@ -7,7 +7,6 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.VoidDeserializer;
 
 import java.util.List;
 
@@ -15,14 +14,12 @@ public class Example {
 
     public static Table homeassistant() {
         final ConsumerRecordOptions basicOptions = ConsumerRecordOptions.of();
-        return KafkaToolsNew.blinkTable(TableOptions.<Void, String>builder()
-                .name("homeassistant")
+        return KafkaTable.of(KafkaTableOptions.<Void, String>builder()
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
-                        .keyDeserializer(new VoidDeserializer())
                         .valueDeserializer(new StringDeserializer())
                         .build())
-                .subscribeOptions(SubscribeOptions.beginning("homeassistant"))
+                .offsets(Offsets.earliest("homeassistant"))
                 .processor(ObjectProcessor.combined(List.of(
                         Processors.basic(basicOptions),
                         Processors.value(Type.stringType()))))

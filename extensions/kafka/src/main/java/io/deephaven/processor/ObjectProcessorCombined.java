@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 final class ObjectProcessorCombined<T> implements ObjectProcessor<T> {
 
     public static <T> ObjectProcessorCombined<T> of(List<ObjectProcessor<? super T>> processors) {
-        //noinspection Convert2Diamond
+        // noinspection Convert2Diamond
         return new ObjectProcessorCombined<T>(processors.stream()
                 .flatMap(ObjectProcessorCombined::destructure)
                 .collect(Collectors.toUnmodifiableList()));

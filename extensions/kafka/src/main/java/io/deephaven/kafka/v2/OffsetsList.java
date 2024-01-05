@@ -9,22 +9,26 @@ import org.apache.kafka.common.TopicPartition;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import static io.deephaven.kafka.v2.ClientHelper.topicPartitions;
 
 @Immutable
 @SimpleStyle
-abstract class OffsetsTopicAllPartitionsBeginning extends OffsetsBase {
+abstract class OffsetsList extends OffsetsBase {
 
     @Parameter
-    public abstract String topic();
+    public abstract List<Offsets> offsets();
 
     @Override
     final Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client) {
-        return topicPartitions(client, topic())
-                .collect(Collectors.toMap(Function.identity(), tp -> Offset.beginning()));
+        return offsets().stream()
+                .map(OffsetsBase.class::cast)
+                .map(offsetsBase -> offsetsBase.offsets(client))
+                .map(Map::entrySet)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 }

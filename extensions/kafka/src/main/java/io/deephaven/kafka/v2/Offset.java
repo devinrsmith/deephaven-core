@@ -3,27 +3,83 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.base.clock.Clock;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
 public interface Offset {
     /**
-     * The earliest offset.
+     * The beginning offset.
      *
-     * @return the earliest offset
+     * @return the beginning offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#beginningOffsets(Collection)
      */
-    static Offset earliest() {
-        return OffsetDir.EARLIEST;
+    static Offset beginning() {
+        return OffsetImpl.BEGINNING;
     }
 
     /**
-     * The latest offset.
+     * The end offsets.
      *
-     * @return the latest offset
+     * @return the end offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#endOffsets(Collection)
      */
-    static Offset latest() {
-        return OffsetDir.LATEST;
+    static Offset end() {
+        return OffsetImpl.END;
     }
 
     /**
-     * The offset.
+     * The last committed offsets (whether the commit happened by this process or another).
+     *
+     * @return the committed offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
+     */
+    static Offset committed() {
+        return committed(null);
+    }
+
+    /**
+     * The last committed offsets (whether the commit happened by this process or another). If no commit exists, the
+     * logic will use {@code fallback}.
+     *
+     * @param fallback the fallback logic
+     * @return the committed offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
+     */
+    static Offset committed(Offset fallback) {
+        return ImmutableOffsetCommitted.of(fallback);
+    }
+
+    /**
+     * The earliest offset whose timestamp is greater than or equal to {@code since}.
+     *
+     * @param since the timestamp
+     * @return the timestamp offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#offsetsForTimes(Map)
+     */
+    static Offset timestamp(Instant since) {
+        return ImmutableOffsetTimestamp.of(since);
+    }
+
+
+    /**
+     * The earliest offset whose timestamp is at most {@code age} old. Equivalent to
+     * {@code timestamp(Clock.system().instantMillis().minus(ago))}.
+     *
+     * @param ago the age
+     * @return the timestamp offset
+     * @see #timestamp(Instant)
+     */
+    static Offset timestamp(Duration ago) {
+        return timestamp(Clock.system().instantMillis().minus(ago));
+    }
+
+    /**
+     * The explicit offset.
      *
      * @param offset the offset
      * @return the offset

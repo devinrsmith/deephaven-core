@@ -4,8 +4,13 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
 
 public final class KafkaTable {
+
+    public static TableDefinition definition(KafkaTableOptions<?, ?> options) {
+        return options.tableDefinition();
+    }
 
     public static Table of(KafkaTableOptions<?, ?> options) {
         return options.table();

@@ -11,6 +11,7 @@ import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
+import io.deephaven.kafka.KafkaTools;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
@@ -28,6 +29,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,8 +74,9 @@ public abstract class KafkaTableOptions<K, V> {
      *
      * <ul>
      * <li>If unset, sets {@link ConsumerConfig#CLIENT_ID_CONFIG} to {@link #name()}.</li>
+     * <li>If unset, sets {@link ConsumerConfig#DEFAULT_API_TIMEOUT_MS_CONFIG} to 5 seconds.</li>
      * <li>If unset, sets {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} to {@link #chunkSize()}.</li>
-     * <li>If unset, sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16MiB.</li>
+     * <li>If unset, sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16 MiB.</li>
      * <li>If unset, sets {@link ClientOptions#keyDeserializer()} to {@link ByteArrayDeserializer}
      * ({@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
      * <li>If unset, sets {@link ClientOptions#valueDeserializer()} to {@link ByteArrayDeserializer}
@@ -219,6 +222,20 @@ public abstract class KafkaTableOptions<K, V> {
         return tableType().walk(new TableTypeVisitor());
     }
 
+    final TableDefinition tableDefinition() {
+        return receiveTimestamp()
+                ? TableDefinition.from(
+                        Stream.concat(
+                                Stream.of("ReceiveTimestamp"),
+                                columnNames().stream())
+                                .collect(Collectors.toList()),
+                        Stream.concat(
+                                Stream.of(Type.instantType()),
+                                processor().outputTypes().stream())
+                                .collect(Collectors.toList()))
+                : TableDefinition.from(columnNames(), processor().outputTypes());
+    }
+
     private class TableTypeVisitor implements TableType.Visitor<Table> {
         @Override
         public Table visit(Blink blink) {
@@ -238,11 +255,7 @@ public abstract class KafkaTableOptions<K, V> {
 
     private StreamToBlinkTableAdapter adapter() {
         final TableDefinition definition = tableDefinition();
-        final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(
-                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
-                offsets(),
-                new KafkaStreamConsumerAdapter<>(filter(), processor(), chunkSize(), receiveTimestamp()),
-                null);
+        final KafkaPublisherDriver<K, V> publisher = publisher();
         final StreamToBlinkTableAdapter adapter;
         try {
             adapter = new StreamToBlinkTableAdapter(
@@ -251,7 +264,7 @@ public abstract class KafkaTableOptions<K, V> {
                     updateSourceRegistrar(),
                     name(),
                     extraAttributes());
-            publisher.start(threadFactory());
+            publisher.start();
         } catch (Throwable t) {
             publisher.errorBeforeStart(t);
             throw t;
@@ -259,18 +272,13 @@ public abstract class KafkaTableOptions<K, V> {
         return adapter;
     }
 
-    private TableDefinition tableDefinition() {
-        return receiveTimestamp()
-                ? TableDefinition.from(
-                        Stream.concat(
-                                Stream.of("ReceiveTimestamp"),
-                                columnNames().stream())
-                                .collect(Collectors.toList()),
-                        Stream.concat(
-                                Stream.of(Type.instantType()),
-                                processor().outputTypes().stream())
-                                .collect(Collectors.toList()))
-                : TableDefinition.from(columnNames(), processor().outputTypes());
+    private KafkaPublisherDriver<K, V> publisher() {
+        return KafkaPublisherDriver.of(
+                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
+                offsets(),
+                new KafkaStreamConsumerAdapter<>(filter(), processor(), chunkSize(), receiveTimestamp()),
+                threadFactory(),
+                callback());
     }
 
     private ClientOptions<K, V> opinionatedClientOptions() {
@@ -286,6 +294,10 @@ public abstract class KafkaTableOptions<K, V> {
             // enough to minimize potential sync wait for StreamPublisher#flush calls (cycle).
             config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.toString(chunkSize()));
         }
+        if (!config.containsKey(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG)) {
+            // The default of 60 seconds seems high
+            config.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, Long.toString(Duration.ofSeconds(5).toMillis()));
+        }
         if (!config.containsKey(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG)) {
             // Potential to base as percentage of cycle time? Might be more reasonable to encourage user to set?
         }
@@ -293,8 +305,8 @@ public abstract class KafkaTableOptions<K, V> {
             // Potential to configure for higher throughput; still adheres to max wait ms
         }
         if (!config.containsKey(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG)) {
-            // The default of 1MiB seems too low
-            // Overall limit still adheres to FETCH_MAX_BYTES_CONFIG (default 50MiB)
+            // The default of 1 MiB seems too low
+            // Overall limit still adheres to FETCH_MAX_BYTES_CONFIG (default 50 MiB)
             config.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, Integer.toString(16 * 1024 * 1024));
         }
         if (clientOptions().keyDeserializer().isPresent()) {
@@ -321,6 +333,11 @@ public abstract class KafkaTableOptions<K, V> {
     // Maybe expose as configuration option in future?
     private static ThreadFactory threadFactory() {
         return new NamingThreadFactory(null, KafkaTableOptions.class, "KafkaPublisherDriver", true);
+    }
+
+    // Maybe expose as configuration option in future?
+    private static KafkaTools.ConsumerLoopCallback callback() {
+        return null;
     }
 
     private enum PredicateTrue implements Predicate<Object> {

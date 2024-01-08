@@ -3,32 +3,89 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.base.clock.Clock;
 import org.apache.kafka.common.TopicPartition;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface Offsets {
 
     /**
-     * The earliest offsets for all partitions of {@code topic}.
+     * The beginning offsets for all partitions of {@code topic}.
      *
      * @param topic the topic
-     * @return the offsets
+     * @return the beginning offsets
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#beginningOffsets(Collection)
      */
-    static Offsets earliest(String topic) {
-        return ImmutableOffsetsEarliest.of(topic);
+    static Offsets beginning(String topic) {
+        return ImmutableOffsetsBeginning.of(topic);
     }
 
     /**
-     * The latest offsets for all partitions of {@code topic}.
+     * The end offsets for all partitions of {@code topic}.
      *
      * @param topic the topic
-     * @return the offsets
+     * @return the end offsets
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#endOffsets(Collection)
      */
-    static Offsets latest(String topic) {
-        return ImmutableOffsetsLatest.of(topic);
+    static Offsets end(String topic) {
+        return ImmutableOffsetsEnd.of(topic);
+    }
+
+    /**
+     * The committed offset for all partitions of {@code topic} (whether the commits happened by this process or
+     * another).
+     *
+     * @param topic the topic
+     * @return the committed offsets
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
+     */
+    static Offsets committed(String topic) {
+        return committed(topic, null);
+    }
+
+    /**
+     * The committed offset for all partitions of {@code topic} (whether the commits happened by this process or
+     * another). If no commit exists for a given partition, the logic for that partition will use {@code fallback}.
+     *
+     * @param topic the topic
+     * @param fallback the fallback logic
+     * @return the committed offsets
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
+     */
+    static Offsets committed(String topic, Offset fallback) {
+        return ImmutableOffsetsCommitted.of(topic, fallback);
+    }
+
+    /**
+     * The earliest offset whose timestamp is greater than or equal to {@code since} for all partitions of
+     * {@code topic}.
+     * 
+     * @param topic the topic
+     * @param since the timestamp
+     * @return the timestamp offsets
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#offsetsForTimes(Map)
+     */
+    static Offsets timestamp(String topic, Instant since) {
+        return ImmutableOffsetsTimestamp.of(topic, since);
+    }
+
+    /**
+     * The earliest offset whose timestamp is at most {@code age} old. Equivalent to
+     * {@code timestamp(Clock.system().instantMillis().minus(ago))}.
+     *
+     * @param ago the age
+     * @return the timestamp offset
+     * @see #timestamp(String, Instant)
+     */
+    static Offsets timestamp(String topic, Duration ago) {
+        return timestamp(topic, Clock.system().instantMillis().minus(ago));
     }
 
     /**

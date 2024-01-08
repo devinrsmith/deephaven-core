@@ -25,12 +25,13 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
             ClientOptions<K, V> clientOptions,
             Offsets offsets,
             KafkaStreamConsumerAdapter<K, V> streamConsumerAdapter,
+            ThreadFactory threadFactory,
             ConsumerLoopCallback callback) {
         final KafkaConsumer<K, V> client =
                 clientOptions.createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
         try {
             ClientHelper.assignAndSeek(client, offsets);
-            return new KafkaPublisherDriver<>(client, streamConsumerAdapter, callback);
+            return new KafkaPublisherDriver<>(client, streamConsumerAdapter, threadFactory, callback);
         } catch (Throwable t) {
             safeCloseClient(client, t);
             throw t;
@@ -39,19 +40,26 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
 
     private final KafkaConsumer<K, V> client;
     private final KafkaStreamConsumerAdapter<K, V> streamConsumerAdapter;
+    private final ThreadFactory threadFactory;
     private final ConsumerLoopCallback callback;
 
     KafkaPublisherDriver(
             KafkaConsumer<K, V> client,
             KafkaStreamConsumerAdapter<K, V> streamConsumerAdapter,
+            ThreadFactory threadFactory,
             ConsumerLoopCallback callback) {
         this.client = Objects.requireNonNull(client);
         this.streamConsumerAdapter = Objects.requireNonNull(streamConsumerAdapter);
+        this.threadFactory = Objects.requireNonNull(threadFactory);
         this.callback = callback;
     }
 
-    void start(ThreadFactory factory) {
-        final Thread thread = factory.newThread(this::run);
+    void start() {
+        if (!streamConsumerAdapter.hasStreamConsumer()) {
+            throw new IllegalStateException(
+                    "Expected io.deephaven.kafka.v2.KafkaPublisherDriver.register to be called before start");
+        }
+        final Thread thread = threadFactory.newThread(this::run);
         thread.setDaemon(true);
         thread.start();
     }
@@ -60,6 +68,7 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         if (streamConsumerAdapter.hasStreamConsumer()) {
             safeNotifyFailure(t);
         }
+        streamConsumerAdapter.close();
         safeCloseClient(client, t);
     }
 
@@ -84,8 +93,7 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
             while (runOnce()) {
             }
         } catch (Throwable t) {
-            safeNotifyFailure(t);
-            throw t;
+            streamConsumerAdapter.acceptFailure(t);
         } finally {
             streamConsumerAdapter.close();
             client.close();
@@ -119,7 +127,7 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         try {
             records = client.poll(Duration.ofMinutes(1));
         } catch (WakeupException e) {
-            safeNotifyFailure(new RuntimeException(KafkaPublisherDriver.class.getName() + ".shutdown() called"));
+            streamConsumerAdapter.acceptFailure(e);
             return false;
         }
         if (records.isEmpty()) {

@@ -3,6 +3,6 @@
  */
 package io.deephaven.kafka.v2;
 
-enum OffsetDir implements Offset {
-    EARLIEST, LATEST
+enum OffsetImpl implements Offset {
+    BEGINNING, END
 }

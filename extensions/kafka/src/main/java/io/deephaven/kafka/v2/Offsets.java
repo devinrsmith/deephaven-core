@@ -32,7 +32,7 @@ public interface Offsets {
     }
 
     /**
-     * The specific offsets for each partition in {@code offsets}.
+     * The specific offsets for each topic partition in {@code offsets}.
      *
      * @param offsets the offsets
      * @return the offsets

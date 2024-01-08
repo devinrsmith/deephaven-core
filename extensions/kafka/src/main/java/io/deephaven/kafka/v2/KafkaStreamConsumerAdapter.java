@@ -21,9 +21,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
+    private final Predicate<ConsumerRecord<K, V>> filter;
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
     private final WritableObjectChunk<ConsumerRecord<K, V>, ?> chunk;
     private final int chunkSize;
@@ -32,9 +34,11 @@ final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
     private StreamConsumer streamConsumer;
 
     KafkaStreamConsumerAdapter(
+            Predicate<ConsumerRecord<K, V>> filter,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
             int chunkSize,
             boolean receiveTimestamp) {
+        this.filter = Objects.requireNonNull(filter);
         this.processor = Objects.requireNonNull(processor);
         this.chunkSize = chunkSize;
         this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize);
@@ -90,11 +94,16 @@ final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
         boolean didFlush = false;
         try {
             while (true) {
-                for (; chunkPos < chunkSize && it.hasNext(); ++chunkPos) {
+                while (chunkPos < chunkSize && it.hasNext()) {
+                    final ConsumerRecord<K, V> record = it.next();
+                    if (!filter.test(record)) {
+                        continue;
+                    }
                     if (receiveTimestampChunk != null) {
                         receiveTimestampChunk.set(chunkPos, receiveTimeEpochNanos);
                     }
-                    chunk.set(chunkPos, it.next());
+                    chunk.set(chunkPos, record);
+                    ++chunkPos;
                 }
                 if (chunkPos < chunkSize) {
                     break;

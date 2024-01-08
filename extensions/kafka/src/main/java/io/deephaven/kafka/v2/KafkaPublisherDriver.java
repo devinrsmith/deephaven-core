@@ -56,7 +56,7 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         thread.start();
     }
 
-    void startError(Throwable t) {
+    void errorBeforeStart(Throwable t) {
         if (streamConsumerAdapter.hasStreamConsumer()) {
             safeNotifyFailure(t);
         }

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,18 +63,21 @@ public abstract class KafkaTableOptions<K, V> {
     public abstract ClientOptions<K, V> clientOptions();
 
     /**
-     * If opinionated client configuration should be used to extend {@link #clientOptions()}. These extensions may
-     * change from release to release. Callers wishing to do their own optimizations are encouraged to set this to
-     * {@code false} and configure {@link #clientOptions()} explicitly.
+     * If an opinionated client configuration should be used to extend {@link #clientOptions()}. By default, is
+     * {@code true}.
+     *
+     * <p>
+     * The specifics of these may change from release to release. Callers wishing to do their own optimizations are
+     * encouraged to set this to {@code false} and finely configure {@link #clientOptions()}. Currently, consists of:
      *
      * <ul>
-     * <li>Sets {@link ConsumerConfig#CLIENT_ID_CONFIG} to {@link #name()} if unset.</li>
-     * <li>Sets {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} to {@link #chunkSize()} if unset.</li>
-     * <li>Sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16MiB if unset.</li>
-     * <li>Sets {@link ClientOptions#keyDeserializer()} to {@link ByteArrayDeserializer} if unset and
-     * {@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} is unset.</li>
-     * <li>Sets {@link ClientOptions#valueDeserializer()} to {@link ByteArrayDeserializer} if unset and
-     * {@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} is unset.</li>
+     * <li>If unset, sets {@link ConsumerConfig#CLIENT_ID_CONFIG} to {@link #name()}.</li>
+     * <li>If unset, sets {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} to {@link #chunkSize()}.</li>
+     * <li>If unset, sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16MiB.</li>
+     * <li>If unset, sets {@link ClientOptions#keyDeserializer()} to {@link ByteArrayDeserializer}
+     * ({@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
+     * <li>If unset, sets {@link ClientOptions#valueDeserializer()} to {@link ByteArrayDeserializer}
+     * ({@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
      * </ul>
      *
      * @return if opinionated client configuration should be used
@@ -90,10 +94,28 @@ public abstract class KafkaTableOptions<K, V> {
      */
     public abstract Offsets offsets();
 
+    /**
+     * The record filter. By default, is equivalent to {@code record -> true}, which will include all records.
+     *
+     * @return the record filter
+     */
+    @Default
+    public Predicate<ConsumerRecord<K, V>> filter() {
+        return predicateTrue();
+    }
+
     // todo: give easy way for users to construct w/ specs for specific key / value types
+
+    /**
+     * The record processor.
+     * 
+     * @return
+     */
     public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
 
     public abstract List<String> columnNames();
+
+
 
     @Default
     public TableType tableType() {
@@ -108,7 +130,8 @@ public abstract class KafkaTableOptions<K, V> {
     public abstract Map<String, Object> extraAttributes();
 
     /**
-     * The update source registrar for the resulting table.
+     * The update source registrar for the resulting table. By default, is equivalent to
+     * {@code ExecutionContext.getContext().getUpdateGraph()}.
      *
      * @return the update source registrar
      */
@@ -141,6 +164,8 @@ public abstract class KafkaTableOptions<K, V> {
         Builder<K, V> useOpinionatedClientOptions(boolean useOpinionatedClientOptions);
 
         Builder<K, V> offsets(Offsets offsets);
+
+        Builder<K, V> filter(Predicate<ConsumerRecord<K, V>> filter);
 
         Builder<K, V> processor(ObjectProcessor<ConsumerRecord<K, V>> processor);
 
@@ -189,28 +214,6 @@ public abstract class KafkaTableOptions<K, V> {
         }
     }
 
-    final StreamToBlinkTableAdapter adapter() {
-        final TableDefinition definition = tableDefinition();
-        final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(
-                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
-                offsets(),
-                new KafkaStreamConsumerAdapter<>(processor(), chunkSize(), receiveTimestamp()),
-                null);
-        try {
-            final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(
-                    definition,
-                    publisher,
-                    updateSourceRegistrar(),
-                    name(),
-                    extraAttributes());
-            publisher.start(threadFactory());
-            return adapter;
-        } catch (Throwable t) {
-            publisher.startError(t);
-            throw t;
-        }
-    }
-
     final Table table() {
         // todo: wrap exec context? liveness?
         return tableType().walk(new TableTypeVisitor());
@@ -233,6 +236,29 @@ public abstract class KafkaTableOptions<K, V> {
         }
     }
 
+    private StreamToBlinkTableAdapter adapter() {
+        final TableDefinition definition = tableDefinition();
+        final KafkaPublisherDriver<K, V> publisher = KafkaPublisherDriver.of(
+                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
+                offsets(),
+                new KafkaStreamConsumerAdapter<>(filter(), processor(), chunkSize(), receiveTimestamp()),
+                null);
+        final StreamToBlinkTableAdapter adapter;
+        try {
+            adapter = new StreamToBlinkTableAdapter(
+                    definition,
+                    publisher,
+                    updateSourceRegistrar(),
+                    name(),
+                    extraAttributes());
+            publisher.start(threadFactory());
+        } catch (Throwable t) {
+            publisher.errorBeforeStart(t);
+            throw t;
+        }
+        return adapter;
+    }
+
     private TableDefinition tableDefinition() {
         return receiveTimestamp()
                 ? TableDefinition.from(
@@ -248,7 +274,6 @@ public abstract class KafkaTableOptions<K, V> {
     }
 
     private ClientOptions<K, V> opinionatedClientOptions() {
-        // todo enable.auto.commit=false
         final HashMap<String, String> config = new HashMap<>(clientOptions().config());
         final ClientOptions.Builder<K, V> opinionated = ClientOptions.builder();
         if (!config.containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
@@ -296,5 +321,19 @@ public abstract class KafkaTableOptions<K, V> {
     // Maybe expose as configuration option in future?
     private static ThreadFactory threadFactory() {
         return new NamingThreadFactory(null, KafkaTableOptions.class, "KafkaPublisherDriver", true);
+    }
+
+    private enum PredicateTrue implements Predicate<Object> {
+        PREDICATE_TRUE;
+
+        @Override
+        public boolean test(Object o) {
+            return true;
+        }
+    }
+
+    private static <T> Predicate<T> predicateTrue() {
+        // noinspection unchecked
+        return (Predicate<T>) PredicateTrue.PREDICATE_TRUE;
     }
 }

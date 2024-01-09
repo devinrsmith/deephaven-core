@@ -47,20 +47,7 @@ public interface Offsets {
      * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
      */
     static Offsets committed(String topic) {
-        return committed(topic, null);
-    }
-
-    /**
-     * The committed offset for all partitions of {@code topic} (whether the commits happened by this process or
-     * another). If no commit exists for a given partition, the logic for that partition will use {@code fallback}.
-     *
-     * @param topic the topic
-     * @param fallback the fallback logic
-     * @return the committed offsets
-     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
-     */
-    static Offsets committed(String topic, Offset fallback) {
-        return ImmutableOffsetsCommitted.of(topic, fallback);
+        return ImmutableOffsetsCommitted.of(topic);
     }
 
     /**

@@ -39,19 +39,7 @@ public interface Offset {
      * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
      */
     static Offset committed() {
-        return committed(null);
-    }
-
-    /**
-     * The last committed offsets (whether the commit happened by this process or another). If no commit exists, the
-     * logic will use {@code fallback}.
-     *
-     * @param fallback the fallback logic
-     * @return the committed offset
-     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
-     */
-    static Offset committed(Offset fallback) {
-        return ImmutableOffsetCommitted.of(fallback);
+        return ImmutableOffsetCommitted.of();
     }
 
     /**

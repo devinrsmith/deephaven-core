@@ -13,7 +13,4 @@ import javax.annotation.Nullable;
 @SimpleStyle
 abstract class OffsetCommitted implements Offset {
 
-    @Parameter
-    @Nullable
-    public abstract Offset fallback();
 }

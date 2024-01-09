@@ -23,6 +23,7 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Check;
@@ -297,6 +298,10 @@ public abstract class KafkaTableOptions<K, V> {
         if (!config.containsKey(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG)) {
             // The default of 60 seconds seems high
             config.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, Long.toString(Duration.ofSeconds(5).toMillis()));
+        }
+        if (!config.containsKey(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)) {
+            // Todo: should we be stricter than kafka default?
+            // config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.NONE.toString());
         }
         if (!config.containsKey(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG)) {
             // Potential to base as percentage of cycle time? Might be more reasonable to encourage user to set?

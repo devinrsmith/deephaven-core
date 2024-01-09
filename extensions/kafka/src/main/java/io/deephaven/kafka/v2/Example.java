@@ -19,11 +19,11 @@ public class Example {
         return KafkaTable.of(KafkaTableOptions.<Void, String>builder()
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
-                        .putConfig("group.id", "homeassistant-test-group-2")
-                        .putConfig("auto.offset.reset", OffsetResetStrategy.NONE.toString())
+                        // .putConfig("group.id", "homeassistant-test-group-2")
+                        .putConfig("auto.offset.reset", OffsetResetStrategy.EARLIEST.toString())
                         .valueDeserializer(new StringDeserializer())
                         .build())
-                .offsets(Offsets.committed("homeassistant", Offset.of(0)))
+                .offsets(Offsets.committed("homeassistant"))
                 .processor(ObjectProcessor.combined(List.of(
                         Processors.basic(basicOptions),
                         Processors.value(Type.stringType()))))

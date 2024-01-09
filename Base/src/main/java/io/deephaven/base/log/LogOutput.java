@@ -6,6 +6,7 @@ package io.deephaven.base.log;
 import io.deephaven.base.text.TimestampBuffer;
 import io.deephaven.base.text.TimestampBufferMicros;
 
+import java.lang.StackWalker.StackFrame;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -492,11 +493,17 @@ public interface LogOutput {
         @Override
         public LogOutput append(LogOutput logOutput) {
             logOutput.append(CurrentStackTrace.class.getName()).nl();
-            final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            for (int i = 1; i < stackTrace.length; i++) {
-                logOutput.append("\tat ").append(stackTrace[i].toString()).nl();
-            }
+            StackWalker.getInstance().walk(stream -> {
+                stream.skip(1)
+                        .dropWhile(CurrentStackTrace::isLoggingFramework)
+                        .forEach(sf -> logOutput.append("\tat ").append(sf.toString()).nl());
+                return null;
+            });
             return logOutput;
+        }
+
+        private static boolean isLoggingFramework(StackFrame sf) {
+            return sf.getClassName().startsWith("io.deephaven.io.");
         }
     }
 }

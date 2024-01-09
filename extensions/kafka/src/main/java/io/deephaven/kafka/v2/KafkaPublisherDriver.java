@@ -9,6 +9,7 @@ import io.deephaven.stream.StreamPublisher;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,7 +31,7 @@ final class KafkaPublisherDriver<K, V> implements StreamPublisher {
         final KafkaConsumer<K, V> client =
                 clientOptions.createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
         try {
-            ClientHelper.assignAndSeek(client, offsets);
+            final Map<TopicPartition, Offset> map = ClientHelper.assignAndSeek(client, offsets);
             return new KafkaPublisherDriver<>(client, streamConsumerAdapter, threadFactory, callback);
         } catch (Throwable t) {
             safeCloseClient(client, t);

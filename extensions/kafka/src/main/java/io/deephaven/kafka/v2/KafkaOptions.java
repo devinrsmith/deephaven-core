@@ -4,65 +4,50 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.engine.context.ExecutionContext;
-import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.BlinkTableTools;
-import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
-import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
-import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.kafka.KafkaTools;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
-import io.deephaven.kafka.KafkaTools.TableType;
-import io.deephaven.kafka.KafkaTools.TableType.Append;
-import io.deephaven.kafka.KafkaTools.TableType.Blink;
-import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.Type;
-import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.stream.StreamPublisher;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.consumer.OffsetCommitCallback;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static io.deephaven.kafka.v2.KafkaTableOptions.predicateTrue;
 
 @Immutable
 @BuildableStyle
-public abstract class KafkaTableOptions<K, V> {
+public abstract class KafkaOptions<K, V> {
 
-    public static <K, V> Builder<K, V> builder() {
-        return ImmutableKafkaTableOptions.builder();
+    public static Publishers create(KafkaOptions<?, ?> options) {
+        return options.publishers();
     }
 
-    // table output?
-    /**
-     * The name. Defaults to {@link UUID#randomUUID()}.
-     *
-     * @return the name
-     */
-    @Default
-    public String name() {
-        return UUID.randomUUID().toString();
+    public static <T> T create(KafkaOptions<?, ?> options, Function<Map<StreamPublisher, Set<TopicPartition>>, T> function) {
+        try (final Publishers publishers = create(options)) {
+            try {
+                final T t = function.apply(publishers.publishers());
+                publishers.start();
+                return t;
+            } catch (Throwable throwable) {
+                publishers.errorBeforeStart(throwable);
+                throw throwable;
+            }
+        }
     }
+
 
     /**
      * The Kafka client options.
@@ -97,6 +82,7 @@ public abstract class KafkaTableOptions<K, V> {
         return true;
     }
 
+
     /**
      * The offsets.
      *
@@ -118,177 +104,75 @@ public abstract class KafkaTableOptions<K, V> {
 
     /**
      * The record processor.
-     * 
+     *
      * @return
      */
     public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
 
-    // table output?
-    public abstract List<String> columnNames();
+    public abstract Partitioning partitioning();
 
-    // table output
-    @Default
-    public TableType tableType() {
-        return TableType.blink();
-    }
+    public interface Partitioning {
 
-    // table output
-    /**
-     * The extra attributes to set on the underlying blink table.
-     *
-     * @return the extra attributes
-     */
-    public abstract Map<String, Object> extraAttributes();
+        static Partitioning single() {
+            return null;
+        }
 
-    // table output
-    /**
-     * The update source registrar for the resulting table. By default, is equivalent to
-     * {@code ExecutionContext.getContext().getUpdateGraph()}.
-     *
-     * @return the update source registrar
-     */
-    @Default
-    public UpdateSourceRegistrar updateSourceRegistrar() {
-        return ExecutionContext.getContext().getUpdateGraph();
-    }
+        static Partitioning perPartition() {
+            return null;
+        }
 
-    /**
-     * The maximum size of each chunk that will be passed to the {@link StreamConsumer}. Defaults to
-     * {@value ArrayBackedColumnSource#BLOCK_SIZE}.
-     *
-     * @return the chunk size
-     */
-    @Default
-    public int chunkSize() {
-        return ArrayBackedColumnSource.BLOCK_SIZE;
-    }
+        static Partitioning perTopic() {
+            return null;
+        }
 
-    // todo: name?
-    @Default
-    public boolean receiveTimestamp() {
-        return true;
-    }
-
-    public interface Builder<K, V> {
-        Builder<K, V> name(String name);
-
-        Builder<K, V> clientOptions(ClientOptions<K, V> clientOptions);
-
-        Builder<K, V> useOpinionatedClientOptions(boolean useOpinionatedClientOptions);
-
-        Builder<K, V> offsets(Offsets offsets);
-
-        Builder<K, V> filter(Predicate<ConsumerRecord<K, V>> filter);
-
-        Builder<K, V> processor(ObjectProcessor<ConsumerRecord<K, V>> processor);
-
-        Builder<K, V> addColumnNames(String element);
-
-        Builder<K, V> addColumnNames(String... elements);
-
-        Builder<K, V> addAllColumnNames(Iterable<String> elements);
-
-        Builder<K, V> tableType(TableType tableType);
-
-        Builder<K, V> putExtraAttributes(String key, Object value);
-
-        Builder<K, V> putExtraAttributes(Map.Entry<String, ?> entry);
-
-        Builder<K, V> putAllExtraAttributes(Map<String, ?> entries);
-
-        Builder<K, V> updateSourceRegistrar(UpdateSourceRegistrar updateSourceRegistrar);
-
-        Builder<K, V> chunkSize(int chunkSize);
-
-        Builder<K, V> receiveTimestamp(boolean receiveTimestamp);;
-
-        KafkaTableOptions<K, V> build();
-    }
-
-    @Check
-    final void checkSize() {
-        if (processor().size() != columnNames().size()) {
-            throw new IllegalArgumentException();
+        static Partitioning perTopicPartition() {
+            return null;
         }
     }
 
-    @Check
-    final void checkChunkSize() {
-        if (chunkSize() < 1) {
-            throw new IllegalArgumentException("chunkSize must be positive");
-        }
-    }
+    public interface Publishers extends Closeable {
+        Map<StreamPublisher, Set<TopicPartition>> publishers();
 
-    @Check
-    final void checkAutoCommit() {
-        final String enableAutoCommit =
-                clientOptions().config().getOrDefault(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        if (!"false".equalsIgnoreCase(enableAutoCommit)) {
-            throw new IllegalArgumentException(String.format("Configuration `%s=%s` is unsupported",
-                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit));
-        }
-    }
+        void start();
 
-    final Table table() {
-        // todo: wrap exec context? liveness?
-        return tableType().walk(new TableTypeVisitor());
-    }
-
-    final TableDefinition tableDefinition() {
-        return receiveTimestamp()
-                ? TableDefinition.from(
-                        Stream.concat(
-                                Stream.of("ReceiveTimestamp"),
-                                columnNames().stream())
-                                .collect(Collectors.toList()),
-                        Stream.concat(
-                                Stream.of(Type.instantType()),
-                                processor().outputTypes().stream())
-                                .collect(Collectors.toList()))
-                : TableDefinition.from(columnNames(), processor().outputTypes());
-    }
-
-    private class TableTypeVisitor implements TableType.Visitor<Table> {
-        @Override
-        public Table visit(Blink blink) {
-            return adapter().table();
-        }
+        void errorBeforeStart(Throwable t);
 
         @Override
-        public Table visit(Append append) {
-            return BlinkTableTools.blinkToAppendOnly(adapter().table());
-        }
-
-        @Override
-        public Table visit(Ring ring) {
-            return RingTableTools.of(adapter().table(), ring.capacity());
-        }
+        void close();
     }
 
-    private StreamToBlinkTableAdapter adapter() {
-        final TableDefinition definition = tableDefinition();
+
+    final Publishers publishers() {
+
         final KafkaPublisherDriver<K, V> publisher = publisher();
-        final StreamToBlinkTableAdapter adapter;
-        try {
-            adapter = new StreamToBlinkTableAdapter(
-                    definition,
-                    publisher,
-                    updateSourceRegistrar(),
-                    name(),
-                    extraAttributes());
-            publisher.start();
-        } catch (Throwable t) {
-            publisher.errorBeforeStart(t);
-            throw t;
-        }
-        return adapter;
+        return new Publishers() {
+            @Override
+            public Map<StreamPublisher, Set<TopicPartition>> publishers() {
+                return Map.of(publisher, null);
+            }
+
+            @Override
+            public void start() {
+
+            }
+
+            @Override
+            public void errorBeforeStart(Throwable t) {
+
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
     }
 
     private KafkaPublisherDriver<K, V> publisher() {
         return KafkaPublisherDriver.of(
                 useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
                 offsets(),
-                new KafkaStreamConsumerAdapter<>(filter(), processor(), chunkSize(), receiveTimestamp()),
+                new KafkaStreamConsumerAdapter<>(filter(), processor(), 2048, true),
                 threadFactory(),
                 callback());
     }
@@ -347,6 +231,7 @@ public abstract class KafkaTableOptions<K, V> {
         return opinionated.putAllConfig(config).build();
     }
 
+
     // Maybe expose as configuration option in future?
     private static ThreadFactory threadFactory() {
         return new NamingThreadFactory(null, KafkaTableOptions.class, "KafkaPublisherDriver", true);
@@ -355,19 +240,5 @@ public abstract class KafkaTableOptions<K, V> {
     // Maybe expose as configuration option in future?
     private static KafkaTools.ConsumerLoopCallback callback() {
         return null;
-    }
-
-    private enum PredicateTrue implements Predicate<Object> {
-        PREDICATE_TRUE;
-
-        @Override
-        public boolean test(Object o) {
-            return true;
-        }
-    }
-
-    static <T> Predicate<T> predicateTrue() {
-        // noinspection unchecked
-        return (Predicate<T>) PredicateTrue.PREDICATE_TRUE;
     }
 }

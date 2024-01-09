@@ -20,6 +20,9 @@ final class ClientHelper {
 
     public static void assignAndSeek(KafkaConsumer<?, ?> client, Offsets options) {
         final Map<TopicPartition, Offset> offsets = ((OffsetsBase) options).offsets(client);
+        if (offsets.isEmpty()) {
+            throw new IllegalArgumentException("Offsets is empty");
+        }
         client.assign(offsets.keySet());
         ClientHelper.seek(client, offsets);
     }

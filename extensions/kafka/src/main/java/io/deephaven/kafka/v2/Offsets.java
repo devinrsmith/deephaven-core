@@ -13,6 +13,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 
 public interface Offsets {
 
@@ -64,15 +66,40 @@ public interface Offsets {
     }
 
     /**
-     * The earliest offset whose timestamp is at most {@code age} old. Equivalent to
-     * {@code timestamp(Clock.system().instantMillis().minus(ago))}.
+     * The earliest offset whose timestamp is at most {@code age} old for all partitions of {@code topic}. Equivalent to
+     * {@code timestamp(topic, Clock.system().instantMillis().minus(ago))}.
      *
+     * @param topic the topic
      * @param ago the age
      * @return the timestamp offset
      * @see #timestamp(String, Instant)
      */
     static Offsets timestamp(String topic, Duration ago) {
         return timestamp(topic, Clock.system().instantMillis().minus(ago));
+    }
+
+    /**
+     * The topic partitions of {@code offsets} that match {@code partitionFilter}. Equivalent to
+     * {@code filter(offsets, topicPartition -> partitionFilter.test(topicPartition.partition()))}.
+     *
+     * @param offsets the offsets
+     * @param partitionFilter the partition filter
+     * @return the filtered topic partitions
+     * @see #filter(Offsets, Predicate)
+     */
+    static Offsets filterPartition(Offsets offsets, IntPredicate partitionFilter) {
+        return filter(offsets, topicPartition -> partitionFilter.test(topicPartition.partition()));
+    }
+
+    /**
+     * The topic partitions of {@code offsets} that match {@code topicPartitionFilter}.
+     *
+     * @param offsets the offsets
+     * @param topicPartitionFilter the topic partition filter
+     * @return the filtered topic partitions
+     */
+    static Offsets filter(Offsets offsets, Predicate<TopicPartition> topicPartitionFilter) {
+        return ImmutableOffsetsFiltered.of(offsets, topicPartitionFilter);
     }
 
     /**

@@ -3,6 +3,7 @@
  */
 package io.deephaven.extensions.barrage.util;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.io.logger.Logger;
 import com.google.rpc.Code;
 import io.deephaven.proto.util.Exceptions;
@@ -30,7 +31,9 @@ public class GrpcUtil {
         }
 
         final UUID errorId = UUID.randomUUID();
-        log.error().append("Internal Error '").append(errorId.toString()).append("' ").append(err).endl();
+        log.error().append("Internal Error '").append(errorId.toString()).append("' ").append(err)
+                .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                .endl();
         return Exceptions.statusRuntimeException(statusCode, "Details Logged w/ID '" + errorId + "'");
     }
 

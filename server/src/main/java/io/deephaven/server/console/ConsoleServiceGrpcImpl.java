@@ -6,6 +6,7 @@ package io.deephaven.server.console;
 import com.google.common.base.Throwables;
 import com.google.rpc.Code;
 import io.deephaven.base.LockFreeArrayQueue;
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.perf.QueryPerformanceNugget;
@@ -194,7 +195,9 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                                 .forEach(entry -> fieldChanges.addRemoved(makeVariableDefinition(entry)));
                         if (changes.error != null) {
                             diff.setErrorMessage(Throwables.getStackTraceAsString(changes.error));
-                            log.error().append("Error running script: ").append(changes.error).endl();
+                            log.error().append("Error running script: ").append(changes.error)
+                                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                                    .endl();
                         }
                         safelyComplete(responseObserver, diff.setChanges(fieldChanges).build());
                     });

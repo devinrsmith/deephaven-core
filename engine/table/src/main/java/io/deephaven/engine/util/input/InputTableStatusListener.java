@@ -3,6 +3,7 @@
  */
 package io.deephaven.engine.util.input;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 
@@ -20,7 +21,11 @@ public interface InputTableStatusListener {
 
         @Override
         public void onError(Throwable t) {
-            log.error().append("Error writing to Input Table: ").append(t).endl();
+            log.error()
+                    .append("Error writing to Input Table: ")
+                    .append(t)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                    .endl();
         }
     };
 

@@ -3,6 +3,7 @@
  */
 package io.deephaven.engine.liveness;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.engine.updategraph.DynamicNode;
@@ -122,7 +123,9 @@ public final class Liveness {
         }
         final String heapDumpPath = HeapDump.generateHeapDumpPath();
         log.fatal().append("LivenessStateException, generating heap dump to").append(heapDumpPath).append(": ")
-                .append(lse).endl();
+                .append(lse)
+                .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                .endl();
         try {
             HeapDump.heapDump(heapDumpPath);
         } catch (IOException ignored) {

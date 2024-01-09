@@ -485,4 +485,18 @@ public interface LogOutput {
             return this;
         }
     }
+
+    enum CurrentStackTrace implements LogOutputAppendable {
+        CURRENT_STACK_TRACE;
+
+        @Override
+        public LogOutput append(LogOutput logOutput) {
+            logOutput.append(CurrentStackTrace.class.getName()).nl();
+            final StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            for (int i = 1; i < stackTrace.length; i++) {
+                logOutput.append("\tat ").append(stackTrace[i].toString()).nl();
+            }
+            return logOutput;
+        }
+    }
 }

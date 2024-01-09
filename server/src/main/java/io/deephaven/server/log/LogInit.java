@@ -3,6 +3,7 @@
  */
 package io.deephaven.server.log;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.base.system.StandardStreamState;
 import io.deephaven.engine.table.impl.util.AsyncClientErrorNotifier;
 import io.deephaven.internal.log.InitSink;
@@ -39,7 +40,9 @@ public class LogInit {
         configureLoggerSink();
         Logger errLog = LoggerFactory.getLogger(AsyncClientErrorNotifier.class);
         AsyncClientErrorNotifier
-                .setReporter(err -> errLog.error().append("Error in table update: ").append(err).endl());
+                .setReporter(err -> errLog.error().append("Error in table update: ").append(err)
+                        .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                        .endl());
     }
 
     private void configureLoggerSink() {

@@ -3,6 +3,7 @@
  */
 package io.deephaven.util;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
 import io.deephaven.configuration.Configuration;
@@ -52,7 +53,9 @@ public class HeapDump {
         try {
             final String heapDumpPath = HeapDump.generateHeapDumpPath();
             log.fatal().append(cause + ", generating heap dump to")
-                    .append(heapDumpPath).append(": ").append(failure).endl();
+                    .append(heapDumpPath).append(": ").append(failure)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                    .endl();
             heapDump(heapDumpPath);
         } catch (Exception e) {
             log.info()

@@ -10,6 +10,7 @@ import io.deephaven.barrage.flatbuf.BarrageMessageType;
 import io.deephaven.barrage.flatbuf.BarrageMessageWrapper;
 import io.deephaven.barrage.flatbuf.BarrageSubscriptionRequest;
 import io.deephaven.base.log.LogOutput;
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.engine.exceptions.RequestCancelledException;
 import io.deephaven.engine.liveness.*;
@@ -152,7 +153,9 @@ public class BarrageSubscriptionImpl extends ReferenceCountedLivenessNode implem
 
             log.error().append(BarrageSubscriptionImpl.this)
                     .append(": Error detected in subscription: ")
-                    .append(t).endl();
+                    .append(t)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                    .endl();
 
             resultTable.handleBarrageError(t);
             cleanup();

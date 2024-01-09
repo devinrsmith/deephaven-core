@@ -8,6 +8,7 @@ import com.google.protobuf.ByteString;
 import com.google.rpc.Code;
 import io.deephaven.auth.AuthenticationException;
 import io.deephaven.auth.AuthenticationRequestHandler;
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.internal.log.LoggerFactory;
@@ -66,7 +67,7 @@ public class SessionService {
                 } else if (sre.getStatus().getCode().equals(Status.CANCELLED.getCode())) {
                     log.debug().append("ignoring cancelled request").endl();
                 } else {
-                    log.error().append(sre).endl();
+                    log.error().append(sre).append(CurrentStackTrace.CURRENT_STACK_TRACE).endl();
                 }
                 return sre;
             } else if (err instanceof InterruptedException) {

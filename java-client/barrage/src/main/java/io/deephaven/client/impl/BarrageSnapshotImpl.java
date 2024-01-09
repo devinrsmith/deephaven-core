@@ -8,6 +8,7 @@ import com.google.protobuf.ByteStringAccess;
 import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.barrage.flatbuf.*;
 import io.deephaven.base.log.LogOutput;
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.engine.exceptions.RequestCancelledException;
 import io.deephaven.engine.liveness.ReferenceCountedLivenessNode;
@@ -158,7 +159,9 @@ public class BarrageSnapshotImpl extends ReferenceCountedLivenessNode implements
 
             log.error().append(BarrageSnapshotImpl.this)
                     .append(": Error detected in snapshot: ")
-                    .append(t).endl();
+                    .append(t)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                    .endl();
 
             // this error will always be propagated to our CheckForCompletion#onError callback
             resultTable.handleBarrageError(t);

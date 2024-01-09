@@ -5,6 +5,7 @@ package io.deephaven.server.browserstreaming;
 
 import com.google.rpc.Code;
 import io.deephaven.base.RAPriQueue;
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.proto.util.Exceptions;
@@ -239,7 +240,9 @@ public class BrowserStream<T> implements Closeable {
 
     public void onError(final RuntimeException e) {
         if (session.removeOnCloseCallback(this)) {
-            log.error().append(logIdentity).append("closing browser stream on unexpected exception: ").append(e).endl();
+            log.error().append(logIdentity).append("closing browser stream on unexpected exception: ").append(e)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
+                    .endl();
             this.marshaller.onError(e);
         }
     }

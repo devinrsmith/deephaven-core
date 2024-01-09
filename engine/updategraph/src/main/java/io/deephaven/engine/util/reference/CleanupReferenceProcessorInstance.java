@@ -3,6 +3,7 @@
  */
 package io.deephaven.engine.util.reference;
 
+import io.deephaven.base.log.LogOutput.CurrentStackTrace;
 import io.deephaven.base.verify.Require;
 import io.deephaven.util.Utils;
 import io.deephaven.util.annotations.TestUseOnly;
@@ -22,6 +23,7 @@ public enum CleanupReferenceProcessorInstance {
                     .append(Thread.currentThread().getName())
                     .append(": Exception thrown from cleanup of ").append(Utils.REFERENT_FORMATTER, r)
                     .append(": ").append(e)
+                    .append(CurrentStackTrace.CURRENT_STACK_TRACE)
                     .endl())
     ),
     LIVENESS(new CleanupReferenceProcessor("liveness", 1000,

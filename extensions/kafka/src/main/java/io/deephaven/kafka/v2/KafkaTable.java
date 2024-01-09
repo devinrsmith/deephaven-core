@@ -15,4 +15,6 @@ public final class KafkaTable {
     public static Table of(KafkaTableOptions<?, ?> options) {
         return options.table();
     }
+
+    // todo: generic entry point for non-table based use-cases
 }

@@ -53,6 +53,7 @@ public abstract class KafkaTableOptions<K, V> {
         return ImmutableKafkaTableOptions.builder();
     }
 
+    // table output?
     /**
      * The name. Defaults to {@link UUID#randomUUID()}.
      *
@@ -122,13 +123,16 @@ public abstract class KafkaTableOptions<K, V> {
      */
     public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
 
+    // table output?
     public abstract List<String> columnNames();
 
+    // table output
     @Default
     public TableType tableType() {
         return TableType.blink();
     }
 
+    // table output
     /**
      * The extra attributes to set on the underlying blink table.
      *
@@ -136,6 +140,7 @@ public abstract class KafkaTableOptions<K, V> {
      */
     public abstract Map<String, Object> extraAttributes();
 
+    // table output
     /**
      * The update source registrar for the resulting table. By default, is equivalent to
      * {@code ExecutionContext.getContext().getUpdateGraph()}.

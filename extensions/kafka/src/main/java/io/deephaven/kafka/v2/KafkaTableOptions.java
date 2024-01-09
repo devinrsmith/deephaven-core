@@ -12,6 +12,7 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.kafka.KafkaTools;
+import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
@@ -23,7 +24,11 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Check;
@@ -119,15 +124,13 @@ public abstract class KafkaTableOptions<K, V> {
 
     public abstract List<String> columnNames();
 
-
-
     @Default
     public TableType tableType() {
         return TableType.blink();
     }
 
     /**
-     * The extra attributes to set on the resulting table.
+     * The extra attributes to set on the underlying blink table.
      *
      * @return the extra attributes
      */
@@ -155,6 +158,7 @@ public abstract class KafkaTableOptions<K, V> {
         return ArrayBackedColumnSource.BLOCK_SIZE;
     }
 
+    // todo: name?
     @Default
     public boolean receiveTimestamp() {
         return true;
@@ -190,6 +194,8 @@ public abstract class KafkaTableOptions<K, V> {
         Builder<K, V> updateSourceRegistrar(UpdateSourceRegistrar updateSourceRegistrar);
 
         Builder<K, V> chunkSize(int chunkSize);
+
+        Builder<K, V> receiveTimestamp(boolean receiveTimestamp);;
 
         KafkaTableOptions<K, V> build();
     }
@@ -290,6 +296,7 @@ public abstract class KafkaTableOptions<K, V> {
         }
         if (!config.containsKey(ConsumerConfig.MAX_POLL_RECORDS_CONFIG)) {
             // This is local only option, doesn't affect server.
+            // Default is 500
             // This affects the maximum number of records that io.deephaven.kafka.v2.KafkaPublisherDriver.runOnce will
             // receive at once. There's a small tradeoff here; allowing enough for runOnce to do a flush, but also small
             // enough to minimize potential sync wait for StreamPublisher#flush calls (cycle).

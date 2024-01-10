@@ -12,7 +12,6 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.kafka.KafkaTools;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
@@ -24,11 +23,6 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.consumer.OffsetCommitCallback;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Check;
@@ -288,7 +282,7 @@ public abstract class KafkaTableOptions<K, V> {
         return KafkaPublisherDriver.of(
                 useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
                 offsets(),
-                new KafkaStreamConsumerAdapter<>(filter(), processor(), chunkSize(), receiveTimestamp()),
+                new KafkaPublisher<>(filter(), processor(), chunkSize(), receiveTimestamp()),
                 threadFactory(),
                 callback());
     }

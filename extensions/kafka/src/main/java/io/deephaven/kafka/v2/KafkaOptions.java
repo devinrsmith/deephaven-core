@@ -10,6 +10,7 @@ import io.deephaven.stream.StreamPublisher;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -19,12 +20,16 @@ import org.immutables.value.Value.Immutable;
 import java.io.Closeable;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static io.deephaven.kafka.v2.ClientHelper.safeCloseClient;
 import static io.deephaven.kafka.v2.KafkaTableOptions.predicateTrue;
 
 @Immutable
@@ -114,20 +119,48 @@ public abstract class KafkaOptions<K, V> {
     public interface Partitioning {
 
         static Partitioning single() {
-            return null;
-        }
-
-        static Partitioning perPartition() {
-            return null;
-        }
-
-        static Partitioning perTopic() {
-            return null;
+            return new PartitioningBase() {
+                @Override
+                public Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+                    return Stream.of(topicPartitions);
+                }
+            };
         }
 
         static Partitioning perTopicPartition() {
-            return null;
+            return new PartitioningBase() {
+                @Override
+                public Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+                    return topicPartitions.stream().map(Set::of);
+                }
+            };
         }
+
+//        static Partitioning perPartition() {
+//            return new PartitioningBase() {
+//                @Override
+//                public Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+//                    final Map<Integer, Set<TopicPartition>> map = new HashMap<>();
+//                    for (TopicPartition topicPartition : topicPartitions) {
+//                        map.computeIfAbsent(topicPartition.partition(), partition -> new HashSet<>()).add(topicPartition);
+//                    }
+//                    return map.values().stream();
+//                }
+//            };
+//        }
+//
+//        static Partitioning perTopic() {
+//            return new PartitioningBase() {
+//                @Override
+//                public Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+//                    final Map<String, Set<TopicPartition>> map = new HashMap<>();
+//                    for (TopicPartition topicPartition : topicPartitions) {
+//                        map.computeIfAbsent(topicPartition.topic(), partition -> new HashSet<>()).add(topicPartition);
+//                    }
+//                    return map.values().stream();
+//                }
+//            };
+//        }
     }
 
     public interface Publishers extends Closeable {
@@ -168,13 +201,29 @@ public abstract class KafkaOptions<K, V> {
         };
     }
 
-    private KafkaPublisherDriver<K, V> publisher() {
-        return KafkaPublisherDriver.of(
-                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
-                offsets(),
-                new KafkaStreamConsumerAdapter<>(filter(), processor(), 2048, true),
-                threadFactory(),
-                callback());
+//    private KafkaPublisherDriver<K, V> publisher() {
+//        return KafkaPublisherDriver.of(
+//                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
+//                offsets(),
+//                new KafkaPublisher<>(filter(), processor(), 2048, true),
+//                threadFactory(),
+//                callback());
+//    }
+
+    private KafkaPublisherDriver<K, V> driver() {
+        final KafkaConsumer<K, V> client = (useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions()).createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
+        try {
+            final Set<TopicPartition> topicPartitions = ClientHelper.assignAndSeek(client, offsets());
+            final Runnable onShutdown = client::wakeup;
+            final Set<KafkaPublisher<K, V>> publishers = ((PartitioningBase) partitioning())
+                    .partition(topicPartitions)
+                    .map(tp -> new KafkaPublisher<>(tp, filter(), processor(), onShutdown, 1024, true))
+                    .collect(Collectors.toSet());
+            return new KafkaPublisherDriver<>(client, publishers, threadFactory(), callback());
+        } catch (Throwable t) {
+            safeCloseClient(client, t);
+            throw t;
+        }
     }
 
     private ClientOptions<K, V> opinionatedClientOptions() {

@@ -14,18 +14,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Stream;
 
 final class ClientHelper {
 
-    public static Map<TopicPartition, Offset> assignAndSeek(KafkaConsumer<?, ?> client, Offsets options) {
+    public static Set<TopicPartition> assignAndSeek(KafkaConsumer<?, ?> client, Offsets options) {
         final Map<TopicPartition, Offset> offsets = ((OffsetsBase) options).offsets(client);
         if (offsets.isEmpty()) {
             throw new IllegalArgumentException("Offsets is empty");
         }
         client.assign(offsets.keySet());
         ClientHelper.seek(client, offsets);
-        return offsets;
+        return offsets.keySet();
     }
 
     static void seek(KafkaConsumer<?, ?> client, Map<TopicPartition, Offset> offsets) {

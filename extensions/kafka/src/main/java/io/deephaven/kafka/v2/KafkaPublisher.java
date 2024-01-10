@@ -11,59 +11,59 @@ import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
+import io.deephaven.stream.StreamPublisher;
 import io.deephaven.util.SafeCloseable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
+final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
+    private final Set<TopicPartition> topicPartitions;
     private final Predicate<ConsumerRecord<K, V>> filter;
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
+    private final Runnable onShutdown;
     private final WritableObjectChunk<ConsumerRecord<K, V>, ?> chunk;
     private final int chunkSize;
     private int chunkPos = 0;
     private WritableLongChunk<?> receiveTimestampChunk;
     private StreamConsumer streamConsumer;
 
-    KafkaStreamConsumerAdapter(
+    KafkaPublisher(
+            Set<TopicPartition> topicPartitions,
             Predicate<ConsumerRecord<K, V>> filter,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
+            Runnable onShutdown,
             int chunkSize,
             boolean receiveTimestamp) {
+        this.topicPartitions = Set.copyOf(topicPartitions);
         this.filter = Objects.requireNonNull(filter);
         this.processor = Objects.requireNonNull(processor);
+        this.onShutdown = Objects.requireNonNull(onShutdown);
         this.chunkSize = chunkSize;
         this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize);
         this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
-    }
-
-    void init(StreamConsumer streamConsumer) {
-        this.streamConsumer = Objects.requireNonNull(streamConsumer);
     }
 
     boolean hasStreamConsumer() {
         return streamConsumer != null;
     }
 
-    public void accept(ConsumerRecords<K, V> records) {
-        final long receiveTimeEpochNanos = receiveTimestampChunk != null
-                ? Clock.system().currentTimeNanos()
-                : 0;
-        synchronized (this) {
-            for (TopicPartition topicPartition : records.partitions()) {
-                fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
-            }
-        }
+    @Override
+    public void register(@NotNull StreamConsumer consumer) {
+        this.streamConsumer = Objects.requireNonNull(consumer);
     }
 
+    @Override
     public synchronized void flush() {
         final int initialChunkPos;
         if ((initialChunkPos = chunkPos) == 0) {
@@ -73,6 +73,23 @@ final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
             doFlush();
         } finally {
             chunk.fillWithNullValue(chunkPos, initialChunkPos);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        onShutdown.run();
+    }
+
+
+    public void accept(ConsumerRecords<K, V> records) {
+        final long receiveTimeEpochNanos = receiveTimestampChunk != null
+                ? Clock.system().currentTimeNanos()
+                : 0;
+        synchronized (this) {
+            for (TopicPartition topicPartition : records.partitions()) {
+                fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
+            }
         }
     }
 
@@ -88,8 +105,9 @@ final class KafkaStreamConsumerAdapter<K, V> implements Closeable {
         chunk.close();
     }
 
-    private void fillImpl(long receiveTimeEpochNanos, TopicPartition topicPartition,
+    public synchronized void fillImpl(long receiveTimeEpochNanos, TopicPartition topicPartition,
             List<ConsumerRecord<K, V>> records) {
+        // todo: check topicPartition?
         final Iterator<ConsumerRecord<K, V>> it = records.iterator();
         boolean didFlush = false;
         try {

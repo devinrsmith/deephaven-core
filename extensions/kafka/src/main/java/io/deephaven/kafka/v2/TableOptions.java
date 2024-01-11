@@ -5,17 +5,22 @@ package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.BlinkTableTools;
+import io.deephaven.engine.table.impl.partitioned.PartitionedTableImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
+import io.deephaven.engine.table.impl.util.ColumnHolder;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
-import io.deephaven.kafka.KafkaTools;
+import io.deephaven.engine.util.TableTools;
+import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
+import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
@@ -23,6 +28,7 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Check;
@@ -30,9 +36,15 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Predicate;
@@ -41,10 +53,9 @@ import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
-public abstract class KafkaTableOptions<K, V> {
-
+public abstract class TableOptions<K, V> {
     public static <K, V> Builder<K, V> builder() {
-        return ImmutableKafkaTableOptions.builder();
+        return ImmutableTableOptions.builder();
     }
 
     // table output?
@@ -110,23 +121,22 @@ public abstract class KafkaTableOptions<K, V> {
 
     // todo: give easy way for users to construct w/ specs for specific key / value types
 
+    // todo: remove Topic/Partition from constituents when partitioning?
+
     /**
      * The record processor.
-     * 
+     *
      * @return
      */
     public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
 
-    // table output?
     public abstract List<String> columnNames();
 
-    // table output
     @Default
     public TableType tableType() {
         return TableType.blink();
     }
 
-    // table output
     /**
      * The extra attributes to set on the underlying blink table.
      *
@@ -134,7 +144,6 @@ public abstract class KafkaTableOptions<K, V> {
      */
     public abstract Map<String, Object> extraAttributes();
 
-    // table output
     /**
      * The update source registrar for the resulting table. By default, is equivalent to
      * {@code ExecutionContext.getContext().getUpdateGraph()}.
@@ -162,6 +171,8 @@ public abstract class KafkaTableOptions<K, V> {
     public boolean receiveTimestamp() {
         return true;
     }
+
+    public abstract Optional<ConsumerLoopCallback> callback();
 
     public interface Builder<K, V> {
         Builder<K, V> name(String name);
@@ -194,9 +205,9 @@ public abstract class KafkaTableOptions<K, V> {
 
         Builder<K, V> chunkSize(int chunkSize);
 
-        Builder<K, V> receiveTimestamp(boolean receiveTimestamp);;
+        Builder<K, V> receiveTimestamp(boolean receiveTimestamp);
 
-        KafkaTableOptions<K, V> build();
+        TableOptions<K, V> build();
     }
 
     @Check
@@ -225,7 +236,12 @@ public abstract class KafkaTableOptions<K, V> {
 
     final Table table() {
         // todo: wrap exec context? liveness?
-        return tableType().walk(new TableTypeVisitor());
+        return toTableType(streamConsumer().table());
+    }
+
+    final PartitionedTable partitionedTable() {
+        // todo: wrap
+        return Publishers.applyAndStart(publishersOptions(Partitioning.perTopicPartition()), this::partitionedTable);
     }
 
     final TableDefinition tableDefinition() {
@@ -242,49 +258,90 @@ public abstract class KafkaTableOptions<K, V> {
                 : TableDefinition.from(columnNames(), processor().outputTypes());
     }
 
-    private class TableTypeVisitor implements TableType.Visitor<Table> {
+    private Table toTableType(Table blinkTable) {
+        return tableType().walk(new ToTableTypeVisitor(blinkTable));
+    }
+
+    private static class ToTableTypeVisitor implements TableType.Visitor<Table> {
+
+        private final Table blinkTable;
+
+        public ToTableTypeVisitor(Table blinkTable) {
+            this.blinkTable = Objects.requireNonNull(blinkTable);
+        }
+
         @Override
         public Table visit(Blink blink) {
-            return adapter().table();
+            return blinkTable;
         }
 
         @Override
         public Table visit(Append append) {
-            return BlinkTableTools.blinkToAppendOnly(adapter().table());
+            return BlinkTableTools.blinkToAppendOnly(blinkTable);
         }
 
         @Override
         public Table visit(Ring ring) {
-            return RingTableTools.of(adapter().table(), ring.capacity());
+            return RingTableTools.of(blinkTable, ring.capacity());
         }
     }
 
-    private StreamToBlinkTableAdapter adapter() {
-        final TableDefinition definition = tableDefinition();
-        final KafkaPublisherDriver<K, V> publisher = publisher();
-        final StreamToBlinkTableAdapter adapter;
-        try {
-            adapter = new StreamToBlinkTableAdapter(
-                    definition,
-                    publisher,
-                    updateSourceRegistrar(),
-                    name(),
-                    extraAttributes());
-            publisher.start();
-        } catch (Throwable t) {
-            publisher.errorBeforeStart(t);
-            throw t;
-        }
-        return adapter;
+    private StreamToBlinkTableAdapter streamConsumer() {
+        return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::streamConsumer);
     }
 
-    private KafkaPublisherDriver<K, V> publisher() {
-        return KafkaPublisherDriver.of(
-                useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions(),
-                offsets(),
-                new KafkaPublisher<>(filter(), processor(), chunkSize(), receiveTimestamp()),
-                threadFactory(),
-                callback());
+    private StreamToBlinkTableAdapter streamConsumer(Collection<? extends Publisher> publishers) {
+        return streamConsumer(single(publishers));
+    }
+
+    private StreamToBlinkTableAdapter streamConsumer(Publisher publisher) {
+        return new StreamToBlinkTableAdapter(
+                tableDefinition(),
+                publisher,
+                updateSourceRegistrar(),
+                name(),
+                extraAttributes());
+    }
+
+    private static final Comparator<TopicPartition> TOPIC_PARTITION_COMPARATOR =
+            Comparator.comparing(TopicPartition::topic).thenComparingInt(TopicPartition::partition);
+
+    private PartitionedTable partitionedTable(Collection<? extends Publisher> publishers) {
+        final List<Publisher> sorted = new ArrayList<>(publishers);
+        sorted.sort(Comparator.comparing(TableOptions::singleTopicPartition, TOPIC_PARTITION_COMPARATOR));
+        final int numPartitions = sorted.size();
+        final String[] topics = new String[numPartitions];
+        final int[] partitions = new int[numPartitions];
+        final Table[] constituents = new Table[numPartitions];
+        for (int i = 0; i < sorted.size(); i++) {
+            final TopicPartition topicPartition = singleTopicPartition(sorted.get(i));
+            topics[i] = topicPartition.topic();
+            partitions[i] = topicPartition.partition();
+            constituents[i] = toTableType(streamConsumer(sorted.get(i)).table());
+        }
+        // should we consider that Topic is "grouped"?
+        final Table table = TableTools.newTable(
+                TableTools.stringCol("Topic", topics),
+                TableTools.intCol("Partition", partitions),
+                new ColumnHolder<>("Table", Table.class, null, false, constituents));
+        return new PartitionedTableImpl(table, List.of("Topic", "Partition"), true, "Table", tableDefinition(), false,
+                false);
+    }
+
+    private static TopicPartition singleTopicPartition(Publisher p) {
+        return single(p.topicPartitions());
+    }
+
+    private PublishersOptions<K, V> publishersOptions(Partitioning partitioning) {
+        return PublishersOptions.<K, V>builder()
+                .clientOptions(useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions())
+                .partitioning(partitioning)
+                .offsets(offsets())
+                .filter(filter())
+                .processor(processor())
+                .chunkSize(chunkSize())
+                .receiveTimestamp(receiveTimestamp())
+                .build();
     }
 
     private ClientOptions<K, V> opinionatedClientOptions() {
@@ -343,12 +400,7 @@ public abstract class KafkaTableOptions<K, V> {
 
     // Maybe expose as configuration option in future?
     private static ThreadFactory threadFactory() {
-        return new NamingThreadFactory(null, KafkaTableOptions.class, "KafkaPublisherDriver", true);
-    }
-
-    // Maybe expose as configuration option in future?
-    private static KafkaTools.ConsumerLoopCallback callback() {
-        return null;
+        return new NamingThreadFactory(null, TableOptions.class, "KafkaPublisherDriver", true);
     }
 
     private enum PredicateTrue implements Predicate<Object> {
@@ -363,5 +415,17 @@ public abstract class KafkaTableOptions<K, V> {
     static <T> Predicate<T> predicateTrue() {
         // noinspection unchecked
         return (Predicate<T>) PredicateTrue.PREDICATE_TRUE;
+    }
+
+    private static <T> T single(Collection<T> collection) {
+        final Iterator<T> it = collection.iterator();
+        if (!it.hasNext()) {
+            throw new IllegalStateException();
+        }
+        final T publisher = it.next();
+        if (it.hasNext()) {
+            throw new IllegalStateException();
+        }
+        return publisher;
     }
 }

@@ -4,17 +4,15 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
-import io.deephaven.kafka.v2.KafkaOptions.Partitioning;
-import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamPublisher;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -22,53 +20,44 @@ import java.util.concurrent.ThreadFactory;
 
 import static io.deephaven.kafka.v2.ClientHelper.safeCloseClient;
 
-final class KafkaPublisherDriver<K, V> {
-
-    public static <K, V> KafkaPublisherDriver<K, V> of(
-            ClientOptions<K, V> clientOptions,
-            Offsets offsets,
-            Partitioning partitioning,
-            ThreadFactory threadFactory,
-            ConsumerLoopCallback callback) {
-        final KafkaConsumer<K, V> client =
-                clientOptions.createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
-        try {
-            final Map<TopicPartition, Offset> map = ClientHelper.assignAndSeek(client, offsets);
-            final Runnable onShutdown = client::wakeup;
-
-            ((PartitioningBase) partitioning
-
-            new KafkaPublisher<>(null, null, null, onShutdown, 1024, true);
-
-
-            final Set<KafkaPublisher<K, V>> kk = null;
-            return new KafkaPublisherDriver<>(client, kk, threadFactory, callback);
-        } catch (Throwable t) {
-            safeCloseClient(client, t);
-            throw t;
-        }
-    }
+final class PublishersImpl<K, V> implements Publishers {
 
     private final KafkaConsumer<K, V> client;
-    private final Set<KafkaPublisher<K, V>> publishers;
-    private final Map<TopicPartition, KafkaPublisher<K, V>> topicPartitionToConsumer;
+    private final Set<PublisherImpl<K, V>> publishers;
     private final ThreadFactory threadFactory;
     private final ConsumerLoopCallback callback;
+    private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
 
-    KafkaPublisherDriver(
+    PublishersImpl(
             KafkaConsumer<K, V> client,
-            Set<KafkaPublisher<K, V>> publishers,
+            Set<PublisherImpl<K, V>> publishers,
             ThreadFactory threadFactory,
             ConsumerLoopCallback callback) {
         this.client = Objects.requireNonNull(client);
         this.publishers = Set.copyOf(publishers);
-        topicPartitionToConsumer = null; // todo
         this.threadFactory = Objects.requireNonNull(threadFactory);
         this.callback = callback;
+        this.topicPartitionToPublisher = Collections.unmodifiableMap(map(publishers));
     }
 
-    void start() {
-        for (KafkaPublisher<K, V> publisher : publishers) {
+    private static <K, V> Map<TopicPartition, PublisherImpl<K, V>> map(Set<PublisherImpl<K, V>> publishers) {
+        final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher = new HashMap<>();
+        for (PublisherImpl<K, V> publisher : publishers) {
+            for (TopicPartition topicPartition : publisher.topicPartitions()) {
+                topicPartitionToPublisher.put(topicPartition, publisher);
+            }
+        }
+        return topicPartitionToPublisher;
+    }
+
+    @Override
+    public Collection<? extends Publisher> publishers() {
+        return publishers;
+    }
+
+    @Override
+    public void start() {
+        for (PublisherImpl<K, V> publisher : publishers) {
             if (!publisher.hasStreamConsumer()) {
                 throw new IllegalStateException(
                         "Expected io.deephaven.kafka.v2.KafkaPublisherDriver.register to be called before start");
@@ -79,30 +68,21 @@ final class KafkaPublisherDriver<K, V> {
         thread.start();
     }
 
-    void errorBeforeStart(Throwable t) {
-        for (KafkaPublisher<K, V> publisher : publishers) {
+    @Override
+    public void errorBeforeStart(Throwable t) {
+        for (PublisherImpl<K, V> publisher : publishers) {
             if (publisher.hasStreamConsumer()) {
                 safeNotifyFailure(t);
             }
         }
 
-        streamConsumerAdapter.close();
+        // streamConsumerAdapter.close();
         safeCloseClient(client, t);
     }
 
     @Override
-    public void register(@NotNull StreamConsumer consumer) {
-        streamConsumerAdapter.init(consumer);
-    }
-
-    @Override
-    public void flush() {
-        streamConsumerAdapter.flush();
-    }
-
-    @Override
-    public void shutdown() {
-        client.wakeup();
+    public void close() {
+        // todo: extra safety check that start or errorBeforeStart was called
     }
 
     private void run() {
@@ -113,8 +93,8 @@ final class KafkaPublisherDriver<K, V> {
         } catch (Throwable t) {
             safeNotifyFailure(t);
         } finally {
-            for (KafkaPublisher<K, V> consumer : what) {
-                consumer.close();
+            for (PublisherImpl<K, V> publisher : publishers) {
+                publisher.close();
             }
             client.close();
         }
@@ -159,13 +139,16 @@ final class KafkaPublisherDriver<K, V> {
 
     private void accept(ConsumerRecords<K, V> records) {
         for (final TopicPartition topicPartition : records.partitions()) {
-            final KafkaPublisher<K, V> consumer = topicPartitionToConsumer.get(topicPartition);
-            consumer.fillImpl(0, topicPartition, records.records(topicPartition));
+            final PublisherImpl<K, V> publisher = topicPartitionToPublisher.get(topicPartition);
+            if (publisher == null) {
+                throw new IllegalStateException("TODO");
+            }
+            publisher.fillImpl(0, topicPartition, records.records(topicPartition));
         }
     }
 
     private void safeNotifyFailure(Throwable t) {
-        for (KafkaPublisher<K, V> consumer : publishers) {
+        for (PublisherImpl<K, V> consumer : publishers) {
             try {
                 consumer.acceptFailure(t);
             } catch (Throwable t2) {

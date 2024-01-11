@@ -11,14 +11,12 @@ import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamPublisher;
 import io.deephaven.util.SafeCloseable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +25,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
+final class PublisherImpl<K, V> implements Publisher {
     private final Set<TopicPartition> topicPartitions;
     private final Predicate<ConsumerRecord<K, V>> filter;
     private final ObjectProcessor<ConsumerRecord<K, V>> processor;
@@ -38,7 +36,7 @@ final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
     private WritableLongChunk<?> receiveTimestampChunk;
     private StreamConsumer streamConsumer;
 
-    KafkaPublisher(
+    PublisherImpl(
             Set<TopicPartition> topicPartitions,
             Predicate<ConsumerRecord<K, V>> filter,
             ObjectProcessor<ConsumerRecord<K, V>> processor,
@@ -54,8 +52,9 @@ final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
         this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
     }
 
-    boolean hasStreamConsumer() {
-        return streamConsumer != null;
+    @Override
+    public Set<TopicPartition> topicPartitions() {
+        return topicPartitions;
     }
 
     @Override
@@ -81,8 +80,11 @@ final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
         onShutdown.run();
     }
 
+    boolean hasStreamConsumer() {
+        return streamConsumer != null;
+    }
 
-    public void accept(ConsumerRecords<K, V> records) {
+    void accept(ConsumerRecords<K, V> records) {
         final long receiveTimeEpochNanos = receiveTimestampChunk != null
                 ? Clock.system().currentTimeNanos()
                 : 0;
@@ -93,19 +95,18 @@ final class KafkaPublisher<K, V> implements StreamPublisher, Closeable {
         }
     }
 
-    public synchronized void acceptFailure(Throwable cause) {
+    synchronized void acceptFailure(Throwable cause) {
         streamConsumer.acceptFailure(cause);
     }
 
-    @Override
-    public void close() {
+    void close() {
         if (receiveTimestampChunk != null) {
             receiveTimestampChunk.close();
         }
         chunk.close();
     }
 
-    public synchronized void fillImpl(long receiveTimeEpochNanos, TopicPartition topicPartition,
+    synchronized void fillImpl(long receiveTimeEpochNanos, TopicPartition topicPartition,
             List<ConsumerRecord<K, V>> records) {
         // todo: check topicPartition?
         final Iterator<ConsumerRecord<K, V>> it = records.iterator();

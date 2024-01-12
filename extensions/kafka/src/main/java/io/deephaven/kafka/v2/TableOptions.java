@@ -5,16 +5,20 @@ package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.TrackingWritableRowSet;
+import io.deephaven.engine.table.ColumnDefinition;
+import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.BlinkTableTools;
+import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.partitioned.PartitionedTableImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
+import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
-import io.deephaven.engine.table.impl.util.ColumnHolder;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
-import io.deephaven.engine.util.TableTools;
 import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
@@ -25,6 +29,7 @@ import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,18 +40,22 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -119,16 +128,16 @@ public abstract class TableOptions<K, V> {
         return predicateTrue();
     }
 
-    // todo: give easy way for users to construct w/ specs for specific key / value types
+    @Default
+    public ConsumerRecordOptions recordOptions() {
+        return ConsumerRecordOptions.of();
+    }
 
-    // todo: remove Topic/Partition from constituents when partitioning?
+    public abstract Optional<ObjectProcessor<ConsumerRecord<K, V>>> recordProcessor();
 
-    /**
-     * The record processor.
-     *
-     * @return
-     */
-    public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
+    public abstract Optional<ObjectProcessor<K>> keyProcessor();
+
+    public abstract Optional<ObjectProcessor<V>> valueProcessor();
 
     public abstract List<String> columnNames();
 
@@ -168,8 +177,9 @@ public abstract class TableOptions<K, V> {
 
     // todo: name?
     @Default
-    public boolean receiveTimestamp() {
-        return true;
+    @Nullable
+    public String receiveTimestamp() {
+        return "ReceiveTimestamp";
     }
 
     public abstract Optional<ConsumerLoopCallback> callback();
@@ -185,7 +195,13 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> filter(Predicate<ConsumerRecord<K, V>> filter);
 
-        Builder<K, V> processor(ObjectProcessor<ConsumerRecord<K, V>> processor);
+        Builder<K, V> recordOptions(ConsumerRecordOptions recordOptions);
+
+        Builder<K, V> recordProcessor(ObjectProcessor<ConsumerRecord<K, V>> processor);
+
+        Builder<K, V> keyProcessor(ObjectProcessor<K> processor);
+
+        Builder<K, V> valueProcessor(ObjectProcessor<V> processor);
 
         Builder<K, V> addColumnNames(String element);
 
@@ -205,17 +221,17 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> chunkSize(int chunkSize);
 
-        Builder<K, V> receiveTimestamp(boolean receiveTimestamp);
+        Builder<K, V> receiveTimestamp(String receiveTimestamp);
 
         TableOptions<K, V> build();
     }
 
-    @Check
-    final void checkSize() {
-        if (processor().size() != columnNames().size()) {
-            throw new IllegalArgumentException();
-        }
-    }
+    // @Check
+    // final void checkSize() {
+    // if (recordProcessor().size() != columnNames().size()) {
+    // throw new IllegalArgumentException();
+    // }
+    // }
 
     @Check
     final void checkChunkSize() {
@@ -245,17 +261,42 @@ public abstract class TableOptions<K, V> {
     }
 
     final TableDefinition tableDefinition() {
-        return receiveTimestamp()
-                ? TableDefinition.from(
-                        Stream.concat(
-                                Stream.of("ReceiveTimestamp"),
-                                columnNames().stream())
-                                .collect(Collectors.toList()),
-                        Stream.concat(
-                                Stream.of(Type.instantType()),
-                                processor().outputTypes().stream())
-                                .collect(Collectors.toList()))
-                : TableDefinition.from(columnNames(), processor().outputTypes());
+
+        final List<String> extraNames = receiveTimestamp() == null
+                ? Collections.emptyList()
+                : Collections.singletonList(receiveTimestamp());
+
+        final List<String> columnNames = Stream.of(
+                extraNames.stream(),
+                recordOptions().columnNames(),
+                columnNames().stream())
+                .flatMap(Function.identity())
+                .collect(Collectors.toList());
+
+        final List<Type<?>> extraTypes = receiveTimestamp() == null
+                ? Collections.emptyList()
+                : Collections.singletonList(Type.instantType());
+
+        final List<Type<?>> outputTypes = Stream.of(
+                extraTypes,
+                recordOptions().processor().outputTypes(),
+                recordProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList),
+                keyProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList),
+                valueProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        return TableDefinition.from(columnNames, outputTypes);
+    }
+
+    private ObjectProcessor<ConsumerRecord<K, V>> fullProcessor() {
+        final ObjectProcessor<ConsumerRecord<K, V>> basics = recordOptions().processor();
+        final ObjectProcessor<ConsumerRecord<K, V>> specifics = recordProcessor().orElseGet(ObjectProcessor::empty);
+        final ObjectProcessor<ConsumerRecord<K, V>> key =
+                Processors.key(keyProcessor().orElseGet(ObjectProcessor::empty));
+        final ObjectProcessor<ConsumerRecord<K, V>> value =
+                Processors.value(valueProcessor().orElseGet(ObjectProcessor::empty));
+        return ObjectProcessor.combined(List.of(basics, specifics, key, value));
     }
 
     private Table toTableType(Table blinkTable) {
@@ -295,6 +336,15 @@ public abstract class TableOptions<K, V> {
     }
 
     private StreamToBlinkTableAdapter streamConsumer(Publisher publisher) {
+
+        if (publisher.topicPartitions().isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        if (publisher.topicPartitions().size() == 1) {
+            // add sorted on offset column?
+
+        }
+        // todo: if all topics are the same, mark column as "singleton" / sorted?
         return new StreamToBlinkTableAdapter(
                 tableDefinition(),
                 publisher,
@@ -305,6 +355,13 @@ public abstract class TableOptions<K, V> {
 
     private static final Comparator<TopicPartition> TOPIC_PARTITION_COMPARATOR =
             Comparator.comparing(TopicPartition::topic).thenComparingInt(TopicPartition::partition);
+
+    private static final ColumnDefinition<String> TOPIC_COLUMN = ColumnDefinition.ofString("Topic").withPartitioning();
+    private static final ColumnDefinition<Integer> PARTITION_COLUMN =
+            ColumnDefinition.ofInt("Partition").withPartitioning();
+    private static final ColumnDefinition<Table> TABLE_COLUMN = ColumnDefinition.fromGenericType("Table", Table.class);
+    private static final TableDefinition TOPIC_PARTITION_COLUMN_TABLEDEF =
+            TableDefinition.of(TOPIC_COLUMN, PARTITION_COLUMN, TABLE_COLUMN);
 
     private PartitionedTable partitionedTable(Collection<? extends Publisher> publishers) {
         final List<Publisher> sorted = new ArrayList<>(publishers);
@@ -317,15 +374,46 @@ public abstract class TableOptions<K, V> {
             final TopicPartition topicPartition = singleTopicPartition(sorted.get(i));
             topics[i] = topicPartition.topic();
             partitions[i] = topicPartition.partition();
+            // todo: should mark that offset is sorted, if it exists
             constituents[i] = toTableType(streamConsumer(sorted.get(i)).table());
         }
-        // should we consider that Topic is "grouped"?
-        final Table table = TableTools.newTable(
-                TableTools.stringCol("Topic", topics),
-                TableTools.intCol("Partition", partitions),
-                new ColumnHolder<>("Table", Table.class, null, false, constituents));
-        return new PartitionedTableImpl(table, List.of("Topic", "Partition"), true, "Table", tableDefinition(), false,
-                false);
+        // should we consider that Topic is "grouped"? NO
+        // could add attributes to say that sorted on (topic, partition)
+        // io.deephaven.engine.table.impl.SortedColumnsAttribute
+        // might need to set it the constituent as well - set it on KafkaOffset
+
+        // noinspection resource
+        final TrackingWritableRowSet rowSet = RowSetFactory.flat(numPartitions).toTracking();
+        final Map<String, ColumnSource<?>> sources = new LinkedHashMap<>(3) {
+            {
+                put(TOPIC_COLUMN.getName(), InMemoryColumnSource.getImmutableMemoryColumnSource(topics));
+                put(PARTITION_COLUMN.getName(), InMemoryColumnSource.getImmutableMemoryColumnSource(partitions));
+                put(TABLE_COLUMN.getName(), InMemoryColumnSource.getImmutableMemoryColumnSource(constituents));
+            }
+        };
+        try (final SafeCloseable ignored = ExecutionContext.getContext()
+                .withUpdateGraph(updateSourceRegistrar().getUpdateGraph(constituents))
+                .open()) {
+            final Table rawTable = new QueryTable(TOPIC_PARTITION_COLUMN_TABLEDEF, rowSet, sources) {
+                {
+                    // Can't set rawTable as refreshing == false;
+                    // setRefreshing(false);
+                    setFlat();
+                    // todo: extra attributes?
+                }
+            };
+            for (Table constituent : constituents) {
+                rawTable.addParentReference(constituent);
+            }
+            return new PartitionedTableImpl(
+                    rawTable,
+                    List.of(TOPIC_COLUMN.getName()),
+                    true,
+                    TABLE_COLUMN.getName(),
+                    tableDefinition(),
+                    false,
+                    false);
+        }
     }
 
     private static TopicPartition singleTopicPartition(Publisher p) {
@@ -338,9 +426,9 @@ public abstract class TableOptions<K, V> {
                 .partitioning(partitioning)
                 .offsets(offsets())
                 .filter(filter())
-                .processor(processor())
+                .processor(fullProcessor())
                 .chunkSize(chunkSize())
-                .receiveTimestamp(receiveTimestamp())
+                .receiveTimestamp(receiveTimestamp() != null)
                 .build();
     }
 

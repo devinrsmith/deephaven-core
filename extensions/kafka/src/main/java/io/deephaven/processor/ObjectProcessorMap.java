@@ -13,10 +13,19 @@ import java.util.Objects;
 import java.util.function.Function;
 
 final class ObjectProcessorMap<T, R> implements ObjectProcessor<T> {
+
+    public static <T, R> ObjectProcessor<T> of(Function<? super T, ? extends R> f,
+            ObjectProcessor<? super R> delegate) {
+        if (delegate == ObjectProcessor.empty()) {
+            return ObjectProcessor.empty();
+        }
+        return new ObjectProcessorMap<>(f, delegate);
+    }
+
     private final Function<? super T, ? extends R> f;
     private final ObjectProcessor<? super R> delegate;
 
-    ObjectProcessorMap(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
+    private ObjectProcessorMap(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
         this.f = Objects.requireNonNull(f);
         this.delegate = Objects.requireNonNull(delegate);
     }

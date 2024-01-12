@@ -3,15 +3,11 @@
  */
 package io.deephaven.kafka.v2;
 
-import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.processor.functions.ObjectProcessorFunctions;
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Headers;
 
-import java.util.List;
 import java.util.function.Function;
 
 public final class Processors {
@@ -83,10 +79,6 @@ public final class Processors {
         return options.processor();
     }
 
-    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(GenericType<K> keyType) {
-        return ObjectProcessorFunctions.of(List.of(ToObjectFunction.of(ConsumerRecord::key, keyType)));
-    }
-
     /**
      * Creates a ... Equivalent to {@code ObjectProcessor.map(ConsumerRecord::key, keyProcessor)}.
      *
@@ -98,10 +90,6 @@ public final class Processors {
      */
     public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(ObjectProcessor<K> keyProcessor) {
         return ObjectProcessor.map(ConsumerRecord::key, keyProcessor);
-    }
-
-    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> value(GenericType<V> valueType) {
-        return ObjectProcessorFunctions.of(List.of(ToObjectFunction.of(ConsumerRecord::value, valueType)));
     }
 
     /**

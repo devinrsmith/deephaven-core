@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -37,6 +38,19 @@ public abstract class ConsumerRecordOptions {
 
     public static ConsumerRecordOptions of() {
         return builder().build();
+    }
+
+    public static ConsumerRecordOptions empty() {
+        return builder()
+                .topic(null)
+                .partition(null)
+                .offset(null)
+                .leaderEpoch(null)
+                .timestampType(null)
+                .timestamp(null)
+                .serializedKeySize(null)
+                .serializedValueSize(null)
+                .build();
     }
 
     public static ConsumerRecordOptions classic() {
@@ -175,7 +189,11 @@ public abstract class ConsumerRecordOptions {
     }
 
     final <K, V> ObjectProcessor<ConsumerRecord<K, V>> processor() {
-        return new ConsumerRecordOptionsProcessor<>();
+        return isEmpty() ? ObjectProcessor.empty() : new ConsumerRecordOptionsProcessor<>();
+    }
+
+    private boolean isEmpty() {
+        return columnNames().allMatch(Objects::isNull);
     }
 
     private boolean outputTopic() {

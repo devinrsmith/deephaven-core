@@ -15,17 +15,26 @@ import java.util.stream.Stream;
 
 final class ObjectProcessorCombined<T> implements ObjectProcessor<T> {
 
-    public static <T> ObjectProcessorCombined<T> of(List<ObjectProcessor<? super T>> processors) {
-        // noinspection Convert2Diamond
-        return new ObjectProcessorCombined<T>(processors.stream()
+    public static <T> ObjectProcessor<T> of(List<ObjectProcessor<? super T>> processors) {
+        final List<ObjectProcessor<? super T>> actual = processors.stream()
                 .flatMap(ObjectProcessorCombined::destructure)
-                .collect(Collectors.toUnmodifiableList()));
+                .collect(Collectors.toUnmodifiableList());
+        if (actual.isEmpty()) {
+            return ObjectProcessor.empty();
+        }
+        if (actual.size() == 1) {
+            // noinspection unchecked
+            return (ObjectProcessor<T>) actual.get(0);
+        }
+        return new ObjectProcessorCombined<>(actual);
     }
 
     private static <T> Stream<ObjectProcessor<? super T>> destructure(ObjectProcessor<T> processor) {
         return processor instanceof ObjectProcessorCombined
                 ? ((ObjectProcessorCombined<T>) processor).processors.stream()
-                : Stream.of(processor);
+                : (processor instanceof ObjectProcessorEmpty
+                        ? Stream.empty()
+                        : Stream.of(processor));
     }
 
 

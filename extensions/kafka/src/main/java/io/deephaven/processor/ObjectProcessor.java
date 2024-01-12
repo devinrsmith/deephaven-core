@@ -107,7 +107,11 @@ public interface ObjectProcessor<T> {
      * @param <R> the mapped in type
      */
     static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
-        return new ObjectProcessorMap<>(f, delegate);
+        return ObjectProcessorMap.of(f, delegate);
+    }
+
+    static <T> ObjectProcessor<T> simple(Type<T> type) {
+        return ObjectProcessorSimple.of(type);
     }
 
     static <T> ObjectProcessor<T> empty() {

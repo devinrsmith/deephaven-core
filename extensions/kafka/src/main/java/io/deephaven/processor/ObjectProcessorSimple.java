@@ -7,6 +7,8 @@ import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
+import io.deephaven.chunk.WritableObjectChunk;
+import io.deephaven.chunk.attributes.Any;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedType;
 import io.deephaven.qst.type.CustomType;
@@ -18,6 +20,7 @@ import io.deephaven.util.QueryConstants;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 final class ObjectProcessorSimple {
 
@@ -33,7 +36,8 @@ final class ObjectProcessorSimple {
 
         @Override
         public ObjectProcessor<T> visit(StringType stringType) {
-            return null;
+            //noinspection unchecked
+            return (ObjectProcessor<T>) new ObjectProcessorCopy<>(stringType);
         }
 
         @Override
@@ -57,7 +61,7 @@ final class ObjectProcessorSimple {
 
         private static int get(ObjectChunk<? extends Integer, ?> in, int pos) {
             final Integer x = in.get(pos);
-            //noinspection RedundantCast
+            // noinspection RedundantCast
             return x == null ? QueryConstants.NULL_INT : (int) x;
         }
 
@@ -68,7 +72,7 @@ final class ObjectProcessorSimple {
 
         @Override
         public void processAll(ObjectChunk<? extends Integer, ?> in, List<WritableChunk<?>> out) {
-            //noinspection resource
+            // noinspection resource
             final WritableIntChunk<?> outChunk = out.get(0).asWritableIntChunk();
             final int outPos = outChunk.size();
             final int size = in.size();
@@ -84,7 +88,7 @@ final class ObjectProcessorSimple {
 
         private static long get(ObjectChunk<? extends Long, ?> in, int pos) {
             final Long x = in.get(pos);
-            //noinspection RedundantCast
+            // noinspection RedundantCast
             return x == null ? QueryConstants.NULL_LONG : (long) x;
         }
 
@@ -95,7 +99,7 @@ final class ObjectProcessorSimple {
 
         @Override
         public void processAll(ObjectChunk<? extends Long, ?> in, List<WritableChunk<?>> out) {
-            //noinspection resource
+            // noinspection resource
             final WritableLongChunk<?> outChunk = out.get(0).asWritableLongChunk();
             final int outPos = outChunk.size();
             final int size = in.size();
@@ -108,8 +112,31 @@ final class ObjectProcessorSimple {
 
     private static class ObjectProcessorCopy<T> implements ObjectProcessor<T> {
 
-        private final GenericType<T> inType;
+        private final GenericType<T> inOutType;
+
+        public ObjectProcessorCopy(GenericType<T> inOutType) {
+            this.inOutType = Objects.requireNonNull(inOutType);
+        }
+
+        @Override
+        public List<Type<?>> outputTypes() {
+            return Collections.singletonList(inOutType);
+        }
+
+        @Override
+        public void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
 
 
+
+            final ObjectChunk<T, Any> IN1 = (ObjectChunk<T, Any>) in;
+//            final WritableObjectChunk<T, Any> dst = out.get(0).<T>asWritableObjectChunk();
+            final WritableObjectChunk<T, Any> dst2 = ((WritableChunk<Any>) out.get(0)).<T>asWritableObjectChunk();
+
+            appendTypedChunk(IN1, dst2);
+        }
+    }
+
+    private static <T, ATTR extends Any> void appendTypedChunk(ObjectChunk<T, ? extends ATTR> src, WritableObjectChunk<T, ATTR> dst) {
+        dst.appendTypedChunk(src, 0, src.size());
     }
 }

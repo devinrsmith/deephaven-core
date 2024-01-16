@@ -51,16 +51,16 @@ public abstract class PublishersOptions<K, V> {
     public abstract Offsets offsets();
 
     /**
-     * The record filter. The filter happens before {@link #processor()}.
+     * The {@link ConsumerRecord} filter. The filtering happens before {@link #processor()}.
      *
-     * @return the record filter
+     * @return the consumer record filter
      */
     public abstract Predicate<ConsumerRecord<K, V>> filter();
 
     /**
-     * The record processor.
+     * The {@link ConsumerRecord} processor.
      *
-     * @return
+     * @return the consumer record processor
      */
     public abstract ObjectProcessor<ConsumerRecord<K, V>> processor();
 

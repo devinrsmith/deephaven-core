@@ -80,7 +80,7 @@ public final class Processors {
     }
 
     /**
-     * Creates a ... Equivalent to {@code ObjectProcessor.map(ConsumerRecord::key, keyProcessor)}.
+     * Creates a consumer record processor for {@code keyProcessor}. Equivalent to {@code ObjectProcessor.map(ConsumerRecord::key, keyProcessor)}.
      *
      * @param keyProcessor the key processor
      * @return the consumer record processor
@@ -93,7 +93,7 @@ public final class Processors {
     }
 
     /**
-     * Creates a ... Equivalent to {@code ObjectProcessor.map(ConsumerRecord::value, valueProcessor)}.
+     * Creates a consumer record processor for {@code valueProcessor}. Equivalent to {@code ObjectProcessor.map(ConsumerRecord::value, valueProcessor)}.
      *
      * @param valueProcessor the value processor
      * @return the consumer record processor
@@ -130,4 +130,6 @@ public final class Processors {
             ObjectProcessor<byte[]> headerProcessor) {
         return ObjectProcessor.map(record -> ConsumerRecordFunctions.lastHeader(record, key), headerProcessor);
     }
+
+
 }

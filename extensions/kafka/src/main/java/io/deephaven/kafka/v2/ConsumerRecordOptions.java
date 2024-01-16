@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -36,7 +37,12 @@ public abstract class ConsumerRecordOptions {
         return ImmutableConsumerRecordOptions.builder();
     }
 
-    public static ConsumerRecordOptions of() {
+    /**
+     * The latest record options.
+     *
+     * @return
+     */
+    public static ConsumerRecordOptions latest() {
         return builder().build();
     }
 
@@ -53,8 +59,11 @@ public abstract class ConsumerRecordOptions {
                 .build();
     }
 
-    public static ConsumerRecordOptions classic() {
-        // todo: configuration properties?
+    /**
+     *
+     * @return
+     */
+    public static ConsumerRecordOptions v1() {
         return builder()
                 .topic(null)
                 .partition("KafkaPartition")
@@ -67,15 +76,19 @@ public abstract class ConsumerRecordOptions {
                 .build();
     }
 
-    @Default
-    @Nullable
-    public String topic() {
-        return "Topic";
+    public static ConsumerRecordOptions v2() {
+        return builder()
+                .topic("Topic")
+                .build();
     }
 
     @Default
     @Nullable
-    public String partition() {
+    public abstract Optional<String> topic();
+
+    @Default
+    @Nullable
+    public abstract Optional<String> partition() {
         return "Partition";
     }
 

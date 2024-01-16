@@ -121,7 +121,8 @@ public abstract class TableOptions<K, V> {
     public abstract Offsets offsets();
 
     /**
-     * The record filter. By default, is equivalent to {@code record -> true}, which will include all records.
+     * The {@link ConsumerRecord} filter. The filtering happens before processing. By default, is equivalent to
+     * {@code record -> true}, which will include all records.
      *
      * @return the record filter
      */
@@ -131,37 +132,49 @@ public abstract class TableOptions<K, V> {
     }
 
     /**
-     * The consumer record options for for a {@link ConsumerRecord} processor.
+     * The basic {@link ConsumerRecord} options for a {@link ConsumerRecord} processor. By default, is equivalent to
+     * {@link ConsumerRecordOptions#latest()}.
      *
      * @return the record options
      */
     @Default
     public ConsumerRecordOptions recordOptions() {
-        return ConsumerRecordOptions.of();
+        return ConsumerRecordOptions.latest();
     }
 
     /**
+     * The {@link ConsumerRecord} processor. This is for advanced use cases where the caller wants additional fields for
+     * the high-level {@link ConsumerRecord} object (for example, "how many headers are there?" or "what is the value of
+     * header X"), or the caller wants to directly parse the key / value without the layer of mapping that
+     * {@link #keyProcessor()} / {@link #valueProcessor()} uses.
      *
-     * @return
+     * @return the record processor
      */
     public abstract Optional<ObjectProcessor<ConsumerRecord<K, V>>> recordProcessor();
 
     /**
-     * When present, the key processor is adapted into a {@link ConsumerRecord} processor via {@link Processors#key(ObjectProcessor)}.
+     * When present, the key processor is adapted into a {@link ConsumerRecord} processor via
+     * {@link Processors#key(ObjectProcessor)}.
      *
-     * @return
+     * @return the key processor
      */
     public abstract Optional<ObjectProcessor<K>> keyProcessor();
 
     /**
-     * When present, the value processor is adapted into a {@link ConsumerRecord} processor via {@link Processors#value(ObjectProcessor)}.
+     * When present, the value processor is adapted into a {@link ConsumerRecord} processor via
+     * {@link Processors#value(ObjectProcessor)}.
      *
-     * @return
+     * @return the value processor
      */
     public abstract Optional<ObjectProcessor<V>> valueProcessor();
 
     public abstract List<String> columnNames();
 
+    /**
+     * The table type for ...
+     *
+     * @return the table type
+     */
     @Default
     public TableType tableType() {
         return TableType.blink();
@@ -272,17 +285,14 @@ public abstract class TableOptions<K, V> {
     }
 
     final Table table() {
-        // todo: wrap exec context? liveness?
-        return toTableType(streamConsumer().table());
+        return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleTable);
     }
 
     final PartitionedTable partitionedTable() {
-        // todo: wrap
         return Publishers.applyAndStart(publishersOptions(Partitioning.perTopicPartition()), this::partitionedTable);
     }
 
     final TableDefinition tableDefinition() {
-
         final List<String> extraNames = receiveTimestamp() == null
                 ? Collections.emptyList()
                 : Collections.singletonList(receiveTimestamp());
@@ -348,12 +358,9 @@ public abstract class TableOptions<K, V> {
         }
     }
 
-    private StreamToBlinkTableAdapter streamConsumer() {
-        return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::streamConsumer);
-    }
 
-    private StreamToBlinkTableAdapter streamConsumer(Collection<? extends Publisher> publishers) {
-        return streamConsumer(single(publishers));
+    private Table singleTable(Collection<? extends Publisher> publishers) {
+        return toTableType(streamConsumer(single(publishers)).table());
     }
 
     private StreamToBlinkTableAdapter streamConsumer(Publisher publisher) {
@@ -402,6 +409,8 @@ public abstract class TableOptions<K, V> {
             topics[i] = topicPartition.topic();
             partitions[i] = topicPartition.partition();
             // todo: should mark that offset is sorted, if it exists
+
+            // todo: wrap in update graph?
             constituents[i] = toTableType(streamConsumer(sorted.get(i)).table());
         }
         // should we consider that Topic is "grouped"? NO

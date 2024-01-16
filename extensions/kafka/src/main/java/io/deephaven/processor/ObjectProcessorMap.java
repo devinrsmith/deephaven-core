@@ -13,11 +13,22 @@ import java.util.Objects;
 import java.util.function.Function;
 
 final class ObjectProcessorMap<T, R> implements ObjectProcessor<T> {
+    interface InnerType {
+        // no-op type, just used for type-safety that makes code a bit more obvious than just using Object
+    }
 
     public static <T, R> ObjectProcessor<T> of(Function<? super T, ? extends R> f,
             ObjectProcessor<? super R> delegate) {
         if (delegate == ObjectProcessor.empty()) {
             return ObjectProcessor.empty();
+        }
+        if (delegate instanceof ObjectProcessorMap) {
+            // We don't care what the actually InnerType is at this layer, but we know the construction is type-safe
+            final ObjectProcessorMap<? super R, InnerType> innerMap =
+                    (ObjectProcessorMap<? super R, InnerType>) delegate;
+            final Function<? super R, ? extends InnerType> innerF = innerMap.f;
+            final ObjectProcessor<? super InnerType> innerDelegate = innerMap.delegate;
+            return new ObjectProcessorMap<>(f.andThen(innerF), innerDelegate);
         }
         return new ObjectProcessorMap<>(f, delegate);
     }

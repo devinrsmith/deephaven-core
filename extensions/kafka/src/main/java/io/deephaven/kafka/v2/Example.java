@@ -8,8 +8,6 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
@@ -56,7 +54,7 @@ public class Example {
 
     public static PartitionedTable netdataMetrics() {
         // {"labels":{"__name__":"netdata_system_cpu_percentage_average","chart":"system.cpu","dimension":"user","family":"cpu","instance":"felian"},"name":"netdata_system_cpu_percentage_average","timestamp":"2024-01-11T00:47:36Z","value":"17.371059810000002"}
-        final ConsumerRecordOptions basicOptions = ConsumerRecordOptions.of();
+        final ConsumerRecordOptions basicOptions = ConsumerRecordOptions.latest();
         return Tablez.ofPartitioned(TableOptions.<Void, String>builder()
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")

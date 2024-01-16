@@ -9,22 +9,28 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
+import io.deephaven.configuration.Configuration;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.record.TimestampType;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
+import static io.deephaven.kafka.KafkaTools.KAFKA_PARTITION_COLUMN_NAME_DEFAULT;
+import static io.deephaven.kafka.KafkaTools.KAFKA_PARTITION_COLUMN_NAME_PROPERTY;
+import static io.deephaven.kafka.KafkaTools.KEY_BYTES_COLUMN_NAME_PROPERTY;
+import static io.deephaven.kafka.KafkaTools.OFFSET_COLUMN_NAME_DEFAULT;
+import static io.deephaven.kafka.KafkaTools.OFFSET_COLUMN_NAME_PROPERTY;
+import static io.deephaven.kafka.KafkaTools.TIMESTAMP_COLUMN_NAME_DEFAULT;
+import static io.deephaven.kafka.KafkaTools.TIMESTAMP_COLUMN_NAME_PROPERTY;
+import static io.deephaven.kafka.KafkaTools.VALUE_BYTES_COLUMN_NAME_PROPERTY;
 
 /**
  * Provides options for processing the common fields of {@link ConsumerRecord}.
@@ -37,208 +43,186 @@ public abstract class ConsumerRecordOptions {
         return ImmutableConsumerRecordOptions.builder();
     }
 
+
     /**
-     * The latest record options.
+     * The empty record options. Equivalent to {@code builder().build()}.
      *
-     * @return
+     * @return the empty record options
      */
-    public static ConsumerRecordOptions latest() {
+    public static ConsumerRecordOptions empty() {
         return builder().build();
     }
 
-    public static ConsumerRecordOptions empty() {
+    /**
+     * The latest record options. Currently, equivalent to {@link #v2()}; this may change from release to release.
+     *
+     * @return the latest record options
+     */
+    public static ConsumerRecordOptions latest() {
+        return v2();
+    }
+
+    /**
+     * Attempts to mimic the options for v1...
+     * 
+     * @return
+     */
+    public static ConsumerRecordOptions v1() {
+        final Configuration config = Configuration.getInstance();
+        final Builder builder = builder()
+                .putFields(Field.PARTITION, config.getStringWithDefault(KAFKA_PARTITION_COLUMN_NAME_PROPERTY,
+                        KAFKA_PARTITION_COLUMN_NAME_DEFAULT))
+                .putFields(Field.OFFSET,
+                        config.getStringWithDefault(OFFSET_COLUMN_NAME_PROPERTY, OFFSET_COLUMN_NAME_DEFAULT))
+                .putFields(Field.TIMESTAMP,
+                        config.getStringWithDefault(TIMESTAMP_COLUMN_NAME_PROPERTY, TIMESTAMP_COLUMN_NAME_DEFAULT));
+        if (config.hasProperty(KEY_BYTES_COLUMN_NAME_PROPERTY)) {
+            builder.putFields(Field.SERIALIZED_KEY_SIZE, config.getProperty(KEY_BYTES_COLUMN_NAME_PROPERTY));
+        }
+        if (config.hasProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY)) {
+            builder.putFields(Field.SERIALIZED_VALUE_SIZE, config.getProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY));
+        }
+        return builder.build();
+    }
+
+    /**
+     * Equivalent to
+     *
+     * <pre>
+     * builder()
+     *         .putFields(Field.TOPIC, "Topic")
+     *         .putFields(Field.PARTITION, "Partition")
+     *         .putFields(Field.OFFSET, "Offset")
+     *         .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
+     *         .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
+     *         .putFields(Field.TIMESTAMP, "Timestamp")
+     *         .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
+     *         .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
+     *         .build()
+     * </pre>
+     *
+     * @return the v2 options
+     */
+    public static ConsumerRecordOptions v2() {
         return builder()
-                .topic(null)
-                .partition(null)
-                .offset(null)
-                .leaderEpoch(null)
-                .timestampType(null)
-                .timestamp(null)
-                .serializedKeySize(null)
-                .serializedValueSize(null)
+                .putFields(Field.TOPIC, "Topic")
+                .putFields(Field.PARTITION, "Partition")
+                .putFields(Field.OFFSET, "Offset")
+                .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
+                .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
+                .putFields(Field.TIMESTAMP, "Timestamp")
+                .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
+                .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
                 .build();
     }
 
     /**
+     * A map from {@link Field} to column name.
      *
-     * @return
+     * @return the fields
      */
-    public static ConsumerRecordOptions v1() {
-        return builder()
-                .topic(null)
-                .partition("KafkaPartition")
-                .offset("KafkaOffset")
-                .leaderEpoch(null)
-                .timestampType(null)
-                .timestamp("KafkaTimestamp")
-                .serializedKeySize(null)
-                .serializedValueSize(null)
-                .build();
+    public abstract Map<Field, String> fields();
+
+    /**
+     * Equivalent to {@code fields().values()}.
+     *
+     * @return the column names
+     */
+    public final Collection<String> columnNames() {
+        return fields().values();
     }
-
-    public static ConsumerRecordOptions v2() {
-        return builder()
-                .topic("Topic")
-                .build();
-    }
-
-    @Default
-    @Nullable
-    public abstract Optional<String> topic();
-
-    @Default
-    @Nullable
-    public abstract Optional<String> partition() {
-        return "Partition";
-    }
-
-    @Default
-    @Nullable
-    public String offset() {
-        return "Offset";
-    }
-
-    @Default
-    @Nullable
-    public String leaderEpoch() {
-        return "LeaderEpoch";
-    }
-
-    @Default
-    @Nullable
-    public String timestampType() {
-        return "TimestampType";
-    }
-
-    @Default
-    @Nullable
-    public String timestamp() {
-        return "Timestamp";
-    }
-
-    @Default
-    @Nullable
-    public String serializedKeySize() {
-        return "SerializedKeySize";
-    }
-
-    @Default
-    @Nullable
-    public String serializedValueSize() {
-        return "SerializedValueSize";
-    }
-
-    // todo: headers? num headers?
 
     public interface Builder {
-        Builder topic(String topic);
 
-        Builder partition(String partition);
+        Builder putFields(Field key, String value);
 
-        Builder offset(String offset);
+        Builder putFields(Map.Entry<Field, ? extends String> entry);
 
-        Builder leaderEpoch(String leaderEpoch);
-
-        Builder timestampType(String timestampType);
-
-        Builder timestamp(String timestamp);
-
-        Builder serializedKeySize(String serializedKeySize);
-
-        Builder serializedValueSize(String serializedValueSize);
+        Builder putAllFields(Map<Field, ? extends String> entries);
 
         ConsumerRecordOptions build();
     }
 
-    @Derived
-    List<Type<?>> outputTypes() {
-        final List<Type<?>> types = new ArrayList<>();
-        if (outputTopic()) {
-            types.add(Type.stringType());
+    public enum Field {
+        /**
+         * The topic.
+         *
+         * @see ConsumerRecord#topic()
+         */
+        TOPIC(Type.stringType()),
+
+        /**
+         * The partition.
+         *
+         * @see ConsumerRecord#partition()
+         */
+        PARTITION(Type.intType()),
+
+        /**
+         * The offset.
+         *
+         * @see ConsumerRecord#offset()
+         */
+        OFFSET(Type.longType()),
+
+        /**
+         * The leader epoch.
+         *
+         * @see ConsumerRecordFunctions#leaderEpoch(ConsumerRecord)
+         */
+        LEADER_EPOCH(Type.intType()),
+
+        /**
+         * The timestamp type.
+         *
+         * @see ConsumerRecord#timestampType()
+         */
+        TIMESTAMP_TYPE(Type.ofCustom(TimestampType.class)),
+
+        /**
+         * The timestamp.
+         *
+         * @see ConsumerRecordFunctions#timestampEpochNanos(ConsumerRecord)
+         */
+        TIMESTAMP(Type.instantType()),
+
+        /**
+         * The serialized key size.
+         *
+         * @see ConsumerRecordFunctions#serializedKeySize(ConsumerRecord)
+         */
+        SERIALIZED_KEY_SIZE(Type.intType()),
+
+        /**
+         * The serialized value size.
+         *
+         * @see ConsumerRecordFunctions#serializedValueSize(ConsumerRecord)
+         */
+        SERIALIZED_VALUE_SIZE(Type.intType()),
+        ;
+
+        private final Type<?> type;
+
+        Field(Type<?> type) {
+            this.type = Objects.requireNonNull(type);
         }
-        if (outputPartition()) {
-            types.add(Type.intType());
+
+        Type<?> type() {
+            return type;
         }
-        if (outputOffset()) {
-            types.add(Type.longType());
-        }
-        if (outputLeaderEpoch()) {
-            types.add(Type.intType());
-        }
-        if (outputTimestampType()) {
-            types.add(Type.ofCustom(TimestampType.class));
-        }
-        if (outputTimestamp()) {
-            types.add(Type.instantType());
-        }
-        if (outputSerializedKeySize()) {
-            types.add(Type.intType());
-        }
-        if (outputSerializedValueSize()) {
-            types.add(Type.intType());
-        }
-        return Collections.unmodifiableList(types);
     }
 
-    /**
-     * Creates a stream the contains the non-{@code null} of {@link #topic()}, {@link #partition()}, {@link #offset()},
-     * {@link #leaderEpoch()}, {@link #timestampType()}, {@link #timestamp()}, {@link #serializedKeySize()}, and
-     * {@link #serializedValueSize()}. This corresponds with the output types of {@link #processor()}.
-     *
-     * @return the column names
-     */
-    public final Stream<String> columnNames() {
-        // noinspection RedundantTypeArguments
-        return Stream.of(
-                Stream.ofNullable(topic()),
-                Stream.ofNullable(partition()),
-                Stream.ofNullable(offset()),
-                Stream.ofNullable(leaderEpoch()),
-                Stream.ofNullable(timestampType()),
-                Stream.ofNullable(timestamp()),
-                Stream.ofNullable(serializedKeySize()),
-                Stream.ofNullable(serializedValueSize()))
-                .flatMap(Function.<Stream<String>>identity());
+    @Derived
+    List<Type<?>> outputTypes() {
+        return fields().keySet().stream().map(Field::type).collect(Collectors.toList());
     }
 
     final <K, V> ObjectProcessor<ConsumerRecord<K, V>> processor() {
-        return isEmpty() ? ObjectProcessor.empty() : new ConsumerRecordOptionsProcessor<>();
+        return fields().isEmpty() ? ObjectProcessor.empty() : new ConsumerRecordOptionsProcessor<>();
     }
 
-    private boolean isEmpty() {
-        return columnNames().allMatch(Objects::isNull);
-    }
-
-    private boolean outputTopic() {
-        return topic() != null;
-    }
-
-    private boolean outputPartition() {
-        return partition() != null;
-    }
-
-    private boolean outputOffset() {
-        return offset() != null;
-    }
-
-    private boolean outputLeaderEpoch() {
-        return leaderEpoch() != null;
-    }
-
-    private boolean outputTimestampType() {
-        return timestampType() != null;
-    }
-
-    private boolean outputTimestamp() {
-        return timestamp() != null;
-    }
-
-    private boolean outputSerializedKeySize() {
-        return serializedKeySize() != null;
-    }
-
-    private boolean outputSerializedValueSize() {
-        return serializedValueSize() != null;
+    private boolean has(Field field) {
+        return fields().containsKey(field);
     }
 
     private class ConsumerRecordOptionsProcessor<K, V> implements ObjectProcessor<ConsumerRecord<K, V>> {
@@ -250,17 +234,30 @@ public abstract class ConsumerRecordOptions {
         @Override
         public void processAll(ObjectChunk<? extends ConsumerRecord<K, V>, ?> in, List<WritableChunk<?>> out) {
             int ix = 0;
-            final WritableObjectChunk<String, ?> topics = outputTopic() ? out.get(ix++).asWritableObjectChunk() : null;
-            final WritableIntChunk<?> partitions = outputPartition() ? out.get(ix++).asWritableIntChunk() : null;
-            final WritableLongChunk<?> offsets = outputOffset() ? out.get(ix++).asWritableLongChunk() : null;
-            final WritableIntChunk<?> leaderEpochs = outputLeaderEpoch() ? out.get(ix++).asWritableIntChunk() : null;
-            final WritableObjectChunk<TimestampType, ?> timestampTypes =
-                    outputTimestampType() ? out.get(ix++).asWritableObjectChunk() : null;
-            final WritableLongChunk<?> timestamps = outputTimestampType() ? out.get(ix++).asWritableLongChunk() : null;
-            final WritableIntChunk<?> serializedKeySize =
-                    outputSerializedKeySize() ? out.get(ix++).asWritableIntChunk() : null;
-            final WritableIntChunk<?> serializedValueSize =
-                    outputSerializedValueSize() ? out.get(ix++).asWritableIntChunk() : null;
+            final WritableObjectChunk<String, ?> topics = has(Field.TOPIC)
+                    ? out.get(ix++).asWritableObjectChunk()
+                    : null;
+            final WritableIntChunk<?> partitions = has(Field.PARTITION)
+                    ? out.get(ix++).asWritableIntChunk()
+                    : null;
+            final WritableLongChunk<?> offsets = has(Field.OFFSET)
+                    ? out.get(ix++).asWritableLongChunk()
+                    : null;
+            final WritableIntChunk<?> leaderEpochs = has(Field.LEADER_EPOCH)
+                    ? out.get(ix++).asWritableIntChunk()
+                    : null;
+            final WritableObjectChunk<TimestampType, ?> timestampTypes = has(Field.TIMESTAMP_TYPE)
+                    ? out.get(ix++).asWritableObjectChunk()
+                    : null;
+            final WritableLongChunk<?> timestamps = has(Field.TIMESTAMP)
+                    ? out.get(ix++).asWritableLongChunk()
+                    : null;
+            final WritableIntChunk<?> serializedKeySize = has(Field.SERIALIZED_KEY_SIZE)
+                    ? out.get(ix++).asWritableIntChunk()
+                    : null;
+            final WritableIntChunk<?> serializedValueSize = has(Field.SERIALIZED_VALUE_SIZE)
+                    ? out.get(ix++).asWritableIntChunk()
+                    : null;
             for (int i = 0; i < in.size(); ++i) {
                 final ConsumerRecord<?, ?> record = in.get(i);
                 if (topics != null) {

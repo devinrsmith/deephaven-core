@@ -3,6 +3,7 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.base.clock.Clock;
 import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -27,17 +28,20 @@ final class PublishersImpl<K, V> implements Publishers {
     private final ThreadFactory threadFactory;
     private final ConsumerLoopCallback callback;
     private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
+    private final boolean receiveTimestamp;
 
     PublishersImpl(
             KafkaConsumer<K, V> client,
             Set<PublisherImpl<K, V>> publishers,
             ThreadFactory threadFactory,
-            ConsumerLoopCallback callback) {
+            ConsumerLoopCallback callback,
+            boolean receiveTimestamp) {
         this.client = Objects.requireNonNull(client);
         this.publishers = Set.copyOf(publishers);
         this.threadFactory = Objects.requireNonNull(threadFactory);
         this.callback = callback;
         this.topicPartitionToPublisher = Collections.unmodifiableMap(map(publishers));
+        this.receiveTimestamp = receiveTimestamp;
     }
 
     private static <K, V> Map<TopicPartition, PublisherImpl<K, V>> map(Set<PublisherImpl<K, V>> publishers) {
@@ -130,20 +134,21 @@ final class PublishersImpl<K, V> implements Publishers {
             safeNotifyFailure(e);
             return false;
         }
+        final long receiveTimeEpochNanos = receiveTimestamp ? Clock.system().currentTimeNanos() : 0;
         if (records.isEmpty()) {
             return true;
         }
-        accept(records);
+        accept(receiveTimeEpochNanos, records);
         return true;
     }
 
-    private void accept(ConsumerRecords<K, V> records) {
+    private void accept(long receiveTimeEpochNanos, ConsumerRecords<K, V> records) {
         for (final TopicPartition topicPartition : records.partitions()) {
             final PublisherImpl<K, V> publisher = topicPartitionToPublisher.get(topicPartition);
             if (publisher == null) {
                 throw new IllegalStateException("TODO");
             }
-            publisher.fillImpl(0, topicPartition, records.records(topicPartition));
+            publisher.fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
         }
     }
 

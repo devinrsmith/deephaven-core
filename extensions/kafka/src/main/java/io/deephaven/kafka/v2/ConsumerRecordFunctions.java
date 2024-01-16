@@ -11,10 +11,6 @@ import java.util.Optional;
 
 public final class ConsumerRecordFunctions {
 
-
-
-    // todo timestamp
-
     /**
      * Returns the last header value for {@code key} if it exists, otherwise returns {@code null}.
      *
@@ -29,6 +25,12 @@ public final class ConsumerRecordFunctions {
         return header == null ? null : header.value();
     }
 
+    /**
+     * Returns {@link ConsumerRecord#leaderEpoch()} if it exists, otherwise return {@link QueryConstants#NULL_INT}.
+     *
+     * @param record the consumer record
+     * @return the leader epoch
+     */
     public static int leaderEpoch(ConsumerRecord<?, ?> record) {
         final Optional<Integer> leaderEpoch = record.leaderEpoch();
         // noinspection OptionalIsPresent
@@ -38,22 +40,38 @@ public final class ConsumerRecordFunctions {
         return QueryConstants.NULL_INT;
     }
 
+    /**
+     * Returns {@link ConsumerRecord#serializedKeySize()} when it is not equal to {@value ConsumerRecord#NULL_SIZE},
+     * otherwise returns {@link QueryConstants#NULL_INT}.
+     *
+     * @param record the consumer record
+     * @return the serialized key size
+     */
     public static int serializedKeySize(ConsumerRecord<?, ?> record) {
         final int size = record.serializedKeySize();
         return size == ConsumerRecord.NULL_SIZE ? QueryConstants.NULL_INT : size;
     }
 
+    /**
+     * Returns {@link ConsumerRecord#serializedValueSize()} when it is not equal to {@value ConsumerRecord#NULL_SIZE},
+     * otherwise returns {@link QueryConstants#NULL_INT}.
+     *
+     * @param record the consumer record
+     * @return the serialized value size
+     */
     public static int serializedValueSize(ConsumerRecord<?, ?> record) {
         final int size = record.serializedValueSize();
         return size == ConsumerRecord.NULL_SIZE ? QueryConstants.NULL_INT : size;
     }
 
+    /**
+     * Returns {@link ConsumerRecord#timestamp()} as epoch nanos.
+     *
+     * @param record the record
+     * @return the epoch nanos
+     */
     public static long timestampEpochNanos(ConsumerRecord<?, ?> record) {
-        // Technically, very old kafka APIs didn't have timestamps.
-        // Kafka 0.10.0.0, released May 22, 2016, was the first release to have timestamps.
-        // Unlikely to encounter? The ConsumerRecord#timestamp doesn't even mention.
         final long timestampEpochMillis = record.timestamp();
-        // todo: overflow checking?
         return timestampEpochMillis * 1_000_000L;
     }
 }

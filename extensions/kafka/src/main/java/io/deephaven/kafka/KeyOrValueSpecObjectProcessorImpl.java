@@ -42,7 +42,7 @@ class KeyOrValueSpecObjectProcessorImpl<T> extends KeyOrValueSpec {
 
     KeyOrValueSpecObjectProcessorImpl(
             Deserializer<? extends T> deserializer, ObjectProcessor<? super T> processor, List<String> columnNames) {
-        if (columnNames.size() != processor.outputTypes().size()) {
+        if (columnNames.size() != processor.size()) {
             throw new IllegalArgumentException("Expected columnNames and processor.outputTypes() to be the same size");
         }
         if (columnNames.stream().distinct().count() != columnNames.size()) {
@@ -71,9 +71,10 @@ class KeyOrValueSpecObjectProcessorImpl<T> extends KeyOrValueSpec {
         final KeyOrValueIngestData data = new KeyOrValueIngestData();
         data.fieldPathToColumnName = new LinkedHashMap<>();
         final int L = columnNames.size();
+        final List<Type<?>> outputTypes = processor.outputTypes();
         for (int i = 0; i < L; ++i) {
             final String columnName = columnNames.get(i);
-            final Type<?> type = processor.outputTypes().get(i);
+            final Type<?> type = outputTypes.get(i);
             data.fieldPathToColumnName.put(columnName, columnName);
             columnDefinitionsOut.add(ColumnDefinition.of(columnName, type));
         }

@@ -65,6 +65,11 @@ final class ObjectProcessorSimple {
         }
 
         @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
         public List<Type<?>> outputTypes() {
             return Collections.singletonList(inOutType);
         }

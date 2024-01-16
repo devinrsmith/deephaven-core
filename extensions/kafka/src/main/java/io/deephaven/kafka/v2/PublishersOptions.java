@@ -134,10 +134,10 @@ public abstract class PublishersOptions<K, V> {
 
 
     final Publishers publishers() {
-        return driver();
+        return publishersImpl();
     }
 
-    private PublishersImpl<K, V> driver() {
+    private PublishersImpl<K, V> publishersImpl() {
         // todo: error if clientOptions contains enable auto commit
         // final KafkaConsumer<K, V> client =
         // clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
@@ -152,7 +152,8 @@ public abstract class PublishersOptions<K, V> {
                     .map(tp -> new PublisherImpl<>(tp, filter(), processor(), onShutdown, chunkSize(),
                             receiveTimestamp()))
                     .collect(Collectors.toSet());
-            return new PublishersImpl<>(client, publishers, threadFactory(), callback().orElse(null));
+            return new PublishersImpl<>(client, publishers, threadFactory(), callback().orElse(null),
+                    receiveTimestamp());
         } catch (Throwable t) {
             safeCloseClient(client, t);
             throw t;

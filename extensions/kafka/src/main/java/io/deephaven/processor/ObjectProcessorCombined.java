@@ -61,7 +61,7 @@ final class ObjectProcessorCombined<T> implements ObjectProcessor<T> {
     public void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         int outIx = 0;
         for (ObjectProcessor<? super T> processor : processors) {
-            final int toIx = outIx + processor.outputTypes().size();
+            final int toIx = outIx + processor.size();
             processor.processAll(in, out.subList(outIx, toIx));
             outIx = toIx;
         }

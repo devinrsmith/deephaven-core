@@ -4,6 +4,7 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.base.clock.Clock;
+import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
@@ -84,16 +85,16 @@ final class PublisherImpl<K, V> implements Publisher {
         return streamConsumer != null;
     }
 
-    void accept(ConsumerRecords<K, V> records) {
-        final long receiveTimeEpochNanos = receiveTimestampChunk != null
-                ? Clock.system().currentTimeNanos()
-                : 0;
-        synchronized (this) {
-            for (TopicPartition topicPartition : records.partitions()) {
-                fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
-            }
-        }
-    }
+    // void accept(ConsumerRecords<K, V> records) {
+    // final long receiveTimeEpochNanos = receiveTimestampChunk != null
+    // ? Clock.system().currentTimeNanos()
+    // : 0;
+    // synchronized (this) {
+    // for (TopicPartition topicPartition : records.partitions()) {
+    // fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
+    // }
+    // }
+    // }
 
     synchronized void acceptFailure(Throwable cause) {
         streamConsumer.acceptFailure(cause);

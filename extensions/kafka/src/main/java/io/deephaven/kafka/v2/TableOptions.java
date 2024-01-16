@@ -26,6 +26,7 @@ import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
+import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
 import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
@@ -57,7 +58,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,6 +113,7 @@ public abstract class TableOptions<K, V> {
         return true;
     }
 
+    // todo: should this be a list?
     /**
      * The offsets.
      *
@@ -133,7 +134,8 @@ public abstract class TableOptions<K, V> {
 
     /**
      * The basic {@link ConsumerRecord} options for a {@link ConsumerRecord} processor. By default, is equivalent to
-     * {@link ConsumerRecordOptions#latest()}.
+     * {@link ConsumerRecordOptions#latest()}. Callers wishing to ensure compatibility across releases are encourage to
+     * set this to a specifically versioned {@link ConsumerRecordOptions}.
      *
      * @return the record options
      */
@@ -274,15 +276,15 @@ public abstract class TableOptions<K, V> {
         }
     }
 
-    @Check
-    final void checkAutoCommit() {
-        final String enableAutoCommit =
-                clientOptions().config().getOrDefault(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        if (!"false".equalsIgnoreCase(enableAutoCommit)) {
-            throw new IllegalArgumentException(String.format("Configuration `%s=%s` is unsupported",
-                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit));
-        }
-    }
+    // @Check
+    // final void checkAutoCommit() {
+    // final String enableAutoCommit =
+    // clientOptions().config().getOrDefault(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    // if (!"false".equalsIgnoreCase(enableAutoCommit)) {
+    // throw new IllegalArgumentException(String.format("Configuration `%s=%s` is unsupported",
+    // ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit));
+    // }
+    // }
 
     final Table table() {
         return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleTable);
@@ -298,10 +300,10 @@ public abstract class TableOptions<K, V> {
                 : Collections.singletonList(receiveTimestamp());
 
         final List<String> columnNames = Stream.of(
-                extraNames.stream(),
+                extraNames,
                 recordOptions().columnNames(),
-                columnNames().stream())
-                .flatMap(Function.identity())
+                columnNames())
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
         final List<Type<?>> extraTypes = receiveTimestamp() == null
@@ -369,10 +371,11 @@ public abstract class TableOptions<K, V> {
         }
         final Map<String, Object> extraAttributes;
         if (publisher.topicPartitions().size() == 1
-                && recordOptions().offset() != null
+                && recordOptions().fields().containsKey(Field.OFFSET)
                 && !extraAttributes().containsKey(Table.SORTED_COLUMNS_ATTRIBUTE)) {
-            final String value = SortedColumnsAttribute.setOrderForColumn((String) null, recordOptions().offset(),
-                    SortingOrder.Ascending);
+            final String value = SortedColumnsAttribute
+                    .setOrderForColumn((String) null, recordOptions().fields().get(Field.OFFSET),
+                            SortingOrder.Ascending);
             final Map<String, Object> withSorted = new HashMap<>(extraAttributes());
             withSorted.put(Table.SORTED_COLUMNS_ATTRIBUTE, value);
             extraAttributes = withSorted;
@@ -408,9 +411,6 @@ public abstract class TableOptions<K, V> {
             final TopicPartition topicPartition = singleTopicPartition(sorted.get(i));
             topics[i] = topicPartition.topic();
             partitions[i] = topicPartition.partition();
-            // todo: should mark that offset is sorted, if it exists
-
-            // todo: wrap in update graph?
             constituents[i] = toTableType(streamConsumer(sorted.get(i)).table());
         }
         // should we consider that Topic is "grouped"? NO
@@ -432,10 +432,8 @@ public abstract class TableOptions<K, V> {
                 .open()) {
             final Table rawTable = new QueryTable(TOPIC_PARTITION_COLUMN_TABLEDEF, rowSet, sources) {
                 {
-                    // Can't set rawTable as refreshing == false;
-                    // setRefreshing(false);
+                    // Even though rawTable won't change, we can't set refreshing as false
                     setFlat();
-                    // todo: extra attributes?
                 }
             };
             for (Table constituent : constituents) {

@@ -30,6 +30,7 @@ final class PublishersImpl<K, V> implements Publishers {
     private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
     private final boolean receiveTimestamp;
 
+
     PublishersImpl(
             KafkaConsumer<K, V> client,
             Set<PublisherImpl<K, V>> publishers,
@@ -60,11 +61,11 @@ final class PublishersImpl<K, V> implements Publishers {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         for (PublisherImpl<K, V> publisher : publishers) {
             if (!publisher.hasStreamConsumer()) {
                 throw new IllegalStateException(
-                        "Expected io.deephaven.kafka.v2.KafkaPublisherDriver.register to be called before start");
+                        "Expected io.deephaven.kafka.v2.PublisherImpl.register to be called before start");
             }
         }
         final Thread thread = threadFactory.newThread(this::run);
@@ -73,19 +74,19 @@ final class PublishersImpl<K, V> implements Publishers {
     }
 
     @Override
-    public void errorBeforeStart(Throwable t) {
+    public synchronized void errorBeforeStart(Throwable t) {
         for (PublisherImpl<K, V> publisher : publishers) {
             if (publisher.hasStreamConsumer()) {
                 safeNotifyFailure(t);
             }
         }
-
-        // streamConsumerAdapter.close();
         safeCloseClient(client, t);
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+
+
         // todo: extra safety check that start or errorBeforeStart was called
     }
 
@@ -146,7 +147,7 @@ final class PublishersImpl<K, V> implements Publishers {
         for (final TopicPartition topicPartition : records.partitions()) {
             final PublisherImpl<K, V> publisher = topicPartitionToPublisher.get(topicPartition);
             if (publisher == null) {
-                throw new IllegalStateException("TODO");
+                throw new IllegalStateException(String.format("Received unexpected topicPartition=%s", topicPartition));
             }
             publisher.fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
         }

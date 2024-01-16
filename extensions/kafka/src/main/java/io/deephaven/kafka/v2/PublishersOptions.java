@@ -41,6 +41,11 @@ public abstract class PublishersOptions<K, V> {
      */
     public abstract ClientOptions<K, V> clientOptions();
 
+    /**
+     * The partitioning strategy.
+     *
+     * @return the partitioning strategy
+     */
     public abstract Partitioning partitioning();
 
     /**

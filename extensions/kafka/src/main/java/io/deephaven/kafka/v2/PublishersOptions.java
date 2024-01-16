@@ -8,13 +8,14 @@ import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.util.thread.NamingThreadFactory;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.immutables.value.Value.Immutable;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +51,7 @@ public abstract class PublishersOptions<K, V> {
     public abstract Offsets offsets();
 
     /**
-     * The record filter.
+     * The record filter. The filter happens before {@link #processor()}.
      *
      * @return the record filter
      */
@@ -94,12 +95,40 @@ public abstract class PublishersOptions<K, V> {
 
     public interface Partitioning {
 
+        /**
+         * The single group partitioning.
+         *
+         * @return the partitioning
+         */
         static Partitioning single() {
             return SinglePartitioning.INSTANCE;
         }
 
+        /**
+         * Partitioning via {@link TopicPartition#topic()} and {@link TopicPartition#partition()}.
+         *
+         * @return the partitioning
+         */
         static Partitioning perTopicPartition() {
             return PerTopicPartitionPartitioning.INSTANCE;
+        }
+
+        /**
+         * Partitioning via {@link TopicPartition#topic()}.
+         *
+         * @return the partitioning
+         */
+        static Partitioning perTopic() {
+            return PerTopicPartitioning.INSTANCE;
+        }
+
+        /**
+         * Partitioning via {@link TopicPartition#partition()}.
+         *
+         * @return the partitioning
+         */
+        static Partitioning perPartition() {
+            return PerPartitionPartitioning.INSTANCE;
         }
     }
 
@@ -110,8 +139,10 @@ public abstract class PublishersOptions<K, V> {
 
     private PublishersImpl<K, V> driver() {
         // todo: error if clientOptions contains enable auto commit
+//        final KafkaConsumer<K, V> client =
+//                clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
         final KafkaConsumer<K, V> client =
-                clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
+                clientOptions().createClient(null);
         try {
             final Set<TopicPartition> topicPartitions = ClientHelper.assignAndSeek(client, offsets());
             // any one calling shutdown
@@ -158,6 +189,29 @@ public abstract class PublishersOptions<K, V> {
         }
     }
 
-    // todo: could have per partition partitioning?
-    // todo: could have per topic partitioning?
+    private static class PerTopicPartitioning extends PartitioningBase {
+        private static final PerTopicPartitioning INSTANCE = new PerTopicPartitioning();
+
+        @Override
+        Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+            final Map<String, Set<TopicPartition>> map = new HashMap<>();
+            for (TopicPartition topicPartition : topicPartitions) {
+                map.computeIfAbsent(topicPartition.topic(), ignored -> new HashSet<>()).add(topicPartition);
+            }
+            return map.values().stream();
+        }
+    }
+
+    private static class PerPartitionPartitioning extends PartitioningBase {
+        private static final PerPartitionPartitioning INSTANCE = new PerPartitionPartitioning();
+
+        @Override
+        Stream<Set<TopicPartition>> partition(Set<TopicPartition> topicPartitions) {
+            final Map<Integer, Set<TopicPartition>> map = new HashMap<>();
+            for (TopicPartition topicPartition : topicPartitions) {
+                map.computeIfAbsent(topicPartition.partition(), ignored -> new HashSet<>()).add(topicPartition);
+            }
+            return map.values().stream();
+        }
+    }
 }

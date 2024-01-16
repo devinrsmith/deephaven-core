@@ -14,6 +14,8 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.SortedColumnsAttribute;
+import io.deephaven.engine.table.impl.SortingOrder;
 import io.deephaven.engine.table.impl.partitioned.PartitionedTableImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
@@ -336,21 +338,26 @@ public abstract class TableOptions<K, V> {
     }
 
     private StreamToBlinkTableAdapter streamConsumer(Publisher publisher) {
-
         if (publisher.topicPartitions().isEmpty()) {
             throw new IllegalArgumentException();
         }
-        if (publisher.topicPartitions().size() == 1) {
-            // add sorted on offset column?
-
+        final Map<String, Object> extraAttributes;
+        if (publisher.topicPartitions().size() == 1
+                && recordOptions().offset() != null
+                && !extraAttributes().containsKey(Table.SORTED_COLUMNS_ATTRIBUTE)) {
+            final String value = SortedColumnsAttribute.setOrderForColumn((String) null, recordOptions().offset(), SortingOrder.Ascending);
+            final Map<String, Object> withSorted = new HashMap<>(extraAttributes());
+            withSorted.put(Table.SORTED_COLUMNS_ATTRIBUTE, value);
+            extraAttributes = withSorted;
+        } else {
+            extraAttributes = extraAttributes();
         }
-        // todo: if all topics are the same, mark column as "singleton" / sorted?
         return new StreamToBlinkTableAdapter(
                 tableDefinition(),
                 publisher,
                 updateSourceRegistrar(),
                 name(),
-                extraAttributes());
+                extraAttributes);
     }
 
     private static final Comparator<TopicPartition> TOPIC_PARTITION_COMPARATOR =
@@ -407,7 +414,7 @@ public abstract class TableOptions<K, V> {
             }
             return new PartitionedTableImpl(
                     rawTable,
-                    List.of(TOPIC_COLUMN.getName()),
+                    List.of(TOPIC_COLUMN.getName(), PARTITION_COLUMN.getName()),
                     true,
                     TABLE_COLUMN.getName(),
                     tableDefinition(),

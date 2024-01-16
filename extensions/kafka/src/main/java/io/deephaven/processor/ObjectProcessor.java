@@ -110,8 +110,14 @@ public interface ObjectProcessor<T> {
         return ObjectProcessorMap.of(f, delegate);
     }
 
-    static <T> ObjectProcessor<T> simple(Type<T> type) {
-        return ObjectProcessorSimple.of(type);
+    /**
+     *
+     * @param inType the input type
+     * @return the object processor
+     * @param <T> the input type
+     */
+    static <T> ObjectProcessor<T> simple(GenericType<T> inType) {
+        return ObjectProcessorSimple.of(inType);
     }
 
     static <T> ObjectProcessor<T> empty() {

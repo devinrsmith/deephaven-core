@@ -12,6 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import java.time.Duration;
+
 public class Example {
 
     public static Table homeassistant() {
@@ -39,13 +41,16 @@ public class Example {
         return TableOptions.<Void, String>builder()
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
-                        .putConfig("group.id", "homeassistant-test-group-2")
-                        .putConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.EARLIEST.toString())
+//                        .putConfig("group.id", "homeassistant-test-group-2")
+//                        .putConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.EARLIEST.toString())
+//                        .putConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.EARLIEST.toString())
                         .valueDeserializer(new StringDeserializer())
                         .build())
-                .offsets(Offsets.committed("homeassistant"))
+//                .offsets(Offsets.committed("homeassistant"))
+                .offsets(Offsets.timestamp("homeassistant", Duration.ofHours(4)))
                 .valueProcessor(ObjectProcessor.simple(Type.stringType()))
                 .addColumnNames("Value")
+                .tableType(TableType.append())
                 .build();
     }
 

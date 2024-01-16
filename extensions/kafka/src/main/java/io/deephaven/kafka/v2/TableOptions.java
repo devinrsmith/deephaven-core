@@ -130,15 +130,34 @@ public abstract class TableOptions<K, V> {
         return predicateTrue();
     }
 
+    /**
+     * The consumer record options for for a {@link ConsumerRecord} processor.
+     *
+     * @return the record options
+     */
     @Default
     public ConsumerRecordOptions recordOptions() {
         return ConsumerRecordOptions.of();
     }
 
+    /**
+     *
+     * @return
+     */
     public abstract Optional<ObjectProcessor<ConsumerRecord<K, V>>> recordProcessor();
 
+    /**
+     * When present, the key processor is adapted into a {@link ConsumerRecord} processor via {@link Processors#key(ObjectProcessor)}.
+     *
+     * @return
+     */
     public abstract Optional<ObjectProcessor<K>> keyProcessor();
 
+    /**
+     * When present, the value processor is adapted into a {@link ConsumerRecord} processor via {@link Processors#value(ObjectProcessor)}.
+     *
+     * @return
+     */
     public abstract Optional<ObjectProcessor<V>> valueProcessor();
 
     public abstract List<String> columnNames();
@@ -345,7 +364,8 @@ public abstract class TableOptions<K, V> {
         if (publisher.topicPartitions().size() == 1
                 && recordOptions().offset() != null
                 && !extraAttributes().containsKey(Table.SORTED_COLUMNS_ATTRIBUTE)) {
-            final String value = SortedColumnsAttribute.setOrderForColumn((String) null, recordOptions().offset(), SortingOrder.Ascending);
+            final String value = SortedColumnsAttribute.setOrderForColumn((String) null, recordOptions().offset(),
+                    SortingOrder.Ascending);
             final Map<String, Object> withSorted = new HashMap<>(extraAttributes());
             withSorted.put(Table.SORTED_COLUMNS_ATTRIBUTE, value);
             extraAttributes = withSorted;

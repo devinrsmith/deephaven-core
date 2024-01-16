@@ -40,19 +40,19 @@ final class ObjectProcessorSimple {
 
         @Override
         public ObjectProcessor<T> visit(StringType stringType) {
-            //noinspection unchecked
+            // noinspection unchecked
             return (ObjectProcessor<T>) new ObjectProcessorAppendTypedChunk<>(stringType);
         }
 
         @Override
         public ObjectProcessor<T> visit(ArrayType<?, ?> arrayType) {
-            //noinspection unchecked
+            // noinspection unchecked
             return (ObjectProcessor<T>) new ObjectProcessorAppendTypedChunk<>(arrayType);
         }
 
         @Override
         public ObjectProcessor<T> visit(CustomType<?> customType) {
-            //noinspection unchecked
+            // noinspection unchecked
             return (ObjectProcessor<T>) new ObjectProcessorAppendTypedChunk<>(customType);
         }
     }
@@ -75,14 +75,15 @@ final class ObjectProcessorSimple {
 
 
             final ObjectChunk<T, Any> IN1 = (ObjectChunk<T, Any>) in;
-//            final WritableObjectChunk<T, Any> dst = out.get(0).<T>asWritableObjectChunk();
+            // final WritableObjectChunk<T, Any> dst = out.get(0).<T>asWritableObjectChunk();
             final WritableObjectChunk<T, Any> dst2 = ((WritableChunk<Any>) out.get(0)).<T>asWritableObjectChunk();
 
             appendTypedChunk(IN1, dst2);
         }
     }
 
-    private static <T, ATTR extends Any> void appendTypedChunk(ObjectChunk<T, ? extends ATTR> src, WritableObjectChunk<T, ATTR> dst) {
+    private static <T, ATTR extends Any> void appendTypedChunk(ObjectChunk<T, ? extends ATTR> src,
+            WritableObjectChunk<T, ATTR> dst) {
         dst.appendTypedChunk(src, 0, src.size());
     }
 }

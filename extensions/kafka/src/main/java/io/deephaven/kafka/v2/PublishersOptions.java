@@ -139,8 +139,8 @@ public abstract class PublishersOptions<K, V> {
 
     private PublishersImpl<K, V> driver() {
         // todo: error if clientOptions contains enable auto commit
-//        final KafkaConsumer<K, V> client =
-//                clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
+        // final KafkaConsumer<K, V> client =
+        // clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));
         final KafkaConsumer<K, V> client =
                 clientOptions().createClient(null);
         try {

@@ -30,6 +30,7 @@ public abstract class NamedObjectProcessor<T> {
     public abstract List<String> columnNames();
 
     public interface Builder<T> {
+        Builder<T> processor(ObjectProcessor<T> processor);
 
         Builder<T> addColumnNames(String element);
 
@@ -37,15 +38,15 @@ public abstract class NamedObjectProcessor<T> {
 
         Builder<T> addAllColumnNames(Iterable<String> elements);
 
-        Builder<T> processor(ObjectProcessor<T> processor);
-
         NamedObjectProcessor<T> build();
     }
 
     @Check
     final void checkSizes() {
         if (columnNames().size() != processor().size()) {
-            throw new IllegalArgumentException(String.format("Unmatched sizes; columnNames().size()=%d, processor().size()=%d", columnNames().size(), processor().size()));
+            throw new IllegalArgumentException(
+                    String.format("Unmatched sizes; columnNames().size()=%d, processor().size()=%d",
+                            columnNames().size(), processor().size()));
         }
     }
 }

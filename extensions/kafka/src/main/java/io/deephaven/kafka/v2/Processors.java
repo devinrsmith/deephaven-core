@@ -5,7 +5,6 @@ package io.deephaven.kafka.v2;
 
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Headers;
 
@@ -14,60 +13,13 @@ import java.util.function.Function;
 public final class Processors {
 
     /**
-     * Creates an {@link ObjectProcessor} that contains the following output types and logic:
-     *
-     * <table>
-     * <tr>
-     * <th>If not {@code null}</th>
-     * <th>Type</th>
-     * <th>Logic</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#topic()}</th>
-     * <th>{@link Type#stringType()}</th>
-     * <th>{@link ConsumerRecord#topic()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#partition()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecord#partition()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#offset()}</th>
-     * <th>{@link Type#longType()}</th>
-     * <th>{@link ConsumerRecord#offset()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#leaderEpoch()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#leaderEpoch(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#timestampType()}</th>
-     * <th>{@link Type#ofCustom(Class) Type.ofCustom(TimestampType.class)}</th>
-     * <th>{@link ConsumerRecord#timestampType()}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#timestamp()}</th>
-     * <th>{@link Type#instantType()}</th>
-     * <th>{@link ConsumerRecordFunctions#timestampEpochNanos(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#serializedKeySize()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#serializedKeySize(ConsumerRecord)}</th>
-     * </tr>
-     * <tr>
-     * <th>{@link ConsumerRecordOptions#serializedValueSize()}</th>
-     * <th>{@link Type#intType()}</th>
-     * <th>{@link ConsumerRecordFunctions#serializedValueSize(ConsumerRecord)}</th>
-     * </tr>
-     * </table>
+     * Creates a {@link NamedObjectProcessor} based on the {@link ConsumerRecordOptions#fields()}.
      *
      * @return the object processor
+     * @see ConsumerRecordOptions.Field
      */
     public static <K, V> NamedObjectProcessor<ConsumerRecord<K, V>> basic(ConsumerRecordOptions options) {
-        return options.namedObjectProcessor();
+        return options.namedProcessor();
     }
 
     /**

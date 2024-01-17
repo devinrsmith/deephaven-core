@@ -3,8 +3,6 @@
  */
 package io.deephaven.kafka.v2;
 
-import io.deephaven.base.clock.Clock;
-import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
@@ -14,7 +12,6 @@ import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.util.SafeCloseable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.jetbrains.annotations.NotNull;
 
@@ -85,17 +82,6 @@ final class PublisherImpl<K, V> implements Publisher {
         return streamConsumer != null;
     }
 
-    // void accept(ConsumerRecords<K, V> records) {
-    // final long receiveTimeEpochNanos = receiveTimestampChunk != null
-    // ? Clock.system().currentTimeNanos()
-    // : 0;
-    // synchronized (this) {
-    // for (TopicPartition topicPartition : records.partitions()) {
-    // fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
-    // }
-    // }
-    // }
-
     synchronized void acceptFailure(Throwable cause) {
         streamConsumer.acceptFailure(cause);
     }
@@ -165,7 +151,9 @@ final class PublisherImpl<K, V> implements Publisher {
             streamConsumer.accept(allChunks);
         } finally {
             chunkPos = 0;
-            receiveTimestampChunk = WritableLongChunk.makeWritableChunk(chunkSize);
+            if (receiveTimestampChunk != null) {
+                receiveTimestampChunk = WritableLongChunk.makeWritableChunk(chunkSize);
+            }
         }
     }
 

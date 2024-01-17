@@ -34,7 +34,6 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.SafeCloseable;
-import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -42,13 +41,13 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
+import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -58,7 +57,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -145,6 +143,11 @@ public abstract class TableOptions<K, V> {
         return ConsumerRecordOptions.latest();
     }
 
+    @Default
+    public boolean useOpinionatedRecordOptions() {
+        return true;
+    }
+
     /**
      * The {@link ConsumerRecord} processor. This is for advanced use cases where the caller wants additional fields for
      * the high-level {@link ConsumerRecord} object (for example, "how many headers are there?" or "what is the value of
@@ -170,8 +173,6 @@ public abstract class TableOptions<K, V> {
      * @return the value processor
      */
     public abstract Optional<NamedObjectProcessor<V>> valueProcessor();
-
-    public abstract List<String> columnNames();
 
     /**
      * The table type for ...
@@ -234,9 +235,47 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> recordOptions(ConsumerRecordOptions recordOptions);
 
+        Builder<K, V> useOpinionatedRecordOptions(boolean useOpinionatedRecordOptions);
+
+        default Builder<K, V> recordProcessor(ObjectProcessor<ConsumerRecord<K, V>> processor) {
+            final int size = processor.size();
+            if (size == 1) {
+                return recordProcessor(NamedObjectProcessor.of(processor, "Record"));
+            }
+            final List<String> names = new ArrayList<>(size);
+            for (int i = 0; i < size; ++i) {
+                names.add("Record_" + i);
+            }
+            return recordProcessor(NamedObjectProcessor.of(processor, names));
+        }
+
         Builder<K, V> recordProcessor(NamedObjectProcessor<ConsumerRecord<K, V>> processor);
 
+        default Builder<K, V> keyProcessor(ObjectProcessor<K> processor) {
+            final int size = processor.size();
+            if (size == 1) {
+                return keyProcessor(NamedObjectProcessor.of(processor, "Key"));
+            }
+            final List<String> names = new ArrayList<>(size);
+            for (int i = 0; i < size; ++i) {
+                names.add("Key_" + i);
+            }
+            return keyProcessor(NamedObjectProcessor.of(processor, names));
+        }
+
         Builder<K, V> keyProcessor(NamedObjectProcessor<K> processor);
+
+        default Builder<K, V> valueProcessor(ObjectProcessor<V> processor) {
+            final int size = processor.size();
+            if (size == 1) {
+                return valueProcessor(NamedObjectProcessor.of(processor, "Value"));
+            }
+            final List<String> names = new ArrayList<>(size);
+            for (int i = 0; i < size; ++i) {
+                names.add("Value_" + i);
+            }
+            return valueProcessor(NamedObjectProcessor.of(processor, names));
+        }
 
         Builder<K, V> valueProcessor(NamedObjectProcessor<V> processor);
 
@@ -257,6 +296,27 @@ public abstract class TableOptions<K, V> {
         TableOptions<K, V> build();
     }
 
+    @Derived
+    ConsumerRecordOptions recordOptionsToUse() {
+        // This method should be the only (internal) caller of recordOptions()
+        if (!useOpinionatedRecordOptions()) {
+            return recordOptions();
+        }
+        final ConsumerRecordOptions.Builder builder = ConsumerRecordOptions.builder();
+        final Map<Field, String> fields = recordOptions().fields();
+        if (!fields.containsKey(Field.TOPIC) && ((OffsetsBase) offsets()).topics().distinct().count() > 1) {
+            // todo: may not want / be relevant in partitioned case?
+            builder.addField(Field.TOPIC);
+        }
+        if (!fields.containsKey(Field.SERIALIZED_KEY_SIZE) && keyProcessor().isPresent()) {
+            builder.addField(Field.SERIALIZED_KEY_SIZE);
+        }
+        if (!fields.containsKey(Field.SERIALIZED_VALUE_SIZE) && valueProcessor().isPresent()) {
+            builder.addField(Field.SERIALIZED_VALUE_SIZE);
+        }
+        return builder.putAllFields(recordOptions().fields()).build();
+    }
+
     @Check
     final void checkChunkSize() {
         if (chunkSize() < 1) {
@@ -273,56 +333,51 @@ public abstract class TableOptions<K, V> {
     }
 
     final TableDefinition tableDefinition() {
+        final List<NamedObjectProcessor<?>> namedProcessors = namedProcessors().collect(Collectors.toList());
         final List<String> columnNames = Stream.concat(
                 Stream.ofNullable(receiveTimestamp()),
-                names())
+                namedProcessors.stream().map(NamedObjectProcessor::columnNames).flatMap(Collection::stream))
                 .collect(Collectors.toList());
         final List<Type<?>> outputTypes = Stream.concat(
                 receiveTimestamp() == null ? Stream.empty() : Stream.of(Type.instantType()),
-                types())
+                namedProcessors.stream()
+                        .map(NamedObjectProcessor::processor)
+                        .map(ObjectProcessor::outputTypes)
+                        .flatMap(Collection::stream))
                 .collect(Collectors.toList());
         return TableDefinition.from(columnNames, outputTypes);
     }
 
-    private Stream<String> names() {
-        return Stream.of(
-                        recordOptions().columnNames(),
-                        recordProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()),
-                        keyProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()),
-                        valueProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()))
-                .flatMap(Collection::stream);
+    private Stream<NamedObjectProcessor<?>> namedProcessors() {
+        return Stream.concat(
+                Stream.of(recordOptionsToUse().namedProcessor()),
+                Stream.of(
+                        recordProcessor(),
+                        keyProcessor(),
+                        valueProcessor())
+                        .flatMap(Optional::stream));
     }
 
-    private Stream<Type<?>> types() {
-        return Stream.of(
-                        recordOptions().processor().outputTypes(),
-                        recordProcessor()
-                                .map(NamedObjectProcessor::processor)
-                                .map(ObjectProcessor::outputTypes)
-                                .orElse(Collections.emptyList()),
-                        keyProcessor()
-                                .map(NamedObjectProcessor::processor)
-                                .map(ObjectProcessor::outputTypes)
-                                .orElse(Collections.emptyList()),
-                        valueProcessor()
-                                .map(NamedObjectProcessor::processor)
-                                .map(ObjectProcessor::outputTypes)
-                                .orElse(Collections.emptyList()))
-                .flatMap(Collection::stream);
+    private Stream<ObjectProcessor<ConsumerRecord<K, V>>> objectProcessors() {
+        return Stream.concat(
+                Stream.of(recordOptionsToUse().processor()),
+                Stream.of(
+                        recordProcessor().map(NamedObjectProcessor::processor),
+                        mappedKeyProcessor(),
+                        mappedValueProcessor())
+                        .flatMap(Optional::stream));
     }
 
-    private ObjectProcessor<ConsumerRecord<K, V>> fullProcessor() {
-        final ObjectProcessor<ConsumerRecord<K, V>> basics = recordOptions().<K, V>namedObjectProcessor().processor();
-        final ObjectProcessor<ConsumerRecord<K, V>> specifics = recordProcessor()
-                .map(NamedObjectProcessor::processor)
-                .orElseGet(ObjectProcessor::empty);
-        final ObjectProcessor<ConsumerRecord<K, V>> key = Processors.key(keyProcessor()
-                .map(NamedObjectProcessor::processor)
-                .orElseGet(ObjectProcessor::empty));
-        final ObjectProcessor<ConsumerRecord<K, V>> value = Processors.value(valueProcessor()
-                .map(NamedObjectProcessor::processor)
-                .orElseGet(ObjectProcessor::empty));
-        return ObjectProcessor.combined(List.of(basics, specifics, key, value));
+    private Optional<ObjectProcessor<ConsumerRecord<K, V>>> mappedKeyProcessor() {
+        return keyProcessor().map(NamedObjectProcessor::processor).map(Processors::key);
+    }
+
+    private Optional<ObjectProcessor<ConsumerRecord<K, V>>> mappedValueProcessor() {
+        return valueProcessor().map(NamedObjectProcessor::processor).map(Processors::value);
+    }
+
+    private ObjectProcessor<ConsumerRecord<K, V>> consumerRecordObjectProcessor() {
+        return ObjectProcessor.combined(objectProcessors().collect(Collectors.toList()));
     }
 
     private Table toTableType(Table blinkTable) {
@@ -364,10 +419,10 @@ public abstract class TableOptions<K, V> {
         }
         final Map<String, Object> extraAttributes;
         if (publisher.topicPartitions().size() == 1
-                && recordOptions().fields().containsKey(Field.OFFSET)
+                && recordOptionsToUse().fields().containsKey(Field.OFFSET)
                 && !extraAttributes().containsKey(Table.SORTED_COLUMNS_ATTRIBUTE)) {
             final String value = SortedColumnsAttribute
-                    .setOrderForColumn((String) null, recordOptions().fields().get(Field.OFFSET),
+                    .setOrderForColumn((String) null, recordOptionsToUse().fields().get(Field.OFFSET),
                             SortingOrder.Ascending);
             final Map<String, Object> withSorted = new HashMap<>(extraAttributes());
             withSorted.put(Table.SORTED_COLUMNS_ATTRIBUTE, value);
@@ -449,17 +504,23 @@ public abstract class TableOptions<K, V> {
 
     private PublishersOptions<K, V> publishersOptions(Partitioning partitioning) {
         return PublishersOptions.<K, V>builder()
-                .clientOptions(useOpinionatedClientOptions() ? opinionatedClientOptions() : clientOptions())
+                .clientOptions(clientOptionsToUse())
                 .partitioning(partitioning)
                 .offsets(offsets())
                 .filter(filter())
-                .processor(fullProcessor())
+                .processor(consumerRecordObjectProcessor())
                 .chunkSize(chunkSize())
                 .receiveTimestamp(receiveTimestamp() != null)
                 .build();
     }
 
-    private ClientOptions<K, V> opinionatedClientOptions() {
+    // Note: not Derived like recordOptionsToUse; if we end up needing to call clientOptionsToUse more than once, may
+    // make sense to make Derived.
+    private ClientOptions<K, V> clientOptionsToUse() {
+        // This method should be the only (internal) caller of clientOptions()
+        if (!useOpinionatedClientOptions()) {
+            return clientOptions();
+        }
         final HashMap<String, String> config = new HashMap<>(clientOptions().config());
         final ClientOptions.Builder<K, V> opinionated = ClientOptions.builder();
         if (!config.containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
@@ -511,11 +572,6 @@ public abstract class TableOptions<K, V> {
             opinionated.valueDeserializer((Deserializer<V>) new ByteArrayDeserializer());
         }
         return opinionated.putAllConfig(config).build();
-    }
-
-    // Maybe expose as configuration option in future?
-    private static ThreadFactory threadFactory() {
-        return new NamingThreadFactory(null, TableOptions.class, "KafkaPublisherDriver", true);
     }
 
     private enum PredicateTrue implements Predicate<Object> {

@@ -10,20 +10,20 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class ClientHelper {
 
     public static Set<TopicPartition> assignAndSeek(KafkaConsumer<?, ?> client, Offsets options) {
-        final Map<TopicPartition, Offset> offsets = ((OffsetsBase) options).offsets(client);
-        if (offsets.isEmpty()) {
-            throw new IllegalArgumentException("Offsets is empty");
-        }
+        final Map<TopicPartition, Offset> offsets = validatedTopicPartitions(client, (OffsetsBase) options);
         client.assign(offsets.keySet());
         ClientHelper.seek(client, offsets);
         return offsets.keySet();
@@ -69,6 +69,7 @@ final class ClientHelper {
     }
 
     static Stream<TopicPartition> topicPartitions(KafkaConsumer<?, ?> client, String topic) {
+        // todo: error if empty?
         return client
                 .partitionsFor(topic)
                 .stream()
@@ -85,5 +86,34 @@ final class ClientHelper {
         } catch (Throwable t2) {
             t.addSuppressed(t2);
         }
+    }
+
+    private static Map<TopicPartition, Offset> validatedTopicPartitions(KafkaConsumer<?, ?> client,
+            OffsetsBase offsetsOptions) {
+        final Set<String> topics = offsetsOptions.topics().collect(Collectors.toSet());
+        // Note: it's probably best to take this per-topic approach as opposed to heavier hammer with client.listTopics
+        final Map<String, List<PartitionInfo>> partitionInfo = new LinkedHashMap<>(topics.size());
+        for (String topic : topics) {
+            final List<PartitionInfo> partitions = client.partitionsFor(topic);
+            if (partitions.isEmpty()) {
+                throw new IllegalArgumentException(String.format("Topic '%s' not found", topic));
+            }
+            partitionInfo.put(topic, partitions);
+        }
+        final Map<TopicPartition, Offset> offsets = offsetsOptions.offsets(partitionInfo);
+        if (offsets.isEmpty()) {
+            throw new IllegalArgumentException("Offsets is empty");
+        }
+        final Set<TopicPartition> existingTopicPartitions = partitionInfo.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .map(OffsetsBase::topicPartition)
+                .collect(Collectors.toSet());
+        for (TopicPartition topicPartition : offsets.keySet()) {
+            if (!existingTopicPartitions.contains(topicPartition)) {
+                throw new IllegalArgumentException(String.format("Topic partition '%s' not found", topicPartition));
+            }
+        }
+        return offsets;
     }
 }

@@ -9,9 +9,11 @@ import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
+import java.util.Map;
 
 public class Example {
 
@@ -38,7 +40,6 @@ public class Example {
 
     private static TableOptions<Void, String> homeassistantOptions() {
         return TableOptions.<Void, String>builder()
-                .recordOptions(ConsumerRecordOptions.v1())
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
                         // .putConfig("group.id", "homeassistant-test-group-2")
@@ -47,8 +48,12 @@ public class Example {
                         .valueDeserializer(new StringDeserializer())
                         .build())
                 // .offsets(Offsets.committed("homeassistant"))
+                .useOpinionatedRecordOptions(false)
+                .recordOptions(ConsumerRecordOptions.empty())
+                .receiveTimestamp(null)
                 .offsets(Offsets.timestamp("homeassistant", Duration.ofHours(4)))
-                .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
+                .filter(cr -> cr.value().startsWith("{\"entity_id\": \"sensor.windspeed\""))
+                .valueProcessor(ObjectProcessor.simple(Type.stringType()))
                 .tableType(TableType.append())
                 .build();
     }

@@ -4,6 +4,7 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.api.util.NameValidator;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableIntChunk;
@@ -15,10 +16,10 @@ import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.record.TimestampType;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,11 +40,11 @@ import static io.deephaven.kafka.KafkaTools.VALUE_BYTES_COLUMN_NAME_PROPERTY;
 @Immutable
 @BuildableStyle
 public abstract class ConsumerRecordOptions {
+    private static final ConsumerRecordOptions EMPTY_INSTANCE = builder().build();
 
     public static Builder builder() {
         return ImmutableConsumerRecordOptions.builder();
     }
-
 
     /**
      * The empty record options. Equivalent to {@code builder().build()}.
@@ -51,7 +52,7 @@ public abstract class ConsumerRecordOptions {
      * @return the empty record options
      */
     public static ConsumerRecordOptions empty() {
-        return builder().build();
+        return EMPTY_INSTANCE;
     }
 
     /**
@@ -106,14 +107,14 @@ public abstract class ConsumerRecordOptions {
      */
     public static ConsumerRecordOptions v2() {
         return builder()
-                .putFields(Field.TOPIC, "Topic")
-                .putFields(Field.PARTITION, "Partition")
-                .putFields(Field.OFFSET, "Offset")
-                .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
-                .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
-                .putFields(Field.TIMESTAMP, "Timestamp")
-                .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
-                .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
+                // .putFields(Field.TOPIC, "Topic")
+                .addField(Field.PARTITION)
+                .addField(Field.OFFSET)
+                // .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
+                // .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
+                .addField(Field.TIMESTAMP)
+                // .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
+                // .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
                 .build();
     }
 
@@ -124,16 +125,17 @@ public abstract class ConsumerRecordOptions {
      */
     public abstract Map<Field, String> fields();
 
-//    /**
-//     * Equivalent to {@code fields().values()}.
-//     *
-//     * @return the column names
-//     */
-//    public final Collection<String> columnNames() {
-//        return fields().values();
-//    }
-
     public interface Builder {
+
+        /**
+         * Adds the {@code field} with the recommended name.
+         *
+         * @param field the field
+         * @return the builder
+         */
+        default Builder addField(Field field) {
+            return putFields(field, field.recommendedName);
+        }
 
         Builder putFields(Field key, String value);
 
@@ -144,68 +146,77 @@ public abstract class ConsumerRecordOptions {
         ConsumerRecordOptions build();
     }
 
+    /**
+     * The fields.
+     */
     public enum Field {
         /**
          * The topic.
          *
          * @see ConsumerRecord#topic()
          */
-        TOPIC(Type.stringType()),
+        TOPIC("Topic", Type.stringType()),
 
         /**
          * The partition.
          *
          * @see ConsumerRecord#partition()
          */
-        PARTITION(Type.intType()),
+        PARTITION("Partition", Type.intType()),
 
         /**
          * The offset.
          *
          * @see ConsumerRecord#offset()
          */
-        OFFSET(Type.longType()),
+        OFFSET("Offset", Type.longType()),
 
         /**
          * The leader epoch.
          *
          * @see ConsumerRecordFunctions#leaderEpoch(ConsumerRecord)
          */
-        LEADER_EPOCH(Type.intType()),
+        LEADER_EPOCH("LeaderEpoch", Type.intType()),
 
         /**
          * The timestamp type.
          *
          * @see ConsumerRecord#timestampType()
          */
-        TIMESTAMP_TYPE(Type.ofCustom(TimestampType.class)),
+        TIMESTAMP_TYPE("TimestampType", Type.ofCustom(TimestampType.class)),
 
         /**
          * The timestamp.
          *
          * @see ConsumerRecordFunctions#timestampEpochNanos(ConsumerRecord)
          */
-        TIMESTAMP(Type.instantType()),
+        TIMESTAMP("Timestamp", Type.instantType()),
 
         /**
          * The serialized key size.
          *
          * @see ConsumerRecordFunctions#serializedKeySize(ConsumerRecord)
          */
-        SERIALIZED_KEY_SIZE(Type.intType()),
+        SERIALIZED_KEY_SIZE("KeySize", Type.intType()),
 
         /**
          * The serialized value size.
          *
          * @see ConsumerRecordFunctions#serializedValueSize(ConsumerRecord)
          */
-        SERIALIZED_VALUE_SIZE(Type.intType()),
+        SERIALIZED_VALUE_SIZE("ValueSize", Type.intType()),
         ;
 
+        private final String recommendedName;
         private final Type<?> type;
 
-        Field(Type<?> type) {
+        Field(String recommendedName, Type<?> type) {
+            this.recommendedName = Objects.requireNonNull(recommendedName);
             this.type = Objects.requireNonNull(type);
+        }
+
+        String recommendedName() {
+            return recommendedName;
         }
 
         Type<?> type() {
@@ -218,17 +229,19 @@ public abstract class ConsumerRecordOptions {
         return fields().keySet().stream().map(Field::type).collect(Collectors.toList());
     }
 
-    final <K, V> NamedObjectProcessor<ConsumerRecord<K, V>> namedObjectProcessor() {
-        return NamedObjectProcessor.of(processor(), columnNames());
+    @Check
+    final void checkColumnNames() {
+        for (String columnName : fields().values()) {
+            NameValidator.validateColumnName(columnName);
+        }
     }
 
+    final <K, V> NamedObjectProcessor<ConsumerRecord<K, V>> namedProcessor() {
+        return NamedObjectProcessor.of(processor(), fields().values());
+    }
 
     final <K, V> ObjectProcessor<ConsumerRecord<K, V>> processor() {
         return fields().isEmpty() ? ObjectProcessor.empty() : new ConsumerRecordOptionsProcessor<>();
-    }
-
-    final Collection<String> columnNames() {
-        return fields().values();
     }
 
     private boolean has(Field field) {
@@ -241,6 +254,7 @@ public abstract class ConsumerRecordOptions {
             return ConsumerRecordOptions.this.outputTypes();
         }
 
+        @SuppressWarnings("resource")
         @Override
         public void processAll(ObjectChunk<? extends ConsumerRecord<K, V>, ?> in, List<WritableChunk<?>> out) {
             int ix = 0;

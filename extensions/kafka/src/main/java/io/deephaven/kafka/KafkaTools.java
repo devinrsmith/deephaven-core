@@ -3,6 +3,7 @@
  */
 package io.deephaven.kafka;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Descriptors.Descriptor;
 import gnu.trove.map.hash.TIntLongHashMap;
@@ -43,6 +44,8 @@ import io.deephaven.engine.updategraph.UpdateSourceCombiner;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.json.ObjectProcessorJsonValue;
+import io.deephaven.json.ValueOptions;
 import io.deephaven.kafka.AvroImpl.AvroConsume;
 import io.deephaven.kafka.AvroImpl.AvroProduce;
 import io.deephaven.kafka.IgnoreImpl.IgnoreConsume;
@@ -102,6 +105,7 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.ShortDeserializer;
 import org.apache.kafka.common.serialization.ShortSerializer;
@@ -419,6 +423,17 @@ public class KafkaTools {
         public static KeyOrValueSpec jsonSpec(@NotNull final ColumnDefinition<?>[] columnDefinitions) {
             return jsonSpec(columnDefinitions, null, null);
         }
+
+        public static KeyOrValueSpec jsonSpec(ValueOptions options) {
+            // for demo
+            return jsonSpec(options, List.of("type", "symbol", "bid", "ask", "price", "size"));
+        }
+
+        public static KeyOrValueSpec jsonSpec(ValueOptions options, List<String> columnNames) {
+            final ObjectProcessorJsonValue processor = new ObjectProcessorJsonValue(new JsonFactory(), options);
+            return new KeyOrValueSpecObjectProcessorImpl<>(new ByteArrayDeserializer(), processor, columnNames);
+        }
+
 
         /**
          * Avro spec from an Avro schema.

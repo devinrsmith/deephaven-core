@@ -9,6 +9,7 @@ dependencies {
     api project(':engine-chunk')
 
     implementation project(':engine-time')
+    Classpaths.inheritImmutables(project)
 
     Classpaths.inheritJUnitPlatform(project)
     Classpaths.inheritAssertJ(project)

@@ -5,13 +5,11 @@ package io.deephaven.processor;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableDoubleChunk;
 import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Objects;

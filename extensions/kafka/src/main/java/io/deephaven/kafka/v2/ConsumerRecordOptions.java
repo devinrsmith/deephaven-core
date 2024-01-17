@@ -10,6 +10,7 @@ import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.configuration.Configuration;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -123,14 +124,14 @@ public abstract class ConsumerRecordOptions {
      */
     public abstract Map<Field, String> fields();
 
-    /**
-     * Equivalent to {@code fields().values()}.
-     *
-     * @return the column names
-     */
-    public final Collection<String> columnNames() {
-        return fields().values();
-    }
+//    /**
+//     * Equivalent to {@code fields().values()}.
+//     *
+//     * @return the column names
+//     */
+//    public final Collection<String> columnNames() {
+//        return fields().values();
+//    }
 
     public interface Builder {
 
@@ -217,8 +218,17 @@ public abstract class ConsumerRecordOptions {
         return fields().keySet().stream().map(Field::type).collect(Collectors.toList());
     }
 
+    final <K, V> NamedObjectProcessor<ConsumerRecord<K, V>> namedObjectProcessor() {
+        return NamedObjectProcessor.of(processor(), columnNames());
+    }
+
+
     final <K, V> ObjectProcessor<ConsumerRecord<K, V>> processor() {
         return fields().isEmpty() ? ObjectProcessor.empty() : new ConsumerRecordOptionsProcessor<>();
+    }
+
+    final Collection<String> columnNames() {
+        return fields().values();
     }
 
     private boolean has(Field field) {

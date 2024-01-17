@@ -3,6 +3,7 @@
  */
 package io.deephaven.kafka.v2;
 
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,16 +12,6 @@ import org.apache.kafka.common.header.Headers;
 import java.util.function.Function;
 
 public final class Processors {
-
-    // /**
-    // *
-    // * @return
-    // * @param <K>
-    // * @param <V>
-    // */
-    // public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> basic() {
-    // return basic(ConsumerRecordOptions.of());
-    // }
 
     /**
      * Creates an {@link ObjectProcessor} that contains the following output types and logic:
@@ -75,8 +66,8 @@ public final class Processors {
      *
      * @return the object processor
      */
-    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> basic(ConsumerRecordOptions options) {
-        return options.processor();
+    public static <K, V> NamedObjectProcessor<ConsumerRecord<K, V>> basic(ConsumerRecordOptions options) {
+        return options.namedObjectProcessor();
     }
 
     /**

@@ -28,6 +28,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
 import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
@@ -152,7 +153,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the record processor
      */
-    public abstract Optional<ObjectProcessor<ConsumerRecord<K, V>>> recordProcessor();
+    public abstract Optional<NamedObjectProcessor<ConsumerRecord<K, V>>> recordProcessor();
 
     /**
      * When present, the key processor is adapted into a {@link ConsumerRecord} processor via
@@ -160,7 +161,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the key processor
      */
-    public abstract Optional<ObjectProcessor<K>> keyProcessor();
+    public abstract Optional<NamedObjectProcessor<K>> keyProcessor();
 
     /**
      * When present, the value processor is adapted into a {@link ConsumerRecord} processor via
@@ -168,7 +169,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the value processor
      */
-    public abstract Optional<ObjectProcessor<V>> valueProcessor();
+    public abstract Optional<NamedObjectProcessor<V>> valueProcessor();
 
     public abstract List<String> columnNames();
 
@@ -233,17 +234,11 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> recordOptions(ConsumerRecordOptions recordOptions);
 
-        Builder<K, V> recordProcessor(ObjectProcessor<ConsumerRecord<K, V>> processor);
+        Builder<K, V> recordProcessor(NamedObjectProcessor<ConsumerRecord<K, V>> processor);
 
-        Builder<K, V> keyProcessor(ObjectProcessor<K> processor);
+        Builder<K, V> keyProcessor(NamedObjectProcessor<K> processor);
 
-        Builder<K, V> valueProcessor(ObjectProcessor<V> processor);
-
-        Builder<K, V> addColumnNames(String element);
-
-        Builder<K, V> addColumnNames(String... elements);
-
-        Builder<K, V> addAllColumnNames(Iterable<String> elements);
+        Builder<K, V> valueProcessor(NamedObjectProcessor<V> processor);
 
         Builder<K, V> tableType(TableType tableType);
 
@@ -262,29 +257,12 @@ public abstract class TableOptions<K, V> {
         TableOptions<K, V> build();
     }
 
-    // @Check
-    // final void checkSize() {
-    // if (recordProcessor().size() != columnNames().size()) {
-    // throw new IllegalArgumentException();
-    // }
-    // }
-
     @Check
     final void checkChunkSize() {
         if (chunkSize() < 1) {
             throw new IllegalArgumentException("chunkSize must be positive");
         }
     }
-
-    // @Check
-    // final void checkAutoCommit() {
-    // final String enableAutoCommit =
-    // clientOptions().config().getOrDefault(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-    // if (!"false".equalsIgnoreCase(enableAutoCommit)) {
-    // throw new IllegalArgumentException(String.format("Configuration `%s=%s` is unsupported",
-    // ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit));
-    // }
-    // }
 
     final Table table() {
         return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleTable);
@@ -295,40 +273,55 @@ public abstract class TableOptions<K, V> {
     }
 
     final TableDefinition tableDefinition() {
-        final List<String> extraNames = receiveTimestamp() == null
-                ? Collections.emptyList()
-                : Collections.singletonList(receiveTimestamp());
-
-        final List<String> columnNames = Stream.of(
-                extraNames,
-                recordOptions().columnNames(),
-                columnNames())
-                .flatMap(Collection::stream)
+        final List<String> columnNames = Stream.concat(
+                Stream.ofNullable(receiveTimestamp()),
+                names())
                 .collect(Collectors.toList());
-
-        final List<Type<?>> extraTypes = receiveTimestamp() == null
-                ? Collections.emptyList()
-                : Collections.singletonList(Type.instantType());
-
-        final List<Type<?>> outputTypes = Stream.of(
-                extraTypes,
-                recordOptions().processor().outputTypes(),
-                recordProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList),
-                keyProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList),
-                valueProcessor().map(ObjectProcessor::outputTypes).orElseGet(Collections::emptyList))
-                .flatMap(Collection::stream)
+        final List<Type<?>> outputTypes = Stream.concat(
+                receiveTimestamp() == null ? Stream.empty() : Stream.of(Type.instantType()),
+                types())
                 .collect(Collectors.toList());
-
         return TableDefinition.from(columnNames, outputTypes);
     }
 
+    private Stream<String> names() {
+        return Stream.of(
+                        recordOptions().columnNames(),
+                        recordProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()),
+                        keyProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()),
+                        valueProcessor().map(NamedObjectProcessor::columnNames).orElse(Collections.emptyList()))
+                .flatMap(Collection::stream);
+    }
+
+    private Stream<Type<?>> types() {
+        return Stream.of(
+                        recordOptions().processor().outputTypes(),
+                        recordProcessor()
+                                .map(NamedObjectProcessor::processor)
+                                .map(ObjectProcessor::outputTypes)
+                                .orElse(Collections.emptyList()),
+                        keyProcessor()
+                                .map(NamedObjectProcessor::processor)
+                                .map(ObjectProcessor::outputTypes)
+                                .orElse(Collections.emptyList()),
+                        valueProcessor()
+                                .map(NamedObjectProcessor::processor)
+                                .map(ObjectProcessor::outputTypes)
+                                .orElse(Collections.emptyList()))
+                .flatMap(Collection::stream);
+    }
+
     private ObjectProcessor<ConsumerRecord<K, V>> fullProcessor() {
-        final ObjectProcessor<ConsumerRecord<K, V>> basics = recordOptions().processor();
-        final ObjectProcessor<ConsumerRecord<K, V>> specifics = recordProcessor().orElseGet(ObjectProcessor::empty);
-        final ObjectProcessor<ConsumerRecord<K, V>> key =
-                Processors.key(keyProcessor().orElseGet(ObjectProcessor::empty));
-        final ObjectProcessor<ConsumerRecord<K, V>> value =
-                Processors.value(valueProcessor().orElseGet(ObjectProcessor::empty));
+        final ObjectProcessor<ConsumerRecord<K, V>> basics = recordOptions().<K, V>namedObjectProcessor().processor();
+        final ObjectProcessor<ConsumerRecord<K, V>> specifics = recordProcessor()
+                .map(NamedObjectProcessor::processor)
+                .orElseGet(ObjectProcessor::empty);
+        final ObjectProcessor<ConsumerRecord<K, V>> key = Processors.key(keyProcessor()
+                .map(NamedObjectProcessor::processor)
+                .orElseGet(ObjectProcessor::empty));
+        final ObjectProcessor<ConsumerRecord<K, V>> value = Processors.value(valueProcessor()
+                .map(NamedObjectProcessor::processor)
+                .orElseGet(ObjectProcessor::empty));
         return ObjectProcessor.combined(List.of(basics, specifics, key, value));
     }
 

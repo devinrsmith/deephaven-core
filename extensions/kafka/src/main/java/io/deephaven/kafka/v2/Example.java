@@ -6,6 +6,7 @@ package io.deephaven.kafka.v2;
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.kafka.KafkaTools.TableType;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -47,15 +48,13 @@ public class Example {
                         .build())
                 // .offsets(Offsets.committed("homeassistant"))
                 .offsets(Offsets.timestamp("homeassistant", Duration.ofHours(4)))
-                .valueProcessor(ObjectProcessor.simple(Type.stringType()))
-                .addColumnNames("Value")
+                .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
                 .tableType(TableType.append())
                 .build();
     }
 
     public static PartitionedTable netdataMetrics() {
         // {"labels":{"__name__":"netdata_system_cpu_percentage_average","chart":"system.cpu","dimension":"user","family":"cpu","instance":"felian"},"name":"netdata_system_cpu_percentage_average","timestamp":"2024-01-11T00:47:36Z","value":"17.371059810000002"}
-        final ConsumerRecordOptions basicOptions = ConsumerRecordOptions.latest();
         return Tablez.ofPartitioned(TableOptions.<Void, String>builder()
                 .clientOptions(ClientOptions.<Void, String>builder()
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
@@ -64,10 +63,7 @@ public class Example {
                 .offsets(Offsets.end("netdata-metrics"))
                 .filter(cr -> cr.value().startsWith(
                         "{\"labels\":{\"__name__\":\"netdata_system_cpu_percentage_average\",\"chart\":\"system.cpu\",\"dimension\":\"user"))
-                .recordOptions(basicOptions)
-                .valueProcessor(ObjectProcessor.simple(Type.stringType()))
-                .addAllColumnNames(basicOptions.columnNames())
-                .addColumnNames("Value")
+                .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
                 .tableType(TableType.append())
                 .build());
     }

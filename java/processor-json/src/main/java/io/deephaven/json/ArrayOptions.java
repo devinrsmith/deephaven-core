@@ -45,6 +45,11 @@ public abstract class ArrayOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return element().outputCount();
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         if (element().numColumns() != 1) {
             throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");

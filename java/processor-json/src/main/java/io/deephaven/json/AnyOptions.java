@@ -37,12 +37,17 @@ public abstract class AnyOptions extends ValueOptions {
     }
 
     @Override
-    Stream<Type<?>> outputTypes() {
+    final int outputCount() {
+        return 1;
+    }
+
+    @Override
+    final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.ofCustom(TreeNode.class));
     }
 
     @Override
-    ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), ToTreeNode.INSTANCE);
     }
 

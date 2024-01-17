@@ -81,6 +81,10 @@ public abstract class FloatOptions extends ValueOptions {
     @Nullable
     public abstract Float onMissing();
 
+    @Override
+    final int outputCount() {
+        return 1;
+    }
 
     @Override
     final Stream<Type<?>> outputTypes() {

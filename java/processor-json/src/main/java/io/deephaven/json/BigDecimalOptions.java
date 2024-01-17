@@ -65,6 +65,11 @@ public abstract class BigDecimalOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return 1;
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.ofCustom(BigDecimal.class));
     }

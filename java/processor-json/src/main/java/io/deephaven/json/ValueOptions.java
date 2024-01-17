@@ -31,6 +31,9 @@ public abstract class ValueOptions {
     }
 
     // todo: what about multivariate?
+
+    abstract int outputCount();
+
     abstract Stream<Type<?>> outputTypes();
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);

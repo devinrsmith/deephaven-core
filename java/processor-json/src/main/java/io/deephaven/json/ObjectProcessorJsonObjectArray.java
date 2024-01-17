@@ -30,6 +30,11 @@ public final class ObjectProcessorJsonObjectArray implements ObjectProcessor<byt
     }
 
     @Override
+    public int size() {
+        return opts.outputCount();
+    }
+
+    @Override
     public List<Type<?>> outputTypes() {
         return opts.outputTypes().collect(Collectors.toList());
     }

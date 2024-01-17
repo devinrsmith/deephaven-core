@@ -85,6 +85,11 @@ public abstract class SkipOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return 0;
+    }
+
+    @Override
     Stream<Type<?>> outputTypes() {
         return Stream.empty();
     }

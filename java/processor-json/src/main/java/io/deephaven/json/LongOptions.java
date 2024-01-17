@@ -128,6 +128,11 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return 1;
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.longType());
     }

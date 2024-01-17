@@ -69,7 +69,13 @@ public abstract class TypedObjectOptions extends ValueOptions {
     }
 
     @Override
-    Stream<Type<?>> outputTypes() {
+    final int outputCount() {
+        return 1 + sharedFields().values().stream().mapToInt(ValueOptions::outputCount).sum()
+                + objects().values().stream().mapToInt(ValueOptions::outputCount).sum();
+    }
+
+    @Override
+    final Stream<Type<?>> outputTypes() {
         return Stream.concat(
                 Stream.of(Type.stringType()),
                 Stream.concat(
@@ -78,7 +84,7 @@ public abstract class TypedObjectOptions extends ValueOptions {
     }
 
     @Override
-    ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         final WritableObjectChunk<String, ?> typeOut = out.get(0).asWritableObjectChunk();
         final List<WritableChunk<?>> sharedFields = out.subList(1, 1 + sharedFields().size());
         final Map<String, Processor> processors = new LinkedHashMap<>(objects().size());

@@ -26,6 +26,11 @@ public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
     }
 
     @Override
+    public int size() {
+        return opts.outputCount();
+    }
+
+    @Override
     public List<Type<?>> outputTypes() {
         return opts.outputTypes().collect(Collectors.toList());
     }

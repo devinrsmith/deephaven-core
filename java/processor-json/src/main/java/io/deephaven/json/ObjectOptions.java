@@ -121,6 +121,11 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return fields().values().stream().mapToInt(ValueOptions::outputCount).sum();
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return fields().values().stream().flatMap(ValueOptions::outputTypes);
     }

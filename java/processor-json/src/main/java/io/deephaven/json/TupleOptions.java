@@ -61,6 +61,11 @@ public abstract class TupleOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return values().stream().mapToInt(ValueOptions::outputCount).sum();
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return values().stream().flatMap(ValueOptions::outputTypes);
     }

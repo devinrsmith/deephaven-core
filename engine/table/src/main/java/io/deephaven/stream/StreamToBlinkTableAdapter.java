@@ -437,6 +437,9 @@ public class StreamToBlinkTableAdapter
      */
     @Override
     public final void accept(@NotNull Collection<WritableChunk<Values>[]> data) {
+        if (data.isEmpty()) {
+            return;
+        }
         if (!alive.get()) {
             // If we'll never deliver these chunks, dispose of them immediately.
             SafeCloseable.closeAll(data.stream().flatMap(Stream::of));

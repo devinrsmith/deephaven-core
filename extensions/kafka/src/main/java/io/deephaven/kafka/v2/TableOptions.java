@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The options for constructing a {@link Table} or {@link PartitionedTable} from a Kafka stream.
+ * The options for constructing a {@link Table} or {@link PartitionedTable} from a Kafka stream source.
  *
  * @param <K> the Kafka stream key type
  * @param <V> the Kafka stream value type

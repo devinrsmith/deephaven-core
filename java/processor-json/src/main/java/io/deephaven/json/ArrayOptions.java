@@ -50,6 +50,11 @@ public abstract class ArrayOptions extends ValueOptions {
     }
 
     @Override
+    final Stream<List<String>> paths() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         if (element().numColumns() != 1) {
             throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");

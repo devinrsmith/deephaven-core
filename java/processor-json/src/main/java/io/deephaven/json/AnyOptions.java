@@ -42,6 +42,11 @@ public abstract class AnyOptions extends ValueOptions {
     }
 
     @Override
+    final Stream<List<String>> paths() {
+        return Stream.of(List.of());
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.ofCustom(TreeNode.class));
     }

@@ -8,13 +8,13 @@ import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.qst.type.Type;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.deephaven.json.Helpers.assertCurrentToken;
@@ -63,6 +63,19 @@ public abstract class TupleOptions extends ValueOptions {
     @Override
     final int outputCount() {
         return values().stream().mapToInt(ValueOptions::outputCount).sum();
+    }
+
+    @Override
+    final Stream<List<String>> paths() {
+        // todo, give user naming option?
+        final List<Stream<List<String>>> prefixed = new ArrayList<>();
+        int i = 0;
+        for (ValueOptions value : values()) {
+            final int ix = i;
+            prefixed.add(value.paths().map(x -> prefixWith("tuple_" + ix, x)));
+            ++i;
+        }
+        return prefixed.stream().flatMap(Function.identity());
     }
 
     @Override

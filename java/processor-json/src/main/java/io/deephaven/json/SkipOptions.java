@@ -90,12 +90,17 @@ public abstract class SkipOptions extends ValueOptions {
     }
 
     @Override
-    Stream<Type<?>> outputTypes() {
+    final Stream<List<String>> paths() {
         return Stream.empty();
     }
 
     @Override
-    ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+    final Stream<Type<?>> outputTypes() {
+        return Stream.empty();
+    }
+
+    @Override
+    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new Impl();
     }
 

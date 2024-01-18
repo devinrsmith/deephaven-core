@@ -12,6 +12,7 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.deephaven.json.Helpers.assertCurrentToken;
@@ -123,6 +125,11 @@ public abstract class ObjectOptions extends ValueOptions {
     @Override
     final int outputCount() {
         return fields().values().stream().mapToInt(ValueOptions::outputCount).sum();
+    }
+
+    @Override
+    final Stream<List<String>> paths() {
+        return prefixWithKeys(fields());
     }
 
     @Override

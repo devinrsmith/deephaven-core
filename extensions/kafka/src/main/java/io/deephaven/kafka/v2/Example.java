@@ -91,7 +91,7 @@ public class Example {
                 .valueProcessor(new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
                         .putFields("state", DoubleOptions.builder().allowString(true).build())
                         .putFields("last_changed", InstantOptions.standard())
-                        .build()))
+                        .build()).named())
                 .tableType(TableType.append())
                 .build();
     }

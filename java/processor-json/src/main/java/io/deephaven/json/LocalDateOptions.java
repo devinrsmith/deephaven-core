@@ -66,6 +66,11 @@ public abstract class LocalDateOptions extends ValueOptions {
     }
 
     @Override
+    final Stream<List<String>> paths() {
+        return Stream.of(List.of());
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.ofCustom(LocalDate.class));
     }

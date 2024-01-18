@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 
@@ -17,12 +18,24 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
+
     private final JsonFactory jsonFactory;
     private final ValueOptions opts;
 
     public ObjectProcessorJsonValue(JsonFactory jsonFactory, ValueOptions opts) {
         this.jsonFactory = Objects.requireNonNull(jsonFactory);
         this.opts = Objects.requireNonNull(opts);
+    }
+
+    public NamedObjectProcessor<byte[]> named() {
+        // todo: on singular / empty path
+        return NamedObjectProcessor.of(this,
+                opts.paths().map(ObjectProcessorJsonValue::toColumnName).collect(Collectors.toList()));
+    }
+
+    private static String toColumnName(List<String> path) {
+        // todo: allow user to configure
+        return String.join("_", path);
     }
 
     @Override

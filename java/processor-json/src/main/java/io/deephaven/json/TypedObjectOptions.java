@@ -75,6 +75,15 @@ public abstract class TypedObjectOptions extends ValueOptions {
     }
 
     @Override
+    final Stream<List<String>> paths() {
+        return Stream.concat(
+                Stream.of(List.of(typeFieldName())),
+                Stream.concat(
+                        prefixWithKeys(sharedFields()),
+                        prefixWithKeys(objects())));
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.concat(
                 Stream.of(Type.stringType()),

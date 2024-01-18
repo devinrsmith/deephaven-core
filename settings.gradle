@@ -254,6 +254,10 @@ project(':extensions-source-support').projectDir = file('extensions/source-suppo
 include(':extensions-protobuf')
 project(':extensions-protobuf').projectDir = file('extensions/protobuf')
 
+include(':extensions-websocket-source-connector')
+project(':extensions-websocket-source-connector').projectDir = file('extensions/websocket-source-connector')
+
+
 include(':plugin')
 
 include(':plugin-dagger')

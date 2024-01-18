@@ -156,7 +156,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the offsets
      */
-    public abstract Offsets offsets();
+    public abstract List<Offsets> offsets();
 
     /**
      * The {@link ConsumerRecord} filter. The filtering happens before processing. By default, is equivalent to
@@ -309,12 +309,6 @@ public abstract class TableOptions<K, V> {
 
     public abstract Optional<ConsumerLoopCallback> callback();
 
-    @Lazy
-    String randomId() {
-        // Internal use only - default for name() and client.id.
-        return UUID.randomUUID().toString();
-    }
-
     public interface Builder<K, V> {
         Builder<K, V> name(String name);
 
@@ -322,7 +316,11 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> opinionatedClientOptions(OpinionatedClientOptions opinionatedClientOptions);
 
-        Builder<K, V> offsets(Offsets offsets);
+        Builder<K, V> addOffsets(Offsets element);
+
+        Builder<K, V> addOffsets(Offsets... elements);
+
+        Builder<K, V> addAllOffsets(Iterable<? extends Offsets> elements);
 
         Builder<K, V> filter(Predicate<ConsumerRecord<K, V>> filter);
 
@@ -363,6 +361,12 @@ public abstract class TableOptions<K, V> {
         Builder<K, V> receiveTimestamp(String receiveTimestamp);
 
         TableOptions<K, V> build();
+    }
+
+    @Lazy
+    String randomId() {
+        // Internal use only - default for name() and client.id.
+        return UUID.randomUUID().toString();
     }
 
     @Derived
@@ -407,6 +411,13 @@ public abstract class TableOptions<K, V> {
     final void checkOpinionatedRecordOptions() {
         if (!(opinionatedRecordOptions() instanceof RecordOpts)) {
             throw new IllegalArgumentException("Unsupported");
+        }
+    }
+
+    @Check
+    final void checkOffsets() {
+        if (offsets().isEmpty()) {
+            throw new IllegalArgumentException("Offsets is empty");
         }
     }
 
@@ -524,9 +535,6 @@ public abstract class TableOptions<K, V> {
                 extraAttributes);
     }
 
-    private static final Comparator<TopicPartition> TOPIC_PARTITION_COMPARATOR =
-            Comparator.comparing(TopicPartition::topic).thenComparingInt(TopicPartition::partition);
-
     private static final ColumnDefinition<String> TOPIC_COLUMN = ColumnDefinition.ofString("Topic").withPartitioning();
     private static final ColumnDefinition<Integer> PARTITION_COLUMN =
             ColumnDefinition.ofInt("Partition").withPartitioning();
@@ -536,7 +544,7 @@ public abstract class TableOptions<K, V> {
 
     private PartitionedTable partitionedTable(Collection<? extends Publisher> publishers) {
         final List<Publisher> sorted = new ArrayList<>(publishers);
-        sorted.sort(Comparator.comparing(TableOptions::singleTopicPartition, TOPIC_PARTITION_COMPARATOR));
+        sorted.sort(Comparator.comparing(TableOptions::singleTopicPartition, ClientHelper.TOPIC_PARTITION_COMPARATOR));
         final int numPartitions = sorted.size();
         final String[] topics = new String[numPartitions];
         final int[] partitions = new int[numPartitions];
@@ -593,7 +601,7 @@ public abstract class TableOptions<K, V> {
         return PublishersOptions.<K, V>builder()
                 .clientOptions(clientOptionsToUse())
                 .partitioning(partitioning)
-                .offsets(offsets())
+                .offsets(Offsets.of(offsets()))
                 .filter(filter())
                 .processor(consumerRecordObjectProcessor())
                 .chunkSize(chunkSize())

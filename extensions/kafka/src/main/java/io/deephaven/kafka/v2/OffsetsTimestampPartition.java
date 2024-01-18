@@ -4,35 +4,33 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.SimpleStyle;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 @Immutable
 @SimpleStyle
-abstract class OffsetsExplicitImpl extends OffsetsBase {
+abstract class OffsetsTimestampPartition extends OffsetsBase {
 
     @Parameter
-    public abstract Map<TopicPartition, Offset> topicPartitionOffsets();
+    public abstract TopicPartition topicPartition();
 
-    @Override
-    final Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client) {
-        return topicPartitionOffsets();
-    }
+    @Parameter
+    public abstract Instant since();
 
     @Override
     final Stream<String> topics() {
-        return topicPartitionOffsets().keySet().stream().map(TopicPartition::topic);
+        return Stream.of(topicPartition().topic());
     }
 
     @Override
-    final Map<TopicPartition, Offset> offsets(Map<String, List<PartitionInfo>> info) {
-        return topicPartitionOffsets();
+    final Map<TopicPartition, OffsetInternal> offsets(Map<String, List<PartitionInfo>> info) {
+        return Map.of(topicPartition(), OffsetInternal.timestamp(since()));
     }
 }

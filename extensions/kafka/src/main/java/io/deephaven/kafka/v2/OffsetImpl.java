@@ -3,6 +3,6 @@
  */
 package io.deephaven.kafka.v2;
 
-enum OffsetImpl implements Offset {
-    BEGINNING, END
+enum OffsetImpl implements OffsetInternal {
+    BEGINNING, END, COMMITTED
 }

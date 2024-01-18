@@ -12,9 +12,9 @@ import java.time.Instant;
 
 @Immutable
 @SimpleStyle
-abstract class OffsetTimestamp implements Offset {
+abstract class OffsetTimestamp implements OffsetInternal {
 
-    private static final Duration ROUND_UP_MILLI = Duration.ofMillis(1).minusNanos(1);
+    private static final Duration ONE_MILLI_MINUS_NANO = Duration.ofMillis(1).minusNanos(1);
 
     @Parameter
     public abstract Instant since();
@@ -25,6 +25,7 @@ abstract class OffsetTimestamp implements Offset {
         // For example, if the user requests timestamp "2020-01-01T01:02:03.456000001Z", we can't just use #toEpochMilli
         // since that will just drop the sub-milli precision.
         // org.apache.kafka.clients.consumer.KafkaConsumer#offsetsForTimes
-        return since().plus(ROUND_UP_MILLI).toEpochMilli();
+        return since().plus(ONE_MILLI_MINUS_NANO).toEpochMilli();
     }
 }
+

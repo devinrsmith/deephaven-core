@@ -16,7 +16,41 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
+/**
+ * A collection of {@link }
+ */
 public interface Offsets {
+
+    /**
+     * The topic-partition offset.
+     *
+     * @param topicPartition the topic partition
+     * @param offset the offset
+     * @return the topic-partition offset
+     */
+    static Offsets of(TopicPartition topicPartition, long offset) {
+        return ImmutableOffsetsExplicitPartition.of(topicPartition, offset);
+    }
+
+    /**
+     * The combined {@code offsets}.
+     *
+     * @param offsets the offsets
+     * @return the offsets
+     */
+    static Offsets of(Offsets... offsets) {
+        return of(Arrays.asList(offsets));
+    }
+
+    /**
+     * The combined {@code offsets}.
+     *
+     * @param offsets the offsets
+     * @return the offsets
+     */
+    static Offsets of(List<Offsets> offsets) {
+        return ImmutableOffsetsList.of(offsets);
+    }
 
     /**
      * The beginning offsets for all partitions of {@code topic}.
@@ -27,6 +61,17 @@ public interface Offsets {
      */
     static Offsets beginning(String topic) {
         return ImmutableOffsetsBeginning.of(topic);
+    }
+
+    /**
+     * The beginning offset for {@code topicPartition}.
+     *
+     * @param topicPartition the topic partition
+     * @return the beginning offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#beginningOffsets(Collection)
+     */
+    static Offsets beginning(TopicPartition topicPartition) {
+        return ImmutableOffsetsBeginningPartition.of(topicPartition);
     }
 
     /**
@@ -41,6 +86,17 @@ public interface Offsets {
     }
 
     /**
+     * The end offset for {@code topicPartition}
+     *
+     * @param topicPartition the topic partition
+     * @return the end offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#endOffsets(Collection)
+     */
+    static Offsets end(TopicPartition topicPartition) {
+        return ImmutableOffsetsEndPartition.of(topicPartition);
+    }
+
+    /**
      * The committed offset for all partitions of {@code topic} (whether the commits happened by this process or
      * another).
      *
@@ -50,6 +106,17 @@ public interface Offsets {
      */
     static Offsets committed(String topic) {
         return ImmutableOffsetsCommitted.of(topic);
+    }
+
+    /**
+     * The committed offset for {@code topicPartition} (whether the commits happened by this process or another).
+     *
+     * @param topicPartition the topic partition
+     * @return the committed offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#committed(Set)
+     */
+    static Offsets committed(TopicPartition topicPartition) {
+        return ImmutableOffsetsCommittedPartition.of(topicPartition);
     }
 
     /**
@@ -66,16 +133,41 @@ public interface Offsets {
     }
 
     /**
+     * The earliest offset whose timestamp is greater than or equal to {@code since} for {@code topicPartition}.
+     *
+     * @param topicPartition the topic partition
+     * @param since the timestamp
+     * @return the timestamp offset
+     * @see org.apache.kafka.clients.consumer.KafkaConsumer#offsetsForTimes(Map)
+     */
+    static Offsets timestamp(TopicPartition topicPartition, Instant since) {
+        return ImmutableOffsetsTimestampPartition.of(topicPartition, since);
+    }
+
+    /**
      * The earliest offset whose timestamp is at most {@code age} old for all partitions of {@code topic}. Equivalent to
      * {@code timestamp(topic, Clock.system().instantMillis().minus(ago))}.
      *
      * @param topic the topic
      * @param ago the age
-     * @return the timestamp offset
+     * @return the timestamp offsets
      * @see #timestamp(String, Instant)
      */
     static Offsets timestamp(String topic, Duration ago) {
         return timestamp(topic, Clock.system().instantMillis().minus(ago));
+    }
+
+    /**
+     * The earliest offset whose timestamp is at most {@code age} old for {@code topicPartition}. Equivalent to
+     * {@code timestamp(topicPartition, Clock.system().instantMillis().minus(ago))}.
+     *
+     * @param topicPartition the topic partition
+     * @param ago the age
+     * @return the timestamp offset
+     * @see #timestamp(String, Instant)
+     */
+    static Offsets timestamp(TopicPartition topicPartition, Duration ago) {
+        return timestamp(topicPartition, Clock.system().instantMillis().minus(ago));
     }
 
     /**
@@ -100,35 +192,5 @@ public interface Offsets {
      */
     static Offsets filter(Offsets offsets, Predicate<TopicPartition> topicPartitionFilter) {
         return ImmutableOffsetsFiltered.of(offsets, topicPartitionFilter);
-    }
-
-    /**
-     * The specific offsets for each topic partition in {@code offsets}.
-     *
-     * @param offsets the offsets
-     * @return the offsets
-     */
-    static Offsets of(Map<TopicPartition, Offset> offsets) {
-        return ImmutableOffsetsExplicitImpl.of(offsets);
-    }
-
-    /**
-     * The combined {@code offsets}.
-     *
-     * @param offsets the offsets
-     * @return the offsets
-     */
-    static Offsets of(Offsets... offsets) {
-        return of(Arrays.asList(offsets));
-    }
-
-    /**
-     * The combined {@code offsets}.
-     *
-     * @param offsets the offsets
-     * @return the offsets
-     */
-    static Offsets of(List<Offsets> offsets) {
-        return ImmutableOffsetsList.of(offsets);
     }
 }

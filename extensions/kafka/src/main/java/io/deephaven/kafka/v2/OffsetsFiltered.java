@@ -4,7 +4,6 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.SimpleStyle;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.immutables.value.Value.Immutable;
@@ -28,23 +27,14 @@ abstract class OffsetsFiltered extends OffsetsBase {
     public abstract Predicate<TopicPartition> filter();
 
     @Override
-    final Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client) {
-        return ((OffsetsBase) offsets())
-                .offsets(client)
-                .entrySet()
-                .stream()
-                .filter(this::test)
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-    }
-
-    @Override
     final Stream<String> topics() {
-        // Can't apply the filter b/c we can't materialize TopicPartitions
+        // Can't apply the filter b/c we can't materialize TopicPartitions, so we have to assume all topics are a
+        // potential
         return ((OffsetsBase) offsets()).topics();
     }
 
     @Override
-    final Map<TopicPartition, Offset> offsets(Map<String, List<PartitionInfo>> info) {
+    final Map<TopicPartition, OffsetInternal> offsets(Map<String, List<PartitionInfo>> info) {
         return ((OffsetsBase) offsets())
                 .offsets(info)
                 .entrySet().stream()
@@ -52,7 +42,7 @@ abstract class OffsetsFiltered extends OffsetsBase {
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
-    private boolean test(Entry<TopicPartition, Offset> e) {
+    private boolean test(Entry<TopicPartition, OffsetInternal> e) {
         return filter().test(e.getKey());
     }
 }

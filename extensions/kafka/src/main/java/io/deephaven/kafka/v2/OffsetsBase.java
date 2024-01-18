@@ -3,7 +3,6 @@
  */
 package io.deephaven.kafka.v2;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
@@ -17,10 +16,7 @@ abstract class OffsetsBase implements Offsets {
         return new TopicPartition(p.topic(), p.partition());
     }
 
-    @Deprecated
-    abstract Map<TopicPartition, Offset> offsets(KafkaConsumer<?, ?> client);
-
     abstract Stream<String> topics();
 
-    abstract Map<TopicPartition, Offset> offsets(Map<String, List<PartitionInfo>> info);
+    abstract Map<TopicPartition, OffsetInternal> offsets(Map<String, List<PartitionInfo>> info);
 }

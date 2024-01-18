@@ -7,10 +7,10 @@ import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-import javax.annotation.Nullable;
-
 @Immutable
 @SimpleStyle
-abstract class OffsetCommitted implements Offset {
+abstract class OffsetExplicit implements OffsetInternal {
 
+    @Parameter
+    public abstract long offset();
 }

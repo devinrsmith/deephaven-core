@@ -9,32 +9,27 @@ import org.apache.kafka.common.TopicPartition;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Immutable
 @SimpleStyle
-abstract class OffsetsList extends OffsetsBase {
+abstract class OffsetsExplicitPartition extends OffsetsBase {
 
     @Parameter
-    public abstract List<Offsets> offsets();
+    public abstract TopicPartition topicPartition();
+
+    @Parameter
+    public abstract long offset();
 
     @Override
     final Stream<String> topics() {
-        return offsets().stream().map(OffsetsBase.class::cast).flatMap(OffsetsBase::topics);
+        return Stream.of(topicPartition().topic());
     }
 
     @Override
     final Map<TopicPartition, OffsetInternal> offsets(Map<String, List<PartitionInfo>> info) {
-        return offsets().stream()
-                .map(OffsetsBase.class::cast)
-                .map(offsetsBase -> offsetsBase.offsets(info))
-                .map(Map::entrySet)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        return Map.of(topicPartition(), OffsetInternal.of(offset()));
     }
 }

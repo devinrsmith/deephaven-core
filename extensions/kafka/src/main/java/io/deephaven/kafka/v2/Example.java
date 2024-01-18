@@ -18,14 +18,11 @@ import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
-import java.util.Map;
 
 public class Example {
 
@@ -86,7 +83,7 @@ public class Example {
                 .recordOptions(ConsumerRecordOptions.builder().addField(Field.OFFSET).build())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
                 // .receiveTimestamp(null)
-                .offsets(Offsets.beginning("homeassistant"))
+                .addOffsets(Offsets.beginning("homeassistant"))
                 .filter(Example::isWindspeed)
                 .valueProcessor(new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
                         .putFields("state", DoubleOptions.builder().allowString(true).build())
@@ -102,7 +99,7 @@ public class Example {
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
                         .valueDeserializer(new ByteArrayDeserializer())
                         .build())
-                .offsets(Offsets.beginning("netdata-metrics"))
+                .addOffsets(Offsets.beginning("netdata-metrics"))
                 .filter(Example::isCpu)
                 .valueProcessor(new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
                         .putFields("labels", ObjectOptions.builder()
@@ -125,7 +122,7 @@ public class Example {
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
                         .valueDeserializer(new StringDeserializer())
                         .build())
-                .offsets(Offsets.end("netdata-metrics"))
+                .addOffsets(Offsets.end("netdata-metrics"))
                 .filter(cr -> cr.value().startsWith(
                         "{\"labels\":{\"__name__\":\"netdata_system_cpu_percentage_average\",\"chart\":\"system.cpu\",\"dimension\":\"user"))
                 .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))

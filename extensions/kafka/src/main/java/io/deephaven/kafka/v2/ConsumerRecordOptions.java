@@ -16,6 +16,7 @@ import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.record.TimestampType;
+import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
@@ -41,6 +42,23 @@ import static io.deephaven.kafka.KafkaTools.VALUE_BYTES_COLUMN_NAME_PROPERTY;
 @BuildableStyle
 public abstract class ConsumerRecordOptions {
     private static final ConsumerRecordOptions EMPTY_INSTANCE = builder().build();
+    private static final ConsumerRecordOptions ALL_INSTANCE;
+    private static final ConsumerRecordOptions V2_INSTANCE;
+
+    static {
+        {
+            final Builder builder = builder();
+            for (Field field : Field.values()) {
+                builder.addField(field);
+            }
+            ALL_INSTANCE = builder.build();
+        }
+        V2_INSTANCE = builder()
+                .addField(Field.PARTITION)
+                .addField(Field.OFFSET)
+                .addField(Field.TIMESTAMP)
+                .build();
+    }
 
     public static Builder builder() {
         return ImmutableConsumerRecordOptions.builder();
@@ -56,6 +74,15 @@ public abstract class ConsumerRecordOptions {
     }
 
     /**
+     * The all record options. Contains all recommended names from {@link Field}.
+     *
+     * @return the all record options
+     */
+    public static ConsumerRecordOptions all() {
+        return ALL_INSTANCE;
+    }
+
+    /**
      * The latest record options. Currently, equivalent to {@link #v2()}; this may change from release to release.
      *
      * @return the latest record options
@@ -65,9 +92,18 @@ public abstract class ConsumerRecordOptions {
     }
 
     /**
-     * Attempts to mimic the options for v1...
-     * 
-     * @return
+     * Attempts to mimic the classic record options. Uses the configuration value
+     * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_PROPERTY} or default
+     * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_DEFAULT} for {@link Field#PARTITION}; the
+     * configuration value {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_PROPERTY} or default
+     * {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_DEFAULT} for {@link Field#OFFSET}; the configuration
+     * value {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_PROPERTY} or default
+     * {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_DEFAULT} for {@link Field#TIMESTAMP}; the
+     * configuration value {@value io.deephaven.kafka.KafkaTools#KEY_BYTES_COLUMN_NAME_PROPERTY} for
+     * {@link Field#KEY_SIZE} if present; and the configuration value
+     * {@value io.deephaven.kafka.KafkaTools#VALUE_BYTES_COLUMN_NAME_PROPERTY} for {@link Field#VALUE_SIZE} if present.
+     *
+     * @return the classic record options
      */
     public static ConsumerRecordOptions v1() {
         final Configuration config = Configuration.getInstance();
@@ -79,10 +115,10 @@ public abstract class ConsumerRecordOptions {
                 .putFields(Field.TIMESTAMP,
                         config.getStringWithDefault(TIMESTAMP_COLUMN_NAME_PROPERTY, TIMESTAMP_COLUMN_NAME_DEFAULT));
         if (config.hasProperty(KEY_BYTES_COLUMN_NAME_PROPERTY)) {
-            builder.putFields(Field.SERIALIZED_KEY_SIZE, config.getProperty(KEY_BYTES_COLUMN_NAME_PROPERTY));
+            builder.putFields(Field.KEY_SIZE, config.getProperty(KEY_BYTES_COLUMN_NAME_PROPERTY));
         }
         if (config.hasProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY)) {
-            builder.putFields(Field.SERIALIZED_VALUE_SIZE, config.getProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY));
+            builder.putFields(Field.VALUE_SIZE, config.getProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY));
         }
         return builder.build();
     }
@@ -92,30 +128,16 @@ public abstract class ConsumerRecordOptions {
      *
      * <pre>
      * builder()
-     *         .putFields(Field.TOPIC, "Topic")
-     *         .putFields(Field.PARTITION, "Partition")
-     *         .putFields(Field.OFFSET, "Offset")
-     *         .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
-     *         .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
-     *         .putFields(Field.TIMESTAMP, "Timestamp")
-     *         .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
-     *         .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
+     *         .addField(Field.PARTITION)
+     *         .addField(Field.OFFSET)
+     *         .addField(Field.TIMESTAMP)
      *         .build()
      * </pre>
      *
      * @return the v2 options
      */
     public static ConsumerRecordOptions v2() {
-        return builder()
-                // .putFields(Field.TOPIC, "Topic")
-                .addField(Field.PARTITION)
-                .addField(Field.OFFSET)
-                // .putFields(Field.LEADER_EPOCH, "LeaderEpoch")
-                // .putFields(Field.TIMESTAMP_TYPE, "TimestampType")
-                .addField(Field.TIMESTAMP)
-                // .putFields(Field.SERIALIZED_KEY_SIZE, "SerializedKeySize")
-                // .putFields(Field.SERIALIZED_VALUE_SIZE, "SerializedValueSize")
-                .build();
+        return V2_INSTANCE;
     }
 
     /**
@@ -197,14 +219,14 @@ public abstract class ConsumerRecordOptions {
          *
          * @see ConsumerRecordFunctions#serializedKeySize(ConsumerRecord)
          */
-        SERIALIZED_KEY_SIZE("KeySize", Type.intType()),
+        KEY_SIZE("KeySize", Type.intType()),
 
         /**
          * The serialized value size.
          *
          * @see ConsumerRecordFunctions#serializedValueSize(ConsumerRecord)
          */
-        SERIALIZED_VALUE_SIZE("ValueSize", Type.intType()),
+        VALUE_SIZE("ValueSize", Type.intType()),
         ;
 
         private final String recommendedName;
@@ -225,6 +247,7 @@ public abstract class ConsumerRecordOptions {
     }
 
     @Derived
+    @Auxiliary
     List<Type<?>> outputTypes() {
         return fields().keySet().stream().map(Field::type).collect(Collectors.toList());
     }
@@ -249,6 +272,12 @@ public abstract class ConsumerRecordOptions {
     }
 
     private class ConsumerRecordOptionsProcessor<K, V> implements ObjectProcessor<ConsumerRecord<K, V>> {
+
+        @Override
+        public int size() {
+            return ConsumerRecordOptions.this.fields().size();
+        }
+
         @Override
         public List<Type<?>> outputTypes() {
             return ConsumerRecordOptions.this.outputTypes();
@@ -276,10 +305,10 @@ public abstract class ConsumerRecordOptions {
             final WritableLongChunk<?> timestamps = has(Field.TIMESTAMP)
                     ? out.get(ix++).asWritableLongChunk()
                     : null;
-            final WritableIntChunk<?> serializedKeySize = has(Field.SERIALIZED_KEY_SIZE)
+            final WritableIntChunk<?> serializedKeySize = has(Field.KEY_SIZE)
                     ? out.get(ix++).asWritableIntChunk()
                     : null;
-            final WritableIntChunk<?> serializedValueSize = has(Field.SERIALIZED_VALUE_SIZE)
+            final WritableIntChunk<?> serializedValueSize = has(Field.VALUE_SIZE)
                     ? out.get(ix++).asWritableIntChunk()
                     : null;
             for (int i = 0; i < in.size(); ++i) {

@@ -13,6 +13,7 @@ import io.deephaven.json.ObjectProcessorJsonValue;
 import io.deephaven.json.StringOptions;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
+import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
@@ -82,8 +83,8 @@ public class Example {
                         .putConfig("bootstrap.servers", "192.168.52.16:9092,192.168.52.17:9092,192.168.52.18:9092")
                         .valueDeserializer(new ByteArrayDeserializer())
                         .build())
-                .useOpinionatedRecordOptions(false)
                 .recordOptions(ConsumerRecordOptions.builder().addField(Field.OFFSET).build())
+                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
                 // .receiveTimestamp(null)
                 .offsets(Offsets.beginning("homeassistant"))
                 .filter(Example::isWindspeed)
@@ -111,8 +112,8 @@ public class Example {
                         .putFields("value", DoubleOptions.builder().allowString(true).build())
                         .build()))
                 .receiveTimestamp(null)
-                .useOpinionatedRecordOptions(false)
                 .recordOptions(ConsumerRecordOptions.empty())
+                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
                 .tableType(TableType.append())
                 .build();
     }

@@ -84,6 +84,11 @@ public abstract class InstantOptions extends ValueOptions {
     }
 
     @Override
+    final int outputCount() {
+        return 1;
+    }
+
+    @Override
     final Stream<Type<?>> outputTypes() {
         return Stream.of(Type.instantType());
     }

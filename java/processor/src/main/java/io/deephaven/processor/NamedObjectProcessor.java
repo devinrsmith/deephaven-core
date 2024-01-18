@@ -8,6 +8,8 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Immutable
 @BuildableStyle
@@ -23,6 +25,14 @@ public abstract class NamedObjectProcessor<T> {
 
     public static <T> NamedObjectProcessor<T> of(ObjectProcessor<T> processor, Iterable<String> names) {
         return NamedObjectProcessor.<T>builder().processor(processor).addAllColumnNames(names).build();
+    }
+
+    public static <T> NamedObjectProcessor<T> prefix(ObjectProcessor<T> processor, String prefix) {
+        final int size = processor.size();
+        if (size == 1) {
+            return of(processor, prefix);
+        }
+        return of(processor, IntStream.range(0, size).mapToObj(ix -> prefix + "_" + ix).collect(Collectors.toList()));
     }
 
     public abstract ObjectProcessor<T> processor();

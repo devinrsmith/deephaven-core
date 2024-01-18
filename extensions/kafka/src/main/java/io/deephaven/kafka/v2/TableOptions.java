@@ -39,10 +39,12 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Lazy;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -61,6 +63,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * The options for constructing a {@link Table} or {@link PartitionedTable} from a Kafka stream.
+ *
+ * @param <K> the Kafka stream key type
+ * @param <V> the Kafka stream value type
+ * @see Tablez#of(TableOptions)
+ * @see Tablez#ofPartitioned(TableOptions)
+ */
 @Immutable
 @BuildableStyle
 public abstract class TableOptions<K, V> {
@@ -68,15 +78,14 @@ public abstract class TableOptions<K, V> {
         return ImmutableTableOptions.builder();
     }
 
-    // table output?
     /**
-     * The name. Defaults to {@link UUID#randomUUID()}.
+     * The name. Defaults to a random string.
      *
      * @return the name
      */
     @Default
     public String name() {
-        return UUID.randomUUID().toString();
+        return randomId();
     }
 
     /**
@@ -87,29 +96,58 @@ public abstract class TableOptions<K, V> {
     public abstract ClientOptions<K, V> clientOptions();
 
     /**
-     * If an opinionated client configuration should be used to extend {@link #clientOptions()}. By default, is
-     * {@code true}.
+     * Opinionated options on top of {@link #clientOptions()}.
+     */
+    public interface OpinionatedClientOptions {
+
+        /**
+         * Do not use opinionated client options.
+         *
+         * @return no opinionated client options
+         */
+        static OpinionatedClientOptions none() {
+            return ClientOpts.NONE;
+        }
+
+        /**
+         * <ul>
+         * <li>If unset, sets {@link ConsumerConfig#CLIENT_ID_CONFIG} to a random string (the same random string as
+         * {@link #name()} if it hasn't been explicitly set).</li>
+         * <li>If unset, sets {@link ConsumerConfig#DEFAULT_API_TIMEOUT_MS_CONFIG} to 5 seconds.</li>
+         * <li>If unset, sets {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} to {@link #chunkSize()}.</li>
+         * <li>If unset, sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16 MiB.</li>
+         * <li>If unset, sets {@link ClientOptions#keyDeserializer()} to {@link ByteArrayDeserializer}
+         * ({@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
+         * <li>If unset, sets {@link ClientOptions#valueDeserializer()} to {@link ByteArrayDeserializer}
+         * ({@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
+         * </ul>
+         *
+         * @return opinionated client options v1
+         */
+        static OpinionatedClientOptions v1() {
+            return ClientOpts.V1;
+        }
+
+        /**
+         * The latest opinionated client options. Currently, equivalent to {@link #v1()}.
+         *
+         * @return the latest opinionated client options
+         */
+        static OpinionatedClientOptions latest() {
+            return v1();
+        }
+    }
+
+    /**
+     * The logic to use for opinionated client configuration. By default, is equivalent to
+     * {@link OpinionatedClientOptions#latest()}. Callers wishing to do their own optimizations are encouraged to set
+     * this to {@link OpinionatedClientOptions#none()} and finely configure {@link #clientOptions()}.
      *
-     * <p>
-     * The specifics of these may change from release to release. Callers wishing to do their own optimizations are
-     * encouraged to set this to {@code false} and finely configure {@link #clientOptions()}. Currently, consists of:
-     *
-     * <ul>
-     * <li>If unset, sets {@link ConsumerConfig#CLIENT_ID_CONFIG} to {@link #name()}.</li>
-     * <li>If unset, sets {@link ConsumerConfig#DEFAULT_API_TIMEOUT_MS_CONFIG} to 5 seconds.</li>
-     * <li>If unset, sets {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} to {@link #chunkSize()}.</li>
-     * <li>If unset, sets {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} to 16 MiB.</li>
-     * <li>If unset, sets {@link ClientOptions#keyDeserializer()} to {@link ByteArrayDeserializer}
-     * ({@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
-     * <li>If unset, sets {@link ClientOptions#valueDeserializer()} to {@link ByteArrayDeserializer}
-     * ({@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} must also be unset).</li>
-     * </ul>
-     *
-     * @return if opinionated client configuration should be used
+     * @return the opinionated client configuration logic
      */
     @Default
-    public boolean useOpinionatedClientOptions() {
-        return true;
+    public OpinionatedClientOptions opinionatedClientOptions() {
+        return OpinionatedClientOptions.latest();
     }
 
     // todo: should this be a list?
@@ -132,7 +170,7 @@ public abstract class TableOptions<K, V> {
     }
 
     /**
-     * The basic {@link ConsumerRecord} options for a {@link ConsumerRecord} processor. By default, is equivalent to
+     * The basic {@link ConsumerRecord} options for a {@link ConsumerRecord} processor. By default, is
      * {@link ConsumerRecordOptions#latest()}. Callers wishing to ensure compatibility across releases are encourage to
      * set this to a specifically versioned {@link ConsumerRecordOptions}.
      *
@@ -143,9 +181,58 @@ public abstract class TableOptions<K, V> {
         return ConsumerRecordOptions.latest();
     }
 
+    /**
+     * Opinionated options on top of {@link #recordOptions()}.
+     */
+    public interface OpinionatedRecordOptions {
+
+        /**
+         * Do not use opinionated record options.
+         *
+         * @return no opinionated record options
+         */
+        static OpinionatedRecordOptions none() {
+            return RecordOpts.NONE;
+        }
+
+        /**
+         *
+         * <ul>
+         * <li>If {@link Field#TOPIC} is unset and {@link #offsets()} contains 2 or more topics, will add in
+         * {@link Field#TOPIC}</li>
+         * <li>If {@link Field#KEY_SIZE} is unset and {@link #keyProcessor()} is present, will add in
+         * {@link Field#KEY_SIZE}</li>
+         * <li>If {@link Field#VALUE_SIZE} is unset and {@link #valueProcessor()} is present, will add in
+         * {@link Field#KEY_SIZE}</li>
+         * </ul>
+         *
+         * @return the opinionated record options v1
+         */
+        static OpinionatedRecordOptions v1() {
+            return RecordOpts.V1;
+        }
+
+        /**
+         * The latest opinionated client options. Currently, equivalent to {@link #v1()}.
+         *
+         * @return the latest opinionated record options
+         */
+        static OpinionatedRecordOptions latest() {
+            return v1();
+        }
+    }
+
+    /**
+     * The logic to use for opinionated client configuration. By default, is equivalent to
+     * {@link OpinionatedRecordOptions#latest()}. Callers wishing to do their own configuration are encouraged to set
+     * this to {@link OpinionatedRecordOptions#none()} and finely configure {@link #recordOptions()} or
+     * {@link #recordProcessor()}.
+     *
+     * @return the opinionated record configuration logic
+     */
     @Default
-    public boolean useOpinionatedRecordOptions() {
-        return true;
+    public OpinionatedRecordOptions opinionatedRecordOptions() {
+        return OpinionatedRecordOptions.latest();
     }
 
     /**
@@ -222,12 +309,18 @@ public abstract class TableOptions<K, V> {
 
     public abstract Optional<ConsumerLoopCallback> callback();
 
+    @Lazy
+    String randomId() {
+        // Internal use only - default for name() and client.id.
+        return UUID.randomUUID().toString();
+    }
+
     public interface Builder<K, V> {
         Builder<K, V> name(String name);
 
         Builder<K, V> clientOptions(ClientOptions<K, V> clientOptions);
 
-        Builder<K, V> useOpinionatedClientOptions(boolean useOpinionatedClientOptions);
+        Builder<K, V> opinionatedClientOptions(OpinionatedClientOptions opinionatedClientOptions);
 
         Builder<K, V> offsets(Offsets offsets);
 
@@ -235,46 +328,22 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> recordOptions(ConsumerRecordOptions recordOptions);
 
-        Builder<K, V> useOpinionatedRecordOptions(boolean useOpinionatedRecordOptions);
+        Builder<K, V> opinionatedRecordOptions(OpinionatedRecordOptions opinionatedRecordOptions);
 
         default Builder<K, V> recordProcessor(ObjectProcessor<ConsumerRecord<K, V>> processor) {
-            final int size = processor.size();
-            if (size == 1) {
-                return recordProcessor(NamedObjectProcessor.of(processor, "Record"));
-            }
-            final List<String> names = new ArrayList<>(size);
-            for (int i = 0; i < size; ++i) {
-                names.add("Record_" + i);
-            }
-            return recordProcessor(NamedObjectProcessor.of(processor, names));
+            return recordProcessor(NamedObjectProcessor.prefix(processor, "Record"));
         }
 
         Builder<K, V> recordProcessor(NamedObjectProcessor<ConsumerRecord<K, V>> processor);
 
         default Builder<K, V> keyProcessor(ObjectProcessor<K> processor) {
-            final int size = processor.size();
-            if (size == 1) {
-                return keyProcessor(NamedObjectProcessor.of(processor, "Key"));
-            }
-            final List<String> names = new ArrayList<>(size);
-            for (int i = 0; i < size; ++i) {
-                names.add("Key_" + i);
-            }
-            return keyProcessor(NamedObjectProcessor.of(processor, names));
+            return keyProcessor(NamedObjectProcessor.prefix(processor, "Key"));
         }
 
         Builder<K, V> keyProcessor(NamedObjectProcessor<K> processor);
 
         default Builder<K, V> valueProcessor(ObjectProcessor<V> processor) {
-            final int size = processor.size();
-            if (size == 1) {
-                return valueProcessor(NamedObjectProcessor.of(processor, "Value"));
-            }
-            final List<String> names = new ArrayList<>(size);
-            for (int i = 0; i < size; ++i) {
-                names.add("Value_" + i);
-            }
-            return valueProcessor(NamedObjectProcessor.of(processor, names));
+            return valueProcessor(NamedObjectProcessor.prefix(processor, "Value"));
         }
 
         Builder<K, V> valueProcessor(NamedObjectProcessor<V> processor);
@@ -297,30 +366,47 @@ public abstract class TableOptions<K, V> {
     }
 
     @Derived
+    @Auxiliary
     ConsumerRecordOptions recordOptionsToUse() {
-        // This method should be the only (internal) caller of recordOptions()
-        if (!useOpinionatedRecordOptions()) {
-            return recordOptions();
+        switch ((RecordOpts) opinionatedRecordOptions()) {
+            case NONE:
+                return recordOptions();
+            case V1:
+                return recordOptionsV1();
         }
-        final ConsumerRecordOptions.Builder builder = ConsumerRecordOptions.builder();
-        final Map<Field, String> fields = recordOptions().fields();
-        if (!fields.containsKey(Field.TOPIC) && ((OffsetsBase) offsets()).topics().distinct().count() > 1) {
-            // todo: may not want / be relevant in partitioned case?
-            builder.addField(Field.TOPIC);
+        throw new IllegalStateException();
+    }
+
+    // Note: not Derived like recordOptionsToUse; if we end up needing to call clientOptionsToUse more than once, may
+    // make sense to make Derived.
+    private ClientOptions<K, V> clientOptionsToUse() {
+        switch (((ClientOpts) opinionatedClientOptions())) {
+            case NONE:
+                return clientOptions();
+            case V1:
+                return clientOptionsV1();
         }
-        if (!fields.containsKey(Field.SERIALIZED_KEY_SIZE) && keyProcessor().isPresent()) {
-            builder.addField(Field.SERIALIZED_KEY_SIZE);
-        }
-        if (!fields.containsKey(Field.SERIALIZED_VALUE_SIZE) && valueProcessor().isPresent()) {
-            builder.addField(Field.SERIALIZED_VALUE_SIZE);
-        }
-        return builder.putAllFields(recordOptions().fields()).build();
+        throw new IllegalStateException();
     }
 
     @Check
     final void checkChunkSize() {
         if (chunkSize() < 1) {
             throw new IllegalArgumentException("chunkSize must be positive");
+        }
+    }
+
+    @Check
+    final void checkOpinionatedClientOptions() {
+        if (!(opinionatedClientOptions() instanceof ClientOpts)) {
+            throw new IllegalArgumentException("Unsupported");
+        }
+    }
+
+    @Check
+    final void checkOpinionatedRecordOptions() {
+        if (!(opinionatedRecordOptions() instanceof RecordOpts)) {
+            throw new IllegalArgumentException("Unsupported");
         }
     }
 
@@ -408,8 +494,8 @@ public abstract class TableOptions<K, V> {
         }
     }
 
-
     private Table singleTable(Collection<? extends Publisher> publishers) {
+        // noinspection resource
         return toTableType(streamConsumer(single(publishers)).table());
     }
 
@@ -459,6 +545,7 @@ public abstract class TableOptions<K, V> {
             final TopicPartition topicPartition = singleTopicPartition(sorted.get(i));
             topics[i] = topicPartition.topic();
             partitions[i] = topicPartition.partition();
+            // noinspection resource
             constituents[i] = toTableType(streamConsumer(sorted.get(i)).table());
         }
         // should we consider that Topic is "grouped"? NO
@@ -514,17 +601,11 @@ public abstract class TableOptions<K, V> {
                 .build();
     }
 
-    // Note: not Derived like recordOptionsToUse; if we end up needing to call clientOptionsToUse more than once, may
-    // make sense to make Derived.
-    private ClientOptions<K, V> clientOptionsToUse() {
-        // This method should be the only (internal) caller of clientOptions()
-        if (!useOpinionatedClientOptions()) {
-            return clientOptions();
-        }
+    private ClientOptions<K, V> clientOptionsV1() {
         final HashMap<String, String> config = new HashMap<>(clientOptions().config());
         final ClientOptions.Builder<K, V> opinionated = ClientOptions.builder();
         if (!config.containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
-            config.put(ConsumerConfig.CLIENT_ID_CONFIG, name());
+            config.put(ConsumerConfig.CLIENT_ID_CONFIG, randomId());
         }
         if (!config.containsKey(ConsumerConfig.MAX_POLL_RECORDS_CONFIG)) {
             // This is local only option, doesn't affect server.
@@ -532,6 +613,7 @@ public abstract class TableOptions<K, V> {
             // This affects the maximum number of records that io.deephaven.kafka.v2.KafkaPublisherDriver.runOnce will
             // receive at once. There's a small tradeoff here; allowing enough for runOnce to do a flush, but also small
             // enough to minimize potential sync wait for StreamPublisher#flush calls (cycle).
+            // Maybe this should be changed depending on the partitioning strategy?
             config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, Integer.toString(chunkSize()));
         }
         if (!config.containsKey(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG)) {
@@ -574,6 +656,22 @@ public abstract class TableOptions<K, V> {
         return opinionated.putAllConfig(config).build();
     }
 
+    private ConsumerRecordOptions recordOptionsV1() {
+        final Map<Field, String> fields = recordOptions().fields();
+        final ConsumerRecordOptions.Builder builder = ConsumerRecordOptions.builder();
+        if (!fields.containsKey(Field.TOPIC) && ((OffsetsBase) offsets()).topics().distinct().count() > 1) {
+            // todo: may not want / be relevant in partitioned case?
+            builder.addField(Field.TOPIC);
+        }
+        if (!fields.containsKey(Field.KEY_SIZE) && keyProcessor().isPresent()) {
+            builder.addField(Field.KEY_SIZE);
+        }
+        if (!fields.containsKey(Field.VALUE_SIZE) && valueProcessor().isPresent()) {
+            builder.addField(Field.VALUE_SIZE);
+        }
+        return builder.putAllFields(fields).build();
+    }
+
     private enum PredicateTrue implements Predicate<Object> {
         PREDICATE_TRUE;
 
@@ -598,5 +696,13 @@ public abstract class TableOptions<K, V> {
             throw new IllegalStateException();
         }
         return publisher;
+    }
+
+    private enum ClientOpts implements OpinionatedClientOptions {
+        NONE, V1,
+    }
+
+    private enum RecordOpts implements OpinionatedRecordOptions {
+        NONE, V1,
     }
 }

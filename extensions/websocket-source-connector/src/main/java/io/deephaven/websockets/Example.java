@@ -4,26 +4,57 @@
 package io.deephaven.websockets;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ObjectProcessorJsonValueFromString;
 import io.deephaven.json.StringOptions;
+import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
-import io.deephaven.stream.StreamToBlinkTableAdapter;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-public class Example {
+public final class Example {
 
-    // {"type":"ticker","sequence":71719158645,"product_id":"BTC-USD","price":"40813.37","open_24h":"42637.36","volume_24h":"24498.81475200","low_24h":"40600.05","high_24h":"42877.22","volume_30d":"516384.79738056","best_bid":"40809.65","best_bid_size":"0.10002360","best_ask":"40818.25","best_ask_size":"0.08964000","side":"sell","time":"2024-01-18T21:32:54.368300Z","trade_id":596784415,"last_size":"0.0006684"}
+    static Table coinbaseTicker(Collection<String> productIds) throws Exception {
+        return WebsocketOptions.builder()
+                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
+                .processor(processor(coinbaseTicker()))
+                .subscribeMessage(coinbaseSubscribe(productIds, List.of("ticker")))
+                .skipFirstN(1) // skip sub response
+                .build()
+                .execute();
+    }
+
+    static Table coinbaseMatches(Collection<String> productIds) throws Exception {
+        return WebsocketOptions.builder()
+                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
+                .processor(coinbaseMatch())
+                .subscribeMessage(coinbaseSubscribe(productIds, List.of("matches")))
+                .skipFirstN(1) // skip sub response
+                .build()
+                .execute();
+    }
+
+    public static NamedObjectProcessor<String> processor(ValueOptions opts) {
+        return new ObjectProcessorJsonValueFromString(new JsonFactory(), opts).named();
+    }
+
+    private static String toJsonArray(Collection<String> elements) {
+        return elements.stream().collect(Collectors.joining("\",\"", "[\"", "\"]"));
+    }
+
+    private static String coinbaseSubscribe(Collection<String> productIds, Collection<String> channels) {
+        return String.format(
+                "{\"type\":\"subscribe\",\"product_ids\":%s,\"channels\":%s}",
+                toJsonArray(productIds),
+                toJsonArray(channels));
+    }
 
     static ObjectOptions coinbaseMatch() {
         return ObjectOptions.builder()
@@ -63,70 +94,5 @@ public class Example {
                 .putFields("trade_id", LongOptions.standard())
                 .putFields("last_size", DoubleOptions.lenient())
                 .build();
-    }
-
-    static PublishersOptions coinbase() {
-        return PublishersOptions.builder()
-                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(new ObjectProcessorJsonValueFromString(new JsonFactory(), coinbaseTicker()))
-                .subscribeMessage(
-                        "{\n" +
-                        "      \"type\": \"subscribe\",\n" +
-                        "      \"product_ids\": [\n" +
-                        "        \"BTC-USD\"\n" +
-                        "      ],\n" +
-                        "      \"channels\": [\"ticker\"]\n" +
-                        "    }")
-                .build();
-    }
-
-    static PublishersOptions coinbase2() {
-        return PublishersOptions.builder()
-                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(new ObjectProcessorJsonValueFromString(new JsonFactory(), coinbaseMatch()))
-                .subscribeMessage(
-                        "{\n" +
-                                "      \"type\": \"subscribe\",\n" +
-                                "      \"product_ids\": [\n" +
-                                "        \"BTC-USD\"\n" +
-                                "      ],\n" +
-                                "      \"channels\": [\"matches\"]\n" +
-                                "    }")
-                .build();
-    }
-
-
-    static Table test(PublishersOptions options) throws Exception {
-        final PublishersOptions.ListenerImpl publisher = options.publisher();
-        final List<String> autoNames = NamedObjectProcessor.prefix(options.processor(), "Auto").columnNames();
-        final TableDefinition tableDef = TableDefinition.from(autoNames, options.processor().outputTypes());
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher, ExecutionContext.getContext().getUpdateGraph(), "todo", Map.of());
-        publisher.start();
-        // todo: close if start throws
-        return BlinkTableTools.blinkToAppendOnly(adapter.table());
-    }
-
-    static Table test() throws Exception {
-        final ObjectProcessorJsonValueFromString processor = new ObjectProcessorJsonValueFromString(new JsonFactory(), coinbaseMatch());
-        final PublishersOptions options = PublishersOptions.builder()
-                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(processor)
-                .subscribeMessage(
-                        "{\n" +
-                                "      \"type\": \"subscribe\",\n" +
-                                "      \"product_ids\": [\n" +
-                                "        \"BTC-USD\"\n" +
-                                "      ],\n" +
-                                "      \"channels\": [\"matches\"]\n" +
-                                "    }")
-                .skipFirstN(2) // skip sub response and last_match
-                .build();
-        final PublishersOptions.ListenerImpl publisher = options.publisher();
-        final TableDefinition tableDef = TableDefinition.from(processor.named().columnNames(), processor.outputTypes());
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher, ExecutionContext.getContext().getUpdateGraph(), "todo", Map.of());
-        publisher.start();
-        // todo: close if start throws
-        return BlinkTableTools.blinkToAppendOnly(adapter.table());
-
     }
 }

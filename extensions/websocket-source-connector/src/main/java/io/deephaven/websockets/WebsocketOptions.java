@@ -3,14 +3,25 @@
  */
 package io.deephaven.websockets;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
+import io.deephaven.json.ObjectProcessorJsonValueFromString;
+import io.deephaven.json.ValueOptions;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
+import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
@@ -23,18 +34,22 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 @Immutable
 @BuildableStyle
-public abstract class PublishersOptions {
+public abstract class WebsocketOptions {
 
     public static Builder builder() {
-        return ImmutablePublishersOptions.builder();
+        return ImmutableWebsocketOptions.builder();
     }
 
-    // http2 options? https://eclipse.dev/jetty/documentation/jetty-11/programming-guide/index.html#pg-client-websocket-connect-http2
+    // http2 options?
+    // https://eclipse.dev/jetty/documentation/jetty-11/programming-guide/index.html#pg-client-websocket-connect-http2
 
     // partitioning?
 
@@ -47,7 +62,12 @@ public abstract class PublishersOptions {
         return x -> true;
     }
 
-    public abstract ObjectProcessor<String> processor();
+    // todo: remove named from this level
+
+    @Default
+    public NamedObjectProcessor<String> processor() {
+        return NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value");
+    }
 
     // todo: move to TableOptions, not set default here
     @Default
@@ -60,23 +80,49 @@ public abstract class PublishersOptions {
         return 0;
     }
 
-//    public abstract boolean receiveTimestamp();
+
+    // public abstract boolean receiveTimestamp();
+
+    // todo: remove this
+
+    public final Table execute() throws Exception {
+        final WebsocketOptions.ListenerImpl publisher = publisher();
+        final TableDefinition tableDef = TableDefinition.from(processor().columnNames(), processor().processor().outputTypes());
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher,
+                ExecutionContext.getContext().getUpdateGraph(), UUID.randomUUID().toString(), Map.of());
+        publisher.start();
+        return adapter.table();
+        //return BlinkTableTools.blinkToAppendOnly(adapter.table());
+    }
 
     public interface Builder {
 
         Builder uri(URI uri);
 
+        default Builder uri(String uri) {
+            return uri(URI.create(uri));
+        }
+
         Builder subscribeMessage(String subscribeMessage);
 
         Builder filter(Predicate<String> predicate);
 
-        Builder processor(ObjectProcessor<String> processor);
+        Builder processor(NamedObjectProcessor<String> processor);
+
+        default Builder processor(ValueOptions options) {
+            // todo: remove
+            return processor(new ObjectProcessorJsonValueFromString(new JsonFactory(), options).named());
+        }
+
+        default Builder processor(GenericType<String> type) {
+            return processor(NamedObjectProcessor.of(ObjectProcessor.simple(type), List.of("Value")));
+        }
 
         Builder chunkSize(int chunkSize);
 
         Builder skipFirstN(int skipFirstN);
 
-        PublishersOptions build();
+        WebsocketOptions build();
     }
 
     final ListenerImpl publisher() {
@@ -185,7 +231,7 @@ public abstract class PublishersOptions {
 
         private void flushImpl() {
             // todo: ordering
-            processor().processAll(buffer, Arrays.asList(chunks));
+            processor().processor().processAll(buffer, Arrays.asList(chunks));
             buffer.fillWithNullValue(0, buffer.size());
             buffer.setSize(0);
             consumer.accept(chunks);
@@ -193,8 +239,9 @@ public abstract class PublishersOptions {
         }
 
         private WritableChunk<Values>[] newProcessorChunks() {
-            //noinspection unchecked
+            // noinspection unchecked
             return processor()
+                    .processor()
                     .outputTypes()
                     .stream()
                     .map(ObjectProcessor::chunkType)

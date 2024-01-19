@@ -43,10 +43,14 @@ public class What {
     }
 
     static void test() throws Exception {
+
+        final String test = "{type: subscribe, productIds: [BTC-USD], channels: [ticker]}";
+
         final WebSocketClient client = new WebSocketClient();
         try {
             client.start();
-            try (final Session session = client.connect(new MyEndpoint(), URI.create("wss://ws-feed.exchange.coinbase.com")).get()) {
+            try (final Session session =
+                    client.connect(new MyEndpoint(), URI.create("wss://ws-feed.exchange.coinbase.com")).get()) {
                 session.getRemote().sendString("{\n" +
                         "      \"type\": \"subscribe\",\n" +
                         "      \"product_ids\": [\n" +

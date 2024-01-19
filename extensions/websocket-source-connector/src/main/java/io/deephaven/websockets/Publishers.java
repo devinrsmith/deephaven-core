@@ -8,7 +8,7 @@ import io.deephaven.stream.StreamPublisher;
 public interface Publishers {
 
     // low level
-    static StreamPublisher of(PublishersOptions options) {
+    static StreamPublisher of(WebsocketOptions options) {
         return options.publisher();
     }
 }

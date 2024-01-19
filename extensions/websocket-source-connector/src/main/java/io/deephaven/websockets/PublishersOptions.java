@@ -162,9 +162,6 @@ public abstract class PublishersOptions {
             if (!filter().test(message)) {
                 return;
             }
-            if (Math.random() < 0.1) {
-                throw new RuntimeException("oops");
-            }
             synchronized (this) {
                 buffer.add(message);
                 if (buffer.size() == chunkSize()) {

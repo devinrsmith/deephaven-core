@@ -4,8 +4,12 @@ plugins {
 }
 
 dependencies {
+    api project(':processor')
     api project(':engine-api')
     implementation project(':engine-table')
+
+    // todo: remove this, only for example atm
+    implementation project(':processor-json')
 
     // todo: https://github.com/TooTallNate/Java-WebSocket seems very popular too
     //Classpaths.inheritJetty11Platform(project)

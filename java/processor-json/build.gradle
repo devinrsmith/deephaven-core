@@ -4,11 +4,12 @@ plugins {
 }
 
 dependencies {
-    Classpaths.inheritJacksonPlatform(project)
+    Classpaths.inheritJacksonPlatform(project, 'api')
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
     api project(':processor')
-    implementation 'com.fasterxml.jackson.core:jackson-core'
+    // currently needs api b/c io.deephaven.json.ObjectProcessorJsonValue.ObjectProcessorJsonValue
+    api 'com.fasterxml.jackson.core:jackson-core'
     implementation project(':engine-query-constants')
     implementation project(':engine-time')
     Classpaths.inheritImmutables(project)

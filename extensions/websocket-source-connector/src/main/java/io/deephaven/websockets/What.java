@@ -8,6 +8,7 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import java.net.URI;
+import java.time.Duration;
 
 public class What {
 
@@ -24,7 +25,8 @@ public class What {
 
         @Override
         public void onWebSocketConnect(Session sess) {
-            super.onWebSocketConnect(sess);
+            sess.setMaxTextMessageSize(16 * 1024);
+            sess.setIdleTimeout(Duration.ofSeconds(30));
         }
 
         @Override

@@ -168,7 +168,7 @@ public abstract class WebsocketOptions {
 
         @Override
         public void shutdown() {
-            System.out.println("shutting down");
+//            System.out.println("shutting down");
             session.close(StatusCode.NORMAL, null);
         }
 

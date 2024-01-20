@@ -3,31 +3,19 @@
  */
 package io.deephaven.websockets;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
-import io.deephaven.engine.context.ExecutionContext;
-import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.BlinkTableTools;
-import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
-import io.deephaven.json.ObjectProcessorJsonValueFromString;
-import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.GenericType;
-import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
-import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.WebSocketListener;
 import org.eclipse.jetty.websocket.api.WriteCallback;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,9 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Predicate;
 
 @Immutable
@@ -55,68 +41,34 @@ public abstract class WebsocketOptions {
 
     public abstract URI uri();
 
-    public abstract Optional<String> subscribeMessage();
+    public abstract List<String> subscribeMessage();
 
-    @Default
-    public Predicate<String> filter() {
-        return x -> true;
-    }
+    public abstract Predicate<String> filter();
 
-    // todo: remove named from this level
+    public abstract NamedObjectProcessor<String> processor();
 
-    @Default
-    public NamedObjectProcessor<String> processor() {
-        return NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value");
-    }
+    public abstract int chunkSize();
 
-    // todo: move to TableOptions, not set default here
-    @Default
-    public int chunkSize() {
-        return ArrayBackedColumnSource.BLOCK_SIZE;
-    }
-
-    @Default
-    public int skipFirstN() {
-        return 0;
-    }
+    public abstract int skipFirstN();
 
 
     // public abstract boolean receiveTimestamp();
 
     // todo: remove this
 
-    public final Table execute() throws Exception {
-        final WebsocketOptions.ListenerImpl publisher = publisher();
-        final TableDefinition tableDef = TableDefinition.from(processor().columnNames(), processor().processor().outputTypes());
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher,
-                ExecutionContext.getContext().getUpdateGraph(), UUID.randomUUID().toString(), Map.of());
-        publisher.start();
-        return adapter.table();
-        //return BlinkTableTools.blinkToAppendOnly(adapter.table());
+    final ListenerImpl execute() {
+        return publisher();
     }
 
     public interface Builder {
 
         Builder uri(URI uri);
 
-        default Builder uri(String uri) {
-            return uri(URI.create(uri));
-        }
-
         Builder subscribeMessage(String subscribeMessage);
 
         Builder filter(Predicate<String> predicate);
 
         Builder processor(NamedObjectProcessor<String> processor);
-
-        default Builder processor(ValueOptions options) {
-            // todo: remove
-            return processor(new ObjectProcessorJsonValueFromString(new JsonFactory(), options).named());
-        }
-
-        default Builder processor(GenericType<String> type) {
-            return processor(NamedObjectProcessor.of(ObjectProcessor.simple(type), List.of("Value")));
-        }
 
         Builder chunkSize(int chunkSize);
 
@@ -129,7 +81,7 @@ public abstract class WebsocketOptions {
         return new ListenerImpl();
     }
 
-    public class ListenerImpl implements WebSocketListener, StreamPublisher {
+    class ListenerImpl implements WebSocketListener, StreamPublisher {
 
         private final WritableObjectChunk<String, ?> buffer;
         private WritableChunk<Values>[] chunks;
@@ -168,7 +120,7 @@ public abstract class WebsocketOptions {
 
         @Override
         public void shutdown() {
-//            System.out.println("shutting down");
+            // System.out.println("shutting down");
             session.close(StatusCode.NORMAL, null);
         }
 

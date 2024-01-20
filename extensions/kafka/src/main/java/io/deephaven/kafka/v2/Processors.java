@@ -32,7 +32,7 @@ public final class Processors {
      * @see ConsumerRecord#key()
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(ObjectProcessor<K> keyProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> key(ObjectProcessor<? super K> keyProcessor) {
         return ObjectProcessor.map(ConsumerRecord::key, keyProcessor);
     }
 
@@ -46,7 +46,7 @@ public final class Processors {
      * @see ConsumerRecord#value()
      * @see ObjectProcessor#map(Function, ObjectProcessor)
      */
-    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> value(ObjectProcessor<V> valueProcessor) {
+    public static <K, V> ObjectProcessor<ConsumerRecord<K, V>> value(ObjectProcessor<? super V> valueProcessor) {
         return ObjectProcessor.map(ConsumerRecord::value, valueProcessor);
     }
 

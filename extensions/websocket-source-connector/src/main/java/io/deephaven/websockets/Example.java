@@ -3,16 +3,12 @@
  */
 package io.deephaven.websockets;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.engine.table.Table;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
-import io.deephaven.json.ObjectProcessorJsonValueFromString;
 import io.deephaven.json.StringOptions;
-import io.deephaven.json.ValueOptions;
-import io.deephaven.processor.NamedObjectProcessor;
 
 import java.net.URI;
 import java.util.Collection;
@@ -24,7 +20,7 @@ public final class Example {
     static Table coinbaseTicker(Collection<String> productIds) throws Exception {
         return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(processor(coinbaseTicker()))
+                .processor(coinbaseTicker())
                 .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("ticker")))
                 .skipFirstN(1) // skip sub response
                 .build()
@@ -41,9 +37,9 @@ public final class Example {
                 .execute();
     }
 
-    public static NamedObjectProcessor<String> processor(ValueOptions opts) {
-        return new ObjectProcessorJsonValueFromString(new JsonFactory(), opts).named();
-    }
+    // public static NamedObjectProcessor<String> processor(ValueOptions opts) {
+    // return new ObjectProcessorJsonValue.ObjectProcessorJsonValueString(new JsonFactory(), opts).named();
+    // }
 
     private static String toJsonArray(Collection<String> elements) {
         return elements.stream().collect(Collectors.joining("\",\"", "[\"", "\"]"));

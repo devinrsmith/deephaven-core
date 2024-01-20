@@ -3,10 +3,15 @@
  */
 package io.deephaven.json;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.processor.NamedObjectProcessor;
+import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +20,80 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class ValueOptions {
+public abstract class ValueOptions implements NamedObjectProcessor.Provider {
 
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
+    private static final Function<List<String>, String> TO_COLUMN_NAME = ValueOptions::toColumnName;
+
+    @Override
+    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+        if (String.class.isAssignableFrom(inputType)) {
+            // noinspection unchecked
+            return (NamedObjectProcessor<T>) namedStringProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+        }
+        if (byte[].class.isAssignableFrom(inputType)) {
+            // noinspection unchecked
+            return (NamedObjectProcessor<T>) namedBytesProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+        }
+        if (char[].class.isAssignableFrom(inputType)) {
+            // noinspection unchecked
+            return (NamedObjectProcessor<T>) namedCharsProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+        }
+        if (File.class.isAssignableFrom(inputType)) {
+            // noinspection unchecked
+            return (NamedObjectProcessor<T>) namedFileProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+        }
+        if (URL.class.isAssignableFrom(inputType)) {
+            // noinspection unchecked
+            return (NamedObjectProcessor<T>) namedURLProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+        }
+        throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
+    }
+
+    public final ObjectProcessor<String> stringProcessor(JsonFactory factory) {
+        return new ObjectProcessorJsonValue.StringIn(this, factory);
+    }
+
+    public final ObjectProcessor<byte[]> bytesProcessor(JsonFactory factory) {
+        return new ObjectProcessorJsonValue.BytesIn(this, factory);
+    }
+
+    public final ObjectProcessor<char[]> charsProcessor(JsonFactory factory) {
+        return new ObjectProcessorJsonValue.CharsIn(this, factory);
+    }
+
+    public final ObjectProcessor<File> fileProcessor(JsonFactory factory) {
+        return new ObjectProcessorJsonValue.FileIn(this, factory);
+    }
+
+    public final ObjectProcessor<URL> urlProcessor(JsonFactory factory) {
+        return new ObjectProcessorJsonValue.URLIn(this, factory);
+    }
+
+    public final NamedObjectProcessor<String> namedStringProcessor(JsonFactory factory,
+            Function<List<String>, String> toColumnName) {
+        return NamedObjectProcessor.of(stringProcessor(factory), names(toColumnName));
+    }
+
+    public final NamedObjectProcessor<byte[]> namedBytesProcessor(JsonFactory factory,
+            Function<List<String>, String> toColumnName) {
+        return NamedObjectProcessor.of(bytesProcessor(factory), names(toColumnName));
+    }
+
+    public final NamedObjectProcessor<char[]> namedCharsProcessor(JsonFactory factory,
+            Function<List<String>, String> toColumnName) {
+        return NamedObjectProcessor.of(charsProcessor(factory), names(toColumnName));
+    }
+
+    public final NamedObjectProcessor<File> namedFileProcessor(JsonFactory factory,
+            Function<List<String>, String> toColumnName) {
+        return NamedObjectProcessor.of(fileProcessor(factory), names(toColumnName));
+    }
+
+    public final NamedObjectProcessor<URL> namedURLProcessor(JsonFactory factory,
+            Function<List<String>, String> toColumnName) {
+        return NamedObjectProcessor.of(urlProcessor(factory), names(toColumnName));
+    }
 
     @Default
     public boolean allowNull() {
@@ -60,6 +137,14 @@ public abstract class ValueOptions {
         return (int) outputTypes().count();
     }
 
+    final List<String> names() {
+        return names(TO_COLUMN_NAME);
+    }
+
+    public final List<String> names(Function<List<String>, String> f) {
+        return paths().map(f).collect(Collectors.toList());
+    }
+
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
 
         B allowNull(boolean allowNull);
@@ -82,5 +167,10 @@ public abstract class ValueOptions {
             paths.add(prefixedPaths);
         }
         return paths.stream().flatMap(Function.identity());
+    }
+
+    public static String toColumnName(List<String> path) {
+        // todo: allow user to configure
+        return String.join("_", path);
     }
 }

@@ -51,6 +51,13 @@ public abstract class NamedObjectProcessor<T> {
         NamedObjectProcessor<T> build();
     }
 
+    public interface Provider {
+
+        // this pattern supports use cases where we some sort of object has multiple json parser types
+        // String.class / byte[].class for JSON
+        <T> NamedObjectProcessor<? super T> named(Class<T> inputType);
+    }
+
     @Check
     final void checkSizes() {
         if (columnNames().size() != processor().size()) {

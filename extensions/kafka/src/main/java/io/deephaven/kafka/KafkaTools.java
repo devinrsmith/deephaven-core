@@ -3,7 +3,6 @@
  */
 package io.deephaven.kafka;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Descriptors.Descriptor;
 import gnu.trove.map.hash.TIntLongHashMap;
@@ -44,7 +43,6 @@ import io.deephaven.engine.updategraph.UpdateSourceCombiner;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
-import io.deephaven.json.ObjectProcessorJsonValue;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.kafka.AvroImpl.AvroConsume;
 import io.deephaven.kafka.AvroImpl.AvroProduce;
@@ -73,6 +71,7 @@ import io.deephaven.kafka.protobuf.ProtobufConsumeOptions;
 import io.deephaven.kafka.publish.KafkaPublisherException;
 import io.deephaven.kafka.publish.KeyOrValueSerializer;
 import io.deephaven.kafka.publish.PublishToKafka;
+import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.qst.column.header.ColumnHeader;
@@ -105,7 +104,6 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.ShortDeserializer;
 import org.apache.kafka.common.serialization.ShortSerializer;
@@ -425,15 +423,11 @@ public class KafkaTools {
         }
 
         public static KeyOrValueSpec jsonSpec(ValueOptions options) {
-            // for demo
-            return jsonSpec(options, List.of("type", "symbol", "bid", "ask", "price", "size"));
+            final NamedObjectProcessor<? super byte[]> nop =
+                    (NamedObjectProcessor<? super byte[]>) options.named(byte[].class);
+            return new KeyOrValueSpecObjectProcessorImpl<>(new ByteArrayDeserializer(), nop.processor(),
+                    nop.columnNames());
         }
-
-        public static KeyOrValueSpec jsonSpec(ValueOptions options, List<String> columnNames) {
-            final ObjectProcessorJsonValue processor = new ObjectProcessorJsonValue(new JsonFactory(), options);
-            return new KeyOrValueSpecObjectProcessorImpl<>(new ByteArrayDeserializer(), processor, columnNames);
-        }
-
 
         /**
          * Avro spec from an Avro schema.

@@ -3,19 +3,15 @@
  */
 package io.deephaven.websockets;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
-import io.deephaven.json.ObjectProcessorJsonValueFromString;
-import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.websockets.WebsocketPublisher.Builder;
 import io.deephaven.websockets.WebsocketPublisher.ListenerImpl;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -44,8 +40,8 @@ public abstract class WebsocketTable {
     public abstract List<String> subscribeMessages();
 
     @Default
-    public Predicate<String> filter() {
-        return x -> true;
+    public Predicate<? super String> filter() {
+        return P.INCLUDE_ALL;
     }
 
     /**
@@ -54,7 +50,7 @@ public abstract class WebsocketTable {
      * @return the processor
      */
     @Default
-    public NamedObjectProcessor<String> processor() {
+    public NamedObjectProcessor<? super String> processor() {
         return NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value");
     }
 
@@ -83,17 +79,6 @@ public abstract class WebsocketTable {
         return adapter.table();
     }
 
-    private WebsocketPublisher publisher() {
-        return WebsocketPublisher.builder()
-                .uri(uri())
-                .addAllSubscribeMessages(subscribeMessages())
-                .filter(filter())
-                .processor(processor().processor())
-                .chunkSize(chunkSize())
-                .skipFirstN(skipFirstN())
-                .build();
-    }
-
     public interface Builder {
 
         Builder uri(URI uri);
@@ -108,14 +93,13 @@ public abstract class WebsocketTable {
 
         Builder addAllSubscribeMessages(Iterable<String> elements);
 
-        Builder filter(Predicate<String> predicate);
+        Builder filter(Predicate<? super String> predicate);
 
-        Builder processor(NamedObjectProcessor<String> processor);
+        Builder processor(NamedObjectProcessor<? super String> processor);
 
         // todo: easier way to constructed processor?
-        default Builder processor(ValueOptions options) {
-            // todo: remove
-            return processor(new ObjectProcessorJsonValueFromString(new JsonFactory(), options).named());
+        default Builder processor(NamedObjectProcessor.Provider nop) {
+            return processor(nop.named(String.class));
         }
 
         Builder chunkSize(int chunkSize);
@@ -125,5 +109,24 @@ public abstract class WebsocketTable {
         WebsocketTable build();
     }
 
+    private WebsocketPublisher publisher() {
+        return WebsocketPublisher.builder()
+                .uri(uri())
+                .addAllSubscribeMessages(subscribeMessages())
+                .filter(filter())
+                .processor(processor().processor())
+                .chunkSize(chunkSize())
+                .skipFirstN(skipFirstN())
+                .build();
+    }
+
+    private enum P implements Predicate<String> {
+        INCLUDE_ALL;
+
+        @Override
+        public boolean test(String s) {
+            return true;
+        }
+    }
 
 }

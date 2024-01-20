@@ -3,13 +3,11 @@
  */
 package io.deephaven.kafka.v2;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.json.ObjectOptions;
-import io.deephaven.json.ObjectProcessorJsonValue;
 import io.deephaven.json.StringOptions;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
@@ -85,10 +83,11 @@ public class Example {
                 // .receiveTimestamp(null)
                 .addOffsets(Offsets.beginning("homeassistant"))
                 .filter(Example::isWindspeed)
-                .valueProcessor(new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
+                .valueProcessor(ObjectOptions.builder()
                         .putFields("state", DoubleOptions.builder().allowString(true).build())
                         .putFields("last_changed", InstantOptions.standard())
-                        .build()).named())
+                        .build()
+                        .<byte[]>named(byte[].class))
                 .tableType(TableType.append())
                 .build();
     }
@@ -101,13 +100,14 @@ public class Example {
                         .build())
                 .addOffsets(Offsets.beginning("netdata-metrics"))
                 .filter(Example::isCpu)
-                .valueProcessor(new ObjectProcessorJsonValue(new JsonFactory(), ObjectOptions.builder()
+                .valueProcessor(ObjectOptions.builder()
                         .putFields("labels", ObjectOptions.builder()
                                 .putFields("dimension", StringOptions.strict())
                                 .build())
                         .putFields("timestamp", InstantOptions.strict())
                         .putFields("value", DoubleOptions.builder().allowString(true).build())
-                        .build()))
+                        .build()
+                        .<byte[]>named(byte[].class))
                 .receiveTimestamp(null)
                 .recordOptions(ConsumerRecordOptions.empty())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())

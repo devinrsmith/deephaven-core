@@ -16,7 +16,6 @@ import io.deephaven.chunk.LongChunk;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.ShortChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.processor.ObjectProcessor;
@@ -35,8 +34,9 @@ public class TestHelper {
     }
 
     static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-        final ObjectProcessorJsonValue processor =
-                new ObjectProcessorJsonValue(new JsonFactory(new ObjectMapper()), options);
+        final ObjectProcessorJsonValue.BytesIn processor =
+                new ObjectProcessorJsonValue.BytesIn(options,
+                        new JsonFactory(new ObjectMapper()));
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()

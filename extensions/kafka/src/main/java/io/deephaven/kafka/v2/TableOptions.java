@@ -251,7 +251,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the key processor
      */
-    public abstract Optional<NamedObjectProcessor<K>> keyProcessor();
+    public abstract Optional<NamedObjectProcessor<? super K>> keyProcessor();
 
     /**
      * When present, the value processor is adapted into a {@link ConsumerRecord} processor via
@@ -259,7 +259,7 @@ public abstract class TableOptions<K, V> {
      *
      * @return the value processor
      */
-    public abstract Optional<NamedObjectProcessor<V>> valueProcessor();
+    public abstract Optional<NamedObjectProcessor<? super V>> valueProcessor();
 
     /**
      * The table type for ...
@@ -334,17 +334,17 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> recordProcessor(NamedObjectProcessor<ConsumerRecord<K, V>> processor);
 
-        default Builder<K, V> keyProcessor(ObjectProcessor<K> processor) {
+        default Builder<K, V> keyProcessor(ObjectProcessor<? super K> processor) {
             return keyProcessor(NamedObjectProcessor.prefix(processor, "Key"));
         }
 
-        Builder<K, V> keyProcessor(NamedObjectProcessor<K> processor);
+        Builder<K, V> keyProcessor(NamedObjectProcessor<? super K> processor);
 
-        default Builder<K, V> valueProcessor(ObjectProcessor<V> processor) {
+        default Builder<K, V> valueProcessor(ObjectProcessor<? super V> processor) {
             return valueProcessor(NamedObjectProcessor.prefix(processor, "Value"));
         }
 
-        Builder<K, V> valueProcessor(NamedObjectProcessor<V> processor);
+        Builder<K, V> valueProcessor(NamedObjectProcessor<? super V> processor);
 
         Builder<K, V> tableType(TableType tableType);
 

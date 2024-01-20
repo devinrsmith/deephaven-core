@@ -21,7 +21,7 @@ import static io.deephaven.json.Helpers.assertCurrentToken;
 import static io.deephaven.json.Helpers.assertNextToken;
 
 /**
- * @deprecated see {@link ObjectProcessorJsonValue}
+ * @deprecated see {@link ObjectProcessorJsonValueBytes}
  */
 @Deprecated
 public final class ObjectProcessorJsonObject implements ObjectProcessor<byte[]> {

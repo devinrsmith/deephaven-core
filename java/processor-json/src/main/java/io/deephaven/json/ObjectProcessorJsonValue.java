@@ -7,49 +7,41 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
+abstract class ObjectProcessorJsonValue<T> implements ObjectProcessor<T> {
 
-    private final JsonFactory jsonFactory;
     private final ValueOptions opts;
+    private final JsonFactory factory;
 
-    public ObjectProcessorJsonValue(JsonFactory jsonFactory, ValueOptions opts) {
-        this.jsonFactory = Objects.requireNonNull(jsonFactory);
+    ObjectProcessorJsonValue(ValueOptions opts, JsonFactory factory) {
         this.opts = Objects.requireNonNull(opts);
+        this.factory = Objects.requireNonNull(factory);
     }
 
-    public NamedObjectProcessor<byte[]> named() {
-        // todo: on singular / empty path
-        return NamedObjectProcessor.of(this,
-                opts.paths().map(ObjectProcessorJsonValue::toColumnName).collect(Collectors.toList()));
-    }
-
-    private static String toColumnName(List<String> path) {
-        // todo: allow user to configure
-        return String.join("_", path);
-    }
+    protected abstract JsonParser createParser(JsonFactory factory, T in) throws IOException;
 
     @Override
-    public int size() {
+    public final int size() {
         return opts.outputCount();
     }
 
     @Override
-    public List<Type<?>> outputTypes() {
+    public final List<Type<?>> outputTypes() {
         return opts.outputTypes().collect(Collectors.toList());
     }
 
     @Override
-    public void processAll(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) {
+    public final void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
         try {
             processAllImpl(in, out);
         } catch (IOException e) {
@@ -57,12 +49,67 @@ public final class ObjectProcessorJsonValue implements ObjectProcessor<byte[]> {
         }
     }
 
-    void processAllImpl(ObjectChunk<? extends byte[], ?> in, List<WritableChunk<?>> out) throws IOException {
+    void processAllImpl(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) throws IOException {
         final ValueProcessor valueProcessor = opts.processor("<root>", out);
         for (int i = 0; i < in.size(); ++i) {
-            try (final JsonParser parser = jsonFactory.createParser(in.get(i))) {
+            try (final JsonParser parser = createParser(factory, in.get(i))) {
                 ValueProcessor.processFullJson(valueProcessor, parser);
             }
+        }
+    }
+
+    static final class StringIn extends ObjectProcessorJsonValue<String> {
+        StringIn(ValueOptions opts, JsonFactory factory) {
+            super(opts, factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, String in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    static final class BytesIn extends ObjectProcessorJsonValue<byte[]> {
+        BytesIn(ValueOptions opts, JsonFactory factory) {
+            super(opts, factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, byte[] in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    static final class CharsIn extends ObjectProcessorJsonValue<char[]> {
+        CharsIn(ValueOptions opts, JsonFactory factory) {
+            super(opts, factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, char[] in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    static final class FileIn extends ObjectProcessorJsonValue<File> {
+        FileIn(ValueOptions opts, JsonFactory factory) {
+            super(opts, factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, File in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    static final class URLIn extends ObjectProcessorJsonValue<URL> {
+        URLIn(ValueOptions opts, JsonFactory factory) {
+            super(opts, factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, URL in) throws IOException {
+            return factory.createParser(in);
         }
     }
 }

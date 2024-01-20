@@ -41,9 +41,9 @@ public abstract class WebsocketPublisher {
 
     public abstract List<String> subscribeMessages();
 
-    public abstract Predicate<String> filter();
+    public abstract Predicate<? super String> filter();
 
-    public abstract ObjectProcessor<String> processor();
+    public abstract ObjectProcessor<? super String> processor();
 
     public abstract int chunkSize();
 
@@ -68,9 +68,9 @@ public abstract class WebsocketPublisher {
 
         Builder addAllSubscribeMessages(Iterable<String> elements);
 
-        Builder filter(Predicate<String> predicate);
+        Builder filter(Predicate<? super String> predicate);
 
-        Builder processor(ObjectProcessor<String> processor);
+        Builder processor(ObjectProcessor<? super String> processor);
 
         Builder chunkSize(int chunkSize);
 

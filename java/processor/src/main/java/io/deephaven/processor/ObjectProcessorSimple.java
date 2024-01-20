@@ -76,13 +76,9 @@ final class ObjectProcessorSimple {
 
         @Override
         public void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
-
-
-
             final ObjectChunk<T, Any> IN1 = (ObjectChunk<T, Any>) in;
             // final WritableObjectChunk<T, Any> dst = out.get(0).<T>asWritableObjectChunk();
             final WritableObjectChunk<T, Any> dst2 = ((WritableChunk<Any>) out.get(0)).<T>asWritableObjectChunk();
-
             appendTypedChunk(IN1, dst2);
         }
     }

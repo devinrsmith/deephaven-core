@@ -7,7 +7,6 @@ import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
-import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
@@ -23,15 +22,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 @Immutable
 @BuildableStyle
-public abstract class WebsocketOptions {
+public abstract class WebsocketPublisher {
 
     public static Builder builder() {
-        return ImmutableWebsocketOptions.builder();
+        return ImmutableWebsocketPublisher.builder();
     }
 
     // http2 options?
@@ -41,11 +39,11 @@ public abstract class WebsocketOptions {
 
     public abstract URI uri();
 
-    public abstract List<String> subscribeMessage();
+    public abstract List<String> subscribeMessages();
 
     public abstract Predicate<String> filter();
 
-    public abstract NamedObjectProcessor<String> processor();
+    public abstract ObjectProcessor<String> processor();
 
     public abstract int chunkSize();
 
@@ -64,17 +62,21 @@ public abstract class WebsocketOptions {
 
         Builder uri(URI uri);
 
-        Builder subscribeMessage(String subscribeMessage);
+        Builder addSubscribeMessages(String element);
+
+        Builder addSubscribeMessages(String... elements);
+
+        Builder addAllSubscribeMessages(Iterable<String> elements);
 
         Builder filter(Predicate<String> predicate);
 
-        Builder processor(NamedObjectProcessor<String> processor);
+        Builder processor(ObjectProcessor<String> processor);
 
         Builder chunkSize(int chunkSize);
 
         Builder skipFirstN(int skipFirstN);
 
-        WebsocketOptions build();
+        WebsocketPublisher build();
     }
 
     final ListenerImpl publisher() {
@@ -102,6 +104,14 @@ public abstract class WebsocketOptions {
             client.start();
             // todo: do we get all errors through WebSocketListener, or do we need to look at error from future?
             session = client.connect(this, uri()).get();
+            for (String subscribeMessage : subscribeMessages()) {
+                session.getRemote().sendString(subscribeMessage, new WriteCallback() {
+                    @Override
+                    public void writeFailed(Throwable x) {
+                        consumer.acceptFailure(new IOException("Error sending subscribe message", x));
+                    }
+                });
+            }
         }
 
         // -----------------------------------------------
@@ -128,21 +138,7 @@ public abstract class WebsocketOptions {
 
         @Override
         public void onWebSocketConnect(Session session) {
-            // todo: configure session
-            if (subscribeMessage().isEmpty()) {
-                return;
-            }
-            session.getRemote().sendString(subscribeMessage().get(), new WriteCallback() {
-                @Override
-                public void writeFailed(Throwable x) {
-                    consumer.acceptFailure(new IOException("Error sending subscribe message", x));
-                }
 
-                @Override
-                public void writeSuccess() {
-                    // ignore
-                }
-            });
         }
 
         @Override
@@ -183,7 +179,7 @@ public abstract class WebsocketOptions {
 
         private void flushImpl() {
             // todo: ordering
-            processor().processor().processAll(buffer, Arrays.asList(chunks));
+            processor().processAll(buffer, Arrays.asList(chunks));
             buffer.fillWithNullValue(0, buffer.size());
             buffer.setSize(0);
             consumer.accept(chunks);
@@ -193,7 +189,6 @@ public abstract class WebsocketOptions {
         private WritableChunk<Values>[] newProcessorChunks() {
             // noinspection unchecked
             return processor()
-                    .processor()
                     .outputTypes()
                     .stream()
                     .map(ObjectProcessor::chunkType)

@@ -13,26 +13,25 @@ import io.deephaven.json.ObjectProcessorJsonValueFromString;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.websockets.WebsocketOptions.ListenerImpl;
+import io.deephaven.websockets.WebsocketPublisher.Builder;
+import io.deephaven.websockets.WebsocketPublisher.ListenerImpl;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 @Immutable
 @BuildableStyle
-public abstract class WebsocketTableOptions {
+public abstract class WebsocketTable {
 
     public static Builder builder() {
-        return ImmutableWebsocketTableOptions.builder();
+        return ImmutableWebsocketTable.builder();
     }
 
     // http2 options?
@@ -42,7 +41,7 @@ public abstract class WebsocketTableOptions {
 
     public abstract URI uri();
 
-    public abstract List<String> subscribeMessage();
+    public abstract List<String> subscribeMessages();
 
     @Default
     public Predicate<String> filter() {
@@ -74,20 +73,25 @@ public abstract class WebsocketTableOptions {
     // public abstract boolean receiveTimestamp();
 
     public final Table execute() throws Exception {
-        final ListenerImpl publisher = WebsocketOptions.builder()
-                .uri(uri())
-                .filter(filter())
-                .processor(processor())
-                .chunkSize(chunkSize())
-                .skipFirstN(skipFirstN())
-                .build()
-                .execute();
+        // todo: receive timestamp
+        final ListenerImpl publisher = publisher().execute();
         final TableDefinition tableDef =
                 TableDefinition.from(processor().columnNames(), processor().processor().outputTypes());
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher,
                 ExecutionContext.getContext().getUpdateGraph(), UUID.randomUUID().toString(), Map.of());
         publisher.start();
         return adapter.table();
+    }
+
+    private WebsocketPublisher publisher() {
+        return WebsocketPublisher.builder()
+                .uri(uri())
+                .addAllSubscribeMessages(subscribeMessages())
+                .filter(filter())
+                .processor(processor().processor())
+                .chunkSize(chunkSize())
+                .skipFirstN(skipFirstN())
+                .build();
     }
 
     public interface Builder {
@@ -98,7 +102,11 @@ public abstract class WebsocketTableOptions {
             return uri(URI.create(uri));
         }
 
-        Builder subscribeMessage(String subscribeMessage);
+        Builder addSubscribeMessages(String element);
+
+        Builder addSubscribeMessages(String... elements);
+
+        Builder addAllSubscribeMessages(Iterable<String> elements);
 
         Builder filter(Predicate<String> predicate);
 
@@ -114,7 +122,7 @@ public abstract class WebsocketTableOptions {
 
         Builder skipFirstN(int skipFirstN);
 
-        WebsocketTableOptions build();
+        WebsocketTable build();
     }
 
 

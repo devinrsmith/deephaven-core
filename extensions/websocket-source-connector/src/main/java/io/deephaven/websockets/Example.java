@@ -22,20 +22,20 @@ import java.util.stream.Collectors;
 public final class Example {
 
     static Table coinbaseTicker(Collection<String> productIds) throws Exception {
-        return WebsocketOptions.builder()
+        return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
                 .processor(processor(coinbaseTicker()))
-                .subscribeMessage(coinbaseSubscribe(productIds, List.of("ticker")))
+                .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("ticker")))
                 .skipFirstN(1) // skip sub response
                 .build()
                 .execute();
     }
 
     static Table coinbaseMatches(Collection<String> productIds) throws Exception {
-        return WebsocketOptions.builder()
+        return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
                 .processor(coinbaseMatch())
-                .subscribeMessage(coinbaseSubscribe(productIds, List.of("matches")))
+                .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("matches")))
                 .skipFirstN(1) // skip sub response
                 .build()
                 .execute();

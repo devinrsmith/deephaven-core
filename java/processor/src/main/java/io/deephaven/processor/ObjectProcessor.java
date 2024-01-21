@@ -219,4 +219,11 @@ public interface ObjectProcessor<T> {
      *        at least {@code in.size()}
      */
     void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
+
+    interface Provider {
+
+        // this pattern supports use cases where we some sort of object has multiple json parser types
+        // String.class / byte[].class for JSON
+        <T> ObjectProcessor<? super T> processor(Class<T> inputType);
+    }
 }

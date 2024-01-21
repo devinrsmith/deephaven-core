@@ -20,34 +20,35 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class ValueOptions implements NamedObjectProcessor.Provider {
+public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final Function<List<String>, String> TO_COLUMN_NAME = ValueOptions::toColumnName;
 
+    @SuppressWarnings("unchecked")
     @Override
-    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+    public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
         if (String.class.isAssignableFrom(inputType)) {
-            // noinspection unchecked
-            return (NamedObjectProcessor<T>) namedStringProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+            return (ObjectProcessor<? super T>) stringProcessor(JSON_FACTORY);
         }
         if (byte[].class.isAssignableFrom(inputType)) {
-            // noinspection unchecked
-            return (NamedObjectProcessor<T>) namedBytesProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+            return (ObjectProcessor<? super T>) bytesProcessor(JSON_FACTORY);
         }
         if (char[].class.isAssignableFrom(inputType)) {
-            // noinspection unchecked
-            return (NamedObjectProcessor<T>) namedCharsProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+            return (ObjectProcessor<? super T>) charsProcessor(JSON_FACTORY);
         }
         if (File.class.isAssignableFrom(inputType)) {
-            // noinspection unchecked
-            return (NamedObjectProcessor<T>) namedFileProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+            return (ObjectProcessor<? super T>) fileProcessor(JSON_FACTORY);
         }
         if (URL.class.isAssignableFrom(inputType)) {
-            // noinspection unchecked
-            return (NamedObjectProcessor<T>) namedURLProcessor(JSON_FACTORY, TO_COLUMN_NAME);
+            return (ObjectProcessor<? super T>) urlProcessor(JSON_FACTORY);
         }
         throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
+    }
+
+    @Override
+    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+        return NamedObjectProcessor.of(processor(inputType), names(TO_COLUMN_NAME));
     }
 
     public final ObjectProcessor<String> stringProcessor(JsonFactory factory) {
@@ -135,10 +136,6 @@ public abstract class ValueOptions implements NamedObjectProcessor.Provider {
 
     final int numColumns() {
         return (int) outputTypes().count();
-    }
-
-    final List<String> names() {
-        return names(TO_COLUMN_NAME);
     }
 
     public final List<String> names(Function<List<String>, String> f) {

@@ -25,6 +25,18 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final Function<List<String>, String> TO_COLUMN_NAME = ValueOptions::toColumnName;
 
+    /**
+     * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.
+     *
+     * @param inputType the input type
+     * @return the object processor
+     * @param <T> the input type
+     * @see #stringProcessor(JsonFactory)
+     * @see #bytesProcessor(JsonFactory)
+     * @see #charsProcessor(JsonFactory)
+     * @see #fileProcessor(JsonFactory)
+     * @see #urlProcessor(JsonFactory)
+     */
     @SuppressWarnings("unchecked")
     @Override
     public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
@@ -46,54 +58,81 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
     }
 
+    /**
+     * Creates a named object processor based on the {@code inputType} with a default {@link JsonFactory} and default
+     * naming function. Equivalent to
+     * {@code NamedObjectProcessor.of(processor(inputType), names(ValueOptions::toColumnName))}.
+     *
+     * @param inputType the input type
+     * @return the named object processor
+     * @param <T> the input type
+     * @see NamedObjectProcessor#of(ObjectProcessor, Iterable)
+     * @see #processor(Class)
+     * @see #names(Function)
+     * @see #toColumnName(List)
+     */
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
         return NamedObjectProcessor.of(processor(inputType), names(TO_COLUMN_NAME));
     }
 
+    /**
+     * Creates a {@link String} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     * @see JsonFactory#createParser(String)
+     */
     public final ObjectProcessor<String> stringProcessor(JsonFactory factory) {
         return new ObjectProcessorJsonValue.StringIn(this, factory);
     }
 
+    /**
+     * Creates a {@code byte[]} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     * @see JsonFactory#createParser(byte[])
+     */
     public final ObjectProcessor<byte[]> bytesProcessor(JsonFactory factory) {
         return new ObjectProcessorJsonValue.BytesIn(this, factory);
     }
 
+    /**
+     * Creates a {@code char[]} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     * @see JsonFactory#createParser(char[])
+     */
     public final ObjectProcessor<char[]> charsProcessor(JsonFactory factory) {
         return new ObjectProcessorJsonValue.CharsIn(this, factory);
     }
 
+    /**
+     * Creates a {@link File} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     * @see JsonFactory#createParser(File)
+     */
     public final ObjectProcessor<File> fileProcessor(JsonFactory factory) {
         return new ObjectProcessorJsonValue.FileIn(this, factory);
     }
 
+    /**
+     * Creates a {@link URL} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     * @see JsonFactory#createParser(URL)
+     */
     public final ObjectProcessor<URL> urlProcessor(JsonFactory factory) {
         return new ObjectProcessorJsonValue.URLIn(this, factory);
     }
 
-    public final NamedObjectProcessor<String> namedStringProcessor(JsonFactory factory,
-            Function<List<String>, String> toColumnName) {
-        return NamedObjectProcessor.of(stringProcessor(factory), names(toColumnName));
-    }
-
-    public final NamedObjectProcessor<byte[]> namedBytesProcessor(JsonFactory factory,
-            Function<List<String>, String> toColumnName) {
-        return NamedObjectProcessor.of(bytesProcessor(factory), names(toColumnName));
-    }
-
-    public final NamedObjectProcessor<char[]> namedCharsProcessor(JsonFactory factory,
-            Function<List<String>, String> toColumnName) {
-        return NamedObjectProcessor.of(charsProcessor(factory), names(toColumnName));
-    }
-
-    public final NamedObjectProcessor<File> namedFileProcessor(JsonFactory factory,
-            Function<List<String>, String> toColumnName) {
-        return NamedObjectProcessor.of(fileProcessor(factory), names(toColumnName));
-    }
-
-    public final NamedObjectProcessor<URL> namedURLProcessor(JsonFactory factory,
-            Function<List<String>, String> toColumnName) {
-        return NamedObjectProcessor.of(urlProcessor(factory), names(toColumnName));
+    public final List<String> names(Function<List<String>, String> f) {
+        return paths().map(f).collect(Collectors.toList());
     }
 
     @Default
@@ -136,10 +175,6 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
     final int numColumns() {
         return (int) outputTypes().count();
-    }
-
-    public final List<String> names(Function<List<String>, String> f) {
-        return paths().map(f).collect(Collectors.toList());
     }
 
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {

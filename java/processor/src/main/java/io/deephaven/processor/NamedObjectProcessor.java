@@ -51,10 +51,16 @@ public abstract class NamedObjectProcessor<T> {
         NamedObjectProcessor<T> build();
     }
 
+
     public interface Provider {
 
-        // this pattern supports use cases where we some sort of object has multiple json parser types
-        // String.class / byte[].class for JSON
+        /**
+         * Creates a named object processor that can process the input type {@code inputType}.
+         *
+         * @param inputType the input type
+         * @return the named object processor
+         * @param <T> the input type
+         */
         <T> NamedObjectProcessor<? super T> named(Class<T> inputType);
     }
 

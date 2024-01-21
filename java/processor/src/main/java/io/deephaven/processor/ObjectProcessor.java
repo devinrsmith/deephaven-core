@@ -19,7 +19,6 @@ import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Function;
 
@@ -222,8 +221,13 @@ public interface ObjectProcessor<T> {
 
     interface Provider {
 
-        // this pattern supports use cases where we some sort of object has multiple json parser types
-        // String.class / byte[].class for JSON
+        /**
+         * Creates an object processor that can process the input type {@code inputType}.
+         *
+         * @param inputType the input type
+         * @return the object processor
+         * @param <T> the input type
+         */
         <T> ObjectProcessor<? super T> processor(Class<T> inputType);
     }
 }

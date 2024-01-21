@@ -4,6 +4,8 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
@@ -11,11 +13,14 @@ import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,7 +89,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonFactory#createParser(String)
      */
     public final ObjectProcessor<String> stringProcessor(JsonFactory factory) {
-        return new ObjectProcessorJsonValue.StringIn(this, factory);
+        return new StringIn(factory);
     }
 
     /**
@@ -95,7 +100,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonFactory#createParser(byte[])
      */
     public final ObjectProcessor<byte[]> bytesProcessor(JsonFactory factory) {
-        return new ObjectProcessorJsonValue.BytesIn(this, factory);
+        return new BytesIn(factory);
     }
 
     /**
@@ -106,7 +111,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonFactory#createParser(char[])
      */
     public final ObjectProcessor<char[]> charsProcessor(JsonFactory factory) {
-        return new ObjectProcessorJsonValue.CharsIn(this, factory);
+        return new CharsIn(factory);
     }
 
     /**
@@ -117,7 +122,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonFactory#createParser(File)
      */
     public final ObjectProcessor<File> fileProcessor(JsonFactory factory) {
-        return new ObjectProcessorJsonValue.FileIn(this, factory);
+        return new FileIn(factory);
     }
 
     /**
@@ -128,7 +133,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonFactory#createParser(URL)
      */
     public final ObjectProcessor<URL> urlProcessor(JsonFactory factory) {
-        return new ObjectProcessorJsonValue.URLIn(this, factory);
+        return new URLIn(factory);
     }
 
     public final List<String> names(Function<List<String>, String> f) {
@@ -204,5 +209,99 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     public static String toColumnName(List<String> path) {
         // todo: allow user to configure
         return String.join("_", path);
+    }
+
+    private class StringIn extends ObjectProcessorJsonValue<String> {
+        StringIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, String in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    private class BytesIn extends ObjectProcessorJsonValue<byte[]> {
+        BytesIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, byte[] in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    private class CharsIn extends ObjectProcessorJsonValue<char[]> {
+        CharsIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, char[] in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    private class FileIn extends ObjectProcessorJsonValue<File> {
+        FileIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, File in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    private class URLIn extends ObjectProcessorJsonValue<URL> {
+        URLIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, URL in) throws IOException {
+            return factory.createParser(in);
+        }
+    }
+
+    private abstract class ObjectProcessorJsonValue<T> implements ObjectProcessor<T> {
+
+        private final JsonFactory factory;
+
+        ObjectProcessorJsonValue(JsonFactory factory) {
+            this.factory = Objects.requireNonNull(factory);
+        }
+
+        protected abstract JsonParser createParser(JsonFactory factory, T in) throws IOException;
+
+        @Override
+        public final int size() {
+            return outputCount();
+        }
+
+        @Override
+        public final List<Type<?>> outputTypes() {
+            return ValueOptions.this.outputTypes().collect(Collectors.toList());
+        }
+
+        @Override
+        public final void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+            try {
+                processAllImpl(in, out);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        void processAllImpl(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) throws IOException {
+            final ValueProcessor valueProcessor = processor("<root>", out);
+            for (int i = 0; i < in.size(); ++i) {
+                try (final JsonParser parser = createParser(factory, in.get(i))) {
+                    ValueProcessor.processFullJson(valueProcessor, parser);
+                }
+            }
+        }
     }
 }

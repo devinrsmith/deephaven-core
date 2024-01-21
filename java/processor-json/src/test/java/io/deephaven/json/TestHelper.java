@@ -21,6 +21,7 @@ import io.deephaven.chunk.attributes.Any;
 import io.deephaven.processor.ObjectProcessor;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,9 +35,7 @@ public class TestHelper {
     }
 
     static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-        final ObjectProcessorJsonValue.BytesIn processor =
-                new ObjectProcessorJsonValue.BytesIn(options,
-                        new JsonFactory(new ObjectMapper()));
+        final ObjectProcessor<byte[]> processor = options.bytesProcessor(new JsonFactory(new ObjectMapper()));
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()
@@ -56,7 +55,11 @@ public class TestHelper {
                     in.set(i, json.getBytes(StandardCharsets.UTF_8));
                     ++i;
                 }
-                processor.processAllImpl(in, out);
+                try {
+                    processor.processAll(in, out);
+                } catch (UncheckedIOException e) {
+                    throw e.getCause();
+                }
             }
             for (int i = 0; i < expectedCols.length; ++i) {
                 check(out.get(i), expectedCols[i]);

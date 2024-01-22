@@ -20,7 +20,7 @@ public final class Example {
     static Table coinbaseTicker(Collection<String> productIds) throws Exception {
         return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(coinbaseTicker())
+                .stringProcessor(coinbaseTicker())
                 .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("ticker")))
                 .skipFirstN(1) // skip sub response
                 .build()
@@ -30,7 +30,7 @@ public final class Example {
     static Table coinbaseMatches(Collection<String> productIds) throws Exception {
         return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .processor(coinbaseMatch())
+                .stringProcessor(coinbaseMatch())
                 .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("matches")))
                 .skipFirstN(1) // skip sub response
                 .build()

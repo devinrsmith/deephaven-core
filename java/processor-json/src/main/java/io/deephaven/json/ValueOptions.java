@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see #charsProcessor(JsonFactory)
      * @see #fileProcessor(JsonFactory)
      * @see #urlProcessor(JsonFactory)
+     * @see #byteBufferProcessor(JsonFactory)
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -59,6 +61,9 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         }
         if (URL.class.isAssignableFrom(inputType)) {
             return (ObjectProcessor<? super T>) urlProcessor(JSON_FACTORY);
+        }
+        if (ByteBuffer.class.isAssignableFrom(inputType)) {
+            return (ObjectProcessor<? super T>) byteBufferProcessor(JSON_FACTORY);
         }
         throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
     }
@@ -134,6 +139,16 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      */
     public final ObjectProcessor<URL> urlProcessor(JsonFactory factory) {
         return new URLIn(factory);
+    }
+
+    /**
+     * Creates a {@link ByteBuffer} json object processor.
+     *
+     * @param factory the factory
+     * @return the object processor
+     */
+    public final ObjectProcessor<ByteBuffer> byteBufferProcessor(JsonFactory factory) {
+        return new ByteBufferIn(factory);
     }
 
     public final List<String> names(Function<List<String>, String> f) {
@@ -230,6 +245,20 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         @Override
         protected JsonParser createParser(JsonFactory factory, byte[] in) throws IOException {
             return factory.createParser(in);
+        }
+    }
+
+    private class ByteBufferIn extends ObjectProcessorJsonValue<ByteBuffer> {
+        ByteBufferIn(JsonFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        protected JsonParser createParser(JsonFactory factory, ByteBuffer in) throws IOException {
+            if (in.hasArray()) {
+                return factory.createParser(in.array(), in.position(), in.remaining());
+            }
+            return factory.createParser(ByteBufferInputStream.of(in));
         }
     }
 

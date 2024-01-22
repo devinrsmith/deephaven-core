@@ -8,19 +8,26 @@ import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
+import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.websockets.WebsocketPublisher.ListenerImpl;
+import io.deephaven.websockets.WebsocketPublisher.WebsocketStreamPublisher;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import javax.annotation.Nullable;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -35,49 +42,102 @@ public abstract class WebsocketTable {
 
     // partitioning?
 
+    /**
+     * The URI to connect to. Must have a host and a scheme of "ws" or "wss".
+     *
+     * @return the uri
+     */
     public abstract URI uri();
 
-    public abstract List<String> subscribeMessages();
+    /**
+     *
+     * @return
+     */
+    public abstract List<String> subscribeMessages(); // todo: binary support
 
-    @Default
-    public Predicate<? super String> filter() {
-        return P.INCLUDE_ALL;
-    }
+    public abstract Optional<Predicate<? super String>> stringFilter();
+
+    public abstract Optional<Predicate<? super byte[]>> bytesFilter();
+
+    public abstract Optional<Predicate<? super ByteBuffer>> byteBufferFilter();
+
+    public abstract Optional<NamedObjectProcessor<? super String>> stringProcessor();
+
+    public abstract Optional<NamedObjectProcessor<? super byte[]>> bytesProcessor();
+
+    public abstract Optional<NamedObjectProcessor<? super ByteBuffer>> byteBufferProcessor();
 
     /**
-     * The
-     * 
-     * @return the processor
+     *
+     * @return
      */
-    @Default
-    public NamedObjectProcessor<? super String> processor() {
-        return NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value");
-    }
-
-    // todo: move to TableOptions, not set default here
     @Default
     public int chunkSize() {
         return ArrayBackedColumnSource.BLOCK_SIZE;
     }
 
+    /**
+     * The number of initial messages responses to skip. This may be useful in situations where an initial connect or
+     * subscription message produces a response that is not necessary to process. By default, is {@code 0}.
+     *
+     * @return the number of initial messages to skip
+     */
     @Default
     public int skipFirstN() {
         return 0;
     }
 
+    /**
+     * The receive timestamp column name. By default, is "ReceiveTimestamp". When set to {@code null}, the resulting
+     * table will not contain the receive timestamp column.
+     *
+     * @return the receive timestamp colum name
+     */
+    @Default
+    @Nullable
+    public String receiveTimestamp() {
+        return "ReceiveTimestamp";
+    }
 
-    // public abstract boolean receiveTimestamp();
+    // ---------------------------------------------------------------------
+
+    @Default
+    public String name() {
+        return UUID.randomUUID().toString();
+    }
+
+    /**
+     * The update source registrar. By default, is equivalent to {@code ExecutionContext.getContext().getUpdateGraph()}.
+     *
+     * @return the update source registrar
+     */
+    @Default
+    public UpdateSourceRegistrar updateSourceRegistrar() {
+        return ExecutionContext.getContext().getUpdateGraph();
+    }
+
+    /**
+     * The extra attributes to set on the blink table.
+     *
+     * @return the extra attributes
+     */
+    public abstract Map<String, Object> extraAttributes();
+
+    // ---------------------------------------------------------------------
+
+    public final TableDefinition tableDefinition() {
+        return TableDefinition.from(columnNames(), columnTypes());
+    }
 
     public final Table execute() throws Exception {
-        // todo: receive timestamp
-        final ListenerImpl publisher = publisher().execute();
-        final TableDefinition tableDef =
-                TableDefinition.from(processor().columnNames(), processor().processor().outputTypes());
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDef, publisher,
-                ExecutionContext.getContext().getUpdateGraph(), UUID.randomUUID().toString(), Map.of());
+        final WebsocketStreamPublisher publisher = publisher().execute();
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition(), publisher,
+                updateSourceRegistrar(), name(), extraAttributes());
         publisher.start();
         return adapter.table();
     }
+
+    // ---------------------------------------------------------------------
 
     public interface Builder {
 
@@ -93,40 +153,112 @@ public abstract class WebsocketTable {
 
         Builder addAllSubscribeMessages(Iterable<String> elements);
 
-        Builder filter(Predicate<? super String> predicate);
+        Builder stringFilter(Predicate<? super String> stringFilter);
 
-        Builder processor(NamedObjectProcessor<? super String> processor);
+        Builder bytesFilter(Predicate<? super byte[]> bytesFilter);
 
-        // todo: easier way to constructed processor?
-        default Builder processor(NamedObjectProcessor.Provider nop) {
-            return processor(nop.named(String.class));
+        Builder byteBufferFilter(Predicate<? super ByteBuffer> byteBufferFilter);
+
+        Builder stringProcessor(NamedObjectProcessor<? super String> stringProcessor);
+
+        default Builder stringProcessor(NamedObjectProcessor.Provider stringProcessor) {
+            return stringProcessor(stringProcessor.named(String.class));
+        }
+
+        Builder bytesProcessor(NamedObjectProcessor<? super byte[]> stringProcessor);
+
+        default Builder bytesProcessor(NamedObjectProcessor.Provider bytesProcessor) {
+            return bytesProcessor(bytesProcessor.named(byte[].class));
+        }
+
+        Builder byteBufferProcessor(NamedObjectProcessor<? super ByteBuffer> stringProcessor);
+
+        default Builder byteBufferProcessor(NamedObjectProcessor.Provider bytesProcessor) {
+            return byteBufferProcessor(bytesProcessor.named(ByteBuffer.class));
         }
 
         Builder chunkSize(int chunkSize);
 
         Builder skipFirstN(int skipFirstN);
 
+        Builder receiveTimestamp(String receiveTimestamp);
+
         WebsocketTable build();
     }
 
-    private WebsocketPublisher publisher() {
-        return WebsocketPublisher.builder()
-                .uri(uri())
-                .addAllSubscribeMessages(subscribeMessages())
-                .filter(filter())
-                .processor(processor().processor())
-                .chunkSize(chunkSize())
-                .skipFirstN(skipFirstN())
-                .build();
+    // ---------------------------------------------------------------------
+
+    @Check
+    final void checkUri() {
+        WebsocketPublisher.checkUri(uri());
     }
 
-    private enum P implements Predicate<String> {
-        INCLUDE_ALL;
+    @Check
+    final void checkChunkSize() {
+        WebsocketPublisher.checkChunkSize(chunkSize());
+    }
 
-        @Override
-        public boolean test(String s) {
-            return true;
+    @Check
+    final void checkSkipFirstN() {
+        WebsocketPublisher.checkSkipFirstN(skipFirstN());
+    }
+
+    @Check
+    final void checkZeroOrOneOf() {
+        final int count = (stringProcessor().isPresent() ? 1 : 0)
+                + (bytesProcessor().isPresent() ? 1 : 0)
+                + (byteBufferProcessor().isPresent() ? 1 : 0);
+        if (count > 1) {
+            throw new IllegalArgumentException(
+                    "Must have exactly at most one of stringProcessor, bytesProcessor, or byteBufferProcessor");
         }
     }
 
+    private Optional<NamedObjectProcessor<? super String>> defaultStringProcessor() {
+        if (stringProcessor().isPresent() || bytesProcessor().isPresent() || byteBufferProcessor().isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"));
+    }
+
+    private NamedObjectProcessor<?> processor() {
+        return Stream.of(stringProcessor(), bytesProcessor(), byteBufferProcessor(), defaultStringProcessor())
+                .flatMap(Optional::stream)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private List<String> columnNames() {
+        return Stream.concat(
+                Stream.ofNullable(receiveTimestamp()),
+                processor().columnNames().stream())
+                .collect(Collectors.toList());
+    }
+
+    private List<Type<?>> columnTypes() {
+        return Stream.concat(
+                receiveTimestamp() == null ? Stream.empty() : Stream.of(Type.instantType()),
+                processor().processor().outputTypes().stream())
+                .collect(Collectors.toList());
+    }
+
+    private WebsocketPublisher publisher() {
+        final WebsocketPublisher.Builder builder = WebsocketPublisher.builder()
+                .uri(uri())
+                .addAllSubscribeMessages(subscribeMessages())
+                .chunkSize(chunkSize())
+                .skipFirstN(skipFirstN())
+                .receiveTimestamp(receiveTimestamp() != null);
+
+        stringFilter().ifPresent(builder::stringFilter);
+        bytesFilter().ifPresent(builder::bytesFilter);
+        byteBufferFilter().ifPresent(builder::byteBufferFilter);
+
+        stringProcessor().map(NamedObjectProcessor::processor).ifPresent(builder::stringProcessor);
+        bytesProcessor().map(NamedObjectProcessor::processor).ifPresent(builder::bytesProcessor);
+        byteBufferProcessor().map(NamedObjectProcessor::processor).ifPresent(builder::byteBufferProcessor);
+        defaultStringProcessor().map(NamedObjectProcessor::processor).ifPresent(builder::stringProcessor);
+
+        return builder.build();
+    }
 }

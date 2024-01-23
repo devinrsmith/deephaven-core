@@ -10,7 +10,6 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.configuration.Configuration;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
@@ -25,15 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static io.deephaven.kafka.KafkaTools.KAFKA_PARTITION_COLUMN_NAME_DEFAULT;
-import static io.deephaven.kafka.KafkaTools.KAFKA_PARTITION_COLUMN_NAME_PROPERTY;
-import static io.deephaven.kafka.KafkaTools.KEY_BYTES_COLUMN_NAME_PROPERTY;
-import static io.deephaven.kafka.KafkaTools.OFFSET_COLUMN_NAME_DEFAULT;
-import static io.deephaven.kafka.KafkaTools.OFFSET_COLUMN_NAME_PROPERTY;
-import static io.deephaven.kafka.KafkaTools.TIMESTAMP_COLUMN_NAME_DEFAULT;
-import static io.deephaven.kafka.KafkaTools.TIMESTAMP_COLUMN_NAME_PROPERTY;
-import static io.deephaven.kafka.KafkaTools.VALUE_BYTES_COLUMN_NAME_PROPERTY;
 
 /**
  * Provides options for processing the common fields of {@link ConsumerRecord}.
@@ -91,37 +81,38 @@ public abstract class ConsumerRecordOptions {
         return v2();
     }
 
-    /**
-     * Attempts to mimic the classic record options. Uses the configuration value
-     * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_PROPERTY} or default
-     * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_DEFAULT} for {@link Field#PARTITION}; the
-     * configuration value {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_PROPERTY} or default
-     * {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_DEFAULT} for {@link Field#OFFSET}; the configuration
-     * value {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_PROPERTY} or default
-     * {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_DEFAULT} for {@link Field#TIMESTAMP}; the
-     * configuration value {@value io.deephaven.kafka.KafkaTools#KEY_BYTES_COLUMN_NAME_PROPERTY} for
-     * {@link Field#KEY_SIZE} if present; and the configuration value
-     * {@value io.deephaven.kafka.KafkaTools#VALUE_BYTES_COLUMN_NAME_PROPERTY} for {@link Field#VALUE_SIZE} if present.
-     *
-     * @return the classic record options
-     */
-    public static ConsumerRecordOptions v1() {
-        final Configuration config = Configuration.getInstance();
-        final Builder builder = builder()
-                .putFields(Field.PARTITION, config.getStringWithDefault(KAFKA_PARTITION_COLUMN_NAME_PROPERTY,
-                        KAFKA_PARTITION_COLUMN_NAME_DEFAULT))
-                .putFields(Field.OFFSET,
-                        config.getStringWithDefault(OFFSET_COLUMN_NAME_PROPERTY, OFFSET_COLUMN_NAME_DEFAULT))
-                .putFields(Field.TIMESTAMP,
-                        config.getStringWithDefault(TIMESTAMP_COLUMN_NAME_PROPERTY, TIMESTAMP_COLUMN_NAME_DEFAULT));
-        if (config.hasProperty(KEY_BYTES_COLUMN_NAME_PROPERTY)) {
-            builder.putFields(Field.KEY_SIZE, config.getProperty(KEY_BYTES_COLUMN_NAME_PROPERTY));
-        }
-        if (config.hasProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY)) {
-            builder.putFields(Field.VALUE_SIZE, config.getProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY));
-        }
-        return builder.build();
-    }
+    // /**
+    // * Attempts to mimic the classic record options. Uses the configuration value
+    // * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_PROPERTY} or default
+    // * {@value io.deephaven.kafka.KafkaTools#KAFKA_PARTITION_COLUMN_NAME_DEFAULT} for {@link Field#PARTITION}; the
+    // * configuration value {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_PROPERTY} or default
+    // * {@value io.deephaven.kafka.KafkaTools#OFFSET_COLUMN_NAME_DEFAULT} for {@link Field#OFFSET}; the configuration
+    // * value {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_PROPERTY} or default
+    // * {@value io.deephaven.kafka.KafkaTools#TIMESTAMP_COLUMN_NAME_DEFAULT} for {@link Field#TIMESTAMP}; the
+    // * configuration value {@value io.deephaven.kafka.KafkaTools#KEY_BYTES_COLUMN_NAME_PROPERTY} for
+    // * {@link Field#KEY_SIZE} if present; and the configuration value
+    // * {@value io.deephaven.kafka.KafkaTools#VALUE_BYTES_COLUMN_NAME_PROPERTY} for {@link Field#VALUE_SIZE} if
+    // present.
+    // *
+    // * @return the classic record options
+    // */
+    // public static ConsumerRecordOptions v1() {
+    // final Configuration config = Configuration.getInstance();
+    // final Builder builder = builder()
+    // .putFields(Field.PARTITION, config.getStringWithDefault(KAFKA_PARTITION_COLUMN_NAME_PROPERTY,
+    // KAFKA_PARTITION_COLUMN_NAME_DEFAULT))
+    // .putFields(Field.OFFSET,
+    // config.getStringWithDefault(OFFSET_COLUMN_NAME_PROPERTY, OFFSET_COLUMN_NAME_DEFAULT))
+    // .putFields(Field.TIMESTAMP,
+    // config.getStringWithDefault(TIMESTAMP_COLUMN_NAME_PROPERTY, TIMESTAMP_COLUMN_NAME_DEFAULT));
+    // if (config.hasProperty(KEY_BYTES_COLUMN_NAME_PROPERTY)) {
+    // builder.putFields(Field.KEY_SIZE, config.getProperty(KEY_BYTES_COLUMN_NAME_PROPERTY));
+    // }
+    // if (config.hasProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY)) {
+    // builder.putFields(Field.VALUE_SIZE, config.getProperty(VALUE_BYTES_COLUMN_NAME_PROPERTY));
+    // }
+    // return builder.build();
+    // }
 
     /**
      * Equivalent to

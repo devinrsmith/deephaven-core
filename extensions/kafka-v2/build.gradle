@@ -1,0 +1,43 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+dependencies {
+    api project(':engine-api')
+    api project(':processor')
+
+    implementation project(':engine-table')
+
+    // Using io.confluent dependencies requires code in the toplevel build.gradle to add their maven repository.
+    // Note: the -ccs flavor is provided by confluent as their community edition. It is equivalent to the maven central
+    // version, but has a different version to make it easier to keep confluent dependencies aligned.
+    implementation 'org.apache.kafka:kafka-clients:7.4.0-ccs'
+
+    // When updating the kafka implementation, it may be useful to test out the minimum kafka version that our code
+    // compiles, tests, and runs with. If we want to offer more strict guarantees in these regards in the future, at
+    // that time we can setup explicit scaffolding to compile and test with other versions.
+    // api 'org.apache.kafka:kafka-clients:5.5.15-ccs'
+
+    Classpaths.inheritImmutables(project)
+
+    testImplementation project(':engine-test-utils')
+    testImplementation "org.testcontainers:testcontainers:1.19.3"
+    testImplementation "org.testcontainers:redpanda:1.19.3"
+    testImplementation "org.testcontainers:kafka:1.19.3"
+
+    Classpaths.inheritJUnitPlatform(project)
+    Classpaths.inheritAssertJ(project)
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
+    Classpaths.inheritJUnitClassic(project, 'testImplementation')
+
+    testRuntimeOnly project(':test-configs')
+    testRuntimeOnly project(':log-to-slf4j')
+    Classpaths.inheritSlf4j(project, 'slf4j-simple', 'testRuntimeOnly')
+}
+
+test {
+    useJUnitPlatform()
+}

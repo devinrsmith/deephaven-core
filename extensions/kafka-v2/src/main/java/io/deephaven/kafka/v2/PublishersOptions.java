@@ -4,7 +4,6 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.util.thread.NamingThreadFactory;
@@ -17,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Predicate;
@@ -78,7 +76,7 @@ public abstract class PublishersOptions<K, V> {
 
     public abstract boolean receiveTimestamp();
 
-    public abstract Optional<ConsumerLoopCallback> callback();
+    // public abstract Optional<ConsumerLoopCallback> callback();
 
     public interface Builder<K, V> {
         Builder<K, V> clientOptions(ClientOptions<K, V> clientOptions);
@@ -95,7 +93,7 @@ public abstract class PublishersOptions<K, V> {
 
         Builder<K, V> receiveTimestamp(boolean receiveTimestamp);
 
-        Builder<K, V> callback(ConsumerLoopCallback callback);
+        // Builder<K, V> callback(ConsumerLoopCallback callback);
 
         PublishersOptions<K, V> build();
     }
@@ -158,7 +156,7 @@ public abstract class PublishersOptions<K, V> {
                     .map(tp -> new PublisherImpl<>(tp, filter(), processor(), onShutdown, chunkSize(),
                             receiveTimestamp()))
                     .collect(Collectors.toSet());
-            return new PublishersImpl<>(client, publishers, threadFactory(), callback().orElse(null),
+            return new PublishersImpl<>(client, publishers, threadFactory(), /* callback().orElse(null), */
                     receiveTimestamp());
         } catch (Throwable t) {
             safeCloseClient(client, t);

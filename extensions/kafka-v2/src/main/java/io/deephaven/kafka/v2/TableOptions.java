@@ -12,22 +12,14 @@ import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.table.impl.BlinkTableTools;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.SortedColumnsAttribute;
 import io.deephaven.engine.table.impl.SortingOrder;
 import io.deephaven.engine.table.impl.partitioned.PartitionedTableImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
-import io.deephaven.engine.table.impl.sources.ring.RingTableTools;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
-import io.deephaven.kafka.KafkaTools.TableType;
-import io.deephaven.kafka.KafkaTools.TableType.Append;
-import io.deephaven.kafka.KafkaTools.TableType.Blink;
-import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
-import io.deephaven.kafka.v2.PublishersOptions.Builder;
 import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
@@ -58,7 +50,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -263,15 +254,15 @@ public abstract class TableOptions<K, V> {
      */
     public abstract Optional<NamedObjectProcessor<? super V>> valueProcessor();
 
-    /**
-     * The table type for ...
-     *
-     * @return the table type
-     */
-    @Default
-    public TableType tableType() {
-        return TableType.blink();
-    }
+    // /**
+    // * The table type for ...
+    // *
+    // * @return the table type
+    // */
+    // @Default
+    // public TableType tableType() {
+    // return TableType.blink();
+    // }
 
     /**
      * The extra attributes to set on the underlying blink table.
@@ -309,7 +300,7 @@ public abstract class TableOptions<K, V> {
         return "ReceiveTimestamp";
     }
 
-    public abstract Optional<ConsumerLoopCallback> callback();
+    // public abstract Optional<ConsumerLoopCallback> callback();
 
     public interface Builder<K, V> {
         Builder<K, V> name(String name);
@@ -348,7 +339,7 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> valueProcessor(NamedObjectProcessor<? super V> processor);
 
-        Builder<K, V> tableType(TableType tableType);
+        // Builder<K, V> tableType(TableType tableType);
 
         Builder<K, V> putExtraAttributes(String key, Object value);
 
@@ -362,7 +353,7 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> receiveTimestamp(String receiveTimestamp);
 
-        Builder<K, V> callback(ConsumerLoopCallback callback);
+        // Builder<K, V> callback(ConsumerLoopCallback callback);
 
         TableOptions<K, V> build();
     }
@@ -431,9 +422,9 @@ public abstract class TableOptions<K, V> {
 
     @VisibleForTesting
     final StreamToBlinkTableAdapter adapter() {
-        if (!TableType.blink().equals(tableType())) {
-            throw new IllegalArgumentException("Should only use adapter with working with blink table test");
-        }
+        // if (!TableType.blink().equals(tableType())) {
+        // throw new IllegalArgumentException("Should only use adapter with working with blink table test");
+        // }
         return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleStreamConsumer);
     }
 
@@ -490,32 +481,33 @@ public abstract class TableOptions<K, V> {
     }
 
     private Table toTableType(Table blinkTable) {
-        return tableType().walk(new ToTableTypeVisitor(blinkTable));
+        return blinkTable;
+        // return tableType().walk(new ToTableTypeVisitor(blinkTable));
     }
 
-    private static class ToTableTypeVisitor implements TableType.Visitor<Table> {
-
-        private final Table blinkTable;
-
-        public ToTableTypeVisitor(Table blinkTable) {
-            this.blinkTable = Objects.requireNonNull(blinkTable);
-        }
-
-        @Override
-        public Table visit(Blink blink) {
-            return blinkTable;
-        }
-
-        @Override
-        public Table visit(Append append) {
-            return BlinkTableTools.blinkToAppendOnly(blinkTable);
-        }
-
-        @Override
-        public Table visit(Ring ring) {
-            return RingTableTools.of(blinkTable, ring.capacity());
-        }
-    }
+    // private static class ToTableTypeVisitor implements TableType.Visitor<Table> {
+    //
+    // private final Table blinkTable;
+    //
+    // public ToTableTypeVisitor(Table blinkTable) {
+    // this.blinkTable = Objects.requireNonNull(blinkTable);
+    // }
+    //
+    // @Override
+    // public Table visit(Blink blink) {
+    // return blinkTable;
+    // }
+    //
+    // @Override
+    // public Table visit(Append append) {
+    // return BlinkTableTools.blinkToAppendOnly(blinkTable);
+    // }
+    //
+    // @Override
+    // public Table visit(Ring ring) {
+    // return RingTableTools.of(blinkTable, ring.capacity());
+    // }
+    // }
 
     private Table singleTable(Collection<? extends Publisher> publishers) {
         // noinspection resource
@@ -622,7 +614,7 @@ public abstract class TableOptions<K, V> {
                 .processor(consumerRecordObjectProcessor())
                 .chunkSize(chunkSize())
                 .receiveTimestamp(receiveTimestamp() != null);
-        callback().ifPresent(builder::callback);
+        // callback().ifPresent(builder::callback);
         return builder.build();
     }
 
@@ -684,7 +676,8 @@ public abstract class TableOptions<K, V> {
     private ConsumerRecordOptions recordOptionsV1() {
         final Map<Field, String> fields = recordOptions().fields();
         final ConsumerRecordOptions.Builder builder = ConsumerRecordOptions.builder();
-        if (!fields.containsKey(Field.TOPIC) && offsets().stream().map(OffsetsBase.class::cast).flatMap(OffsetsBase::topics).distinct().count() > 1) {
+        if (!fields.containsKey(Field.TOPIC) && offsets().stream().map(OffsetsBase.class::cast)
+                .flatMap(OffsetsBase::topics).distinct().count() > 1) {
             // todo: may not want / be relevant in partitioned case?
             builder.addField(Field.TOPIC);
         }

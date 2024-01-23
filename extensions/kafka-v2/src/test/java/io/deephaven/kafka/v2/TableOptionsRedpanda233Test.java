@@ -15,7 +15,8 @@ import java.util.Map;
 public final class TableOptionsRedpanda233Test extends TableOptionsTestBase {
 
     @Rule
-    public final RedpandaContainer redpanda = new RedpandaContainer("docker.redpanda.com/redpandadata/redpanda:v23.3.3");
+    public final RedpandaContainer redpanda =
+            new RedpandaContainer("docker.redpanda.com/redpandadata/redpanda:v23.3.3");
 
     @Override
     public Map<String, Object> adminConfig() {

@@ -5,11 +5,6 @@ package io.deephaven.kafka.v2;
 
 import io.deephaven.engine.table.PartitionedTable;
 import io.deephaven.engine.table.Table;
-import io.deephaven.json.DoubleOptions;
-import io.deephaven.json.InstantOptions;
-import io.deephaven.json.ObjectOptions;
-import io.deephaven.json.StringOptions;
-import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
 import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.processor.NamedObjectProcessor;
@@ -83,12 +78,12 @@ public class Example {
                 // .receiveTimestamp(null)
                 .addOffsets(Offsets.beginning("homeassistant"))
                 .filter(Example::isWindspeed)
-                .valueProcessor(ObjectOptions.builder()
-                        .putFields("state", DoubleOptions.builder().allowString(true).build())
-                        .putFields("last_changed", InstantOptions.standard())
-                        .build()
-                        .<byte[]>named(byte[].class))
-                .tableType(TableType.append())
+                // .valueProcessor(ObjectOptions.builder()
+                // .putFields("state", DoubleOptions.builder().allowString(true).build())
+                // .putFields("last_changed", InstantOptions.standard())
+                // .build()
+                // .<byte[]>named(byte[].class))
+                // .tableType(TableType.append())
                 .build();
     }
 
@@ -100,18 +95,18 @@ public class Example {
                         .build())
                 .addOffsets(Offsets.beginning("netdata-metrics"))
                 .filter(Example::isCpu)
-                .valueProcessor(ObjectOptions.builder()
-                        .putFields("labels", ObjectOptions.builder()
-                                .putFields("dimension", StringOptions.strict())
-                                .build())
-                        .putFields("timestamp", InstantOptions.strict())
-                        .putFields("value", DoubleOptions.builder().allowString(true).build())
-                        .build()
-                        .<byte[]>named(byte[].class))
+                // .valueProcessor(ObjectOptions.builder()
+                // .putFields("labels", ObjectOptions.builder()
+                // .putFields("dimension", StringOptions.strict())
+                // .build())
+                // .putFields("timestamp", InstantOptions.strict())
+                // .putFields("value", DoubleOptions.builder().allowString(true).build())
+                // .build()
+                // .<byte[]>named(byte[].class))
                 .receiveTimestamp(null)
                 .recordOptions(ConsumerRecordOptions.empty())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                .tableType(TableType.append())
+                // .tableType(TableType.append())
                 .build();
     }
 
@@ -126,7 +121,7 @@ public class Example {
                 .filter(cr -> cr.value().startsWith(
                         "{\"labels\":{\"__name__\":\"netdata_system_cpu_percentage_average\",\"chart\":\"system.cpu\",\"dimension\":\"user"))
                 .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
-                .tableType(TableType.append())
+                // .tableType(TableType.append())
                 .build());
     }
 }

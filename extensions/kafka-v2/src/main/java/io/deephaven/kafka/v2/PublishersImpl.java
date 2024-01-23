@@ -4,7 +4,6 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.base.clock.Clock;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -26,7 +25,7 @@ final class PublishersImpl<K, V> implements Publishers {
     private final KafkaConsumer<K, V> client;
     private final Set<PublisherImpl<K, V>> publishers;
     private final ThreadFactory threadFactory;
-    private final ConsumerLoopCallback callback;
+    // private final ConsumerLoopCallback callback;
     private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
     private final boolean receiveTimestamp;
 
@@ -35,12 +34,12 @@ final class PublishersImpl<K, V> implements Publishers {
             KafkaConsumer<K, V> client,
             Set<PublisherImpl<K, V>> publishers,
             ThreadFactory threadFactory,
-            ConsumerLoopCallback callback,
+            // ConsumerLoopCallback callback,
             boolean receiveTimestamp) {
         this.client = Objects.requireNonNull(client);
         this.publishers = Set.copyOf(publishers);
         this.threadFactory = Objects.requireNonNull(threadFactory);
-        this.callback = callback;
+        // this.callback = callback;
         this.topicPartitionToPublisher = Collections.unmodifiableMap(map(publishers));
         this.receiveTimestamp = receiveTimestamp;
     }
@@ -116,15 +115,15 @@ final class PublishersImpl<K, V> implements Publishers {
     }
 
     private void beforePoll() {
-        if (callback != null) {
-            callback.beforePoll(client);
-        }
+        // if (callback != null) {
+        // callback.beforePoll(client);
+        // }
     }
 
     private void afterPoll(boolean more) {
-        if (callback != null) {
-            callback.afterPoll(client, more);
-        }
+        // if (callback != null) {
+        // callback.afterPoll(client, more);
+        // }
     }
 
     private boolean pollAndAccept() {

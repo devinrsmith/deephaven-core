@@ -49,8 +49,8 @@ final class PublisherImpl<K, V> implements Publisher {
         this.chunkSize = chunkSize;
 
         /*
-        this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize);
-        this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
+         * this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize); this.receiveTimestampChunk = receiveTimestamp
+         * ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
          */
 
         this.chunk = WritableObjectChunk.writableChunkWrap(new ConsumerRecord[chunkSize]);

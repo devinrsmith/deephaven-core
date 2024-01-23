@@ -9,7 +9,6 @@ import io.deephaven.engine.testutil.ControlledUpdateGraph;
 import io.deephaven.engine.testutil.TstUtils;
 import io.deephaven.engine.testutil.junit4.EngineCleanup;
 import io.deephaven.engine.util.TableTools;
-import io.deephaven.kafka.KafkaTools.ConsumerLoopCallback;
 import io.deephaven.kafka.v2.TableOptions.OpinionatedClientOptions;
 import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.processor.ObjectProcessor;
@@ -17,7 +16,6 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -28,7 +26,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 public abstract class TableOptionsTestBase {
@@ -52,7 +49,7 @@ public abstract class TableOptionsTestBase {
                 new StringSerializer())) {
             producer.send(new ProducerRecord<>("MyTest", "mykey", "myvalue")).get();
         }
-        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
+        // final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
         try (final StreamToBlinkTableAdapter adapter = TableOptions.<String, String>builder()
                 .clientOptions(ClientOptions.<String, String>builder()
                         .putAllConfig(clientConfig())
@@ -66,10 +63,10 @@ public abstract class TableOptionsTestBase {
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
                 .keyProcessor(ObjectProcessor.simple(Type.stringType()))
                 .valueProcessor(ObjectProcessor.simple(Type.stringType()))
-                .callback(firstPollCompleted)
+                // .callback(firstPollCompleted)
                 .build()
                 .adapter()) {
-            firstPollCompleted.await();
+            // firstPollCompleted.await();
             final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
             updateGraph.runWithinUnitTestCycle(adapter::run);
             final Table expected = TableTools.newTable(
@@ -84,21 +81,21 @@ public abstract class TableOptionsTestBase {
         keyValue();
     }
 
-    static class FirstPollCompleted implements ConsumerLoopCallback {
-        private final CountDownLatch afterPollLatch = new CountDownLatch(1);
-
-        public void await() throws InterruptedException {
-            afterPollLatch.await();
-        }
-
-        @Override
-        public void beforePoll(KafkaConsumer<?, ?> consumer) {
-
-        }
-
-        @Override
-        public void afterPoll(KafkaConsumer<?, ?> consumer, boolean more) {
-            afterPollLatch.countDown();
-        }
-    }
+    // static class FirstPollCompleted implements ConsumerLoopCallback {
+    // private final CountDownLatch afterPollLatch = new CountDownLatch(1);
+    //
+    // public void await() throws InterruptedException {
+    // afterPollLatch.await();
+    // }
+    //
+    // @Override
+    // public void beforePoll(KafkaConsumer<?, ?> consumer) {
+    //
+    // }
+    //
+    // @Override
+    // public void afterPoll(KafkaConsumer<?, ?> consumer, boolean more) {
+    // afterPollLatch.countDown();
+    // }
+    // }
 }

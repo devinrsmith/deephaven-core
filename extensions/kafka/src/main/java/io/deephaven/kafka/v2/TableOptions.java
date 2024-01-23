@@ -667,7 +667,7 @@ public abstract class TableOptions<K, V> {
     private ConsumerRecordOptions recordOptionsV1() {
         final Map<Field, String> fields = recordOptions().fields();
         final ConsumerRecordOptions.Builder builder = ConsumerRecordOptions.builder();
-        if (!fields.containsKey(Field.TOPIC) && ((OffsetsBase) offsets()).topics().distinct().count() > 1) {
+        if (!fields.containsKey(Field.TOPIC) && offsets().stream().map(OffsetsBase.class::cast).flatMap(OffsetsBase::topics).distinct().count() > 1) {
             // todo: may not want / be relevant in partitioned case?
             builder.addField(Field.TOPIC);
         }

@@ -95,6 +95,8 @@ public abstract class PublishersOptions<K, V> {
 
         Builder<K, V> receiveTimestamp(boolean receiveTimestamp);
 
+        Builder<K, V> callback(ConsumerLoopCallback callback);
+
         PublishersOptions<K, V> build();
     }
 

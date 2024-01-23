@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+// todo: needs to be liveness artifact? see io.deephaven.kafka.StreamPublisherBase
 final class PublisherImpl<K, V> implements Publisher {
     private final Set<TopicPartition> topicPartitions;
     private final Predicate<ConsumerRecord<K, V>> filter;
@@ -46,8 +47,14 @@ final class PublisherImpl<K, V> implements Publisher {
         this.processor = Objects.requireNonNull(processor);
         this.onShutdown = Objects.requireNonNull(onShutdown);
         this.chunkSize = chunkSize;
+
+        /*
         this.chunk = WritableObjectChunk.makeWritableChunk(chunkSize);
         this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.makeWritableChunk(chunkSize) : null;
+         */
+
+        this.chunk = WritableObjectChunk.writableChunkWrap(new ConsumerRecord[chunkSize]);
+        this.receiveTimestampChunk = receiveTimestamp ? WritableLongChunk.writableChunkWrap(new long[chunkSize]) : null;
     }
 
     @Override

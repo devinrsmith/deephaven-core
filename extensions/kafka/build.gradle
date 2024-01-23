@@ -50,6 +50,7 @@ dependencies {
 
     testImplementation "org.testcontainers:testcontainers:1.19.3"
     testImplementation "org.testcontainers:redpanda:1.19.3"
+    testImplementation "org.testcontainers:kafka:1.19.3"
 
 }
 

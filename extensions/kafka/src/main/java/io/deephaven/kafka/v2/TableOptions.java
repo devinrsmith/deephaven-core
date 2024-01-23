@@ -27,6 +27,7 @@ import io.deephaven.kafka.KafkaTools.TableType.Append;
 import io.deephaven.kafka.KafkaTools.TableType.Blink;
 import io.deephaven.kafka.KafkaTools.TableType.Ring;
 import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
+import io.deephaven.kafka.v2.PublishersOptions.Builder;
 import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
@@ -34,6 +35,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import io.deephaven.util.SafeCloseable;
+import io.deephaven.util.annotations.VisibleForTesting;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -360,6 +362,8 @@ public abstract class TableOptions<K, V> {
 
         Builder<K, V> receiveTimestamp(String receiveTimestamp);
 
+        Builder<K, V> callback(ConsumerLoopCallback callback);
+
         TableOptions<K, V> build();
     }
 
@@ -423,6 +427,14 @@ public abstract class TableOptions<K, V> {
 
     final Table table() {
         return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleTable);
+    }
+
+    @VisibleForTesting
+    final StreamToBlinkTableAdapter adapter() {
+        if (!TableType.blink().equals(tableType())) {
+            throw new IllegalArgumentException("Should only use adapter with working with blink table test");
+        }
+        return Publishers.applyAndStart(publishersOptions(Partitioning.single()), this::singleStreamConsumer);
     }
 
     final PartitionedTable partitionedTable() {
@@ -507,7 +519,11 @@ public abstract class TableOptions<K, V> {
 
     private Table singleTable(Collection<? extends Publisher> publishers) {
         // noinspection resource
-        return toTableType(streamConsumer(single(publishers)).table());
+        return toTableType(singleStreamConsumer(publishers).table());
+    }
+
+    private StreamToBlinkTableAdapter singleStreamConsumer(Collection<? extends Publisher> publishers) {
+        return streamConsumer(single(publishers));
     }
 
     private StreamToBlinkTableAdapter streamConsumer(Publisher publisher) {
@@ -598,15 +614,16 @@ public abstract class TableOptions<K, V> {
     }
 
     private PublishersOptions<K, V> publishersOptions(Partitioning partitioning) {
-        return PublishersOptions.<K, V>builder()
+        final PublishersOptions.Builder<K, V> builder = PublishersOptions.<K, V>builder()
                 .clientOptions(clientOptionsToUse())
                 .partitioning(partitioning)
                 .offsets(Offsets.of(offsets()))
                 .filter(filter())
                 .processor(consumerRecordObjectProcessor())
                 .chunkSize(chunkSize())
-                .receiveTimestamp(receiveTimestamp() != null)
-                .build();
+                .receiveTimestamp(receiveTimestamp() != null);
+        callback().ifPresent(builder::callback);
+        return builder.build();
     }
 
     private ClientOptions<K, V> clientOptionsV1() {

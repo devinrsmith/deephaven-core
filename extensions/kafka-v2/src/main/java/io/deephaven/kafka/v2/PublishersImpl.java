@@ -29,7 +29,6 @@ final class PublishersImpl<K, V> implements Publishers {
     private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
     private final boolean receiveTimestamp;
 
-
     PublishersImpl(
             KafkaConsumer<K, V> client,
             Set<PublisherImpl<K, V>> publishers,
@@ -52,6 +51,10 @@ final class PublishersImpl<K, V> implements Publishers {
             }
         }
         return topicPartitionToPublisher;
+    }
+
+    public KafkaConsumer<K, V> client() {
+        return client;
     }
 
     @Override

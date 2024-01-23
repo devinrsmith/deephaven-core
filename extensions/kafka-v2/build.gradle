@@ -23,6 +23,7 @@ dependencies {
 
     testImplementation project(':engine-test-utils')
     testImplementation "org.testcontainers:testcontainers:1.19.3"
+    testImplementation "org.testcontainers:junit-jupiter:1.19.3"
     testImplementation "org.testcontainers:redpanda:1.19.3"
     testImplementation "org.testcontainers:kafka:1.19.3"
 
@@ -30,8 +31,8 @@ dependencies {
     Classpaths.inheritAssertJ(project)
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
-    Classpaths.inheritJUnitClassic(project, 'testImplementation')
+//    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
+//    Classpaths.inheritJUnitClassic(project, 'testImplementation')
 
     testRuntimeOnly project(':test-configs')
     testRuntimeOnly project(':log-to-slf4j')

@@ -23,4 +23,7 @@ dependencies {
     Classpaths.inheritJUnitClassic(project, 'implementation')
     Classpaths.inheritJUnitPlatform(project, 'implementation')
     Classpaths.inheritAssertJ(project, 'implementation')
+
+    Classpaths.inheritJUnitPlatform(project)
+    compileOnly 'org.junit.jupiter:junit-jupiter'
 }

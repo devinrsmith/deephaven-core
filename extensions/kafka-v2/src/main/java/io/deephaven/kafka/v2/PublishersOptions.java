@@ -6,6 +6,7 @@ package io.deephaven.kafka.v2;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.stream.StreamConsumer;
+import io.deephaven.util.annotations.VisibleForTesting;
 import io.deephaven.util.thread.NamingThreadFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -141,7 +142,8 @@ public abstract class PublishersOptions<K, V> {
         return publishersImpl();
     }
 
-    private PublishersImpl<K, V> publishersImpl() {
+    // package-private, VisibleForDHE
+    final PublishersImpl<K, V> publishersImpl() {
         // todo: error if clientOptions contains enable auto commit
         // final KafkaConsumer<K, V> client =
         // clientOptions().createClient(Map.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"));

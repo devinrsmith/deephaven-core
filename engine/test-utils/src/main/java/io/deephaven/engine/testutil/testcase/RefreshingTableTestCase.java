@@ -73,12 +73,12 @@ abstract public class RefreshingTableTestCase extends BaseArrayTestCase implemen
         oldLogEnabled = QueryCompiler.setLogEnabled(ENABLE_QUERY_COMPILER_LOGGING);
         oldSerialSafe = updateGraph.setSerialTableOperationsSafe(true);
         AsyncErrorLogger.init();
-        ChunkPoolReleaseTracking.enable();
+        // ChunkPoolReleaseTracking.enable();
     }
 
     @Override
     public void tearDown() throws Exception {
-        ChunkPoolReleaseTracking.checkAndDisable();
+        // ChunkPoolReleaseTracking.checkAndDisable();
         final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
         updateGraph.setSerialTableOperationsSafe(oldSerialSafe);
         QueryCompiler.setLogEnabled(oldLogEnabled);

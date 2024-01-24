@@ -35,4 +35,9 @@ public class TableOptionsKafka_7_4 extends TableOptionsSingleTopicTestBase {
     public Map<String, String> clientConfig() {
         return Map.of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
     }
+
+    @Override
+    public int initialLeaderEpoch() {
+        return 0;
+    }
 }

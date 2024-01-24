@@ -34,4 +34,9 @@ public class TableOptionsRedpanda_v23_3 extends TableOptionsSingleTopicTestBase 
     public Map<String, String> clientConfig() {
         return Map.of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, REDPANDA.getBootstrapServers());
     }
+
+    @Override
+    public int initialLeaderEpoch() {
+        return 1;
+    }
 }

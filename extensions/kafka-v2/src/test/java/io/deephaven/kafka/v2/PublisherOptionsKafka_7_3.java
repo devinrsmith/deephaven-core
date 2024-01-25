@@ -15,11 +15,11 @@ import java.util.Map;
 
 // todo: make out of band?
 @Testcontainers
-public class PublisherOptionsKafka_7_5 extends PublishersOptionsSingleTopicBase {
+public class PublisherOptionsKafka_7_3 extends PublishersOptionsSingleTopicBase {
 
     @Container
     private static final KafkaContainer KAFKA =
-            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.1"));
+            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.5"));
 
     @Override
     public Map<String, Object> adminConfig() {

@@ -1,74 +1,74 @@
 package io.deephaven.chunk;
 
-import io.deephaven.chunk.attributes.Any;
-
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ChunkEquals {
 
     // todo: should probably be moved into respective classes
 
-    public static boolean equals(Chunk<?> actual, Chunk<?> expected) {
-        if (actual instanceof BooleanChunk) {
-            if (!(expected instanceof BooleanChunk)) {
+
+
+    public static boolean equals(Chunk<?> x, Chunk<?> y) {
+        if (x instanceof BooleanChunk) {
+            if (!(y instanceof BooleanChunk)) {
                 return false;
             }
-            return equals((BooleanChunk<?>) actual, (BooleanChunk<?>) expected);
+            return equals((BooleanChunk<?>) x, (BooleanChunk<?>) y);
         }
-        if (actual instanceof ByteChunk) {
-            if (!(expected instanceof ByteChunk)) {
+        if (x instanceof ByteChunk) {
+            if (!(y instanceof ByteChunk)) {
                 return false;
             }
-            return equals((ByteChunk<?>) actual, (ByteChunk<?>) expected);
+            return equals((ByteChunk<?>) x, (ByteChunk<?>) y);
         }
-        if (actual instanceof CharChunk) {
-            if (!(expected instanceof CharChunk)) {
+        if (x instanceof CharChunk) {
+            if (!(y instanceof CharChunk)) {
                 return false;
             }
-            return equals((CharChunk<?>) actual, (CharChunk<?>) expected);
+            return equals((CharChunk<?>) x, (CharChunk<?>) y);
         }
-        if (actual instanceof ShortChunk) {
-            if (!(expected instanceof ShortChunk)) {
+        if (x instanceof ShortChunk) {
+            if (!(y instanceof ShortChunk)) {
                 return false;
             }
-            return equals((ShortChunk<?>) actual, (ShortChunk<?>) expected);
+            return equals((ShortChunk<?>) x, (ShortChunk<?>) y);
         }
-        if (actual instanceof IntChunk) {
-            if (!(expected instanceof IntChunk)) {
+        if (x instanceof IntChunk) {
+            if (!(y instanceof IntChunk)) {
                 return false;
             }
-            return equals((IntChunk<?>) actual, (IntChunk<?>) expected);
+            return equals((IntChunk<?>) x, (IntChunk<?>) y);
         }
-        if (actual instanceof LongChunk) {
-            if (!(expected instanceof LongChunk)) {
+        if (x instanceof LongChunk) {
+            if (!(y instanceof LongChunk)) {
                 return false;
             }
-            return equals((LongChunk<?>) actual, (LongChunk<?>) expected);
+            return equals((LongChunk<?>) x, (LongChunk<?>) y);
         }
-        if (actual instanceof FloatChunk) {
-            if (!(expected instanceof FloatChunk)) {
+        if (x instanceof FloatChunk) {
+            if (!(y instanceof FloatChunk)) {
                 return false;
             }
-            return equals((FloatChunk<?>) actual, (FloatChunk<?>) expected);
+            return equals((FloatChunk<?>) x, (FloatChunk<?>) y);
         }
-        if (actual instanceof DoubleChunk) {
-            if (!(expected instanceof DoubleChunk)) {
+        if (x instanceof DoubleChunk) {
+            if (!(y instanceof DoubleChunk)) {
                 return false;
             }
-            return equals((DoubleChunk<?>) actual, (DoubleChunk<?>) expected);
+            return equals((DoubleChunk<?>) x, (DoubleChunk<?>) y);
         }
-        if (!(expected instanceof ObjectChunk)) {
+        if (!(y instanceof ObjectChunk)) {
             return false;
         }
+        final ObjectChunk<?, ?> actualObjectChunk = (ObjectChunk<?, ?>) x;
+        final ObjectChunk<?, ?> expectedObjectChunk = (ObjectChunk<?, ?>) y;
         // Note: we can't be this precise b/c io.deephaven.chunk.ObjectChunk.makeArray doesn't actually use the typed
         // class
         /*
-        final ObjectChunk<?, ?> actualObjectChunk = (ObjectChunk<?, ?>) actual;
-        final ObjectChunk<?, ?> expectedObjectChunk = (ObjectChunk<?, ?>) expected;
-        if (!actualObjectChunk.data.getClass().equals(expectedObjectChunk.data.getClass())) {
-            return false;
-        }*/
-        //noinspection unchecked
+         * if (!actualObjectChunk.data.getClass().equals(expectedObjectChunk.data.getClass())) { return false; }
+         */
+        // noinspection unchecked
         return equals((ObjectChunk<Object, ?>) actualObjectChunk, (ObjectChunk<Object, ?>) expectedObjectChunk);
     }
 
@@ -105,6 +105,12 @@ public class ChunkEquals {
     }
 
     public static <T> boolean equals(ObjectChunk<T, ?> actual, ObjectChunk<T, ?> expected) {
-        return Arrays.equals(actual.data, actual.offset, actual.size, expected.data, expected.offset, expected.size);
+        // this is probably only suitable for unit testing, not something we'd want in real code?
+        return Arrays.equals(actual.data, actual.offset, actual.size, expected.data, expected.offset, expected.size,
+                ChunkEquals::fakeDeepCompareForEquals);
+    }
+
+    private static int fakeDeepCompareForEquals(Object a, Object b) {
+        return Objects.deepEquals(a, b) ? 0 : 1;
     }
 }

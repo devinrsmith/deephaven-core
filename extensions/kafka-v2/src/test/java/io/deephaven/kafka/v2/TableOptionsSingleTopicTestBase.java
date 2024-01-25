@@ -18,6 +18,7 @@ import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.kafka.v2.TopicExtension.Topic;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.processor.functions.ObjectProcessorFunctions;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
@@ -45,7 +46,6 @@ import org.apache.kafka.common.serialization.VoidDeserializer;
 import org.apache.kafka.common.serialization.VoidSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -118,7 +118,6 @@ public abstract class TableOptionsSingleTopicTestBase {
                 TableTools.newTable(TableTools.col("Key", key)));
     }
 
-    @Disabled
     @Test
     void intKey() throws ExecutionException, InterruptedException {
         final Integer key = 42;
@@ -159,7 +158,6 @@ public abstract class TableOptionsSingleTopicTestBase {
                 TableTools.newTable(TableTools.col("Value", value)));
     }
 
-    @Disabled
     @Test
     void intValue() throws ExecutionException, InterruptedException {
         final Integer value = 42;
@@ -333,7 +331,8 @@ public abstract class TableOptionsSingleTopicTestBase {
                 .recordOptions(ConsumerRecordOptions.empty())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
                 .recordProcessor(NamedObjectProcessor.of(ObjectProcessor.combined(List.of(
-                        Processors.lastHeader("CustomKey1", ObjectProcessor.simple(Type.byteType().arrayType())),
+                        Processors.lastHeader("CustomKey1",
+                                ObjectProcessorFunctions.identity(Type.byteType().arrayType())),
                         NumHeaders.INSTANCE)), List.of("CustomKey1", "NumHeaders")))
                 // .keyProcessor(ObjectProcessor.simple(keyType))
                 // .callback(firstPollCompleted)
@@ -372,6 +371,30 @@ public abstract class TableOptionsSingleTopicTestBase {
         }
     }
 
+    @Test
+    void extraAttributes() throws ExecutionException, InterruptedException {
+        final RecordMetadata metadata;
+        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
+            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
+        }
+        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
+        try (final StreamToBlinkTableAdapter adapter = TableOptions.<byte[], byte[]>builder()
+                .clientOptions(clientOptions(new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+                .addOffsets(Offsets.beginning(topic))
+                .recordOptions(ConsumerRecordOptions.empty())
+                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
+                .putExtraAttributes("CustomAttribute", 42L)
+                // .keyProcessor(ObjectProcessor.simple(keyType))
+                // .callback(firstPollCompleted)
+                .build()
+                .adapter()) {
+            firstPollCompleted.await();
+            final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
+            updateGraph.runWithinUnitTestCycle(adapter::run);
+            assertThat(adapter.table().getAttribute("CustomAttribute")).isEqualTo(42L);
+        }
+    }
+
     private void recordOption(ConsumerRecordOptions recordOptions, Table expected) throws InterruptedException {
         final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
         try (final StreamToBlinkTableAdapter adapter = TableOptions.<byte[], byte[]>builder()
@@ -400,7 +423,7 @@ public abstract class TableOptionsSingleTopicTestBase {
                 .receiveTimestamp(null)
                 .recordOptions(ConsumerRecordOptions.empty())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                .keyProcessor(ObjectProcessor.simple(keyType))
+                .keyProcessor(ObjectProcessorFunctions.identity(keyType))
                 // .callback(firstPollCompleted)
                 .build()
                 .adapter()) {
@@ -420,7 +443,7 @@ public abstract class TableOptionsSingleTopicTestBase {
                 .receiveTimestamp(null)
                 .recordOptions(ConsumerRecordOptions.empty())
                 .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                .valueProcessor(ObjectProcessor.simple(valueType))
+                .valueProcessor(ObjectProcessorFunctions.identity(valueType))
                 // .callback(firstPollCompleted)
                 .build()
                 .adapter()) {

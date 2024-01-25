@@ -4,8 +4,15 @@
 package io.deephaven.processor.functions;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.functions.ToObjectFunction;
 import io.deephaven.functions.TypedFunction;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.ArrayType;
+import io.deephaven.qst.type.BoxedType;
+import io.deephaven.qst.type.CustomType;
+import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.InstantType;
+import io.deephaven.qst.type.StringType;
 
 import java.util.List;
 
@@ -25,5 +32,52 @@ public final class ObjectProcessorFunctions {
      */
     public static <T> ObjectProcessor<T> of(List<TypedFunction<? super T>> functions) {
         return ObjectProcessorFunctionsImpl.create(functions);
+    }
+
+    public static <T> ObjectProcessor<T> identity(GenericType<T> type) {
+        return type.walk(new IdentityVisitor<>());
+    }
+
+    private static final class IdentityVisitor<T> implements GenericType.Visitor<ObjectProcessor<T>> {
+
+        private static <T> ObjectProcessor<T> identityWithTransform(GenericType<T> type) {
+            return of(List.of(ToObjectFunction.identity(type)));
+        }
+
+        private static <T> ObjectProcessor<T> identityWithSameType(GenericType<T> type) {
+            return ObjectProcessor.simple(type);
+        }
+
+        @Override
+        public ObjectProcessor<T> visit(BoxedType<?> boxedType) {
+            // Boxed type gets transformed into primitive type
+            // noinspection unchecked
+            return identityWithTransform((GenericType<T>) boxedType);
+        }
+
+        @Override
+        public ObjectProcessor<T> visit(InstantType instantType) {
+            // Instant type gets transformed into long nano
+            // noinspection unchecked
+            return identityWithTransform((GenericType<T>) instantType);
+        }
+
+        @Override
+        public ObjectProcessor<T> visit(StringType stringType) {
+            // noinspection unchecked
+            return identityWithSameType((GenericType<T>) stringType);
+        }
+
+        @Override
+        public ObjectProcessor<T> visit(ArrayType<?, ?> arrayType) {
+            // noinspection unchecked
+            return identityWithSameType((GenericType<T>) arrayType);
+        }
+
+        @Override
+        public ObjectProcessor<T> visit(CustomType<?> customType) {
+            // noinspection unchecked
+            return identityWithSameType((GenericType<T>) customType);
+        }
     }
 }

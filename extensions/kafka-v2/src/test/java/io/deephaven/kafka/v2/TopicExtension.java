@@ -47,6 +47,7 @@ public class TopicExtension implements ParameterResolver, BeforeEachCallback {
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
+        // Inject the unique single topic name for a given test into any field annotated w/ Topic
         for (Field field : findAnnotatedFields(context.getRequiredTestClass(), Topic.class)) {
             field.set(context.getRequiredTestInstance(), topic(context));
         }

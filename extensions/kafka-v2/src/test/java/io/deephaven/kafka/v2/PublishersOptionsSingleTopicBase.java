@@ -5,29 +5,20 @@ package io.deephaven.kafka.v2;
 
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.ChunkEquals;
+import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.attributes.Values;
-import io.deephaven.engine.context.ExecutionContext;
-import io.deephaven.engine.table.ColumnDefinition;
-import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.engine.testutil.ControlledUpdateGraph;
-import io.deephaven.engine.testutil.TstUtils;
 import io.deephaven.engine.testutil.junit5.EngineExtensions;
-import io.deephaven.engine.util.TableTools;
-import io.deephaven.kafka.v2.ConsumerRecordOptions.Field;
 import io.deephaven.kafka.v2.PublishersOptions.Partitioning;
-import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.kafka.v2.TopicExtension.Topic;
-import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.processor.functions.ObjectProcessorFunctions;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
-import io.deephaven.stream.StreamToBlinkTableAdapter;
-import io.deephaven.util.QueryConstants;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,8 +26,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.internals.RecordHeader;
-import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -52,15 +41,14 @@ import org.apache.kafka.common.serialization.VoidSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +56,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.LongAdder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,9 +67,6 @@ public abstract class PublishersOptionsSingleTopicBase {
     public abstract Map<String, Object> producerConfig();
 
     public abstract Map<String, String> clientConfig();
-
-    // 0 for Kafka, 1 for Redpanda
-    public abstract int initialLeaderEpoch();
 
     @Topic
     public String topic;
@@ -106,7 +90,7 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<String, Void> producer = producer(new StringSerializer(), new VoidSerializer())) {
             producer.send(new ProducerRecord<>(topic, key, null)).get();
         }
-        keyTest(Type.stringType(), new StringDeserializer(), ObjectChunk.chunkWrap(new String[] { key }));
+        keyTest(Type.stringType(), new StringDeserializer(), ObjectChunk.chunkWrap(new String[] {key}));
     }
 
     @Test
@@ -115,7 +99,7 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<UUID, Void> producer = producer(new UUIDSerializer(), new VoidSerializer())) {
             producer.send(new ProducerRecord<>(topic, key, null)).get();
         }
-        keyTest(Type.ofCustom(UUID.class), new UUIDDeserializer(), ObjectChunk.chunkWrap(new UUID[] { key }));
+        keyTest(Type.ofCustom(UUID.class), new UUIDDeserializer(), ObjectChunk.chunkWrap(new UUID[] {key}));
     }
 
     @Test
@@ -124,17 +108,16 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<byte[], Void> producer = producer(new ByteArraySerializer(), new VoidSerializer())) {
             producer.send(new ProducerRecord<>(topic, key, null)).get();
         }
-        keyTest(Type.byteType().arrayType(), new ByteArrayDeserializer(), ObjectChunk.chunkWrap(new byte[][] { key }));
+        keyTest(Type.byteType().arrayType(), new ByteArrayDeserializer(), ObjectChunk.chunkWrap(new byte[][] {key}));
     }
 
-    @Disabled
     @Test
     void intKey() throws ExecutionException, InterruptedException {
         final Integer key = 42;
         try (final KafkaProducer<Integer, Void> producer = producer(new IntegerSerializer(), new VoidSerializer())) {
             producer.send(new ProducerRecord<>(topic, key, null)).get();
         }
-        keyTest(Type.intType().boxedType(), new IntegerDeserializer(), IntChunk.chunkWrap(new int[] { key }));
+        keyTest(Type.intType().boxedType(), new IntegerDeserializer(), IntChunk.chunkWrap(new int[] {key}));
     }
 
     @Test
@@ -143,8 +126,7 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<Void, String> producer = producer(new VoidSerializer(), new StringSerializer())) {
             producer.send(new ProducerRecord<>(topic, null, value)).get();
         }
-        valueTest(Type.stringType(), new StringDeserializer(),
-                TableTools.newTable(TableTools.stringCol("Value", value)));
+        valueTest(Type.stringType(), new StringDeserializer(), ObjectChunk.chunkWrap(new String[] {value}));
     }
 
     @Test
@@ -153,8 +135,7 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<Void, UUID> producer = producer(new VoidSerializer(), new UUIDSerializer())) {
             producer.send(new ProducerRecord<>(topic, null, value)).get();
         }
-        valueTest(Type.ofCustom(UUID.class), new UUIDDeserializer(),
-                TableTools.newTable(TableTools.col("Value", value)));
+        valueTest(Type.ofCustom(UUID.class), new UUIDDeserializer(), ObjectChunk.chunkWrap(new UUID[] {value}));
     }
 
     @Test
@@ -163,251 +144,36 @@ public abstract class PublishersOptionsSingleTopicBase {
         try (final KafkaProducer<Void, byte[]> producer = producer(new VoidSerializer(), new ByteArraySerializer())) {
             producer.send(new ProducerRecord<>(topic, null, value)).get();
         }
-        valueTest(Type.byteType().arrayType(), new ByteArrayDeserializer(),
-                TableTools.newTable(TableTools.col("Value", value)));
+        final byte[][] data = new byte[][] {value};
+        valueTest(Type.byteType().arrayType(), new ByteArrayDeserializer(), ObjectChunk.chunkWrap(data));
     }
 
-    @Disabled
     @Test
     void intValue() throws ExecutionException, InterruptedException {
         final Integer value = 42;
         try (final KafkaProducer<Void, Integer> producer = producer(new VoidSerializer(), new IntegerSerializer())) {
             producer.send(new ProducerRecord<>(topic, null, value)).get();
         }
-        valueTest(Type.intType().boxedType(), new IntegerDeserializer(),
-                TableTools.newTable(TableTools.intCol("Value", value)));
+        valueTest(Type.intType().boxedType(), new IntegerDeserializer(), IntChunk.chunkWrap(new int[] {value}));
     }
 
-    @Test
-    void topicRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        assertThat(metadata.topic()).isEqualTo(topic);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.TOPIC).build(),
-                TableTools.newTable(TableTools.stringCol(Field.TOPIC.recommendedName(), topic)));
-    }
 
-    @Test
-    void partitionRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.PARTITION).build(),
-                TableTools.newTable(TableTools.intCol(Field.PARTITION.recommendedName(), metadata.partition())));
-    }
-
-    @Test
-    void offsetRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.OFFSET).build(),
-                TableTools.newTable(TableTools.longCol(Field.OFFSET.recommendedName(), metadata.offset())));
-    }
-
-    @Test
-    void leaderEpochRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.LEADER_EPOCH).build(),
-                TableTools.newTable(TableTools.intCol(Field.LEADER_EPOCH.recommendedName(), initialLeaderEpoch())));
-    }
-
-    @Test
-    void timestampTypeRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        // Not sure how to configure broker to use log append time
-        // https://docs.confluent.io/platform/current/installation/configuration/topic-configs.html#message-timestamp-type
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.TIMESTAMP_TYPE).build(),
-                TableTools.newTable(TableTools.col(Field.TIMESTAMP_TYPE.recommendedName(), TimestampType.CREATE_TIME)));
-    }
-
-    @Test
-    void timestampRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, 42L, null, null, null)).get();
-        }
-        assertThat(metadata.timestamp()).isEqualTo(42L);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.TIMESTAMP).build(),
-                TableTools
-                        .newTable(TableTools.instantCol(Field.TIMESTAMP.recommendedName(), Instant.ofEpochMilli(42L))));
-    }
-
-    @Test
-    void keySizeRecordOptionNoKey() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        assertThat(metadata.serializedKeySize()).isEqualTo(-1);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.KEY_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.KEY_SIZE.recommendedName(), QueryConstants.NULL_INT)));
-    }
-
-    @Test
-    void keySizeRecordOptionEmptyKey() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<byte[], Void> producer = producer(new ByteArraySerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, new byte[0], null)).get();
-        }
-        assertThat(metadata.serializedKeySize()).isEqualTo(0);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.KEY_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.KEY_SIZE.recommendedName(), 0)));
-    }
-
-    @Test
-    void keySizeRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<byte[], Void> producer = producer(new ByteArraySerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, new byte[42], null)).get();
-        }
-        assertThat(metadata.serializedKeySize()).isEqualTo(42);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.KEY_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.KEY_SIZE.recommendedName(), 42)));
-    }
-
-    @Test
-    void valueSizeRecordOptionNoValue() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        assertThat(metadata.serializedValueSize()).isEqualTo(-1);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.VALUE_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.VALUE_SIZE.recommendedName(), QueryConstants.NULL_INT)));
-    }
-
-    @Test
-    void valueSizeRecordOptionEmptyValue() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, byte[]> producer = producer(new VoidSerializer(), new ByteArraySerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, new byte[0])).get();
-        }
-        assertThat(metadata.serializedValueSize()).isEqualTo(0);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.VALUE_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.VALUE_SIZE.recommendedName(), 0)));
-    }
-
-    @Test
-    void valueSizeRecordOption() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, byte[]> producer = producer(new VoidSerializer(), new ByteArraySerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, new byte[42])).get();
-        }
-        assertThat(metadata.serializedValueSize()).isEqualTo(42);
-        recordOption(
-                ConsumerRecordOptions.builder().addField(Field.VALUE_SIZE).build(),
-                TableTools.newTable(TableTools.intCol(Field.VALUE_SIZE.recommendedName(), 42)));
-    }
 
     @Test
     void customRecordProcessor() throws ExecutionException, InterruptedException {
         final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, 42L, null, null, List.of(
-                    new RecordHeader("CustomKey1", new byte[] {42}),
-                    new RecordHeader("CustomKey2", new byte[] {43}),
-                    new RecordHeader("CustomKey1", new byte[] {44})))).get();
+        try (final KafkaProducer<String, String> producer = producer(new StringSerializer(), new StringSerializer())) {
+            metadata = producer.send(new ProducerRecord<>(topic, "myKey", "myValue")).get();
         }
-        final Table expected = TableTools.newTable(
-                TableTools.<byte[]>col("CustomKey1", new byte[] {44}),
-                TableTools.intCol("NumHeaders", 3));
-        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
-        try (final StreamToBlinkTableAdapter adapter = TableOptions.<byte[], byte[]>builder()
-                .clientOptions(clientOptions(new ByteArrayDeserializer(), new ByteArrayDeserializer()))
-                .addOffsets(Offsets.beginning(topic))
-                .receiveTimestamp(null)
-                .recordOptions(ConsumerRecordOptions.empty())
-                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                .recordProcessor(NamedObjectProcessor.of(ObjectProcessor.combined(List.of(
-                        Processors.lastHeader("CustomKey1", ObjectProcessor.simple(Type.byteType().arrayType())),
-                        NumHeaders.INSTANCE)), List.of("CustomKey1", "NumHeaders")))
-                // .keyProcessor(ObjectProcessor.simple(keyType))
-                // .callback(firstPollCompleted)
-                .build()
-                .adapter()) {
-            firstPollCompleted.await();
-            final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
-            updateGraph.runWithinUnitTestCycle(adapter::run);
-            TstUtils.assertTableEquals(expected, adapter.table());
-        }
-    }
-
-    @Test
-    void receiveTimestamp() throws InterruptedException, ExecutionException {
-        final RecordMetadata metadata;
-        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
-            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
-        }
-        final TableDefinition expectedDefinition =
-                TableDefinition.of(ColumnDefinition.of("ReceiveTimestamp", Type.instantType()));
-        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
-        try (final StreamToBlinkTableAdapter adapter = TableOptions.<byte[], byte[]>builder()
-                .clientOptions(clientOptions(new ByteArrayDeserializer(), new ByteArrayDeserializer()))
-                .addOffsets(Offsets.beginning(topic))
-                .recordOptions(ConsumerRecordOptions.empty())
-                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                // .keyProcessor(ObjectProcessor.simple(keyType))
-                // .callback(firstPollCompleted)
-                .build()
-                .adapter()) {
-            firstPollCompleted.await();
-            final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
-            updateGraph.runWithinUnitTestCycle(adapter::run);
-            assertThat(adapter.table().getDefinition()).isEqualTo(expectedDefinition);
-            assertThat(adapter.table().size()).isEqualTo(1);
-        }
-    }
-
-    private void recordOption(ConsumerRecordOptions recordOptions, Table expected) throws InterruptedException {
-        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
-        try (final StreamToBlinkTableAdapter adapter = TableOptions.<byte[], byte[]>builder()
-                .clientOptions(clientOptions(new ByteArrayDeserializer(), new ByteArrayDeserializer()))
-                .addOffsets(Offsets.beginning(topic))
-                .receiveTimestamp(null)
-                .recordOptions(recordOptions)
-                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                // .keyProcessor(ObjectProcessor.simple(keyType))
-                // .callback(firstPollCompleted)
-                .build()
-                .adapter()) {
-            firstPollCompleted.await();
-            final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
-            updateGraph.runWithinUnitTestCycle(adapter::run);
-            TstUtils.assertTableEquals(expected, adapter.table());
-        }
-    }
-
-    private <K> void keyTest(GenericType<K> keyType, Deserializer<K> keyDeserializer, Chunk<?> expected)
-            throws InterruptedException {
         final StreamConsumerRecorder recorder;
-        try (final PublishersImpl<K, Void> publishersImpl = PublishersOptions.<K, Void>builder()
-                .clientOptions(clientOptions(keyDeserializer, new VoidDeserializer()))
+        try (final PublishersImpl<String, String> publishersImpl = PublishersOptions.<String, String>builder()
+                .clientOptions(clientOptions(new StringDeserializer(), new StringDeserializer()))
                 .partitioning(Partitioning.single())
                 .filter(x -> true)
                 .offsets(Offsets.beginning(topic))
-                .processor(Processors.key(ObjectProcessor.simple(keyType)))
+                .processor(ObjectProcessor.combined(List.of(
+                        Processors.key(CharSequenceLength.INSTANCE),
+                        Processors.value(CharSequenceLength.INSTANCE))))
                 .chunkSize(1024)
                 .receiveTimestamp(false)
                 .build()
@@ -422,7 +188,96 @@ public abstract class PublishersOptionsSingleTopicBase {
             publishersImpl.awaitRecords(1);
         }
         recorder.flushPublisher();
-        assertThat(ChunkEquals.equals(recorder.accepted.get(0)[0], expected)).isTrue();
+        recorder.assertEquals(IntChunk.chunkWrap(new int[] {5}), IntChunk.chunkWrap(new int[] {7}));
+        recorder.close();
+    }
+
+    @Test
+    void receiveTimestamp() throws InterruptedException, ExecutionException {
+        final RecordMetadata metadata;
+        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
+            metadata = producer.send(new ProducerRecord<>(topic, null, null)).get();
+        }
+        final StreamConsumerRecorder recorder;
+        try (final PublishersImpl<Void, Void> publishersImpl = PublishersOptions.<Void, Void>builder()
+                .clientOptions(clientOptions(new VoidDeserializer(), new VoidDeserializer()))
+                .partitioning(Partitioning.single())
+                .filter(x -> true)
+                .offsets(Offsets.beginning(topic))
+                .processor(ObjectProcessor.empty())
+                .chunkSize(1024)
+                .receiveTimestamp(true)
+                .build()
+                .publishersImpl()) {
+            try {
+                recorder = singleRecorder(publishersImpl.publishers());
+                publishersImpl.start();
+            } catch (Throwable t) {
+                publishersImpl.errorBeforeStart(t);
+                throw t;
+            }
+            publishersImpl.awaitRecords(1);
+        }
+        recorder.flushPublisher();
+        final Chunk<?> chunk = recorder.singleValue();
+        assertThat(chunk.size()).isEqualTo(1);
+        assertThat(chunk.getChunkType()).isEqualTo(ChunkType.Long);
+        assertThat(chunk.asLongChunk().get(0)).isPositive();
+        recorder.close();
+    }
+
+    private <K> void keyTest(GenericType<K> keyType, Deserializer<K> keyDeserializer, Chunk<?> expected)
+            throws InterruptedException {
+        final StreamConsumerRecorder recorder;
+        try (final PublishersImpl<K, Void> publishersImpl = PublishersOptions.<K, Void>builder()
+                .clientOptions(clientOptions(keyDeserializer, new VoidDeserializer()))
+                .partitioning(Partitioning.single())
+                .filter(x -> true)
+                .offsets(Offsets.beginning(topic))
+                .processor(Processors.key(ObjectProcessorFunctions.identity(keyType)))
+                .chunkSize(1024)
+                .receiveTimestamp(false)
+                .build()
+                .publishersImpl()) {
+            try {
+                recorder = singleRecorder(publishersImpl.publishers());
+                publishersImpl.start();
+            } catch (Throwable t) {
+                publishersImpl.errorBeforeStart(t);
+                throw t;
+            }
+            publishersImpl.awaitRecords(expected.size());
+        }
+        recorder.flushPublisher();
+        recorder.assertEquals(expected);
+        recorder.close();
+    }
+
+    private <V> void valueTest(GenericType<V> valueType, Deserializer<V> valueDeserializer, Chunk<?> expected)
+            throws InterruptedException {
+        final StreamConsumerRecorder recorder;
+        try (final PublishersImpl<Void, V> publishersImpl = PublishersOptions.<Void, V>builder()
+                .clientOptions(clientOptions(new VoidDeserializer(), valueDeserializer))
+                .partitioning(Partitioning.single())
+                .filter(x -> true)
+                .offsets(Offsets.beginning(topic))
+                .processor(Processors.value(ObjectProcessorFunctions.identity(valueType)))
+                .chunkSize(1024)
+                .receiveTimestamp(false)
+                .build()
+                .publishersImpl()) {
+            try {
+                recorder = singleRecorder(publishersImpl.publishers());
+                publishersImpl.start();
+            } catch (Throwable t) {
+                publishersImpl.errorBeforeStart(t);
+                throw t;
+            }
+            publishersImpl.awaitRecords(expected.size());
+        }
+        recorder.flushPublisher();
+        recorder.assertEquals(expected);
+        recorder.close();
     }
 
     private static StreamConsumerRecorder singleRecorder(Collection<? extends Publisher> publishers) {
@@ -430,26 +285,6 @@ public abstract class PublishersOptionsSingleTopicBase {
         final StreamConsumerRecorder consumer = new StreamConsumerRecorder(publisher);
         publisher.register(consumer);
         return consumer;
-    }
-
-    private <V> void valueTest(GenericType<V> valueType, Deserializer<V> valueDeserializer, Table expected)
-            throws InterruptedException {
-        final FirstPollCompleted firstPollCompleted = new FirstPollCompleted();
-        try (final StreamToBlinkTableAdapter adapter = TableOptions.<Void, V>builder()
-                .clientOptions(clientOptions(new VoidDeserializer(), valueDeserializer))
-                .addOffsets(Offsets.beginning(topic))
-                .receiveTimestamp(null)
-                .recordOptions(ConsumerRecordOptions.empty())
-                .opinionatedRecordOptions(OpinionatedRecordOptions.none())
-                .valueProcessor(ObjectProcessor.simple(valueType))
-                // .callback(firstPollCompleted)
-                .build()
-                .adapter()) {
-            firstPollCompleted.await();
-            final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
-            updateGraph.runWithinUnitTestCycle(adapter::run);
-            TstUtils.assertTableEquals(expected, adapter.table());
-        }
     }
 
     final Admin admin() {
@@ -517,7 +352,7 @@ public abstract class PublishersOptionsSingleTopicBase {
         final Publisher publisher;
         final List<WritableChunk<Values>[]> accepted = new ArrayList<>();
         final List<Throwable> failures = new ArrayList<>();
-//        private final LongAdder rowCount = new LongAdder();
+        // private final LongAdder rowCount = new LongAdder();
 
         private StreamConsumerRecorder(Publisher publisher) {
             this.publisher = Objects.requireNonNull(publisher);
@@ -529,13 +364,13 @@ public abstract class PublishersOptionsSingleTopicBase {
 
         @Override
         public void accept(@NotNull WritableChunk<Values>... data) {
-//            rowCount.add(data[0].size());
+            // rowCount.add(data[0].size());
             accepted.add(data);
         }
 
         @Override
         public void accept(@NotNull Collection<WritableChunk<Values>[]> data) {
-//            rowCount.add(data.stream().map(x -> x[0]).mapToInt(Chunk::size).sum());
+            // rowCount.add(data.stream().map(x -> x[0]).mapToInt(Chunk::size).sum());
             accepted.addAll(data);
         }
 
@@ -547,6 +382,50 @@ public abstract class PublishersOptionsSingleTopicBase {
         @Override
         public void close() {
             publisher.shutdown();
+        }
+
+        public Chunk<?> singleValue() {
+            assertThat(accepted).hasSize(1);
+            assertThat(accepted.get(0)).hasSize(1);
+            return accepted.get(0)[0];
+        }
+
+        public void assertEquals(Chunk<?>... expectedChunks) {
+            assertThat(accepted).hasSize(1);
+            final WritableChunk<Values>[] chunks = accepted.get(0);
+            assertThat(chunks).hasSize(expectedChunks.length);
+            for (int i = 0; i < chunks.length; ++i) {
+                assertThat(chunks[i]).usingComparator(FAKE_COMPARE_FOR_EQUALS).isEqualTo(expectedChunks[i]);
+            }
+        }
+    }
+
+    private static final Comparator<Chunk<?>> FAKE_COMPARE_FOR_EQUALS =
+            PublishersOptionsSingleTopicBase::fakeCompareForEquals;
+
+    private static int fakeCompareForEquals(Chunk<?> x, Chunk<?> y) {
+        return ChunkEquals.equals(x, y) ? 0 : 1;
+    }
+
+    enum CharSequenceLength implements ObjectProcessor<CharSequence> {
+        INSTANCE;
+
+        @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
+        public List<Type<?>> outputTypes() {
+            return List.of(Type.intType());
+        }
+
+        @Override
+        public void processAll(ObjectChunk<? extends CharSequence, ?> in, List<WritableChunk<?>> out) {
+            final WritableIntChunk<?> lengthOut = out.get(0).asWritableIntChunk();
+            for (int i = 0; i < in.size(); ++i) {
+                lengthOut.add(in.get(i).length());
+            }
         }
     }
 }

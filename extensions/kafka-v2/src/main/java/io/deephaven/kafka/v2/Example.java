@@ -120,7 +120,7 @@ public class Example {
                 .addOffsets(Offsets.end("netdata-metrics"))
                 .filter(cr -> cr.value().startsWith(
                         "{\"labels\":{\"__name__\":\"netdata_system_cpu_percentage_average\",\"chart\":\"system.cpu\",\"dimension\":\"user"))
-                .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
+                // .valueProcessor(NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "Value"))
                 // .tableType(TableType.append())
                 .build());
     }

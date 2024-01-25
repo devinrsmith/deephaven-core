@@ -4,6 +4,7 @@
 package io.deephaven.kafka.v2;
 
 import io.deephaven.base.clock.Clock;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -13,10 +14,13 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static io.deephaven.kafka.v2.ClientHelper.safeCloseClient;
 
@@ -28,6 +32,11 @@ final class PublishersImpl<K, V> implements Publishers {
     // private final ConsumerLoopCallback callback;
     private final Map<TopicPartition, PublisherImpl<K, V>> topicPartitionToPublisher;
     private final boolean receiveTimestamp;
+    private long polls;
+    private long empties;
+    private long records;
+//    private final Lock recordsLock = new ReentrantLock();
+//    private final Lock records
 
     PublishersImpl(
             KafkaConsumer<K, V> client,
@@ -41,6 +50,7 @@ final class PublishersImpl<K, V> implements Publishers {
         // this.callback = callback;
         this.topicPartitionToPublisher = Collections.unmodifiableMap(map(publishers));
         this.receiveTimestamp = receiveTimestamp;
+        this.polls = 0;
     }
 
     private static <K, V> Map<TopicPartition, PublisherImpl<K, V>> map(Set<PublisherImpl<K, V>> publishers) {
@@ -92,6 +102,18 @@ final class PublishersImpl<K, V> implements Publishers {
         // todo: extra safety check that start or errorBeforeStart was called
     }
 
+    public synchronized void awaitRecords(long numRecords) throws InterruptedException {
+        // todo
+//        recordsLock.lock();
+        try {
+            while (records < numRecords) {
+                wait();
+            }
+        } finally {
+//            recordsLock.lock();
+        }
+    }
+
     private void run() {
         try {
             // noinspection StatementWithEmptyBody
@@ -130,28 +152,41 @@ final class PublishersImpl<K, V> implements Publishers {
     }
 
     private boolean pollAndAccept() {
-        final ConsumerRecords<K, V> records;
+        ++polls;
+        final ConsumerRecords<K, V> consumerRecords;
         try {
-            records = client.poll(Duration.ofMinutes(1));
+            consumerRecords = client.poll(Duration.ofMinutes(1));
         } catch (WakeupException e) {
             safeNotifyFailure(e);
             return false;
         }
         final long receiveTimeEpochNanos = receiveTimestamp ? Clock.system().currentTimeNanos() : 0;
-        if (records.isEmpty()) {
+        if (consumerRecords.isEmpty()) {
+            ++empties;
             return true;
         }
-        accept(receiveTimeEpochNanos, records);
+        accept(receiveTimeEpochNanos, consumerRecords);
         return true;
     }
 
-    private void accept(long receiveTimeEpochNanos, ConsumerRecords<K, V> records) {
-        for (final TopicPartition topicPartition : records.partitions()) {
-            final PublisherImpl<K, V> publisher = topicPartitionToPublisher.get(topicPartition);
-            if (publisher == null) {
-                throw new IllegalStateException(String.format("Received unexpected topicPartition=%s", topicPartition));
+    private synchronized void accept(long receiveTimeEpochNanos, ConsumerRecords<K, V> consumerRecords) {
+        // larger area than we technically need, but typically awaitNumRecords will be used in combo w/ flushing, but
+        // we should give the batch the full opportunity before allowing awaitNumRecords to proceed
+//        recordsLock.lock();
+        try {
+            for (final TopicPartition topicPartition : consumerRecords.partitions()) {
+                final PublisherImpl<K, V> publisher = topicPartitionToPublisher.get(topicPartition);
+                if (publisher == null) {
+                    throw new IllegalStateException(String.format("Received unexpected topicPartition=%s", topicPartition));
+                }
+                final List<ConsumerRecord<K, V>> tpRecords = consumerRecords.records(topicPartition);
+                records += tpRecords.size();
+                publisher.fillImpl(receiveTimeEpochNanos, topicPartition, tpRecords);
             }
-            publisher.fillImpl(receiveTimeEpochNanos, topicPartition, records.records(topicPartition));
+            notify();
+//            recordsLock.notify();
+        } finally {
+//            recordsLock.unlock();
         }
     }
 

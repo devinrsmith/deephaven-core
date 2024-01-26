@@ -32,7 +32,7 @@ final class SingletonContainers {
 
         private static final class Kafka_7_3 {
             private static final KafkaContainer KAFKA =
-                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.5"));
+                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.5")).withKraft();
             static {
                 KAFKA.start();
             }
@@ -40,7 +40,7 @@ final class SingletonContainers {
 
         private static final class Kafka_7_4 {
             private static final KafkaContainer KAFKA =
-                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.2"));
+                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.2")).withKraft();
             static {
                 KAFKA.start();
             }
@@ -48,7 +48,7 @@ final class SingletonContainers {
 
         private static final class Kafka_7_5 {
             private static final KafkaContainer KAFKA =
-                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.1"));
+                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.1")).withKraft();
             static {
                 KAFKA.start();
             }

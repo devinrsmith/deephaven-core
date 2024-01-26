@@ -42,7 +42,12 @@ public class TopicExtension implements ParameterResolver, BeforeEachCallback {
     }
 
     private static String topic(ExtensionContext context) {
-        return "topic-" + context.getRequiredTestMethod().getName();
+        return sanitizeTopic(
+                "topic-" + context.getRequiredTestClass().getName() + "-" + context.getRequiredTestMethod().getName());
+    }
+
+    private static String sanitizeTopic(String in) {
+        return in.replace('$', '.');
     }
 
     @Override

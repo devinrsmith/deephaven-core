@@ -185,6 +185,11 @@ public class StreamToBlinkTableAdapter
         }
     }
 
+    // todo visibility
+    public StreamPublisher getStreamPublisher() {
+        return streamPublisher;
+    }
+
     /**
      * Initialize this adapter by invoking {@link StreamPublisher#register(StreamConsumer)} and
      * {@link UpdateSourceRegistrar#addSource(Runnable)} with {@code this}. Must be called once <b>if and only if</b>

@@ -10,66 +10,37 @@ public class ChunkEquals {
 
 
     public static boolean equals(Chunk<?> x, Chunk<?> y) {
-        if (x instanceof BooleanChunk) {
-            if (!(y instanceof BooleanChunk)) {
-                return false;
-            }
-            return equals((BooleanChunk<?>) x, (BooleanChunk<?>) y);
-        }
-        if (x instanceof ByteChunk) {
-            if (!(y instanceof ByteChunk)) {
-                return false;
-            }
-            return equals((ByteChunk<?>) x, (ByteChunk<?>) y);
-        }
-        if (x instanceof CharChunk) {
-            if (!(y instanceof CharChunk)) {
-                return false;
-            }
-            return equals((CharChunk<?>) x, (CharChunk<?>) y);
-        }
-        if (x instanceof ShortChunk) {
-            if (!(y instanceof ShortChunk)) {
-                return false;
-            }
-            return equals((ShortChunk<?>) x, (ShortChunk<?>) y);
-        }
-        if (x instanceof IntChunk) {
-            if (!(y instanceof IntChunk)) {
-                return false;
-            }
-            return equals((IntChunk<?>) x, (IntChunk<?>) y);
-        }
-        if (x instanceof LongChunk) {
-            if (!(y instanceof LongChunk)) {
-                return false;
-            }
-            return equals((LongChunk<?>) x, (LongChunk<?>) y);
-        }
-        if (x instanceof FloatChunk) {
-            if (!(y instanceof FloatChunk)) {
-                return false;
-            }
-            return equals((FloatChunk<?>) x, (FloatChunk<?>) y);
-        }
-        if (x instanceof DoubleChunk) {
-            if (!(y instanceof DoubleChunk)) {
-                return false;
-            }
-            return equals((DoubleChunk<?>) x, (DoubleChunk<?>) y);
-        }
-        if (!(y instanceof ObjectChunk)) {
+        if (!x.getChunkType().equals(y.getChunkType())) {
             return false;
         }
-        final ObjectChunk<?, ?> actualObjectChunk = (ObjectChunk<?, ?>) x;
-        final ObjectChunk<?, ?> expectedObjectChunk = (ObjectChunk<?, ?>) y;
-        // Note: we can't be this precise b/c io.deephaven.chunk.ObjectChunk.makeArray doesn't actually use the typed
-        // class
-        /*
-         * if (!actualObjectChunk.data.getClass().equals(expectedObjectChunk.data.getClass())) { return false; }
-         */
-        // noinspection unchecked
-        return equals((ObjectChunk<Object, ?>) actualObjectChunk, (ObjectChunk<Object, ?>) expectedObjectChunk);
+        switch (x.getChunkType()) {
+            case Boolean:
+                return equals((BooleanChunk<?>) x, (BooleanChunk<?>) y);
+            case Char:
+                return equals((CharChunk<?>) x, (CharChunk<?>) y);
+            case Byte:
+                return equals((ByteChunk<?>) x, (ByteChunk<?>) y);
+            case Short:
+                return equals((ShortChunk<?>) x, (ShortChunk<?>) y);
+            case Int:
+                return equals((IntChunk<?>) x, (IntChunk<?>) y);
+            case Long:
+                return equals((LongChunk<?>) x, (LongChunk<?>) y);
+            case Float:
+                return equals((FloatChunk<?>) x, (FloatChunk<?>) y);
+            case Double:
+                return equals((DoubleChunk<?>) x, (DoubleChunk<?>) y);
+            case Object:
+                // Note: we can't be this precise b/c io.deephaven.chunk.ObjectChunk.makeArray doesn't actually use the
+                // typed
+                // class
+                /*
+                 * if (!actualObjectChunk.data.getClass().equals(expectedObjectChunk.data.getClass())) { return false; }
+                 */
+                return equals((ObjectChunk<Object, ?>) x, (ObjectChunk<Object, ?>) y);
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     public static boolean equals(BooleanChunk<?> actual, BooleanChunk<?> expected) {

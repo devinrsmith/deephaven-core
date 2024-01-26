@@ -46,7 +46,10 @@ import org.apache.kafka.common.serialization.VoidDeserializer;
 import org.apache.kafka.common.serialization.VoidSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
@@ -60,8 +63,9 @@ import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestMethodOrder(OrderAnnotation.class)
 @ExtendWith({TopicExtension.class, EngineExtensions.class})
-public abstract class TableOptionsSingleTopicTestBase {
+public abstract class TableOptionsBase {
 
     public abstract Map<String, Object> adminConfig();
 
@@ -86,6 +90,12 @@ public abstract class TableOptionsSingleTopicTestBase {
     void deleteTopic() {
         // We _could_ delete the topics, but the container should be deleted soon enough, and each method has its own
         // topic name
+    }
+
+    @Order(0)
+    @Test
+    void init() {
+        // forced to go first, accounts for shared container startup time
     }
 
     @Test

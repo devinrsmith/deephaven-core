@@ -32,7 +32,7 @@ final class PublishersImpl<K, V> implements Publishers {
     private final boolean receiveTimestamp;
     private long polls;
     private long empties;
-    private long records;
+    private long records = -1;
 
     PublishersImpl(
             KafkaConsumer<K, V> client,
@@ -93,8 +93,6 @@ final class PublishersImpl<K, V> implements Publishers {
 
     @Override
     public synchronized void close() {
-
-
         // todo: extra safety check that start or errorBeforeStart was called
     }
 
@@ -145,21 +143,30 @@ final class PublishersImpl<K, V> implements Publishers {
         ++polls;
         final ConsumerRecords<K, V> consumerRecords;
         try {
-            consumerRecords = client.poll(Duration.ofMinutes(1));
+            // We are the only writer to records, so it is safe for us to read it here outside the lock. On the very
+            // first call to poll, we want to return asap so we can establish we've initialized ourselves wrt the
+            // kafka polling offset (most relevant for seekToEnd).
+            // Right now, this is only important for testing, but it's not unreasonable to think a real client might
+            // like to block until it knows the poll has been established.
+            consumerRecords = client.poll(records == -1 ? Duration.ZERO : Duration.ofMinutes(1));
         } catch (WakeupException e) {
             safeNotifyFailure(e);
             return false;
         }
         final long receiveTimeEpochNanos = receiveTimestamp ? Clock.system().currentTimeNanos() : 0;
-        if (consumerRecords.isEmpty()) {
-            ++empties;
-            return true;
-        }
+        // don't want to pass on empty, still want a notification on accept that records has gone to 0 initially.
+        // if (consumerRecords.isEmpty()) {
+        // ++empties;
+        // return true;
+        // }
         accept(receiveTimeEpochNanos, consumerRecords);
         return true;
     }
 
     private synchronized void accept(long receiveTimeEpochNanos, ConsumerRecords<K, V> consumerRecords) {
+        if (records == -1) {
+            records = 0;
+        }
         // larger area than we technically need, but typically awaitNumRecords will be used in combo w/ flushing, but
         // we should give the batch the full opportunity before allowing awaitNumRecords to proceed
         for (final TopicPartition topicPartition : consumerRecords.partitions()) {

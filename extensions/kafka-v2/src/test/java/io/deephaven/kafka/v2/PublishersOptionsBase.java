@@ -69,6 +69,7 @@ import org.opentest4j.AssertionFailedError;
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -420,6 +421,104 @@ public abstract class PublishersOptionsBase {
         recorder.flushPublisher();
         recorder.assertEquals(LongChunk.chunkWrap(new long[] {metadata_2.offset()}));
         recorder.close();
+    }
+
+    @Test
+    void offsetsExplicit() throws ExecutionException, InterruptedException {
+        final RecordMetadata metadata_1;
+        final RecordMetadata metadata_2;
+        final RecordMetadata metadata_3;
+        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
+            metadata_1 = producer.send(new ProducerRecord<>(topic, null, null)).get();
+            metadata_2 = producer.send(new ProducerRecord<>(topic, null, null)).get();
+            metadata_3 = producer.send(new ProducerRecord<>(topic, null, null)).get();
+        }
+        final StreamConsumerRecorder recorder;
+        try (final PublishersImpl<Void, Void> publishersImpl = PublishersOptions.<Void, Void>builder()
+                .clientOptions(clientOptions(new VoidDeserializer(), new VoidDeserializer()))
+                .partitioning(Partitioning.single())
+                .filter(x -> true)
+                .offsets(Offsets.of(new TopicPartition(topic, 0), metadata_2.offset()))
+                .processor(ObjectProcessorFunctions.of(List.of(OFFSET_FUNCTION)))
+                .chunkSize(1024)
+                .receiveTimestamp(false)
+                .build()
+                .publishersImpl()) {
+            try {
+                recorder = singleRecorder(publishersImpl.publishers());
+                publishersImpl.start();
+            } catch (Throwable t) {
+                publishersImpl.errorBeforeStart(t);
+                throw t;
+            }
+            publishersImpl.awaitRecords(2);
+        }
+        recorder.flushPublisher();
+        recorder.assertEquals(LongChunk.chunkWrap(new long[] {metadata_2.offset(), metadata_3.offset()}));
+        recorder.close();
+    }
+
+    @Test
+    void offsetsTimestamp() throws ExecutionException, InterruptedException {
+        final long epochMillis = 1706238105939L;
+        final RecordMetadata metadata_1;
+        final RecordMetadata metadata_2;
+        final RecordMetadata metadata_3;
+        try (final KafkaProducer<Void, Void> producer = producer(new VoidSerializer(), new VoidSerializer())) {
+            metadata_1 = producer.send(new ProducerRecord<>(topic, null, epochMillis - 1, null, null, null)).get();
+            metadata_2 = producer.send(new ProducerRecord<>(topic, null, epochMillis, null, null, null)).get();
+            metadata_3 = producer.send(new ProducerRecord<>(topic, null, epochMillis + 1, null, null, null)).get();
+        }
+        {
+            final StreamConsumerRecorder recorder;
+            try (final PublishersImpl<Void, Void> publishersImpl = PublishersOptions.<Void, Void>builder()
+                    .clientOptions(clientOptions(new VoidDeserializer(), new VoidDeserializer()))
+                    .partitioning(Partitioning.single())
+                    .filter(x -> true)
+                    .offsets(Offsets.timestamp(topic, Instant.ofEpochMilli(epochMillis)))
+                    .processor(ObjectProcessorFunctions.of(List.of(OFFSET_FUNCTION)))
+                    .chunkSize(1024)
+                    .receiveTimestamp(false)
+                    .build()
+                    .publishersImpl()) {
+                try {
+                    recorder = singleRecorder(publishersImpl.publishers());
+                    publishersImpl.start();
+                } catch (Throwable t) {
+                    publishersImpl.errorBeforeStart(t);
+                    throw t;
+                }
+                publishersImpl.awaitRecords(2);
+            }
+            recorder.flushPublisher();
+            recorder.assertEquals(LongChunk.chunkWrap(new long[] {metadata_2.offset(), metadata_3.offset()}));
+            recorder.close();
+        }
+        {
+            final StreamConsumerRecorder recorder;
+            try (final PublishersImpl<Void, Void> publishersImpl = PublishersOptions.<Void, Void>builder()
+                    .clientOptions(clientOptions(new VoidDeserializer(), new VoidDeserializer()))
+                    .partitioning(Partitioning.single())
+                    .filter(x -> true)
+                    .offsets(Offsets.timestamp(topic, Instant.ofEpochMilli(epochMillis).plusNanos(1)))
+                    .processor(ObjectProcessorFunctions.of(List.of(OFFSET_FUNCTION)))
+                    .chunkSize(1024)
+                    .receiveTimestamp(false)
+                    .build()
+                    .publishersImpl()) {
+                try {
+                    recorder = singleRecorder(publishersImpl.publishers());
+                    publishersImpl.start();
+                } catch (Throwable t) {
+                    publishersImpl.errorBeforeStart(t);
+                    throw t;
+                }
+                publishersImpl.awaitRecords(1);
+            }
+            recorder.flushPublisher();
+            recorder.assertEquals(LongChunk.chunkWrap(new long[] {metadata_3.offset()}));
+            recorder.close();
+        }
     }
 
     @Test

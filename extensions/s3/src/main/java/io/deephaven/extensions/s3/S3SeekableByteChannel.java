@@ -4,12 +4,9 @@
 package io.deephaven.extensions.s3;
 
 import io.deephaven.base.verify.Assert;
-
-import java.util.Objects;
-
+import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.channel.CachedChannelProvider;
 import io.deephaven.util.channel.SeekableChannelContext;
-import io.deephaven.util.SafeCloseable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -25,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.SeekableByteChannel;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -74,13 +72,22 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
                 return this.fragmentIndex == fragmentIndex;
             }
 
-            private void cancelAndRelease() {
-                try (final SafeCloseable ignored = () -> SafeCloseable.closeAll(
-                        future == null ? null : () -> future.cancel(true), bufferRelease)) {
+            private void cancelAndRelease(S3ChannelContext s3ChannelContext) {
+                if (fragmentIndex != UNINITIALIZED_FRAGMENT_INDEX) {
+                    System.out.printf("cancel: %d,%d%n", System.identityHashCode(s3ChannelContext), fragmentIndex);
+                }
+                try (
+                        final SafeCloseable ignored1 = cancelOnClose(future, true);
+                        final SafeCloseable ignored2 = bufferRelease) {
                     fragmentIndex = UNINITIALIZED_FRAGMENT_INDEX;
                     future = null;
                     bufferRelease = null;
                 }
+            }
+
+            // do not inline, needs to capture future at time of method call
+            private static SafeCloseable cancelOnClose(Future<?> future, boolean mayInterruptIfRunning) {
+                return future == null ? null : () -> future.cancel(mayInterruptIfRunning);
             }
 
             private void set(
@@ -148,7 +155,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             // Cancel all outstanding requests
             for (final FragmentState fragmentState : bufferCache) {
                 if (fragmentState != null) {
-                    fragmentState.cancelAndRelease();
+                    fragmentState.cancelAndRelease(null);
                 }
             }
         }
@@ -280,11 +287,12 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
     private void sendAsyncRequest(final long fragmentIndex, @NotNull final S3ChannelContext s3ChannelContext) {
         final S3ChannelContext.FragmentState fragmentState = s3ChannelContext.getFragmentState(fragmentIndex);
         if (fragmentState.matches(fragmentIndex)) {
+//            System.out.printf("match: %d,%s/%s,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, fragmentIndex);
             // We already have the fragment cached
             return;
         }
         // Cancel any outstanding requests for the fragment in cached slot
-        fragmentState.cancelAndRelease();
+        fragmentState.cancelAndRelease(s3ChannelContext);
 
         final int fragmentSize = s3Instructions.fragmentSize();
         final long readFrom = fragmentIndex * fragmentSize;
@@ -295,6 +303,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         final BufferPool.BufferHolder bufferHolder = bufferPool.take(numBytes);
         final ByteBufferAsyncResponseTransformer<GetObjectResponse> asyncResponseTransformer =
                 new ByteBufferAsyncResponseTransformer<>(Objects.requireNonNull(bufferHolder.get()));
+        System.out.printf("send: %d,%s/%s,%d-%d,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, readFrom, readTo, fragmentIndex);
         final CompletableFuture<ByteBuffer> future = s3AsyncClient
                 .getObject(GetObjectRequest.builder()
                         .bucket(bucket)
@@ -303,6 +312,9 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
                         .build(), asyncResponseTransformer)
                 .whenComplete((response, throwable) -> asyncResponseTransformer.close());;
         fragmentState.set(fragmentIndex, future, bufferHolder);
+        if (fragmentIndex == 0) {
+            Thread.dumpStack();
+        }
     }
 
     private IOException handleS3Exception(final Exception e, final String operationDescription) {

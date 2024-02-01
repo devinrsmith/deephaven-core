@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SeekableByteChannel;
@@ -42,6 +43,8 @@ public interface SeekableChannelsProvider extends SafeCloseable {
      */
     SeekableChannelContext makeContext();
 
+    SeekableChannelContext makeSingleUseContext();
+
     /**
      * Check if the given context is compatible with this provider. Useful to test if we can use provided
      * {@code context} object for creating channels with this provider.
@@ -55,6 +58,11 @@ public interface SeekableChannelsProvider extends SafeCloseable {
 
     SeekableByteChannel getReadChannel(@NotNull SeekableChannelContext channelContext, @NotNull URI uri)
             throws IOException;
+
+    default InputStream getInputStream(SeekableByteChannel channel, int position) {
+        // TODO
+        return null;
+    }
 
     default SeekableByteChannel getWriteChannel(@NotNull final String path, final boolean append) throws IOException {
         return getWriteChannel(Paths.get(path), append);

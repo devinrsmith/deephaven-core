@@ -178,7 +178,8 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
             return NULL_DICTIONARY;
         }
         // Use the context object provided by the caller, or create (and close) a new one
-        final SeekableChannelContext context = channelContext == SeekableChannelContext.NULL ? channelsProvider.makeContext() : channelContext;
+        final SeekableChannelContext context =
+                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeContext() : channelContext;
         try (final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null) {
             return getDictionaryHelper(context, dictionaryPageOffset);
         }
@@ -259,6 +260,7 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
                 final long headerOffset = currentOffset;
                 readChannel.position(currentOffset);
                 // deliberately not closing this stream
+                // TODO: don't rely on inputstream moving position exactly, use buffered?
                 final PageHeader pageHeader = Util.readPageHeader(Channels.newInputStream(readChannel));
                 currentOffset = readChannel.position() + pageHeader.getCompressed_page_size();
                 if (pageHeader.isSetDictionary_page_header()) {

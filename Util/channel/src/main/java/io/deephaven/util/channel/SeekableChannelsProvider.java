@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,7 +44,9 @@ public interface SeekableChannelsProvider extends SafeCloseable {
      */
     SeekableChannelContext makeContext();
 
-    SeekableChannelContext makeSingleUseContext();
+    default SeekableChannelContext makeSingleUseContext() {
+        return makeContext();
+    }
 
     /**
      * Check if the given context is compatible with this provider. Useful to test if we can use provided
@@ -59,9 +62,8 @@ public interface SeekableChannelsProvider extends SafeCloseable {
     SeekableByteChannel getReadChannel(@NotNull SeekableChannelContext channelContext, @NotNull URI uri)
             throws IOException;
 
-    default InputStream getInputStream(SeekableByteChannel channel, int position) {
-        // TODO
-        return null;
+    default InputStream getInputStream(SeekableByteChannel channel) {
+        return Channels.newInputStream(new ReadableByteChannelNoClose(channel));
     }
 
     default SeekableByteChannel getWriteChannel(@NotNull final String path, final boolean append) throws IOException {

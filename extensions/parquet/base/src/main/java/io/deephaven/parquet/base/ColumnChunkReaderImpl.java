@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.channels.Channels;
@@ -179,9 +180,15 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
         }
         // Use the context object provided by the caller, or create (and close) a new one
         final SeekableChannelContext context =
-                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeContext() : channelContext;
-        try (final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null) {
+                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeSingleUseContext() : channelContext;
+        try (
+                final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null;
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(context, getURI())) {
+            ch.position(dictionaryPageOffset);
+
             return getDictionaryHelper(context, dictionaryPageOffset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -210,29 +217,31 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
         return channelsProvider;
     }
 
+    private Dictionary readDictionary(SeekableByteChannel ch) throws IOException {
+        try (final InputStream in = channelsProvider.getInputStream(ch)) {
+            return readDictionary(in);
+        }
+    }
+
     @NotNull
-    private Dictionary readDictionary(ReadableByteChannel file) throws IOException {
+    private Dictionary readDictionary(InputStream in) throws IOException {
         // explicitly not closing this, caller is responsible
-        final BufferedInputStream inputStream = new BufferedInputStream(Channels.newInputStream(file));
-        final PageHeader pageHeader = Util.readPageHeader(inputStream);
+        final PageHeader pageHeader = Util.readPageHeader(in);
         if (pageHeader.getType() != PageType.DICTIONARY_PAGE) {
             // In case our fallback in getDictionary was too optimistic...
             return NULL_DICTIONARY;
         }
         final DictionaryPageHeader dictHeader = pageHeader.getDictionary_page_header();
-
-        final BytesInput payload;
         final int compressedPageSize = pageHeader.getCompressed_page_size();
+        final BytesInput payload;
         if (compressedPageSize == 0) {
             // Sometimes the size is explicitly empty, just use an empty payload
             payload = BytesInput.empty();
         } else {
-            payload = decompressor.decompress(inputStream, compressedPageSize, pageHeader.getUncompressed_page_size());
+            payload = decompressor.decompress(in, compressedPageSize, pageHeader.getUncompressed_page_size());
         }
-
         final DictionaryPage dictionaryPage = new DictionaryPage(payload, dictHeader.getNum_values(),
                 Encoding.valueOf(dictHeader.getEncoding().name()));
-
         return dictionaryPage.getEncoding().initDictionary(path, dictionaryPage);
     }
 

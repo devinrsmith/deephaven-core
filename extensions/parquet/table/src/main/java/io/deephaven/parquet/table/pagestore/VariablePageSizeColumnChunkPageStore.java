@@ -153,7 +153,7 @@ final class VariablePageSizeColumnChunkPageStore<ATTR extends Any> extends Colum
         }
         // Use the latest channel context while reading page headers, or create (and close) a new one
         final SeekableChannelContext inner = innerFillContext(fillContext);
-        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeContext() : inner;
+        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeSingleUseContext() : inner;
         try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {
             if (pageNum >= localNumPages) {
                 final int minPageNum = fillToRow(context, localNumPages, rowKey);

@@ -214,7 +214,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
 
             final RowGroupReader rowGroupReader = parquetFileReader.getRowGroup(0, version);
             final ColumnChunkReader groupingKeyReader, beginPosReader, endPosReader;
-            try (final SeekableChannelContext channelContext = channelsProvider.makeContext()) {
+            try (final SeekableChannelContext channelContext = channelsProvider.makeSingleUseContext()) {
                 groupingKeyReader =
                         rowGroupReader.getColumnChunk(Collections.singletonList(GROUPING_KEY), channelContext);
                 beginPosReader = rowGroupReader.getColumnChunk(Collections.singletonList(BEGIN_POS), channelContext);

@@ -105,12 +105,15 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
          */
         private final FragmentState[] bufferCache;
 
+        private final int readAheadCount;
+
         /**
          * The size of the object in bytes, stored in context to avoid fetching multiple times
          */
         private long size;
 
-        S3ChannelContext(final int maxCacheSize) {
+        S3ChannelContext(final int maxCacheSize, final int readAheadCount) {
+            this.readAheadCount = readAheadCount;
             bufferCache = new FragmentState[maxCacheSize];
             size = UNINITIALIZED_SIZE;
         }
@@ -226,7 +229,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         // Send async read requests for current fragment as well as read ahead fragments
         final long currFragmentIndex = fragmentIndexForByteNumber(localPosition);
         final int numReadAheadFragments = (int) Math.min(
-                s3Instructions.readAheadCount(),
+                context.readAheadCount,
                 numFragmentsInObject - currFragmentIndex - 1);
         for (long idx = currFragmentIndex; idx <= currFragmentIndex + numReadAheadFragments; idx++) {
             sendAsyncRequest(idx, context);

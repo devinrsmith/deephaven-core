@@ -130,7 +130,7 @@ final class OffsetIndexBasedColumnChunkPageStore<ATTR extends Any> extends Colum
         final ColumnPageReader reader = columnPageDirectAccessor.getPageReader(pageNum);
         // Use the latest context while reading the page, or create (and close) new one
         final SeekableChannelContext inner = innerFillContext(fillContext);
-        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeContext() : inner;
+        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeSingleUseContext() : inner;
         try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {
             return toPage(offsetIndex.getFirstRowIndex(pageNum), reader, context);
         } catch (IOException e) {

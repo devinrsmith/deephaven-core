@@ -58,7 +58,16 @@ final class S3SeekableChannelProvider implements SeekableChannelsProvider {
 
     @Override
     public SeekableChannelContext makeContext() {
-        return new S3SeekableByteChannel.S3ChannelContext(s3Instructions.maxCacheSize());
+        return new S3SeekableByteChannel.S3ChannelContext(s3Instructions.maxCacheSize(), s3Instructions.readAheadCount());
+    }
+
+    @Override
+    public SeekableChannelContext makeSingleUseContext() {
+        // todo: still have readAhead 1?
+        // final int readAheadCount = Math.min(s3Instructions.readAheadCount(), 1);
+        final int readAheadCount = 0;
+        // todo: does the math *need* the context to have this size? or can it be different?
+        return new S3SeekableByteChannel.S3ChannelContext(s3Instructions.maxCacheSize(), readAheadCount);
     }
 
     @Override

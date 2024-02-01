@@ -287,7 +287,8 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
     private void sendAsyncRequest(final long fragmentIndex, @NotNull final S3ChannelContext s3ChannelContext) {
         final S3ChannelContext.FragmentState fragmentState = s3ChannelContext.getFragmentState(fragmentIndex);
         if (fragmentState.matches(fragmentIndex)) {
-//            System.out.printf("match: %d,%s/%s,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, fragmentIndex);
+            // System.out.printf("match: %d,%s/%s,%d%n", System.identityHashCode(s3ChannelContext), bucket, key,
+            // fragmentIndex);
             // We already have the fragment cached
             return;
         }
@@ -303,7 +304,8 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         final BufferPool.BufferHolder bufferHolder = bufferPool.take(numBytes);
         final ByteBufferAsyncResponseTransformer<GetObjectResponse> asyncResponseTransformer =
                 new ByteBufferAsyncResponseTransformer<>(Objects.requireNonNull(bufferHolder.get()));
-        System.out.printf("send: %d,%s/%s,%d-%d,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, readFrom, readTo, fragmentIndex);
+        System.out.printf("send: %d,%s/%s,%d-%d,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, readFrom,
+                readTo, fragmentIndex);
         final CompletableFuture<ByteBuffer> future = s3AsyncClient
                 .getObject(GetObjectRequest.builder()
                         .bucket(bucket)

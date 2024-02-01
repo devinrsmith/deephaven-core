@@ -7,6 +7,7 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.page.ChunkPage;
+import io.deephaven.parquet.table.pagestore.PageCache.IntrusivePage;
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.parquet.table.pagestore.topage.ToPage;
 import io.deephaven.parquet.base.ColumnChunkReader;
@@ -116,21 +117,25 @@ final class OffsetIndexBasedColumnChunkPageStore<ATTR extends Any> extends Colum
             synchronized (pageState) {
                 // Make sure no one materialized this page as we waited for the lock
                 if ((localRef = pageState.pageRef) == null || (page = localRef.get()) == null) {
-                    // Use the latest context while reading the page
-                    final SeekableChannelContext channelContext = innerFillContext(fillContext);
-                    final ColumnPageReader reader = columnPageDirectAccessor.getPageReader(pageNum);
-                    try {
-                        page = new PageCache.IntrusivePage<>(
-                                toPage(offsetIndex.getFirstRowIndex(pageNum), reader, channelContext));
-                    } catch (final IOException except) {
-                        throw new UncheckedIOException(except);
-                    }
+                    page = new IntrusivePage<>(getPageImpl(fillContext, pageNum));
                     pageState.pageRef = new WeakReference<>(page);
                 }
             }
         }
         pageCache.touch(page);
         return page.getPage();
+    }
+
+    private ChunkPage<ATTR> getPageImpl(@Nullable FillContext fillContext, int pageNum) {
+        // Use the latest context while reading the page, or create (and close) new one
+        final ColumnPageReader reader = columnPageDirectAccessor.getPageReader(pageNum);
+        final SeekableChannelContext inner = innerFillContext(fillContext);
+        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeContext() : inner;
+        try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {
+            return toPage(offsetIndex.getFirstRowIndex(pageNum), reader, context);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

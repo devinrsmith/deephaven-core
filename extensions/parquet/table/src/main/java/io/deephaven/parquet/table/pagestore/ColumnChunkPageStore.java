@@ -218,6 +218,10 @@ public abstract class ColumnChunkPageStore<ATTR extends Any>
         return SeekableChannelContext.NULL;
     }
 
+    final SeekableChannelContext makeContext() {
+        return columnChunkReader.getChannelsProvider().makeContext();
+    }
+
     private <T extends FillContext> T fillContextUpdater(
             int chunkCapacity,
             @Nullable final SharedContext sharedContext,

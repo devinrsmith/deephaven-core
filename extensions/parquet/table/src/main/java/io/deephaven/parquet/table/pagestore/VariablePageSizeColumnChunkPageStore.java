@@ -146,27 +146,24 @@ final class VariablePageSizeColumnChunkPageStore<ATTR extends Any> extends Colum
     public ChunkPage<ATTR> getPageContaining(@Nullable final FillContext fillContext, long rowKey) {
         rowKey &= mask();
         Require.inRange(rowKey - pageRowOffsets[0], "rowKey", numRows(), "numRows");
-
         int localNumPages = numPages;
         int pageNum = Arrays.binarySearch(pageRowOffsets, 1, localNumPages + 1, rowKey);
-
         if (pageNum < 0) {
             pageNum = -2 - pageNum;
         }
-
-        // Use the latest channel context while reading page headers
-        final SeekableChannelContext channelContext = innerFillContext(fillContext);
-
-        if (pageNum >= localNumPages) {
-            final int minPageNum = fillToRow(channelContext, localNumPages, rowKey);
-            localNumPages = numPages;
-            pageNum = Arrays.binarySearch(pageRowOffsets, minPageNum + 1, localNumPages + 1, rowKey);
-
-            if (pageNum < 0) {
-                pageNum = -2 - pageNum;
+        // Use the latest channel context while reading page headers, or create (and close) a new one
+        final SeekableChannelContext inner = innerFillContext(fillContext);
+        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeContext() : inner;
+        try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {
+            if (pageNum >= localNumPages) {
+                final int minPageNum = fillToRow(context, localNumPages, rowKey);
+                localNumPages = numPages;
+                pageNum = Arrays.binarySearch(pageRowOffsets, minPageNum + 1, localNumPages + 1, rowKey);
+                if (pageNum < 0) {
+                    pageNum = -2 - pageNum;
+                }
             }
+            return getPage(context, pageNum);
         }
-
-        return getPage(channelContext, pageNum);
     }
 }

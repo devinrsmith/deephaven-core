@@ -177,14 +177,10 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
         } else {
             return NULL_DICTIONARY;
         }
-        if (channelContext == SeekableChannelContext.NULL) {
-            // Create a new context object and use that for reading the dictionary
-            try (final SeekableChannelContext newChannelContext = channelsProvider.makeContext()) {
-                return getDictionaryHelper(newChannelContext, dictionaryPageOffset);
-            }
-        } else {
-            // Use the context object provided by the caller
-            return getDictionaryHelper(channelContext, dictionaryPageOffset);
+        // Use the context object provided by the caller, or create (and close) a new one
+        final SeekableChannelContext context = channelContext == SeekableChannelContext.NULL ? channelsProvider.makeContext() : channelContext;
+        try (final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null) {
+            return getDictionaryHelper(context, dictionaryPageOffset);
         }
     }
 

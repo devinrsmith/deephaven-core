@@ -63,9 +63,7 @@ final class S3SeekableChannelProvider implements SeekableChannelsProvider {
 
     @Override
     public boolean isCompatibleWith(@NotNull final SeekableChannelContext channelContext) {
-        // A null context implies no caching or read ahead
-        return channelContext == SeekableChannelContext.NULL
-                || channelContext instanceof S3SeekableByteChannel.S3ChannelContext;
+        return channelContext instanceof S3SeekableByteChannel.S3ChannelContext;
     }
 
     @Override

@@ -127,8 +127,8 @@ final class OffsetIndexBasedColumnChunkPageStore<ATTR extends Any> extends Colum
     }
 
     private ChunkPage<ATTR> getPageImpl(@Nullable FillContext fillContext, int pageNum) {
-        // Use the latest context while reading the page, or create (and close) new one
         final ColumnPageReader reader = columnPageDirectAccessor.getPageReader(pageNum);
+        // Use the latest context while reading the page, or create (and close) new one
         final SeekableChannelContext inner = innerFillContext(fillContext);
         final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeContext() : inner;
         try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {

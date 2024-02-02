@@ -66,6 +66,26 @@ public interface SeekableChannelsProvider extends SafeCloseable {
         return Channels.newInputStream(new ReadableByteChannelNoClose(channel));
     }
 
+    default InputStream what(@NotNull SeekableChannelContext channelContext, @NotNull URI uri, long position) throws IOException {
+        final boolean singleUse = channelContext == SeekableChannelContext.NULL;
+        final SeekableChannelContext context = singleUse ? makeSingleUseContext() : channelContext;
+        final SeekableByteChannel ch;
+        try {
+            ch = getReadChannel(context, uri);
+        } catch (Throwable t) {
+            if (singleUse)  {
+                context.close();
+            }
+            throw t;
+        }
+        try {
+            return new InputStreamAdditionalClose(Channels.newInputStream(ch.position(position)), singleUse ? context : null);
+        } catch (Throwable t) {
+            ch.close();
+            throw t;
+        }
+    }
+
     default SeekableByteChannel getWriteChannel(@NotNull final String path, final boolean append) throws IOException {
         return getWriteChannel(Paths.get(path), append);
     }

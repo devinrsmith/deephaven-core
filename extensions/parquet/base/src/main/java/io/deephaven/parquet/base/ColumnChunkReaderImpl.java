@@ -179,27 +179,23 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
             return NULL_DICTIONARY;
         }
         // Use the context object provided by the caller, or create (and close) a new one
-        final SeekableChannelContext context =
-                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeSingleUseContext() : channelContext;
-        try (
-                final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null;
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(context, getURI())) {
-            ch.position(dictionaryPageOffset);
 
-            return getDictionaryHelper(context, dictionaryPageOffset);
+        try (final InputStream in = channelsProvider.what(channelContext, getURI(), dictionaryPageOffset)) {
+            return readDictionary(in);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Dictionary getDictionaryHelper(final SeekableChannelContext channelContext,
-            final long dictionaryPageOffset) {
-        try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, getURI())) {
-            readChannel.position(dictionaryPageOffset);
-            return readDictionary(readChannel);
-        } catch (final IOException e) {
             throw new UncheckedIOException(e);
         }
+
+//        final SeekableChannelContext context =
+//                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeSingleUseContext() : channelContext;
+//        try (
+//                final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null;
+//                final SeekableByteChannel ch = channelsProvider.getReadChannel(context, getURI());
+//                final InputStream in = channelsProvider.getInputStream(ch.position(dictionaryPageOffset))) {
+//            return readDictionary(in);
+//        } catch (IOException e) {
+//            throw new UncheckedIOException(e);
+//        }
     }
 
     @Override

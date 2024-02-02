@@ -107,6 +107,8 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
     @Override
     public Object materialize(@NotNull final Object nullValue,
             @NotNull final SeekableChannelContext channelContext) throws IOException {
+
+
         try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, uri)) {
             ensurePageHeader(readChannel);
             return readDataPage(nullValue, readChannel, channelContext);
@@ -157,6 +159,7 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
                         if (maxHeader > MAX_HEADER) {
                             throw e;
                         }
+                        // TODO: this is horrible
                         maxHeader <<= 1;
                         ch.position(offset);
                     }

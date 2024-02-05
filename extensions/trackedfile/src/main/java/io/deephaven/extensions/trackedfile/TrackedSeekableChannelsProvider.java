@@ -13,8 +13,10 @@ import io.deephaven.util.channel.SeekableChannelsProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
@@ -52,6 +54,11 @@ class TrackedSeekableChannelsProvider implements SeekableChannelsProvider {
         // context is unused here
         Assert.assertion(FILE_URI_SCHEME.equals(uri.getScheme()), "Expected a file uri, got " + uri);
         return new TrackedSeekableByteChannel(fileHandleFactory.readOnlyHandleCreator, new File(uri));
+    }
+
+    @Override
+    public final InputStream getInputStream(SeekableByteChannel channel) throws IOException {
+        return new BufferedInputStream(SeekableChannelsProvider.super.getInputStream(channel), 8192);
     }
 
     @Override

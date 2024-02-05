@@ -8,6 +8,7 @@ import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.parquet.compress.CompressorAdapter;
 import io.deephaven.parquet.compress.DeephavenCompressorAdapterFactory;
+import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
 import io.deephaven.util.datastructures.LazyCachingFunction;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -21,13 +22,10 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.List;
@@ -179,23 +177,14 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
             return NULL_DICTIONARY;
         }
         // Use the context object provided by the caller, or create (and close) a new one
-
-        try (final InputStream in = channelsProvider.what(channelContext, getURI(), dictionaryPageOffset)) {
+        try (
+                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), getURI());
+                final InputStream in = channelsProvider.getInputStream(ch.position(dictionaryPageOffset))) {
             return readDictionary(in);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-
-//        final SeekableChannelContext context =
-//                channelContext == SeekableChannelContext.NULL ? channelsProvider.makeSingleUseContext() : channelContext;
-//        try (
-//                final SeekableChannelContext ignored = channelContext == SeekableChannelContext.NULL ? context : null;
-//                final SeekableByteChannel ch = channelsProvider.getReadChannel(context, getURI());
-//                final InputStream in = channelsProvider.getInputStream(ch.position(dictionaryPageOffset))) {
-//            return readDictionary(in);
-//        } catch (IOException e) {
-//            throw new UncheckedIOException(e);
-//        }
     }
 
     @Override
@@ -211,12 +200,6 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
     @Override
     public SeekableChannelsProvider getChannelsProvider() {
         return channelsProvider;
-    }
-
-    private Dictionary readDictionary(SeekableByteChannel ch) throws IOException {
-        try (final InputStream in = channelsProvider.getInputStream(ch)) {
-            return readDictionary(in);
-        }
     }
 
     @NotNull
@@ -242,12 +225,12 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
     }
 
     private final class ColumnPageReaderIteratorImpl implements ColumnPageReaderIterator {
-        private long currentOffset;
+        private long nextHeaderOffset;
         private long remainingValues;
 
         ColumnPageReaderIteratorImpl(final long startOffset, final long numValues) {
             this.remainingValues = numValues;
-            this.currentOffset = startOffset;
+            this.nextHeaderOffset = startOffset;
         }
 
         @Override
@@ -261,49 +244,58 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
                 throw new NoSuchElementException("No next element");
             }
             // NB: The channels provider typically caches channels; this avoids maintaining a handle per column chunk
-            try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, getURI())) {
-                final long headerOffset = currentOffset;
-                readChannel.position(currentOffset);
-                // deliberately not closing this stream
-                // TODO: don't rely on inputstream moving position exactly, use buffered?
-                final PageHeader pageHeader = Util.readPageHeader(Channels.newInputStream(readChannel));
-                currentOffset = readChannel.position() + pageHeader.getCompressed_page_size();
+            final long headerOffset = nextHeaderOffset;
+            try (
+                    final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                    final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), getURI())) {
+                ch.position(headerOffset);
+                final PageHeader pageHeader;
+                try (final InputStream in = SeekableChannelsProvider.positionInputStream(channelsProvider, ch)) {
+                    pageHeader = Util.readPageHeader(in);
+                }
+                // relying on exact position of ch
+                final long dataOffset = ch.position();
+                nextHeaderOffset = dataOffset + pageHeader.getCompressed_page_size();
                 if (pageHeader.isSetDictionary_page_header()) {
                     // Dictionary page; skip it
-                    return next(channelContext);
+                    return next(upgrade.context());
                 }
                 if (!pageHeader.isSetData_page_header() && !pageHeader.isSetData_page_header_v2()) {
                     throw new IllegalStateException(
                             "Expected data page, but neither v1 nor v2 data page header is set in file "
-                                    + readChannel + " at offset " + headerOffset);
+                                    + ch + " at offset " + headerOffset);
                 }
-                remainingValues -= pageHeader.isSetData_page_header()
-                        ? pageHeader.getData_page_header().getNum_values()
-                        : pageHeader.getData_page_header_v2().getNum_values();
-                final org.apache.parquet.format.Encoding encoding;
-                switch (pageHeader.type) {
-                    case DATA_PAGE:
-                        encoding = pageHeader.getData_page_header().getEncoding();
-                        break;
-                    case DATA_PAGE_V2:
-                        encoding = pageHeader.getData_page_header_v2().getEncoding();
-                        break;
-                    default:
-                        throw new UncheckedDeephavenException(
-                                "Unknown parquet data page header type " + pageHeader.type);
-                }
+                remainingValues -= getNumValues(pageHeader);
+                final org.apache.parquet.format.Encoding encoding = getEncoding(pageHeader);
                 final Function<SeekableChannelContext, Dictionary> pageDictionarySupplier =
                         (encoding == PLAIN_DICTIONARY || encoding == RLE_DICTIONARY)
                                 ? dictionarySupplier
                                 : (SeekableChannelContext context) -> NULL_DICTIONARY;
-                final ColumnPageReader nextReader = new ColumnPageReaderImpl(channelsProvider, decompressor,
+                return new ColumnPageReaderImpl(channelsProvider, decompressor,
                         pageDictionarySupplier, nullMaterializerFactory, path, getURI(), fieldTypes,
-                        readChannel.position(), pageHeader, ColumnPageReaderImpl.NULL_NUM_VALUES);
-                return nextReader;
+                        dataOffset, pageHeader, ColumnPageReaderImpl.NULL_NUM_VALUES);
             } catch (IOException e) {
                 throw new UncheckedDeephavenException("Error reading page header", e);
             }
         }
+    }
+
+    private static org.apache.parquet.format.Encoding getEncoding(PageHeader pageHeader) {
+        switch (pageHeader.type) {
+            case DATA_PAGE:
+                return pageHeader.getData_page_header().getEncoding();
+            case DATA_PAGE_V2:
+                return pageHeader.getData_page_header_v2().getEncoding();
+            default:
+                throw new UncheckedDeephavenException(
+                        "Unknown parquet data page header type " + pageHeader.type);
+        }
+    }
+
+    private static int getNumValues(PageHeader pageHeader) {
+        return pageHeader.isSetData_page_header()
+                ? pageHeader.getData_page_header().getNum_values()
+                : pageHeader.getData_page_header_v2().getNum_values();
     }
 
     private final class ColumnPageReaderIteratorIndexImpl implements ColumnPageReaderIterator {

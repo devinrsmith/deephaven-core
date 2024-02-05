@@ -59,37 +59,42 @@ public class ParquetFileReader {
         }
         final byte[] footer;
         try (
-                final SeekableChannelContext channelContext = channelsProvider.makeSingleUseContext();
-                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, parquetFileURI)) {
-            final long fileLen = readChannel.size();
-            if (fileLen < MAGIC.length + FOOTER_LENGTH_SIZE + MAGIC.length) { // MAGIC + data + footer +
-                // footerIndex + MAGIC
-                throw new InvalidParquetFileException(
-                        parquetFileURI + " is not a Parquet file (too small length: " + fileLen + ")");
-            }
-
-            final long footerLengthIndex = fileLen - FOOTER_LENGTH_SIZE - MAGIC.length;
-            readChannel.position(footerLengthIndex);
-
-            final int footerLength = readIntLittleEndian(readChannel);
-            final byte[] magic = new byte[MAGIC.length];
-            Helpers.readBytes(readChannel, magic);
-            if (!Arrays.equals(MAGIC, magic)) {
-                throw new InvalidParquetFileException(
-                        parquetFileURI + " is not a Parquet file. expected magic number at tail "
-                                + Arrays.toString(MAGIC) + " but found " + Arrays.toString(magic));
-            }
-            final long footerIndex = footerLengthIndex - footerLength;
-            if (footerIndex < MAGIC.length || footerIndex >= footerLengthIndex) {
-                throw new InvalidParquetFileException(
-                        "corrupted file: the footer index is not within the file: " + footerIndex);
-            }
-            readChannel.position(footerIndex);
-            footer = new byte[footerLength];
-            Helpers.readBytes(readChannel, footer);
+                final SeekableChannelContext context = channelsProvider.makeSingleUseContext();
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(context, parquetFileURI)) {
+            footer = footerBytes(parquetFileURI, ch);
         }
         fileMetaData = Util.readFileMetaData(new ByteArrayInputStream(footer));
         type = fromParquetSchema(fileMetaData.schema, fileMetaData.column_orders);
+    }
+
+    private static byte[] footerBytes(URI parquetFileURI, SeekableByteChannel readChannel) throws IOException {
+        // TODO: use inputstream for guaranteed buffering?
+        final byte[] footer;
+        final long fileLen = readChannel.size();
+        if (fileLen < MAGIC.length + FOOTER_LENGTH_SIZE + MAGIC.length) { // MAGIC + data + footer +
+            // footerIndex + MAGIC
+            throw new InvalidParquetFileException(
+                    parquetFileURI + " is not a Parquet file (too small length: " + fileLen + ")");
+        }
+        final long footerLengthIndex = fileLen - FOOTER_LENGTH_SIZE - MAGIC.length;
+        readChannel.position(footerLengthIndex);
+        final int footerLength = readIntLittleEndian(readChannel);
+        final byte[] magic = new byte[MAGIC.length];
+        Helpers.readBytes(readChannel, magic);
+        if (!Arrays.equals(MAGIC, magic)) {
+            throw new InvalidParquetFileException(
+                    parquetFileURI + " is not a Parquet file. expected magic number at tail "
+                            + Arrays.toString(MAGIC) + " but found " + Arrays.toString(magic));
+        }
+        final long footerIndex = footerLengthIndex - footerLength;
+        if (footerIndex < MAGIC.length || footerIndex >= footerLengthIndex) {
+            throw new InvalidParquetFileException(
+                    "corrupted file: the footer index is not within the file: " + footerIndex);
+        }
+        readChannel.position(footerIndex);
+        footer = new byte[footerLength];
+        Helpers.readBytes(readChannel, footer);
+        return footer;
     }
 
     /**
@@ -180,7 +185,7 @@ public class ParquetFileReader {
         return result;
     }
 
-    private int readIntLittleEndian(SeekableByteChannel f) throws IOException {
+    private static int readIntLittleEndian(SeekableByteChannel f) throws IOException {
         ByteBuffer tempBuf = ByteBuffer.allocate(Integer.BYTES);
         tempBuf.order(ByteOrder.LITTLE_ENDIAN);
         Helpers.readExact(f, tempBuf);

@@ -93,8 +93,8 @@ public class CachedChannelProvider implements SeekableChannelsProvider {
     }
 
     @Override
-    public InputStream getInputStream(SeekableByteChannel channel) {
-        return wrappedProvider.getInputStream();
+    public InputStream getInputStream(SeekableByteChannel channel) throws IOException {
+        return wrappedProvider.getInputStream(channel);
     }
 
     @Override

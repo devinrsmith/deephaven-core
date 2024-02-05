@@ -10,6 +10,7 @@ import io.deephaven.parquet.base.util.RunLengthBitPackingHybridBufferDecoder;
 import io.deephaven.parquet.compress.CompressorAdapter;
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
+import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
 import org.apache.parquet.bytes.ByteBufferInputStream;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -107,17 +108,21 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
     @Override
     public Object materialize(@NotNull final Object nullValue,
             @NotNull final SeekableChannelContext channelContext) throws IOException {
-
-
-        try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, uri)) {
+        try (
+                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
             ensurePageHeader(readChannel);
-            return readDataPage(nullValue, readChannel, channelContext);
+            // position safe, needs to be
+            return readDataPage(nullValue, readChannel, upgrade.context());
         }
     }
 
     public int readRowCount(@NotNull final SeekableChannelContext channelContext) throws IOException {
-        try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, uri)) {
+        try (
+                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
             ensurePageHeader(readChannel);
+            // position safe, needs to be
             return readRowCountFromDataPage(readChannel);
         }
     }
@@ -126,17 +131,66 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
     @Override
     public IntBuffer readKeyValues(IntBuffer keyDest, int nullPlaceholder,
             @NotNull final SeekableChannelContext channelContext) throws IOException {
-        try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, uri)) {
+        try (
+                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
             ensurePageHeader(readChannel);
-            return readKeyFromDataPage(keyDest, nullPlaceholder, readChannel, channelContext);
+            // position safe, needs to be
+            return readKeyFromDataPage(keyDest, nullPlaceholder, readChannel, upgrade.context());
         }
     }
 
     /**
-     * If {@link #pageHeader} is {@code null}, read it from the channel, and increment the {@link #offset} by the length of
-     * page header. Channel position would be set to the end of page header or beginning of data before returning.
+     * If {@link #pageHeader} is {@code null}, read it from the channel, and increment the {@link #offset} by the length
+     * of page header. Channel position would be set to the end of page header or beginning of data before returning.
      */
     private void ensurePageHeader(final SeekableByteChannel ch) throws IOException {
+        // TODO: refactor; use input stream?
+        // Set this channel's position to appropriate offset for reading. If pageHeader is null, this offset would be
+        // the offset of page header, else it would be the offset of data.
+        ch.position(offset);
+        synchronized (this) {
+            if (pageHeader == null) {
+                int maxHeader = START_HEADER;
+                boolean success;
+                do {
+                    final ByteBuffer headerBuffer = ByteBuffer.allocate(maxHeader);
+                    Helpers.readExact(ch, headerBuffer);
+                    headerBuffer.flip();
+
+                    final ByteBufferInputStream bufferedIS = ByteBufferInputStream.wrap(headerBuffer);
+                    try {
+                        pageHeader = Util.readPageHeader(bufferedIS);
+                        offset += bufferedIS.position();
+                        success = true;
+                    } catch (IOException e) {
+                        success = false;
+                        if (maxHeader > MAX_HEADER) {
+                            throw e;
+                        }
+                        // TODO: this is horrible
+                        maxHeader <<= 1;
+                        ch.position(offset);
+                    }
+                } while (!success);
+                ch.position(offset);
+                if (numValues >= 0) {
+                    final int numValuesFromHeader = readNumValuesFromPageHeader(pageHeader);
+                    if (numValues != numValuesFromHeader) {
+                        throw new IllegalStateException(
+                                "numValues = " + numValues + " different from number of values " +
+                                        "read from the page header = " + numValuesFromHeader + " for column " + path);
+                    }
+                }
+            }
+            if (numValues == NULL_NUM_VALUES) {
+                numValues = readNumValuesFromPageHeader(pageHeader);
+            }
+        }
+    }
+
+    private void ensurePageHeader2(final SeekableByteChannel ch) throws IOException {
+        // TODO: refactor
         // Set this channel's position to appropriate offset for reading. If pageHeader is null, this offset would be
         // the offset of page header, else it would be the offset of data.
         ch.position(offset);
@@ -228,10 +282,14 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
         final int uncompressedPageSize = pageHeader.getUncompressed_page_size();
         final int compressedPageSize = pageHeader.getCompressed_page_size();
         final DataPageHeaderV2 header = pageHeader.getData_page_header_v2();
-        final int compressedSize = compressedPageSize - header.getRepetition_levels_byte_length() - header.getDefinition_levels_byte_length();
-        final int uncompressedSize = uncompressedPageSize - header.getRepetition_levels_byte_length() - header.getDefinition_levels_byte_length();
-        final BytesInput repetitionLevels = BytesInput.copy(BytesInput.from(in, header.getRepetition_levels_byte_length()));
-        final BytesInput definitionLevels = BytesInput.copy(BytesInput.from(in, header.getDefinition_levels_byte_length()));
+        final int compressedSize = compressedPageSize - header.getRepetition_levels_byte_length()
+                - header.getDefinition_levels_byte_length();
+        final int uncompressedSize = uncompressedPageSize - header.getRepetition_levels_byte_length()
+                - header.getDefinition_levels_byte_length();
+        final BytesInput repetitionLevels =
+                BytesInput.copy(BytesInput.from(in, header.getRepetition_levels_byte_length()));
+        final BytesInput definitionLevels =
+                BytesInput.copy(BytesInput.from(in, header.getDefinition_levels_byte_length()));
         final BytesInput data = compressorAdapter.decompress(in, compressedSize, uncompressedSize);
         return new DataPageV2(
                 header.getNum_rows(),
@@ -600,8 +658,10 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
         if (numValues >= 0) {
             return numValues;
         }
-        try (final SeekableByteChannel readChannel = channelsProvider.getReadChannel(channelContext, uri)) {
-            ensurePageHeader(readChannel);
+        try (
+                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+            ensurePageHeader(ch);
             // Above will block till it populates numValues
             Assert.geqZero(numValues, "numValues");
             return numValues;

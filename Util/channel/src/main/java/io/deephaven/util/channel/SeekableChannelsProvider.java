@@ -6,6 +6,7 @@ package io.deephaven.util.channel;
 import io.deephaven.util.SafeCloseable;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +40,32 @@ public interface SeekableChannelsProvider extends SafeCloseable {
         return uri;
     }
 
+    static Upgrade upgrade(SeekableChannelsProvider provider, SeekableChannelContext context) {
+        if (context != SeekableChannelContext.NULL) {
+            return () -> context;
+        }
+        return new UpgradeImpl(provider.makeSingleUseContext());
+    }
+
+    /**
+     * Wraps {@link SeekableChannelsProvider#getInputStream(SeekableByteChannel)} in a position-safe manner. To remain
+     * valid, the caller must ensure that the resulting input stream isn't re-wrapped by any downstream code in a way
+     * that would adversely effect the position (such as wrapping the resulting input stream with buffering).
+     *
+     * <p>
+     * Equivalent to {@code PositionInputStream.of(ch, provider.getInputStream(ch))}.
+     *
+     * @param provider the provider
+     * @param ch the seekable channel
+     * @return the position-safe input stream
+     * @throws IOException if an IO exception occurs
+     * @see PositionInputStream#of(SeekableByteChannel, InputStream)
+     */
+    static InputStream positionInputStream(SeekableChannelsProvider provider, SeekableByteChannel ch)
+            throws IOException {
+        return PositionInputStream.of(ch, provider.getInputStream(ch));
+    }
+
     /**
      * Create a new {@link SeekableChannelContext} object for creating read channels via this provider.
      */
@@ -62,28 +89,24 @@ public interface SeekableChannelsProvider extends SafeCloseable {
     SeekableByteChannel getReadChannel(@NotNull SeekableChannelContext channelContext, @NotNull URI uri)
             throws IOException;
 
-    default InputStream getInputStream(SeekableByteChannel channel) {
-        return Channels.newInputStream(new ReadableByteChannelNoClose(channel));
-    }
+    // callers must close this; but it does *not* close channel. guarantees position of channel on close?
 
-    default InputStream what(@NotNull SeekableChannelContext channelContext, @NotNull URI uri, long position) throws IOException {
-        final boolean singleUse = channelContext == SeekableChannelContext.NULL;
-        final SeekableChannelContext context = singleUse ? makeSingleUseContext() : channelContext;
-        final SeekableByteChannel ch;
-        try {
-            ch = getReadChannel(context, uri);
-        } catch (Throwable t) {
-            if (singleUse)  {
-                context.close();
-            }
-            throw t;
-        }
-        try {
-            return new InputStreamAdditionalClose(Channels.newInputStream(ch.position(position)), singleUse ? context : null);
-        } catch (Throwable t) {
-            ch.close();
-            throw t;
-        }
+
+    /**
+     * Creates an {@link InputStream} from the current position of {@code channel}; closing the resulting input stream
+     * does _not_ close the {@code channel}. {@code channel} must have been created by {@code this} channels provider.
+     * The caller can't assume the position of {@code channel} after consuming the {@link InputStream}. For use-cases
+     * that require the channel's position to be incremented the exact amount the {@link InputStream} has been consumed,
+     * use {@link #positionInputStream(SeekableChannelsProvider, SeekableByteChannel)}.
+     *
+     * Callers assume buffered, either the channel itself, or a buffer around the input.
+     *
+     * @param channel the channel
+     * @return the input stream
+     * @throws IOException if an IO exception occurs
+     */
+    default InputStream getInputStream(SeekableByteChannel channel) throws IOException {
+        return Channels.newInputStream(ReadableByteChannelNoClose.of(channel));
     }
 
     default SeekableByteChannel getWriteChannel(@NotNull final String path, final boolean append) throws IOException {
@@ -91,4 +114,12 @@ public interface SeekableChannelsProvider extends SafeCloseable {
     }
 
     SeekableByteChannel getWriteChannel(@NotNull Path path, boolean append) throws IOException;
+
+    interface Upgrade extends Closeable {
+
+        SeekableChannelContext context();
+
+        @Override
+        default void close() {}
+    }
 }

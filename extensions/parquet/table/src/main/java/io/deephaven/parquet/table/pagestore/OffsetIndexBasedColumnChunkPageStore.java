@@ -8,10 +8,10 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.page.ChunkPage;
 import io.deephaven.parquet.table.pagestore.PageCache.IntrusivePage;
-import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.parquet.table.pagestore.topage.ToPage;
 import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ColumnPageReader;
+import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -129,10 +129,8 @@ final class OffsetIndexBasedColumnChunkPageStore<ATTR extends Any> extends Colum
     private ChunkPage<ATTR> getPageImpl(@Nullable FillContext fillContext, int pageNum) {
         final ColumnPageReader reader = columnPageDirectAccessor.getPageReader(pageNum);
         // Use the latest context while reading the page, or create (and close) new one
-        final SeekableChannelContext inner = innerFillContext(fillContext);
-        final SeekableChannelContext context = inner == SeekableChannelContext.NULL ? makeSingleUseContext() : inner;
-        try (final SeekableChannelContext ignored = inner == SeekableChannelContext.NULL ? context : null) {
-            return toPage(offsetIndex.getFirstRowIndex(pageNum), reader, context);
+        try (final Upgrade upgrade = upgrade(fillContext)) {
+            return toPage(offsetIndex.getFirstRowIndex(pageNum), reader, upgrade.context());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

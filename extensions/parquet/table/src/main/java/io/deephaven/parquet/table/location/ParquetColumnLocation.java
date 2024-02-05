@@ -223,10 +223,9 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
             if (groupingKeyReader == null || beginPosReader == null || endPosReader == null) {
                 log.warn().append("Index file ").append(indexFilePath)
                         .append(" is missing one or more expected columns for table location ")
-                        .append(tl()).append(", column ").append(getName());
+                        .append(tl()).append(", column ").append(getName()).endl();
                 return null;
             }
-
 
             final PageCache<ATTR> localPageCache = ensurePageCache();
 

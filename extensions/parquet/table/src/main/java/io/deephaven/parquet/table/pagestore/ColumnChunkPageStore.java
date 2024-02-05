@@ -22,6 +22,7 @@ import io.deephaven.engine.page.PageStore;
 import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ColumnPageReader;
 import io.deephaven.util.SafeCloseable;
+import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
 import io.deephaven.vector.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -220,6 +221,10 @@ public abstract class ColumnChunkPageStore<ATTR extends Any>
 
     final SeekableChannelContext makeSingleUseContext() {
         return columnChunkReader.getChannelsProvider().makeSingleUseContext();
+    }
+
+    final Upgrade upgrade(@Nullable final FillContext context) {
+        return SeekableChannelsProvider.upgrade(columnChunkReader.getChannelsProvider(), innerFillContext(context));
     }
 
     private <T extends FillContext> T fillContextUpdater(

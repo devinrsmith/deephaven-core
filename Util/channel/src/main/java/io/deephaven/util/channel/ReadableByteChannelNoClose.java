@@ -8,10 +8,18 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
 
-final class ReadableByteChannelNoClose implements ReadableByteChannel {
+public final class ReadableByteChannelNoClose implements ReadableByteChannel {
+
+    public static ReadableByteChannel of(ReadableByteChannel ch) {
+        if (ch instanceof ReadableByteChannelNoClose) {
+            return ch;
+        }
+        return new ReadableByteChannelNoClose(ch);
+    }
+
     private final ReadableByteChannel ch;
 
-    public ReadableByteChannelNoClose(ReadableByteChannel ch) {
+    private ReadableByteChannelNoClose(ReadableByteChannel ch) {
         this.ch = Objects.requireNonNull(ch);
     }
 

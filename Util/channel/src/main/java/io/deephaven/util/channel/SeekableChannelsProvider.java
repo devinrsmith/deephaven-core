@@ -41,6 +41,7 @@ public interface SeekableChannelsProvider extends SafeCloseable {
     }
 
     static Upgrade upgrade(SeekableChannelsProvider provider, SeekableChannelContext context) {
+        // todo: move to NULL
         if (context != SeekableChannelContext.NULL) {
             return () -> context;
         }

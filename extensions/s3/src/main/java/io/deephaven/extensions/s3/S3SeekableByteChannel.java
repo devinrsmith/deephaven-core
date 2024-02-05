@@ -74,7 +74,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
 
             private void cancelAndRelease(S3ChannelContext s3ChannelContext) {
                 if (fragmentIndex != UNINITIALIZED_FRAGMENT_INDEX) {
-                    System.out.printf("cancel: %d,%d%n", System.identityHashCode(s3ChannelContext), fragmentIndex);
+                    System.out.printf("cancel: id=%d, ix=%d(%d)%n", System.identityHashCode(s3ChannelContext), fragmentIndex, 0);
                 }
                 try (
                         final SafeCloseable ignored1 = cancelOnClose(future, true);
@@ -289,8 +289,8 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         final BufferPool.BufferHolder bufferHolder = bufferPool.take(numBytes);
         final ByteBufferAsyncResponseTransformer<GetObjectResponse> asyncResponseTransformer =
                 new ByteBufferAsyncResponseTransformer<>(Objects.requireNonNull(bufferHolder.get()));
-        System.out.printf("send: %d,%s/%s,%d-%d,%d%n", System.identityHashCode(s3ChannelContext), bucket, key, readFrom,
-                readTo, fragmentIndex);
+        System.out.printf("send: id=%d, path=%s/%s, range=%d-%d(%d), ix=%d(%d)%n", System.identityHashCode(s3ChannelContext), bucket, key, readFrom,
+                readTo, readTo - readFrom + 1, fragmentIndex, fragmentIndex % s3ChannelContext.bufferCache.length);
         final CompletableFuture<ByteBuffer> future = s3AsyncClient
                 .getObject(GetObjectRequest.builder()
                         .bucket(bucket)
@@ -299,9 +299,9 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
                         .build(), asyncResponseTransformer)
                 .whenComplete((response, throwable) -> asyncResponseTransformer.close());
         fragmentState.set(fragmentIndex, future, bufferHolder);
-        if (fragmentIndex == 0) {
-            Thread.dumpStack();
-        }
+//        if (fragmentIndex == 0) {
+//            Thread.dumpStack();
+//        }
     }
 
     private IOException handleS3Exception(final Exception e, final String operationDescription) {

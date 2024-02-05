@@ -297,7 +297,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
                         .key(key)
                         .range(range)
                         .build(), asyncResponseTransformer)
-                .whenComplete((response, throwable) -> asyncResponseTransformer.close());;
+                .whenComplete((response, throwable) -> asyncResponseTransformer.close());
         fragmentState.set(fragmentIndex, future, bufferHolder);
         if (fragmentIndex == 0) {
             Thread.dumpStack();

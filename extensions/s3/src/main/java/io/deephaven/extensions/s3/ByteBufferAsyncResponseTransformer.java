@@ -31,6 +31,9 @@ final class ByteBufferAsyncResponseTransformer<ResponseT>
 
     @Override
     public CompletableFuture<ByteBuffer> prepare() {
+        if (currentFuture != null) {
+            System.out.println("preparing new future");
+        }
         return currentFuture = new CompletableFuture<>();
     }
 
@@ -96,6 +99,9 @@ final class ByteBufferAsyncResponseTransformer<ResponseT>
             synchronized (ByteBufferAsyncResponseTransformer.this) {
                 if (released) {
                     return;
+                }
+                if (resultFuture != currentFuture) {
+                    throw new IllegalStateException("bad future");
                 }
                 duplicate.put(responseBytes);
             }

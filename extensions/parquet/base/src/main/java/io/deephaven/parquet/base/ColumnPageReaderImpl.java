@@ -5,7 +5,6 @@ package io.deephaven.parquet.base;
 
 import io.deephaven.base.Pair;
 import io.deephaven.base.verify.Assert;
-import io.deephaven.parquet.base.util.Helpers;
 import io.deephaven.parquet.base.util.RunLengthBitPackingHybridBufferDecoder;
 import io.deephaven.parquet.compress.CompressorAdapter;
 import io.deephaven.util.channel.SeekableChannelContext;
@@ -110,20 +109,18 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
             @NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
                 final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
-            ensurePageHeader(readChannel);
-            // position safe, needs to be
-            return readDataPage(nullValue, readChannel, upgrade.context());
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+            ensurePageHeader(channelsProvider, ch);
+            return readDataPage(nullValue, ch, upgrade.context());
         }
     }
 
     public int readRowCount(@NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
                 final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
-            ensurePageHeader(readChannel);
-            // position safe, needs to be
-            return readRowCountFromDataPage(readChannel);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+            ensurePageHeader(channelsProvider, ch);
+            return readRowCountFromDataPage(ch);
         }
     }
 
@@ -133,10 +130,9 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
             @NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
                 final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), uri)) {
-            ensurePageHeader(readChannel);
-            // position safe, needs to be
-            return readKeyFromDataPage(keyDest, nullPlaceholder, readChannel, upgrade.context());
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+            ensurePageHeader(channelsProvider, ch);
+            return readKeyFromDataPage(keyDest, nullPlaceholder, ch, upgrade.context());
         }
     }
 
@@ -144,81 +140,17 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
      * If {@link #pageHeader} is {@code null}, read it from the channel, and increment the {@link #offset} by the length
      * of page header. Channel position would be set to the end of page header or beginning of data before returning.
      */
-    private void ensurePageHeader(final SeekableByteChannel ch) throws IOException {
-        // TODO: refactor; use input stream?
-        // Set this channel's position to appropriate offset for reading. If pageHeader is null, this offset would be
-        // the offset of page header, else it would be the offset of data.
-        ch.position(offset);
-        synchronized (this) {
-            if (pageHeader == null) {
-                int maxHeader = START_HEADER;
-                boolean success;
-                do {
-                    final ByteBuffer headerBuffer = ByteBuffer.allocate(maxHeader);
-                    Helpers.readExact(ch, headerBuffer);
-                    headerBuffer.flip();
-
-                    final ByteBufferInputStream bufferedIS = ByteBufferInputStream.wrap(headerBuffer);
-                    try {
-                        pageHeader = Util.readPageHeader(bufferedIS);
-                        offset += bufferedIS.position();
-                        success = true;
-                    } catch (IOException e) {
-                        success = false;
-                        if (maxHeader > MAX_HEADER) {
-                            throw e;
-                        }
-                        // TODO: this is horrible
-                        maxHeader <<= 1;
-                        ch.position(offset);
-                    }
-                } while (!success);
-                ch.position(offset);
-                if (numValues >= 0) {
-                    final int numValuesFromHeader = readNumValuesFromPageHeader(pageHeader);
-                    if (numValues != numValuesFromHeader) {
-                        throw new IllegalStateException(
-                                "numValues = " + numValues + " different from number of values " +
-                                        "read from the page header = " + numValuesFromHeader + " for column " + path);
-                    }
-                }
-            }
-            if (numValues == NULL_NUM_VALUES) {
-                numValues = readNumValuesFromPageHeader(pageHeader);
-            }
-        }
-    }
-
-    private void ensurePageHeader2(final SeekableByteChannel ch) throws IOException {
+    private void ensurePageHeader(SeekableChannelsProvider provider, SeekableByteChannel ch) throws IOException {
         // TODO: refactor
         // Set this channel's position to appropriate offset for reading. If pageHeader is null, this offset would be
         // the offset of page header, else it would be the offset of data.
         ch.position(offset);
         synchronized (this) {
             if (pageHeader == null) {
-                int maxHeader = START_HEADER;
-                boolean success;
-                do {
-                    final ByteBuffer headerBuffer = ByteBuffer.allocate(maxHeader);
-                    Helpers.readExact(ch, headerBuffer);
-                    headerBuffer.flip();
-
-                    final ByteBufferInputStream bufferedIS = ByteBufferInputStream.wrap(headerBuffer);
-                    try {
-                        pageHeader = Util.readPageHeader(bufferedIS);
-                        offset += bufferedIS.position();
-                        success = true;
-                    } catch (IOException e) {
-                        success = false;
-                        if (maxHeader > MAX_HEADER) {
-                            throw e;
-                        }
-                        // TODO: this is horrible
-                        maxHeader <<= 1;
-                        ch.position(offset);
-                    }
-                } while (!success);
-                ch.position(offset);
+                try (final InputStream in = SeekableChannelsProvider.positionInputStream(provider, ch)) {
+                    pageHeader = Util.readPageHeader(in);
+                }
+                offset = ch.position();
                 if (numValues >= 0) {
                     final int numValuesFromHeader = readNumValuesFromPageHeader(pageHeader);
                     if (numValues != numValuesFromHeader) {
@@ -661,7 +593,7 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
         try (
                 final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
                 final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
-            ensurePageHeader(ch);
+            ensurePageHeader(channelsProvider, ch);
             // Above will block till it populates numValues
             Assert.geqZero(numValues, "numValues");
             return numValues;

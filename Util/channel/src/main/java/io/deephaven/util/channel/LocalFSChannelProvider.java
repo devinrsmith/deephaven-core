@@ -6,16 +6,19 @@ package io.deephaven.util.channel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class LocalFSChannelProvider implements SeekableChannelsProvider {
+public class LocalFSChannelProvider extends SeekableChannelsProviderBase {
+
+    @Override
+    protected boolean readChannelIsBuffered() {
+        return false;
+    }
 
     @Override
     public SeekableChannelContext makeContext() {
@@ -35,11 +38,6 @@ public class LocalFSChannelProvider implements SeekableChannelsProvider {
             throws IOException {
         // context is unused here
         return FileChannel.open(Path.of(uri), StandardOpenOption.READ);
-    }
-
-    @Override
-    public InputStream getInputStream(SeekableByteChannel channel) throws IOException {
-        return new BufferedInputStream(SeekableChannelsProvider.super.getInputStream(channel), 8192);
     }
 
     @Override

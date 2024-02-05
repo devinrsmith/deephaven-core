@@ -5,6 +5,7 @@ package io.deephaven.extensions.s3;
 
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
+import io.deephaven.util.channel.SeekableChannelsProviderBase;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
@@ -21,7 +22,7 @@ import static io.deephaven.extensions.s3.S3Instructions.MAX_FRAGMENT_SIZE;
 /**
  * {@link SeekableChannelsProvider} implementation that is used to fetch objects from AWS S3 instances.
  */
-final class S3SeekableChannelProvider implements SeekableChannelsProvider {
+final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
 
     /**
      * We always allocate buffers of maximum allowed size for re-usability across reads with different fragment sizes.
@@ -47,6 +48,12 @@ final class S3SeekableChannelProvider implements SeekableChannelsProvider {
         s3Instructions.endpointOverride().ifPresent(builder::endpointOverride);
         this.s3AsyncClient = builder.build();
         this.s3Instructions = s3Instructions;
+    }
+
+    @Override
+    protected boolean readChannelIsBuffered() {
+        // io.deephaven.extensions.s3.S3SeekableByteChannel is buffered based on context / options
+        return true;
     }
 
     @Override

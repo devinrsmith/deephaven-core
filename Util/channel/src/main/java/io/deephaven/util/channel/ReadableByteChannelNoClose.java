@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
 
-public final class ReadableByteChannelNoClose implements ReadableByteChannel {
+final class ReadableByteChannelNoClose implements ReadableByteChannel {
 
     public static ReadableByteChannel of(ReadableByteChannel ch) {
         if (ch instanceof ReadableByteChannelNoClose) {

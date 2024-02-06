@@ -81,7 +81,9 @@ public class ParquetFileReader {
         readChannel.position(footerLengthIndex);
         Helpers.readBytes(readChannel, last8);
         if (!Arrays.equals(MAGIC, 0, MAGIC.length, last8, 4, 8)) {
-            throw new InvalidParquetFileException(parquetFileURI + " is not a Parquet file. expected magic number at tail " + Arrays.toString(MAGIC) + " but found " + Arrays.toString(Arrays.copyOfRange(last8, 4, 8)));
+            throw new InvalidParquetFileException(
+                    parquetFileURI + " is not a Parquet file. expected magic number at tail " + Arrays.toString(MAGIC)
+                            + " but found " + Arrays.toString(Arrays.copyOfRange(last8, 4, 8)));
         }
         final int footerLength = ByteBuffer.wrap(last8, 0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
         final long footerIndex = footerLengthIndex - footerLength;

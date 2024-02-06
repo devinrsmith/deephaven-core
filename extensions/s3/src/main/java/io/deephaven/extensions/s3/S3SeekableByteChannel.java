@@ -51,7 +51,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         /**
          * Used to store information related to a single fragment
          */
-        private static final class FragmentState {
+        private final class FragmentState {
 
             /**
              * The index of the fragment in the object.
@@ -61,7 +61,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             /**
              * The future that will be completed with the fragment's bytes.
              */
-            private Future<ByteBuffer> future;
+            private CompletableFuture<ByteBuffer> future;
 
             /**
              * The {@link SafeCloseable} that will be used to release outstanding resources post-cancellation.
@@ -72,33 +72,60 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
                 return this.fragmentIndex == fragmentIndex;
             }
 
-            private void cancelAndRelease(S3ChannelContext s3ChannelContext) {
+            private void cancelAndReleaseBad() {
                 if (fragmentIndex != UNINITIALIZED_FRAGMENT_INDEX) {
-                    System.out.printf("cancel: id=%d, ix=%d(%d)%n", System.identityHashCode(s3ChannelContext),
-                            fragmentIndex, 0);
+                    System.out.printf("cancel: thread=%d, id=%d, ix=%d(%d)%n", Thread.currentThread().getId(), System.identityHashCode(S3ChannelContext.this), fragmentIndex, 0);
                 }
-                try (
-                        final SafeCloseable ignored1 = cancelOnClose(future, true);
-                        final SafeCloseable ignored2 = bufferRelease) {
+//                try (
+//                        final SafeCloseable ignored1 = cancelOnClose(future, true);
+//                        final SafeCloseable ignored2 = bufferRelease) {
                     fragmentIndex = UNINITIALIZED_FRAGMENT_INDEX;
                     future = null;
                     bufferRelease = null;
-                }
+//                }
             }
 
-            // do not inline, needs to capture future at time of method call
-            private static SafeCloseable cancelOnClose(Future<?> future, boolean mayInterruptIfRunning) {
-                return future == null ? null : () -> future.cancel(mayInterruptIfRunning);
+            private void cancelAndReleaseGood() {
+                if (fragmentIndex != UNINITIALIZED_FRAGMENT_INDEX) {
+                    System.out.printf("cancel: thread=%d, id=%d, ix=%d(%d)%n", Thread.currentThread().getId(), System.identityHashCode(S3ChannelContext.this), fragmentIndex, 0);
+                }
+                if (future != null) {
+                    final SafeCloseable x = bufferRelease;
+                    future.whenComplete((a, b) -> x.close());
+                    future.cancel(true);
+                }
+                fragmentIndex = UNINITIALIZED_FRAGMENT_INDEX;
+                future = null;
+                bufferRelease = null;
+
+//                try (final SafeCloseable ignored1 = cancelOnClose(future, true)) {
+//                    fragmentIndex = UNINITIALIZED_FRAGMENT_INDEX;
+//                    future = null;
+//                    bufferRelease = null;
+//                }
             }
 
             private void set(
                     final long fragmentIndex,
-                    @NotNull final Future<ByteBuffer> future,
+                    @NotNull final CompletableFuture<ByteBuffer> future,
                     @NotNull final SafeCloseable bufferRelease) {
                 this.fragmentIndex = fragmentIndex;
                 this.future = future;
                 this.bufferRelease = bufferRelease;
             }
+
+            boolean contextIsClosed() {
+                return S3ChannelContext.this.closed;
+            }
+
+            S3ChannelContext context() {
+                return S3ChannelContext.this;
+            }
+        }
+
+        // do not inline, needs to capture future at time of method call
+        private static SafeCloseable cancelOnClose(Future<?> future, boolean mayInterruptIfRunning) {
+            return future == null ? null : () -> future.cancel(mayInterruptIfRunning);
         }
 
         /**
@@ -113,6 +140,8 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
          */
         private long size;
 
+        private boolean closed;
+
         S3ChannelContext(final int maxCacheSize, final int readAheadCount) {
             this.readAheadCount = readAheadCount;
             bufferCache = new FragmentState[maxCacheSize];
@@ -124,7 +153,10 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             return (int) (fragmentIndex % bufferCache.length);
         }
 
-        private FragmentState getFragmentState(final long fragmentIndex) {
+        private FragmentState getOrCreateState(final long fragmentIndex) {
+            if (closed) {
+                throw new IllegalStateException();
+            }
             final int cacheIdx = getIndex(fragmentIndex);
             FragmentState cachedEntry = bufferCache[cacheIdx];
             if (cachedEntry == null) {
@@ -133,17 +165,25 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             return cachedEntry;
         }
 
+        private FragmentState getState(final long fragmentIndex) {
+            if (closed) {
+                throw new IllegalStateException();
+            }
+            final FragmentState cachedFragment = bufferCache[getIndex(fragmentIndex)];
+            if (cachedFragment != null && cachedFragment.matches(fragmentIndex)) {
+                return cachedFragment;
+            }
+            return null;
+        }
+
         /**
          * Will return the {@link CompletableFuture} corresponding to provided fragment index if present in the cache,
          * else will return {@code null}
          */
         @Nullable
         private Future<ByteBuffer> getCachedFuture(final long fragmentIndex) {
-            final FragmentState cachedFragment = bufferCache[getIndex(fragmentIndex)];
-            if (cachedFragment != null && cachedFragment.matches(fragmentIndex)) {
-                return cachedFragment.future;
-            }
-            return null;
+            final FragmentState state = getState(fragmentIndex);
+            return state == null ? null : state.future;
         }
 
         private long getSize() {
@@ -156,12 +196,15 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
 
         @Override
         public void close() {
+            System.out.printf("closing context: thread=%d, id=%d%n", Thread.currentThread().getId(), System.identityHashCode(this));
+//            Thread.dumpStack();
             // Cancel all outstanding requests
             for (final FragmentState fragmentState : bufferCache) {
                 if (fragmentState != null) {
-                    fragmentState.cancelAndRelease(null);
+                    fragmentState.cancelAndReleaseGood();
                 }
             }
+            closed = true;
         }
     }
 
@@ -214,6 +257,9 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
     @Override
     public int read(@NotNull final ByteBuffer destination) throws IOException {
         Assert.neqNull(context, "channelContext");
+        if (context.closed) {
+            throw new IllegalStateException("context closed");
+        }
         if (!destination.hasRemaining()) {
             return 0;
         }
@@ -236,15 +282,18 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             sendAsyncRequest(idx, context);
         }
 
+
         // Wait till the current fragment is fetched
-        final Future<ByteBuffer> currFragmentFuture = context.getCachedFuture(currFragmentIndex);
+
+        final S3ChannelContext.FragmentState state = context.getState(currFragmentIndex);
+        final Future<ByteBuffer> currFragmentFuture = state.future;
         final ByteBuffer currentFragment;
         try {
-            currentFragment = currFragmentFuture.get(s3Instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS);
+            currentFragment = currFragmentFuture.get(s3Instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS).duplicate();
         } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
             throw handleS3Exception(e,
-                    String.format("fetching fragment %d for file %s in S3 bucket %s", currFragmentIndex, key,
-                            bucket));
+                    String.format("fetching fragment %d for file %s in S3 bucket %s, context=%d", currFragmentIndex, key,
+                            bucket, System.identityHashCode(state.context())));
         }
 
         // Copy the bytes from fragment from the offset up to the min of remaining fragment and destination bytes.
@@ -260,6 +309,13 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         currentFragment.limit(originalBufferLimit);
         position = localPosition + numBytesCopied;
         return numBytesCopied;
+
+//        final int outOffset = (int) (localPosition - (currFragmentIndex * s3Instructions.fragmentSize()));
+//        // todo: currentfragment.remaining() is incorrect
+//        final int outLength = Math.min(currentFragment.remaining(), destination.remaining());
+//        destination.put(currentFragment.duplicate().position(outOffset).limit(outOffset + outLength));
+//        position = localPosition + outLength;
+//        return outLength;
     }
 
     private long fragmentIndexForByteNumber(final long byteNumber) {
@@ -271,7 +327,10 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
      * caches it in the context.
      */
     private void sendAsyncRequest(final long fragmentIndex, @NotNull final S3ChannelContext s3ChannelContext) {
-        final S3ChannelContext.FragmentState fragmentState = s3ChannelContext.getFragmentState(fragmentIndex);
+        final S3ChannelContext.FragmentState fragmentState = s3ChannelContext.getOrCreateState(fragmentIndex);
+        if (fragmentState.contextIsClosed()) {
+            throw new IllegalStateException();
+        }
         if (fragmentState.matches(fragmentIndex)) {
             // System.out.printf("match: %d,%s/%s,%d%n", System.identityHashCode(s3ChannelContext), bucket, key,
             // fragmentIndex);
@@ -279,7 +338,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             return;
         }
         // Cancel any outstanding requests for the fragment in cached slot
-        fragmentState.cancelAndRelease(s3ChannelContext);
+        fragmentState.cancelAndReleaseBad();
 
         final int fragmentSize = s3Instructions.fragmentSize();
         final long readFrom = fragmentIndex * fragmentSize;
@@ -290,16 +349,16 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         final BufferPool.BufferHolder bufferHolder = bufferPool.take(numBytes);
         final ByteBufferAsyncResponseTransformer<GetObjectResponse> asyncResponseTransformer =
                 new ByteBufferAsyncResponseTransformer<>(Objects.requireNonNull(bufferHolder.get()));
-        System.out.printf("send: id=%d, path=%s/%s, range=%d-%d(%d), ix=%d(%d)%n",
-                System.identityHashCode(s3ChannelContext), bucket, key, readFrom,
+        System.out.printf("send: thread=%d, id=%d, path=%s/%s, range=%d-%d(%d), ix=%d(%d)%n",
+                Thread.currentThread().getId(), System.identityHashCode(s3ChannelContext), bucket, key, readFrom,
                 readTo, readTo - readFrom + 1, fragmentIndex, fragmentIndex % s3ChannelContext.bufferCache.length);
         final CompletableFuture<ByteBuffer> future = s3AsyncClient
                 .getObject(GetObjectRequest.builder()
                         .bucket(bucket)
                         .key(key)
                         .range(range)
-                        .build(), asyncResponseTransformer)
-                .whenComplete((response, throwable) -> asyncResponseTransformer.close());
+                        .build(), asyncResponseTransformer);
+        future.whenComplete((response, throwable) -> asyncResponseTransformer.close());
         fragmentState.set(fragmentIndex, future, bufferHolder);
         // if (fragmentIndex == 0) {
         // Thread.dumpStack();

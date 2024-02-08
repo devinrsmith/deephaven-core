@@ -219,10 +219,6 @@ public abstract class ColumnChunkPageStore<ATTR extends Any>
         return SeekableChannelContext.NULL;
     }
 
-    final SeekableChannelContext makeSingleUseContext() {
-        return columnChunkReader.getChannelsProvider().makeSingleUseContext();
-    }
-
     final Upgrade upgrade(@Nullable final FillContext context) {
         return SeekableChannelsProvider.upgrade(columnChunkReader.getChannelsProvider(), innerFillContext(context));
     }

@@ -63,11 +63,7 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
 
     @Override
     public SeekableChannelContext makeSingleUseContext() {
-        // todo: still have readAhead 1?
-        // final int readAheadCount = Math.min(s3Instructions.readAheadCount(), 1);
-        final int readAheadCount = 0;
-        // todo: does the math *need* the context to have this size? or can it be different?
-        return new S3ChannelContext(s3AsyncClient, s3Instructions); // todo: make no readahead
+        return new S3ChannelContext(s3AsyncClient, s3Instructions.withReadAheadCount(0));
     }
 
     @Override

@@ -8,8 +8,6 @@ import io.deephaven.util.channel.CachedChannelProvider;
 import io.deephaven.util.channel.SeekableChannelContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Uri;
 
 import java.io.IOException;
@@ -25,7 +23,6 @@ import java.util.Objects;
  * read ahead and cache fragments of the object.
  */
 final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelProvider.ContextHolder {
-    private static final Logger log = LoggerFactory.getLogger(S3SeekableByteChannel.class);
 
     private static final long CLOSED_SENTINEL = -1;
 
@@ -38,6 +35,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
     private S3ChannelContext context;
 
     private long position;
+    private long size = -1;
 
     S3SeekableByteChannel(S3Uri uri) {
         this.uri = Objects.requireNonNull(uri);
@@ -55,13 +53,26 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             throw new IllegalArgumentException("Unsupported channel context " + channelContext);
         }
         this.context = (S3ChannelContext) channelContext;
+        if (this.context != null) {
+            this.context.assume(uri);
+            if (size != -1) {
+                this.context.hackSize(size);
+            }
+        }
+    }
+
+    private long hackSize() throws IOException {
+        if (size != -1) {
+            return size;
+        }
+        return (size = context.size(uri));
     }
 
     @Override
     public int read(@NotNull final ByteBuffer destination) throws IOException {
         Assert.neqNull(context, "channelContext");
         checkClosed(position);
-        if (position >= context.size(uri)) {
+        if (position >= hackSize()) {
             // We are finished reading
             return -1;
         }

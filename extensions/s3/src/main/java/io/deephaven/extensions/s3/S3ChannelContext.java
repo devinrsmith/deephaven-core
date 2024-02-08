@@ -16,6 +16,8 @@ import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -55,6 +57,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         this.instructions = Objects.requireNonNull(instructions);
         requests = new Request[instructions.maxCacheSize()];
         size = UNINITIALIZED_SIZE;
+        // Thread.dumpStack();
     }
 
     private int getIndex(final long fragmentIndex) {
@@ -62,13 +65,24 @@ final class S3ChannelContext implements SeekableChannelContext {
         return (int) (fragmentIndex % requests.length);
     }
 
-    private void assume(S3Uri uri) {
+    void assume(S3Uri uri) {
         if (this.uri == null) {
             this.uri = Objects.requireNonNull(uri);
         } else {
             if (!this.uri.equals(uri)) {
                 throw new IllegalStateException("inconsistent URI");
             }
+        }
+    }
+
+    void hackSize(long size) {
+        if (this.size == UNINITIALIZED_SIZE) {
+            this.size = size;
+            // ceil(size / fragmentSize)
+            this.numFragmentsInObject = (size + instructions.fragmentSize() - 1) / instructions.fragmentSize();
+        }
+        if (this.size != size) {
+            throw new IllegalStateException();
         }
     }
 
@@ -133,14 +147,6 @@ final class S3ChannelContext implements SeekableChannelContext {
         return request;
     }
 
-    long getSize() {
-        return size;
-    }
-
-    void setSize(final long size) {
-        this.size = size;
-    }
-
     @Override
     public void close() {
         log.info("closing context: thread={}, id={}", Thread.currentThread().getId(), System.identityHashCode(this));
@@ -162,13 +168,25 @@ final class S3ChannelContext implements SeekableChannelContext {
         private final CompletableFuture<ByteBuffer> libraryFuture;
         private volatile CompletableFuture<ByteBuffer> rootFuture;
         private GetObjectResponse response;
+        private boolean didFill;
 
         private Request(long fragmentIndex) {
             this.fragmentIndex = fragmentIndex;
             from = fragmentIndex * instructions.fragmentSize();
             to = Math.min(from + instructions.fragmentSize(), size) - 1;
-            log.info("send: uri={}, ix={}, range={}-{}({})", uri, fragmentIndex, from, to, (to - from + 1));
+            log.info("send: uri={}, ix={}, range={}-{}({}), context={}", "<uri>", fragmentIndex, from, to,
+                    (to - from + 1), System.identityHashCode(S3ChannelContext.this));
+
+            final Instant now = Instant.now();
             libraryFuture = client.getObject(getObjectRequest(), this);
+            libraryFuture.whenComplete((bb, e) -> {
+                if (bb != null) {
+                    final Instant x = Instant.now();
+                    log.info("send complete: uri={}, ix={}, range={}-{}({}), context={}, d={}", "<uri>", fragmentIndex,
+                            from, to, (to - from + 1), System.identityHashCode(S3ChannelContext.this),
+                            Duration.between(now, x));
+                }
+            });
         }
 
         private int requestLength() {
@@ -185,8 +203,9 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         public void cancel() {
             boolean didCancel = libraryFuture.cancel(true);
-            log.info("cancel {}: uri={}, ix={}, range={}-{}({})", didCancel, uri, fragmentIndex, from, to,
-                    (to - from + 1));
+            log.info("cancel: uri={}, ix={}, range={}-{}({}), didCancel={}, didFill={}", "<uri>", fragmentIndex, from,
+                    to,
+                    (to - from + 1), didCancel, didFill);
         }
 
         public ByteBuffer get() throws IOException {
@@ -207,6 +226,7 @@ final class S3ChannelContext implements SeekableChannelContext {
             final int outOffset = (int) (localPosition - from);
             final int outLength = Math.min((int) (to - localPosition + 1), dest.remaining());
             dest.put(get().position(outOffset).limit(outOffset + outLength));
+            didFill = true;
             return outLength;
         }
 
@@ -279,7 +299,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         if (size != UNINITIALIZED_SIZE) {
             return;
         }
-        log.info("head: uri={}, context={}", uri, System.identityHashCode(this));
+        log.info("head: uri={}, context={}", "<uri>", System.identityHashCode(this));
         // Fetch the size of the file on the first read using a blocking HEAD request, and store it in the context
         // for future use
         final HeadObjectResponse headObjectResponse;

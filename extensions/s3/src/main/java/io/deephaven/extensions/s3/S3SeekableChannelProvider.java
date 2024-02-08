@@ -34,9 +34,9 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
         // TODO(deephaven-core#5062): Add support for async client recovery and auto-close
         // TODO(deephaven-core#5063): Add support for caching clients for re-use
         final S3AsyncClientBuilder builder = S3AsyncClient.builder()
-                .region(Region.of(s3Instructions.awsRegionName()))
+                .region(Region.of(s3Instructions.regionName()))
                 .httpClient(asyncHttpClient)
-                .credentialsProvider(s3Instructions.awsCredentialsProvider());
+                .credentialsProvider(s3Instructions.awsV2CredentialsProvider());
         s3Instructions.endpointOverride().ifPresent(builder::endpointOverride);
         this.s3AsyncClient = builder.build();
         this.s3Instructions = s3Instructions;

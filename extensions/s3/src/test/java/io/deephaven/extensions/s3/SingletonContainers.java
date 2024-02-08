@@ -3,6 +3,7 @@
  */
 package io.deephaven.extensions.s3;
 
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
@@ -23,7 +24,8 @@ final class SingletonContainers {
 
     static final class LocalStack {
         private static final LocalStackContainer LOCALSTACK_S3 =
-                new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.1.0")).withServices(Service.S3);
+                new LocalStackContainer(DockerImageName.parse(System.getProperty("testcontainers.localstack.image")))
+                        .withServices(Service.S3);
         static {
             LOCALSTACK_S3.start();
         }
@@ -35,9 +37,9 @@ final class SingletonContainers {
         static S3Instructions.Builder s3Instructions(S3Instructions.Builder builder) {
             return builder
                     .endpointOverride(LOCALSTACK_S3.getEndpoint())
-                    .awsRegionName(LOCALSTACK_S3.getRegion())
+                    .regionName(LOCALSTACK_S3.getRegion())
                     .credentials(
-                            AwsCredentials.basicCredentials(LOCALSTACK_S3.getAccessKey(),
+                            Credentials.basicCredentials(LOCALSTACK_S3.getAccessKey(),
                                     LOCALSTACK_S3.getSecretKey()));
         }
 
@@ -57,8 +59,8 @@ final class SingletonContainers {
         // comments in S3Instructions.
         // https://min.io/docs/minio/linux/reference/minio-server/settings/core.html#domain
         private static final MinIOContainer MINIO =
-                new MinIOContainer(DockerImageName.parse("minio/minio:RELEASE.2024-01-29T03-56-32Z"))
-                        .withEnv("MINIO_DOMAIN", "localhost");
+                new MinIOContainer(DockerImageName.parse(System.getProperty("testcontainers.minio.image")))
+                        .withEnv("MINIO_DOMAIN", DockerClientFactory.instance().dockerHostIpAddress());
         static {
             MINIO.start();
         }
@@ -70,8 +72,8 @@ final class SingletonContainers {
         static S3Instructions.Builder s3Instructions(S3Instructions.Builder builder) {
             return builder
                     .endpointOverride(URI.create(MINIO.getS3URL()))
-                    .awsRegionName(Region.AWS_GLOBAL.id())
-                    .credentials(AwsCredentials.basicCredentials(MINIO.getUserName(), MINIO.getPassword()));
+                    .regionName(Region.AWS_GLOBAL.id())
+                    .credentials(Credentials.basicCredentials(MINIO.getUserName(), MINIO.getPassword()));
         }
 
         static S3Client s3Client() {

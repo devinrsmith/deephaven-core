@@ -185,7 +185,8 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         public void cancel() {
             boolean didCancel = libraryFuture.cancel(true);
-            log.info("cancel {}: uri={}, ix={}, range={}-{}({})", didCancel, uri, fragmentIndex, from, to, (to - from + 1));
+            log.info("cancel {}: uri={}, ix={}, range={}-{}({})", didCancel, uri, fragmentIndex, from, to,
+                    (to - from + 1));
         }
 
         public ByteBuffer get() throws IOException {
@@ -193,7 +194,8 @@ final class S3ChannelContext implements SeekableChannelContext {
                 return libraryFuture.get(instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS).duplicate();
             } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
                 throw handleS3Exception(e,
-                        String.format("fetching fragment %d for %s, context=%d", fragmentIndex, uri, System.identityHashCode(this)));
+                        String.format("fetching fragment %d for %s, context=%d", fragmentIndex, uri,
+                                System.identityHashCode(this)));
             }
         }
 
@@ -203,7 +205,7 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         public int fill(long localPosition, ByteBuffer dest) throws IOException {
             final int outOffset = (int) (localPosition - from);
-            final int outLength = Math.min((int)(to - localPosition + 1), dest.remaining());
+            final int outLength = Math.min((int) (to - localPosition + 1), dest.remaining());
             dest.put(get().position(outOffset).limit(outOffset + outLength));
             return outLength;
         }
@@ -306,7 +308,8 @@ final class S3ChannelContext implements SeekableChannelContext {
         }
         if (e instanceof TimeoutException) {
             return new IOException(String.format(
-                    "Operation timeout while %s after waiting for duration %s", operationDescription, instructions.readTimeout()), e);
+                    "Operation timeout while %s after waiting for duration %s", operationDescription,
+                    instructions.readTimeout()), e);
         }
         if (e instanceof CancellationException) {
             return new IOException(String.format("Cancelled an operation while %s", operationDescription), e);

@@ -12,24 +12,16 @@ import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3Uri;
 
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
-import static io.deephaven.extensions.s3.S3Instructions.MAX_FRAGMENT_SIZE;
-
 /**
  * {@link SeekableChannelsProvider} implementation that is used to fetch objects from AWS S3 instances.
  */
 final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
-
-    /**
-     * We always allocate buffers of maximum allowed size for re-usability across reads with different fragment sizes.
-     * There can be a performance penalty though if the fragment size is much smaller than the maximum size.
-     */
-    private static final int POOLED_BUFFER_SIZE = MAX_FRAGMENT_SIZE;
-    private static final BufferPool bufferPool = new SegmentedBufferPool(POOLED_BUFFER_SIZE);
 
     private final S3AsyncClient s3AsyncClient;
     private final S3Instructions s3Instructions;
@@ -59,14 +51,14 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
     @Override
     public SeekableByteChannel getReadChannel(@NotNull final SeekableChannelContext channelContext,
             @NotNull final URI uri) {
+        final S3Uri s3Uri = s3AsyncClient.utilities().parseUri(uri);
         // context is unused here, will be set before reading from the channel
-        return new S3SeekableByteChannel(uri, s3AsyncClient, s3Instructions, bufferPool);
+        return new S3SeekableByteChannel(s3Uri);
     }
 
     @Override
     public SeekableChannelContext makeContext() {
-        return new S3SeekableByteChannel.S3ChannelContext(s3Instructions.maxCacheSize(),
-                s3Instructions.readAheadCount());
+        return new S3ChannelContext(s3AsyncClient, s3Instructions);
     }
 
     @Override
@@ -75,12 +67,12 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
         // final int readAheadCount = Math.min(s3Instructions.readAheadCount(), 1);
         final int readAheadCount = 0;
         // todo: does the math *need* the context to have this size? or can it be different?
-        return new S3SeekableByteChannel.S3ChannelContext(s3Instructions.maxCacheSize(), readAheadCount);
+        return new S3ChannelContext(s3AsyncClient, s3Instructions); // todo: make no readahead
     }
 
     @Override
     public boolean isCompatibleWith(@NotNull final SeekableChannelContext channelContext) {
-        return channelContext instanceof S3SeekableByteChannel.S3ChannelContext;
+        return channelContext instanceof S3ChannelContext;
     }
 
     @Override

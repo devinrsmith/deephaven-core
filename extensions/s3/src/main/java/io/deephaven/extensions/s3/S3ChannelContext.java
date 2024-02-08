@@ -90,6 +90,9 @@ final class S3ChannelContext implements SeekableChannelContext {
                 instructions.readAheadCount(),
                 numFragmentsInObject - fragmentIx - 1);
         final Request request = getOrCreateRequest(fragmentIx);
+
+        // todo: base the number of read aheads based on dest.remaining()!?
+
         for (int i = -1; i < numReadAheadFragments; ++i) {
             getOrCreateRequest(fragmentIx + i + 1);
         }

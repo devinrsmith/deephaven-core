@@ -25,6 +25,10 @@
 
   <logger name="io.deephaven.sql.SqlAdapter" level="DEBUG"/>
 
+  <!--
+  <Logger name="software.amazon.awssdk" level="TRACE" />
+  -->
+
   <root level="info">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="LOGBUFFER" />

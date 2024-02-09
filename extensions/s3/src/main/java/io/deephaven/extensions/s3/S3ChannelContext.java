@@ -5,6 +5,8 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.BytesWrapper;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -13,12 +15,14 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.utils.CompletableFutureUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -84,26 +88,31 @@ final class S3ChannelContext implements SeekableChannelContext {
     public int fill(S3Uri uri, final long position, ByteBuffer dest) throws IOException {
         assume(uri);
         populateSize();
+        final int destRemaining = dest.remaining();
+        if (destRemaining == 0) {
+            return 0;
+        }
         // Send async read requests for current fragment as well as read ahead fragments
-        final long fragmentIx = fragmentIndex(position);
+        final long firstFragmentIx = fragmentIndex(position);
+        // todo: base the number of read aheads based on dest.remaining()!?
+        // final long lastFragmentIx = fragmentIndex(position + destRemaining - 1);
+
         final int numReadAheadFragments = (int) Math.min(
                 instructions.readAheadCount(),
-                numFragmentsInObject - fragmentIx - 1);
-        final Request request = getOrCreateRequest(fragmentIx);
-
-        // todo: base the number of read aheads based on dest.remaining()!?
-
-        for (int i = -1; i < numReadAheadFragments; ++i) {
-            getOrCreateRequest(fragmentIx + i + 1);
+                numFragmentsInObject - firstFragmentIx - 1);
+        final Request immediateRequest = getOrCreateRequest(firstFragmentIx);
+        for (int i = 0; i < numReadAheadFragments; ++i) {
+            getOrCreateRequest(firstFragmentIx + i + 1);
         }
-        int filled = request.fill(position, dest);
-        // if dest has more remaining, and is request is immediately available, we can fill more
-        for (int i = 0; i < numReadAheadFragments && dest.hasRemaining(); ++i) {
-            final Request ahead = getRequest(fragmentIx + i + 1);
-            if (!ahead.isDone()) {
-                return filled;
+        // blocking
+        int filled = immediateRequest.fill(position, dest);
+        for (int i = 0; dest.hasRemaining(); ++i) {
+            final Request request = getRequest(firstFragmentIx + i + 1).orElse(null);
+            if (request == null || !request.isDone()) {
+                break;
             }
-            filled += ahead.fill(position + filled, dest);
+            // non-blocking
+            filled += request.fill(position + filled, dest);
         }
         return filled;
     }
@@ -112,13 +121,12 @@ final class S3ChannelContext implements SeekableChannelContext {
         return byteNumber / instructions.fragmentSize();
     }
 
-    public Request getRequest(final long fragmentIndex) {
+    public Optional<Request> getRequest(final long fragmentIndex) {
         final int cacheIdx = getIndex(fragmentIndex);
-        Request request = requests[cacheIdx];
-        if (request.fragmentIndex != fragmentIndex) {
-            throw new IllegalStateException();
-        }
-        return request;
+        final Request request = requests[cacheIdx];
+        return request == null || !request.isFragment(fragmentIndex)
+                ? Optional.empty()
+                : Optional.of(request);
     }
 
     public Request getOrCreateRequest(final long fragmentIndex) {
@@ -129,7 +137,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         final int cacheIdx = getIndex(fragmentIndex);
         Request request = requests[cacheIdx];
         if (request != null) {
-            if (request.fragmentIndex != fragmentIndex) {
+            if (!request.isFragment(fragmentIndex)) {
                 request.cancel();
                 requests[cacheIdx] = (request = new Request(fragmentIndex));
             }
@@ -154,31 +162,42 @@ final class S3ChannelContext implements SeekableChannelContext {
 
     final class Request implements AsyncResponseTransformer<GetObjectResponse, ByteBuffer> {
 
-        private final long fragmentIndex;
+        private final long fragmentIndex; // implicitly + URI
         private final long from;
         private final long to;
-        private final CompletableFuture<ByteBuffer> libraryFuture;
-        private volatile CompletableFuture<ByteBuffer> rootFuture;
+        private final Instant createdAt;
+        private Instant completedSuccessfullyAt;
+        private final CompletableFuture<ByteBuffer> consumerFuture;
+        private volatile CompletableFuture<ByteBuffer> producerFuture;
         private GetObjectResponse response;
         private int fillCount;
+        private long fillBytes;
 
         private Request(long fragmentIndex) {
             this.fragmentIndex = fragmentIndex;
             from = fragmentIndex * instructions.fragmentSize();
             to = Math.min(from + instructions.fragmentSize(), size) - 1;
+            createdAt = Instant.now();
             log.info("send: uri={}, ix={}, range={}-{}({}), context={}", "<uri>", fragmentIndex, from, to,
                     (to - from + 1), System.identityHashCode(S3ChannelContext.this));
 
-            final Instant now = Instant.now();
-            libraryFuture = client.getObject(getObjectRequest(), this);
-            libraryFuture.whenComplete((bb, e) -> {
+             consumerFuture = client.getObject(getObjectRequest(), this);
+
+//            final CompletableFuture<ResponseBytes<GetObjectResponse>> f1 = client.getObject(getObjectRequest(), AsyncResponseTransformer.toBytes());
+//            consumerFuture = f1.thenApply(BytesWrapper::asByteBuffer);
+//            CompletableFutureUtils.forwardExceptionTo(consumerFuture, f1);
+            consumerFuture.whenComplete((bb, e) -> {
                 if (bb != null) {
-                    final Instant x = Instant.now();
+                    completedSuccessfullyAt = Instant.now();
                     log.info("send complete: uri={}, ix={}, range={}-{}({}), context={}, d={}", "<uri>", fragmentIndex,
                             from, to, (to - from + 1), System.identityHashCode(S3ChannelContext.this),
-                            Duration.between(now, x));
+                            Duration.between(createdAt, completedSuccessfullyAt));
                 }
             });
+        }
+
+        private boolean isFragment(long fragmentIndex) {
+            return this.fragmentIndex == fragmentIndex;
         }
 
         private int requestLength() {
@@ -194,15 +213,18 @@ final class S3ChannelContext implements SeekableChannelContext {
         }
 
         public void cancel() {
-            boolean didCancel = libraryFuture.cancel(true);
-            log.info("cancel: uri={}, ix={}, range={}-{}({}), didCancel={}, fillCount={}", "<uri>", fragmentIndex, from,
-                    to,
-                    (to - from + 1), didCancel, fillCount);
+            final boolean didCancel = consumerFuture.cancel(true);
+            final String cancelType = didCancel
+                    ? "fast"
+                    : (fillCount == 0
+                    ? "unused"
+                    : "normal");
+            log.info("cancel ({}): uri={}, ix={}, range={}-{}({}), fillCount={}", "<uri>", cancelType, fragmentIndex, from, to, (to - from + 1), fillCount);
         }
 
         public ByteBuffer get() throws IOException {
             try {
-                return libraryFuture.get(instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS).duplicate();
+                return consumerFuture.get(instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS).duplicate();
             } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
                 throw handleS3Exception(e,
                         String.format("fetching fragment %d for %s, context=%d", fragmentIndex, uri,
@@ -211,7 +233,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         }
 
         public boolean isDone() {
-            return libraryFuture.isDone();
+            return consumerFuture.isDone();
         }
 
         public int fill(long localPosition, ByteBuffer dest) throws IOException {
@@ -219,13 +241,14 @@ final class S3ChannelContext implements SeekableChannelContext {
             final int outLength = Math.min((int) (to - localPosition + 1), dest.remaining());
             dest.put(get().position(outOffset).limit(outOffset + outLength));
             ++fillCount;
+            fillBytes += outLength;
             return outLength;
         }
 
         @Override
         public CompletableFuture<ByteBuffer> prepare() {
             final CompletableFuture<ByteBuffer> localFuture = new CompletableFuture<>();
-            rootFuture = localFuture;
+            producerFuture = localFuture;
             return localFuture;
         }
 
@@ -241,17 +264,17 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         @Override
         public void exceptionOccurred(Throwable error) {
-            this.rootFuture.completeExceptionally(error);
+            this.producerFuture.completeExceptionally(error);
         }
 
         final class Sub implements Subscriber<ByteBuffer> {
 
-            private final CompletableFuture<ByteBuffer> localRoot;
+            private final CompletableFuture<ByteBuffer> localProducer;
             private final ByteBuffer dest;
             private Subscription subscription;
 
             Sub() {
-                this.localRoot = rootFuture;
+                this.localProducer = producerFuture;
                 this.dest = ByteBuffer.allocate(requestLength());
             }
 
@@ -273,7 +296,7 @@ final class S3ChannelContext implements SeekableChannelContext {
 
             @Override
             public void onError(Throwable t) {
-                localRoot.completeExceptionally(t);
+                localProducer.completeExceptionally(t);
             }
 
             @Override
@@ -282,7 +305,7 @@ final class S3ChannelContext implements SeekableChannelContext {
                 if (dest.remaining() != requestLength()) {
                     throw new IllegalStateException(); // todo
                 }
-                localRoot.complete(dest.asReadOnlyBuffer());
+                localProducer.complete(dest.asReadOnlyBuffer());
             }
         }
     }

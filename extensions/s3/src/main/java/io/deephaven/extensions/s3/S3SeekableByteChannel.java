@@ -76,9 +76,6 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
             // We are finished reading
             return -1;
         }
-        if (!destination.hasRemaining()) {
-            return 0;
-        }
         final int filled = context.fill(uri, position, destination);
         position += filled;
         return filled;

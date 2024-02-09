@@ -7,6 +7,7 @@ import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.util.channel.SeekableChannelsProviderBase;
 import org.jetbrains.annotations.NotNull;
+import software.amazon.awssdk.core.retry.RetryMode;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -31,9 +32,20 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
                 .maxConcurrency(s3Instructions.maxConcurrentRequests())
                 .connectionTimeout(s3Instructions.connectionTimeout())
                 .build();
+
+//        final SdkAsyncHttpClient asyncHttpClient = NettyNioAsyncHttpClient.builder()
+//                .maxConcurrency(s3Instructions.maxConcurrentRequests())
+//                .connectionTimeout(s3Instructions.connectionTimeout())
+//                .build();
+
         // TODO(deephaven-core#5062): Add support for async client recovery and auto-close
         // TODO(deephaven-core#5063): Add support for caching clients for re-use
         final S3AsyncClientBuilder builder = S3AsyncClient.builder()
+                .overrideConfiguration(b -> b
+                        //.retryPolicy(RetryPolicy.defaultRetryPolicy())
+                        .retryPolicy(RetryMode.ADAPTIVE)
+                        .apiCallAttemptTimeout(s3Instructions.readTimeout().dividedBy(6))
+                        .apiCallTimeout(s3Instructions.readTimeout().dividedBy(2)))
                 .region(Region.of(s3Instructions.regionName()))
                 .httpClient(asyncHttpClient)
                 .credentialsProvider(s3Instructions.awsV2CredentialsProvider());

@@ -5,8 +5,6 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.BytesWrapper;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -15,7 +13,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
-import software.amazon.awssdk.utils.CompletableFutureUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,7 +33,6 @@ final class S3ChannelContext implements SeekableChannelContext {
     private static final Logger log = LoggerFactory.getLogger(S3ChannelContext.class);
     private static final long UNINITIALIZED_SIZE = -1;
 
-
     private final S3AsyncClient client;
     final S3Instructions instructions;
 
@@ -54,28 +50,13 @@ final class S3ChannelContext implements SeekableChannelContext {
 
     private long numFragmentsInObject;
 
-    private boolean closed;
-
     S3ChannelContext(S3AsyncClient client, S3Instructions instructions) {
         this.client = Objects.requireNonNull(client);
         this.instructions = Objects.requireNonNull(instructions);
         requests = new Request[instructions.maxCacheSize()];
         size = UNINITIALIZED_SIZE;
-        log.info("creating context: thread={}, id={}", Thread.currentThread().getId(), System.identityHashCode(this));
-    }
-
-    private int getIndex(final long fragmentIndex) {
-        // TODO(deephaven-core#5061): Experiment with LRU caching
-        return (int) (fragmentIndex % requests.length);
-    }
-
-    void assume(S3Uri uri) {
-        if (this.uri == null) {
-            this.uri = Objects.requireNonNull(uri);
-        } else {
-            if (!this.uri.equals(uri)) {
-                throw new IllegalStateException("inconsistent URI");
-            }
+        if (log.isDebugEnabled()) {
+            log.debug("creating context: {}", ctxStr());
         }
     }
 
@@ -94,14 +75,19 @@ final class S3ChannelContext implements SeekableChannelContext {
         }
         // Send async read requests for current fragment as well as read ahead fragments
         final long firstFragmentIx = fragmentIndex(position);
-        // todo: base the number of read aheads based on dest.remaining()!?
-        // final long lastFragmentIx = fragmentIndex(position + destRemaining - 1);
-
-        final int numReadAheadFragments = (int) Math.min(
-                instructions.readAheadCount(),
-                numFragmentsInObject - firstFragmentIx - 1);
+        final long readAhead;
+        {
+            final long lastFragmentIx = fragmentIndex(position + destRemaining - 1);
+            final int impliedReadAhead = (int) (lastFragmentIx - firstFragmentIx);
+            final int desiredReadAhead = instructions.readAheadCount();
+            final long totalRemainingFragments = numFragmentsInObject - firstFragmentIx - 1;
+            final int maxReadAhead = requests.length - 1;
+            readAhead = Math.min(
+                    Math.max(impliedReadAhead, desiredReadAhead),
+                    (int) Math.min(maxReadAhead, totalRemainingFragments));
+        }
         final Request immediateRequest = getOrCreateRequest(firstFragmentIx);
-        for (int i = 0; i < numReadAheadFragments; ++i) {
+        for (int i = 0; i < readAhead; ++i) {
             getOrCreateRequest(firstFragmentIx + i + 1);
         }
         // blocking
@@ -111,18 +97,14 @@ final class S3ChannelContext implements SeekableChannelContext {
             if (request == null || !request.isDone()) {
                 break;
             }
-            // non-blocking
+            // non-blocking since we know isDone
             filled += request.fill(position + filled, dest);
         }
         return filled;
     }
 
-    private long fragmentIndex(final long byteNumber) {
-        return byteNumber / instructions.fragmentSize();
-    }
-
     public Optional<Request> getRequest(final long fragmentIndex) {
-        final int cacheIdx = getIndex(fragmentIndex);
+        final int cacheIdx = cacheIndex(fragmentIndex);
         final Request request = requests[cacheIdx];
         return request == null || !request.isFragment(fragmentIndex)
                 ? Optional.empty()
@@ -130,11 +112,7 @@ final class S3ChannelContext implements SeekableChannelContext {
     }
 
     public Request getOrCreateRequest(final long fragmentIndex) {
-        // todo: error if more than one uri?
-        if (closed) {
-            throw new IllegalStateException();
-        }
-        final int cacheIdx = getIndex(fragmentIndex);
+        final int cacheIdx = cacheIndex(fragmentIndex);
         Request request = requests[cacheIdx];
         if (request != null) {
             if (!request.isFragment(fragmentIndex)) {
@@ -149,7 +127,9 @@ final class S3ChannelContext implements SeekableChannelContext {
 
     @Override
     public void close() {
-        log.info("closing context: thread={}, id={}", Thread.currentThread().getId(), System.identityHashCode(this));
+        if (log.isDebugEnabled()) {
+            log.debug("closing context: {}", ctxStr());
+        }
         // Cancel all outstanding requests
         for (int i = 0; i < requests.length; i++) {
             if (requests[i] != null) {
@@ -157,16 +137,45 @@ final class S3ChannelContext implements SeekableChannelContext {
                 requests[i] = null;
             }
         }
-        closed = true;
+    }
+
+    void assume(S3Uri uri) {
+        if (this.uri == null) {
+            this.uri = Objects.requireNonNull(uri);
+        } else {
+            if (!this.uri.equals(uri)) {
+                throw new IllegalStateException(
+                        String.format("Inconsistent URIs. expected=%s, actual=%s", this.uri, uri));
+            }
+        }
+    }
+
+    private int cacheIndex(final long fragmentIndex) {
+        // TODO(deephaven-core#5061): Experiment with LRU caching
+        return (int) (fragmentIndex % requests.length);
+    }
+
+    private long fragmentIndex(final long pos) {
+        return pos / instructions.fragmentSize();
+    }
+
+    private String ctxStr() {
+        if (uri != null) {
+            return String.format("ctx=%d %s/%s", System.identityHashCode(S3ChannelContext.this),
+                    uri.bucket().orElseThrow(), uri.key().orElseThrow());
+        } else {
+            return String.format("ctx=%d", System.identityHashCode(S3ChannelContext.this));
+        }
     }
 
     final class Request implements AsyncResponseTransformer<GetObjectResponse, ByteBuffer> {
 
-        private final long fragmentIndex; // implicitly + URI
+        // implicitly + URI
+        private final long fragmentIndex;
         private final long from;
         private final long to;
         private final Instant createdAt;
-        private Instant completedSuccessfullyAt;
+        private Instant completedAt;
         private final CompletableFuture<ByteBuffer> consumerFuture;
         private volatile CompletableFuture<ByteBuffer> producerFuture;
         private GetObjectResponse response;
@@ -178,22 +187,51 @@ final class S3ChannelContext implements SeekableChannelContext {
             from = fragmentIndex * instructions.fragmentSize();
             to = Math.min(from + instructions.fragmentSize(), size) - 1;
             createdAt = Instant.now();
-            log.info("send: uri={}, ix={}, range={}-{}({}), context={}", "<uri>", fragmentIndex, from, to,
-                    (to - from + 1), System.identityHashCode(S3ChannelContext.this));
-
-             consumerFuture = client.getObject(getObjectRequest(), this);
-
-//            final CompletableFuture<ResponseBytes<GetObjectResponse>> f1 = client.getObject(getObjectRequest(), AsyncResponseTransformer.toBytes());
-//            consumerFuture = f1.thenApply(BytesWrapper::asByteBuffer);
-//            CompletableFutureUtils.forwardExceptionTo(consumerFuture, f1);
-            consumerFuture.whenComplete((bb, e) -> {
-                if (bb != null) {
-                    completedSuccessfullyAt = Instant.now();
-                    log.info("send complete: uri={}, ix={}, range={}-{}({}), context={}, d={}", "<uri>", fragmentIndex,
-                            from, to, (to - from + 1), System.identityHashCode(S3ChannelContext.this),
-                            Duration.between(createdAt, completedSuccessfullyAt));
+            if (log.isDebugEnabled()) {
+                log.debug("send: {}", requestStr());
+            }
+            consumerFuture = client.getObject(getObjectRequest(), this);
+            consumerFuture.whenComplete((out, e) -> {
+                completedAt = Instant.now();
+                if (log.isDebugEnabled()) {
+                    if (out != null) {
+                        log.debug("send complete: {} {}", requestStr(), Duration.between(createdAt, completedAt));
+                    } else {
+                        log.debug("send error: {} {}", requestStr(), Duration.between(createdAt, completedAt));
+                    }
                 }
             });
+        }
+
+        public boolean isDone() {
+            return consumerFuture.isDone();
+        }
+
+        public int fill(long localPosition, ByteBuffer dest) throws IOException {
+            final int outOffset = (int) (localPosition - from);
+            final int outLength = Math.min((int) (to - localPosition + 1), dest.remaining());
+            final ByteBuffer fullFragment;
+            try {
+                fullFragment = get();
+            } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
+                throw handleS3Exception(e, String.format("fetching fragment %s", requestStr()));
+            }
+            dest.put(fullFragment.duplicate().position(outOffset).limit(outOffset + outLength));
+            ++fillCount;
+            fillBytes += outLength;
+            return outLength;
+        }
+
+        public void cancel() {
+            final boolean didCancel = consumerFuture.cancel(true);
+            if (log.isDebugEnabled()) {
+                final String cancelType = didCancel ? "fast" : (fillCount == 0 ? "unused" : "normal");
+                log.debug("cancel {}: {} fillCount={}, fillBytes={}", cancelType, requestStr(), fillCount, fillBytes);
+            }
+        }
+
+        private ByteBuffer get() throws ExecutionException, InterruptedException, TimeoutException {
+            return consumerFuture.get(instructions.readTimeout().plusMillis(100).toNanos(), TimeUnit.NANOSECONDS);
         }
 
         private boolean isFragment(long fragmentIndex) {
@@ -204,52 +242,31 @@ final class S3ChannelContext implements SeekableChannelContext {
             return (int) (to - from + 1);
         }
 
-        public GetObjectRequest getObjectRequest() {
+        private GetObjectRequest getObjectRequest() {
             return GetObjectRequest.builder()
-                    .bucket(uri.bucket().orElse(null))
-                    .key(uri.key().orElse(null))
+                    .bucket(uri.bucket().orElseThrow())
+                    .key(uri.key().orElseThrow())
                     .range("bytes=" + from + "-" + to)
                     .build();
         }
 
-        public void cancel() {
-            final boolean didCancel = consumerFuture.cancel(true);
-            final String cancelType = didCancel
-                    ? "fast"
-                    : (fillCount == 0
-                    ? "unused"
-                    : "normal");
-            log.info("cancel ({}): uri={}, ix={}, range={}-{}({}), fillCount={}", "<uri>", cancelType, fragmentIndex, from, to, (to - from + 1), fillCount);
-        }
-
-        public ByteBuffer get() throws IOException {
-            try {
-                return consumerFuture.get(instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS).duplicate();
-            } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-                throw handleS3Exception(e,
-                        String.format("fetching fragment %d for %s, context=%d", fragmentIndex, uri,
-                                System.identityHashCode(this)));
+        private String requestStr() {
+            if (uri != null) {
+                return String.format("ctx=%d ix=%d [%d, %d]/%d %s/%s", System.identityHashCode(S3ChannelContext.this),
+                        fragmentIndex, from, to, requestLength(), uri.bucket().orElseThrow(), uri.key().orElseThrow());
+            } else {
+                return String.format("ctx=%d ix=%d [%d, %d]/%d", System.identityHashCode(S3ChannelContext.this),
+                        fragmentIndex, from, to, requestLength());
             }
         }
 
-        public boolean isDone() {
-            return consumerFuture.isDone();
-        }
-
-        public int fill(long localPosition, ByteBuffer dest) throws IOException {
-            final int outOffset = (int) (localPosition - from);
-            final int outLength = Math.min((int) (to - localPosition + 1), dest.remaining());
-            dest.put(get().position(outOffset).limit(outOffset + outLength));
-            ++fillCount;
-            fillBytes += outLength;
-            return outLength;
-        }
+        // --------------------------------------------------------------------------------------------------
 
         @Override
         public CompletableFuture<ByteBuffer> prepare() {
-            final CompletableFuture<ByteBuffer> localFuture = new CompletableFuture<>();
-            producerFuture = localFuture;
-            return localFuture;
+            final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+            producerFuture = future;
+            return future;
         }
 
         @Override
@@ -264,8 +281,10 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         @Override
         public void exceptionOccurred(Throwable error) {
-            this.producerFuture.completeExceptionally(error);
+            producerFuture.completeExceptionally(error);
         }
+
+        // --------------------------------------------------------------------------------------------------
 
         final class Sub implements Subscriber<ByteBuffer> {
 
@@ -274,8 +293,8 @@ final class S3ChannelContext implements SeekableChannelContext {
             private Subscription subscription;
 
             Sub() {
-                this.localProducer = producerFuture;
-                this.dest = ByteBuffer.allocate(requestLength());
+                localProducer = producerFuture;
+                dest = ByteBuffer.allocate(requestLength());
             }
 
             @Override
@@ -303,9 +322,11 @@ final class S3ChannelContext implements SeekableChannelContext {
             public void onComplete() {
                 dest.flip();
                 if (dest.remaining() != requestLength()) {
-                    throw new IllegalStateException(); // todo
+                    localProducer.completeExceptionally(new IllegalStateException(String.format(
+                            "Expected %d bytes, received %d, %s", requestLength(), dest.remaining(), requestStr())));
+                } else {
+                    localProducer.complete(dest.asReadOnlyBuffer());
                 }
-                localProducer.complete(dest.asReadOnlyBuffer());
             }
         }
     }
@@ -333,19 +354,21 @@ final class S3ChannelContext implements SeekableChannelContext {
         if (size != UNINITIALIZED_SIZE) {
             return;
         }
-        log.info("head: uri={}, context={}", "<uri>", System.identityHashCode(this));
+        if (log.isDebugEnabled()) {
+            log.debug("head: {}", ctxStr());
+        }
         // Fetch the size of the file on the first read using a blocking HEAD request, and store it in the context
         // for future use
         final HeadObjectResponse headObjectResponse;
         try {
             headObjectResponse = client
                     .headObject(HeadObjectRequest.builder()
-                            .bucket(uri.bucket().orElse(null))
-                            .key(uri.key().orElse(null))
+                            .bucket(uri.bucket().orElseThrow())
+                            .key(uri.key().orElseThrow())
                             .build())
                     .get(instructions.readTimeout().toNanos(), TimeUnit.NANOSECONDS);
         } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-            throw handleS3Exception(e, String.format("fetching HEAD for file %s", uri));
+            throw handleS3Exception(e, String.format("fetching HEAD for file %s, %s", uri, ctxStr()));
         }
         setSize(headObjectResponse.contentLength());
     }

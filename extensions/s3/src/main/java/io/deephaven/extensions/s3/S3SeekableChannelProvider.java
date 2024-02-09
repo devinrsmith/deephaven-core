@@ -8,7 +8,6 @@ import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.util.channel.SeekableChannelsProviderBase;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.core.retry.RetryMode;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.crt.AwsCrtAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -28,26 +27,19 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
     private final S3Instructions s3Instructions;
 
     S3SeekableChannelProvider(@NotNull final S3Instructions s3Instructions) {
-        final SdkAsyncHttpClient asyncHttpClient = AwsCrtAsyncHttpClient.builder()
-                .maxConcurrency(s3Instructions.maxConcurrentRequests())
-                .connectionTimeout(s3Instructions.connectionTimeout())
-                .build();
-
-//        final SdkAsyncHttpClient asyncHttpClient = NettyNioAsyncHttpClient.builder()
-//                .maxConcurrency(s3Instructions.maxConcurrentRequests())
-//                .connectionTimeout(s3Instructions.connectionTimeout())
-//                .build();
-
         // TODO(deephaven-core#5062): Add support for async client recovery and auto-close
         // TODO(deephaven-core#5063): Add support for caching clients for re-use
         final S3AsyncClientBuilder builder = S3AsyncClient.builder()
+                .httpClient(AwsCrtAsyncHttpClient.builder()
+                        .maxConcurrency(s3Instructions.maxConcurrentRequests())
+                        .connectionTimeout(s3Instructions.connectionTimeout())
+                        .build())
                 .overrideConfiguration(b -> b
-                        //.retryPolicy(RetryPolicy.defaultRetryPolicy())
-                        .retryPolicy(RetryMode.ADAPTIVE)
-                        .apiCallAttemptTimeout(s3Instructions.readTimeout().dividedBy(6))
-                        .apiCallTimeout(s3Instructions.readTimeout().dividedBy(2)))
+                        // .retryPolicy(RetryPolicy.builder(RetryMode.ADAPTIVE).fastFailRateLimiting(true).build())
+                        .retryPolicy(RetryMode.STANDARD)
+                        .apiCallAttemptTimeout(s3Instructions.readTimeout().dividedBy(3))
+                        .apiCallTimeout(s3Instructions.readTimeout()))
                 .region(Region.of(s3Instructions.regionName()))
-                .httpClient(asyncHttpClient)
                 .credentialsProvider(s3Instructions.awsV2CredentialsProvider());
         s3Instructions.endpointOverride().ifPresent(builder::endpointOverride);
         this.s3AsyncClient = builder.build();
@@ -88,6 +80,7 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
         throw new UnsupportedOperationException("Writing to S3 is currently unsupported");
     }
 
+    @Override
     public void close() {
         s3AsyncClient.close();
     }

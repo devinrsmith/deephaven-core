@@ -8,7 +8,7 @@ import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.parquet.compress.CompressorAdapter;
 import io.deephaven.parquet.compress.DeephavenCompressorAdapterFactory;
-import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
+import io.deephaven.util.channel.SeekableChannelContext.Provider;
 import io.deephaven.util.datastructures.LazyCachingFunction;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -178,8 +178,8 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
         }
         // Use the context object provided by the caller, or create (and close) a new one
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), getURI());
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), getURI());
                 final InputStream in = channelsProvider.getInputStream(ch.position(dictionaryPageOffset))) {
             return readDictionary(in);
         } catch (IOException e) {
@@ -246,8 +246,8 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
             // NB: The channels provider typically caches channels; this avoids maintaining a handle per column chunk
             final long headerOffset = nextHeaderOffset;
             try (
-                    final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                    final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), getURI())) {
+                    final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                    final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), getURI())) {
                 ch.position(headerOffset);
                 final PageHeader pageHeader;
                 try (final InputStream in = SeekableChannelsProvider.positionInputStream(channelsProvider, ch)) {
@@ -258,7 +258,7 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
                 nextHeaderOffset = dataOffset + pageHeader.getCompressed_page_size();
                 if (pageHeader.isSetDictionary_page_header()) {
                     // Dictionary page; skip it
-                    return next(upgrade.context());
+                    return next(upgrade.get());
                 }
                 if (!pageHeader.isSetData_page_header() && !pageHeader.isSetData_page_header_v2()) {
                     throw new IllegalStateException(

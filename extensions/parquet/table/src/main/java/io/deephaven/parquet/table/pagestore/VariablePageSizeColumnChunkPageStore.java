@@ -11,7 +11,7 @@ import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.parquet.table.pagestore.topage.ToPage;
 import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ColumnPageReader;
-import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
+import io.deephaven.util.channel.SeekableChannelContext.Provider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -153,16 +153,16 @@ final class VariablePageSizeColumnChunkPageStore<ATTR extends Any> extends Colum
             pageNum = -2 - pageNum;
         }
         // Use the latest channel context while reading page headers, or create (and close) a new one
-        try (final Upgrade upgrade = upgrade(fillContext)) {
+        try (final Provider upgrade = upgrade(fillContext)) {
             if (pageNum >= localNumPages) {
-                final int minPageNum = fillToRow(upgrade.context(), localNumPages, rowKey);
+                final int minPageNum = fillToRow(upgrade.get(), localNumPages, rowKey);
                 localNumPages = numPages;
                 pageNum = Arrays.binarySearch(pageRowOffsets, minPageNum + 1, localNumPages + 1, rowKey);
                 if (pageNum < 0) {
                     pageNum = -2 - pageNum;
                 }
             }
-            return getPage(upgrade.context(), pageNum);
+            return getPage(upgrade.get(), pageNum);
         }
     }
 }

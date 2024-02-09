@@ -6,13 +6,11 @@ package io.deephaven.util.channel;
 import io.deephaven.util.SafeCloseable;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.Channels;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,14 +36,6 @@ public interface SeekableChannelsProvider extends SafeCloseable {
             return new File(source).toURI();
         }
         return uri;
-    }
-
-    static Upgrade upgrade(SeekableChannelsProvider provider, SeekableChannelContext context) {
-        // todo: move to NULL
-        if (context != SeekableChannelContext.NULL) {
-            return () -> context;
-        }
-        return new UpgradeImpl(provider.makeSingleUseContext());
     }
 
     /**
@@ -118,12 +108,4 @@ public interface SeekableChannelsProvider extends SafeCloseable {
     }
 
     SeekableByteChannel getWriteChannel(@NotNull Path path, boolean append) throws IOException;
-
-    interface Upgrade extends Closeable {
-
-        SeekableChannelContext context();
-
-        @Override
-        default void close() {}
-    }
 }

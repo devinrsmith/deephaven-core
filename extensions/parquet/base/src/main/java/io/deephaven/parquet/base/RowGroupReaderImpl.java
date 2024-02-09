@@ -4,7 +4,7 @@
 package io.deephaven.parquet.base;
 
 import io.deephaven.util.channel.SeekableChannelsProvider;
-import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
+import io.deephaven.util.channel.SeekableChannelContext.Provider;
 import io.deephaven.util.channel.SeekableChannelContext;
 import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.RowGroup;
@@ -93,8 +93,8 @@ public class RowGroupReaderImpl implements RowGroupReader {
     private org.apache.parquet.format.OffsetIndex readOffsetIndex(ColumnChunk chunk,
             @NotNull SeekableChannelContext channelContext) {
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.context(), rootURI);
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel readChannel = channelsProvider.getReadChannel(upgrade.get(), rootURI);
                 final InputStream in =
                         channelsProvider.getInputStream(readChannel.position(chunk.getOffset_index_offset()))) {
             return Util.readOffsetIndex(in);

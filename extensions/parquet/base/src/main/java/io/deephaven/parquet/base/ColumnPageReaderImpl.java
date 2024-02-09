@@ -9,7 +9,7 @@ import io.deephaven.parquet.base.util.RunLengthBitPackingHybridBufferDecoder;
 import io.deephaven.parquet.compress.CompressorAdapter;
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
-import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
+import io.deephaven.util.channel.SeekableChannelContext.Provider;
 import org.apache.parquet.bytes.ByteBufferInputStream;
 import org.apache.parquet.bytes.BytesInput;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -108,31 +108,30 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
     public Object materialize(@NotNull final Object nullValue,
             @NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), uri)) {
             ensurePageHeader(channelsProvider, ch);
-            return readDataPage(nullValue, ch, upgrade.context());
+            return readDataPage(nullValue, ch, upgrade.get());
         }
     }
 
     public int readRowCount(@NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), uri)) {
             ensurePageHeader(channelsProvider, ch);
             return readRowCountFromDataPage(ch);
         }
     }
 
-
     @Override
     public IntBuffer readKeyValues(IntBuffer keyDest, int nullPlaceholder,
             @NotNull final SeekableChannelContext channelContext) throws IOException {
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), uri)) {
             ensurePageHeader(channelsProvider, ch);
-            return readKeyFromDataPage(keyDest, nullPlaceholder, ch, upgrade.context());
+            return readKeyFromDataPage(keyDest, nullPlaceholder, ch, upgrade.get());
         }
     }
 
@@ -591,8 +590,8 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
             return numValues;
         }
         try (
-                final Upgrade upgrade = SeekableChannelsProvider.upgrade(channelsProvider, channelContext);
-                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.context(), uri)) {
+                final Provider upgrade = SeekableChannelContext.upgrade(channelsProvider, channelContext);
+                final SeekableByteChannel ch = channelsProvider.getReadChannel(upgrade.get(), uri)) {
             ensurePageHeader(channelsProvider, ch);
             // Above will block till it populates numValues
             Assert.geqZero(numValues, "numValues");

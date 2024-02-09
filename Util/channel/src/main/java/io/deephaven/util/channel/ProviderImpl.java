@@ -3,19 +3,19 @@
  */
 package io.deephaven.util.channel;
 
-import io.deephaven.util.channel.SeekableChannelsProvider.Upgrade;
+import io.deephaven.util.channel.SeekableChannelContext.Provider;
 
 import java.util.Objects;
 
-final class UpgradeImpl implements Upgrade {
+final class ProviderImpl implements Provider {
     private final SeekableChannelContext context;
 
-    public UpgradeImpl(SeekableChannelContext context) {
+    public ProviderImpl(SeekableChannelContext context) {
         this.context = Objects.requireNonNull(context);
     }
 
     @Override
-    public SeekableChannelContext context() {
+    public SeekableChannelContext get() {
         return context;
     }
 

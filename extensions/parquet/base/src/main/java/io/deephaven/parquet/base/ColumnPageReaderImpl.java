@@ -42,9 +42,6 @@ import java.util.function.Function;
 import static org.apache.parquet.column.ValuesType.VALUES;
 
 public class ColumnPageReaderImpl implements ColumnPageReader {
-
-    private static final int MAX_HEADER = 8192;
-    private static final int START_HEADER = 128;
     public static final int NULL_OFFSET = -1;
     static final int NULL_NUM_VALUES = -1;
 
@@ -140,7 +137,6 @@ public class ColumnPageReaderImpl implements ColumnPageReader {
      * of page header. Channel position would be set to the end of page header or beginning of data before returning.
      */
     private void ensurePageHeader(SeekableChannelsProvider provider, SeekableByteChannel ch) throws IOException {
-        // TODO: refactor
         // Set this channel's position to appropriate offset for reading. If pageHeader is null, this offset would be
         // the offset of page header, else it would be the offset of data.
         ch.position(offset);

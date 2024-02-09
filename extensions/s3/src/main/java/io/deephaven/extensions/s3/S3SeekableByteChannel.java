@@ -24,6 +24,7 @@ import java.util.Objects;
  */
 final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelProvider.ContextHolder {
 
+    private static final long UNINITIALIZED_SIZE = -1;
     private static final long CLOSED_SENTINEL = -1;
 
     private final S3Uri uri;
@@ -35,7 +36,7 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
     private S3ChannelContext context;
 
     private long position;
-    private long size = -1;
+    private long size = UNINITIALIZED_SIZE;
 
     S3SeekableByteChannel(S3Uri uri) {
         this.uri = Objects.requireNonNull(uri);
@@ -55,14 +56,14 @@ final class S3SeekableByteChannel implements SeekableByteChannel, CachedChannelP
         this.context = (S3ChannelContext) channelContext;
         if (this.context != null) {
             this.context.assume(uri);
-            if (size != -1) {
+            if (size != UNINITIALIZED_SIZE) {
                 this.context.hackSize(size);
             }
         }
     }
 
     private long hackSize() throws IOException {
-        if (size != -1) {
+        if (size != UNINITIALIZED_SIZE) {
             return size;
         }
         return (size = context.size(uri));

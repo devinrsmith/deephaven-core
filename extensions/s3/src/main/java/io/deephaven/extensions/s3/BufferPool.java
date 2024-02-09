@@ -10,9 +10,8 @@ interface BufferPool {
     interface BufferHolder extends SafeCloseable {
 
         /**
-         * @return The buffer if available, else {@code null}
+         * @return The buffer
          */
-        @Nullable
         ByteBuffer get();
 
         /**

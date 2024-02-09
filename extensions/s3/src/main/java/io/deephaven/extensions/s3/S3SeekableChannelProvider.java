@@ -23,6 +23,12 @@ import java.nio.file.Path;
  */
 final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
 
+    /**
+     * We always allocate buffers of maximum allowed size for re-usability across reads with different fragment sizes.
+     * There can be a performance penalty though if the fragment size is much smaller than the maximum size.
+     */
+    private static final BufferPool BUFFER_POOL = new SegmentedBufferPool(S3Instructions.MAX_FRAGMENT_SIZE);
+
     private final S3AsyncClient s3AsyncClient;
     private final S3Instructions s3Instructions;
 
@@ -62,12 +68,12 @@ final class S3SeekableChannelProvider extends SeekableChannelsProviderBase {
 
     @Override
     public SeekableChannelContext makeContext() {
-        return new S3ChannelContext(s3AsyncClient, s3Instructions);
+        return new S3ChannelContext(s3AsyncClient, s3Instructions, BUFFER_POOL);
     }
 
     @Override
     public SeekableChannelContext makeSingleUseContext() {
-        return new S3ChannelContext(s3AsyncClient, s3Instructions.withReadAheadCount(0));
+        return new S3ChannelContext(s3AsyncClient, s3Instructions.withReadAheadCount(0), BUFFER_POOL);
     }
 
     @Override

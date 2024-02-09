@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 final class SegmentedBufferPool implements BufferPool {
@@ -42,11 +43,11 @@ final class SegmentedBufferPool implements BufferPool {
 
         private SegmentedBufferHolder(@NotNull final SegmentedSoftPool<ByteBuffer> pool) {
             this.pool = pool;
-            this.buffer = pool.take();
+            this.buffer = Objects.requireNonNull(pool.take());
         }
 
         @Override
-        public @Nullable ByteBuffer get() {
+        public ByteBuffer get() {
             return buffer;
         }
 

@@ -1,5 +1,6 @@
 package io.deephaven.extensions.s3;
 
+import io.deephaven.extensions.s3.BufferPool.BufferHolder;
 import io.deephaven.util.channel.SeekableChannelContext;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -25,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
 /**
  * Context object used to store read-ahead buffers for efficiently reading from S3.
@@ -35,6 +37,7 @@ final class S3ChannelContext implements SeekableChannelContext {
 
     private final S3AsyncClient client;
     final S3Instructions instructions;
+    private final BufferPool bufferPool;
 
     private S3Uri uri;
 
@@ -50,9 +53,10 @@ final class S3ChannelContext implements SeekableChannelContext {
 
     private long numFragmentsInObject;
 
-    S3ChannelContext(S3AsyncClient client, S3Instructions instructions) {
+    S3ChannelContext(S3AsyncClient client, S3Instructions instructions, BufferPool bufferPool) {
         this.client = Objects.requireNonNull(client);
         this.instructions = Objects.requireNonNull(instructions);
+        this.bufferPool = Objects.requireNonNull(bufferPool);
         requests = new Request[instructions.maxCacheSize()];
         size = UNINITIALIZED_SIZE;
         if (log.isDebugEnabled()) {
@@ -116,7 +120,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         Request request = requests[cacheIdx];
         if (request != null) {
             if (!request.isFragment(fragmentIndex)) {
-                request.cancel();
+                request.release();
                 requests[cacheIdx] = (request = new Request(fragmentIndex));
             }
         } else {
@@ -133,7 +137,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         // Cancel all outstanding requests
         for (int i = 0; i < requests.length; i++) {
             if (requests[i] != null) {
-                requests[i].cancel();
+                requests[i].release();
                 requests[i] = null;
             }
         }
@@ -168,7 +172,8 @@ final class S3ChannelContext implements SeekableChannelContext {
         }
     }
 
-    final class Request implements AsyncResponseTransformer<GetObjectResponse, ByteBuffer> {
+    final class Request
+            implements AsyncResponseTransformer<GetObjectResponse, ByteBuffer>, BiConsumer<ByteBuffer, Throwable> {
 
         // implicitly + URI
         private final long fragmentIndex;
@@ -176,6 +181,7 @@ final class S3ChannelContext implements SeekableChannelContext {
         private final long to;
         private final Instant createdAt;
         private Instant completedAt;
+        private final CompletableFuture<Void> released;
         private final CompletableFuture<ByteBuffer> consumerFuture;
         private volatile CompletableFuture<ByteBuffer> producerFuture;
         private GetObjectResponse response;
@@ -190,17 +196,9 @@ final class S3ChannelContext implements SeekableChannelContext {
             if (log.isDebugEnabled()) {
                 log.debug("send: {}", requestStr());
             }
+            released = new CompletableFuture<>();
             consumerFuture = client.getObject(getObjectRequest(), this);
-            consumerFuture.whenComplete((out, e) -> {
-                completedAt = Instant.now();
-                if (log.isDebugEnabled()) {
-                    if (out != null) {
-                        log.debug("send complete: {} {}", requestStr(), Duration.between(createdAt, completedAt));
-                    } else {
-                        log.debug("send error: {} {}", requestStr(), Duration.between(createdAt, completedAt));
-                    }
-                }
-            });
+            consumerFuture.whenComplete(this);
         }
 
         public boolean isDone() {
@@ -216,18 +214,22 @@ final class S3ChannelContext implements SeekableChannelContext {
             } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
                 throw handleS3Exception(e, String.format("fetching fragment %s", requestStr()));
             }
+            if (released.isDone()) {
+                throw new IllegalStateException(String.format("Should not be using after release, %s", requestStr()));
+            }
             dest.put(fullFragment.duplicate().position(outOffset).limit(outOffset + outLength));
             ++fillCount;
             fillBytes += outLength;
             return outLength;
         }
 
-        public void cancel() {
+        public void release() {
             final boolean didCancel = consumerFuture.cancel(true);
             if (log.isDebugEnabled()) {
                 final String cancelType = didCancel ? "fast" : (fillCount == 0 ? "unused" : "normal");
                 log.debug("cancel {}: {} fillCount={}, fillBytes={}", cancelType, requestStr(), fillCount, fillBytes);
             }
+            released.complete(null);
         }
 
         private ByteBuffer get() throws ExecutionException, InterruptedException, TimeoutException {
@@ -263,6 +265,20 @@ final class S3ChannelContext implements SeekableChannelContext {
         // --------------------------------------------------------------------------------------------------
 
         @Override
+        public void accept(ByteBuffer byteBuffer, Throwable throwable) {
+            completedAt = Instant.now();
+            if (log.isDebugEnabled()) {
+                if (byteBuffer != null) {
+                    log.debug("send complete: {} {}", requestStr(), Duration.between(createdAt, completedAt));
+                } else {
+                    log.debug("send error: {} {}", requestStr(), Duration.between(createdAt, completedAt));
+                }
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------
+
+        @Override
         public CompletableFuture<ByteBuffer> prepare() {
             final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
             producerFuture = future;
@@ -286,16 +302,32 @@ final class S3ChannelContext implements SeekableChannelContext {
 
         // --------------------------------------------------------------------------------------------------
 
-        final class Sub implements Subscriber<ByteBuffer> {
+        final class Sub implements Subscriber<ByteBuffer>, BiConsumer<ByteBuffer, Throwable> {
 
             private final CompletableFuture<ByteBuffer> localProducer;
-            private final ByteBuffer dest;
+            private final BufferHolder holder;
             private Subscription subscription;
 
             Sub() {
                 localProducer = producerFuture;
-                dest = ByteBuffer.allocate(requestLength());
+                holder = bufferPool.take(requestLength());
+                localProducer.whenComplete(this);
             }
+
+            // -----------------------------------------------------------------------------
+
+            @Override
+            public void accept(ByteBuffer byteBuffer, Throwable throwable) {
+                if (byteBuffer != null) {
+                    // On local success, the buffer must live until Request#release
+                    released.whenComplete((unused, e) -> holder.close());
+                } else {
+                    // On local failure, the buffer can be immediately released
+                    holder.close();
+                }
+            }
+
+            // -----------------------------------------------------------------------------
 
             @Override
             public void onSubscribe(Subscription s) {
@@ -309,7 +341,7 @@ final class S3ChannelContext implements SeekableChannelContext {
 
             @Override
             public void onNext(ByteBuffer byteBuffer) {
-                dest.put(byteBuffer);
+                holder.get().put(byteBuffer);
                 subscription.request(1);
             }
 
@@ -320,6 +352,7 @@ final class S3ChannelContext implements SeekableChannelContext {
 
             @Override
             public void onComplete() {
+                final ByteBuffer dest = holder.get();
                 dest.flip();
                 if (dest.remaining() != requestLength()) {
                     localProducer.completeExceptionally(new IllegalStateException(String.format(

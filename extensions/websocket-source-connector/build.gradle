@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api project(':processor')
+    api project(':engine-processor')
     api project(':engine-api')
     implementation project(':engine-table')
 

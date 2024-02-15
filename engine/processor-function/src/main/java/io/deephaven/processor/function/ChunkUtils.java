@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.processor.functions;
+package io.deephaven.processor.function;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableBooleanChunk;
@@ -13,10 +13,10 @@ import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.WritableShortChunk;
-import io.deephaven.functions.ToByteFunction;
-import io.deephaven.functions.ToCharFunction;
-import io.deephaven.functions.ToFloatFunction;
-import io.deephaven.functions.ToShortFunction;
+import io.deephaven.function.ToByteFunction;
+import io.deephaven.function.ToCharFunction;
+import io.deephaven.function.ToFloatFunction;
+import io.deephaven.function.ToShortFunction;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,8 +25,6 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 final class ChunkUtils {
-
-    // Copy from io.deephaven.kafka.ingest.ChunkUtils
 
     public static <T> void applyInto(
             Predicate<? super T> booleanFunction,

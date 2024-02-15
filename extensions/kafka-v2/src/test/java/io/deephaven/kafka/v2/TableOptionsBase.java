@@ -18,7 +18,7 @@ import io.deephaven.kafka.v2.TableOptions.OpinionatedRecordOptions;
 import io.deephaven.kafka.v2.TopicExtension.Topic;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.processor.functions.ObjectProcessorFunctions;
+import io.deephaven.processor.function.ObjectProcessorFunctions;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamToBlinkTableAdapter;

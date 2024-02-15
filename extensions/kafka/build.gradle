@@ -8,9 +8,9 @@ description 'Kafka: Integrating Engine tables with Kafka'
 dependencies {
     api project(':engine-table')
 
-    api project(':processor')
+    api project(':engine-processor')
 
-    api 'org.apache.avro:avro:1.11.2'
+    api 'org.apache.avro:avro:1.11.3'
 
     // Using io.confluent dependencies requires code in the toplevel build.gradle to add their maven repository.
     // Note: the -ccs flavor is provided by confluent as their community edition. It is equivalent to the maven central
@@ -31,6 +31,7 @@ dependencies {
     // todo: remove this
     api project(':processor-json')
 
+    implementation project(':engine-processor-function')
     implementation project(':Configuration')
     implementation project(':log-factory')
     implementation depTrove3

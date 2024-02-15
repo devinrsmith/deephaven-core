@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.functions;
+package io.deephaven.function;
 
 import io.deephaven.qst.type.ByteType;
 import io.deephaven.qst.type.Type;

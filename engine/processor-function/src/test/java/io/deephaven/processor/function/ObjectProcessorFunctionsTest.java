@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.processor.functions;
+package io.deephaven.processor.function;
 
 import io.deephaven.chunk.WritableByteChunk;
 import io.deephaven.chunk.WritableCharChunk;
@@ -12,19 +12,20 @@ import io.deephaven.chunk.WritableIntChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.WritableShortChunk;
-import io.deephaven.functions.ToByteFunction;
-import io.deephaven.functions.ToCharFunction;
-import io.deephaven.functions.ToDoubleFunction;
-import io.deephaven.functions.ToFloatFunction;
-import io.deephaven.functions.ToIntFunction;
-import io.deephaven.functions.ToLongFunction;
-import io.deephaven.functions.ToObjectFunction;
-import io.deephaven.functions.ToShortFunction;
+import io.deephaven.function.ToByteFunction;
+import io.deephaven.function.ToCharFunction;
+import io.deephaven.function.ToDoubleFunction;
+import io.deephaven.function.ToFloatFunction;
+import io.deephaven.function.ToIntFunction;
+import io.deephaven.function.ToLongFunction;
+import io.deephaven.function.ToObjectFunction;
+import io.deephaven.function.ToShortFunction;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.BooleanUtils;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +45,8 @@ public class ObjectProcessorFunctionsTest {
                 (ToLongFunction<Object>) orchestrator::toLong,
                 (ToFloatFunction<Object>) orchestrator::toFloat,
                 (ToDoubleFunction<Object>) orchestrator::toDouble,
-                ToObjectFunction.of(orchestrator::toString, Type.stringType()))));
+                ToObjectFunction.of(orchestrator::toString, Type.stringType()),
+                ToObjectFunction.of(orchestrator::toInstant, Type.instantType()))));
         try (
                 WritableObjectChunk<Object, ?> in = WritableObjectChunk.makeWritableChunk(numRows);
                 WritableByteChunk<?> c1 = WritableByteChunk.makeWritableChunk(numRows);
@@ -55,8 +57,9 @@ public class ObjectProcessorFunctionsTest {
                 WritableLongChunk<?> c6 = WritableLongChunk.makeWritableChunk(numRows);
                 WritableFloatChunk<?> c7 = WritableFloatChunk.makeWritableChunk(numRows);
                 WritableDoubleChunk<?> c8 = WritableDoubleChunk.makeWritableChunk(numRows);
-                WritableObjectChunk<String, ?> c9 = WritableObjectChunk.makeWritableChunk(numRows)) {
-            List<WritableChunk<?>> out = List.of(c1, c2, c3, c4, c5, c6, c7, c8, c9);
+                WritableObjectChunk<String, ?> c9 = WritableObjectChunk.makeWritableChunk(numRows);
+                WritableLongChunk<?> c10 = WritableLongChunk.makeWritableChunk(numRows)) {
+            List<WritableChunk<?>> out = List.of(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
             for (WritableChunk<?> c : out) {
                 c.setSize(0);
             }
@@ -74,6 +77,7 @@ public class ObjectProcessorFunctionsTest {
                 assertThat(c7.get(i)).isEqualTo(42.0f);
                 assertThat(c8.get(i)).isEqualTo(42.0);
                 assertThat(c9.get(i)).isEqualTo("42");
+                assertThat(c10.get(i)).isEqualTo(42000000L);
             }
         }
         orchestrator.assertDone();
@@ -92,6 +96,7 @@ public class ObjectProcessorFunctionsTest {
         private int floats;
         private int doubles;
         private int strings;
+        private int instants;
 
         public FunctionOrchestrator(int numRows) {
             this.numRows = numRows;
@@ -150,8 +155,14 @@ public class ObjectProcessorFunctionsTest {
             return "42";
         }
 
-        void assertDone() {
+        Instant toInstant(Object ignore) {
             assertThat(strings).isEqualTo(numRows);
+            ++instants;
+            return Instant.ofEpochMilli(42);
+        }
+
+        void assertDone() {
+            assertThat(instants).isEqualTo(numRows);
         }
     }
 }

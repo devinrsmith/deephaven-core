@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.processor.functions;
+package io.deephaven.processor.function;
 
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.functions.ToObjectFunction;
-import io.deephaven.functions.TypedFunction;
+import io.deephaven.function.ToObjectFunction;
+import io.deephaven.function.TypedFunction;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BoxedType;

@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     api project(':engine-api')
-    api project(':processor')
+    api project(':engine-processor')
 
     implementation project(':engine-table')
 
@@ -22,7 +22,7 @@ dependencies {
     Classpaths.inheritImmutables(project)
 
     testImplementation project(':engine-test-utils')
-    testImplementation project(':processor-functions')
+    testImplementation project(':engine-processor-function')
     testImplementation "org.testcontainers:testcontainers:1.19.3"
     testImplementation "org.testcontainers:junit-jupiter:1.19.3"
     testImplementation "org.testcontainers:redpanda:1.19.3"

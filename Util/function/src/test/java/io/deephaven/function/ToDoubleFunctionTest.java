@@ -1,8 +1,8 @@
-package io.deephaven.functions;
+package io.deephaven.function;
 
 import org.junit.jupiter.api.Test;
 
-import static io.deephaven.functions.ToDoubleFunction.map;
+import static io.deephaven.function.ToDoubleFunction.map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ToDoubleFunctionTest {

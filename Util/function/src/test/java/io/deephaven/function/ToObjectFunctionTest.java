@@ -1,9 +1,9 @@
-package io.deephaven.functions;
+package io.deephaven.function;
 
 import io.deephaven.qst.type.Type;
 import org.junit.jupiter.api.Test;
 
-import static io.deephaven.functions.ToObjectFunction.map;
+import static io.deephaven.function.ToObjectFunction.map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ToObjectFunctionTest {

@@ -1,8 +1,8 @@
-package io.deephaven.functions;
+package io.deephaven.function;
 
 import org.junit.jupiter.api.Test;
 
-import static io.deephaven.functions.ToLongFunction.map;
+import static io.deephaven.function.ToLongFunction.map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ToLongFunctionTest {

@@ -1,15 +1,15 @@
-package io.deephaven.functions;
+package io.deephaven.function;
 
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static io.deephaven.functions.ToBooleanFunction.and;
-import static io.deephaven.functions.ToBooleanFunction.map;
-import static io.deephaven.functions.ToBooleanFunction.not;
-import static io.deephaven.functions.ToBooleanFunction.ofFalse;
-import static io.deephaven.functions.ToBooleanFunction.ofTrue;
-import static io.deephaven.functions.ToBooleanFunction.or;
+import static io.deephaven.function.ToBooleanFunction.and;
+import static io.deephaven.function.ToBooleanFunction.map;
+import static io.deephaven.function.ToBooleanFunction.not;
+import static io.deephaven.function.ToBooleanFunction.ofFalse;
+import static io.deephaven.function.ToBooleanFunction.ofTrue;
+import static io.deephaven.function.ToBooleanFunction.or;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ToBooleanFunctionTest {

@@ -7,6 +7,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.jackson.Helpers;
+import io.deephaven.json.jackson.IntValueProcessor;
+import io.deephaven.json.jackson.ValueProcessor;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
@@ -125,6 +128,11 @@ public abstract class IntOptions extends ValueOptions {
                 .allowObject(false)
                 .allowArray(false)
                 .build();
+    }
+
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {

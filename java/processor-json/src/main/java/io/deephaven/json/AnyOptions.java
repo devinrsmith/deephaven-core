@@ -7,7 +7,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import io.deephaven.annotations.SimpleStyle;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ObjectValueProcessor.ToObject;
+import io.deephaven.json.jackson.ObjectValueProcessor;
+import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
+import io.deephaven.json.jackson.ValueProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Immutable;
 

@@ -1,16 +1,14 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.json;
+package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
 
-import static io.deephaven.json.Helpers.assertCurrentToken;
-import static io.deephaven.json.Helpers.assertNoCurrentToken;
-import static io.deephaven.json.Helpers.endToken;
+import static io.deephaven.json.jackson.Helpers.assertNoCurrentToken;
 
 interface ValueProcessor {
 
@@ -48,7 +46,6 @@ interface ValueProcessor {
      * @throws IOException if an IOException occurs
      */
     void processCurrentValue(JsonParser parser) throws IOException;
-
 
     /**
      * Called when the JSON value is missing; the current token may or may <b>not</b> be {@code null}. For example, if a

@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.jackson.ValueProcessor;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;

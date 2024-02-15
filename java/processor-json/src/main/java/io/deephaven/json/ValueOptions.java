@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.jackson.ValueProcessor;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
@@ -172,6 +173,39 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         // .build();
     }
 
+    public abstract <T> T walk(Visitor<T> visitor);
+
+    public interface Visitor<T> {
+
+        T visit(IntOptions _int);
+
+        T visit(LongOptions _long);
+
+        T visit(FloatOptions _float);
+
+        T visit(DoubleOptions _double);
+
+        T visit(ObjectOptions object);
+
+        T visit(InstantOptions instant);
+
+        T visit(InstantNumberOptions instantNumber);
+
+        T visit(BigIntegerOptions bigInteger);
+
+        T visit(BigDecimalOptions bigDecimal);
+    }
+
+    public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
+
+        B allowNull(boolean allowNull);
+
+        B allowMissing(boolean allowMissing);
+
+        V build();
+    }
+
+
     // todo: what about multivariate?
 
     abstract int outputCount();
@@ -195,15 +229,6 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
     final int numColumns() {
         return (int) outputTypes().count();
-    }
-
-    public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
-
-        B allowNull(boolean allowNull);
-
-        B allowMissing(boolean allowMissing);
-
-        V build();
     }
 
     static List<String> prefixWith(String prefix, List<String> path) {

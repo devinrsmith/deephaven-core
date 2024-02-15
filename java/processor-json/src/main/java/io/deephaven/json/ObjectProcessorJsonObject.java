@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.jackson.ValueProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 
@@ -17,8 +18,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static io.deephaven.json.Helpers.assertCurrentToken;
-import static io.deephaven.json.Helpers.assertNextToken;
+import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
+import static io.deephaven.json.jackson.Helpers.assertNextToken;
 
 /**
  * @deprecated see {@link ObjectProcessorJsonValueBytes}

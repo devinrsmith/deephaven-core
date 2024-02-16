@@ -10,6 +10,7 @@ dependencies {
     api project(':engine-processor')
     // currently needs api b/c io.deephaven.json.ObjectProcessorJsonValue.ObjectProcessorJsonValue
     api 'com.fasterxml.jackson.core:jackson-core'
+
     implementation project(':engine-query-constants')
     implementation project(':engine-time')
     Classpaths.inheritImmutables(project)
@@ -19,6 +20,7 @@ dependencies {
     Classpaths.inheritAssertJ(project)
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'de.undercouch:bson4jackson:2.15.0'
 }
 
 test {

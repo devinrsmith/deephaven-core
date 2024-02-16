@@ -3,22 +3,13 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.ObjectValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -57,6 +48,11 @@ public abstract class BigDecimalOptions extends ValueOptions {
 
     public abstract Optional<BigDecimal> onMissing();
 
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder extends ValueOptions.Builder<BigDecimalOptions, Builder> {
         Builder allowNumber(boolean allowNumber);
 
@@ -65,26 +61,6 @@ public abstract class BigDecimalOptions extends ValueOptions {
         Builder onNull(BigDecimal onNull);
 
         Builder onMissing(BigDecimal onMissing);
-    }
-
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.ofCustom(BigDecimal.class));
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
     @Check
@@ -98,55 +74,6 @@ public abstract class BigDecimalOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private BigDecimal parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!allowNumber()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
-        }
-        return parser.getDecimalValue();
-    }
-
-    private BigDecimal parseString(JsonParser parser) throws IOException {
-        if (!allowString()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
-        }
-        return Helpers.parseStringAsBigDecimal(parser);
-    }
-
-    private BigDecimal parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
-        }
-        return onNull().orElse(null);
-    }
-
-    private BigDecimal parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, BigDecimal.class);
-        }
-        return onMissing().orElse(null);
-    }
-
-    private class Impl implements ObjectValueProcessor.ToObject<BigDecimal> {
-        @Override
-        public BigDecimal parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberIntOrFloat(parser);
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, BigDecimal.class);
-        }
-
-        @Override
-        public BigDecimal parseMissing(JsonParser parser) throws IOException {
-            return BigDecimalOptions.this.parseMissing(parser);
         }
     }
 }

@@ -3,28 +3,17 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.LongValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
 import java.lang.Runtime.Version;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAccessor;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -76,6 +65,21 @@ public abstract class InstantOptions extends ValueOptions {
                 : DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     }
 
+    @Derived
+    public long onMissingOrDefault() {
+        return DateTimeUtils.epochNanos(onMissing().orElse(null));
+    }
+
+    @Derived
+    public long onNullOrDefault() {
+        return DateTimeUtils.epochNanos(onNull().orElse(null));
+    }
+
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder extends ValueOptions.Builder<InstantOptions, Builder> {
         Builder onNull(Instant onNull);
 
@@ -84,26 +88,6 @@ public abstract class InstantOptions extends ValueOptions {
         Builder dateTimeFormatter(DateTimeFormatter formatter);
 
         InstantOptions build();
-    }
-
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.instantType());
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new LongValueProcessor(out.get(0).asWritableLongChunk(), new ToLongImpl());
     }
 
     @Check
@@ -117,57 +101,6 @@ public abstract class InstantOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    @Derived
-    long onMissingOrDefault() {
-        return DateTimeUtils.epochNanos(onMissing().orElse(null));
-    }
-
-    @Derived
-    long onNullOrDefault() {
-        return DateTimeUtils.epochNanos(onNull().orElse(null));
-    }
-
-    private long parseString(JsonParser parser) throws IOException {
-        final TemporalAccessor accessor = dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));
-        final long epochSeconds = accessor.getLong(ChronoField.INSTANT_SECONDS);
-        final int nanoOfSecond = accessor.get(ChronoField.NANO_OF_SECOND);
-        // todo: overflow
-        // io.deephaven.time.DateTimeUtils.safeComputeNanos
-        return epochSeconds * 1_000_000_000L + nanoOfSecond;
-    }
-
-    private long parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, Instant.class);
-        }
-        return onNullOrDefault();
-    }
-
-    private long parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, Instant.class);
-        }
-        return onMissingOrDefault();
-    }
-
-    private class ToLongImpl implements LongValueProcessor.ToLong {
-        @Override
-        public long parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, Instant.class);
-        }
-
-        @Override
-        public long parseMissing(JsonParser parser) throws IOException {
-            return InstantOptions.this.parseMissing(parser);
         }
     }
 }

@@ -3,22 +3,12 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.DoubleValueProcessor;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.OptionalDouble;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -93,23 +83,18 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     @Override
-    final int outputCount() {
-        return 1;
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
+    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
+        Builder allowNumber(boolean allowNumber);
 
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.doubleType());
-    }
+        Builder allowString(boolean allowString);
 
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new DoubleValueProcessor(out.get(0).asWritableDoubleChunk(), new Impl());
+        Builder onNull(double onNull);
+
+        Builder onMissing(double onMissing);
     }
 
     @Check
@@ -124,72 +109,5 @@ public abstract class DoubleOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
-    }
-
-    private double onNullOrDefault() {
-        return onNull().orElse(QueryConstants.NULL_DOUBLE);
-    }
-
-    private double onMissingOrDefault() {
-        return onMissing().orElse(QueryConstants.NULL_DOUBLE);
-    }
-
-    private double parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!allowNumber()) {
-            throw Helpers.mismatch(parser, double.class);
-        }
-        return parser.getDoubleValue();
-    }
-
-    private double parseString(JsonParser parser) throws IOException {
-        if (!allowString()) {
-            throw Helpers.mismatch(parser, double.class);
-        }
-        return Helpers.parseStringAsDouble(parser);
-    }
-
-    private double parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, double.class);
-        }
-        return onNullOrDefault();
-    }
-
-    private double parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, double.class);
-        }
-        return onMissingOrDefault();
-    }
-
-    class Impl implements DoubleValueProcessor.ToDouble {
-        @Override
-        public double parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberIntOrFloat(parser);
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, double.class);
-        }
-
-        @Override
-        public double parseMissing(JsonParser parser) throws IOException {
-            return DoubleOptions.this.parseMissing(parser);
-        }
-    }
-
-    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
-        Builder allowNumber(boolean allowNumber);
-
-        Builder allowString(boolean allowString);
-
-        Builder onNull(double onNull);
-
-        Builder onMissing(double onMissing);
     }
 }

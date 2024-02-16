@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.json;
+package io.deephaven.json.jackson;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

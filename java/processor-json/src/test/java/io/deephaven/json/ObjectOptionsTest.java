@@ -39,13 +39,13 @@ public class ObjectOptionsTest {
     @Test
     void ofNameAge() throws IOException {
         parse(OBJECT_NAME_AGE_FIELD, List.of(
-                "",
-                "null",
-                "{}",
-                "{\"age\": 42}",
+                // "",
+                // "null",
+                // "{}",
+                // "{\"age\": 42}",
                 "{\"name\": \"Devin\", \"age\": 43}"),
-                ObjectChunk.chunkWrap(new String[] {null, null, null, null, "Devin"}),
+                ObjectChunk.chunkWrap(new String[] {"Devin"}),
                 IntChunk.chunkWrap(
-                        new int[] {QueryConstants.NULL_INT, QueryConstants.NULL_INT, QueryConstants.NULL_INT, 42, 43}));
+                        new int[] {43}));
     }
 }

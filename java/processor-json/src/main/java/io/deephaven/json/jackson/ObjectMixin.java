@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
@@ -23,19 +24,27 @@ import java.util.stream.Stream;
 
 import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
 
-final class ObjectOptionsImpl implements WrapperInterface {
-    private final ObjectOptions objectOptions;
+final class ObjectMixin extends Mixin {
+    private final ObjectOptions options;
 
-    public ObjectOptionsImpl(ObjectOptions objectOptions) {
-        this.objectOptions = Objects.requireNonNull(objectOptions);
+    public ObjectMixin(ObjectOptions options, JsonFactory factory) {
+        super(factory);
+        this.options = Objects.requireNonNull(options);
     }
 
+    @Override
     public Stream<Type<?>> outputTypes() {
-        return objectOptions.fields().values().stream().flatMap(ValueOptions::outputTypes);
+        return options.fields().values().stream().map(this::mixin).flatMap(Mixin::outputTypes);
     }
 
-    int numColumns() {
-        return (int) outputTypes().count();
+    @Override
+    public int outputCount() {
+        return options.fields().values().stream().map(this::mixin).mapToInt(Mixin::outputCount).sum();
+    }
+
+    @Override
+    public Stream<List<String>> paths() {
+        return prefixWithKeys(options.fields());
     }
 
     @Override
@@ -43,13 +52,14 @@ final class ObjectOptionsImpl implements WrapperInterface {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(objectOptions.fields().size());
+        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(options.fields().size());
         int ix = 0;
-        for (Entry<String, ValueOptions> e : objectOptions.fields().entrySet()) {
+        for (Entry<String, ValueOptions> e : options.fields().entrySet()) {
             final String fieldName = e.getKey();
-            final ValueOptions opts = e.getValue();
-            final int numTypes = numColumns();
-            final ValueProcessor fieldProcessor = WrapperInterface.of(opts).processor(context + "/" + fieldName, out.subList(ix, ix + numTypes))
+            final Mixin opts = mixin(e.getValue());
+            final int numTypes = opts.numColumns();
+            final ValueProcessor fieldProcessor =
+                    opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
             processors.put(fieldName, fieldProcessor);
             ix += numTypes;
         }
@@ -94,7 +104,7 @@ final class ObjectOptionsImpl implements WrapperInterface {
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
-            if (!objectOptions.allowMissing()) {
+            if (!options.allowMissing()) {
                 throw Helpers.mismatchMissing(parser, Object.class);
             }
             for (ValueProcessor value : fieldProcessors.values()) {
@@ -103,7 +113,7 @@ final class ObjectOptionsImpl implements WrapperInterface {
         }
 
         private void processNullObject(JsonParser parser) throws IOException {
-            if (!objectOptions.allowNull()) {
+            if (!options.allowNull()) {
                 throw Helpers.mismatch(parser, Object.class);
             }
             for (ValueProcessor value : fieldProcessors.values()) {
@@ -127,7 +137,7 @@ final class ObjectOptionsImpl implements WrapperInterface {
                 final String fieldName = parser.currentName();
                 final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
                 if (knownProcessor == null) {
-                    if (!objectOptions.allowUnknownFields()) {
+                    if (!options.allowUnknownFields()) {
                         // todo json exception
                         throw new IllegalStateException(String.format("Unexpected field '%s'", fieldName));
                     }
@@ -137,7 +147,7 @@ final class ObjectOptionsImpl implements WrapperInterface {
                     // First time seeing field
                     parser.nextToken();
                     knownProcessor.processCurrentValue(parser);
-                } else if (objectOptions.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
+                } else if (options.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
                     parser.nextToken();
                     parser.skipChildren();
                 } else {

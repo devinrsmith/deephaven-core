@@ -3,8 +3,6 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.deephaven.chunk.BooleanChunk;
 import io.deephaven.chunk.ByteChunk;
 import io.deephaven.chunk.CharChunk;
@@ -30,17 +28,60 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHelper {
-    static void parse(ValueOptions options, String json, Chunk<?>... expected) throws IOException {
+    public static void parse(ValueOptions options, String json, Chunk<?>... expected) throws IOException {
         parse(options, List.of(json), expected);
     }
 
-    static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-        final ObjectProcessor<byte[]> processor = options.bytesProcessor(new JsonFactory(new ObjectMapper()));
+    public static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
+
+        parse(String.class, options, jsonRows, expectedCols);
+
+        // final ObjectProcessor<? super byte[]> processor = options.processor(byte[].class);
+        // // final ObjectProcessor<byte[]> processor = new JacksonJsonProvider().of(options).bytesProcessor(new
+        // // JsonFactory(new ObjectMapper()));
+        // final List<WritableChunk<?>> out = processor
+        // .outputTypes()
+        // .stream()
+        // .map(ObjectProcessor::chunkType)
+        // .map(x -> x.makeWritableChunk(jsonRows.size()))
+        // .collect(Collectors.toList());
+        // try {
+        // assertThat(out.size()).isEqualTo(expectedCols.length);
+        // assertThat(out.stream().map(Chunk::getChunkType).collect(Collectors.toList()))
+        // .isEqualTo(Stream.of(expectedCols).map(Chunk::getChunkType).collect(Collectors.toList()));
+        // for (WritableChunk<?> wc : out) {
+        // wc.setSize(0);
+        // }
+        // try (final WritableObjectChunk<byte[], Any> in = WritableObjectChunk.makeWritableChunk(jsonRows.size())) {
+        // int i = 0;
+        // for (String json : jsonRows) {
+        // in.set(i, json.getBytes(StandardCharsets.UTF_8));
+        // ++i;
+        // }
+        // try {
+        // processor.processAll(in, out);
+        // } catch (UncheckedIOException e) {
+        // throw e.getCause();
+        // }
+        // }
+        // for (int i = 0; i < expectedCols.length; ++i) {
+        // check(out.get(i), expectedCols[i]);
+        // }
+        // } finally {
+        // for (WritableChunk<?> wc : out) {
+        // wc.close();
+        // }
+        // }
+    }
+
+    public static <T> void parse(Class<T> inType, ValueOptions options, List<T> rows, Chunk<?>... expectedCols)
+            throws IOException {
+        final ObjectProcessor<? super T> processor = options.processor(inType);
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()
                 .map(ObjectProcessor::chunkType)
-                .map(x -> x.makeWritableChunk(jsonRows.size()))
+                .map(x -> x.makeWritableChunk(rows.size()))
                 .collect(Collectors.toList());
         try {
             assertThat(out.size()).isEqualTo(expectedCols.length);
@@ -49,10 +90,10 @@ public class TestHelper {
             for (WritableChunk<?> wc : out) {
                 wc.setSize(0);
             }
-            try (final WritableObjectChunk<byte[], Any> in = WritableObjectChunk.makeWritableChunk(jsonRows.size())) {
+            try (final WritableObjectChunk<T, Any> in = WritableObjectChunk.makeWritableChunk(rows.size())) {
                 int i = 0;
-                for (String json : jsonRows) {
-                    in.set(i, json.getBytes(StandardCharsets.UTF_8));
+                for (T input : rows) {
+                    in.set(i, input);
                     ++i;
                 }
                 try {

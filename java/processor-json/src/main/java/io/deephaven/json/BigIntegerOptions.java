@@ -3,22 +3,13 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.ObjectValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -67,6 +58,11 @@ public abstract class BigIntegerOptions extends ValueOptions {
 
     public abstract Optional<BigInteger> onMissing();
 
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder extends ValueOptions.Builder<BigIntegerOptions, Builder> {
         Builder allowNumberInt(boolean allowNumberInt);
 
@@ -77,26 +73,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
         Builder onNull(BigInteger onNull);
 
         Builder onMissing(BigInteger onMissing);
-    }
-
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.ofCustom(BigInteger.class));
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
     @Check
@@ -117,68 +93,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private BigInteger parseNumberInt(JsonParser parser) throws IOException {
-        if (!allowNumberInt()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
-        }
-        return parser.getBigIntegerValue();
-    }
-
-    private BigInteger parseNumberFloat(JsonParser parser) throws IOException {
-        if (!allowNumberFloat()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
-        }
-        return parser.getBigIntegerValue();
-    }
-
-    private BigInteger parseString(JsonParser parser) throws IOException {
-        switch (allowString()) {
-            case NONE:
-                throw Helpers.mismatch(parser, BigInteger.class);
-            case INT:
-                return Helpers.parseStringAsBigInteger(parser);
-            case FLOAT:
-                return Helpers.parseStringAsBigDecimal(parser).toBigInteger();
-        }
-        throw new IllegalStateException();
-    }
-
-    private BigInteger parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
-        }
-        return onNull().orElse(null);
-    }
-
-    private BigInteger parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, BigInteger.class);
-        }
-        return onMissing().orElse(null);
-    }
-
-    private class Impl implements ObjectValueProcessor.ToObject<BigInteger> {
-        @Override
-        public BigInteger parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, BigInteger.class);
-        }
-
-        @Override
-        public BigInteger parseMissing(JsonParser parser) throws IOException {
-            return BigIntegerOptions.this.parseMissing(parser);
         }
     }
 }

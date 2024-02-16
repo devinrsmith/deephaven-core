@@ -4,18 +4,10 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.ObjectOptionsImpl.ObjectValueFieldProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -74,6 +66,11 @@ public abstract class ObjectOptions extends ValueOptions {
                 .build();
     }
 
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     // Note: Builder does not extend ValueOptions.Builder b/c allowNull / allowMissing is implicitly set
 
     public enum RepeatedFieldBehavior {
@@ -113,41 +110,4 @@ public abstract class ObjectOptions extends ValueOptions {
 
         Builder putAllFields(Map<String, ? extends ValueOptions> entries);
     }
-
-    @Override
-    final int outputCount() {
-        return fields().values().stream().mapToInt(ValueOptions::outputCount).sum();
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return prefixWithKeys(fields());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return fields().values().stream().flatMap(ValueOptions::outputTypes);
-    }
-
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        if (out.size() != numColumns()) {
-            throw new IllegalArgumentException();
-        }
-        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(fields().size());
-        int ix = 0;
-        for (Entry<String, ValueOptions> e : fields().entrySet()) {
-            final String fieldName = e.getKey();
-            final ValueOptions opts = e.getValue();
-            final int numTypes = opts.numColumns();
-            final ValueProcessor fieldProcessor =
-                    opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
-            processors.put(fieldName, fieldProcessor);
-            ix += numTypes;
-        }
-        if (ix != out.size()) {
-            throw new IllegalStateException();
-        }
-        return new ObjectValueFieldProcessor(processors);
-    }
-
 }

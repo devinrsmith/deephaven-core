@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
 
+import static io.deephaven.json.jackson.Helpers.assertNextToken;
 import static io.deephaven.json.jackson.Helpers.assertNoCurrentToken;
 
 interface ValueProcessor {
@@ -24,8 +25,8 @@ interface ValueProcessor {
         // clears out the token, so we can't necessarily check it.
         // parser.getLastClearedToken()
         // assertCurrentToken(parser, endToken(startToken));
-        parser.nextToken();
-        assertNoCurrentToken(parser);
+
+        assertNextToken(parser, null);
     }
 
     // semantically _similar_ to

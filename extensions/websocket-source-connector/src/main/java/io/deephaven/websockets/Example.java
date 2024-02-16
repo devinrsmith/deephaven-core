@@ -9,6 +9,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.StringOptions;
+import io.deephaven.json.jackson.JacksonProcessor;
 
 import java.net.URI;
 import java.util.Collection;
@@ -20,7 +21,7 @@ public final class Example {
     static Table coinbaseTicker(Collection<String> productIds) throws Exception {
         return WebsocketTable.builder()
                 .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
-                .stringProcessor(coinbaseTicker())
+                .stringProcessor(JacksonProcessor.of(coinbaseTicker()))
                 .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("ticker")))
                 .skipFirstN(1) // skip sub response
                 .build()

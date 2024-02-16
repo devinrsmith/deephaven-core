@@ -3,25 +3,15 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.ObjectValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
-import java.time.temporal.TemporalAccessor;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -54,6 +44,11 @@ public abstract class LocalDateOptions extends ValueOptions {
 
     public abstract Optional<LocalDate> onMissing();
 
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder extends ValueOptions.Builder<LocalDateOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
@@ -61,26 +56,6 @@ public abstract class LocalDateOptions extends ValueOptions {
         Builder onNull(LocalDate onNull);
 
         Builder onMissing(LocalDate onMissing);
-    }
-
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.ofCustom(LocalDate.class));
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
     @Check
@@ -94,43 +69,6 @@ public abstract class LocalDateOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private LocalDate parseString(JsonParser parser) throws IOException {
-        final TemporalAccessor accessor = dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));
-        return LocalDate.from(accessor);
-    }
-
-    private LocalDate parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, LocalDate.class);
-        }
-        return onNull().orElse(null);
-    }
-
-    private LocalDate parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, LocalDate.class);
-        }
-        return onMissing().orElse(null);
-    }
-
-    private class Impl implements ObjectValueProcessor.ToObject<LocalDate> {
-        @Override
-        public LocalDate parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, LocalDateOptions.class);
-        }
-
-        @Override
-        public LocalDate parseMissing(JsonParser parser) throws IOException {
-            return LocalDateOptions.this.parseMissing(parser);
         }
     }
 }

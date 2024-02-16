@@ -3,19 +3,8 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.TreeNode;
 import io.deephaven.annotations.SimpleStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.ObjectValueProcessor;
-import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Immutable;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Note: TreeNode should not be considered part of the public API. Implementation may change.
@@ -39,36 +28,7 @@ public abstract class AnyOptions extends ValueOptions {
     }
 
     @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.ofCustom(TreeNode.class));
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), ToTreeNode.INSTANCE);
-    }
-
-    private enum ToTreeNode implements ToObject<TreeNode> {
-        INSTANCE;
-
-        @Override
-        public TreeNode parseValue(JsonParser parser) throws IOException {
-            return parser.readValueAsTree();
-        }
-
-        @Override
-        public TreeNode parseMissing(JsonParser parser) {
-            return parser.getCodec().missingNode();
-        }
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

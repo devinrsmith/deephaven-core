@@ -6,20 +6,11 @@ package io.deephaven.json;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.LongValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.OptionalLong;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -135,26 +126,6 @@ public abstract class LongOptions extends ValueOptions {
         Builder onMissing(long onMissing);
     }
 
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.longType());
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new LongValueProcessor(out.get(0).asWritableLongChunk(), new Impl());
-    }
-
     @Check
     final void checkOnNull() {
         if (!allowNull() && onNull().isPresent()) {
@@ -166,70 +137,6 @@ public abstract class LongOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private long parseNumberInt(JsonParser parser) throws IOException {
-        if (!allowNumberInt()) {
-            throw Helpers.mismatch(parser, long.class);
-        }
-        return parser.getLongValue();
-    }
-
-    private long parseNumberFloat(JsonParser parser) throws IOException {
-        if (!allowNumberFloat()) {
-            throw Helpers.mismatch(parser, long.class);
-        }
-        // May lose info
-        return parser.getLongValue();
-    }
-
-    private long parseString(JsonParser parser) throws IOException {
-        switch (allowString()) {
-            case NONE:
-                throw Helpers.mismatch(parser, long.class);
-            case INT:
-                return Helpers.parseStringAsLong(parser);
-            case FLOAT:
-                // Need to parse as BigDecimal to have 64-bit long range
-                return Helpers.parseStringAsBigDecimal(parser).longValue();
-        }
-        throw new IllegalStateException();
-    }
-
-    private long parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, long.class);
-        }
-        return onNull().orElse(QueryConstants.NULL_LONG);
-    }
-
-    private long parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, long.class);
-        }
-        return onMissing().orElse(QueryConstants.NULL_LONG);
-    }
-
-    private class Impl implements LongValueProcessor.ToLong {
-        @Override
-        public long parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, long.class);
-        }
-
-        @Override
-        public long parseMissing(JsonParser parser) throws IOException {
-            return LongOptions.this.parseMissing(parser);
         }
     }
 }

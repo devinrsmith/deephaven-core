@@ -6,20 +6,11 @@ package io.deephaven.json;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.IntValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
-import io.deephaven.util.QueryConstants;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.OptionalInt;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -148,26 +139,6 @@ public abstract class IntOptions extends ValueOptions {
         Builder onMissing(int onMissing);
     }
 
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.intType());
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new IntValueProcessor(out.get(0).asWritableIntChunk(), new Impl());
-    }
-
     @Check
     final void checkOnNull() {
         if (!allowNull() && onNull().isPresent()) {
@@ -179,70 +150,6 @@ public abstract class IntOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private int parseNumberInt(JsonParser parser) throws IOException {
-        if (!allowNumberInt()) {
-            throw Helpers.mismatch(parser, int.class);
-        }
-        return parser.getIntValue();
-    }
-
-    private int parseNumberFloat(JsonParser parser) throws IOException {
-        if (!allowNumberFloat()) {
-            throw Helpers.mismatch(parser, int.class);
-        }
-        // May lose info
-        return parser.getIntValue();
-    }
-
-    private int parseString(JsonParser parser) throws IOException {
-        switch (allowString()) {
-            case NONE:
-                throw Helpers.mismatch(parser, int.class);
-            case INT:
-                return Helpers.parseStringAsInt(parser);
-            case FLOAT:
-                // Need to parse as double to have 32-bit int range
-                return (int) Helpers.parseStringAsDouble(parser);
-        }
-        throw new IllegalStateException();
-    }
-
-    private int parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, int.class);
-        }
-        return onNull().orElse(QueryConstants.NULL_INT);
-    }
-
-    private int parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, int.class);
-        }
-        return onMissing().orElse(QueryConstants.NULL_INT);
-    }
-
-    private class Impl implements IntValueProcessor.ToInt {
-        @Override
-        public int parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, int.class);
-        }
-
-        @Override
-        public int parseMissing(JsonParser parser) throws IOException {
-            return IntOptions.this.parseMissing(parser);
         }
     }
 }

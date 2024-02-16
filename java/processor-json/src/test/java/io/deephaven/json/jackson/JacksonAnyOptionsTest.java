@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
  */
-package io.deephaven.json;
+package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -15,6 +15,12 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.deephaven.chunk.DoubleChunk;
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.json.AnyOptions;
+import io.deephaven.json.DoubleOptions;
+import io.deephaven.json.IntOptions;
+import io.deephaven.json.ObjectOptions;
+import io.deephaven.json.TestHelper;
+import io.deephaven.json.TupleOptions;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -22,9 +28,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static io.deephaven.json.TestHelper.parse;
-
-public class AnyOptionsTest {
+public class JacksonAnyOptionsTest {
 
     @Test
     void anyMissing() throws IOException {
@@ -76,7 +80,7 @@ public class AnyOptionsTest {
     @Test
     void anyInTuple() throws IOException {
         final TupleOptions options = TupleOptions.of(IntOptions.standard(), AnyOptions.of(), DoubleOptions.standard());
-        parse(options, List.of("", "[42, {\"zip\": 43}, 44.44]"),
+        TestHelper.parse(options, List.of("", "[42, {\"zip\": 43}, 44.44]"),
                 IntChunk.chunkWrap(new int[] {QueryConstants.NULL_INT, 42}),
                 ObjectChunk.chunkWrap(new TreeNode[] {MissingNode.getInstance(),
                         new ObjectNode(null, Map.of("zip", IntNode.valueOf(43)))}),
@@ -90,7 +94,7 @@ public class AnyOptionsTest {
                 .putFields("bar", AnyOptions.of())
                 .putFields("baz", DoubleOptions.standard())
                 .build();
-        parse(options, List.of("", "{\"foo\": 42, \"bar\": {\"zip\": 43}, \"baz\": 44.44}"),
+        TestHelper.parse(options, List.of("", "{\"foo\": 42, \"bar\": {\"zip\": 43}, \"baz\": 44.44}"),
                 IntChunk.chunkWrap(new int[] {QueryConstants.NULL_INT, 42}),
                 ObjectChunk.chunkWrap(new TreeNode[] {MissingNode.getInstance(),
                         new ObjectNode(null, Map.of("zip", IntNode.valueOf(43)))}),
@@ -98,6 +102,6 @@ public class AnyOptionsTest {
     }
 
     private static void checkAny(String json, TreeNode expected) throws IOException {
-        parse(AnyOptions.of(), json, ObjectChunk.chunkWrap(new TreeNode[] {expected}));
+        TestHelper.parse(AnyOptions.of(), json, ObjectChunk.chunkWrap(new TreeNode[] {expected}));
     }
 }

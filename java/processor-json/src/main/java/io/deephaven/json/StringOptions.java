@@ -3,21 +3,12 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.jackson.Helpers;
-import io.deephaven.json.jackson.ObjectValueProcessor;
-import io.deephaven.json.jackson.ValueProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @Immutable
 @BuildableStyle
@@ -84,6 +75,11 @@ public abstract class StringOptions extends ValueOptions {
                 .build();
     }
 
+    @Override
+    public final <T> T walk(Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
     public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
         Builder allowString(boolean allowString);
 
@@ -96,26 +92,6 @@ public abstract class StringOptions extends ValueOptions {
         Builder onNull(String onNull);
 
         Builder onMissing(String onMissing);
-    }
-
-    @Override
-    final int outputCount() {
-        return 1;
-    }
-
-    @Override
-    final Stream<List<String>> paths() {
-        return Stream.of(List.of());
-    }
-
-    @Override
-    final Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.stringType());
-    }
-
-    @Override
-    final ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
     @Override
@@ -145,73 +121,6 @@ public abstract class StringOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private String parseString(JsonParser parser) throws IOException {
-        if (!allowString()) {
-            throw Helpers.mismatch(parser, String.class);
-        }
-        return parser.getText();
-    }
-
-    private String parseNumberInt(JsonParser parser) throws IOException {
-        if (!allowNumberInt()) {
-            throw Helpers.mismatch(parser, String.class);
-        }
-        return parser.getText();
-    }
-
-    private String parseNumberFloat(JsonParser parser) throws IOException {
-        if (!allowNumberFloat()) {
-            throw Helpers.mismatch(parser, String.class);
-        }
-        return parser.getText();
-    }
-
-    private String parseBoolean(JsonParser parser) throws IOException {
-        if (!allowBoolean()) {
-            throw Helpers.mismatch(parser, String.class);
-        }
-        return parser.getText();
-    }
-
-    private String parseNull(JsonParser parser) throws IOException {
-        if (!allowNull()) {
-            throw Helpers.mismatch(parser, String.class);
-        }
-        return onNull().orElse(null);
-    }
-
-    private String parseMissing(JsonParser parser) throws IOException {
-        if (!allowMissing()) {
-            throw Helpers.mismatchMissing(parser, String.class);
-        }
-        return onMissing().orElse(null);
-    }
-
-    private class Impl implements ObjectValueProcessor.ToObject<String> {
-        @Override
-        public String parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseString(parser);
-                case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
-                case VALUE_TRUE:
-                case VALUE_FALSE:
-                    return parseBoolean(parser);
-                case VALUE_NULL:
-                    return parseNull(parser);
-            }
-            throw Helpers.mismatch(parser, String.class);
-        }
-
-        @Override
-        public String parseMissing(JsonParser parser) throws IOException {
-            return StringOptions.this.parseMissing(parser);
         }
     }
 }

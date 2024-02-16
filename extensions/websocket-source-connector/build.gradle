@@ -9,7 +9,7 @@ dependencies {
     implementation project(':engine-table')
 
     // todo: remove this, only for example atm
-    implementation project(':processor-json')
+    implementation project(':extensions-processor-json')
 
     // todo: https://github.com/TooTallNate/Java-WebSocket seems very popular too
     //Classpaths.inheritJetty11Platform(project)

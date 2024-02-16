@@ -272,6 +272,9 @@ project(':extensions-s3').projectDir = file('extensions/s3')
 include(':extensions-websocket-source-connector')
 project(':extensions-websocket-source-connector').projectDir = file('extensions/websocket-source-connector')
 
+include(':extensions-processor-json')
+project(':extensions-processor-json').projectDir = file('extensions/processor-json')
+
 include(':plugin')
 
 include(':plugin-dagger')
@@ -404,10 +407,6 @@ include ':clock'
 include ':clock-impl'
 
 include ':sql'
-
-
-include(':processor-json')
-project(':processor-json').projectDir = file('java/processor-json')
 
 file("${rootDir}/docker/registry").list().each { name ->
     if (file("${rootDir}/docker/registry/${name}/build.gradle").exists()) {

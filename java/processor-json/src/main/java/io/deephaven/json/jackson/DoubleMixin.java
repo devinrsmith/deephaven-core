@@ -3,7 +3,6 @@
  */
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.DoubleOptions;
@@ -18,7 +17,7 @@ import java.util.stream.Stream;
 final class DoubleMixin extends Mixin {
     private final DoubleOptions options;
 
-    public DoubleMixin(DoubleOptions options, JsonFactory factory) {
+    public DoubleMixin(DoubleOptions options, JacksonConfiguration factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

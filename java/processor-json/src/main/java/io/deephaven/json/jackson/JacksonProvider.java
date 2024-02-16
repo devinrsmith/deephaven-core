@@ -14,15 +14,28 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Function;
 
-public interface JacksonProcessor extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
+public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
 
-    static JacksonProcessor of(ValueOptions options, JsonFactory factory) {
-        return Mixin.of(options, factory);
+    /**
+     * Creates a jackson provider using the {@link JacksonConfiguration#defaultInstance() default configuration}.
+     * Equivalent to {@code of(options, JacksonConfiguration.defaultInstance())}.
+     *
+     * @param options the object options
+     * @return the jackson provider
+     */
+    static JacksonProvider of(ValueOptions options) {
+        return of(options, JacksonConfiguration.defaultInstance());
     }
 
-    static String toColumnName(List<String> path) {
-        // todo: allow user to configure
-        return String.join("_", path);
+    /**
+     * Creates a jackson provider using the provided {@code config}.
+     *
+     * @param options the object options
+     * @param config the jackson configuration
+     * @return the jackson provider
+     */
+    static JacksonProvider of(ValueOptions options, JacksonConfiguration config) {
+        return Mixin.of(options, config);
     }
 
     /**
@@ -52,7 +65,7 @@ public interface JacksonProcessor extends NamedObjectProcessor.Provider, ObjectP
      * @see NamedObjectProcessor#of(ObjectProcessor, Iterable)
      * @see #processor(Class)
      * @see #names(Function)
-     * @see #toColumnName(List)
+     * @see Mixin#toColumnName(List)
      */
     @Override
     <T> NamedObjectProcessor<? super T> named(Class<T> inputType);

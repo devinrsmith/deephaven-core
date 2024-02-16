@@ -3,13 +3,12 @@
  */
 package io.deephaven.json;
 
-import io.deephaven.json.jackson.JacksonConfiguration;
+import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import org.immutables.value.Value.Default;
 
 public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
-
 
     @Default
     public boolean allowNull() {
@@ -21,11 +20,17 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         return true;
     }
 
-    @Default
-    public JsonConfiguration jsonConfiguration() {
-        return JacksonConfiguration.defaultInstance();
-    }
-
+    // NOTE: I think this is a mistake providing it here... at a minimum, it should be hidden? Thinking of patterns:
+    //
+    // parser=object_({"name": string(), "age": int()})
+    // working by default, but also having ability to override:
+    // parser=bson(object_({"name": string(), "age": int()}))
+    // having it modify the object itself seems odd.
+    // it should probably also be implicitly recursive, which also leans to not having it publicly exposed.
+    // @Default
+    // public JsonConfiguration jsonConfiguration() {
+    // return JacksonConfiguration.defaultInstance();
+    // }
 
     /**
      * Equivalent to {@code jsonConfiguration().namedProvider(this).named(inputType)}.
@@ -33,11 +38,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @param inputType the input type
      * @return
      * @param <T>
-     * @see #jsonConfiguration()
      */
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
-        return jsonConfiguration().namedProvider(this).named(inputType);
+        return JacksonProvider.of(this).named(inputType);
     }
 
     /**
@@ -46,11 +50,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @param inputType the input type
      * @return
      * @param <T>
-     * @see #jsonConfiguration()
      */
     @Override
     public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
-        return jsonConfiguration().processorProvider(this).processor(inputType);
+        return JacksonProvider.of(this).processor(inputType);
     }
 
     public final ArrayOptions toArrayOptions() {
@@ -102,8 +105,6 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         B allowNull(boolean allowNull);
 
         B allowMissing(boolean allowMissing);
-
-        B jsonConfiguration(JsonConfiguration jsonConfiguration);
 
         V build();
     }

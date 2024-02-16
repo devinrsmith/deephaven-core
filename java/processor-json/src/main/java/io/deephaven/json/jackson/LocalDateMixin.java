@@ -3,7 +3,6 @@
  */
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.LocalDateOptions;
@@ -19,7 +18,7 @@ import java.util.stream.Stream;
 final class LocalDateMixin extends Mixin {
     private final LocalDateOptions options;
 
-    public LocalDateMixin(LocalDateOptions options, JsonFactory factory) {
+    public LocalDateMixin(LocalDateOptions options, JacksonConfiguration factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

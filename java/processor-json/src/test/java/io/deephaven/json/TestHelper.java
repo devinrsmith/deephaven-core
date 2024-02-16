@@ -16,11 +16,11 @@ import io.deephaven.chunk.ShortChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Any;
+import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.processor.ObjectProcessor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,50 +33,11 @@ public class TestHelper {
     }
 
     public static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-
-        parse(String.class, options, jsonRows, expectedCols);
-
-        // final ObjectProcessor<? super byte[]> processor = options.processor(byte[].class);
-        // // final ObjectProcessor<byte[]> processor = new JacksonJsonProvider().of(options).bytesProcessor(new
-        // // JsonFactory(new ObjectMapper()));
-        // final List<WritableChunk<?>> out = processor
-        // .outputTypes()
-        // .stream()
-        // .map(ObjectProcessor::chunkType)
-        // .map(x -> x.makeWritableChunk(jsonRows.size()))
-        // .collect(Collectors.toList());
-        // try {
-        // assertThat(out.size()).isEqualTo(expectedCols.length);
-        // assertThat(out.stream().map(Chunk::getChunkType).collect(Collectors.toList()))
-        // .isEqualTo(Stream.of(expectedCols).map(Chunk::getChunkType).collect(Collectors.toList()));
-        // for (WritableChunk<?> wc : out) {
-        // wc.setSize(0);
-        // }
-        // try (final WritableObjectChunk<byte[], Any> in = WritableObjectChunk.makeWritableChunk(jsonRows.size())) {
-        // int i = 0;
-        // for (String json : jsonRows) {
-        // in.set(i, json.getBytes(StandardCharsets.UTF_8));
-        // ++i;
-        // }
-        // try {
-        // processor.processAll(in, out);
-        // } catch (UncheckedIOException e) {
-        // throw e.getCause();
-        // }
-        // }
-        // for (int i = 0; i < expectedCols.length; ++i) {
-        // check(out.get(i), expectedCols[i]);
-        // }
-        // } finally {
-        // for (WritableChunk<?> wc : out) {
-        // wc.close();
-        // }
-        // }
+        parse(JacksonProvider.of(options).stringProcessor(), jsonRows, expectedCols);
     }
 
-    public static <T> void parse(Class<T> inType, ValueOptions options, List<T> rows, Chunk<?>... expectedCols)
+    public static <T> void parse(ObjectProcessor<? super T> processor, List<T> rows, Chunk<?>... expectedCols)
             throws IOException {
-        final ObjectProcessor<? super T> processor = options.processor(inType);
         final List<WritableChunk<?>> out = processor
                 .outputTypes()
                 .stream()

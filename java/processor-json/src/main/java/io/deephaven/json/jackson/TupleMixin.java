@@ -3,7 +3,6 @@
  */
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
@@ -23,7 +22,7 @@ import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
 final class TupleMixin extends Mixin {
     private final TupleOptions options;
 
-    public TupleMixin(TupleOptions options, JsonFactory factory) {
+    public TupleMixin(TupleOptions options, JacksonConfiguration factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

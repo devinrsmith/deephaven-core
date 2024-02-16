@@ -3,7 +3,6 @@
  */
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.BigDecimalOptions;
@@ -18,7 +17,7 @@ import java.util.stream.Stream;
 final class BigDecimalMixin extends Mixin {
     private final BigDecimalOptions options;
 
-    public BigDecimalMixin(BigDecimalOptions options, JsonFactory factory) {
+    public BigDecimalMixin(BigDecimalOptions options, JacksonConfiguration factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

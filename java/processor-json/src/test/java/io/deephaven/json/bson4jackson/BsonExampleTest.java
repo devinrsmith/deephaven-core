@@ -11,6 +11,7 @@ import io.deephaven.json.IntOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.StringOptions;
 import io.deephaven.json.jackson.JacksonConfiguration;
+import io.deephaven.json.jackson.JacksonProvider;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -22,11 +23,10 @@ import static io.deephaven.json.TestHelper.parse;
 public class BsonExampleTest {
     private static final BsonFactory FACTORY = new BsonFactory();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(FACTORY);
-    private static final JacksonConfiguration BSON_DEFAULT = new JacksonConfiguration(FACTORY);
+    private static final JacksonConfiguration BSON_DEFAULT = JacksonConfiguration.of(FACTORY);
     private static final ObjectOptions OBJECT_NAME_AGE_FIELD = ObjectOptions.builder()
             .putFields("name", StringOptions.standard())
             .putFields("age", IntOptions.standard())
-            .jsonConfiguration(BSON_DEFAULT)
             .build();
 
     @Test
@@ -35,8 +35,7 @@ public class BsonExampleTest {
                 "name", "foo",
                 "age", 42));
         parse(
-                byte[].class,
-                OBJECT_NAME_AGE_FIELD,
+                JacksonProvider.of(OBJECT_NAME_AGE_FIELD, BSON_DEFAULT).bytesProcessor(),
                 List.of(bsonExample),
                 ObjectChunk.chunkWrap(new String[] {"foo"}),
                 IntChunk.chunkWrap(new int[] {42}));

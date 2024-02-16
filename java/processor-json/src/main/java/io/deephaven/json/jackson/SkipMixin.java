@@ -3,7 +3,6 @@
  */
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.SkipOptions;
@@ -17,7 +16,7 @@ import java.util.stream.Stream;
 final class SkipMixin extends Mixin {
     private final SkipOptions options;
 
-    public SkipMixin(SkipOptions options, JsonFactory factory) {
+    public SkipMixin(SkipOptions options, JacksonConfiguration factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

@@ -8,13 +8,24 @@ import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import org.immutables.value.Value.Default;
 
+/**
+ * The base configuration for JSON values.
+ *
+ * @see StringOptions
+ */
 public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
 
+    /**
+     * If the processor should allow a JSON null value. By default, is {@code true}.
+     */
     @Default
     public boolean allowNull() {
         return true;
     }
 
+    /**
+     * If the processor should allow a missing JSON value. By default, is {@code true}.
+     */
     @Default
     public boolean allowMissing() {
         return true;
@@ -90,6 +101,8 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         T visit(ArrayOptions array);
 
         T visit(AnyOptions any);
+
+        // todo: short, byte, char
     }
 
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {

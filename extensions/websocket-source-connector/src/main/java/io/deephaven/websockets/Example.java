@@ -9,6 +9,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.StringOptions;
+import io.deephaven.json.TypedObjectOptions;
 
 import java.net.URI;
 import java.util.Collection;
@@ -33,6 +34,16 @@ public final class Example {
                 .stringProcessor(coinbaseMatch())
                 .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("matches")))
                 .skipFirstN(1) // skip sub response
+                .build()
+                .execute();
+    }
+
+    static Table coinbaseMatchAndTicker(Collection<String> productIds) throws Exception {
+        return WebsocketTable.builder()
+                .uri(URI.create("wss://ws-feed.exchange.coinbase.com"))
+                .stringProcessor(matchAndTicker())
+                .addSubscribeMessages(coinbaseSubscribe(productIds, List.of("matches", "ticker")))
+                .skipFirstN(4) // skip sub response
                 .build()
                 .execute();
     }
@@ -90,5 +101,35 @@ public final class Example {
                 .putFields("trade_id", LongOptions.standard())
                 .putFields("last_size", DoubleOptions.lenient())
                 .build();
+    }
+
+    static TypedObjectOptions matchAndTicker() {
+        return TypedObjectOptions.builder()
+                .typeFieldName("type")
+                .putSharedFields("sequence", LongOptions.standard())
+                .putSharedFields("time", InstantOptions.standard())
+                .putSharedFields("product_id", StringOptions.standard())
+                .putSharedFields("side", StringOptions.standard())
+                .putSharedFields("trade_id", LongOptions.standard())
+                .putObjects("match", ObjectOptions.builder()
+                        .putFields("maker_order_id", StringOptions.standard())
+                        .putFields("taker_order_id", StringOptions.standard())
+                        .putFields("price", DoubleOptions.lenient())
+                        .putFields("size", DoubleOptions.lenient())
+                        .build())
+                .putObjects("ticker", ObjectOptions.builder()
+                        .putFields("open_24h", DoubleOptions.lenient())
+                        .putFields("volume_24h", DoubleOptions.lenient())
+                        .putFields("low_24h", DoubleOptions.lenient())
+                        .putFields("high_24h", DoubleOptions.lenient())
+                        .putFields("volume_30d", DoubleOptions.lenient())
+                        .putFields("best_bid", DoubleOptions.lenient())
+                        .putFields("best_bid_size", DoubleOptions.lenient())
+                        .putFields("best_ask", DoubleOptions.lenient())
+                        .putFields("best_ask_size", DoubleOptions.lenient())
+                        .putFields("last_size", DoubleOptions.lenient())
+                        .build())
+                .build();
+
     }
 }

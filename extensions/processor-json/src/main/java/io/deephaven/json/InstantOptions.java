@@ -15,6 +15,9 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
+/**
+ * Processes a JSON string as an {@link Instant}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class InstantOptions extends ValueOptions {

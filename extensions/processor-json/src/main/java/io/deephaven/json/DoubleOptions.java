@@ -10,6 +10,9 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.OptionalDouble;
 
+/**
+ * Processes a JSON value as a {@code double}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class DoubleOptions extends ValueOptions {

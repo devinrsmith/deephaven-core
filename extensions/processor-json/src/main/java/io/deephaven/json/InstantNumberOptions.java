@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Options to parse an {@link Instant} from numbers.
+ * Processes a JSON number as an {@link Instant}.
  */
 @Immutable
 @BuildableStyle

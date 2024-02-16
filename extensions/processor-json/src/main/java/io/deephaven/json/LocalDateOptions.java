@@ -13,6 +13,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.Optional;
 
+/**
+ * Processes a JSON string as an {@link LocalDate}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class LocalDateOptions extends ValueOptions {

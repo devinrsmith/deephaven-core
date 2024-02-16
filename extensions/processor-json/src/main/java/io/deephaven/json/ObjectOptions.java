@@ -9,6 +9,9 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.Map;
 
+/**
+ * Processes a JSON object as map of processors.
+ */
 @Immutable
 @BuildableStyle
 public abstract class ObjectOptions extends ValueOptions {

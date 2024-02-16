@@ -8,6 +8,9 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.List;
 
+/**
+ * Processes a JSON array as an tuple.
+ */
 @Immutable
 @BuildableStyle
 public abstract class TupleOptions extends ValueOptions {

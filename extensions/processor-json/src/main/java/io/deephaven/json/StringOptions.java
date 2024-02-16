@@ -10,6 +10,9 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.Optional;
 
+/**
+ * Processes a JSON value as a {@link String}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class StringOptions extends ValueOptions {
@@ -28,6 +31,7 @@ public abstract class StringOptions extends ValueOptions {
         return ImmutableStringOptions.builder();
     }
 
+
     public static StringOptions standard() {
         return STANDARD;
     }
@@ -40,6 +44,11 @@ public abstract class StringOptions extends ValueOptions {
         return LENIENT;
     }
 
+    /**
+     * If a
+     * 
+     * @return
+     */
     @Default
     public boolean allowString() {
         return true;

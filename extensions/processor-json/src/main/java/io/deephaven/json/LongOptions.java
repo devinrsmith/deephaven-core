@@ -3,8 +3,6 @@
  */
 package io.deephaven.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -12,6 +10,9 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.OptionalLong;
 
+/**
+ * Processes a JSON value as a {@code long}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class LongOptions extends ValueOptions {
@@ -62,10 +63,9 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * If parsing {@link JsonToken#VALUE_NUMBER_INT} is supported. By default, is {@code true}.
+     * If parsing JSON integer numbers is supported. By default, is {@code true}.
      *
      * @return allow number int
-     * @see #parseNumberInt(JsonParser)
      */
     @Default
     public boolean allowNumberInt() {
@@ -73,10 +73,9 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * If parsing {@link JsonToken#VALUE_NUMBER_FLOAT} is supported. By default, is {@code false}.
+     * If parsing JSON floating point numbers is supported. By default, is {@code false}.
      *
      * @return allow number float
-     * @see #parseNumberFloat(JsonParser)
      */
     @Default
     public boolean allowNumberFloat() {
@@ -84,10 +83,9 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * If parsing {@link JsonToken#VALUE_STRING} is supported. By default, is {@code false}.
+     * If parsing JSON strings is supported. By default, is {@code false}.
      *
      * @return allow string
-     * @see #parseString(JsonParser)
      */
     @Default
     public StringFormat allowString() {

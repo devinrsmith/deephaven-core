@@ -11,6 +11,9 @@ import org.immutables.value.Value.Immutable;
 import java.math.BigInteger;
 import java.util.Optional;
 
+/**
+ * Processes a JSON value as a {@link BigInteger}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class BigIntegerOptions extends ValueOptions {

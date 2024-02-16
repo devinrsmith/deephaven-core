@@ -10,6 +10,9 @@ import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Nullable;
 
+/**
+ * Processes a JSON value as a {@code float}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class FloatOptions extends ValueOptions {

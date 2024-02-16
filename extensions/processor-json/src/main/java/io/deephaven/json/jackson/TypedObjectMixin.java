@@ -225,6 +225,8 @@ final class TypedObjectMixin extends Mixin {
                 for (Processor processor : processors.values()) {
                     processor.notApplicable();
                 }
+                // todo: add testing to make sure this is correct
+                return;
             }
             if (parser.currentToken() != JsonToken.FIELD_NAME) {
                 throw new IllegalStateException();

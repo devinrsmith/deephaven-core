@@ -7,7 +7,7 @@ import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Immutable;
 
 /**
- * Note: TreeNode should not be considered part of the public API. Implementation may change.
+ * Processes a JSON value as an implementation-specific object.
  */
 @Immutable
 @SimpleStyle

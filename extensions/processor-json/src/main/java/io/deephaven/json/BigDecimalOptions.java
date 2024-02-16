@@ -11,6 +11,9 @@ import org.immutables.value.Value.Immutable;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+/**
+ * Processes a JSON value as a {@link BigDecimal}.
+ */
 @Immutable
 @BuildableStyle
 public abstract class BigDecimalOptions extends ValueOptions {

@@ -6,6 +6,9 @@ package io.deephaven.json;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
+/**
+ * Processes a JSON value by skipping it.
+ */
 @Immutable
 @BuildableStyle
 public abstract class SkipOptions extends ValueOptions {

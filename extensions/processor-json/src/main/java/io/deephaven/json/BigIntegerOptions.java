@@ -5,10 +5,10 @@ package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Check;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.math.BigInteger;
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -42,21 +42,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
         NONE, INT, FLOAT
     }
 
-    @Default
-    public boolean allowNumberInt() {
-        return true;
-    }
-
-    @Default
-    public boolean allowNumberFloat() {
-        return false;
-    }
-
-    @Default
-    public StringFormat allowString() {
-        return StringFormat.NONE;
-    }
-
     public abstract Optional<BigInteger> onNull();
 
     public abstract Optional<BigInteger> onMissing();
@@ -67,11 +52,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<BigIntegerOptions, Builder> {
-        Builder allowNumberInt(boolean allowNumberInt);
-
-        Builder allowNumberFloat(boolean allowNumberFloat);
-
-        Builder allowString(StringFormat allowString);
 
         Builder onNull(BigInteger onNull);
 
@@ -97,5 +77,10 @@ public abstract class BigIntegerOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

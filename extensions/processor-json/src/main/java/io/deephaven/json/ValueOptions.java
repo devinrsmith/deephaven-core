@@ -6,7 +6,11 @@ package io.deephaven.json;
 import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
+
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * The base configuration for JSON values.
@@ -15,13 +19,7 @@ import org.immutables.value.Value.Default;
  */
 public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
 
-    /**
-     * If the processor should allow a JSON null value. By default, is {@code true}.
-     */
-    @Default
-    public boolean allowNull() {
-        return true;
-    }
+    public abstract Set<JsonValueTypes> desiredTypes();
 
     /**
      * If the processor should allow a missing JSON value. By default, is {@code true}.
@@ -57,6 +55,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
         return defaultProvider().named(inputType);
+    }
+
+    public final SkipOptions skip() {
+        return SkipOptions.builder().allowMissing(allowMissing()).addAllDesiredTypes(desiredTypes()).build();
     }
 
     public final ArrayOptions toArrayOptions() {
@@ -107,11 +109,61 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
 
-        B allowNull(boolean allowNull);
-
         B allowMissing(boolean allowMissing);
 
+        B addDesiredTypes(JsonValueTypes element);
+
+        B addDesiredTypes(JsonValueTypes... elements);
+
+        B addAllDesiredTypes(Iterable<JsonValueTypes> elements);
+
         V build();
+    }
+
+    abstract EnumSet<JsonValueTypes> allowableTypes();
+
+    @Check
+    void checkIllegalTypes() {
+        for (JsonValueTypes type : desiredTypes()) {
+            if (!allowableTypes().contains(type)) {
+                throw new IllegalArgumentException("todo");
+            }
+        }
+    }
+
+    @Check
+    void checkDesiredNotEmpty() {
+        if (desiredTypes().isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public final boolean allowNull() {
+        return desiredTypes().contains(JsonValueTypes.NULL);
+    }
+
+    public final boolean allowString() {
+        return desiredTypes().contains(JsonValueTypes.STRING);
+    }
+
+    public final boolean allowNumberInt() {
+        return desiredTypes().contains(JsonValueTypes.NUMBER_INT);
+    }
+
+    public final boolean allowNumberFloat() {
+        return desiredTypes().contains(JsonValueTypes.NUMBER_FLOAT);
+    }
+
+    public final boolean allowBoolean() {
+        return desiredTypes().contains(JsonValueTypes.BOOL);
+    }
+
+    public final boolean allowObject() {
+        return desiredTypes().contains(JsonValueTypes.OBJECT);
+    }
+
+    public final boolean allowArray() {
+        return desiredTypes().contains(JsonValueTypes.ARRAY);
     }
 
     // for nested / typedescr cases

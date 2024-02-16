@@ -7,6 +7,7 @@ import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -59,5 +60,10 @@ public abstract class TypedObjectOptions extends ValueOptions {
         Builder putAllObjects(Map<String, ? extends ObjectOptions> entries);
 
         Builder allowUnknownTypes(boolean allowUnknownTypes);
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
     }
 }

@@ -6,6 +6,7 @@ package io.deephaven.json;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -55,5 +56,10 @@ public abstract class TupleOptions extends ValueOptions {
         Builder addAllValues(Iterable<? extends ValueOptions> elements);
 
         TupleOptions build();
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.ARRAY_OR_NULL;
     }
 }

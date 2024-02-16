@@ -11,6 +11,7 @@ import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -141,5 +142,10 @@ public abstract class InstantNumberOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

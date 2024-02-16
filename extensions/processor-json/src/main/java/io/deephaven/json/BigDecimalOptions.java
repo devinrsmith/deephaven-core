@@ -5,10 +5,10 @@ package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Check;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.math.BigDecimal;
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -17,9 +17,10 @@ import java.util.Optional;
 @Immutable
 @BuildableStyle
 public abstract class BigDecimalOptions extends ValueOptions {
+
+    private static final BigDecimalOptions LENIENT = builder().allowString(true).build();
     private static final BigDecimalOptions STANDARD = builder().build();
     private static final BigDecimalOptions STRICT = builder().allowNull(false).allowMissing(false).build();
-    private static final BigDecimalOptions LENIENT = builder().allowString(true).build();
 
     public static Builder builder() {
         return ImmutableBigDecimalOptions.builder();
@@ -37,16 +38,6 @@ public abstract class BigDecimalOptions extends ValueOptions {
         return LENIENT;
     }
 
-    @Default
-    public boolean allowNumber() {
-        return true;
-    }
-
-    @Default
-    public boolean allowString() {
-        return false;
-    }
-
     public abstract Optional<BigDecimal> onNull();
 
     public abstract Optional<BigDecimal> onMissing();
@@ -57,9 +48,6 @@ public abstract class BigDecimalOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<BigDecimalOptions, Builder> {
-        Builder allowNumber(boolean allowNumber);
-
-        Builder allowString(boolean allowString);
 
         Builder onNull(BigDecimal onNull);
 
@@ -78,5 +66,10 @@ public abstract class BigDecimalOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

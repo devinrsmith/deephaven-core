@@ -7,6 +7,7 @@ import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -62,11 +63,7 @@ public abstract class ObjectOptions extends ValueOptions {
 
     public final SkipOptions skip() {
         // todo: this doesn't make sense on this object
-        return SkipOptions.builder()
-                .allowObject(true)
-                .allowNull(allowNull())
-                .allowMissing(allowMissing())
-                .build();
+        return SkipOptions.builder().allowMissing(allowMissing()).addAllDesiredTypes(desiredTypes()).build();
     }
 
     @Override
@@ -97,12 +94,6 @@ public abstract class ObjectOptions extends ValueOptions {
 
         // python needs these overloaded...
 
-        @Override
-        Builder allowNull(boolean allowNull);
-
-        @Override
-        Builder allowMissing(boolean allowMissing);
-
         Builder allowUnknownFields(boolean allowUnknownFields);
 
         Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
@@ -112,5 +103,10 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder putFields(Map.Entry<String, ? extends ValueOptions> entry);
 
         Builder putAllFields(Map<String, ? extends ValueOptions> entries);
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
     }
 }

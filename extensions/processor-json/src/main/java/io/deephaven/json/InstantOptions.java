@@ -13,6 +13,7 @@ import org.immutables.value.Value.Immutable;
 import java.lang.Runtime.Version;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -105,5 +106,10 @@ public abstract class InstantOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
     }
 }

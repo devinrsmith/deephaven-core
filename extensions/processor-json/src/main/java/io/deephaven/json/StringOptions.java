@@ -8,7 +8,9 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Processes a JSON value as a {@link String}.
@@ -42,6 +44,12 @@ public abstract class StringOptions extends ValueOptions {
 
     public static StringOptions lenient() {
         return LENIENT;
+    }
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.STRING_LIKE;
     }
 
     /**
@@ -131,5 +139,10 @@ public abstract class StringOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.STRING_LIKE;
     }
 }

@@ -9,6 +9,7 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Nullable;
+import java.util.EnumSet;
 
 /**
  * Processes a JSON value as a {@code float}.
@@ -104,5 +105,10 @@ public abstract class FloatOptions extends ValueOptions {
         if (!allowMissing() && onMissing() != null) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

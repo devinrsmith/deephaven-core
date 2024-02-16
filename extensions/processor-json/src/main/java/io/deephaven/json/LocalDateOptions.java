@@ -11,6 +11,7 @@ import org.immutables.value.Value.Immutable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -73,5 +74,10 @@ public abstract class LocalDateOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
     }
 }

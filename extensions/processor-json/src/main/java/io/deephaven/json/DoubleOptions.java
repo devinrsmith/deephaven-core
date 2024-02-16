@@ -8,6 +8,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.OptionalDouble;
 
 /**
@@ -65,26 +66,6 @@ public abstract class DoubleOptions extends ValueOptions {
      **/
     public abstract OptionalDouble onMissing();
 
-    @Default
-    public boolean allowNumber() {
-        return true;
-    }
-
-    @Default
-    public boolean allowString() {
-        return false;
-    }
-
-    public final SkipOptions skip() {
-        return SkipOptions.builder()
-                .allowNumberFloat(allowNumber())
-                .allowNumberInt(allowNumber())
-                .allowString(allowString())
-                .allowNull(allowNull())
-                .allowMissing(allowMissing())
-                .build();
-    }
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
@@ -112,5 +93,10 @@ public abstract class DoubleOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

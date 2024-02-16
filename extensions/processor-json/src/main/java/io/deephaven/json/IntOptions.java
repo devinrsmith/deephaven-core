@@ -8,7 +8,9 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * Processes a JSON value as an {@code int}.
@@ -17,14 +19,15 @@ import java.util.OptionalInt;
 @BuildableStyle
 public abstract class IntOptions extends ValueOptions {
 
-    private static final IntOptions STANDARD = builder().build();
-    private static final IntOptions STRICT = builder()
-            .allowNull(false)
-            .allowMissing(false)
-            .build();
     private static final IntOptions LENIENT = builder()
-            .allowNumberFloat(true)
-            .allowString(StringFormat.FLOAT)
+            .addAllDesiredTypes(JsonValueTypes.NUMBER_LIKE)
+            .build();
+    private static final IntOptions STANDARD = builder()
+            .addDesiredTypes(JsonValueTypes.NUMBER_INT, JsonValueTypes.NULL)
+            .build();
+    private static final IntOptions STRICT = builder()
+            .allowMissing(false)
+            .addDesiredTypes(JsonValueTypes.NUMBER_INT)
             .build();
 
     public static Builder builder() {
@@ -33,6 +36,15 @@ public abstract class IntOptions extends ValueOptions {
 
     public enum StringFormat {
         NONE, INT, FLOAT
+    }
+
+    /**
+     * The lenient Int options, equivalent to ....
+     *
+     * @return the lenient Int options
+     */
+    public static IntOptions lenient() {
+        return LENIENT;
     }
 
     /**
@@ -54,32 +66,11 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     /**
-     * The lenient Int options, equivalent to ....
-     *
-     * @return the lenient Int options
+     * The desired types. By default, is {@link JsonValueTypes#NUMBER_INT} and {@link JsonValueTypes#NULL}.
      */
-    public static IntOptions lenient() {
-        return LENIENT;
-    }
-
-    /**
-     * If parsing JSON integer numbers is supported. By default, is {@code true}.
-     *
-     * @return allow number int
-     */
-    @Default
-    public boolean allowNumberInt() {
-        return true;
-    }
-
-    /**
-     * If parsing JSON floating point numbers is supported. By default, is {@code false}.
-     *
-     * @return allow number float
-     */
-    @Default
-    public boolean allowNumberFloat() {
-        return false;
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
     /**
@@ -88,7 +79,7 @@ public abstract class IntOptions extends ValueOptions {
      * @return allow string
      */
     @Default
-    public StringFormat allowString() {
+    public StringFormat allowString2() {
         return StringFormat.NONE;
     }
 
@@ -106,18 +97,6 @@ public abstract class IntOptions extends ValueOptions {
      */
     public abstract OptionalInt onMissing();
 
-    public final SkipOptions skip() {
-        return SkipOptions.builder()
-                .allowNumberInt(allowNumberInt())
-                .allowNumberFloat(allowNumberFloat())
-                .allowString(allowString() != StringFormat.NONE)
-                .allowNull(allowNull())
-                .allowMissing(allowMissing())
-                .allowBoolean(false)
-                .allowObject(false)
-                .allowArray(false)
-                .build();
-    }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {
@@ -125,10 +104,6 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
-
-        Builder allowNumberInt(boolean allowNumberInt);
-
-        Builder allowNumberFloat(boolean allowNumberFloat);
 
         Builder allowString(StringFormat allowString);
 
@@ -149,5 +124,10 @@ public abstract class IntOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

@@ -8,7 +8,9 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.EnumSet;
 import java.util.OptionalLong;
+import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code long}.
@@ -17,15 +19,16 @@ import java.util.OptionalLong;
 @BuildableStyle
 public abstract class LongOptions extends ValueOptions {
 
-    private static final LongOptions STANDARD = builder().build();
-    private static final LongOptions STRICT = builder()
-            .allowNull(false)
-            .allowMissing(false)
-            .build();
     private static final LongOptions LENIENT = builder()
             .allowNumberFloat(true)
             .allowString(StringFormat.FLOAT)
             .build();
+    private static final LongOptions STANDARD = builder().build();
+    private static final LongOptions STRICT = builder()
+            .allowMissing(false)
+            .addDesiredTypes(JsonValueTypes.NUMBER_INT)
+            .build();
+
 
     public static Builder builder() {
         return ImmutableLongOptions.builder();
@@ -62,24 +65,9 @@ public abstract class LongOptions extends ValueOptions {
         NONE, INT, FLOAT
     }
 
-    /**
-     * If parsing JSON integer numbers is supported. By default, is {@code true}.
-     *
-     * @return allow number int
-     */
-    @Default
-    public boolean allowNumberInt() {
-        return true;
-    }
-
-    /**
-     * If parsing JSON floating point numbers is supported. By default, is {@code false}.
-     *
-     * @return allow number float
-     */
-    @Default
-    public boolean allowNumberFloat() {
-        return false;
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return  JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
     /**
@@ -88,7 +76,7 @@ public abstract class LongOptions extends ValueOptions {
      * @return allow string
      */
     @Default
-    public StringFormat allowString() {
+    public StringFormat allowString2() {
         return StringFormat.NONE;
     }
 
@@ -136,5 +124,10 @@ public abstract class LongOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    final EnumSet<JsonValueTypes> allowableTypes() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

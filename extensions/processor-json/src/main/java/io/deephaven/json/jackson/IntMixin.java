@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.IntOptions;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 final class IntMixin extends Mixin {
     private final IntOptions options;
 
-    public IntMixin(IntOptions options, JacksonConfiguration factory) {
+    public IntMixin(IntOptions options, JsonFactory factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

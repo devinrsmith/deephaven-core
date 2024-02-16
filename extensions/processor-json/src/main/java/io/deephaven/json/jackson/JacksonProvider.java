@@ -14,28 +14,32 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * A specific JSON processor implementation using Jackson. This provides more control over the default
+ * {@link ValueOptions#processor(Class)} and {@link ValueOptions#named(Class)}.
+ */
 public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
 
     /**
-     * Creates a jackson provider using the {@link JacksonConfiguration#defaultInstance() default configuration}.
-     * Equivalent to {@code of(options, JacksonConfiguration.defaultInstance())}.
+     * Creates a jackson provider using the default factory. If the optional jackson-databind package is on the
+     * classpath, the provider will be capable of parsing {@link io.deephaven.json.AnyOptions}.
      *
      * @param options the object options
      * @return the jackson provider
      */
     static JacksonProvider of(ValueOptions options) {
-        return of(options, JacksonConfiguration.defaultInstance());
+        return of(options, JacksonConfiguration.defaultFactory());
     }
 
     /**
-     * Creates a jackson provider using the provided {@code config}.
+     * Creates a jackson provider using the provided {@code factory}.
      *
      * @param options the object options
-     * @param config the jackson configuration
+     * @param factory the jackson factory
      * @return the jackson provider
      */
-    static JacksonProvider of(ValueOptions options, JacksonConfiguration config) {
-        return Mixin.of(options, config);
+    static JacksonProvider of(ValueOptions options, JsonFactory factory) {
+        return Mixin.of(options, factory);
     }
 
     /**

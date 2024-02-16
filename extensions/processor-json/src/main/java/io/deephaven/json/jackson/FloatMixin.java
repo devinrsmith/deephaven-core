@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.FloatOptions;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 final class FloatMixin extends Mixin {
     private final FloatOptions options;
 
-    public FloatMixin(FloatOptions options, JacksonConfiguration factory) {
+    public FloatMixin(FloatOptions options, JsonFactory factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

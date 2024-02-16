@@ -20,40 +20,32 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         return true;
     }
 
-    // NOTE: I think this is a mistake providing it here... at a minimum, it should be hidden? Thinking of patterns:
-    //
-    // parser=object_({"name": string(), "age": int()})
-    // working by default, but also having ability to override:
-    // parser=bson(object_({"name": string(), "age": int()}))
-    // having it modify the object itself seems odd.
-    // it should probably also be implicitly recursive, which also leans to not having it publicly exposed.
-    // @Default
-    // public JsonConfiguration jsonConfiguration() {
-    // return JacksonConfiguration.defaultInstance();
-    // }
-
     /**
-     * Equivalent to {@code jsonConfiguration().namedProvider(this).named(inputType)}.
+     * Creates a default object processor of type {@code inputType} from {@code this}. Callers wanting more control are
+     * encouraged to depend on a specific implementation and construct an object processor from {@code this} more
+     * explicitly.
      *
      * @param inputType the input type
-     * @return
-     * @param <T>
-     */
-    @Override
-    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
-        return JacksonProvider.of(this).named(inputType);
-    }
-
-    /**
-     * Equivalent to {@code jsonConfiguration().processorProvider(this).processor(inputType)}.
-     *
-     * @param inputType the input type
-     * @return
-     * @param <T>
+     * @return the object processor
+     * @param <T> the input type
      */
     @Override
     public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
-        return JacksonProvider.of(this).processor(inputType);
+        return defaultProvider().processor(inputType);
+    }
+
+    /**
+     * Creates a default named object processor of type {@code inputType} from {@code this}. Callers wanting more
+     * control are encouraged to depend on a specific implementation and construct a named object processor from
+     * {@code this} more explicitly.
+     *
+     * @param inputType the input type
+     * @return the named object processor
+     * @param <T> the input type
+     */
+    @Override
+    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+        return defaultProvider().named(inputType);
     }
 
     public final ArrayOptions toArrayOptions() {
@@ -115,5 +107,12 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
             return this;
         }
         throw new UnsupportedOperationException(); // todo
+    }
+
+    private JacksonProvider defaultProvider() {
+        // This is the only reference from io.deephaven.json into io.deephaven.json.jackson. If we want to break out
+        // io.deephaven.json.jackson into a separate project, we'd probably want a ServiceLoader pattern here to choose
+        // a default implementation.
+        return JacksonProvider.of(this);
     }
 }

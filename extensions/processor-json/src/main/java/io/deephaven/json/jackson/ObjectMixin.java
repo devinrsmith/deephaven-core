@@ -27,7 +27,7 @@ import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
 final class ObjectMixin extends Mixin {
     private final ObjectOptions options;
 
-    public ObjectMixin(ObjectOptions options, JacksonConfiguration factory) {
+    public ObjectMixin(ObjectOptions options, JsonFactory factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

@@ -4,14 +4,18 @@ plugins {
 }
 
 dependencies {
+
     Classpaths.inheritJacksonPlatform(project, 'api')
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
     api project(':engine-processor')
-    api 'com.fasterxml.jackson.core:jackson-core'
 
-    implementation project(':engine-query-constants')
-    implementation project(':engine-time')
+    // If we were to break up this, we would have api on json, impl on jackson
+    api project(':extensions-processor-json')
+
+    api 'com.fasterxml.jackson.core:jackson-core'
+    api 'de.undercouch:bson4jackson:2.15.0'
+
     Classpaths.inheritImmutables(project)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 

@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.LongOptions;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 final class LongMixin extends Mixin {
     private final LongOptions options;
 
-    public LongMixin(LongOptions options, JacksonConfiguration config) {
+    public LongMixin(LongOptions options, JsonFactory config) {
         super(config);
         this.options = Objects.requireNonNull(options);
     }

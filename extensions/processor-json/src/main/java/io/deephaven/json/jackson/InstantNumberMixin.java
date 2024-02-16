@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.InstantNumberOptions;
@@ -23,7 +24,7 @@ final class InstantNumberMixin extends Mixin {
 
     private final InstantNumberOptions options;
 
-    public InstantNumberMixin(InstantNumberOptions options, JacksonConfiguration factory) {
+    public InstantNumberMixin(InstantNumberOptions options, JsonFactory factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

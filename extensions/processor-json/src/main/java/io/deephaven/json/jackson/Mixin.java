@@ -44,30 +44,16 @@ import java.util.stream.Stream;
 
 abstract class Mixin implements JacksonProvider {
 
-    // private static final JsonFactory JSON_FACTORY;
     private static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
 
-    // static {
-    // // We'll attach an ObjectMapper if it's on the classpath
-    // ObjectCodec objectCodec = null;
-    // try {
-    // final Class<?> clazz = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-    // objectCodec = (ObjectCodec) clazz.getDeclaredConstructor().newInstance();
-    // } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException |
-    // InvocationTargetException e) {
-    // // ignore
-    // }
-    // JSON_FACTORY = new JsonFactory(objectCodec);
-    // }
-
-    static Mixin of(ValueOptions options, JacksonConfiguration config) {
-        return options.walk(new MixinImpl(config));
+    static Mixin of(ValueOptions options, JsonFactory factory) {
+        return options.walk(new MixinImpl(factory));
     }
 
-    private final JacksonConfiguration config;
+    private final JsonFactory factory;
 
-    Mixin(JacksonConfiguration config) {
-        this.config = Objects.requireNonNull(config);
+    Mixin(JsonFactory factory) {
+        this.factory = Objects.requireNonNull(factory);
     }
 
     public static String toColumnName(List<String> path) {
@@ -76,7 +62,7 @@ abstract class Mixin implements JacksonProvider {
     }
 
     final Mixin mixin(ValueOptions options) {
-        return of(options, config);
+        return of(options, factory);
     }
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
@@ -240,14 +226,10 @@ abstract class Mixin implements JacksonProvider {
             }
         }
 
-        private JsonParser createParser(T in) throws IOException {
-            return createParser(config.factory(), in);
-        }
-
         void processAllImpl(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) throws IOException {
             final ValueProcessor valueProcessor = processor("<root>", out);
             for (int i = 0; i < in.size(); ++i) {
-                try (final JsonParser parser = createParser(in.get(i))) {
+                try (final JsonParser parser = createParser(factory, in.get(i))) {
                     ValueProcessor.processFullJson(valueProcessor, parser);
                 }
             }
@@ -255,90 +237,90 @@ abstract class Mixin implements JacksonProvider {
     }
 
     private static class MixinImpl implements ValueOptions.Visitor<Mixin> {
-        private final JacksonConfiguration config;
+        private final JsonFactory factory;
 
-        public MixinImpl(JacksonConfiguration config) {
-            this.config = Objects.requireNonNull(config);
+        public MixinImpl(JsonFactory factory) {
+            this.factory = Objects.requireNonNull(factory);
         }
 
         @Override
         public Mixin visit(StringOptions _string) {
-            return new StringMixin(_string, config);
+            return new StringMixin(_string, factory);
         }
 
         @Override
         public Mixin visit(IntOptions _int) {
-            return new IntMixin(_int, config);
+            return new IntMixin(_int, factory);
         }
 
         @Override
         public Mixin visit(LongOptions _long) {
-            return new LongMixin(_long, config);
+            return new LongMixin(_long, factory);
         }
 
         @Override
         public Mixin visit(FloatOptions _float) {
-            return new FloatMixin(_float, config);
+            return new FloatMixin(_float, factory);
         }
 
         @Override
         public Mixin visit(DoubleOptions _double) {
-            return new DoubleMixin(_double, config);
+            return new DoubleMixin(_double, factory);
         }
 
         @Override
         public Mixin visit(ObjectOptions object) {
-            return new ObjectMixin(object, config);
+            return new ObjectMixin(object, factory);
         }
 
         @Override
         public Mixin visit(InstantOptions instant) {
-            return new InstantMixin(instant, config);
+            return new InstantMixin(instant, factory);
         }
 
         @Override
         public Mixin visit(InstantNumberOptions instantNumber) {
-            return new InstantNumberMixin(instantNumber, config);
+            return new InstantNumberMixin(instantNumber, factory);
         }
 
         @Override
         public Mixin visit(BigIntegerOptions bigInteger) {
-            return new BigIntegerMixin(bigInteger, config);
+            return new BigIntegerMixin(bigInteger, factory);
         }
 
         @Override
         public Mixin visit(BigDecimalOptions bigDecimal) {
-            return new BigDecimalMixin(bigDecimal, config);
+            return new BigDecimalMixin(bigDecimal, factory);
         }
 
         @Override
         public Mixin visit(SkipOptions skip) {
-            return new SkipMixin(skip, config);
+            return new SkipMixin(skip, factory);
         }
 
         @Override
         public Mixin visit(TupleOptions tuple) {
-            return new TupleMixin(tuple, config);
+            return new TupleMixin(tuple, factory);
         }
 
         @Override
         public Mixin visit(TypedObjectOptions typedObject) {
-            return new TypedObjectMixin(typedObject, config);
+            return new TypedObjectMixin(typedObject, factory);
         }
 
         @Override
         public Mixin visit(LocalDateOptions localDate) {
-            return new LocalDateMixin(localDate, config);
+            return new LocalDateMixin(localDate, factory);
         }
 
         @Override
         public Mixin visit(ArrayOptions array) {
-            return new ArrayMixin(array, config);
+            return new ArrayMixin(array, factory);
         }
 
         @Override
         public Mixin visit(AnyOptions any) {
-            return new AnyMixin(any, config);
+            return new AnyMixin(any, factory);
         }
     }
 }

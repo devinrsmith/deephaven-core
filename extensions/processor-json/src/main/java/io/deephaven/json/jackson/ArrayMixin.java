@@ -3,6 +3,7 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ArrayOptions;
 import io.deephaven.qst.type.ArrayType;
@@ -29,7 +30,7 @@ import java.util.stream.Stream;
 final class ArrayMixin extends Mixin {
     private final ArrayOptions options;
 
-    public ArrayMixin(ArrayOptions options, JacksonConfiguration factory) {
+    public ArrayMixin(ArrayOptions options, JsonFactory factory) {
         super(factory);
         this.options = Objects.requireNonNull(options);
     }

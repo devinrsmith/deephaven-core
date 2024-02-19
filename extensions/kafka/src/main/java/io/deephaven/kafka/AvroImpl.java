@@ -37,6 +37,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.jetbrains.annotations.NotNull;
@@ -107,7 +108,21 @@ class AvroImpl {
         @Override
         protected Deserializer<?> getDeserializer(KeyOrValue keyOrValue, SchemaRegistryClient schemaRegistryClient,
                 Map<String, ?> configs) {
-            return new KafkaAvroDeserializer(Objects.requireNonNull(schemaRegistryClient));
+            // TODO: unable to store this data as extra ATM
+            final Schema localSchema = schema != null
+                    ? schema
+                    : getAvroSchema(schemaRegistryClient, schemaName, schemaVersion);
+            return new KafkaAvroDeserializer(Objects.requireNonNull(schemaRegistryClient)) {
+                @Override
+                public Object deserialize(String topic, byte[] bytes) {
+                    return super.deserialize(topic, bytes, localSchema);
+                }
+
+                @Override
+                public Object deserialize(String topic, Headers headers, byte[] bytes) {
+                    return super.deserialize(topic, headers, bytes, localSchema);
+                }
+            };
         }
 
         @Override

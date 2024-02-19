@@ -1,0 +1,30 @@
+{
+  "namespace": "io.deephaven.example.v2",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {
+      "name":  "bar",
+      "type": {
+        "type": "record",
+        "name": "Bar",
+        "fields": [
+          {"name": "c", "type": ["null", "int"], "default": null },
+          {"name": "b", "type": "long"},
+          {"name": "a", "type": "string"}
+        ]
+      }
+    },
+    {
+      "name":  "foo",
+      "type": {
+        "type": "record",
+        "name": "Foo",
+        "fields": [
+          {"name": "b", "type": "long"},
+          {"name": "a", "type": "string"}
+        ]
+      }
+    }
+  ]
+}

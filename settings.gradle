@@ -260,6 +260,9 @@ project(':extensions-source-support').projectDir = file('extensions/source-suppo
 include(':extensions-protobuf')
 project(':extensions-protobuf').projectDir = file('extensions/protobuf')
 
+include(':extensions-processor-avro')
+project(':extensions-processor-avro').projectDir = file('extensions/processor-avro')
+
 include(':extensions-trackedfile')
 project(':extensions-trackedfile').projectDir = file('extensions/trackedfile')
 

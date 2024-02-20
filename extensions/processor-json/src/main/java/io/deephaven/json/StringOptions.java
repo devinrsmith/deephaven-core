@@ -55,13 +55,6 @@ public abstract class StringOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
-        Builder allowString(boolean allowString);
-
-        Builder allowNumberInt(boolean allowNumberInt);
-
-        Builder allowNumberFloat(boolean allowNumberFloat);
-
-        Builder allowBoolean(boolean allowBoolean);
 
         Builder onNull(String onNull);
 
@@ -70,18 +63,19 @@ public abstract class StringOptions extends ValueOptions {
 
     @Override
     StringOptions withMissingSupport() {
-        if (allowMissing()) {
-            return this;
-        }
-        final Builder builder = builder()
-                .allowString(allowString())
-                .allowNumberInt(allowNumberInt())
-                .allowNumberFloat(allowNumberFloat())
-                .allowNull(allowNull())
-                .allowMissing(true);
-        onNull().ifPresent(builder::onNull);
-        // todo: option for onMissing?
-        return builder.build();
+        throw new RuntimeException();
+//        if (allowMissing()) {
+//            return this;
+//        }
+//        final Builder builder = builder()
+//                .allowString(allowString())
+//                .allowNumberInt(allowNumberInt())
+//                .allowNumberFloat(allowNumberFloat())
+//                .allowNull(allowNull())
+//                .allowMissing(true);
+//        onNull().ifPresent(builder::onNull);
+//        // todo: option for onMissing?
+//        return builder.build();
     }
 
     @Check

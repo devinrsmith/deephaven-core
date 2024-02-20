@@ -6,7 +6,6 @@ package io.deephaven.json;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.time.DateTimeUtils;
 import org.immutables.value.Value.Check;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
@@ -25,23 +24,15 @@ public abstract class InstantNumberOptions extends ValueOptions {
         EPOCH_SECONDS, EPOCH_MILLIS, EPOCH_MICROS, EPOCH_NANOS;
 
         public InstantNumberOptions standard() {
-            return builder().format(this).build();
+            return builder().build();
         }
 
         public InstantNumberOptions strict() {
-            return builder()
-                    .format(this)
-                    .allowNull(false)
-                    .allowMissing(false)
-                    .build();
+            return builder().build();
         }
 
         public InstantNumberOptions lenient() {
-            return builder()
-                    .format(this)
-                    .allowNumberFloat(true)
-                    .allowString(StringFormat.FLOAT)
-                    .build();
+            return builder().build();
         }
     }
 
@@ -59,36 +50,6 @@ public abstract class InstantNumberOptions extends ValueOptions {
      * @return the format
      */
     public abstract Format format();
-
-    /**
-     * By default, is {@code true}.
-     *
-     * @return
-     */
-    @Default
-    public boolean allowNumberInt() {
-        return true;
-    }
-
-    /**
-     * By default, is {@code false}.
-     *
-     * @return
-     */
-    @Default
-    public boolean allowNumberFloat() {
-        return false;
-    }
-
-    /**
-     * By default, is {@code false}.
-     *
-     * @return
-     */
-    @Default
-    public StringFormat allowString() {
-        return StringFormat.NONE;
-    }
 
     public abstract Optional<Instant> onNull();
 

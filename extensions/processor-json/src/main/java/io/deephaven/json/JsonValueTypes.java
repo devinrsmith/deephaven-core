@@ -16,7 +16,21 @@ public enum JsonValueTypes {
     static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = ARRAY.orNull();
     static final EnumSet<JsonValueTypes> NUMBER_INT_OR_NULL = NUMBER_INT.orNull();
 
+    static void checkInvariants(EnumSet<JsonValueTypes> set) {
+        if (set.isEmpty()) {
+            throw new IllegalArgumentException("");
+        }
+        if (set.size() == 1 && set.contains(JsonValueTypes.NULL)) {
+            // does it ever make sense to _only_ accept null?
+        }
+        if (set.contains(JsonValueTypes.NUMBER_FLOAT) && !set.contains(JsonValueTypes.NUMBER_INT)) {
+            throw new IllegalArgumentException("Accepting NUMBER_FLOAT but not NUMBER_INT");
+        }
+    }
+
     EnumSet<JsonValueTypes> orNull() {
         return EnumSet.of(this, NULL);
     }
+
+
 }

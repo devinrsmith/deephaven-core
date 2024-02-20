@@ -76,6 +76,8 @@ public abstract class DoubleOptions extends ValueOptions {
         Builder onMissing(double onMissing);
     }
 
+    // todo: check float/number must be the same
+
     @Check
     final void checkOnNull() {
         if (!allowNull() && onNull().isPresent()) {

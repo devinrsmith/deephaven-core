@@ -54,16 +54,6 @@ public abstract class FloatOptions extends ValueOptions {
         return LENIENT;
     }
 
-    @Default
-    public boolean allowNumber() {
-        return true;
-    }
-
-    @Default
-    public boolean allowString() {
-        return false;
-    }
-
     @Nullable
     public abstract Float onNull();
 
@@ -87,6 +77,8 @@ public abstract class FloatOptions extends ValueOptions {
 
         Builder onMissing(Float onMissing);
     }
+
+    // todo: check float/number must be the same
 
     @Check
     final void checkOnNull() {

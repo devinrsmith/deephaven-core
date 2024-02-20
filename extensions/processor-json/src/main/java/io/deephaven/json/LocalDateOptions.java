@@ -29,7 +29,7 @@ public abstract class LocalDateOptions extends ValueOptions {
     }
 
     public static LocalDateOptions strict() {
-        return builder().allowNull(false).allowMissing(false).build();
+        return builder().build();
     }
 
     /**

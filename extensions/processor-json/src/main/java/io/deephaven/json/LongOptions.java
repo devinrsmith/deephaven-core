@@ -19,15 +19,9 @@ import java.util.Set;
 @BuildableStyle
 public abstract class LongOptions extends ValueOptions {
 
-    private static final LongOptions LENIENT = builder()
-            .allowNumberFloat(true)
-            .allowString(StringFormat.FLOAT)
-            .build();
+    private static final LongOptions LENIENT = builder().build();
     private static final LongOptions STANDARD = builder().build();
-    private static final LongOptions STRICT = builder()
-            .allowMissing(false)
-            .addDesiredTypes(JsonValueTypes.NUMBER_INT)
-            .build();
+    private static final LongOptions STRICT = builder().build();
 
 
     public static Builder builder() {
@@ -67,7 +61,7 @@ public abstract class LongOptions extends ValueOptions {
 
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return  JsonValueTypes.NUMBER_INT_OR_NULL;
+        return JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
     /**

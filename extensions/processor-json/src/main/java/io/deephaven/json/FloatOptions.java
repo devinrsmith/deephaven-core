@@ -19,13 +19,8 @@ import java.util.EnumSet;
 public abstract class FloatOptions extends ValueOptions {
 
     private static final FloatOptions STANDARD = builder().build();
-    private static final FloatOptions STRICT = builder()
-            .allowNull(false)
-            .allowMissing(false)
-            .build();
-    private static final FloatOptions LENIENT = builder()
-            .allowString(true)
-            .build();
+    private static final FloatOptions STRICT = builder().build();
+    private static final FloatOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableFloatOptions.builder();

@@ -19,13 +19,8 @@ import java.util.OptionalDouble;
 public abstract class DoubleOptions extends ValueOptions {
 
     private static final DoubleOptions STANDARD = builder().build();
-    private static final DoubleOptions STRICT = builder()
-            .allowNull(false)
-            .allowMissing(false)
-            .build();
-    private static final DoubleOptions LENIENT = builder()
-            .allowString(true)
-            .build();
+    private static final DoubleOptions STRICT = builder().build();
+    private static final DoubleOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableDoubleOptions.builder();

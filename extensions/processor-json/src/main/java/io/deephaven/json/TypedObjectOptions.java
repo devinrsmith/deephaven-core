@@ -39,8 +39,8 @@ public abstract class TypedObjectOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<TypedObjectOptions, Builder> {
         // python needs this to be overloaded... :/
-        @Override
-        Builder allowNull(boolean allowNull);
+        // @Override
+        // Builder allowNull(boolean allowNull);
 
         @Override
         Builder allowMissing(boolean allowMissing);

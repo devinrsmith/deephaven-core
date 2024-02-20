@@ -34,7 +34,7 @@ public abstract class InstantOptions extends ValueOptions {
     }
 
     public static InstantOptions strict() {
-        return builder().allowNull(false).allowMissing(false).build();
+        return builder().build();
     }
 
     /**

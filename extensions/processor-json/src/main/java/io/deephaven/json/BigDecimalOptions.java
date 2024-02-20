@@ -18,9 +18,9 @@ import java.util.Optional;
 @BuildableStyle
 public abstract class BigDecimalOptions extends ValueOptions {
 
-    private static final BigDecimalOptions LENIENT = builder().allowString(true).build();
+    private static final BigDecimalOptions LENIENT = builder().build();
     private static final BigDecimalOptions STANDARD = builder().build();
-    private static final BigDecimalOptions STRICT = builder().allowNull(false).allowMissing(false).build();
+    private static final BigDecimalOptions STRICT = builder().build();
 
     public static Builder builder() {
         return ImmutableBigDecimalOptions.builder();

@@ -18,9 +18,8 @@ import java.util.Optional;
 @BuildableStyle
 public abstract class BigIntegerOptions extends ValueOptions {
     private static final BigIntegerOptions STANDARD = builder().build();
-    private static final BigIntegerOptions STRICT = builder().allowNull(false).allowMissing(false).build();
-    private static final BigIntegerOptions LENIENT =
-            builder().allowNumberFloat(true).allowString(StringFormat.FLOAT).build();
+    private static final BigIntegerOptions STRICT = builder().build();
+    private static final BigIntegerOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableBigIntegerOptions.builder();

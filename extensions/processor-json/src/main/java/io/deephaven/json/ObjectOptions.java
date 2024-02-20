@@ -61,11 +61,6 @@ public abstract class ObjectOptions extends ValueOptions {
     // return fieldProcessors().values().stream().allMatch(ValueOptions::allowMissing);
     // }
 
-    public final SkipOptions skip() {
-        // todo: this doesn't make sense on this object
-        return SkipOptions.builder().allowMissing(allowMissing()).addAllDesiredTypes(desiredTypes()).build();
-    }
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);

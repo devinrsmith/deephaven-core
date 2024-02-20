@@ -30,15 +30,15 @@ public abstract class TupleOptions extends ValueOptions {
 
     public abstract List<ValueOptions> values();
 
-    @Override
-    public final boolean allowNull() {
-        return values().stream().allMatch(ValueOptions::allowNull);
-    }
-
-    @Override
-    public final boolean allowMissing() {
-        return values().stream().allMatch(ValueOptions::allowMissing);
-    }
+    // @Override
+    // public final boolean allowNull() {
+    // return values().stream().allMatch(ValueOptions::allowNull);
+    // }
+    //
+    // @Override
+    // public final boolean allowMissing() {
+    // return values().stream().allMatch(ValueOptions::allowMissing);
+    // }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {

@@ -6,13 +6,7 @@ package io.deephaven.json;
 import java.util.EnumSet;
 
 public enum JsonValueTypes {
-    OBJECT,
-    ARRAY,
-    STRING,
-    NUMBER_INT,
-    NUMBER_FLOAT,
-    BOOL,
-    NULL;
+    OBJECT, ARRAY, STRING, NUMBER_INT, NUMBER_FLOAT, BOOL, NULL;
 
     static final EnumSet<JsonValueTypes> ALL = EnumSet.allOf(JsonValueTypes.class);
     static final EnumSet<JsonValueTypes> NUMBER_LIKE = EnumSet.of(STRING, NUMBER_INT, NUMBER_FLOAT, NULL);

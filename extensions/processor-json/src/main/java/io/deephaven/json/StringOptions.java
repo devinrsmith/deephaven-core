@@ -19,15 +19,8 @@ import java.util.Set;
 @BuildableStyle
 public abstract class StringOptions extends ValueOptions {
     private static final StringOptions STANDARD = builder().build();
-    private static final StringOptions STRICT = builder()
-            .allowNull(false)
-            .allowMissing(false)
-            .build();
-    private static final StringOptions LENIENT = builder()
-            .allowNumberInt(true)
-            .allowNumberFloat(true)
-            .allowBoolean(true)
-            .build();
+    private static final StringOptions STRICT = builder().build();
+    private static final StringOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableStringOptions.builder();
@@ -52,45 +45,9 @@ public abstract class StringOptions extends ValueOptions {
         return JsonValueTypes.STRING_LIKE;
     }
 
-    /**
-     * If a
-     * 
-     * @return
-     */
-    @Default
-    public boolean allowString() {
-        return true;
-    }
-
-    @Default
-    public boolean allowNumberInt() {
-        return false;
-    }
-
-    @Default
-    public boolean allowNumberFloat() {
-        return false;
-    }
-
-    @Default
-    public boolean allowBoolean() {
-        return false;
-    }
-
     public abstract Optional<String> onNull();
 
     public abstract Optional<String> onMissing();
-
-    public final SkipOptions skip() {
-        return SkipOptions.builder()
-                .allowString(allowString())
-                .allowNumberInt(allowNumberInt())
-                .allowNumberFloat(allowNumberFloat())
-                .allowBoolean(allowBoolean())
-                .allowNull(allowNull())
-                .allowMissing(allowMissing())
-                .build();
-    }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {

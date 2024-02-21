@@ -58,4 +58,12 @@ public abstract class PublisherOptionsKafka extends PublishersOptionsBase {
             return Kafka._7_5();
         }
     }
+
+    public static class _7_6 extends PublisherOptionsKafka {
+
+        @Override
+        public KafkaContainer container() {
+            return Kafka._7_6();
+        }
+    }
 }

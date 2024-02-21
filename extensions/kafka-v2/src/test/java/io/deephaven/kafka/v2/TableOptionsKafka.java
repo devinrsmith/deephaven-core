@@ -62,4 +62,12 @@ public abstract class TableOptionsKafka extends TableOptionsBase {
             return Kafka._7_5();
         }
     }
+
+    public static class _7_6 extends TableOptionsKafka {
+
+        @Override
+        public KafkaContainer container() {
+            return Kafka._7_6();
+        }
+    }
 }

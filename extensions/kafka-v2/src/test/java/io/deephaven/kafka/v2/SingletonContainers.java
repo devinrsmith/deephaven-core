@@ -30,6 +30,10 @@ final class SingletonContainers {
             return Kafka_7_5.KAFKA;
         }
 
+        static KafkaContainer _7_6() {
+            return Kafka_7_6.KAFKA;
+        }
+
         private static final class Kafka_7_3 {
             private static final KafkaContainer KAFKA =
                     new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.5")).withKraft();
@@ -49,6 +53,14 @@ final class SingletonContainers {
         private static final class Kafka_7_5 {
             private static final KafkaContainer KAFKA =
                     new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.1")).withKraft();
+            static {
+                KAFKA.start();
+            }
+        }
+
+        private static final class Kafka_7_6 {
+            private static final KafkaContainer KAFKA =
+                    new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0")).withKraft();
             static {
                 KAFKA.start();
             }

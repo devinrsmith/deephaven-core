@@ -10,6 +10,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.OptionalDouble;
+import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code double}.
@@ -18,12 +19,18 @@ import java.util.OptionalDouble;
 @BuildableStyle
 public abstract class DoubleOptions extends ValueOptions {
 
-    private static final DoubleOptions STANDARD = builder().build();
-    private static final DoubleOptions STRICT = builder().build();
-    private static final DoubleOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableDoubleOptions.builder();
+    }
+
+    /**
+     * The lenient double options, equivalent to {@code builder().onValue(ToDoubleImpl.lenient()).build()}.
+     *
+     * @return the lenient double options
+     */
+    public static DoubleOptions lenient() {
+        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
     }
 
     /**
@@ -32,7 +39,7 @@ public abstract class DoubleOptions extends ValueOptions {
      * @return the standard double options
      */
     public static DoubleOptions standard() {
-        return STANDARD;
+        return builder().build();
     }
 
     /**
@@ -42,16 +49,16 @@ public abstract class DoubleOptions extends ValueOptions {
      * @return the strict double options
      */
     public static DoubleOptions strict() {
-        return STRICT;
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.NUMBER)
+                .build();
     }
 
-    /**
-     * The lenient double options, equivalent to {@code builder().onValue(ToDoubleImpl.lenient()).build()}.
-     *
-     * @return the lenient double options
-     */
-    public static DoubleOptions lenient() {
-        return LENIENT;
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.NUMBER_OR_NULL;
     }
 
     public abstract OptionalDouble onNull();
@@ -67,9 +74,6 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
-        Builder allowNumber(boolean allowNumber);
-
-        Builder allowString(boolean allowString);
 
         Builder onNull(double onNull);
 

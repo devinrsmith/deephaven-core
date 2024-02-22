@@ -9,6 +9,7 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 
@@ -19,31 +20,8 @@ import java.util.Set;
 @BuildableStyle
 public abstract class LongOptions extends ValueOptions {
 
-    private static final LongOptions LENIENT = builder().build();
-    private static final LongOptions STANDARD = builder().build();
-    private static final LongOptions STRICT = builder().build();
-
-
     public static Builder builder() {
         return ImmutableLongOptions.builder();
-    }
-
-    /**
-     * The standard Long options, equivalent to {@code builder().build()}.
-     *
-     * @return the standard Long options
-     */
-    public static LongOptions standard() {
-        return STANDARD;
-    }
-
-    /**
-     * The strict Long options, equivalent to ....
-     *
-     * @return the strict Long options
-     */
-    public static LongOptions strict() {
-        return STRICT;
     }
 
     /**
@@ -52,27 +30,40 @@ public abstract class LongOptions extends ValueOptions {
      * @return the lenient Long options
      */
     public static LongOptions lenient() {
-        return LENIENT;
+        return builder()
+                .desiredTypes(JsonValueTypes.NUMBER_LIKE)
+                .stringFormat(StringNumberFormat.FLOAT)
+                .build();
     }
 
-    public enum StringFormat {
-        NONE, INT, FLOAT
+    /**
+     * The standard Long options, equivalent to {@code builder().build()}.
+     *
+     * @return the standard Long options
+     */
+    public static LongOptions standard() {
+        return builder().build();
     }
 
+    /**
+     * The strict Long options, equivalent to ....
+     *
+     * @return the strict Long options
+     */
+    public static LongOptions strict() {
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .build();
+    }
+
+    @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
         return JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
-    /**
-     * If parsing JSON strings is supported. By default, is {@code false}.
-     *
-     * @return allow string
-     */
-    @Default
-    public StringFormat allowString2() {
-        return StringFormat.NONE;
-    }
+    public abstract Optional<StringNumberFormat> stringFormat();
 
     /**
      * The on-null value.
@@ -95,11 +86,8 @@ public abstract class LongOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<LongOptions, Builder> {
 
-        Builder allowNumberInt(boolean allowNumberInt);
 
-        Builder allowNumberFloat(boolean allowNumberFloat);
-
-        Builder allowString(StringFormat allowString);
+        Builder stringFormat(StringNumberFormat stringFormat);
 
         Builder onNull(long onNull);
 
@@ -117,6 +105,13 @@ public abstract class LongOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void stringFormatCheck() {
+        if (stringFormat().isPresent() && !allowString()) {
+            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
         }
     }
 

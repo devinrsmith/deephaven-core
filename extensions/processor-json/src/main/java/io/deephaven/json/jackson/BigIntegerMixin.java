@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.BigIntegerOptions;
+import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
@@ -58,9 +59,10 @@ final class BigIntegerMixin extends Mixin {
     }
 
     private BigInteger parseString(JsonParser parser) throws IOException {
-        switch (options.allowString()) {
-            case NONE:
-                throw Helpers.mismatch(parser, BigInteger.class);
+        if (!options.allowString()) {
+            throw Helpers.mismatch(parser, BigInteger.class);
+        }
+        switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
             case INT:
                 return Helpers.parseStringAsBigInteger(parser);
             case FLOAT:

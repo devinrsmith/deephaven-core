@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.InstantNumberOptions;
+import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
@@ -88,9 +89,10 @@ final class InstantNumberMixin extends Mixin {
                     }
                     return parseNumberFloat(parser);
                 case VALUE_STRING:
-                    switch (options.allowString()) {
-                        case NONE:
-                            throw Helpers.mismatch(parser, Instant.class);
+                    if (!options.allowString()) {
+                        throw Helpers.mismatch(parser, Instant.class);
+                    }
+                    switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
                         case INT:
                             return parseStringAsNumberInt(parser);
                         case FLOAT:

@@ -58,7 +58,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     }
 
     public final SkipOptions skip() {
-        return SkipOptions.builder().allowMissing(allowMissing()).addAllDesiredTypes(desiredTypes()).build();
+        return SkipOptions.builder().allowMissing(allowMissing()).desiredTypes(desiredTypes()).build();
     }
 
     public final ArrayOptions toArrayOptions() {
@@ -111,11 +111,13 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         B allowMissing(boolean allowMissing);
 
-        B addDesiredTypes(JsonValueTypes element);
+        B desiredTypes(Set<JsonValueTypes> desiredTypes);
 
-        B addDesiredTypes(JsonValueTypes... elements);
-
-        B addAllDesiredTypes(Iterable<JsonValueTypes> elements);
+        // B addDesiredTypes(JsonValueTypes element);
+        //
+        // B addDesiredTypes(JsonValueTypes... elements);
+        //
+        // B addAllDesiredTypes(Iterable<JsonValueTypes> elements);
 
         V build();
     }
@@ -132,10 +134,8 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     }
 
     @Check
-    void checkDesiredNotEmpty() {
-        if (desiredTypes().isEmpty()) {
-            throw new IllegalArgumentException();
-        }
+    final void checkInvariants() {
+        JsonValueTypes.checkInvariants(desiredTypes());
     }
 
     public final boolean allowNull() {

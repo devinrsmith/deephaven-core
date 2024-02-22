@@ -97,7 +97,7 @@ final class TypedObjectMixin extends Mixin {
         }
         final ObjectOptions.Builder builder = ObjectOptions.builder()
                 .allowUnknownFields(objectOpts.allowUnknownFields())
-                .allowNull(objectOpts.allowNull())
+                // .allowNull(objectOpts.allowNull())
                 .allowMissing(objectOpts.allowMissing());
         builder.putAllFields(sharedFields);
         builder.putAllFields(objectOpts.fields());

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.IntOptions;
+import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
@@ -59,9 +60,10 @@ final class IntMixin extends Mixin {
     }
 
     private int parseString(JsonParser parser) throws IOException {
-        switch (options.allowString()) {
-            case NONE:
-                throw Helpers.mismatch(parser, int.class);
+        if (!options.allowString()) {
+            throw Helpers.mismatch(parser, int.class);
+        }
+        switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
             case INT:
                 return Helpers.parseStringAsInt(parser);
             case FLOAT:

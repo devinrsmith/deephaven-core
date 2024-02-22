@@ -44,7 +44,7 @@ final class BigDecimalMixin extends Mixin {
     }
 
     private BigDecimal parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!options.allowNumber()) {
+        if (!options.allowNumberInt() && !options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, BigDecimal.class);
         }
         return parser.getDecimalValue();

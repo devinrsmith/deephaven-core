@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
+import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
@@ -25,6 +26,7 @@ public abstract class SkipOptions extends ValueOptions {
     }
 
     @Override
+    @Default
     public Set<JsonValueTypes> desiredTypes() {
         return JsonValueTypes.ALL;
     }

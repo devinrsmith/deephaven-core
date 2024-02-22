@@ -9,6 +9,7 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -19,23 +20,9 @@ import java.util.Set;
 @BuildableStyle
 public abstract class IntOptions extends ValueOptions {
 
-    private static final IntOptions LENIENT = builder()
-            .addAllDesiredTypes(JsonValueTypes.NUMBER_LIKE)
-            .build();
-    private static final IntOptions STANDARD = builder()
-            .addDesiredTypes(JsonValueTypes.NUMBER_INT, JsonValueTypes.NULL)
-            .build();
-    private static final IntOptions STRICT = builder()
-            .allowMissing(false)
-            .addDesiredTypes(JsonValueTypes.NUMBER_INT)
-            .build();
 
     public static Builder builder() {
         return ImmutableIntOptions.builder();
-    }
-
-    public enum StringFormat {
-        NONE, INT, FLOAT
     }
 
     /**
@@ -44,7 +31,10 @@ public abstract class IntOptions extends ValueOptions {
      * @return the lenient Int options
      */
     public static IntOptions lenient() {
-        return LENIENT;
+        return builder()
+                .desiredTypes(JsonValueTypes.NUMBER_LIKE)
+                .stringFormat(StringNumberFormat.FLOAT)
+                .build();
     }
 
     /**
@@ -53,7 +43,7 @@ public abstract class IntOptions extends ValueOptions {
      * @return the standard Int options
      */
     public static IntOptions standard() {
-        return STANDARD;
+        return builder().build();
     }
 
     /**
@@ -62,12 +52,16 @@ public abstract class IntOptions extends ValueOptions {
      * @return the strict Int options
      */
     public static IntOptions strict() {
-        return STRICT;
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .build();
     }
 
     /**
      * The desired types. By default, is {@link JsonValueTypes#NUMBER_INT} and {@link JsonValueTypes#NULL}.
      */
+    @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
         return JsonValueTypes.NUMBER_INT_OR_NULL;
@@ -78,10 +72,7 @@ public abstract class IntOptions extends ValueOptions {
      *
      * @return allow string
      */
-    @Default
-    public StringFormat allowString2() {
-        return StringFormat.NONE;
-    }
+    public abstract Optional<StringNumberFormat> stringFormat();
 
     /**
      * The on-null value.
@@ -105,7 +96,7 @@ public abstract class IntOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
 
-        Builder allowString(StringFormat allowString);
+        Builder stringFormat(StringNumberFormat stringFormat);
 
         Builder onNull(int onNull);
 
@@ -123,6 +114,13 @@ public abstract class IntOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void stringFormatCheck() {
+        if (stringFormat().isPresent() && !allowString()) {
+            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
         }
     }
 

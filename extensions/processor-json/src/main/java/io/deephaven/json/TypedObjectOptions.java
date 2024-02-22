@@ -9,6 +9,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A type-discriminated object.
@@ -26,6 +27,12 @@ public abstract class TypedObjectOptions extends ValueOptions {
     public abstract Map<String, ValueOptions> sharedFields();
 
     public abstract Map<String, ObjectOptions> objects();
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
+    }
 
     @Default
     public boolean allowUnknownTypes() {

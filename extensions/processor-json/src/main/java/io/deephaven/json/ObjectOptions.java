@@ -9,6 +9,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Processes a JSON object as map of processors.
@@ -26,6 +27,12 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     public abstract Map<String, ValueOptions> fields();
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
+    }
 
     /**
      * ...

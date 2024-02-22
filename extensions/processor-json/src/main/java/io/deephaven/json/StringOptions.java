@@ -18,31 +18,32 @@ import java.util.Set;
 @Immutable
 @BuildableStyle
 public abstract class StringOptions extends ValueOptions {
-    private static final StringOptions STANDARD = builder().build();
-    private static final StringOptions STRICT = builder().build();
-    private static final StringOptions LENIENT = builder().build();
 
     public static Builder builder() {
         return ImmutableStringOptions.builder();
     }
 
+    public static StringOptions lenient() {
+        return builder()
+                .desiredTypes(JsonValueTypes.STRING_LIKE)
+                .build();
+    }
 
     public static StringOptions standard() {
-        return STANDARD;
+        return builder().build();
     }
 
     public static StringOptions strict() {
-        return STRICT;
-    }
-
-    public static StringOptions lenient() {
-        return LENIENT;
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .build();
     }
 
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return JsonValueTypes.STRING_LIKE;
+        return JsonValueTypes.STRING_OR_NULL;
     }
 
     public abstract Optional<String> onNull();
@@ -64,18 +65,18 @@ public abstract class StringOptions extends ValueOptions {
     @Override
     StringOptions withMissingSupport() {
         throw new RuntimeException();
-//        if (allowMissing()) {
-//            return this;
-//        }
-//        final Builder builder = builder()
-//                .allowString(allowString())
-//                .allowNumberInt(allowNumberInt())
-//                .allowNumberFloat(allowNumberFloat())
-//                .allowNull(allowNull())
-//                .allowMissing(true);
-//        onNull().ifPresent(builder::onNull);
-//        // todo: option for onMissing?
-//        return builder.build();
+        // if (allowMissing()) {
+        // return this;
+        // }
+        // final Builder builder = builder()
+        // .allowString(allowString())
+        // .allowNumberInt(allowNumberInt())
+        // .allowNumberFloat(allowNumberFloat())
+        // .allowNull(allowNull())
+        // .allowMissing(true);
+        // onNull().ifPresent(builder::onNull);
+        // // todo: option for onMissing?
+        // return builder.build();
     }
 
     @Check

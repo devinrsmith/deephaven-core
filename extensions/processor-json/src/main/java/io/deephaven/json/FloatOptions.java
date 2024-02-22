@@ -10,6 +10,7 @@ import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code float}.
@@ -18,12 +19,17 @@ import java.util.EnumSet;
 @BuildableStyle
 public abstract class FloatOptions extends ValueOptions {
 
-    private static final FloatOptions STANDARD = builder().build();
-    private static final FloatOptions STRICT = builder().build();
-    private static final FloatOptions LENIENT = builder().build();
-
     public static Builder builder() {
         return ImmutableFloatOptions.builder();
+    }
+
+    /**
+     * The lenient float options, equivalent to {@code builder().onValue(ToFloatImpl.lenient()).build()}.
+     *
+     * @return the lenient float options
+     */
+    public static FloatOptions lenient() {
+        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
     }
 
     /**
@@ -32,7 +38,7 @@ public abstract class FloatOptions extends ValueOptions {
      * @return the standard float options
      */
     public static FloatOptions standard() {
-        return STANDARD;
+        return builder().build();
     }
 
     /**
@@ -42,16 +48,16 @@ public abstract class FloatOptions extends ValueOptions {
      * @return the strict float options
      */
     public static FloatOptions strict() {
-        return STRICT;
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.NUMBER)
+                .build();
     }
 
-    /**
-     * The lenient float options, equivalent to {@code builder().onValue(ToFloatImpl.lenient()).build()}.
-     *
-     * @return the lenient float options
-     */
-    public static FloatOptions lenient() {
-        return LENIENT;
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.NUMBER_OR_NULL;
     }
 
     @Nullable
@@ -69,10 +75,6 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     public interface Builder extends ValueOptions.Builder<FloatOptions, Builder> {
-        Builder allowNumber(boolean allowNumber);
-
-        Builder allowString(boolean allowString);
-
         Builder onNull(Float onNull);
 
         Builder onMissing(Float onMissing);

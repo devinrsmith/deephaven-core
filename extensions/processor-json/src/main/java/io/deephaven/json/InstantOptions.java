@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Processes a JSON string as an {@link Instant}.
@@ -34,7 +35,16 @@ public abstract class InstantOptions extends ValueOptions {
     }
 
     public static InstantOptions strict() {
-        return builder().build();
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .build();
+    }
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
     }
 
     /**

@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Processes a JSON string as an {@link LocalDate}.
@@ -29,7 +30,16 @@ public abstract class LocalDateOptions extends ValueOptions {
     }
 
     public static LocalDateOptions strict() {
-        return builder().build();
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .build();
+    }
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
     }
 
     /**

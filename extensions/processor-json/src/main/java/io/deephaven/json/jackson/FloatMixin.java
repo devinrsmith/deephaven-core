@@ -54,7 +54,7 @@ final class FloatMixin extends Mixin {
     }
 
     private float parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!options.allowNumber()) {
+        if (!options.allowNumberFloat() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, float.class);
         }
         return parser.getFloatValue();

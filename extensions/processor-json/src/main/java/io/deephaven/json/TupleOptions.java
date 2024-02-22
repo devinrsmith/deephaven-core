@@ -8,6 +8,7 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Processes a JSON array as an tuple.
@@ -30,15 +31,22 @@ public abstract class TupleOptions extends ValueOptions {
 
     public abstract List<ValueOptions> values();
 
+    @Override
+    public final Set<JsonValueTypes> desiredTypes() {
+        return values().stream().allMatch(ValueOptions::allowNull)
+                ? JsonValueTypes.ARRAY_OR_NULL
+                : JsonValueTypes.ARRAY.asSet();
+    }
+
     // @Override
     // public final boolean allowNull() {
     // return values().stream().allMatch(ValueOptions::allowNull);
     // }
     //
-    // @Override
-    // public final boolean allowMissing() {
-    // return values().stream().allMatch(ValueOptions::allowMissing);
-    // }
+    @Override
+    public final boolean allowMissing() {
+        return values().stream().allMatch(ValueOptions::allowMissing);
+    }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {

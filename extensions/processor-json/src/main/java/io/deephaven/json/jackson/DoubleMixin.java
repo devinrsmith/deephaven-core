@@ -52,7 +52,7 @@ final class DoubleMixin extends Mixin {
     }
 
     private double parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!options.allowNumber()) {
+        if (!options.allowNumberFloat() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, double.class);
         }
         return parser.getDoubleValue();

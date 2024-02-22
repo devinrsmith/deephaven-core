@@ -5,11 +5,13 @@ package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Check;
+import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Processes a JSON value as a {@link BigInteger}.
@@ -17,33 +19,37 @@ import java.util.Optional;
 @Immutable
 @BuildableStyle
 public abstract class BigIntegerOptions extends ValueOptions {
-    private static final BigIntegerOptions STANDARD = builder().build();
-    private static final BigIntegerOptions STRICT = builder().build();
-    private static final BigIntegerOptions LENIENT = builder().build();
-
     public static Builder builder() {
         return ImmutableBigIntegerOptions.builder();
     }
 
+    public static BigIntegerOptions lenient() {
+        // todo: float
+        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
+    }
+
     public static BigIntegerOptions standard() {
-        return STANDARD;
+        return builder().build();
     }
 
     public static BigIntegerOptions strict() {
-        return STRICT;
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .build();
     }
 
-    public static BigIntegerOptions lenient() {
-        return LENIENT;
-    }
-
-    public enum StringFormat {
-        NONE, INT, FLOAT
-    }
+    public abstract Optional<StringNumberFormat> stringFormat();
 
     public abstract Optional<BigInteger> onNull();
 
     public abstract Optional<BigInteger> onMissing();
+
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return JsonValueTypes.NUMBER_INT_OR_NULL;
+    }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {
@@ -58,13 +64,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
     }
 
     @Check
-    final void checkNumberFloatInt() {
-        if (allowNumberFloat() && !allowNumberInt()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
     final void checkOnNull() {
         if (!allowNull() && onNull().isPresent()) {
             throw new IllegalArgumentException();
@@ -75,6 +74,13 @@ public abstract class BigIntegerOptions extends ValueOptions {
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException();
+        }
+    }
+
+    @Check
+    final void stringFormatCheck() {
+        if (stringFormat().isPresent() && !allowString()) {
+            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
         }
     }
 

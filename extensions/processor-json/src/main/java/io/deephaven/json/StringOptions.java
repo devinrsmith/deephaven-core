@@ -4,12 +4,10 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -17,7 +15,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class StringOptions extends ValueOptions {
+public abstract class StringOptions extends BoxedOptions<String> {
 
     public static Builder builder() {
         return ImmutableStringOptions.builder();
@@ -46,20 +44,13 @@ public abstract class StringOptions extends ValueOptions {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
-    public abstract Optional<String> onNull();
-
-    public abstract Optional<String> onMissing();
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<StringOptions, Builder> {
+    public interface Builder extends BoxedOptions.Builder<String, StringOptions, Builder> {
 
-        Builder onNull(String onNull);
-
-        Builder onMissing(String onMissing);
     }
 
     @Override
@@ -77,20 +68,6 @@ public abstract class StringOptions extends ValueOptions {
         // onNull().ifPresent(builder::onNull);
         // // todo: option for onMissing?
         // return builder.build();
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
     }
 
     @Override

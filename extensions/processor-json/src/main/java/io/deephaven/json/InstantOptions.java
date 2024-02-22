@@ -5,7 +5,6 @@ package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.time.DateTimeUtils;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
@@ -14,7 +13,6 @@ import java.lang.Runtime.Version;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -22,7 +20,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class InstantOptions extends ValueOptions {
+public abstract class InstantOptions extends BoxedOptions<Instant> {
 
     private static final Version VERSION_12 = Version.parse("12");
 
@@ -46,20 +44,6 @@ public abstract class InstantOptions extends ValueOptions {
     public Set<JsonValueTypes> desiredTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
-
-    /**
-     * The onNull value to use. Must not set if {@link #allowNull()} is {@code false}.
-     *
-     * @return
-     */
-    public abstract Optional<Instant> onNull();
-
-    /**
-     * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
-     * 
-     * @return
-     */
-    public abstract Optional<Instant> onMissing();
 
     /**
      * The date-time formatter to use for {@link DateTimeFormatter#parse(CharSequence) parsing}. The parsed result must
@@ -94,28 +78,9 @@ public abstract class InstantOptions extends ValueOptions {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<InstantOptions, Builder> {
-        Builder onNull(Instant onNull);
-
-        Builder onMissing(Instant onMissing);
+    public interface Builder extends BoxedOptions.Builder<Instant, InstantOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
-
-        InstantOptions build();
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
     }
 
     @Override

@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class BigIntegerOptions extends ValueOptions {
+public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     public static Builder builder() {
         return ImmutableBigIntegerOptions.builder();
     }
@@ -41,10 +41,6 @@ public abstract class BigIntegerOptions extends ValueOptions {
 
     public abstract Optional<StringNumberFormat> stringFormat();
 
-    public abstract Optional<BigInteger> onNull();
-
-    public abstract Optional<BigInteger> onMissing();
-
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
@@ -56,25 +52,9 @@ public abstract class BigIntegerOptions extends ValueOptions {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<BigIntegerOptions, Builder> {
+    public interface Builder extends BoxedOptions.Builder<BigInteger, BigIntegerOptions, Builder> {
 
-        Builder onNull(BigInteger onNull);
-
-        Builder onMissing(BigInteger onMissing);
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
+        Builder stringFormat(StringNumberFormat stringFormat);
     }
 
     @Check

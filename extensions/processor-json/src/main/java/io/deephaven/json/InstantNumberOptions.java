@@ -20,7 +20,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class InstantNumberOptions extends ValueOptions {
+public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     public enum Format {
         EPOCH_SECONDS, EPOCH_MILLIS, EPOCH_MICROS, EPOCH_NANOS;
@@ -56,10 +56,6 @@ public abstract class InstantNumberOptions extends ValueOptions {
      */
     public abstract Format format();
 
-    public abstract Optional<Instant> onNull();
-
-    public abstract Optional<Instant> onMissing();
-
     public abstract Optional<StringNumberFormat> stringFormat();
 
     @Default
@@ -83,28 +79,10 @@ public abstract class InstantNumberOptions extends ValueOptions {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<InstantNumberOptions, Builder> {
+    public interface Builder extends BoxedOptions.Builder<Instant, InstantNumberOptions, Builder> {
         Builder format(Format format);
 
-        Builder onNull(Instant onNull);
-
-        Builder onMissing(Instant onMissing);
-
         Builder stringFormat(StringNumberFormat allowString);
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
     }
 
     @Check

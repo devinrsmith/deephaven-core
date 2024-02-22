@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class BigDecimalOptions extends ValueOptions {
+public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
 
     public static Builder builder() {
         return ImmutableBigDecimalOptions.builder();
@@ -39,11 +39,6 @@ public abstract class BigDecimalOptions extends ValueOptions {
                 .build();
     }
 
-
-    public abstract Optional<BigDecimal> onNull();
-
-    public abstract Optional<BigDecimal> onMissing();
-
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
@@ -55,25 +50,8 @@ public abstract class BigDecimalOptions extends ValueOptions {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<BigDecimalOptions, Builder> {
+    public interface Builder extends BoxedOptions.Builder<BigDecimal, BigDecimalOptions, Builder> {
 
-        Builder onNull(BigDecimal onNull);
-
-        Builder onMissing(BigDecimal onMissing);
-    }
-
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
     }
 
     @Override

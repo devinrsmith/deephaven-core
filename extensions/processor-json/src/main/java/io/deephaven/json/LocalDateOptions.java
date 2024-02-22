@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -12,7 +11,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,7 +18,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class LocalDateOptions extends ValueOptions {
+public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
     public static Builder builder() {
         return ImmutableLocalDateOptions.builder();
     }
@@ -54,37 +52,16 @@ public abstract class LocalDateOptions extends ValueOptions {
         return DateTimeFormatter.ISO_LOCAL_DATE;
     }
 
-    public abstract Optional<LocalDate> onNull();
-
-    public abstract Optional<LocalDate> onMissing();
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<LocalDateOptions, Builder> {
+    public interface Builder extends BoxedOptions.Builder<LocalDate, LocalDateOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
-
-        Builder onNull(LocalDate onNull);
-
-        Builder onMissing(LocalDate onMissing);
     }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
-        }
-    }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {

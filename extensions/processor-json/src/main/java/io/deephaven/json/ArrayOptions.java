@@ -15,8 +15,19 @@ import java.util.Set;
 public abstract class ArrayOptions extends ValueOptions {
 
     public static Builder builder() {
-        return null;
-        // return ImmutableArrayOptions.builder();
+        return ImmutableArrayOptions.builder();
+    }
+
+    public static ArrayOptions standard(ValueOptions element) {
+        return builder().element(element).build();
+    }
+
+    public static ArrayOptions strict(ValueOptions element) {
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.ARRAY.asSet())
+                .element(element)
+                .build();
     }
 
     public abstract ValueOptions element();

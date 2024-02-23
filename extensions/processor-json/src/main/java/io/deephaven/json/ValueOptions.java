@@ -61,11 +61,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         return SkipOptions.builder().allowMissing(allowMissing()).desiredTypes(desiredTypes()).build();
     }
 
-    public final ArrayOptions toArrayOptions() {
-        return null;
-        // return ArrayOptions.builder()
-        // .element(this)
-        // .build();
+    public final ArrayOptions array() {
+        // todo: allowMissing not applicable for elements,
+        // but should we use it to define whether array is strict or not?
+        return ArrayOptions.standard(this);
     }
 
     public abstract <T> T walk(Visitor<T> visitor);

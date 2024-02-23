@@ -87,7 +87,7 @@ final class ObjectMixin extends Mixin {
                         processEmptyObject(parser);
                         return;
                     }
-                    if (parser.currentToken() != JsonToken.FIELD_NAME) {
+                    if (!parser.hasToken(JsonToken.FIELD_NAME)) {
                         throw new IllegalStateException();
                     }
                     // fall-through

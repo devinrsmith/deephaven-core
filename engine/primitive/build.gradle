@@ -6,7 +6,8 @@ plugins {
 description 'Primitives: Expanding upon java.util.PrimitiveIterator and java.util.function.* for {byte, char, float, short}'
 
 dependencies {
-    implementation project(':Util')
+    // is API b/c CloseableIterator exposes SafeCloseable
+    api project(':Util')
 
     compileOnly depAnnotations
 }

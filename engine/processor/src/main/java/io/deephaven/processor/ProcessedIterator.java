@@ -30,7 +30,8 @@ public final class ProcessedIterator<T> implements Iterator<List<WritableChunk<?
      * @param <T>
      * @throws IOException
      */
-    public static <T> ProcessedIterator<T> it(Iterator<T> iterator, ObjectProcessor<? super T> processor, int chunkSize) throws IOException {
+    public static <T> ProcessedIterator<T> it(Iterator<T> iterator, ObjectProcessor<? super T> processor, int chunkSize)
+            throws IOException {
         return new ProcessedIterator<>(iterator, processor, chunkSize);
     }
 

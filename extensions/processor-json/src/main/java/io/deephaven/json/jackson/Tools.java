@@ -4,6 +4,7 @@
 package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.ObjectCodec;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
@@ -42,6 +43,8 @@ public final class Tools {
         final StreamPublisherIt spit = new StreamPublisherIt(outputTypes);
         final StreamToBlinkTableAdapter adapter =
                 new StreamToBlinkTableAdapter(definition, spit, ExecutionContext.getContext().getUpdateGraph(), "name");
+        Helpers.assertNextToken(parser, JsonToken.START_ARRAY);
+        Helpers.assertNextToken(parser, JsonToken.VALUE_STRING);
         final Iterator<String> it = iterator(parser);
         final ProcessedIterator<String> processedIt = ProcessedIterator.it(it, op, 1024);
         // todo; ability to do all on this thread

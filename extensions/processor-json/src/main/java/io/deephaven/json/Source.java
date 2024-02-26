@@ -6,10 +6,42 @@ package io.deephaven.json;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.file.Path;
 import java.util.Objects;
 
 public interface Source {
+
+    static Source of(String string) {
+        Objects.requireNonNull(string);
+        return new Source() {
+            @Override
+            public <T> T walk(Visitor<T> visitor) {
+                return visitor.visit(string);
+            }
+        };
+    }
+
+    static Source of(ByteBuffer buffer) {
+        Objects.requireNonNull(buffer);
+        return new Source() {
+            @Override
+            public <T> T walk(Visitor<T> visitor) {
+                return visitor.visit(buffer);
+            }
+        };
+    }
+
+    static Source of(CharBuffer buffer) {
+        Objects.requireNonNull(buffer);
+        return new Source() {
+            @Override
+            public <T> T walk(Visitor<T> visitor) {
+                return visitor.visit(buffer);
+            }
+        };
+    }
 
     static Source of(File file) {
         Objects.requireNonNull(file);
@@ -54,6 +86,10 @@ public interface Source {
     <T> T walk(Visitor<T> visitor);
 
     interface Visitor<T> {
+        // todo: charSource?
+        T visit(String string);
+        T visit(ByteBuffer buffer);
+        T visit(CharBuffer buffer);
         T visit(File file);
         T visit(Path path);
         T visit(InputStream inputStream);

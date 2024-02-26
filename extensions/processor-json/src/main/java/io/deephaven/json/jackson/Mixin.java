@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -166,45 +167,42 @@ abstract class Mixin implements JacksonProvider {
     private class StringIn extends ObjectProcessorJsonValue<String> {
         @Override
         protected JsonParser createParser(JsonFactory factory, String in) throws IOException {
-            return factory.createParser(in);
+            return JacksonSource.of(factory, in);
         }
     }
 
     private class BytesIn extends ObjectProcessorJsonValue<byte[]> {
         @Override
         protected JsonParser createParser(JsonFactory factory, byte[] in) throws IOException {
-            return factory.createParser(in);
+            return JacksonSource.of(factory, ByteBuffer.wrap(in));
         }
     }
 
     private class ByteBufferIn extends ObjectProcessorJsonValue<ByteBuffer> {
         @Override
         protected JsonParser createParser(JsonFactory factory, ByteBuffer in) throws IOException {
-            if (in.hasArray()) {
-                return factory.createParser(in.array(), in.position(), in.remaining());
-            }
-            return factory.createParser(ByteBufferInputStream.of(in));
+            return JacksonSource.of(factory, in);
         }
     }
 
     private class CharsIn extends ObjectProcessorJsonValue<char[]> {
         @Override
         protected JsonParser createParser(JsonFactory factory, char[] in) throws IOException {
-            return factory.createParser(in);
+            return JacksonSource.of(factory, CharBuffer.wrap(in));
         }
     }
 
     private class FileIn extends ObjectProcessorJsonValue<File> {
         @Override
         protected JsonParser createParser(JsonFactory factory, File in) throws IOException {
-            return factory.createParser(in);
+            return JacksonSource.of(factory, in);
         }
     }
 
     private class URLIn extends ObjectProcessorJsonValue<URL> {
         @Override
         protected JsonParser createParser(JsonFactory factory, URL in) throws IOException {
-            return factory.createParser(in);
+            return JacksonSource.of(factory, in);
         }
     }
 

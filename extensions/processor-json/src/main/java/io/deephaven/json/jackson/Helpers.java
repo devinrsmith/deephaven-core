@@ -38,10 +38,9 @@ final class Helpers {
     }
 
     static void assertCurrentToken(JsonParser parser, JsonToken expected) {
-        final JsonToken actual = parser.currentToken();
-        if (actual != expected) {
+        if (!parser.hasToken(expected)) {
             throw new IllegalStateException(
-                    String.format("Unexpected current token. expected=%s, actual=%s", expected, actual));
+                    String.format("Unexpected current token. expected=%s, actual=%s", expected, parser.currentToken()));
         }
     }
 

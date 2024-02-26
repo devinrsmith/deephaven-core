@@ -7,12 +7,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.Type;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * A specific JSON processor implementation using Jackson. This provides more control over the default
@@ -43,6 +45,8 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectPr
     }
 
     JsonFactory factory();
+
+    Stream<Type<?>> outputTypes();
 
     /**
      * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.

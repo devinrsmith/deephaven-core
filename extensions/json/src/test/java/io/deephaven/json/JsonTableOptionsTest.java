@@ -5,6 +5,8 @@ package io.deephaven.json;
 
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+
 public class JsonTableOptionsTest {
 
     static final ObjectOptions NAME_AGE = ObjectOptions.builder()
@@ -12,14 +14,14 @@ public class JsonTableOptionsTest {
             .putFields("age", IntOptions.strict())
             .build();
 
-    static Source source(String resource) {
-        return Source.of(JsonTableOptionsTest.class.getResource(resource));
+    static URL resource(String resource) {
+        return JsonTableOptionsTest.class.getResource(resource);
     }
 
     @Test
     void singleObject() {
         JsonTableOptions.builder()
-                .source(source("test-single-object.json"))
+                .source(resource("test-single-object.json"))
                 .options(NAME_AGE)
                 .build();
     }
@@ -27,7 +29,7 @@ public class JsonTableOptionsTest {
     @Test
     void arrayObjects() {
         JsonTableOptions.builder()
-                .source(source("test-array-object.json"))
+                .source(resource("test-array-object.json"))
                 .options(NAME_AGE.array())
                 .build();
     }

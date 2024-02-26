@@ -11,6 +11,8 @@ import org.immutables.value.Value.Immutable;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 
 @Immutable
@@ -43,6 +45,14 @@ public abstract class JsonTableOptions {
 
         Builder source(Source source);
 
+        default Builder source(String string) {
+            return source(Source.of(string));
+        }
+
+        default Builder source(ByteBuffer buffer) {
+            return source(Source.of(buffer));
+        }
+
         default Builder source(File file) {
             return source(Source.of(file));
         }
@@ -53,6 +63,10 @@ public abstract class JsonTableOptions {
 
         default Builder source(InputStream inputStream) {
             return source(Source.of(inputStream));
+        }
+
+        default Builder source(URL url) {
+            return source(Source.of(url));
         }
 
         JsonTableOptions build();

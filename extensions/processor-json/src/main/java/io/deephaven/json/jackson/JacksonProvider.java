@@ -42,6 +42,8 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectPr
         return Mixin.of(options, factory);
     }
 
+    JsonFactory factory();
+
     /**
      * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.
      *

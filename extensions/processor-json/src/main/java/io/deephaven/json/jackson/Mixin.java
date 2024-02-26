@@ -56,6 +56,11 @@ abstract class Mixin implements JacksonProvider {
         this.factory = Objects.requireNonNull(factory);
     }
 
+    @Override
+    public final JsonFactory factory() {
+        return factory;
+    }
+
     public static String toColumnName(List<String> path) {
         // todo: allow user to configure
         return String.join("_", path);

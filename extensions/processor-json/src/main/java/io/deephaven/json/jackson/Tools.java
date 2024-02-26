@@ -3,12 +3,15 @@
  */
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.ObjectCodec;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.json.ValueOptions;
+import io.deephaven.json.ValueOptions.Visitor;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.processor.ProcessedIterator;
@@ -18,6 +21,8 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -56,4 +61,10 @@ public final class Tools {
         final JsonParser parser = JacksonConfiguration.defaultFactory().createParser(new File(file));
         return array(parser, NamedObjectProcessor.of(ObjectProcessor.simple(Type.stringType()), "String"));
     }
+
+    public static void what(ValueOptions options, JsonFactory factory, Path path) {
+
+    }
+
+
 }

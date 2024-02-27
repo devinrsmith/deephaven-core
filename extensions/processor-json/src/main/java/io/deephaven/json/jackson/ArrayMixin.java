@@ -40,7 +40,7 @@ final class ArrayMixin extends Mixin {
         return true;
     }
 
-    private Mixin element() {
+    Mixin element() {
         return mixin(options.element());
     }
 

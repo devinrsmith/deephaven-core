@@ -133,7 +133,7 @@ final class ObjectMixin extends Mixin {
             // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
             // counter to ensure all field processors were invoked.
             final Set<String> visited = new HashSet<>(fieldProcessors.size());
-            while (parser.currentToken() == JsonToken.FIELD_NAME) {
+            while (parser.hasToken(JsonToken.FIELD_NAME)) {
                 final String fieldName = parser.currentName();
                 final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
                 if (knownProcessor == null) {

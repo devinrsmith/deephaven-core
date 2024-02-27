@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 
 abstract class Mixin implements JacksonProvider {
 
-    private static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
+    static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
 
     static Mixin of(ValueOptions options, JsonFactory factory) {
         return options.walk(new MixinImpl(factory));
@@ -78,8 +78,6 @@ abstract class Mixin implements JacksonProvider {
     // todo: is Map<List<String>, Type<?>> easier?
     // or, Stream<(List<String>, Type<?>)>?
     abstract Stream<List<String>> paths();
-
-    abstract Stream<Type<?>> outputTypes();
 
     final int numColumns() {
         return (int) outputTypes().count();

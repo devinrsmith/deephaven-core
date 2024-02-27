@@ -28,9 +28,15 @@ public abstract class JsonTableOptions {
     public abstract Source source();
 
     @Default
-    public boolean isDelimited() {
+    public boolean multiValueSupport() {
         // TODO: newline delimited pretty common?
+        // todo: true by default?
         return false;
+    }
+
+    @Default
+    public int chunkSize() {
+        return 1024;
     }
 
     public final Table execute() {
@@ -68,6 +74,8 @@ public abstract class JsonTableOptions {
         default Builder source(URL url) {
             return source(Source.of(url));
         }
+
+        Builder multiValueSupport(boolean multiValueSupport);
 
         JsonTableOptions build();
     }

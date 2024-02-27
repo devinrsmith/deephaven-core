@@ -103,7 +103,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         T visit(AnyOptions any);
 
-        // todo: short, byte, char
+        // todo: bool, short, byte, char
     }
 
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {

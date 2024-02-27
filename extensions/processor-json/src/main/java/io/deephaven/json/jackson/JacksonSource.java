@@ -44,7 +44,8 @@ final class JacksonSource implements Visitor<JsonParser> {
             return of(factory, path.toFile());
         }
         if (!factory.isEnabled(StreamReadFeature.AUTO_CLOSE_SOURCE)) {
-            throw new RuntimeException(String.format("Unable to create Path-based parser when '%s' is not enabled", StreamReadFeature.AUTO_CLOSE_SOURCE));
+            throw new RuntimeException(String.format("Unable to create Path-based parser when '%s' is not enabled",
+                    StreamReadFeature.AUTO_CLOSE_SOURCE));
         }
         // jackson buffers internally
         return factory.createParser(Files.newInputStream(path));

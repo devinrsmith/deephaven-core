@@ -27,12 +27,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class ArrayMixin extends Mixin {
-    private final ArrayOptions options;
+final class ArrayMixin extends Mixin<ArrayOptions> {
 
     public ArrayMixin(ArrayOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     final boolean asArray() {

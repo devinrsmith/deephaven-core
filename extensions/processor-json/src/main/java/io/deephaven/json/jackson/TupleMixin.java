@@ -20,12 +20,10 @@ import java.util.stream.Stream;
 
 import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
 
-final class TupleMixin extends Mixin {
-    private final TupleOptions options;
+final class TupleMixin extends Mixin<TupleOptions> {
 
     public TupleMixin(TupleOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

@@ -17,12 +17,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class InstantMixin extends Mixin {
-    private final InstantOptions options;
+final class InstantMixin extends Mixin<InstantOptions> {
 
     public InstantMixin(InstantOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

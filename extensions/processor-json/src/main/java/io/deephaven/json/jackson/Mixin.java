@@ -43,18 +43,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class Mixin implements JacksonProvider {
+abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
 
     static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
 
-    static Mixin of(ValueOptions options, JsonFactory factory) {
+    static Mixin<?> of(ValueOptions options, JsonFactory factory) {
         return options.walk(new MixinImpl(factory));
     }
 
-    private final JsonFactory factory;
+    private final JsonFactory factory; // todo: probably shouldn't take factory at this level, work w/ Source instead
+    final T options;
 
-    Mixin(JsonFactory factory) {
-        this.factory = Objects.requireNonNull(factory);
+    Mixin(JsonFactory factory, T options) {
+        this.factory = factory;
+        this.options = Objects.requireNonNull(options);
+    }
+
+    public final T options() {
+        return options;
     }
 
     @Override
@@ -64,10 +70,10 @@ abstract class Mixin implements JacksonProvider {
 
     public static String toColumnName(List<String> path) {
         // todo: allow user to configure
-        return String.join("_", path);
+        return path.isEmpty() ? "Value" : String.join("_", path);
     }
 
-    final Mixin mixin(ValueOptions options) {
+    final Mixin<?> mixin(ValueOptions options) {
         return of(options, factory);
     }
 
@@ -85,30 +91,30 @@ abstract class Mixin implements JacksonProvider {
 
     @SuppressWarnings("unchecked")
     @Override
-    public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
+    public final <X> ObjectProcessor<? super X> processor(Class<X> inputType) {
         if (String.class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) stringProcessor();
+            return (ObjectProcessor<? super X>) stringProcessor();
         }
         if (byte[].class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) bytesProcessor();
+            return (ObjectProcessor<? super X>) bytesProcessor();
         }
         if (char[].class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) charsProcessor();
+            return (ObjectProcessor<? super X>) charsProcessor();
         }
         if (File.class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) fileProcessor();
+            return (ObjectProcessor<? super X>) fileProcessor();
         }
         if (URL.class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) urlProcessor();
+            return (ObjectProcessor<? super X>) urlProcessor();
         }
         if (ByteBuffer.class.isAssignableFrom(inputType)) {
-            return (ObjectProcessor<? super T>) byteBufferProcessor();
+            return (ObjectProcessor<? super X>) byteBufferProcessor();
         }
         throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
     }
 
     @Override
-    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+    public final <X> NamedObjectProcessor<? super X> named(Class<X> inputType) {
         return NamedObjectProcessor.of(processor(inputType), names(TO_COLUMN_NAME));
     }
 
@@ -237,90 +243,90 @@ abstract class Mixin implements JacksonProvider {
         }
     }
 
-    private static class MixinImpl implements ValueOptions.Visitor<Mixin> {
+    private static class MixinImpl implements ValueOptions.Visitor<Mixin<?>> {
         private final JsonFactory factory;
 
         public MixinImpl(JsonFactory factory) {
-            this.factory = Objects.requireNonNull(factory);
+            this.factory = factory;
         }
 
         @Override
-        public Mixin visit(StringOptions _string) {
+        public StringMixin visit(StringOptions _string) {
             return new StringMixin(_string, factory);
         }
 
         @Override
-        public Mixin visit(IntOptions _int) {
+        public IntMixin visit(IntOptions _int) {
             return new IntMixin(_int, factory);
         }
 
         @Override
-        public Mixin visit(LongOptions _long) {
+        public LongMixin visit(LongOptions _long) {
             return new LongMixin(_long, factory);
         }
 
         @Override
-        public Mixin visit(FloatOptions _float) {
+        public FloatMixin visit(FloatOptions _float) {
             return new FloatMixin(_float, factory);
         }
 
         @Override
-        public Mixin visit(DoubleOptions _double) {
+        public DoubleMixin visit(DoubleOptions _double) {
             return new DoubleMixin(_double, factory);
         }
 
         @Override
-        public Mixin visit(ObjectOptions object) {
+        public ObjectMixin visit(ObjectOptions object) {
             return new ObjectMixin(object, factory);
         }
 
         @Override
-        public Mixin visit(InstantOptions instant) {
+        public InstantMixin visit(InstantOptions instant) {
             return new InstantMixin(instant, factory);
         }
 
         @Override
-        public Mixin visit(InstantNumberOptions instantNumber) {
+        public InstantNumberMixin visit(InstantNumberOptions instantNumber) {
             return new InstantNumberMixin(instantNumber, factory);
         }
 
         @Override
-        public Mixin visit(BigIntegerOptions bigInteger) {
+        public BigIntegerMixin visit(BigIntegerOptions bigInteger) {
             return new BigIntegerMixin(bigInteger, factory);
         }
 
         @Override
-        public Mixin visit(BigDecimalOptions bigDecimal) {
+        public BigDecimalMixin visit(BigDecimalOptions bigDecimal) {
             return new BigDecimalMixin(bigDecimal, factory);
         }
 
         @Override
-        public Mixin visit(SkipOptions skip) {
+        public SkipMixin visit(SkipOptions skip) {
             return new SkipMixin(skip, factory);
         }
 
         @Override
-        public Mixin visit(TupleOptions tuple) {
+        public TupleMixin visit(TupleOptions tuple) {
             return new TupleMixin(tuple, factory);
         }
 
         @Override
-        public Mixin visit(TypedObjectOptions typedObject) {
+        public TypedObjectMixin visit(TypedObjectOptions typedObject) {
             return new TypedObjectMixin(typedObject, factory);
         }
 
         @Override
-        public Mixin visit(LocalDateOptions localDate) {
+        public LocalDateMixin visit(LocalDateOptions localDate) {
             return new LocalDateMixin(localDate, factory);
         }
 
         @Override
-        public Mixin visit(ArrayOptions array) {
+        public ArrayMixin visit(ArrayOptions array) {
             return new ArrayMixin(array, factory);
         }
 
         @Override
-        public Mixin visit(AnyOptions any) {
+        public AnyMixin visit(AnyOptions any) {
             return new AnyMixin(any, factory);
         }
     }

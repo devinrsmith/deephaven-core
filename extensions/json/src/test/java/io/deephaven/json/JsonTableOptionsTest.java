@@ -21,7 +21,7 @@ public class JsonTableOptionsTest {
     @Test
     void singleObject() {
         JsonTableOptions.builder()
-                .source(resource("test-single-object.json"))
+                .addSources(resource("test-single-object.json"))
                 .options(NAME_AGE)
                 .build();
     }
@@ -29,7 +29,7 @@ public class JsonTableOptionsTest {
     @Test
     void arrayObjects() {
         JsonTableOptions.builder()
-                .source(resource("test-array-object.json"))
+                .addSources(resource("test-array-objects.json"))
                 .options(NAME_AGE.array())
                 .build();
     }

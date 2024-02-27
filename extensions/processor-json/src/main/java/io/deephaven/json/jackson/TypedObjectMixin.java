@@ -22,12 +22,9 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class TypedObjectMixin extends Mixin {
-    private final TypedObjectOptions options;
-
+final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     public TypedObjectMixin(TypedObjectOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

@@ -24,12 +24,10 @@ import java.util.stream.Stream;
 
 import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
 
-final class ObjectMixin extends Mixin {
-    private final ObjectOptions options;
+final class ObjectMixin extends Mixin<ObjectOptions> {
 
     public ObjectMixin(ObjectOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

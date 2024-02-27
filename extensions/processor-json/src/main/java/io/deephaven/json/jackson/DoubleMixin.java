@@ -15,12 +15,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class DoubleMixin extends Mixin {
-    private final DoubleOptions options;
+final class DoubleMixin extends Mixin<DoubleOptions> {
 
     public DoubleMixin(DoubleOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

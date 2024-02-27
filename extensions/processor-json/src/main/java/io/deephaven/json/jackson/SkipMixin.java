@@ -14,12 +14,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class SkipMixin extends Mixin {
-    private final SkipOptions options;
+final class SkipMixin extends Mixin<SkipOptions> {
 
     public SkipMixin(SkipOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

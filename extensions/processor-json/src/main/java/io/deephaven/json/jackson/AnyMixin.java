@@ -16,12 +16,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class AnyMixin extends Mixin {
-    private final AnyOptions options;
-
+final class AnyMixin extends Mixin<AnyOptions> {
     public AnyMixin(AnyOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     // TODO: ALLOW NULL USAGE?

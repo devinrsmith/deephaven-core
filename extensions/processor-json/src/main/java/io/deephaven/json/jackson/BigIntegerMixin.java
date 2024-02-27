@@ -16,12 +16,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class BigIntegerMixin extends Mixin {
-    private final BigIntegerOptions options;
+final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
 
     public BigIntegerMixin(BigIntegerOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

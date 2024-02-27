@@ -15,12 +15,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class FloatMixin extends Mixin {
-    private final FloatOptions options;
+final class FloatMixin extends Mixin<FloatOptions> {
 
     public FloatMixin(FloatOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

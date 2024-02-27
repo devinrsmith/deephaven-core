@@ -13,12 +13,12 @@ import java.util.Objects;
 
 public interface Source {
 
-    static Source of(String string) {
-        Objects.requireNonNull(string);
+    static Source of(String content) {
+        Objects.requireNonNull(content);
         return new Source() {
             @Override
             public <T> T walk(Visitor<T> visitor) {
-                return visitor.visit(string);
+                return visitor.visit(content);
             }
         };
     }
@@ -87,12 +87,18 @@ public interface Source {
 
     interface Visitor<T> {
         // todo: charSource?
-        T visit(String string);
+        T visit(String content);
+
         T visit(ByteBuffer buffer);
+
         T visit(CharBuffer buffer);
+
         T visit(File file);
+
         T visit(Path path);
+
         T visit(InputStream inputStream);
+
         T visit(URL url);
     }
 }

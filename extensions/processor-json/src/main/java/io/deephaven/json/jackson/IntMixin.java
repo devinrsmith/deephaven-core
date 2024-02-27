@@ -16,12 +16,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class IntMixin extends Mixin {
-    private final IntOptions options;
-
+final class IntMixin extends Mixin<IntOptions> {
     public IntMixin(IntOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

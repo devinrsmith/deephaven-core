@@ -17,17 +17,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class InstantNumberMixin extends Mixin {
+final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
     private static final BigDecimal MULTIPLICAND_10e9 = BigDecimal.valueOf(1_000_000_000);
     private static final BigDecimal MULTIPLICAND_10e6 = BigDecimal.valueOf(1_000_000);
     private static final BigDecimal MULTIPLICAND_10e3 = BigDecimal.valueOf(1_000);
 
-    private final InstantNumberOptions options;
-
     public InstantNumberMixin(InstantNumberOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

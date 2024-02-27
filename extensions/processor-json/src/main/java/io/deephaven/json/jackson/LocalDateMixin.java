@@ -16,12 +16,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class LocalDateMixin extends Mixin {
-    private final LocalDateOptions options;
+final class LocalDateMixin extends Mixin<LocalDateOptions> {
 
     public LocalDateMixin(LocalDateOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

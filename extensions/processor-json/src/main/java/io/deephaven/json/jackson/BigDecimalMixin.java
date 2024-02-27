@@ -15,12 +15,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-final class BigDecimalMixin extends Mixin {
-    private final BigDecimalOptions options;
+final class BigDecimalMixin extends Mixin<BigDecimalOptions> {
 
     public BigDecimalMixin(BigDecimalOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

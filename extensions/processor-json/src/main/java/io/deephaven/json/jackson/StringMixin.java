@@ -11,15 +11,12 @@ import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
-final class StringMixin extends Mixin {
-    private final StringOptions options;
+final class StringMixin extends Mixin<StringOptions> {
 
     public StringMixin(StringOptions options, JsonFactory factory) {
-        super(factory);
-        this.options = Objects.requireNonNull(options);
+        super(factory, options);
     }
 
     @Override

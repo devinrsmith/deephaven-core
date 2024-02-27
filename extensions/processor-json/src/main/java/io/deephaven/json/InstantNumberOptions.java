@@ -28,17 +28,19 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
         public InstantNumberOptions lenient() {
             return builder()
+                    .format(this)
                     .desiredTypes(JsonValueTypes.NUMBER_LIKE)
                     .stringFormat(StringNumberFormat.FLOAT)
                     .build();
         }
 
         public InstantNumberOptions standard() {
-            return builder().build();
+            return builder().format(this).build();
         }
 
         public InstantNumberOptions strict() {
             return builder()
+                    .format(this)
                     .allowMissing(false)
                     .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
                     .build();

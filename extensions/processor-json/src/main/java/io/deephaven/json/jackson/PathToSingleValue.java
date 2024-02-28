@@ -4,6 +4,7 @@
 package io.deephaven.json.jackson;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.annotations.SimpleStyle;
 import io.deephaven.json.AnyOptions;
 import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BigDecimalOptions;
@@ -24,6 +25,7 @@ import io.deephaven.json.ValueOptions;
 import io.deephaven.json.ValueOptions.Visitor;
 import io.deephaven.json.jackson.PathToSingleValue.Results;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Parameter;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -31,11 +33,32 @@ import java.util.Objects;
 
 final class PathToSingleValue implements Visitor<Results> {
 
+    interface Path {
+
+    }
+
+    @Immutable
+    @SimpleStyle
+    static abstract class ObjectField implements Path {
+
+        @Parameter
+        public abstract String field();
+    }
+
+    @Immutable
+    @SimpleStyle
+    static abstract class ArrayIndex implements Path {
+
+        @Parameter
+        public abstract int index();
+    }
+
+
     @Immutable
     @BuildableStyle
     static abstract class Results {
 
-        public abstract List<String> path();
+        public abstract List<Path> path();
 
         public abstract ValueOptions options();
     }
@@ -52,8 +75,17 @@ final class PathToSingleValue implements Visitor<Results> {
             return complete(object);
         }
         final Entry<String, ValueOptions> entry = object.fields().entrySet().iterator().next();
-        builder.addPath(entry.getKey());
+        builder.addPath(ImmutableObjectField.of(entry.getKey()));
         return entry.getValue().walk(this);
+    }
+
+    @Override
+    public Results visit(TupleOptions tuple) {
+        if (tuple.values().size() != 1) {
+            return complete(tuple);
+        }
+        builder.addPath(ImmutableArrayIndex.of(0));
+        return tuple.values().iterator().next().walk(this);
     }
 
     @Override
@@ -109,11 +141,6 @@ final class PathToSingleValue implements Visitor<Results> {
     @Override
     public Results visit(SkipOptions skip) {
         return complete(skip);
-    }
-
-    @Override
-    public Results visit(TupleOptions tuple) {
-        return complete(tuple);
     }
 
     @Override

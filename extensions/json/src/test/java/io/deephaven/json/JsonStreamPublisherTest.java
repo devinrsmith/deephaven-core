@@ -6,52 +6,158 @@ package io.deephaven.json;
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.ChunkEquals;
 import io.deephaven.chunk.IntChunk;
+import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.json.Source.Visitor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
-import io.deephaven.util.QueryConstants;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import static io.deephaven.util.QueryConstants.NULL_INT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JsonStreamPublisherTest {
+
+    public static Source empty() {
+        return Source.of("");
+    }
+
+    public static Source nullToken() {
+        return Source.of("null");
+    }
+
+    public static Source objEmpty() {
+        return Source.of("{}");
+    }
+
+    public static Source arrayEmpty() {
+        return Source.of("[]");
+    }
+
+    public static Source _int(int x) {
+        return Source.of(Integer.toString(x));
+    }
+
+    public static Source objNameAge(String name, int age) {
+        // we are assuming name is simple here
+        return Source.of(String.format("{\"name\":\"%s\", \"age\":%d}", name, age));
+    }
+
+    public static Source objName(String name) {
+        // we are assuming name is simple here
+        return Source.of(String.format("{\"name\":\"%s\"}", name));
+    }
+
+    public static Source objAge(int age) {
+        return Source.of(String.format("{\"age\":%d}", age));
+    }
+
+    public static Source array(Source... sources) {
+        return Source.of(Arrays
+                .stream(sources)
+                .map(JsonStreamPublisherTest::string)
+                .collect(Collectors.joining(",", "[", "]")));
+    }
+
+    public static Source newlineDelimited(Source... sources) {
+        return Source.of(Arrays
+                .stream(sources)
+                .map(JsonStreamPublisherTest::string)
+                .collect(Collectors.joining("\n")));
+    }
+
+    public static ObjectOptions nameAgeOptions() {
+        return ObjectOptions.builder()
+                .putFields("name", StringOptions.standard())
+                .putFields("age", IntOptions.standard())
+                .build();
+    }
+
     @Test
-    void singlePrimitive() {
+    void emptySource() {
         final JsonStreamPublisher publisher = publisher(IntOptions.standard(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
-            executeInline(publisher, Source.of("42"), Source.of("null"), Source.of("43"));
-            executeInline(publisher, Source.of("1"), Source.of("-2"));
+            executeInline(publisher, empty());
             recorder.flushPublisher();
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{42, QueryConstants.NULL_INT, 43}));
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{1, -2}));
             recorder.assertEmpty();
             recorder.clear();
         }
     }
 
     @Test
-    void multiPrimitive() {
-        final JsonStreamPublisher publisher = publisher(IntOptions.standard(), true);
+    void emptyObject() {
+        final JsonStreamPublisher publisher = publisher(nameAgeOptions(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
-            executeInline(publisher, Source.of("42 null 43"));
-            executeInline(publisher, Source.of("1\n\n-2"));
+            executeInline(publisher, objEmpty());
             recorder.flushPublisher();
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{42, QueryConstants.NULL_INT, 43}));
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{1, -2}));
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {null}),
+                    IntChunk.chunkWrap(new int[] {NULL_INT}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void emptyArray() {
+        final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(nameAgeOptions()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher, arrayEmpty());
+            recorder.flushPublisher();
             recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void singlePrimitive() {
+        final JsonStreamPublisher publisher = publisher(IntOptions.standard(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher, _int(42), nullToken(), _int(43));
+            recorder.flushPublisher();
+            recorder.assertEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void singleObject() {
+        final JsonStreamPublisher publisher = publisher(nameAgeOptions(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher,
+                    objNameAge("foo", 42),
+                    nullToken(),
+                    objNameAge("bar", 43),
+                    objName("baz"),
+                    objAge(44),
+                    objEmpty());
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
             recorder.clear();
         }
     }
@@ -61,26 +167,156 @@ public class JsonStreamPublisherTest {
         final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(IntOptions.standard()), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
-            executeInline(publisher, Source.of("[42, null, 43]"));
-            executeInline(publisher, Source.of("[1, -2]"));
+            // [42, null, 43]
+            executeInline(publisher, array(_int(42), nullToken(), _int(43)));
             recorder.flushPublisher();
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{42, QueryConstants.NULL_INT, 43}));
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{1, -2}));
+            recorder.assertEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void singleObjectArray() {
+        final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(nameAgeOptions()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [{"name": "foo", "age":42}, null, {"name": "bar", "age": 43}, {"name": "baz"}, {"age": 44}, {}]
+            executeInline(publisher, array(
+                    objNameAge("foo", 42),
+                    nullToken(),
+                    objNameAge("bar", 43),
+                    objName("baz"),
+                    objAge(44),
+                    objEmpty()));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void multiValuePrimitive() {
+        final JsonStreamPublisher publisher = publisher(IntOptions.standard(), true);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // 42 null 43
+            executeInline(publisher, newlineDelimited(_int(42), nullToken(), _int(43)));
+            recorder.flushPublisher();
+            recorder.assertEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void multiValueObject() {
+        final JsonStreamPublisher publisher = publisher(nameAgeOptions(), true);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // {"name": "foo", "age": 42} null {"name": "bar", "age": 43} {"name": "baz"} {"age": 44} {}
+            executeInline(publisher, newlineDelimited(
+                    objNameAge("foo", 42),
+                    nullToken(),
+                    objNameAge("bar", 43),
+                    objName("baz"),
+                    objAge(44),
+                    objEmpty()));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void multiValuePrimitiveArray() {
+        final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(IntOptions.standard()), true);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [42] [] [null, 43] [44]
+            executeInline(publisher, newlineDelimited(
+                    array(_int(42)),
+                    arrayEmpty(),
+                    array(nullToken(), _int(43)),
+                    array(_int(44))));
+            recorder.flushPublisher();
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, 44}));
             recorder.assertEmpty();
             recorder.clear();
         }
     }
 
     @Test
-    void multiPrimitiveArray() {
-        final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(IntOptions.standard()), false);
+    void nestedPrimitiveArray() {
+        final JsonStreamPublisher publisher = publisher(ObjectOptions.builder()
+                .putFields("a", ObjectOptions.builder()
+                        .putFields("b", ObjectOptions.builder()
+                                .putFields("c", ArrayOptions.strict(IntOptions.standard()))
+                                .build())
+                        .build())
+                .build(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
-            executeInline(publisher, Source.of("[42, null, 43]"));
-            executeInline(publisher, Source.of("[1, -2]"));
+            executeInline(publisher, Source.of("{\"a\": {\"b\": {\"c\": [42, null, 43]}}}"));
+            // Ensure extra fields are ignored
+            executeInline(publisher, Source.of(
+                    "{\"a\": {\"skip\": {}, \"b\": {\"skip\": {}, \"c\": [42, null, 43], \"skip\": {}}}, \"skip\": {}}"));
             recorder.flushPublisher();
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{42, QueryConstants.NULL_INT, 43}));
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[]{1, -2}));
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void nestedTuplePrimitiveArrays() {
+        final JsonStreamPublisher publisher = publisher(TupleOptions.of(TupleOptions.of(TupleOptions.of(
+                ArrayOptions.strict(IntOptions.standard())))), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher, Source.of("[[[[42, null, 43]]]]"));
+            // Ensure skipping over extra elements
+            executeInline(publisher, Source.of("[[[[42, null, 43], {}], {}], {}]"));
+            recorder.flushPublisher();
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void tupleNestedRefArray() {
+        final JsonStreamPublisher publisher = publisher(TupleOptions.of(ObjectOptions.builder()
+                .putFields("ref", ArrayOptions.strict(IntOptions.standard()))
+                .build()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher, Source.of("[{\"ref\": [42, null, 43]}]"));
+            // Ensure skipping over extra fields and elements
+            executeInline(publisher, Source.of("[{\"foo\": {}, \"ref\": [42, null, 43], \"bar\": {}}, {}]"));
+            recorder.flushPublisher();
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void separateExecutes() {
+        final JsonStreamPublisher publisher = publisher(IntOptions.standard(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            executeInline(publisher, Source.of("42"), nullToken(), Source.of("43"));
+            executeInline(publisher, Source.of("1"), Source.of("-2"));
+            recorder.flushPublisher();
+            // Separate executes are submitted to consumer separately
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {1, -2}));
             recorder.assertEmpty();
             recorder.clear();
         }
@@ -96,7 +332,7 @@ public class JsonStreamPublisherTest {
     }
 
     private static void executeInline(JsonStreamPublisher publisher, Source... sources) {
-        publisher.execute(Runnable::run, Arrays.asList(sources));
+        publisher.execute(Runnable::run, new LinkedList<>(Arrays.asList(sources)));
     }
 
     // todo: consolidate between this and io.deephaven.kafka.v2.PublishersOptionsBase.StreamConsumerRecorder
@@ -179,5 +415,48 @@ public class JsonStreamPublisherTest {
 
     private static int fakeCompareForEquals(Chunk<?> x, Chunk<?> y) {
         return ChunkEquals.equals(x, y) ? 0 : 1;
+    }
+
+    private static String string(Source source) {
+        return source.walk(StringContent.INSTANCE);
+    }
+
+    enum StringContent implements Visitor<String> {
+        INSTANCE;
+
+        @Override
+        public String visit(String content) {
+            return content;
+        }
+
+        @Override
+        public String visit(ByteBuffer buffer) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public String visit(CharBuffer buffer) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public String visit(File file) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public String visit(Path path) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public String visit(InputStream inputStream) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public String visit(URL url) {
+            throw new IllegalStateException();
+        }
     }
 }

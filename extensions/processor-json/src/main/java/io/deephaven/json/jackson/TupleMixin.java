@@ -33,6 +33,9 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
     @Override
     public Stream<List<String>> paths() {
+        if (options.values().size() == 1) {
+            return mixin(options.values().get(0)).paths();
+        }
         // todo, give user naming option?
         final List<Stream<List<String>>> prefixed = new ArrayList<>();
         int i = 0;
@@ -58,7 +61,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         int ix = 0;
         int processorIx = 0;
         for (ValueOptions value : options.values()) {
-            final Mixin mixin = mixin(value);
+            final Mixin<?> mixin = mixin(value);
             final int numTypes = mixin.numColumns();
             final ValueProcessor processor =
                     mixin.processor(context + "[" + processorIx + "]", out.subList(ix, ix + numTypes));

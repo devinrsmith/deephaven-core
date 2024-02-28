@@ -12,7 +12,7 @@ import java.nio.file.Path;
 
 public class Examples {
     public static Table largeFile(String source) {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .options(ArrayOptions.strict(ObjectOptions.builder()
                         .putFields("id", LongOptions.lenient())
                         .putFields("type", StringOptions.strict())
@@ -23,7 +23,7 @@ public class Examples {
     }
 
     public static Table execute(String source) {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .options(ObjectOptions.builder()
                         .putFields("id", StringOptions.strict())
                         .putFields("age", IntOptions.strict())
@@ -34,7 +34,7 @@ public class Examples {
     }
 
     public static Table unconfirmedTransactions() throws MalformedURLException {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .addSources(new URL("https://blockchain.info/unconfirmed-transactions?format=json"))
                 .options(ObjectOptions.builder()
                         .putFields("txs", ArrayOptions.builder()
@@ -61,7 +61,7 @@ public class Examples {
     }
 
     public static Table latestBlock() throws MalformedURLException {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .addSources(new URL("https://blockchain.info/latestblock"))
                 .options(ObjectOptions.builder()
                         .putFields("txIndexes", ArrayOptions.strict(LongOptions.strict()))
@@ -71,7 +71,7 @@ public class Examples {
 
     // https://raw.githubusercontent.com/dariusk/corpora/master/data/colors/dulux.json
     public static Table dulux() throws MalformedURLException {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .options(ArrayOptions.strict(ObjectOptions.builder()
                         .putFields("name", StringOptions.strict())
                         .putFields("code", StringOptions.strict())
@@ -86,7 +86,7 @@ public class Examples {
     }
 
     public static Table cloudTrails() {
-        return JacksonTable.execute(JsonTableOptions.builder()
+        return JacksonTable.of(JsonTableOptions.builder()
                 .options(ObjectOptions.builder()
                         .putFields("Records", ArrayOptions.strict(ObjectOptions.builder()
                                 .putFields("userAgent", StringOptions.standard())

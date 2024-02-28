@@ -115,7 +115,7 @@ public abstract class JsonTableOptions {
         // This is the only reference from io.deephaven.json into io.deephaven.json.jackson. If we want to break out
         // io.deephaven.json.jackson into a separate project, we'd probably want a ServiceLoader pattern here to choose
         // a default implementation.
-        return JacksonTable.execute(this);
+        return JacksonTable.of(this);
     }
 
     // todo: potential for partitioned table in future based on sources

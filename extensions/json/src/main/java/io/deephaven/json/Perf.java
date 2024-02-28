@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 public class Perf {
 
     public static Table table(int maxThreads, int numMessages, int chunkSize) {
-        final List<Source> sources = Arrays.stream(generateBigMessages(numMessages)).map(Source::of).collect(Collectors.toList());
+        final List<Source> sources =
+                Arrays.stream(generateBigMessages(numMessages)).map(Source::of).collect(Collectors.toList());
         final ObjectOptions opts = bigMessageOptions();
         return JsonTableOptions.builder()
                 .options(opts)
@@ -65,7 +66,8 @@ public class Perf {
         final String floatCol = "flt";
 
         final String[] names = new String[140];
-        @SuppressWarnings("rawtypes") final Class[] types = new Class[names.length];
+        @SuppressWarnings("rawtypes")
+        final Class[] types = new Class[names.length];
         final int groupSize = names.length / 7;
         for (int i = 0; i < names.length; i++) {
             if (i < groupSize) {

@@ -21,6 +21,7 @@ public abstract class TupleOptions extends ValueOptions {
         return ImmutableTupleOptions.builder();
     }
 
+    // todo: allow users to specify the indices they care about; maybe w/ Skip?
     public static TupleOptions of(ValueOptions... values) {
         return builder().addValues(values).build();
     }

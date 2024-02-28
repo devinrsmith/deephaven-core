@@ -37,7 +37,8 @@ public class WeatherObservations {
         }
         rowSet.forAllRowKeys(rowKey -> {
             try {
-                sources.add(Source.of(new URL(String.format("https://api.weather.gov/stations/%s/observations", source.get(rowKey)))));
+                sources.add(Source.of(new URL(
+                        String.format("https://api.weather.gov/stations/%s/observations", source.get(rowKey)))));
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }

@@ -272,6 +272,9 @@ project(':extensions-s3').projectDir = file('extensions/s3')
 include(':extensions-websocket-source-connector')
 project(':extensions-websocket-source-connector').projectDir = file('extensions/websocket-source-connector')
 
+include(':extensions-json')
+project(':extensions-json').projectDir = file('extensions/json')
+
 include(':extensions-processor-json')
 project(':extensions-processor-json').projectDir = file('extensions/processor-json')
 

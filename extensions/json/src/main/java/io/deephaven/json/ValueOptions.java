@@ -3,7 +3,6 @@
  */
 package io.deephaven.json;
 
-import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import org.immutables.value.Value.Check;
@@ -40,7 +39,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      */
     @Override
     public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
-        return defaultProvider().processor(inputType);
+        return JsonProvider.serviceLoader().provider(this).processor(inputType);
     }
 
     /**
@@ -54,7 +53,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      */
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
-        return defaultProvider().named(inputType);
+        return JsonProvider.serviceLoader().namedProvider(this).named(inputType);
     }
 
     public final SkipOptions skip() {
@@ -171,12 +170,5 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
             return this;
         }
         throw new UnsupportedOperationException(); // todo
-    }
-
-    private JacksonProvider defaultProvider() {
-        // This is the only reference from io.deephaven.json into io.deephaven.json.jackson. If we want to break out
-        // io.deephaven.json.jackson into a separate project, we'd probably want a ServiceLoader pattern here to choose
-        // a default implementation.
-        return JacksonProvider.of(this);
     }
 }

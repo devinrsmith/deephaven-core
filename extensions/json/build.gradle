@@ -4,27 +4,18 @@ plugins {
 }
 
 dependencies {
-    Classpaths.inheritJacksonPlatform(project, 'api')
-    Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
-    Classpaths.inheritAutoService(project)
-
-    api project(':extensions-json')
+    // todo
     api project(':engine-processor')
-    api 'com.fasterxml.jackson.core:jackson-core'
 
-    // TODO: move this elsewhere
-    api project(':engine-table')
-
-    implementation project(':engine-query-constants')
     implementation project(':engine-time')
+
     Classpaths.inheritImmutables(project)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     Classpaths.inheritJUnitPlatform(project)
     Classpaths.inheritAssertJ(project)
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 test {

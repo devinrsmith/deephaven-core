@@ -4,9 +4,12 @@
 package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.google.auto.service.AutoService;
+import io.deephaven.json.JsonProvider;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.processor.ObjectProcessor.Provider;
 import io.deephaven.qst.type.Type;
 
 import java.io.File;

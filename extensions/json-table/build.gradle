@@ -7,8 +7,10 @@ dependencies {
     Classpaths.inheritJacksonPlatform(project, 'api')
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
+
     api 'com.fasterxml.jackson.core:jackson-core'
 
+    api project(':extensions-json')
     api project(':extensions-processor-json')
     api project(':engine-table')
     api project(':engine-processor')

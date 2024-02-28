@@ -7,7 +7,6 @@ import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
-import io.deephaven.json.jackson.JacksonTable;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -112,10 +111,7 @@ public abstract class JsonTableOptions {
      * @return the blink table
      */
     public final Table execute() {
-        // This is the only reference from io.deephaven.json into io.deephaven.json.jackson. If we want to break out
-        // io.deephaven.json.jackson into a separate project, we'd probably want a ServiceLoader pattern here to choose
-        // a default implementation.
-        return JacksonTable.of(this);
+        return JsonStreamPublisherProvider.serviceLoader().of(this);
     }
 
     // todo: potential for partitioned table in future based on sources

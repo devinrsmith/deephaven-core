@@ -10,11 +10,10 @@ dependencies {
     Classpaths.inheritAutoService(project)
 
     api project(':extensions-json')
+    api project(':engine-table')
     api project(':engine-processor')
     api 'com.fasterxml.jackson.core:jackson-core'
 
-    // TODO: move this elsewhere
-    api project(':engine-table')
 
     implementation project(':engine-query-constants')
     implementation project(':engine-time')

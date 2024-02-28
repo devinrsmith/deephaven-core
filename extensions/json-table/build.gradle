@@ -11,7 +11,7 @@ dependencies {
     api 'com.fasterxml.jackson.core:jackson-core'
 
     api project(':extensions-json')
-    api project(':extensions-processor-json')
+    api project(':extensions-json-processor')
     api project(':engine-table')
     api project(':engine-processor')
 

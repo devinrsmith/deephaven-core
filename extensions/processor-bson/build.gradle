@@ -11,7 +11,7 @@ dependencies {
     api project(':engine-processor')
 
     // If we were to break up this, we would have api on json, impl on jackson
-    api project(':extensions-processor-json')
+    api project(':extensions-json-processor')
 
     api 'com.fasterxml.jackson.core:jackson-core'
     api 'de.undercouch:bson4jackson:2.15.0'

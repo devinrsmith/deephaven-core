@@ -275,8 +275,8 @@ project(':extensions-websocket-source-connector').projectDir = file('extensions/
 include(':extensions-json')
 project(':extensions-json').projectDir = file('extensions/json')
 
-include(':extensions-processor-json')
-project(':extensions-processor-json').projectDir = file('extensions/processor-json')
+include(':extensions-json-processor')
+project(':extensions-json-processor').projectDir = file('extensions/json-processor')
 
 include(':extensions-json-table')
 project(':extensions-json-table').projectDir = file('extensions/json-table')

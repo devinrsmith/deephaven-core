@@ -7,12 +7,27 @@ import io.deephaven.engine.table.Table;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WeatherStations {
 
     public static Table table() throws MalformedURLException {
         return JsonTableOptions.builder()
                 .addSources(new URL("https://api.weather.gov/stations"))
+                .options(api())
+                .build()
+                .execute();
+    }
+
+    public static Table tableLocal() {
+        final List<Source> sources = new ArrayList<>();
+        for (int i = 0; i < 91; ++i) {
+            sources.add(Source.of(Path.of(String.format("/home/devin/Downloads/api.weather.gov/stations-%d.json", i))));
+        }
+        return JsonTableOptions.builder()
+                .addAllSources(sources)
                 .options(api())
                 .build()
                 .execute();

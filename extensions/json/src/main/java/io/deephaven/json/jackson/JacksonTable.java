@@ -44,14 +44,14 @@ public final class JacksonTable {
         final int numThreads = Math.min(options.maxThreads(), options.sources().size());
         final ExecutorService executor = Executors.newFixedThreadPool(numThreads, threadFactory);
         try {
-            return execute(options, factory, executor);
+            return execute(options, factory, executor, numThreads > 1);
         } finally {
             // ensure no new tasks can be added, but does not cancel existing submissions
             executor.shutdown();
         }
     }
 
-    private static Table execute(JsonTableOptions options, JsonFactory factory, Executor executor) {
+    private static Table execute(JsonTableOptions options, JsonFactory factory, Executor executor, boolean concurrent) {
         final JacksonStreamPublisher publisher = publisher(JsonStreamPublisherOptions.builder()
                 .options(options.options())
                 .multiValueSupport(options.multiValueSupport())
@@ -61,8 +61,12 @@ public final class JacksonTable {
         // noinspection resource
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher,
                 options.updateSourceRegistrar(), options.name(), options.extraAttributes(), true);
-        for (Source source : options.sources()) {
-            publisher.execute(executor, factory, source);
+        if (concurrent) {
+            for (final Source source : options.sources()) {
+                publisher.execute(executor, List.of(source), factory);
+            }
+        } else {
+            publisher.execute(executor, options.sources(), factory);
         }
         return adapter.table();
     }
@@ -130,24 +134,35 @@ public final class JacksonTable {
         }
 
         @Override
-        public Runnable runnable(JsonFactory factory, Source source) {
+        public Runnable runnable(List<Source> sources) {
+            return runnable(sources, JacksonConfiguration.defaultFactory());
+        }
+
+        public Runnable runnable(List<Source> sources, JsonFactory factory) {
             if (consumer == null) {
                 throw new IllegalStateException("Must register a consumer first");
             }
-            return new Runner(factory, source);
+            return new Runner(factory, sources);
+        }
+
+        public void execute(Executor executor, List<Source> sources, JsonFactory factory) {
+            executor.execute(runnable(sources, factory));
         }
 
         private class Runner implements Runnable, JsonProcess {
             private final JsonFactory factory;
-            private final Source source;
+            private final List<Source> sources;
             private final WritableChunk[] outArray;
             private List<WritableChunk<?>> out;
             private ValueProcessor elementProcessor;
             private int count;
 
-            public Runner(JsonFactory factory, Source source) {
+            public Runner(JsonFactory factory, List<Source> sources) {
+                if (sources.isEmpty()) {
+                    throw new IllegalArgumentException("sources must be non-empty");
+                }
                 this.factory = Objects.requireNonNull(factory);
-                this.source = Objects.requireNonNull(source);
+                this.sources = List.copyOf(sources);
                 this.outArray = new WritableChunk[chunkTypes.size()];
                 out = newProcessorChunks(chunkSize, chunkTypes);
                 count = 0;
@@ -156,13 +171,24 @@ public final class JacksonTable {
 
             @Override
             public void run() {
-                try (final JsonParser parser = JacksonSource.of(factory, source)) {
-                    parser.nextToken();
-                    runImpl(parser);
+                try {
+                    runImpl();
                 } catch (Throwable t) {
                     consumer.acceptFailure(t);
                 }
                 // todo: notify consumer on shutdown?
+            }
+
+            private void runImpl() throws IOException {
+                for (final Source source : sources) {
+                    try (final JsonParser parser = JacksonSource.of(factory, source)) {
+                        parser.nextToken();
+                        runImpl(parser);
+                    }
+                }
+                if (count != 0) {
+                    flushImpl();
+                }
             }
 
             private void runImpl(JsonParser parser) throws IOException {
@@ -170,9 +196,6 @@ public final class JacksonTable {
                     NavContext.processObjectField(parser, path, this);
                 } while (multiValue && !parser.hasToken(null));
                 // todo: throw exception if not multi value and not null?
-                if (count != 0) {
-                    flushImpl();
-                }
             }
 
             @Override
@@ -191,13 +214,13 @@ public final class JacksonTable {
                 parser.nextToken();
                 while (!parser.hasToken(JsonToken.END_ARRAY)) {
                     processElement(parser);
-                    parser.nextToken();
                 }
                 parser.nextToken();
             }
 
             private void processElement(JsonParser parser) throws IOException {
                 elementProcessor.processCurrentValue(parser);
+                parser.nextToken();
                 if (shutdown) {
                     throw new IOException("shutdown");
                 }

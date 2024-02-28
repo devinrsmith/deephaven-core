@@ -23,22 +23,22 @@ public interface Source {
         };
     }
 
-    static Source of(ByteBuffer buffer) {
-        Objects.requireNonNull(buffer);
+    static Source of(ByteBuffer content) {
+        Objects.requireNonNull(content);
         return new Source() {
             @Override
             public <T> T walk(Visitor<T> visitor) {
-                return visitor.visit(buffer);
+                return visitor.visit(content);
             }
         };
     }
 
-    static Source of(CharBuffer buffer) {
-        Objects.requireNonNull(buffer);
+    static Source of(CharBuffer content) {
+        Objects.requireNonNull(content);
         return new Source() {
             @Override
             public <T> T walk(Visitor<T> visitor) {
-                return visitor.visit(buffer);
+                return visitor.visit(content);
             }
         };
     }

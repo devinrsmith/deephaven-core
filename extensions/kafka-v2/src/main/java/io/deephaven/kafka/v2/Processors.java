@@ -75,6 +75,4 @@ public final class Processors {
             ObjectProcessor<byte[]> headerProcessor) {
         return ObjectProcessor.map(record -> ConsumerRecordFunctions.lastHeader(record, key), headerProcessor);
     }
-
-
 }

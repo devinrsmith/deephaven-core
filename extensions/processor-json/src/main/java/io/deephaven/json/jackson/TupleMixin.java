@@ -38,7 +38,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         int i = 0;
         for (ValueOptions value : options.values()) {
             final int ix = i;
-            prefixed.add(mixin(value).paths().map(x -> prefixWith("tuple_" + ix, x)));
+            prefixed.add(mixin(value).paths().map(x -> prefixWith(String.valueOf(ix), x)));
             ++i;
         }
         return prefixed.stream().flatMap(Function.identity());

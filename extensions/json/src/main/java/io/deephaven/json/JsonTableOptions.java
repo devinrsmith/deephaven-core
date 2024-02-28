@@ -19,14 +19,21 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Immutable
 @BuildableStyle
 public abstract class JsonTableOptions {
+    private static final Function<List<String>, String> TO_COLUMN_NAME = JsonTableOptions::toColumnName;
 
     public static Builder builder() {
         return ImmutableJsonTableOptions.builder();
+    }
+
+    public static String toColumnName(List<String> path) {
+        return path.isEmpty() ? "Value" : String.join("_", path);
     }
 
     public abstract ValueOptions options();
@@ -68,10 +75,32 @@ public abstract class JsonTableOptions {
         return UUID.randomUUID().toString();
     }
 
+    /**
+     * Equivalent to {@code ExecutionContext.getContext().getUpdateGraph()}.
+     *
+     * @return
+     */
     @Default
     public UpdateSourceRegistrar updateSourceRegistrar() {
         return ExecutionContext.getContext().getUpdateGraph();
     }
+
+    /**
+     * Equivalent to {@link JsonTableOptions#toColumnName(List)}.
+     *
+     * @return the naming function
+     */
+    @Default
+    public Function<List<String>, String> namingFunction() {
+        return TO_COLUMN_NAME;
+    }
+
+    /**
+     * The extra attributes.
+     *
+     * @return the extra attributes
+     */
+    public abstract Map<String, Object> extraAttributes();
 
     /**
      * Creates a blink {@link Table} from the combined rows from {@link #sources()}. While the intra-source rows are
@@ -138,6 +167,12 @@ public abstract class JsonTableOptions {
         Builder maxThreads(int maxThreads);
 
         Builder chunkSize(int chunkSize);
+
+        Builder namingFunction(Function<List<String>, String> namingFunction);
+
+        Builder putExtraAttributes(String key, Object value);
+
+        Builder putAllExtraAttributes(Map<String, ? extends Object> entries);
 
         JsonTableOptions build();
     }

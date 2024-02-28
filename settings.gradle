@@ -281,8 +281,8 @@ project(':extensions-json-processor').projectDir = file('extensions/json-process
 include(':extensions-json-table')
 project(':extensions-json-table').projectDir = file('extensions/json-table')
 
-include(':extensions-processor-bson')
-project(':extensions-processor-bson').projectDir = file('extensions/processor-bson')
+include(':extensions-bson-processor')
+project(':extensions-bson-processor').projectDir = file('extensions/bson-processor')
 
 include(':plugin')
 

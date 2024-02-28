@@ -11,7 +11,7 @@ dependencies {
     implementation project(':server-jetty')
 
     // todo: remove?
-    runtimeOnly project(':extensions-json-processor')
+    runtimeOnly project(':extensions-json-jackson')
     runtimeOnly project(':extensions-json-table')
 
     runtimeOnly project(':extensions-websocket-source-connector')

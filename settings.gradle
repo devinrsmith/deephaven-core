@@ -275,14 +275,14 @@ project(':extensions-websocket-source-connector').projectDir = file('extensions/
 include(':extensions-json')
 project(':extensions-json').projectDir = file('extensions/json')
 
-include(':extensions-json-processor')
-project(':extensions-json-processor').projectDir = file('extensions/json-processor')
+include(':extensions-json-jackson')
+project(':extensions-json-jackson').projectDir = file('extensions/json-jackson')
 
 include(':extensions-json-table')
 project(':extensions-json-table').projectDir = file('extensions/json-table')
 
-include(':extensions-bson-processor')
-project(':extensions-bson-processor').projectDir = file('extensions/bson-processor')
+include(':extensions-bson-jackson')
+project(':extensions-bson-jackson').projectDir = file('extensions/bson-jackson')
 
 include(':plugin')
 

@@ -29,7 +29,7 @@ dependencies {
     api project(':extensions-protobuf')
 
     // todo: remove this
-    api project(':extensions-json-processor')
+    api project(':extensions-json-jackson')
 
     implementation project(':engine-processor-function')
     implementation project(':Configuration')

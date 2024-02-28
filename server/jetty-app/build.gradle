@@ -12,7 +12,7 @@ dependencies {
 
     // todo: remove?
     runtimeOnly project(':extensions-processor-json')
-    runtimeOnly project(':extensions-json')
+    runtimeOnly project(':extensions-json-table')
 
     runtimeOnly project(':extensions-websocket-source-connector')
 

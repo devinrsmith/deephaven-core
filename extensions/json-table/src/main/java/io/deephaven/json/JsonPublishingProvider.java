@@ -8,14 +8,14 @@ import io.deephaven.engine.table.Table;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-public interface JsonStreamPublisherProvider {
+public interface JsonPublishingProvider {
 
-    static JsonStreamPublisherProvider serviceLoader() {
-        final Iterator<JsonStreamPublisherProvider> it = ServiceLoader.load(JsonStreamPublisherProvider.class).iterator();
+    static JsonPublishingProvider serviceLoader() {
+        final Iterator<JsonPublishingProvider> it = ServiceLoader.load(JsonPublishingProvider.class).iterator();
         if (!it.hasNext()) {
             throw new IllegalStateException();
         }
-        final JsonStreamPublisherProvider provider = it.next();
+        final JsonPublishingProvider provider = it.next();
         if (it.hasNext()) {
             throw new IllegalStateException();
         }

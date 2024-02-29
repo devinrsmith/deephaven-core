@@ -7,17 +7,17 @@ dependencies {
     Classpaths.inheritJacksonPlatform(project, 'api')
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
-    Classpaths.inheritAutoService(project)
-
-    api project(':extensions-json')
-    api project(':engine-table')
-    api project(':engine-processor')
     api 'com.fasterxml.jackson.core:jackson-core'
+    api project(':extensions-json')
+    api project(':extensions-json-table')
 
+//    api project(':engine-table')
+//    api project(':engine-processor')
 
     implementation project(':engine-query-constants')
     implementation project(':engine-time')
     Classpaths.inheritImmutables(project)
+    Classpaths.inheritAutoService(project)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     Classpaths.inheritJUnitPlatform(project)

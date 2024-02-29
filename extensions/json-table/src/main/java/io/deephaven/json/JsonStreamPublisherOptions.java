@@ -14,14 +14,29 @@ public abstract class JsonStreamPublisherOptions {
         return ImmutableJsonStreamPublisherOptions.builder();
     }
 
+    /**
+     * The JSON options.
+     */
     public abstract ValueOptions options();
 
+    /**
+     * If multi-value JSON sources should be parsed.
+     */
     public abstract boolean multiValueSupport();
 
+    /**
+     * The chunk size.
+     */
     public abstract int chunkSize();
 
+    /**
+     * Creates the json stream publisher with the default json publishing provider. Equivalent to {@code JsonPublishingProvider.serviceLoader().of(this)}.
+     *
+     * @return the json stream publisher
+     * @see JsonPublishingProvider#serviceLoader()
+     */
     public final JsonStreamPublisher execute() {
-        return JsonStreamPublisherProvider.serviceLoader().of(this);
+        return JsonPublishingProvider.serviceLoader().of(this);
     }
 
     public interface Builder {

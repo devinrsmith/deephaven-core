@@ -18,12 +18,31 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ *
+ */
 public final class JacksonTable {
 
+    /**
+     * Equivalent to {@code of(options, JacksonConfiguration.defaultFactory())}.
+     *
+     * @param options the options
+     * @return a blink table
+     * @see #of(JsonTableOptions, JsonFactory)
+     * @see JacksonConfiguration#defaultFactory()
+     */
     public static Table of(JsonTableOptions options) {
         return of(options, JacksonConfiguration.defaultFactory());
     }
 
+    /**
+     * Creates a blink table according to the {@code options} and {@code factory} by combining a
+     * {@link JacksonStreamPublisher} and {@link StreamToBlinkTableAdapter}.
+     *
+     * @param options the options
+     * @param factory the jackson factory
+     * @return the blink table
+     */
     public static Table of(JsonTableOptions options, JsonFactory factory) {
         final int numThreads = Math.min(options.maxThreads(), options.sources().size());
         final ExecutorService executor = executor(options, numThreads);

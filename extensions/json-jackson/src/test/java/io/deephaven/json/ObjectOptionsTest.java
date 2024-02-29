@@ -22,10 +22,6 @@ public class ObjectOptionsTest {
     private static final ObjectOptions OBJECT_NAME_AGE_FIELD = ObjectOptions.builder()
             .putFields("name", StringOptions.standard())
             .putFields("age", IntOptions.standard())
-            .putFields("properties", ObjectOptions.builder()
-                    .putFields("foo", null)
-                    .putFields("bar", null)
-                    .build())
             .build();
 
     @Test

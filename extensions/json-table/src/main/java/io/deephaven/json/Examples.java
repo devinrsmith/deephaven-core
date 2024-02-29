@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import io.deephaven.engine.table.Table;
-import io.deephaven.json.jackson.JacksonTable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,29 +11,31 @@ import java.nio.file.Path;
 
 public class Examples {
     public static Table largeFile(String source) {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .options(ArrayOptions.strict(ObjectOptions.builder()
                         .putFields("id", LongOptions.lenient())
                         .putFields("type", StringOptions.strict())
                         .putFields("created_at", InstantOptions.strict())
                         .build()))
                 .addSources(Path.of(source))
-                .build());
+                .build()
+                .execute();
     }
 
     public static Table execute(String source) {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .options(ObjectOptions.builder()
                         .putFields("id", StringOptions.strict())
                         .putFields("age", IntOptions.strict())
                         .build())
                 .addSources(Path.of(source))
                 .multiValueSupport(true)
-                .build());
+                .build()
+                .execute();
     }
 
     public static Table unconfirmedTransactions() throws MalformedURLException {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .addSources(new URL("https://blockchain.info/unconfirmed-transactions?format=json"))
                 .options(ObjectOptions.builder()
                         .putFields("txs", ArrayOptions.builder()
@@ -57,21 +58,23 @@ public class Examples {
                                 .build())
                         .build())
                 .multiValueSupport(false)
-                .build());
+                .build()
+                .execute();
     }
 
     public static Table latestBlock() throws MalformedURLException {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .addSources(new URL("https://blockchain.info/latestblock"))
                 .options(ObjectOptions.builder()
                         .putFields("txIndexes", ArrayOptions.strict(LongOptions.strict()))
                         .build())
-                .build());
+                .build()
+                .execute();
     }
 
     // https://raw.githubusercontent.com/dariusk/corpora/master/data/colors/dulux.json
     public static Table dulux() throws MalformedURLException {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .options(ArrayOptions.strict(ObjectOptions.builder()
                         .putFields("name", StringOptions.strict())
                         .putFields("code", StringOptions.strict())
@@ -82,11 +85,12 @@ public class Examples {
                         .putFields("b", IntOptions.lenient())
                         .build()))
                 .addSources(new URL("https://raw.githubusercontent.com/dariusk/corpora/master/data/colors/dulux.json"))
-                .build());
+                .build()
+                .execute();
     }
 
     public static Table cloudTrails() {
-        return JacksonTable.of(JsonTableOptions.builder()
+        return JsonTableOptions.builder()
                 .options(ObjectOptions.builder()
                         .putFields("Records", ArrayOptions.strict(ObjectOptions.builder()
                                 .putFields("userAgent", StringOptions.standard())
@@ -139,6 +143,7 @@ public class Examples {
                 .addSources(Path.of("/home/devin/Downloads/flaws_cloudtrail_logs/flaws_cloudtrail17.json"))
                 .addSources(Path.of("/home/devin/Downloads/flaws_cloudtrail_logs/flaws_cloudtrail18.json"))
                 .addSources(Path.of("/home/devin/Downloads/flaws_cloudtrail_logs/flaws_cloudtrail19.json"))
-                .build());
+                .build()
+                .execute();
     }
 }

@@ -111,7 +111,7 @@ public abstract class JsonTableOptions {
      * @return the blink table
      */
     public final Table execute() {
-        return JsonStreamPublisherProvider.serviceLoader().of(this);
+        return JsonPublishingProvider.serviceLoader().of(this);
     }
 
     // todo: potential for partitioned table in future based on sources

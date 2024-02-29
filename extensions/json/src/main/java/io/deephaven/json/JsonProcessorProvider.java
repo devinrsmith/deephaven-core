@@ -9,14 +9,13 @@ import io.deephaven.processor.ObjectProcessor;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-public interface JsonProvider {
-
-    static JsonProvider serviceLoader() {
-        final Iterator<JsonProvider> it = ServiceLoader.load(JsonProvider.class).iterator();
+public interface JsonProcessorProvider {
+    static JsonProcessorProvider serviceLoader() {
+        final Iterator<JsonProcessorProvider> it = ServiceLoader.load(JsonProcessorProvider.class).iterator();
         if (!it.hasNext()) {
             throw new IllegalStateException();
         }
-        final JsonProvider provider = it.next();
+        final JsonProcessorProvider provider = it.next();
         if (it.hasNext()) {
             throw new IllegalStateException();
         }

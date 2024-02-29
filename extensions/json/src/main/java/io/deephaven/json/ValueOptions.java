@@ -39,7 +39,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      */
     @Override
     public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
-        return JsonProvider.serviceLoader().provider(this).processor(inputType);
+        return JsonProcessorProvider.serviceLoader().provider(this).processor(inputType);
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      */
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
-        return JsonProvider.serviceLoader().namedProvider(this).named(inputType);
+        return JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType);
     }
 
     public final SkipOptions skip() {

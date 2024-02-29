@@ -4,14 +4,7 @@ plugins {
 }
 
 dependencies {
-    Classpaths.inheritJacksonPlatform(project, 'api')
-    Classpaths.inheritJacksonPlatform(project, 'testImplementation')
-
-
-    api 'com.fasterxml.jackson.core:jackson-core'
-
     api project(':extensions-json')
-    api project(':extensions-json-jackson')
     api project(':engine-table')
     api project(':engine-processor')
 
@@ -23,11 +16,9 @@ dependencies {
 
     implementation project(':engine-function') // for random, todo remove
 
-
     Classpaths.inheritJUnitPlatform(project)
     Classpaths.inheritAssertJ(project)
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 test {

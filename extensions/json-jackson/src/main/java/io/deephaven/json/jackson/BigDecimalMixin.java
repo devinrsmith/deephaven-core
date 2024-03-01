@@ -12,7 +12,6 @@ import io.deephaven.qst.type.Type;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class BigDecimalMixin extends Mixin<BigDecimalOptions> {
@@ -45,7 +44,7 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> {
         if (!options.allowNumberInt() && !options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, BigDecimal.class);
         }
-        return parser.getDecimalValue();
+        return Helpers.parseDecimalAsBigDecimal(parser);
     }
 
     private BigDecimal parseString(JsonParser parser) throws IOException {

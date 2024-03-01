@@ -39,42 +39,42 @@ final class StringMixin extends Mixin<StringOptions> {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
-    private String parseString(JsonParser parser) throws IOException {
+    private String parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, String.class);
         }
-        return parser.getText();
+        return Helpers.parseStringAsString(parser);
     }
 
-    private String parseNumberInt(JsonParser parser) throws IOException {
+    private String parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, String.class);
         }
-        return parser.getText();
+        return Helpers.parseIntAsString(parser);
     }
 
-    private String parseNumberFloat(JsonParser parser) throws IOException {
+    private String parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, String.class);
         }
-        return parser.getText();
+        return Helpers.parseDecimalAsString(parser);
     }
 
-    private String parseBoolean(JsonParser parser) throws IOException {
+    private String parseFromBool(JsonParser parser) throws IOException {
         if (!options.allowBoolean()) {
             throw Helpers.mismatch(parser, String.class);
         }
-        return parser.getText();
+        return Helpers.parseBoolAsString(parser);
     }
 
-    private String parseNull(JsonParser parser) throws IOException {
+    private String parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, String.class);
         }
         return options.onNull().orElse(null);
     }
 
-    private String parseMissing(JsonParser parser) throws IOException {
+    private String parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, String.class);
         }
@@ -86,23 +86,23 @@ final class StringMixin extends Mixin<StringOptions> {
         public String parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
+                    return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
+                    return parseFromDecimal(parser);
                 case VALUE_TRUE:
                 case VALUE_FALSE:
-                    return parseBoolean(parser);
+                    return parseFromBool(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, String.class);
         }
 
         @Override
         public String parseMissing(JsonParser parser) throws IOException {
-            return StringMixin.this.parseMissing(parser);
+            return StringMixin.this.parseFromMissing(parser);
         }
     }
 }

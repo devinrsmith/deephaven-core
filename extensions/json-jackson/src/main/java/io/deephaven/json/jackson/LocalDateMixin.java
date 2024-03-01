@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAccessor;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class LocalDateMixin extends Mixin<LocalDateOptions> {
@@ -42,19 +41,19 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
-    private LocalDate parseString(JsonParser parser) throws IOException {
+    private LocalDate parseFromString(JsonParser parser) throws IOException {
         final TemporalAccessor accessor = options.dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));
         return LocalDate.from(accessor);
     }
 
-    private LocalDate parseNull(JsonParser parser) throws IOException {
+    private LocalDate parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, LocalDate.class);
         }
         return options.onNull().orElse(null);
     }
 
-    private LocalDate parseMissing(JsonParser parser) throws IOException {
+    private LocalDate parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, LocalDate.class);
         }
@@ -66,16 +65,16 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> {
         public LocalDate parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, LocalDateOptions.class);
         }
 
         @Override
         public LocalDate parseMissing(JsonParser parser) throws IOException {
-            return LocalDateMixin.this.parseMissing(parser);
+            return LocalDateMixin.this.parseFromMissing(parser);
         }
     }
 }

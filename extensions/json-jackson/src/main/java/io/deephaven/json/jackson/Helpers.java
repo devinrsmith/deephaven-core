@@ -75,25 +75,51 @@ final class Helpers {
         return new UnexpectedToken("Unexpected missing token", location);
     }
 
-    static int parseNumberIntAsInt(JsonParser parser) throws IOException {
+    static int parseIntAsInt(JsonParser parser) throws IOException {
         return parser.getIntValue();
     }
 
-    static int parseNumberFloatAsInt(JsonParser parser) throws IOException {
-        // May lose info
+    static int parseDecimalAsTruncatedInt(JsonParser parser) throws IOException {
+        // parser as double then cast to int; no loss of whole number part (64 bit -> 32 bit)
         return parser.getIntValue();
     }
 
-    static long parseNumberIntAsLong(JsonParser parser) throws IOException {
+    static long parseIntAsLong(JsonParser parser) throws IOException {
         return parser.getLongValue();
     }
 
-    static long parseNumberFloatAsLong(JsonParser parser) throws IOException {
-        // May lose info
+    static long parseDecimalAsLossyLong(JsonParser parser) throws IOException {
+        // parser as double then cast to long; loses info (64 bit -> 64 bit)
         return parser.getLongValue();
     }
 
-    static BigDecimal parseNumberFloatAsBigDecimal(JsonParser parser) throws IOException {
+    static long parseDecimalAsTruncatedLong(JsonParser parser) throws IOException {
+        // io.deephaven.json.InstantNumberOptionsTest.epochNanosDecimal fails
+        // return parser.getLongValue();
+        return parser.getDecimalValue().longValue();
+    }
+
+    static long parseDecimalAsScaledTruncatedLong(JsonParser parser, int n) throws IOException {
+        return parser.getDecimalValue().scaleByPowerOfTen(n).longValue();
+    }
+
+    static String parseStringAsString(JsonParser parser) throws IOException {
+        return parser.getText();
+    }
+
+    static String parseIntAsString(JsonParser parser) throws IOException {
+        return parser.getText();
+    }
+
+    static String parseDecimalAsString(JsonParser parser) throws IOException {
+        return parser.getText();
+    }
+
+    static String parseBoolAsString(JsonParser parser) throws IOException {
+        return parser.getText();
+    }
+
+    static BigDecimal parseDecimalAsBigDecimal(JsonParser parser) throws IOException {
         return parser.getDecimalValue();
     }
 
@@ -122,6 +148,11 @@ final class Helpers {
         }
     }
 
+    static int parseDecimalStringAsTruncatedInt(JsonParser parser) throws IOException {
+        // parse as double then cast to int; no loss of whole number part (64 bit -> 32 bit)
+        return (int) Helpers.parseStringAsDouble(parser);
+    }
+
     static long parseStringAsLong(JsonParser parser) throws IOException {
         // 11mm / s; 88 bytes garbage
         // return parser.getValueAsLong();
@@ -136,9 +167,19 @@ final class Helpers {
         }
     }
 
-    static long parseStringConvertToLong(JsonParser parser) throws IOException {
-        // To ensure 64-bit in cases where the string is a float, we need BigDecimal
+    static long parseDecimalStringAsLossyLong(JsonParser parser) throws IOException {
+        // parser as double then cast to long; loses info (64 bit -> 64 bit)
+        return (long) parseStringAsDouble(parser);
+    }
+
+    static long parseDecimalStringAsTruncatedLong(JsonParser parser) throws IOException {
+        // To ensure 64-bit in cases where the string is a decimal, we need BigDecimal
         return parseStringAsBigDecimal(parser).longValue();
+    }
+
+    static long parseDecimalStringAsScaledTruncatedLong(JsonParser parser, int n) throws IOException {
+        // To ensure 64-bit in cases where the string is a decimal, we need BigDecimal
+        return parseStringAsBigDecimal(parser).scaleByPowerOfTen(n).longValue();
     }
 
     static float parseStringAsFloat(JsonParser parser) throws IOException {
@@ -163,6 +204,10 @@ final class Helpers {
         return parser.isEnabled(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
                 ? parseStringAsBigIntegerFast(parser)
                 : new BigInteger(parser.getText());
+    }
+
+    static BigInteger parseStringAsTruncatedBigInteger(JsonParser parser) throws IOException {
+        return parseStringAsBigDecimal(parser).toBigInteger();
     }
 
     static BigDecimal parseStringAsBigDecimal(JsonParser parser) throws IOException {
@@ -194,33 +239,5 @@ final class Helpers {
         return p.hasTextCharacters()
                 ? JavaBigDecimalParser.parseBigDecimal(p.getTextCharacters(), p.getTextOffset(), p.getTextLength())
                 : JavaBigDecimalParser.parseBigDecimal(p.getText());
-    }
-
-    private static int parseInt(char[] str, int offset, int length) {
-        // leading +?
-        final boolean negate = str[offset] == '-';
-        int res = 0;
-        for (int i = negate ? offset + 1 : offset; i < offset + length; ++i) {
-            final char ch = str[i];
-            res = res * 10 - (ch - '0');
-        }
-        // don't worry about edge case atm.
-        return negate ? -res : res;
-    }
-
-    private static long parseLong(char[] str, int offset, int length) {
-        // leading +?
-        final boolean negate = str[offset] == '-';
-        long res = 0;
-        for (int i = negate ? offset + 1 : offset; i < offset + length; ++i) {
-            final char ch = str[i];
-            res = res * 10 - (ch - '0');
-        }
-        // don't worry about edge case atm.
-        return negate ? -res : res;
-    }
-
-    public static boolean isDigit(char ch) {
-        return ch >= '0' && ch <= '9';
     }
 }

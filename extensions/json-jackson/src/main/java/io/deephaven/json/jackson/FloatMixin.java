@@ -12,7 +12,6 @@ import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class FloatMixin extends Mixin<FloatOptions> {
@@ -51,21 +50,21 @@ final class FloatMixin extends Mixin<FloatOptions> {
         return onMissing != null ? onMissing : QueryConstants.NULL_FLOAT;
     }
 
-    private float parseNumberIntOrFloat(JsonParser parser) throws IOException {
+    private float parseFromNumber(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, float.class);
         }
         return Helpers.parseNumberAsFloat(parser);
     }
 
-    private float parseString(JsonParser parser) throws IOException {
+    private float parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, float.class);
         }
         return Helpers.parseStringAsFloat(parser);
     }
 
-    private float parseNull(JsonParser parser) throws IOException {
+    private float parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, float.class);
         }
@@ -85,11 +84,11 @@ final class FloatMixin extends Mixin<FloatOptions> {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberIntOrFloat(parser);
+                    return parseFromNumber(parser);
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, float.class);
         }

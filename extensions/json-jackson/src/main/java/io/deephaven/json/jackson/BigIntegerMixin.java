@@ -59,7 +59,7 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
         return options.allowDecimal()
-                ? Helpers.parseStringAsBigDecimal(parser).toBigInteger()
+                ? Helpers.parseStringAsTruncatedBigInteger(parser)
                 : Helpers.parseStringAsBigInteger(parser);
     }
 

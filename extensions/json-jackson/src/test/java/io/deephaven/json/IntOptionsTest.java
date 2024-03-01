@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import com.fasterxml.jackson.core.exc.InputCoercionException;
 import io.deephaven.chunk.IntChunk;
+import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -152,5 +153,23 @@ public class IntOptionsTest {
     void allowDecimalString() throws IOException {
         parse(IntOptions.builder().allowDecimal(true).desiredTypes(JsonValueTypes.NUMBER_LIKE).build(),
                 List.of("\"42.42\"", "\"43.999\""), IntChunk.chunkWrap(new int[] {42, 43}));
+    }
+
+    @Test
+    void decimalStringLimitsNearMinValue() throws IOException {
+        for (int i = 0; i < 100; ++i) {
+            parse(LongOptions.builder().allowDecimal(true).desiredTypes(JsonValueTypes.NUMBER_LIKE).build(),
+                    List.of(String.format("\"%d.0\"", Integer.MIN_VALUE + i)),
+                    LongChunk.chunkWrap(new long[] {Integer.MIN_VALUE + i}));
+        }
+    }
+
+    @Test
+    void decimalStringLimitsNearMaxValue() throws IOException {
+        for (int i = 0; i < 100; ++i) {
+            parse(LongOptions.builder().allowDecimal(true).desiredTypes(JsonValueTypes.NUMBER_LIKE).build(),
+                    List.of(String.format("\"%d.0\"", Integer.MAX_VALUE - i)),
+                    LongChunk.chunkWrap(new long[] {Integer.MAX_VALUE - i}));
+        }
     }
 }

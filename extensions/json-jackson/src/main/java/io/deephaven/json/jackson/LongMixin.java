@@ -40,32 +40,33 @@ final class LongMixin extends Mixin<LongOptions> {
         return new LongValueProcessor(out.get(0).asWritableLongChunk(), new Impl());
     }
 
-    private long parseNumberInt(JsonParser parser) throws IOException {
+    private long parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, long.class);
         }
-        return Helpers.parseNumberIntAsLong(parser);
+        return Helpers.parseIntAsLong(parser);
     }
 
-    private long parseNumberFloat(JsonParser parser) throws IOException {
+    private long parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, long.class);
         }
-        return Helpers.parseNumberFloatAsLong(parser);
+        // todo: allow caller to configure between lossy long and truncated long
+        return Helpers.parseDecimalAsLossyLong(parser);
     }
 
-    private long parseString(JsonParser parser) throws IOException {
+    private long parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, long.class);
         }
         return options.allowDecimal()
-                // TODO: test
-                // Need to parse as BigDecimal to have 64-bit long range
-                ? Helpers.parseStringAsBigDecimal(parser).longValue()
+                // todo: allow caller to configure between lossy long and truncated long
+                // ? Helpers.parseDecimalStringAsLossyLong(parser)
+                ? Helpers.parseDecimalStringAsTruncatedLong(parser)
                 : Helpers.parseStringAsLong(parser);
     }
 
-    private long parseNull(JsonParser parser) throws IOException {
+    private long parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, long.class);
         }
@@ -84,13 +85,13 @@ final class LongMixin extends Mixin<LongOptions> {
         public long parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
+                    return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
+                    return parseFromDecimal(parser);
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, long.class);
         }

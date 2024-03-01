@@ -48,7 +48,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
         return options.onMissing().orElse(QueryConstants.NULL_DOUBLE);
     }
 
-    private double parseNumberIntOrFloat(JsonParser parser) throws IOException {
+    private double parseFromNumber(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, double.class);
         }
@@ -56,14 +56,14 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
         return Helpers.parseNumberAsDouble(parser);
     }
 
-    private double parseString(JsonParser parser) throws IOException {
+    private double parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, double.class);
         }
         return Helpers.parseStringAsDouble(parser);
     }
 
-    private double parseNull(JsonParser parser) throws IOException {
+    private double parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, double.class);
         }
@@ -83,11 +83,11 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberIntOrFloat(parser);
+                    return parseFromNumber(parser);
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, double.class);
         }

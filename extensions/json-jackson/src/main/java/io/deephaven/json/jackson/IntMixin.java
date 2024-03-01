@@ -39,32 +39,30 @@ final class IntMixin extends Mixin<IntOptions> {
         return new IntValueProcessor(out.get(0).asWritableIntChunk(), new Impl());
     }
 
-    private int parseNumberInt(JsonParser parser) throws IOException {
+    private int parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, int.class);
         }
-        return Helpers.parseNumberIntAsInt(parser);
+        return Helpers.parseIntAsInt(parser);
     }
 
-    private int parseNumberFloat(JsonParser parser) throws IOException {
+    private int parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, int.class);
         }
-        return Helpers.parseNumberFloatAsInt(parser);
+        return Helpers.parseDecimalAsTruncatedInt(parser);
     }
 
-    private int parseString(JsonParser parser) throws IOException {
+    private int parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, int.class);
         }
         return options.allowDecimal()
-                // Need to parse as double to have 32-bit int range
-                // todo: test this
-                ? (int) Helpers.parseStringAsDouble(parser)
+                ? Helpers.parseDecimalStringAsTruncatedInt(parser)
                 : Helpers.parseStringAsInt(parser);
     }
 
-    private int parseNull(JsonParser parser) throws IOException {
+    private int parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, int.class);
         }
@@ -83,13 +81,13 @@ final class IntMixin extends Mixin<IntOptions> {
         public int parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
+                    return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
+                    return parseFromDecimal(parser);
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, int.class);
         }

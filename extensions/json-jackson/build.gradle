@@ -8,6 +8,9 @@ dependencies {
     Classpaths.inheritJacksonPlatform(project, 'testImplementation')
 
     api 'com.fasterxml.jackson.core:jackson-core'
+    // https://github.com/FasterXML/jackson-core/issues/1229
+    implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
+
     api project(':extensions-json')
     api project(':extensions-json-table')
 

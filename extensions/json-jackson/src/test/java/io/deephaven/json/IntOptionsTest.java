@@ -138,12 +138,19 @@ public class IntOptionsTest {
     }
 
     @Test
-    void lenientFloat() throws IOException {
-        parse(IntOptions.lenient(), List.of("42.42", "43.43"), IntChunk.chunkWrap(new int[] {42, 43}));
+    void lenientString() throws IOException {
+        parse(IntOptions.lenient(), List.of("\"42\"", "\"43\""), IntChunk.chunkWrap(new int[] {42, 43}));
     }
 
     @Test
-    void lenientString() throws IOException {
-        parse(IntOptions.lenient(), List.of("\"42\"", "\"43.43\""), IntChunk.chunkWrap(new int[] {42, 43}));
+    void allowDecimal() throws IOException {
+        parse(IntOptions.builder().allowDecimal(true).build(), List.of("42.42", "43.999"),
+                IntChunk.chunkWrap(new int[] {42, 43}));
+    }
+
+    @Test
+    void allowDecimalString() throws IOException {
+        parse(IntOptions.builder().allowDecimal(true).desiredTypes(JsonValueTypes.NUMBER_LIKE).build(),
+                List.of("\"42.42\"", "\"43.999\""), IntChunk.chunkWrap(new int[] {42, 43}));
     }
 }

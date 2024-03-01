@@ -30,7 +30,8 @@ public abstract class JsonStreamPublisherOptions {
     public abstract int chunkSize();
 
     /**
-     * Creates the json stream publisher with the default json publishing provider. Equivalent to {@code JsonPublishingProvider.serviceLoader().of(this)}.
+     * Creates the json stream publisher with the default json publishing provider. Equivalent to
+     * {@code JsonPublishingProvider.serviceLoader().of(this)}.
      *
      * @return the json stream publisher
      * @see JsonPublishingProvider#serviceLoader()

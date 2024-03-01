@@ -23,28 +23,37 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
         return ImmutableBigIntegerOptions.builder();
     }
 
-    public static BigIntegerOptions lenient() {
+    public static BigIntegerOptions lenient(boolean allowDecimal) {
         // todo: float
-        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
-    }
-
-    public static BigIntegerOptions standard() {
-        return builder().build();
-    }
-
-    public static BigIntegerOptions strict() {
         return builder()
-                .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .allowDecimal(allowDecimal)
+                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE)
                 .build();
     }
 
-    public abstract Optional<StringNumberFormat> stringFormat();
+    public static BigIntegerOptions standard(boolean allowDecimal) {
+        return builder()
+                .allowDecimal(allowDecimal)
+                .build();
+    }
+
+    public static BigIntegerOptions strict(boolean allowDecimal) {
+        return builder()
+                .allowDecimal(allowDecimal)
+                .allowMissing(false)
+                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.NUMBER_INT.asSet())
+                .build();
+    }
+
+    @Default
+    public boolean allowDecimal() {
+        return false;
+    }
 
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
     @Override
@@ -54,18 +63,18 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
 
     public interface Builder extends BoxedOptions.Builder<BigInteger, BigIntegerOptions, Builder> {
 
-        Builder stringFormat(StringNumberFormat stringFormat);
+        Builder allowDecimal(boolean allowDecimal);
     }
 
     @Check
-    final void stringFormatCheck() {
-        if (stringFormat().isPresent() && !allowString()) {
-            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
+    final void checkAllowDecimal() {
+        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
+            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
         }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
     }
 }

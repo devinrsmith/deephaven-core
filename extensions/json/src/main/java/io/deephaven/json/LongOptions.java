@@ -9,7 +9,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 
@@ -31,8 +30,7 @@ public abstract class LongOptions extends ValueOptions {
      */
     public static LongOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.NUMBER_LIKE)
-                .stringFormat(StringNumberFormat.FLOAT)
+                .desiredTypes(JsonValueTypes.NUMBER_INT_LIKE)
                 .build();
     }
 
@@ -58,12 +56,15 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     @Default
-    @Override
-    public Set<JsonValueTypes> desiredTypes() {
-        return JsonValueTypes.NUMBER_INT_OR_NULL;
+    public boolean allowDecimal() {
+        return false;
     }
 
-    public abstract Optional<StringNumberFormat> stringFormat();
+    @Default
+    @Override
+    public Set<JsonValueTypes> desiredTypes() {
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
+    }
 
     /**
      * The on-null value.
@@ -86,8 +87,7 @@ public abstract class LongOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<LongOptions, Builder> {
 
-
-        Builder stringFormat(StringNumberFormat stringFormat);
+        Builder allowDecimal(boolean allowDecimal);
 
         Builder onNull(long onNull);
 
@@ -109,14 +109,14 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     @Check
-    final void stringFormatCheck() {
-        if (stringFormat().isPresent() && !allowString()) {
-            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
+    final void checkAllowDecimal() {
+        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
+            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
         }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
     }
 }

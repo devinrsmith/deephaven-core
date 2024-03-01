@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import com.fasterxml.jackson.core.exc.InputCoercionException;
+import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -133,12 +134,19 @@ public class LongOptionsTest {
     }
 
     @Test
-    void lenientFloat() throws IOException {
-        parse(LongOptions.lenient(), List.of("42.42", "43.43"), LongChunk.chunkWrap(new long[] {42, 43}));
+    void lenientString() throws IOException {
+        parse(LongOptions.lenient(), List.of("\"42\"", "\"43\""), LongChunk.chunkWrap(new long[] {42, 43}));
     }
 
     @Test
-    void lenientString() throws IOException {
-        parse(LongOptions.lenient(), List.of("\"42\"", "\"43.43\""), LongChunk.chunkWrap(new long[] {42, 43}));
+    void allowDecimal() throws IOException {
+        parse(LongOptions.builder().allowDecimal(true).build(), List.of("42.42", "43.999"),
+                LongChunk.chunkWrap(new long[] {42, 43}));
+    }
+
+    @Test
+    void allowDecimalString() throws IOException {
+        parse(LongOptions.builder().allowDecimal(true).desiredTypes(JsonValueTypes.NUMBER_LIKE).build(),
+                List.of("\"42.42\"", "\"43.999\""), LongChunk.chunkWrap(new long[] {42, 43}));
     }
 }

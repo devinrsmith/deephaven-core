@@ -12,11 +12,10 @@ import org.immutables.value.Value.Immutable;
 
 import java.time.Instant;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
- * Processes a JSON number as an {@link Instant}.
+ * Processes a JSON number (or string that is a number) as an {@link Instant}.
  */
 @Immutable
 @BuildableStyle
@@ -25,24 +24,27 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     public enum Format {
         EPOCH_SECONDS, EPOCH_MILLIS, EPOCH_MICROS, EPOCH_NANOS;
 
-
-        public InstantNumberOptions lenient() {
+        public InstantNumberOptions lenient(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .desiredTypes(JsonValueTypes.NUMBER_LIKE)
-                    .stringFormat(StringNumberFormat.FLOAT)
+                    .allowDecimal(allowDecimal)
+                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE)
                     .build();
         }
 
-        public InstantNumberOptions standard() {
-            return builder().format(this).build();
-        }
-
-        public InstantNumberOptions strict() {
+        public InstantNumberOptions standard(boolean allowDecimal) {
             return builder()
                     .format(this)
+                    .allowDecimal(allowDecimal)
+                    .build();
+        }
+
+        public InstantNumberOptions strict(boolean allowDecimal) {
+            return builder()
+                    .format(this)
+                    .allowDecimal(allowDecimal)
                     .allowMissing(false)
-                    .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.NUMBER_INT.asSet())
                     .build();
         }
     }
@@ -58,12 +60,15 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
      */
     public abstract Format format();
 
-    public abstract Optional<StringNumberFormat> stringFormat();
+    @Default
+    public boolean allowDecimal() {
+        return false;
+    }
 
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
     }
 
     @Derived
@@ -84,18 +89,18 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     public interface Builder extends BoxedOptions.Builder<Instant, InstantNumberOptions, Builder> {
         Builder format(Format format);
 
-        Builder stringFormat(StringNumberFormat allowString);
+        Builder allowDecimal(boolean allowDecimal);
     }
 
     @Check
-    final void stringFormatCheck() {
-        if (stringFormat().isPresent() && !allowString()) {
-            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
+    final void checkAllowDecimal() {
+        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
+            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
         }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
     }
 }

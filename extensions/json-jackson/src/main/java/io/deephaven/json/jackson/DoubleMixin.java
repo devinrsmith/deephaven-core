@@ -12,7 +12,6 @@ import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class DoubleMixin extends Mixin<DoubleOptions> {
@@ -53,7 +52,8 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
         if (!options.allowNumberFloat() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, double.class);
         }
-        return parser.getDoubleValue();
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return Helpers.parseNumberAsDouble(parser);
     }
 
     private double parseString(JsonParser parser) throws IOException {

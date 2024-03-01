@@ -8,6 +8,8 @@ import io.deephaven.engine.table.Table;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Examples {
     public static Table largeFile(String source) {
@@ -18,6 +20,66 @@ public class Examples {
                         .putFields("created_at", InstantOptions.strict())
                         .build()))
                 .addSources(Path.of(source))
+                .build()
+                .execute();
+    }
+
+    public static Table doubleArray(String source, int chunkSize, int times) {
+        final Path path = Path.of(source);
+        final List<Source> sources = new ArrayList<>(times);
+        for (int i = 0; i < times; i++) {
+            sources.add(Source.of(path));
+        }
+        return JsonTableOptions.builder()
+                .options(ArrayOptions.strict(DoubleOptions.strict()))
+                .addAllSources(sources)
+                .maxThreads(1)
+                .chunkSize(chunkSize)
+                .build()
+                .execute();
+    }
+
+    public static Table doubleStringArray(String source, int chunkSize, int times) {
+        final Path path = Path.of(source);
+        final List<Source> sources = new ArrayList<>(times);
+        for (int i = 0; i < times; i++) {
+            sources.add(Source.of(path));
+        }
+        return JsonTableOptions.builder()
+                .options(ArrayOptions.strict(DoubleOptions.lenient()))
+                .addAllSources(sources)
+                .maxThreads(1)
+                .chunkSize(chunkSize)
+                .build()
+                .execute();
+    }
+
+    public static Table intArray(String source, int chunkSize, int times) {
+        final Path path = Path.of(source);
+        final List<Source> sources = new ArrayList<>(times);
+        for (int i = 0; i < times; i++) {
+            sources.add(Source.of(path));
+        }
+        return JsonTableOptions.builder()
+                .options(ArrayOptions.strict(IntOptions.lenient()))
+                .addAllSources(sources)
+                .maxThreads(1)
+                .chunkSize(chunkSize)
+                .build()
+                .execute();
+    }
+
+    public static Table longArray(String source, int chunkSize, int times) {
+        final Path path = Path.of(source);
+        final List<Source> sources = new ArrayList<>(times);
+        for (int i = 0; i < times; i++) {
+            sources.add(Source.of(path));
+        }
+        return JsonTableOptions.builder()
+                .options(ArrayOptions.strict(LongOptions.lenient()))
+                .addAllSources(sources)
+                .maxThreads(1)
+                .chunkSize(chunkSize)
                 .build()
                 .execute();
     }
@@ -51,7 +113,7 @@ public class Examples {
                                         .putFields("lock_time", LongOptions.strict())
                                         .putFields("tx_index", LongOptions.strict())
                                         // todo double_spend bool
-                                        .putFields("time", InstantNumberOptions.Format.EPOCH_SECONDS.strict())
+                                        .putFields("time", InstantNumberOptions.Format.EPOCH_SECONDS.strict(false))
                                         // todo: inputs
                                         // todo: outputs
                                         .build())

@@ -86,7 +86,7 @@ public interface Source {
     <T> T walk(Visitor<T> visitor);
 
     interface Visitor<T> {
-        // todo: charSource?
+
         T visit(String content);
 
         T visit(ByteBuffer buffer);

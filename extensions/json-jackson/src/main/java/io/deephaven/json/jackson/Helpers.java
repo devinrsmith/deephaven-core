@@ -3,22 +3,20 @@
  */
 package io.deephaven.json.jackson;
 
+import ch.randelshofer.fastdoubleparser.JavaBigDecimalParser;
+import ch.randelshofer.fastdoubleparser.JavaBigIntegerParser;
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import ch.randelshofer.fastdoubleparser.JavaFloatParser;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.core.io.NumberInput;
-import com.fasterxml.jackson.core.io.doubleparser.FastDoubleParser;
-import com.fasterxml.jackson.core.io.doubleparser.FastFloatParser;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
-import java.util.function.Function;
-import java.util.function.ToLongFunction;
 
 final class Helpers {
 
@@ -58,77 +56,7 @@ final class Helpers {
                 : parser.getText();
     }
 
-    private static CharSequence textAsCharSequenceSafe(JsonParser parser) {
-        try {
-            return textAsCharSequence(parser);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
-    static ToLongFunction<? super JsonParser> fromString(ToLongFunction<? super String> f) {
-        return (ToLongFunction<JsonParser>) parser -> applyString(f, parser);
-    }
-
-    static ToLongFunction<? super JsonParser> fromCharSequence(ToLongFunction<? super CharSequence> f) {
-        return (ToLongFunction<JsonParser>) parser -> applyCharSequence(f, parser);
-    }
-
-    static <R> Function<? super JsonParser, ? extends R> fromCharSequence(
-            Function<? super CharSequence, ? extends R> f) {
-        return parser -> applyCharSequence(f, parser);
-    }
-
-    static long apply(ToLongFunction<? super JsonParser> f, JsonParser parser) throws IOException {
-        try {
-            return f.applyAsLong(parser);
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
-    }
-
-    static <R> R apply(Function<? super JsonParser, ? extends R> f, JsonParser parser) throws IOException {
-        try {
-            return f.apply(parser);
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
-    }
-
-    static long applyString(ToLongFunction<? super String> f, JsonParser parser) {
-        final String text;
-        try {
-            text = parser.getText();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return f.applyAsLong(text);
-    }
-
-    static long applyCharSequence(ToLongFunction<? super CharSequence> f, JsonParser parser) {
-        return f.applyAsLong(textAsCharSequenceSafe(parser));
-    }
-
-    static <R> R applyCharSequence(Function<? super CharSequence, ? extends R> f, JsonParser parser) {
-        return f.apply(textAsCharSequenceSafe(parser));
-    }
-
-    static JsonToken endToken(JsonToken startToken) {
-        switch (startToken) {
-            case START_OBJECT:
-                return JsonToken.END_OBJECT;
-            case START_ARRAY:
-                return JsonToken.END_ARRAY;
-            case VALUE_STRING:
-            case VALUE_NUMBER_INT:
-            case VALUE_NUMBER_FLOAT:
-            case VALUE_TRUE:
-            case VALUE_FALSE:
-            case VALUE_NULL:
-                return startToken;
-        }
-        throw new IllegalStateException("Unexpected startToken: " + startToken);
-    }
 
     static class UnexpectedToken extends JsonProcessingException {
         public UnexpectedToken(String msg, JsonLocation loc) {
@@ -147,56 +75,152 @@ final class Helpers {
         return new UnexpectedToken("Unexpected missing token", location);
     }
 
+    static int parseNumberIntAsInt(JsonParser parser) throws IOException {
+        return parser.getIntValue();
+    }
+
+    static int parseNumberFloatAsInt(JsonParser parser) throws IOException {
+        // May lose info
+        return parser.getIntValue();
+    }
+
+    static long parseNumberIntAsLong(JsonParser parser) throws IOException {
+        return parser.getLongValue();
+    }
+
+    static long parseNumberFloatAsLong(JsonParser parser) throws IOException {
+        // May lose info
+        return parser.getLongValue();
+    }
+
+    static BigDecimal parseNumberFloatAsBigDecimal(JsonParser parser) throws IOException {
+        return parser.getDecimalValue();
+    }
+
+    static float parseNumberAsFloat(JsonParser parser) throws IOException {
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return parser.getFloatValue();
+    }
+
+    static double parseNumberAsDouble(JsonParser parser) throws IOException {
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return parser.getDoubleValue();
+    }
+
     static int parseStringAsInt(JsonParser parser) throws IOException {
-        // Note: NumberInput#parseInt has different semantics
-        final CharSequence cs = textAsCharSequence(parser);
-        return Integer.parseInt(cs, 0, cs.length(), 10);
+        // 23mm / s; 19 bytes garbage
+        // return parser.getValueAsInt();
+        // No apparent difference in this case like in the long case.
+        // 23mm / s; 19 bytes garbage
+        if (parser.hasTextCharacters()) {
+            // TODO: potential to write parseInt optimized for char[]
+            final int len = parser.getTextLength();
+            final CharSequence cs = CharBuffer.wrap(parser.getTextCharacters(), parser.getTextOffset(), len);
+            return Integer.parseInt(cs, 0, len, 10);
+        } else {
+            return Integer.parseInt(parser.getText());
+        }
     }
 
     static long parseStringAsLong(JsonParser parser) throws IOException {
-        // Note: NumberInput#parseLong has different semantics
-        final CharSequence cs = textAsCharSequence(parser);
-        return Long.parseLong(cs, 0, cs.length(), 10);
+        // 11mm / s; 88 bytes garbage
+        // return parser.getValueAsLong();
+        // 17mm / s; 24 bytes garbage
+        if (parser.hasTextCharacters()) {
+            // TODO: potential to write parseInt optimized for char[]
+            final int len = parser.getTextLength();
+            final CharSequence cs = CharBuffer.wrap(parser.getTextCharacters(), parser.getTextOffset(), len);
+            return Long.parseLong(cs, 0, len, 10);
+        } else {
+            return Long.parseLong(parser.getText());
+        }
+    }
+
+    static long parseStringConvertToLong(JsonParser parser) throws IOException {
+        // To ensure 64-bit in cases where the string is a float, we need BigDecimal
+        return parseStringAsBigDecimal(parser).longValue();
     }
 
     static float parseStringAsFloat(JsonParser parser) throws IOException {
-        if (parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)) {
-            if (parser.hasTextCharacters()) {
-                return FastFloatParser.parseFloat(parser.getTextCharacters(), parser.getTextOffset(),
-                        parser.getTextLength());
-            } else {
-                return FastFloatParser.parseFloat(parser.getText());
-            }
-        } else {
-            return Float.parseFloat(parser.getText());
-        }
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
+                ? parseStringAsFloatFast(parser)
+                : Float.parseFloat(parser.getText());
     }
 
     static double parseStringAsDouble(JsonParser parser) throws IOException {
-        if (parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)) {
-            if (parser.hasTextCharacters()) {
-                return FastDoubleParser.parseDouble(parser.getTextCharacters(), parser.getTextOffset(),
-                        parser.getTextLength());
-            } else {
-                return FastDoubleParser.parseDouble(parser.getText());
-            }
-        } else {
-            return Double.parseDouble(parser.getText());
-        }
-    }
-
-    static BigDecimal parseStringAsBigDecimal(JsonParser parser) throws IOException {
-        if (parser.hasTextCharacters()) {
-            // If parser supports this, saves us from allocating string
-            return NumberInput.parseBigDecimal(parser.getTextCharacters(), parser.getTextOffset(),
-                    parser.getTextLength());
-        } else {
-            return NumberInput.parseBigDecimal(parser.getText());
-        }
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        // 14mm / s; 73 bytes of garbage
+        // return p.getValueAsDouble();
+        // 20mm / s; 8 bytes of garbage
+        return parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
+                ? parseStringAsDoubleFast(parser)
+                : Double.parseDouble(parser.getText());
     }
 
     static BigInteger parseStringAsBigInteger(JsonParser parser) throws IOException {
-        // Todo: PR to jackson to accept textChars version
-        return NumberInput.parseBigInteger(parser.getText());
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return parser.isEnabled(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
+                ? parseStringAsBigIntegerFast(parser)
+                : new BigInteger(parser.getText());
+    }
+
+    static BigDecimal parseStringAsBigDecimal(JsonParser parser) throws IOException {
+        // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
+        return parser.isEnabled(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
+                ? parseStringAsBigDecimalFast(parser)
+                : new BigDecimal(parser.getText());
+    }
+
+    private static float parseStringAsFloatFast(JsonParser p) throws IOException {
+        return p.hasTextCharacters()
+                ? JavaFloatParser.parseFloat(p.getTextCharacters(), p.getTextOffset(), p.getTextLength())
+                : JavaFloatParser.parseFloat(p.getText());
+    }
+
+    private static double parseStringAsDoubleFast(JsonParser p) throws IOException {
+        return p.hasTextCharacters()
+                ? JavaDoubleParser.parseDouble(p.getTextCharacters(), p.getTextOffset(), p.getTextLength())
+                : JavaDoubleParser.parseDouble(p.getText());
+    }
+
+    private static BigInteger parseStringAsBigIntegerFast(JsonParser p) throws IOException {
+        return p.hasTextCharacters()
+                ? JavaBigIntegerParser.parseBigInteger(p.getTextCharacters(), p.getTextOffset(), p.getTextLength())
+                : JavaBigIntegerParser.parseBigInteger(p.getText());
+    }
+
+    private static BigDecimal parseStringAsBigDecimalFast(JsonParser p) throws IOException {
+        return p.hasTextCharacters()
+                ? JavaBigDecimalParser.parseBigDecimal(p.getTextCharacters(), p.getTextOffset(), p.getTextLength())
+                : JavaBigDecimalParser.parseBigDecimal(p.getText());
+    }
+
+    private static int parseInt(char[] str, int offset, int length) {
+        // leading +?
+        final boolean negate = str[offset] == '-';
+        int res = 0;
+        for (int i = negate ? offset + 1 : offset; i < offset + length; ++i) {
+            final char ch = str[i];
+            res = res * 10 - (ch - '0');
+        }
+        // don't worry about edge case atm.
+        return negate ? -res : res;
+    }
+
+    private static long parseLong(char[] str, int offset, int length) {
+        // leading +?
+        final boolean negate = str[offset] == '-';
+        long res = 0;
+        for (int i = negate ? offset + 1 : offset; i < offset + length; ++i) {
+            final char ch = str[i];
+            res = res * 10 - (ch - '0');
+        }
+        // don't worry about edge case atm.
+        return negate ? -res : res;
+    }
+
+    public static boolean isDigit(char ch) {
+        return ch >= '0' && ch <= '9';
     }
 }

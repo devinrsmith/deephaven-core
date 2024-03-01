@@ -9,7 +9,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -19,7 +18,6 @@ import java.util.Set;
 @Immutable
 @BuildableStyle
 public abstract class IntOptions extends ValueOptions {
-
 
     public static Builder builder() {
         return ImmutableIntOptions.builder();
@@ -32,8 +30,7 @@ public abstract class IntOptions extends ValueOptions {
      */
     public static IntOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.NUMBER_LIKE)
-                .stringFormat(StringNumberFormat.FLOAT)
+                .desiredTypes(JsonValueTypes.NUMBER_INT_LIKE)
                 .build();
     }
 
@@ -58,21 +55,20 @@ public abstract class IntOptions extends ValueOptions {
                 .build();
     }
 
+    @Default
+    public boolean allowDecimal() {
+        return false;
+    }
+
     /**
-     * The desired types. By default, is {@link JsonValueTypes#NUMBER_INT} and {@link JsonValueTypes#NULL}.
+     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#NUMBER_INT} and
+     * {@link JsonValueTypes#NULL}.
      */
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
     }
-
-    /**
-     * If parsing JSON strings is supported. By default, is {@code false}.
-     *
-     * @return allow string
-     */
-    public abstract Optional<StringNumberFormat> stringFormat();
 
     /**
      * The on-null value.
@@ -96,7 +92,7 @@ public abstract class IntOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
 
-        Builder stringFormat(StringNumberFormat stringFormat);
+        Builder allowDecimal(boolean allowDecimal);
 
         Builder onNull(int onNull);
 
@@ -118,14 +114,14 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     @Check
-    final void stringFormatCheck() {
-        if (stringFormat().isPresent() && !allowString()) {
-            throw new IllegalArgumentException("stringFormat is only applicable when strings are allowed");
+    final void checkAllowDecimal() {
+        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
+            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
         }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
     }
 }

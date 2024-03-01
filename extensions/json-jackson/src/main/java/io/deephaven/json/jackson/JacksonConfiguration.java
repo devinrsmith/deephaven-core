@@ -4,11 +4,13 @@
 package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.StreamReadFeature;
 
 import java.lang.reflect.InvocationTargetException;
 
-final class JacksonConfiguration {
+public final class JacksonConfiguration {
 
     private static final JsonFactory DEFAULT_FACTORY;
 
@@ -22,11 +24,32 @@ final class JacksonConfiguration {
                 | InvocationTargetException e) {
             // ignore
         }
-        // todo: are there any configurations we want to set by default?
-        DEFAULT_FACTORY = new JsonFactory(objectCodec);
+        DEFAULT_FACTORY = defaultFactoryBuilder().build().setCodec(objectCodec);
     }
 
-    public static JsonFactory defaultFactory() {
+    /**
+     * Constructs a Deephaven-configured json factory builder. This currently includes
+     * {@link StreamReadFeature#USE_FAST_DOUBLE_PARSER} and {@link StreamReadFeature#USE_FAST_BIG_NUMBER_PARSER}. The
+     * specific configuration may change in the future.
+     *
+     * @return the Deephaven-configured json factory builder
+     */
+    public static JsonFactoryBuilder defaultFactoryBuilder() {
+        return new JsonFactoryBuilder()
+                .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
+                .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER);
+    }
+
+    // Not currently public, but javadoc still useful to ensure internal callers don't modify.
+    /**
+     * Returns a Deephaven-configured json factory singleton. Callers should not modify the returned factory in any way.
+     * This has been constructed as the singleton-equivalent of {@code defaultFactoryBuilder().build()}, with an
+     * ObjectMapper set as the codec if it is on the classpath.
+     *
+     * @return the Deephaven-configured json factory singleton
+     * @see #defaultFactoryBuilder()
+     */
+    static JsonFactory defaultFactory() {
         return DEFAULT_FACTORY;
     }
 }

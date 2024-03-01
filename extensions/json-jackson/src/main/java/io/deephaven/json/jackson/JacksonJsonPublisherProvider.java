@@ -21,7 +21,7 @@ import io.deephaven.processor.ObjectProcessor;
  * @see JacksonStreamPublisher
  * @see JacksonTable
  */
-@AutoService({ JsonProcessorProvider.class, JsonPublishingProvider.class })
+@AutoService({JsonProcessorProvider.class, JsonPublishingProvider.class})
 public final class JacksonJsonPublisherProvider implements JsonProcessorProvider, JsonPublishingProvider {
 
     @Override

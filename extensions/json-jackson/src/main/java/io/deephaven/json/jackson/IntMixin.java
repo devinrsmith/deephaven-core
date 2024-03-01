@@ -7,13 +7,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.IntOptions;
-import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class IntMixin extends Mixin<IntOptions> {
@@ -45,29 +43,25 @@ final class IntMixin extends Mixin<IntOptions> {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, int.class);
         }
-        return parser.getIntValue();
+        return Helpers.parseNumberIntAsInt(parser);
     }
 
     private int parseNumberFloat(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, int.class);
         }
-        // May lose info
-        return parser.getIntValue();
+        return Helpers.parseNumberFloatAsInt(parser);
     }
 
     private int parseString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, int.class);
         }
-        switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
-            case INT:
-                return Helpers.parseStringAsInt(parser);
-            case FLOAT:
+        return options.allowDecimal()
                 // Need to parse as double to have 32-bit int range
-                return (int) Helpers.parseStringAsDouble(parser);
-        }
-        throw new IllegalStateException();
+                // todo: test this
+                ? (int) Helpers.parseStringAsDouble(parser)
+                : Helpers.parseStringAsInt(parser);
     }
 
     private int parseNull(JsonParser parser) throws IOException {

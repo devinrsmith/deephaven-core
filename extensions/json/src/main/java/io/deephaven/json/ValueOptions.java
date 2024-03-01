@@ -126,7 +126,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     void checkIllegalTypes() {
         for (JsonValueTypes type : desiredTypes()) {
             if (!allowableTypes().contains(type)) {
-                throw new IllegalArgumentException("todo");
+                throw new IllegalArgumentException("Unexpected type");
             }
         }
     }

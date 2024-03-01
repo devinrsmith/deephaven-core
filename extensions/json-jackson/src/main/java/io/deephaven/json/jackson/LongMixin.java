@@ -7,13 +7,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.LongOptions;
-import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class LongMixin extends Mixin<LongOptions> {
@@ -46,29 +44,25 @@ final class LongMixin extends Mixin<LongOptions> {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, long.class);
         }
-        return parser.getLongValue();
+        return Helpers.parseNumberIntAsLong(parser);
     }
 
     private long parseNumberFloat(JsonParser parser) throws IOException {
         if (!options.allowNumberFloat()) {
             throw Helpers.mismatch(parser, long.class);
         }
-        // May lose info
-        return parser.getLongValue();
+        return Helpers.parseNumberFloatAsLong(parser);
     }
 
     private long parseString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, long.class);
         }
-        switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
-            case INT:
-                return Helpers.parseStringAsLong(parser);
-            case FLOAT:
+        return options.allowDecimal()
+                // TODO: test
                 // Need to parse as BigDecimal to have 64-bit long range
-                return Helpers.parseStringAsBigDecimal(parser).longValue();
-        }
-        throw new IllegalStateException();
+                ? Helpers.parseStringAsBigDecimal(parser).longValue()
+                : Helpers.parseStringAsLong(parser);
     }
 
     private long parseNull(JsonParser parser) throws IOException {

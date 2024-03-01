@@ -7,13 +7,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.BigIntegerOptions;
-import io.deephaven.json.StringNumberFormat;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
@@ -60,13 +58,9 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
-        switch (options.stringFormat().orElse(StringNumberFormat.INT)) {
-            case INT:
-                return Helpers.parseStringAsBigInteger(parser);
-            case FLOAT:
-                return Helpers.parseStringAsBigDecimal(parser).toBigInteger();
-        }
-        throw new IllegalStateException();
+        return options.allowDecimal()
+                ? Helpers.parseStringAsBigDecimal(parser).toBigInteger()
+                : Helpers.parseStringAsBigInteger(parser);
     }
 
     private BigInteger parseNull(JsonParser parser) throws IOException {

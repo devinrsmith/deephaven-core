@@ -93,19 +93,19 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
-    void emptySource() {
+    void missingPrimitive() {
         final JsonStreamPublisher publisher = publisher(IntOptions.standard(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
             directExecute(publisher, empty());
             recorder.flushPublisher();
-            recorder.assertEmpty();
+            recorder.assertEquals(IntChunk.chunkWrap(new int[] {NULL_INT}));
             recorder.clear();
         }
     }
 
     @Test
-    void emptyObject() {
+    void missingObject() {
         final JsonStreamPublisher publisher = publisher(nameAgeOptions(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
@@ -119,7 +119,7 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
-    void emptyArray() {
+    void missingArray() {
         final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(nameAgeOptions()), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);

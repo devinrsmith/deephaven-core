@@ -115,7 +115,7 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             this.outArray = new WritableChunk[chunkTypes.size()];
             out = newProcessorChunks(chunkSize, chunkTypes);
             count = 0;
-            elementProcessor = elementMixin.processor("todo", out);
+            elementProcessor = elementMixin.processor(StatefulRunner.class.getName(), out);
         }
 
         @Override
@@ -131,11 +131,7 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             Source source;
             while ((source = sources.poll()) != null) {
                 try (final JsonParser parser = JacksonSource.of(factory, source)) {
-                    if (parser.nextToken() == null) {
-                        // empty source
-                        // option to throw error?
-                        continue;
-                    }
+                    parser.nextToken();
                     runImpl(parser);
                 }
             }
@@ -155,9 +151,12 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
         public void process(JsonParser parser) throws IOException {
             if (pathIsToArray) {
                 processArrayOfElements(parser);
+            } else if (parser.hasToken(null)) {
+                processMissingElement(parser);
             } else {
                 processElement(parser);
             }
+            parser.nextToken();
         }
 
         private void processArrayOfElements(JsonParser parser) throws IOException {
@@ -167,13 +166,21 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             parser.nextToken();
             while (!parser.hasToken(JsonToken.END_ARRAY)) {
                 processElement(parser);
+                parser.nextToken();
             }
-            parser.nextToken();
         }
 
         private void processElement(JsonParser parser) throws IOException {
             elementProcessor.processCurrentValue(parser);
-            parser.nextToken();
+            incAndMaybeFlush();
+        }
+
+        private void processMissingElement(JsonParser parser) throws IOException {
+            elementProcessor.processMissing(parser);
+            incAndMaybeFlush();
+        }
+
+        private void incAndMaybeFlush() throws IOException {
             if (shutdown) {
                 throw new IOException("shutdown");
             }

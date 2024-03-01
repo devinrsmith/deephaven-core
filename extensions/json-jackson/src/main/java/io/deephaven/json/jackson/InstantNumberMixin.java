@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.InstantNumberOptions;
 import io.deephaven.qst.type.Type;
+import io.deephaven.time.DateTimeUtils;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -89,7 +90,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
                     if (!options.allowNull()) {
                         throw Helpers.mismatch(parser, Instant.class);
                     }
-                    return options.onNullOrDefault();
+                    return DateTimeUtils.epochNanos(options.onNull().orElse(null));
             }
             throw Helpers.mismatch(parser, Instant.class);
         }
@@ -99,7 +100,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
             if (!options.allowMissing()) {
                 throw Helpers.mismatchMissing(parser, Instant.class);
             }
-            return options.onMissingOrDefault();
+            return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
         }
     }
 

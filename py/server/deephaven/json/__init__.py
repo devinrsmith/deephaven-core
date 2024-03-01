@@ -1,3 +1,5 @@
+from deephaven import dtypes
+
 from .double import double
 from .int import int_
 from .object import object_, RepeatedFieldBehavior
@@ -14,3 +16,4 @@ __all__ = [
     "typed_object",
     "int_"
 ]
+

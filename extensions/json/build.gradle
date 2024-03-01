@@ -4,11 +4,7 @@ plugins {
 }
 
 dependencies {
-
-    // todo
     api project(':engine-processor')
-
-    implementation project(':engine-time')
 
     Classpaths.inheritImmutables(project)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'

@@ -39,7 +39,7 @@ public class JsonValueTypesTest {
 
     @Test
     public void numberIntOrNull() {
-        JsonValueTypes.checkInvariants(JsonValueTypes.NUMBER_INT_OR_NULL);
+        JsonValueTypes.checkInvariants(JsonValueTypes.INT_OR_NULL);
     }
 
 }

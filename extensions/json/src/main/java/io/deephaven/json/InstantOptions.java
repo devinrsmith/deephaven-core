@@ -4,9 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.time.DateTimeUtils;
 import org.immutables.value.Value.Default;
-import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import java.lang.Runtime.Version;
@@ -61,16 +59,6 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
         return Runtime.version().compareTo(VERSION_12) >= 0
                 ? DateTimeFormatter.ISO_INSTANT
                 : DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-    }
-
-    @Derived
-    public long onMissingOrDefault() {
-        return DateTimeUtils.epochNanos(onMissing().orElse(null));
-    }
-
-    @Derived
-    public long onNullOrDefault() {
-        return DateTimeUtils.epochNanos(onNull().orElse(null));
     }
 
     @Override

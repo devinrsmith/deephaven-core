@@ -61,7 +61,7 @@ final class StringMixin extends Mixin<StringOptions> {
     }
 
     private String parseFromBool(JsonParser parser) throws IOException {
-        if (!options.allowBoolean()) {
+        if (!options.allowBool()) {
             throw Helpers.mismatch(parser, String.class);
         }
         return Helpers.parseBoolAsString(parser);

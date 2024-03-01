@@ -10,7 +10,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -27,7 +26,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
         // todo: float
         return builder()
                 .allowDecimal(allowDecimal)
-                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE)
+                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -41,7 +40,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
         return builder()
                 .allowDecimal(allowDecimal)
                 .allowMissing(false)
-                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.NUMBER_INT.asSet())
+                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                 .build();
     }
 
@@ -53,7 +52,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
     }
 
     @Override
@@ -75,6 +74,6 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
     }
 }

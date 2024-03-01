@@ -7,20 +7,18 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public enum JsonValueTypes {
-    OBJECT, ARRAY, STRING, NUMBER_INT, NUMBER_FLOAT, BOOL, NULL;
+    OBJECT, ARRAY, STRING, INT, DECIMAL, BOOL, NULL;
 
     static final EnumSet<JsonValueTypes> ALL = EnumSet.allOf(JsonValueTypes.class);
-    static final EnumSet<JsonValueTypes> NUMBER_LIKE = EnumSet.of(STRING, NUMBER_INT, NUMBER_FLOAT, NULL);
-
-    static final EnumSet<JsonValueTypes> NUMBER_INT_LIKE = EnumSet.of(STRING, NUMBER_INT, NULL);
-
-    static final EnumSet<JsonValueTypes> STRING_LIKE = EnumSet.of(STRING, NUMBER_INT, NUMBER_FLOAT, BOOL, NULL);
+    static final EnumSet<JsonValueTypes> NUMBER_LIKE = EnumSet.of(STRING, INT, DECIMAL, NULL);
+    static final EnumSet<JsonValueTypes> INT_LIKE = EnumSet.of(STRING, INT, NULL);
+    static final EnumSet<JsonValueTypes> STRING_LIKE = EnumSet.of(STRING, INT, DECIMAL, BOOL, NULL);
     static final EnumSet<JsonValueTypes> STRING_OR_NULL = STRING.orNull();
     static final EnumSet<JsonValueTypes> OBJECT_OR_NULL = OBJECT.orNull();
     static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = ARRAY.orNull();
-    static final EnumSet<JsonValueTypes> NUMBER_INT_OR_NULL = NUMBER_INT.orNull();
-    static final EnumSet<JsonValueTypes> NUMBER = EnumSet.of(NUMBER_INT, NUMBER_FLOAT);
-    static final EnumSet<JsonValueTypes> NUMBER_OR_NULL = EnumSet.of(NUMBER_INT, NUMBER_FLOAT, NULL);
+    static final EnumSet<JsonValueTypes> INT_OR_NULL = INT.orNull();
+    static final EnumSet<JsonValueTypes> NUMBER = EnumSet.of(INT, DECIMAL);
+    static final EnumSet<JsonValueTypes> NUMBER_OR_NULL = EnumSet.of(INT, DECIMAL, NULL);
 
     static void checkInvariants(Set<JsonValueTypes> set) {
         if (set.isEmpty()) {
@@ -29,7 +27,7 @@ public enum JsonValueTypes {
         if (set.size() == 1 && set.contains(JsonValueTypes.NULL)) {
             // does it ever make sense to _only_ accept null?
         }
-        if (set.contains(JsonValueTypes.NUMBER_FLOAT) && !set.contains(JsonValueTypes.NUMBER_INT)) {
+        if (set.contains(JsonValueTypes.DECIMAL) && !set.contains(JsonValueTypes.INT)) {
             throw new IllegalArgumentException("Accepting NUMBER_FLOAT but not NUMBER_INT");
         }
     }

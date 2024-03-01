@@ -30,7 +30,7 @@ public abstract class IntOptions extends ValueOptions {
      */
     public static IntOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.NUMBER_INT_LIKE)
+                .desiredTypes(JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -51,7 +51,7 @@ public abstract class IntOptions extends ValueOptions {
     public static IntOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .desiredTypes(JsonValueTypes.INT.asSet())
                 .build();
     }
 
@@ -61,13 +61,13 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#NUMBER_INT} and
+     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
      * {@link JsonValueTypes#NULL}.
      */
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
     }
 
     /**
@@ -122,6 +122,6 @@ public abstract class IntOptions extends ValueOptions {
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
     }
 }

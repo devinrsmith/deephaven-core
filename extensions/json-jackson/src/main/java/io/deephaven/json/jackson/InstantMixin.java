@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.qst.type.Type;
+import io.deephaven.time.DateTimeUtils;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -53,14 +54,14 @@ final class InstantMixin extends Mixin<InstantOptions> {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, Instant.class);
         }
-        return options.onNullOrDefault();
+        return DateTimeUtils.epochNanos(options.onNull().orElse(null));
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, Instant.class);
         }
-        return options.onMissingOrDefault();
+        return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
     }
 
     private class ToLongImpl implements LongValueProcessor.ToLong {

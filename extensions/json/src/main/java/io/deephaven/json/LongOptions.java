@@ -30,7 +30,7 @@ public abstract class LongOptions extends ValueOptions {
      */
     public static LongOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.NUMBER_INT_LIKE)
+                .desiredTypes(JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -51,7 +51,7 @@ public abstract class LongOptions extends ValueOptions {
     public static LongOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER_INT.asSet())
+                .desiredTypes(JsonValueTypes.INT.asSet())
                 .build();
     }
 
@@ -63,7 +63,7 @@ public abstract class LongOptions extends ValueOptions {
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
     }
 
     /**
@@ -117,6 +117,6 @@ public abstract class LongOptions extends ValueOptions {
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
     }
 }

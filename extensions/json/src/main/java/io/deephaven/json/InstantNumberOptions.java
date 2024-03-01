@@ -4,10 +4,8 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.time.DateTimeUtils;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
-import org.immutables.value.Value.Derived;
 import org.immutables.value.Value.Immutable;
 
 import java.time.Instant;
@@ -28,7 +26,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
             return builder()
                     .format(this)
                     .allowDecimal(allowDecimal)
-                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE)
+                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                     .build();
         }
 
@@ -44,7 +42,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
                     .format(this)
                     .allowDecimal(allowDecimal)
                     .allowMissing(false)
-                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.NUMBER_INT.asSet())
+                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                     .build();
         }
     }
@@ -68,17 +66,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.NUMBER_INT_OR_NULL;
-    }
-
-    @Derived
-    public long onNullOrDefault() {
-        return DateTimeUtils.epochNanos(onNull().orElse(null));
-    }
-
-    @Derived
-    public long onMissingOrDefault() {
-        return DateTimeUtils.epochNanos(onMissing().orElse(null));
+        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
     }
 
     @Override
@@ -101,6 +89,6 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.NUMBER_INT_LIKE;
+        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
     }
 }

@@ -11,7 +11,6 @@ import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class SkipMixin extends Mixin<SkipOptions> {
@@ -73,7 +72,7 @@ final class SkipMixin extends Mixin<SkipOptions> {
                     break;
                 case VALUE_TRUE:
                 case VALUE_FALSE:
-                    if (!options.allowBoolean()) {
+                    if (!options.allowBool()) {
                         throw Helpers.mismatch(parser, void.class);
                     }
                     break;

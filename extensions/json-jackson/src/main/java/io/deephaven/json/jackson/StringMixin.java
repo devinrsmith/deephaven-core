@@ -54,7 +54,7 @@ final class StringMixin extends Mixin<StringOptions> {
     }
 
     private String parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat()) {
+        if (!options.allowDecimal()) {
             throw Helpers.mismatch(parser, String.class);
         }
         return Helpers.parseDecimalAsString(parser);

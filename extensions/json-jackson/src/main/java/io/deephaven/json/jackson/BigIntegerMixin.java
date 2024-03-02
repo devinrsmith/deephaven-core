@@ -40,21 +40,21 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
-    private BigInteger parseNumberInt(JsonParser parser) throws IOException {
+    private BigInteger parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
-    private BigInteger parseNumberFloat(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat()) {
+    private BigInteger parseFromDecimal(JsonParser parser) throws IOException {
+        if (!options.allowDecimal()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
-    private BigInteger parseString(JsonParser parser) throws IOException {
+    private BigInteger parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
@@ -63,14 +63,14 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
                 : Helpers.parseStringAsBigInteger(parser);
     }
 
-    private BigInteger parseNull(JsonParser parser) throws IOException {
+    private BigInteger parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
             throw Helpers.mismatch(parser, BigInteger.class);
         }
         return options.onNull().orElse(null);
     }
 
-    private BigInteger parseMissing(JsonParser parser) throws IOException {
+    private BigInteger parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, BigInteger.class);
         }
@@ -82,20 +82,20 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
         public BigInteger parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
-                    return parseNumberInt(parser);
+                    return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberFloat(parser);
+                    return parseFromDecimal(parser);
                 case VALUE_STRING:
-                    return parseString(parser);
+                    return parseFromString(parser);
                 case VALUE_NULL:
-                    return parseNull(parser);
+                    return parseFromNull(parser);
             }
             throw Helpers.mismatch(parser, BigInteger.class);
         }
 
         @Override
         public BigInteger parseMissing(JsonParser parser) throws IOException {
-            return BigIntegerMixin.this.parseMissing(parser);
+            return BigIntegerMixin.this.parseFromMissing(parser);
         }
     }
 }

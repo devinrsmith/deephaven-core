@@ -66,7 +66,7 @@ final class SkipMixin extends Mixin<SkipOptions> {
                     }
                     break;
                 case VALUE_NUMBER_FLOAT:
-                    if (!options.allowNumberFloat()) {
+                    if (!options.allowDecimal()) {
                         throw Helpers.mismatch(parser, void.class);
                     }
                     break;

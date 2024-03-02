@@ -8,7 +8,7 @@ import java.util.Map;
 public class HomeAssistant {
 
     public static ObjectOptions attributes() {
-        return ObjectOptions.of(Map.of(
+        return ObjectOptions.standard(Map.of(
                 "unit_standard_measurement", StringOptions.standard(),
                 "device_class", StringOptions.standard(),
                 "icon", StringOptions.standard(),
@@ -16,14 +16,14 @@ public class HomeAssistant {
     }
 
     public static ObjectOptions context() {
-        return ObjectOptions.of(Map.of(
+        return ObjectOptions.standard(Map.of(
                 "id", StringOptions.standard(),
                 "parent_id", StringOptions.standard(),
                 "user_id", StringOptions.standard()));
     }
 
     public static ObjectOptions full() {
-        return ObjectOptions.of(Map.of(
+        return ObjectOptions.standard(Map.of(
                 "entity_id", StringOptions.standard(),
                 "state", StringOptions.standard(),
                 "attributes", attributes(),

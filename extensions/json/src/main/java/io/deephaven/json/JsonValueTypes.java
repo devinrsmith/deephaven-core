@@ -9,16 +9,16 @@ import java.util.Set;
 public enum JsonValueTypes {
     OBJECT, ARRAY, STRING, INT, DECIMAL, BOOL, NULL;
 
-    static final EnumSet<JsonValueTypes> ALL = EnumSet.allOf(JsonValueTypes.class);
-    static final EnumSet<JsonValueTypes> NUMBER_LIKE = EnumSet.of(STRING, INT, DECIMAL, NULL);
-    static final EnumSet<JsonValueTypes> INT_LIKE = EnumSet.of(STRING, INT, NULL);
-    static final EnumSet<JsonValueTypes> STRING_LIKE = EnumSet.of(STRING, INT, DECIMAL, BOOL, NULL);
-    static final EnumSet<JsonValueTypes> STRING_OR_NULL = STRING.orNull();
-    static final EnumSet<JsonValueTypes> OBJECT_OR_NULL = OBJECT.orNull();
-    static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = ARRAY.orNull();
-    static final EnumSet<JsonValueTypes> INT_OR_NULL = INT.orNull();
-    static final EnumSet<JsonValueTypes> NUMBER = EnumSet.of(INT, DECIMAL);
-    static final EnumSet<JsonValueTypes> NUMBER_OR_NULL = EnumSet.of(INT, DECIMAL, NULL);
+    public static final EnumSet<JsonValueTypes> ALL = EnumSet.allOf(JsonValueTypes.class);
+    public static final EnumSet<JsonValueTypes> NUMBER_LIKE = EnumSet.of(STRING, INT, DECIMAL, NULL);
+    public static final EnumSet<JsonValueTypes> INT_LIKE = EnumSet.of(STRING, INT, NULL);
+    public static final EnumSet<JsonValueTypes> STRING_LIKE = EnumSet.of(STRING, INT, DECIMAL, BOOL, NULL);
+    public static final EnumSet<JsonValueTypes> STRING_OR_NULL = STRING.orNull();
+    public static final EnumSet<JsonValueTypes> OBJECT_OR_NULL = OBJECT.orNull();
+    public static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = ARRAY.orNull();
+    public static final EnumSet<JsonValueTypes> INT_OR_NULL = INT.orNull();
+    public static final EnumSet<JsonValueTypes> NUMBER = EnumSet.of(INT, DECIMAL);
+    public static final EnumSet<JsonValueTypes> NUMBER_OR_NULL = EnumSet.of(INT, DECIMAL, NULL);
 
     static void checkInvariants(Set<JsonValueTypes> set) {
         if (set.isEmpty()) {
@@ -32,11 +32,11 @@ public enum JsonValueTypes {
         }
     }
 
-    EnumSet<JsonValueTypes> asSet() {
+    public EnumSet<JsonValueTypes> asSet() {
         return EnumSet.of(this);
     }
 
-    EnumSet<JsonValueTypes> orNull() {
+    public EnumSet<JsonValueTypes> orNull() {
         return EnumSet.of(this, NULL);
     }
 }

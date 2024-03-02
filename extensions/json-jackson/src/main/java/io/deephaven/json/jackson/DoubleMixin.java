@@ -49,7 +49,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
     }
 
     private double parseFromNumber(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat() && !options.allowNumberInt()) {
+        if (!options.allowDecimal() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, double.class);
         }
         // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229

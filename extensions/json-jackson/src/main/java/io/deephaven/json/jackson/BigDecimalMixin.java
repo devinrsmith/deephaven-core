@@ -40,8 +40,8 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> {
         return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
     }
 
-    private BigDecimal parseNumberIntOrFloat(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt() && !options.allowNumberFloat()) {
+    private BigDecimal parseNumber(JsonParser parser) throws IOException {
+        if (!options.allowNumberInt() && !options.allowDecimal()) {
             throw Helpers.mismatch(parser, BigDecimal.class);
         }
         return Helpers.parseDecimalAsBigDecimal(parser);
@@ -74,7 +74,7 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
                 case VALUE_NUMBER_FLOAT:
-                    return parseNumberIntOrFloat(parser);
+                    return parseNumber(parser);
                 case VALUE_STRING:
                     return parseString(parser);
                 case VALUE_NULL:

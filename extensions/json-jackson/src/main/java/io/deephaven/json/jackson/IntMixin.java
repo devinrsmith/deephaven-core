@@ -47,7 +47,7 @@ final class IntMixin extends Mixin<IntOptions> {
     }
 
     private int parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat()) {
+        if (!options.allowDecimal()) {
             throw Helpers.mismatch(parser, int.class);
         }
         return Helpers.parseDecimalAsTruncatedInt(parser);

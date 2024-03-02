@@ -75,7 +75,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
                     }
                     return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    if (!options.allowNumberFloat()) {
+                    if (!options.allowDecimal()) {
                         throw Helpers.mismatch(parser, Instant.class);
                     }
                     return parseFromDecimal(parser);

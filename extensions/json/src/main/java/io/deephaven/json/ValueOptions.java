@@ -111,6 +111,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         B desiredTypes(Set<JsonValueTypes> desiredTypes);
 
+        default B desiredTypes(JsonValueTypes... desiredTypes) {
+            return desiredTypes(Set.of(desiredTypes));
+        }
+
         V build();
     }
 
@@ -142,7 +146,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         return desiredTypes().contains(JsonValueTypes.INT);
     }
 
-    public final boolean allowNumberFloat() {
+    public final boolean allowDecimal() {
         return desiredTypes().contains(JsonValueTypes.DECIMAL);
     }
 

@@ -22,8 +22,17 @@ public abstract class ObjectOptions extends ValueOptions {
         return ImmutableObjectOptions.builder();
     }
 
-    public static ObjectOptions of(Map<String, ValueOptions> fields) {
+    public static ObjectOptions standard(Map<String, ValueOptions> fields) {
         return builder().putAllFields(fields).build();
+    }
+
+    public static ObjectOptions strict(Map<String, ValueOptions> fields) {
+        return builder()
+                .allowMissing(false)
+                .desiredTypes(JsonValueTypes.OBJECT.asSet())
+                .repeatedFieldBehavior(RepeatedFieldBehavior.ERROR)
+                .putAllFields(fields)
+                .build();
     }
 
     public abstract Map<String, ValueOptions> fields();
@@ -58,16 +67,6 @@ public abstract class ObjectOptions extends ValueOptions {
         return RepeatedFieldBehavior.USE_FIRST;
     }
 
-    // @Override
-    // public final boolean allowNull() {
-    // return fieldProcessors().values().stream().allMatch(ValueOptions::allowNull);
-    // }
-    //
-    // @Override
-    // public final boolean allowMissing() {
-    // return fieldProcessors().values().stream().allMatch(ValueOptions::allowMissing);
-    // }
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
@@ -92,6 +91,7 @@ public abstract class ObjectOptions extends ValueOptions {
         // USE_LAST
     }
 
+    // not extending value options
     public interface Builder extends ValueOptions.Builder<ObjectOptions, Builder> {
 
         // python needs these overloaded...
@@ -105,6 +105,10 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder putFields(Map.Entry<String, ? extends ValueOptions> entry);
 
         Builder putAllFields(Map<String, ? extends ValueOptions> entries);
+
+        // Builder allowMissing(boolean allowMissing);
+        //
+        // ObjectOptions build();
     }
 
     @Override

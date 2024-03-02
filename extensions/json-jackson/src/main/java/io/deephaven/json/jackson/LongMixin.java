@@ -48,7 +48,7 @@ final class LongMixin extends Mixin<LongOptions> {
     }
 
     private long parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat()) {
+        if (!options.allowDecimal()) {
             throw Helpers.mismatch(parser, long.class);
         }
         // todo: allow caller to configure between lossy long and truncated long

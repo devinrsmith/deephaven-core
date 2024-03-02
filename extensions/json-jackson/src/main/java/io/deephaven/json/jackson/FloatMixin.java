@@ -51,7 +51,7 @@ final class FloatMixin extends Mixin<FloatOptions> {
     }
 
     private float parseFromNumber(JsonParser parser) throws IOException {
-        if (!options.allowNumberFloat() && !options.allowNumberInt()) {
+        if (!options.allowDecimal() && !options.allowNumberInt()) {
             throw Helpers.mismatch(parser, float.class);
         }
         return Helpers.parseNumberAsFloat(parser);

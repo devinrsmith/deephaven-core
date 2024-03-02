@@ -56,14 +56,9 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     @Default
-    public boolean allowDecimal() {
-        return false;
-    }
-
-    @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
+        return JsonValueTypes.INT_OR_NULL;
     }
 
     /**
@@ -87,8 +82,6 @@ public abstract class LongOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<LongOptions, Builder> {
 
-        Builder allowDecimal(boolean allowDecimal);
-
         Builder onNull(long onNull);
 
         Builder onMissing(long onMissing);
@@ -108,15 +101,8 @@ public abstract class LongOptions extends ValueOptions {
         }
     }
 
-    @Check
-    final void checkAllowDecimal() {
-        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
-            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
-        }
-    }
-
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

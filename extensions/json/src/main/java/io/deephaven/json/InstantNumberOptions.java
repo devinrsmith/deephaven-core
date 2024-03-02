@@ -25,7 +25,6 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
         public InstantNumberOptions lenient(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .allowDecimal(allowDecimal)
                     .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                     .build();
         }
@@ -33,14 +32,12 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
         public InstantNumberOptions standard(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .allowDecimal(allowDecimal)
                     .build();
         }
 
         public InstantNumberOptions strict(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .allowDecimal(allowDecimal)
                     .allowMissing(false)
                     .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                     .build();
@@ -59,14 +56,9 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     public abstract Format format();
 
     @Default
-    public boolean allowDecimal() {
-        return false;
-    }
-
-    @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
+        return JsonValueTypes.INT_OR_NULL;
     }
 
     @Override
@@ -76,19 +68,10 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     public interface Builder extends BoxedOptions.Builder<Instant, InstantNumberOptions, Builder> {
         Builder format(Format format);
-
-        Builder allowDecimal(boolean allowDecimal);
-    }
-
-    @Check
-    final void checkAllowDecimal() {
-        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
-            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
-        }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

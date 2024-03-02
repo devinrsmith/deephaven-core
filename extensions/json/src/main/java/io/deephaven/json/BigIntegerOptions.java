@@ -25,34 +25,26 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     public static BigIntegerOptions lenient(boolean allowDecimal) {
         // todo: float
         return builder()
-                .allowDecimal(allowDecimal)
                 .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                 .build();
     }
 
     public static BigIntegerOptions standard(boolean allowDecimal) {
         return builder()
-                .allowDecimal(allowDecimal)
                 .build();
     }
 
     public static BigIntegerOptions strict(boolean allowDecimal) {
         return builder()
-                .allowDecimal(allowDecimal)
                 .allowMissing(false)
                 .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                 .build();
     }
 
     @Default
-    public boolean allowDecimal() {
-        return false;
-    }
-
-    @Default
     @Override
     public Set<JsonValueTypes> desiredTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL;
+        return JsonValueTypes.INT_OR_NULL;
     }
 
     @Override
@@ -62,18 +54,10 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
 
     public interface Builder extends BoxedOptions.Builder<BigInteger, BigIntegerOptions, Builder> {
 
-        Builder allowDecimal(boolean allowDecimal);
-    }
-
-    @Check
-    final void checkAllowDecimal() {
-        if (allowDecimal() && !allowNumberFloat() && !allowString()) {
-            throw new IllegalArgumentException("allowDecimal only makes sense if NUMBER_FLOAT or STRING is enabled");
-        }
     }
 
     @Override
     final EnumSet<JsonValueTypes> allowableTypes() {
-        return allowDecimal() ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE;
+        return JsonValueTypes.NUMBER_LIKE;
     }
 }

@@ -20,18 +20,7 @@ import java.util.stream.Stream;
  * A specific JSON processor implementation using Jackson. This provides more control over the default
  * {@link ValueOptions#processor(Class)} and {@link ValueOptions#named(Class)}.
  */
-public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
-
-    /**
-     * Creates a jackson provider using the default factory. If the optional jackson-databind package is on the
-     * classpath, the provider will be capable of parsing {@link io.deephaven.json.AnyOptions}.
-     *
-     * @param options the object options
-     * @return the jackson provider
-     */
-    static JacksonProvider of(ValueOptions options) {
-        return of(options, JacksonConfiguration.defaultFactory());
-    }
+public interface JacksonProcessors extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
 
     /**
      * Creates a jackson provider using the provided {@code factory}.
@@ -40,7 +29,7 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectPr
      * @param factory the jackson factory
      * @return the jackson provider
      */
-    static JacksonProvider of(ValueOptions options, JsonFactory factory) {
+    static JacksonProcessors of(ValueOptions options, JsonFactory factory) {
         return Mixin.of(options, factory);
     }
 

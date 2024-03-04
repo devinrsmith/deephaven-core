@@ -24,18 +24,6 @@ import java.util.concurrent.Executors;
 public final class JacksonTable {
 
     /**
-     * Equivalent to {@code of(options, JacksonConfiguration.defaultFactory())}.
-     *
-     * @param options the options
-     * @return a blink table
-     * @see #of(JsonTableOptions, JsonFactory)
-     * @see JacksonConfiguration#defaultFactory()
-     */
-    public static Table of(JsonTableOptions options) {
-        return of(options, JacksonConfiguration.defaultFactory());
-    }
-
-    /**
      * Creates a blink table according to the {@code options} and {@code factory} by combining a
      * {@link JacksonStreamPublisher} and {@link StreamToBlinkTableAdapter}.
      *
@@ -65,7 +53,8 @@ public final class JacksonTable {
                 .options(options.options())
                 .multiValueSupport(options.multiValueSupport())
                 .chunkSize(options.chunkSize())
-                .build());
+                .build(),
+                factory);
         final TableDefinition tableDefinition = publisher.tableDefinition(options.namingFunction());
         // noinspection resource
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher,
@@ -74,7 +63,7 @@ public final class JacksonTable {
         // alternative)
         final Queue<Source> queue = new ArrayBlockingQueue<>(options.sources().size(), false, options.sources());
         for (int i = 0; i < numJobs; ++i) {
-            publisher.execute(executor, queue, factory);
+            publisher.execute(executor, queue);
         }
         return adapter.table();
     }

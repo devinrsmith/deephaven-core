@@ -17,30 +17,30 @@ import io.deephaven.processor.ObjectProcessor;
 /**
  * The Jackson {@link JsonPublishingProvider} and {@link JsonPublishingProvider}.
  *
- * @see JacksonProvider
+ * @see JacksonProcessors
  * @see JacksonStreamPublisher
  * @see JacksonTable
  */
 @AutoService({JsonProcessorProvider.class, JsonPublishingProvider.class})
-public final class JacksonJsonPublisherProvider implements JsonProcessorProvider, JsonPublishingProvider {
+public final class JacksonJsonProvider implements JsonProcessorProvider, JsonPublishingProvider {
 
     @Override
-    public ObjectProcessor.Provider provider(ValueOptions options) {
-        return JacksonProvider.of(options);
+    public JacksonProcessors provider(ValueOptions options) {
+        return JacksonProcessors.of(options, JacksonConfiguration.defaultFactory());
     }
 
     @Override
-    public NamedObjectProcessor.Provider namedProvider(ValueOptions options) {
-        return JacksonProvider.of(options);
+    public JacksonProcessors namedProvider(ValueOptions options) {
+        return JacksonProcessors.of(options, JacksonConfiguration.defaultFactory());
     }
 
     @Override
-    public JsonStreamPublisher of(JsonStreamPublisherOptions options) {
-        return JacksonStreamPublisher.of(options);
+    public JacksonStreamPublisher of(JsonStreamPublisherOptions options) {
+        return JacksonStreamPublisher.of(options, JacksonConfiguration.defaultFactory());
     }
 
     @Override
     public Table of(JsonTableOptions options) {
-        return JacksonTable.of(options);
+        return JacksonTable.of(options, JacksonConfiguration.defaultFactory());
     }
 }

@@ -47,7 +47,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
+abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
 
@@ -59,7 +59,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
     final T options;
 
     Mixin(JsonFactory factory, T options) {
-        this.factory = factory;
+        this.factory = Objects.requireNonNull(factory);
         this.options = Objects.requireNonNull(options);
     }
 
@@ -210,9 +210,9 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
         }
     }
 
-    private abstract class ObjectProcessorJsonValue<T> implements ObjectProcessor<T> {
+    private abstract class ObjectProcessorJsonValue<X> implements ObjectProcessor<X> {
 
-        protected abstract JsonParser createParser(JsonFactory factory, T in) throws IOException;
+        protected abstract JsonParser createParser(JsonFactory factory, X in) throws IOException;
 
         @Override
         public final int size() {
@@ -225,7 +225,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
         }
 
         @Override
-        public final void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) {
+        public final void processAll(ObjectChunk<? extends X, ?> in, List<WritableChunk<?>> out) {
             try {
                 processAllImpl(in, out);
             } catch (IOException e) {
@@ -233,7 +233,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
             }
         }
 
-        void processAllImpl(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out) throws IOException {
+        void processAllImpl(ObjectChunk<? extends X, ?> in, List<WritableChunk<?>> out) throws IOException {
             final ValueProcessor valueProcessor = processor("<root>", out);
             for (int i = 0; i < in.size(); ++i) {
                 try (final JsonParser parser = createParser(factory, in.get(i))) {

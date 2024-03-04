@@ -30,8 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public final class JacksonStreamPublisher implements JsonStreamPublisher {
-    public static JacksonStreamPublisher of(JsonStreamPublisherOptions options) {
-        // todo: we should probably do this for kafka as well
+    public static JacksonStreamPublisher of(JsonStreamPublisherOptions options, JsonFactory factory) {
         final Results results = PathToSingleValue.of(options.options());
         final ValueOptions singleValue = results.options();
         final ValueOptions element;
@@ -44,13 +43,14 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             element = singleValue;
         }
         return new JacksonStreamPublisher(results.path(), isArray, element, options.chunkSize(),
-                options.multiValueSupport());
+                options.multiValueSupport(), factory);
     }
 
     private final List<Path> path;
     private final boolean pathIsToArray;
     private final int chunkSize;
     private final boolean multiValue;
+    private final JsonFactory factory;
     private final Mixin<?> elementMixin;
     private final List<Type<?>> chunkTypes;
     private StreamConsumer consumer;
@@ -61,13 +61,14 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             boolean pathIsToArray,
             ValueOptions elementOptions,
             int chunkSize,
-            boolean multiValue) {
+            boolean multiValue,
+            JsonFactory factory) {
         this.path = List.copyOf(path);
         this.pathIsToArray = pathIsToArray;
         this.chunkSize = chunkSize;
         this.multiValue = multiValue;
-        // note: this is the motivating reason to remove factory from mixin
-        this.elementMixin = Objects.requireNonNull(Mixin.of(elementOptions, null));
+        this.factory = Objects.requireNonNull(factory);
+        this.elementMixin = Objects.requireNonNull(Mixin.of(elementOptions, factory));
         this.chunkTypes = elementMixin.outputTypes().collect(Collectors.toList());
     }
 
@@ -93,15 +94,10 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
 
     @Override
     public void execute(Executor executor, Queue<Source> sources) {
-        execute(executor, sources, JacksonConfiguration.defaultFactory());
-    }
-
-    public void execute(Executor executor, Queue<Source> sources, JsonFactory factory) {
-        executor.execute(new StatefulRunner(sources, factory));
+        executor.execute(new StatefulRunner(sources));
     }
 
     private class StatefulRunner implements Runnable, JsonProcess {
-        private final JsonFactory factory;
         private final Queue<Source> sources;
         @SuppressWarnings("rawtypes")
         private final WritableChunk[] outArray;
@@ -109,8 +105,7 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
         private ValueProcessor elementProcessor;
         private int count;
 
-        public StatefulRunner(Queue<Source> sources, JsonFactory factory) {
-            this.factory = Objects.requireNonNull(factory);
+        public StatefulRunner(Queue<Source> sources) {
             this.sources = Objects.requireNonNull(sources);
             this.outArray = new WritableChunk[chunkTypes.size()];
             out = newProcessorChunks(chunkSize, chunkTypes);

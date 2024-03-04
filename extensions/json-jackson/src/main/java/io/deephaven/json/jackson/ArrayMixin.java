@@ -72,14 +72,14 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
     @Override
     public Stream<Type<?>> outputTypes() {
-//        if (element().numColumns() != 1) {
-//            throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");
-//        }
+        // if (element().numColumns() != 1) {
+        // throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");
+        // }
         if (!asArray()) {
             throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");
         }
         return element().outputTypes().map(Type::arrayType);
-        //return element().outputTypes();
+        // return element().outputTypes();
     }
 
     @Override
@@ -94,7 +94,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
 
                 final List<WritableChunk<?>> sublist = out.subList(ix, ix + numColumns);
-                //mixin.processor();
+                // mixin.processor();
 
 
                 processors.put(e.getKey(), mixin.processor(context, sublist));
@@ -114,7 +114,8 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
         if (!asArray()) {
             throw new IllegalArgumentException("Need multivariate (ChunkProvider) support for this");
         }
-        return Objects.requireNonNull(element().outputTypes().findFirst().orElseThrow().walk(new ToProcessor(context, out)));
+        return Objects
+                .requireNonNull(element().outputTypes().findFirst().orElseThrow().walk(new ToProcessor(context, out)));
     }
 
 
@@ -160,15 +161,14 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
         @Override
         public ValueProcessor visit(IntType intType) {
-
-            return new ArrayValueProcessor(element().processor(context, out));
-
-            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new ToIntArrayImpl(((IntMixin)element()).intImpl()));
+            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(),
+                    new ToIntArrayImpl(((IntMixin) element()).intImpl()));
         }
 
         @Override
         public ValueProcessor visit(LongType longType) {
-            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new ToLongArrayImpl(((LongMixin)element()).longImpl()));
+            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(),
+                    new ToLongArrayImpl(((LongMixin) element()).longImpl()));
         }
 
         @Override
@@ -178,7 +178,8 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
         @Override
         public ValueProcessor visit(DoubleType doubleType) {
-            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new ToDoubleArrayImpl(((DoubleMixin)element()).doubleImpl()));
+            return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(),
+                    new ToDoubleArrayImpl(((DoubleMixin) element()).doubleImpl()));
         }
 
         @Override

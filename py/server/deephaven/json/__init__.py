@@ -1,27 +1,31 @@
-from typing import Dict, List, Union, Tuple, Optional
-from enum import Enum
-
 import jpy
 from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Union, Tuple, Optional
 
 from deephaven import dtypes
-from deephaven.jcompat import j_hashmap, j_hashset
-from deephaven.table import Table
 from deephaven._wrapper import JObjectWrapper
 
-
 __all__ = [
-    "JsonOptions",
-    "array_",
-    "object_",
     "string_",
-    "double_",
-    "tuple_",
+    "bool_",
+    "char_",
+    "byte_",
+    "short_",
     "int_",
     "long_",
-    "RepeatedFieldBehavior",
+    "float_",
+    "double_",
+    "instant_",
+    "big_integer_",
+    "big_decimal_",
+    "array_",
+    "object_",
+    "tuple_",
     "json",
+    "JsonOptions",
     "JsonValueType",
+    "RepeatedFieldBehavior",
 ]
 
 _JObjectOptions = jpy.get_type("io.deephaven.json.ObjectOptions")
@@ -31,12 +35,18 @@ _JRepeatedFieldBehavior = jpy.get_type(
     "io.deephaven.json.ObjectOptions$RepeatedFieldBehavior"
 )
 _JJsonValueTypes = jpy.get_type("io.deephaven.json.JsonValueTypes")
+_JBoolOptions = jpy.get_type("io.deephaven.json.BoolOptions")
+_JCharOptions = jpy.get_type("io.deephaven.json.CharOptions")
+_JByteOptions = jpy.get_type("io.deephaven.json.ByteOptions")
+_JShortOptions = jpy.get_type("io.deephaven.json.ShortOptions")
 _JIntOptions = jpy.get_type("io.deephaven.json.IntOptions")
 _JLongOptions = jpy.get_type("io.deephaven.json.LongOptions")
 _JFloatOptions = jpy.get_type("io.deephaven.json.FloatOptions")
 _JDoubleOptions = jpy.get_type("io.deephaven.json.DoubleOptions")
 _JStringOptions = jpy.get_type("io.deephaven.json.StringOptions")
 _JInstantOptions = jpy.get_type("io.deephaven.json.InstantOptions")
+_JBigIntegerOptions = jpy.get_type("io.deephaven.json.BigIntegerOptions")
+_JBigDecimalOptions = jpy.get_type("io.deephaven.json.BigDecimalOptions")
 _JValueOptions = jpy.get_type("io.deephaven.json.ValueOptions")
 
 
@@ -67,6 +77,14 @@ JsonValueType = Union[
     Tuple["JsonValueType", ...],
 ]
 
+_VALUE_STRING = _JJsonValueTypes.STRING
+_VALUE_NULL = _JJsonValueTypes.NULL
+_VALUE_INT = _JJsonValueTypes.INT
+_VALUE_DECIMAL = _JJsonValueTypes.DECIMAL
+_VALUE_BOOL = _JJsonValueTypes.BOOL
+_VALUE_OBJECT = _JJsonValueTypes.OBJECT
+_VALUE_ARRAY = _JJsonValueTypes.ARRAY
+
 
 def _build(
     builder,
@@ -81,21 +99,21 @@ def _build(
 ):
     builder.allowMissing(allow_missing)
     builder.desiredTypes(
-        ([_JJsonValueTypes.STRING] if allow_string else [])
-        + ([_JJsonValueTypes.NULL] if allow_null else [])
-        + ([_JJsonValueTypes.INT] if allow_int else [])
-        + ([_JJsonValueTypes.DECIMAL] if allow_decimal else [])
-        + ([_JJsonValueTypes.BOOL] if allow_bool else [])
-        + ([_JJsonValueTypes.OBJECT] if allow_object else [])
-        + ([_JJsonValueTypes.ARRAY] if allow_array else [])
+        ([_VALUE_STRING] if allow_string else [])
+        + ([_VALUE_NULL] if allow_null else [])
+        + ([_VALUE_INT] if allow_int else [])
+        + ([_VALUE_DECIMAL] if allow_decimal else [])
+        + ([_VALUE_BOOL] if allow_bool else [])
+        + ([_VALUE_OBJECT] if allow_object else [])
+        + ([_VALUE_ARRAY] if allow_array else [])
     )
 
 
 def object_(
     fields: Dict[str, JsonValueType],
     allow_unknown_fields: bool = True,
-    allow_null: bool = True,
     allow_missing: bool = True,
+    allow_null: bool = True,
     repeated_field_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.USE_FIRST,
 ) -> JsonOptions:
     builder = _JObjectOptions.builder()
@@ -109,8 +127,8 @@ def object_(
 
 def array_(
     element: JsonValueType,
-    allow_null: bool = True,
     allow_missing: bool = True,
+    allow_null: bool = True,
 ) -> JsonOptions:
     builder = _JArrayOptions.builder()
     builder.element(json(element).j_options)
@@ -122,13 +140,103 @@ def tuple_(values: Tuple[JsonValueType, ...]) -> JsonOptions:
     return JsonOptions(_JTupleOptions.of([json(opt).j_options for opt in values]))
 
 
+def bool_(
+    allow_string: bool = False,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    on_missing: Optional[bool] = None,
+    on_null: Optional[bool] = None,
+) -> JsonOptions:
+    builder = _JBoolOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_bool=True,
+        allow_string=allow_string,
+    )
+    if on_null:
+        builder.onNull(onNull)
+    if on_missing:
+        builder.onMissing(on_missing)
+    return JsonOptions(builder.build())
+
+
+def char_(
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    on_missing: Optional[str] = None,
+    on_null: Optional[str] = None,
+) -> JsonOptions:
+    builder = _JCharOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_string=True,
+    )
+    if on_null:
+        builder.onNull(onNull)
+    if on_missing:
+        builder.onMissing(on_missing)
+    return JsonOptions(builder.build())
+
+
+def byte_(
+    allow_decimal: bool = False,
+    allow_string: bool = False,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    on_missing: Optional[int] = None,
+    on_null: Optional[int] = None,
+) -> JsonOptions:
+    builder = _JByteOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_int=True,
+        allow_decimal=allow_decimal,
+        allow_string=allow_string,
+    )
+    if on_null:
+        builder.onNull(onNull)
+    if on_missing:
+        builder.onMissing(on_missing)
+    return JsonOptions(builder.build())
+
+
+def short_(
+    allow_decimal: bool = False,
+    allow_string: bool = False,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    on_missing: Optional[int] = None,
+    on_null: Optional[int] = None,
+) -> JsonOptions:
+    builder = _JShortOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_int=True,
+        allow_decimal=allow_decimal,
+        allow_string=allow_string,
+    )
+    if on_null:
+        builder.onNull(onNull)
+    if on_missing:
+        builder.onMissing(on_missing)
+    return JsonOptions(builder.build())
+
+
 def int_(
     allow_decimal: bool = False,
     allow_string: bool = False,
-    allow_null: bool = True,
     allow_missing: bool = True,
-    on_null: Optional[int] = None,
+    allow_null: bool = True,
     on_missing: Optional[int] = None,
+    on_null: Optional[int] = None,
 ) -> JsonOptions:
     builder = _JIntOptions.builder()
     _build(
@@ -149,10 +257,10 @@ def int_(
 def long_(
     allow_decimal: bool = False,
     allow_string: bool = False,
-    allow_null: bool = True,
     allow_missing: bool = True,
-    on_null: Optional[int] = None,
+    allow_null: bool = True,
     on_missing: Optional[int] = None,
+    on_null: Optional[int] = None,
 ) -> JsonOptions:
     builder = _JLongOptions.builder()
     _build(
@@ -172,10 +280,10 @@ def long_(
 
 def float_(
     allow_string: bool = False,
-    allow_null: bool = True,
     allow_missing: bool = True,
-    on_null: Optional[float] = None,
+    allow_null: bool = True,
     on_missing: Optional[float] = None,
+    on_null: Optional[float] = None,
 ) -> JsonOptions:
     builder = _JFloatOptions.builder()
     _build(
@@ -195,10 +303,10 @@ def float_(
 
 def double_(
     allow_string: bool = False,
-    allow_null: bool = True,
     allow_missing: bool = True,
-    on_null: Optional[float] = None,
+    allow_null: bool = True,
     on_missing: Optional[float] = None,
+    on_null: Optional[float] = None,
 ) -> JsonOptions:
     builder = _JDoubleOptions.builder()
     _build(
@@ -220,10 +328,10 @@ def string_(
     allow_int: bool = False,
     allow_decimal: bool = False,
     allow_bool: bool = False,
-    allow_null: bool = True,
     allow_missing: bool = True,
-    on_null: Optional[str] = None,
+    allow_null: bool = True,
     on_missing: Optional[str] = None,
+    on_null: Optional[str] = None,
 ) -> JsonOptions:
     builder = _JStringOptions.builder()
     _build(
@@ -243,8 +351,8 @@ def string_(
 
 
 def instant_(
-    allow_null: bool = True,
     allow_missing: bool = True,
+    allow_null: bool = True,
     # todo on_null, on_missing
 ) -> JsonOptions:
     builder = _JInstantOptions.builder()
@@ -257,22 +365,41 @@ def instant_(
     return JsonOptions(builder.build())
 
 
-# TODO: encode optional?
-_dtype_dict = {
-    dtypes.int32: int_(),
-    dtypes.int64: long_(),
-    dtypes.float32: float_(),
-    dtypes.float64: double_(),
-    dtypes.string: string_(),
-    dtypes.Instant: instant_(),
-}
+def big_integer_(
+    allow_string: bool = False,
+    allow_decimal: bool = False,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    # todo on_null, on_missing
+) -> JsonOptions:
+    builder = _JBigIntegerOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_int=True,
+        allow_decimal=allow_decimal,
+        allow_string=allow_string,
+    )
+    return JsonOptions(builder.build())
 
-_type_dict = {
-    int: long_(),
-    float: double_(),
-    str: string_(),
-    datetime: instant_(),
-}
+
+def big_decimal_(
+    allow_string: bool = False,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    # todo on_null, on_missing
+) -> JsonOptions:
+    builder = _JBigDecimalOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_int=True,
+        allow_decimal=True,
+        allow_string=allow_string,
+    )
+    return JsonOptions(builder.build())
 
 
 def json(json_value_type: JsonValueType) -> JsonOptions:
@@ -291,3 +418,37 @@ def json(json_value_type: JsonValueType) -> JsonOptions:
     if isinstance(json_value_type, Tuple):
         return tuple_(json_value_type)
     raise TypeError("unexpected")
+
+
+_dtype_dict = {
+    dtypes.bool_: bool_(),
+    dtypes.char: char_(),
+    dtypes.int8: byte_(),
+    dtypes.int16: short_(),
+    dtypes.int32: int_(),
+    dtypes.int64: long_(),
+    dtypes.float32: float_(),
+    dtypes.float64: double_(),
+    dtypes.string: string_(),
+    dtypes.Instant: instant_(),
+    dtypes.BigInteger: big_integer_(),
+    dtypes.BigDecimal: big_decimal_(),
+    dtypes.bool_array: array_(bool_()),
+    dtypes.char_array: array_(char_()),
+    dtypes.int8_array: array_(byte_()),
+    dtypes.int16_array: array_(short_()),
+    dtypes.int32_array: array_(int_()),
+    dtypes.int64_array: array_(long_()),
+    dtypes.float32_array: array_(float_()),
+    dtypes.float64_array: array_(double_()),
+    dtypes.string_array: array_(string_()),
+    dtypes.instant_array: array_(instant_()),
+}
+
+_type_dict = {
+    bool: bool_(),
+    int: long_(),
+    float: double_(),
+    str: string_(),
+    datetime: instant_(),
+}

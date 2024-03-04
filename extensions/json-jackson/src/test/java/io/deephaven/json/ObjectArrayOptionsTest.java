@@ -37,28 +37,29 @@ public class ObjectArrayOptionsTest {
     @Test
     void fooBarBaz() throws IOException {
         parse(FOO_BAR_BAZ.array(), "[{\"foo\": \"foo\", \"bar\": 42, \"baz\": {\"bip\": 43, \"bop\": 44.0}}]",
-                ObjectChunk.chunkWrap(new String[] { "foo" }),
-                IntChunk.chunkWrap(new int[] { 42 }),
-                LongChunk.chunkWrap(new long[] { 43 }),
-                DoubleChunk.chunkWrap(new double[] { 44.0 }));
+                ObjectChunk.chunkWrap(new String[] {"foo"}),
+                IntChunk.chunkWrap(new int[] {42}),
+                LongChunk.chunkWrap(new long[] {43}),
+                DoubleChunk.chunkWrap(new double[] {44.0}));
     }
 
     @Test
     void fooBarBazArray() throws IOException {
-        parse(FOO_BAR_BAZ_ARRAY, "{\"foo\": \"foo\", \"bar\": 42, \"baz\": [{\"bip\": 43, \"bop\": 44.0}, {\"bip\": 45, \"bop\": 46.0}]}",
-                ObjectChunk.chunkWrap(new String[] { "foo" }),
-                IntChunk.chunkWrap(new int[] { 42 }),
-                ObjectChunk.chunkWrap(new Object[] { LongChunk.chunkWrap(new long[] { 43, 45 } ) }),
-                ObjectChunk.chunkWrap(new Object[] { DoubleChunk.chunkWrap(new double[] {44.0, 46.0 })}));
+        parse(FOO_BAR_BAZ_ARRAY,
+                "{\"foo\": \"foo\", \"bar\": 42, \"baz\": [{\"bip\": 43, \"bop\": 44.0}, {\"bip\": 45, \"bop\": 46.0}]}",
+                ObjectChunk.chunkWrap(new String[] {"foo"}),
+                IntChunk.chunkWrap(new int[] {42}),
+                ObjectChunk.chunkWrap(new Object[] {LongChunk.chunkWrap(new long[] {43, 45})}),
+                ObjectChunk.chunkWrap(new Object[] {DoubleChunk.chunkWrap(new double[] {44.0, 46.0})}));
     }
 
-//    @Test
-//    void standardMissing() throws IOException {
-//        parse(IntOptions.standard().array(), "", ObjectChunk.chunkWrap(new Object[] { null }));
-//    }
-//
-//    @Test
-//    void standardNull() throws IOException {
-//        parse(IntOptions.standard().array(), "null", ObjectChunk.chunkWrap(new Object[] { null }));
-//    }
+    // @Test
+    // void standardMissing() throws IOException {
+    // parse(IntOptions.standard().array(), "", ObjectChunk.chunkWrap(new Object[] { null }));
+    // }
+    //
+    // @Test
+    // void standardNull() throws IOException {
+    // parse(IntOptions.standard().array(), "null", ObjectChunk.chunkWrap(new Object[] { null }));
+    // }
 }

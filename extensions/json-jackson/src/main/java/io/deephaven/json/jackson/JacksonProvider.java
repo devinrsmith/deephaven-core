@@ -44,7 +44,6 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider, ObjectPr
         return Mixin.of(options, factory);
     }
 
-    JsonFactory factory();
 
     Stream<Type<?>> outputTypes();
 

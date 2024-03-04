@@ -72,6 +72,14 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         T visit(StringOptions _string);
 
+        T visit(BoolOptions _bool);
+
+        T visit(CharOptions _char);
+
+        T visit(ByteOptions _byte);
+
+        T visit(ShortOptions _short);
+
         T visit(IntOptions _int);
 
         T visit(LongOptions _long);

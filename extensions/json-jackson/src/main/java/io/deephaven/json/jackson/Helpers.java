@@ -12,8 +12,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadFeature;
+import io.deephaven.util.BooleanUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
@@ -73,6 +76,68 @@ final class Helpers {
     static IOException mismatchMissing(JsonParser parser, Class<?> clazz) {
         final JsonLocation location = parser.currentLocation();
         return new UnexpectedToken("Unexpected missing token", location);
+    }
+
+    static byte parseStringAsByteBool(JsonParser parser) throws IOException {
+        final String text = parser.getText().trim();
+        if ("true".equalsIgnoreCase(text)) {
+            return BooleanUtils.TRUE_BOOLEAN_AS_BYTE;
+        }
+        if ("false".equalsIgnoreCase(text)) {
+            return BooleanUtils.FALSE_BOOLEAN_AS_BYTE;
+        }
+        if ("null".equalsIgnoreCase(text)) {
+            return BooleanUtils.NULL_BOOLEAN_AS_BYTE;
+        }
+        throw new IOException("todo");
+    }
+
+    static char parseStringAsChar(JsonParser parser) throws IOException {
+        if (parser.hasTextCharacters()) {
+            if (parser.getTextLength() != 1) {
+                throw new IOException("todo");
+            }
+            return parser.getTextCharacters()[parser.getTextOffset()];
+        }
+        final String text = parser.getText();
+        if (text.length() != 1) {
+            throw new IOException("todo");
+        }
+        return text.charAt(0);
+    }
+
+    static byte parseIntAsByte(JsonParser parser) throws IOException {
+        return parser.getByteValue();
+    }
+
+    static byte parseDecimalAsTruncatedByte(JsonParser parser) throws IOException {
+        return parser.getByteValue();
+    }
+
+    static byte parseDecimalStringAsTruncatedByte(JsonParser parser) throws IOException {
+        // parse as float then cast to byte; no loss of whole number part (32 bit -> 8 bit) if in range
+        return (byte) Helpers.parseStringAsFloat(parser);
+    }
+
+    static byte parseStringAsByte(JsonParser parser) throws IOException {
+        return (byte) parseStringAsInt(parser);
+    }
+
+    static short parseIntAsShort(JsonParser parser) throws IOException {
+        return parser.getShortValue();
+    }
+
+    static short parseDecimalAsTruncatedShort(JsonParser parser) throws IOException {
+        return parser.getShortValue();
+    }
+
+    static short parseDecimalStringAsTruncatedShort(JsonParser parser) throws IOException {
+        // parse as float then cast to short; no loss of whole number part (32 bit -> 16 bit) if in range
+        return (short) Helpers.parseStringAsFloat(parser);
+    }
+
+    static short parseStringAsShort(JsonParser parser) throws IOException {
+        return (short) parseStringAsInt(parser);
     }
 
     static int parseIntAsInt(JsonParser parser) throws IOException {

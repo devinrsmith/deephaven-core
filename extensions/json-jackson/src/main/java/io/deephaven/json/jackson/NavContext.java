@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-class NavContext {
+final class NavContext {
 
     interface JsonProcess {
 

@@ -9,6 +9,9 @@ import io.deephaven.json.AnyOptions;
 import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BigDecimalOptions;
 import io.deephaven.json.BigIntegerOptions;
+import io.deephaven.json.BoolOptions;
+import io.deephaven.json.ByteOptions;
+import io.deephaven.json.CharOptions;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.FloatOptions;
 import io.deephaven.json.InstantNumberOptions;
@@ -17,6 +20,7 @@ import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
+import io.deephaven.json.ShortOptions;
 import io.deephaven.json.SkipOptions;
 import io.deephaven.json.StringOptions;
 import io.deephaven.json.TupleOptions;
@@ -96,6 +100,26 @@ final class PathToSingleValue implements Visitor<Results> {
     @Override
     public Results visit(StringOptions _string) {
         return complete(_string);
+    }
+
+    @Override
+    public Results visit(BoolOptions _bool) {
+        return complete(_bool);
+    }
+
+    @Override
+    public Results visit(CharOptions _char) {
+        return complete(_char);
+    }
+
+    @Override
+    public Results visit(ByteOptions _byte) {
+        return complete(_byte);
+    }
+
+    @Override
+    public Results visit(ShortOptions _short) {
+        return complete(_short);
     }
 
     @Override

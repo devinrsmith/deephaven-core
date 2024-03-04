@@ -11,6 +11,9 @@ import io.deephaven.json.AnyOptions;
 import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BigDecimalOptions;
 import io.deephaven.json.BigIntegerOptions;
+import io.deephaven.json.BoolOptions;
+import io.deephaven.json.ByteOptions;
+import io.deephaven.json.CharOptions;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.FloatOptions;
 import io.deephaven.json.InstantNumberOptions;
@@ -19,6 +22,7 @@ import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectOptions;
+import io.deephaven.json.ShortOptions;
 import io.deephaven.json.SkipOptions;
 import io.deephaven.json.StringOptions;
 import io.deephaven.json.TupleOptions;
@@ -63,11 +67,6 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
         return options;
     }
 
-    @Override
-    public final JsonFactory factory() {
-        return factory;
-    }
-
     public static String toColumnName(List<String> path) {
         // todo: allow user to configure
         return path.isEmpty() ? "Value" : String.join("_", path);
@@ -87,7 +86,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
 
     final int numColumns() {
         return outputCount();
-        //return (int) outputTypes().count();
+        // return (int) outputTypes().count();
     }
 
     @SuppressWarnings("unchecked")
@@ -254,6 +253,26 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
         @Override
         public StringMixin visit(StringOptions _string) {
             return new StringMixin(_string, factory);
+        }
+
+        @Override
+        public Mixin<?> visit(BoolOptions _bool) {
+            return new BoolMixin(_bool, factory);
+        }
+
+        @Override
+        public Mixin<?> visit(ByteOptions _byte) {
+            return new ByteMixin(_byte, factory);
+        }
+
+        @Override
+        public Mixin<?> visit(CharOptions _char) {
+            return new CharMixin(_char, factory);
+        }
+
+        @Override
+        public Mixin<?> visit(ShortOptions _short) {
+            return new ShortMixin(_short, factory);
         }
 
         @Override

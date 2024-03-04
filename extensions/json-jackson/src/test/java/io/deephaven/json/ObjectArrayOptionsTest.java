@@ -37,10 +37,10 @@ public class ObjectArrayOptionsTest {
     @Test
     void fooBarBaz() throws IOException {
         parse(FOO_BAR_BAZ.array(), "[{\"foo\": \"foo\", \"bar\": 42, \"baz\": {\"bip\": 43, \"bop\": 44.0}}]",
-                ObjectChunk.chunkWrap(new String[] {"foo"}),
-                IntChunk.chunkWrap(new int[] {42}),
-                LongChunk.chunkWrap(new long[] {43}),
-                DoubleChunk.chunkWrap(new double[] {44.0}));
+                ObjectChunk.chunkWrap(new Object[] { new String[] {"foo"} }),
+                ObjectChunk.chunkWrap(new Object[] { new int[] {42} }),
+                ObjectChunk.chunkWrap(new Object[] { new long[] {43} }),
+                ObjectChunk.chunkWrap(new Object[] { new double[] {44.0} }));
     }
 
     @Test

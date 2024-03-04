@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.CharOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
@@ -39,10 +40,15 @@ final class CharMixin extends Mixin<CharOptions> {
         return new CharValueProcessor(out.get(0).asWritableCharChunk(), charImpl());
     }
 
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
+    }
+
     CharValueProcessor.ToChar charImpl() {
         return new Impl();
     }
-
 
     private char parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {

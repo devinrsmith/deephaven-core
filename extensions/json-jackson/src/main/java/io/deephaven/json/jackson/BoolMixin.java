@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BoolOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.BooleanUtils;
@@ -38,6 +39,12 @@ final class BoolMixin extends Mixin<BoolOptions> {
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         // bool to byte
         return new ByteValueProcessor(out.get(0).asWritableByteChunk(), boolImpl());
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     ByteValueProcessor.ToByte boolImpl() {

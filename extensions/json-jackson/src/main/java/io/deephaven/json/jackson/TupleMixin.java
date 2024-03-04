@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.TupleOptions;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
@@ -73,6 +74,12 @@ final class TupleMixin extends Mixin<TupleOptions> {
             throw new IllegalStateException();
         }
         return new TupleProcessor(processors);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     private class TupleProcessor implements ValueProcessor {

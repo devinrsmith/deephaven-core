@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.SkipOptions;
 import io.deephaven.qst.type.Type;
 
@@ -37,6 +38,12 @@ final class SkipMixin extends Mixin<SkipOptions> {
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new Impl();
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     class Impl implements ValueProcessor {

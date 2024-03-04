@@ -8,25 +8,30 @@ import io.deephaven.chunk.WritableObjectChunk;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 final class ObjectValueProcessor<T> implements ValueProcessor {
 
-    private final WritableObjectChunk<T, ?> out;
-    private final ToObject<T> toObj;
+    public static <T> ObjectValueProcessor<T> of(WritableObjectChunk<T, ?> chunk, ToObject<? extends T> toObj) {
+        return new ObjectValueProcessor<>(chunk::add, toObj);
+    }
 
-    ObjectValueProcessor(WritableObjectChunk<T, ?> out, ToObject<T> toObj) {
+    private final Consumer<? super T> out;
+    private final ToObject<? extends T> toObj;
+
+    ObjectValueProcessor(Consumer<? super T> out, ToObject<? extends T> toObj) {
         this.out = Objects.requireNonNull(out);
         this.toObj = Objects.requireNonNull(toObj);
     }
 
     @Override
     public void processCurrentValue(JsonParser parser) throws IOException {
-        out.add(toObj.parseValue(parser));
+        out.accept(toObj.parseValue(parser));
     }
 
     @Override
     public void processMissing(JsonParser parser) throws IOException {
-        out.add(toObj.parseMissing(parser));
+        out.accept(toObj.parseMissing(parser));
     }
 
     interface ToObject<T> {

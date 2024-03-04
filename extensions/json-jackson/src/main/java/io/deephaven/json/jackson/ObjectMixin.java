@@ -7,11 +7,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ObjectOptions.RepeatedFieldBehavior;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -66,6 +66,12 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             throw new IllegalStateException();
         }
         return processorImpl(processors);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     ObjectValueFieldProcessor processorImpl(Map<String, ValueProcessor> processors) {

@@ -8,12 +8,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.AnyOptions;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 final class AnyMixin extends Mixin<AnyOptions> {
@@ -40,7 +40,13 @@ final class AnyMixin extends Mixin<AnyOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), ToTreeNode.INSTANCE);
+        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), ToTreeNode.INSTANCE);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     private enum ToTreeNode implements ToObject<TreeNode> {

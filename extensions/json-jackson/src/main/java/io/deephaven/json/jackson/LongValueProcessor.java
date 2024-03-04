@@ -8,25 +8,30 @@ import io.deephaven.chunk.WritableLongChunk;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.LongConsumer;
 
 final class LongValueProcessor implements ValueProcessor {
 
-    private final WritableLongChunk<?> out;
+    public static LongValueProcessor of(WritableLongChunk<?> out, ToLong toLong) {
+        return new LongValueProcessor(out::add, toLong);
+    }
+
+    private final LongConsumer out;
     private final ToLong toLong;
 
-    LongValueProcessor(WritableLongChunk<?> out, ToLong toLong) {
+    LongValueProcessor(LongConsumer out, ToLong toLong) {
         this.out = Objects.requireNonNull(out);
         this.toLong = Objects.requireNonNull(toLong);
     }
 
     @Override
     public void processCurrentValue(JsonParser parser) throws IOException {
-        out.add(toLong.parseValue(parser));
+        out.accept(toLong.parseValue(parser));
     }
 
     @Override
     public void processMissing(JsonParser parser) throws IOException {
-        out.add(toLong.parseMissing(parser));
+        out.accept(toLong.parseMissing(parser));
     }
 
     interface ToLong {

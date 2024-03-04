@@ -6,7 +6,9 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BigIntegerOptions;
+import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
@@ -37,7 +39,13 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ObjectValueProcessor<>(out.get(0).asWritableObjectChunk(), new Impl());
+        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), new Impl());
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     private BigInteger parseFromInt(JsonParser parser) throws IOException {
@@ -77,7 +85,7 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
         return options.onMissing().orElse(null);
     }
 
-    private class Impl implements ObjectValueProcessor.ToObject<BigInteger> {
+    private class Impl implements ToObject<BigInteger> {
         @Override
         public BigInteger parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {

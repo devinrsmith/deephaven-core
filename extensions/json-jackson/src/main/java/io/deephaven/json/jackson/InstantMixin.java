@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
@@ -40,7 +41,13 @@ final class InstantMixin extends Mixin<InstantOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new LongValueProcessor(out.get(0).asWritableLongChunk(), new ToLongImpl());
+        return LongValueProcessor.of(out.get(0).asWritableLongChunk(), new ToLongImpl());
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     private long parseFromString(JsonParser parser) throws IOException {

@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
@@ -39,6 +40,12 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new DoubleValueProcessor(out.get(0).asWritableDoubleChunk(), doubleImpl());
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     Impl doubleImpl() {

@@ -6,6 +6,7 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.ByteOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
@@ -37,6 +38,12 @@ final class ByteMixin extends Mixin<ByteOptions> {
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
         return new ByteValueProcessor(out.get(0).asWritableByteChunk(), byteImpl());
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+        // array of arrays
+        throw new UnsupportedOperationException("todo");
     }
 
     ByteValueProcessor.ToByte byteImpl() {

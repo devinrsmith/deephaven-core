@@ -39,6 +39,10 @@ final class IntMixin extends Mixin<IntOptions> {
         return new IntValueProcessor(out.get(0).asWritableIntChunk(), new Impl());
     }
 
+    IntValueProcessor.ToInt intImpl() {
+        return new Impl();
+    }
+
     private int parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
             throw Helpers.mismatch(parser, int.class);

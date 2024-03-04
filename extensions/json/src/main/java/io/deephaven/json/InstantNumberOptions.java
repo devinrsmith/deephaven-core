@@ -32,6 +32,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
         public InstantNumberOptions standard(boolean allowDecimal) {
             return builder()
                     .format(this)
+                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL)
                     .build();
         }
 

@@ -86,7 +86,8 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
     abstract Stream<List<String>> paths();
 
     final int numColumns() {
-        return (int) outputTypes().count();
+        return outputCount();
+        //return (int) outputTypes().count();
     }
 
     @SuppressWarnings("unchecked")

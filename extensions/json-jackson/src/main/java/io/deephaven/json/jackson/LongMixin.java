@@ -37,7 +37,11 @@ final class LongMixin extends Mixin<LongOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new LongValueProcessor(out.get(0).asWritableLongChunk(), new Impl());
+        return new LongValueProcessor(out.get(0).asWritableLongChunk(), longImpl());
+    }
+
+    Impl longImpl() {
+        return new Impl();
     }
 
     private long parseFromInt(JsonParser parser) throws IOException {

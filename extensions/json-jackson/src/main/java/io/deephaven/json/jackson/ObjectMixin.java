@@ -11,6 +11,7 @@ import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ObjectOptions.RepeatedFieldBehavior;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -64,10 +65,14 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
+        return processorImpl(processors);
+    }
+
+    ObjectValueFieldProcessor processorImpl(Map<String, ValueProcessor> processors) {
         return new ObjectValueFieldProcessor(processors);
     }
 
-    private class ObjectValueFieldProcessor implements ValueProcessor {
+    class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;
 
         ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {

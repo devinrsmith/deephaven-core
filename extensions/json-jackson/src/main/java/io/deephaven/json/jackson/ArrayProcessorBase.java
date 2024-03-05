@@ -12,20 +12,6 @@ import java.util.function.Consumer;
 
 public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
 
-    public abstract class ArrayContextBase implements Context {
-        @Override
-        public final boolean hasElement(JsonParser parser) {
-            return !parser.hasToken(JsonToken.END_ARRAY);
-        }
-
-        @Override
-        public final void done(JsonParser parser) throws IOException {
-            consumer.accept(onDone());
-        }
-
-        public abstract T onDone();
-    }
-
     private final Consumer<? super T> consumer;
     private final boolean allowMissing;
     private final boolean allowNull;
@@ -41,7 +27,6 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
         this.allowMissing = allowMissing;
     }
 
-
     public abstract ArrayContextBase newContext();
 
     @Override
@@ -51,7 +36,7 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
     }
 
     @Override
-    public final void processMissing(JsonParser parser) throws IOException {
+    public final void processMissingArray(JsonParser parser) throws IOException {
         if (!allowMissing) {
             throw Helpers.mismatchMissing(parser, void.class);
         }
@@ -59,10 +44,24 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
     }
 
     @Override
-    public final void processNull(JsonParser parser) throws IOException {
+    public final void processNullArray(JsonParser parser) throws IOException {
         if (!allowNull) {
             throw Helpers.mismatch(parser, void.class);
         }
         consumer.accept(onNull);
+    }
+
+    public abstract class ArrayContextBase implements Context {
+        @Override
+        public final boolean hasElement(JsonParser parser) {
+            return !parser.hasToken(JsonToken.END_ARRAY);
+        }
+
+        @Override
+        public final void done(JsonParser parser, int length) throws IOException {
+            consumer.accept(onDone(length));
+        }
+
+        public abstract T onDone(int length);
     }
 }

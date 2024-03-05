@@ -21,7 +21,7 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -60,13 +60,13 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
 
     @Override
     public String parseMissing(JsonParser parser) throws IOException {
-        return StringMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
     }
 
     @Override
     ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorObjectImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
-                null, this, String.class);
+        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, this, String.class, String[].class);
     }
 
     private String parseFromString(JsonParser parser) throws IOException {

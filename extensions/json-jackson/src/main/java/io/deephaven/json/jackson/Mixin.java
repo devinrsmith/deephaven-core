@@ -80,16 +80,12 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
 
-    abstract int outputCount();
+    abstract int numColumns();
 
     // todo: is Map<List<String>, Type<?>> easier?
     // or, Stream<(List<String>, Type<?>)>?
     abstract Stream<List<String>> paths();
 
-    final int numColumns() {
-        return outputCount();
-        // return (int) outputTypes().count();
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -218,7 +214,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
         @Override
         public final int size() {
-            return outputCount();
+            return numColumns();
         }
 
         @Override

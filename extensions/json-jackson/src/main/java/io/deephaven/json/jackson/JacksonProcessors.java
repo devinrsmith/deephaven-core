@@ -34,7 +34,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
     }
 
 
-    Stream<Type<?>> outputTypes();
+    Stream<? extends Type<?>> outputTypes();
 
     /**
      * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.

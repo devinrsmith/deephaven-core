@@ -22,7 +22,7 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -42,12 +42,6 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorObjectImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
-                null, this, BigInteger.class);
-    }
-
-    @Override
     public BigInteger parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_NUMBER_INT:
@@ -64,7 +58,13 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
 
     @Override
     public BigInteger parseMissing(JsonParser parser) throws IOException {
-        return BigIntegerMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, this, BigInteger.class, BigInteger[].class);
     }
 
     private BigInteger parseFromInt(JsonParser parser) throws IOException {

@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ByteOptions;
 import io.deephaven.json.jackson.ByteValueProcessor.ToByte;
@@ -12,8 +13,12 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_BYTE_ARRAY;
 
 final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     public ByteMixin(ByteOptions options, JsonFactory factory) {
@@ -21,7 +26,7 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -41,12 +46,6 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
     public byte parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_NUMBER_INT:
@@ -63,7 +62,55 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
 
     @Override
     public byte parseMissing(JsonParser parser) throws IOException {
-        return ByteMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ByteArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    }
+
+    final class ByteArrayProcessorImpl extends ArrayProcessorBase<byte[]> {
+
+        public ByteArrayProcessorImpl(Consumer<? super byte[]> consumer, boolean allowMissing, boolean allowNull) {
+            super(consumer, allowMissing, allowNull, null, null);
+        }
+
+        @Override
+        public ByteArrayContext newContext() {
+            return new ByteArrayContext();
+        }
+
+        final class ByteArrayContext extends ArrayContextBase {
+            private byte[] arr = EMPTY_BYTE_ARRAY;
+            private int len = 0;
+
+            @Override
+            public void processElement(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, ByteMixin.this.parseValue(parser));
+                ++len;
+            }
+
+            @Override
+            public void processElementMissing(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, ByteMixin.this.parseMissing(parser));
+                ++len;
+            }
+
+            @Override
+            public byte[] onDone(int length) {
+                if (length != len) {
+                    throw new IllegalStateException();
+                }
+                return arr.length == len ? arr : Arrays.copyOf(arr, len);
+            }
+        }
     }
 
     private byte parseFromInt(JsonParser parser) throws IOException {

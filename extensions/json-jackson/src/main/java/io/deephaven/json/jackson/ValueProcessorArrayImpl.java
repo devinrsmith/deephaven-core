@@ -21,20 +21,21 @@ final class ValueProcessorArrayImpl implements ValueProcessor {
     @Override
     public void processCurrentValue(JsonParser parser) throws IOException {
         if (parser.hasToken(JsonToken.VALUE_NULL)) {
-            arrayProcessor.processNull(parser);
+            arrayProcessor.processNullArray(parser);
             return;
         }
         final Context context = arrayProcessor.start(parser);
         parser.nextToken();
-        for (int ix = 0; context.hasElement(parser); ++ix) {
-            context.processElement(ix, parser);
+        int ix;
+        for (ix = 0; context.hasElement(parser); ++ix) {
+            context.processElement(parser, ix);
             parser.nextToken();
         }
-        context.done(parser);
+        context.done(parser, ix);
     }
 
     @Override
     public void processMissing(JsonParser parser) throws IOException {
-        arrayProcessor.processMissing(parser);
+        arrayProcessor.processMissingArray(parser);
     }
 }

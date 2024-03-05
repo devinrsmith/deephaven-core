@@ -23,7 +23,7 @@ final class AnyMixin extends Mixin<AnyOptions> {
     // TODO: ALLOW NULL USAGE?
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -44,8 +44,8 @@ final class AnyMixin extends Mixin<AnyOptions> {
 
     @Override
     ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, ToTreeNode.INSTANCE, TreeNode.class, TreeNode[].class);
     }
 
     private enum ToTreeNode implements ToObject<TreeNode> {

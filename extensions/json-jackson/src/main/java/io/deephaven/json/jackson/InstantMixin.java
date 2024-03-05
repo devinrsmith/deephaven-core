@@ -25,7 +25,7 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -45,12 +45,6 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
     public long parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_STRING:
@@ -63,7 +57,12 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
 
     @Override
     public long parseMissing(JsonParser parser) throws IOException {
-        return InstantMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new LongArrayProcessorImpl(this, allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     private long parseFromString(JsonParser parser) throws IOException {

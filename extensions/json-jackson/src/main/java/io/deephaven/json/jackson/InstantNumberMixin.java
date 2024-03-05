@@ -22,7 +22,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -43,8 +43,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
     @Override
     ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+        return new LongArrayProcessorImpl(function(), allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     private LongValueProcessor.ToLong function() {

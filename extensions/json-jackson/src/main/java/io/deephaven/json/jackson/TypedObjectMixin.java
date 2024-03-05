@@ -28,9 +28,9 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     }
 
     @Override
-    public int outputCount() {
-        return 1 + options.sharedFields().values().stream().map(this::mixin).mapToInt(Mixin::outputCount).sum()
-                + options.objects().values().stream().map(this::mixin).mapToInt(Mixin::outputCount).sum();
+    public int numColumns() {
+        return 1 + options.sharedFields().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum()
+                + options.objects().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum();
     }
 
     @Override

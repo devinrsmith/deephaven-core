@@ -18,16 +18,16 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-final class IntMixin extends Mixin<IntOptions> implements ToInt {
+import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_INT_ARRAY;
 
-    private static final int[] EMPTY_INT_ARRAY = new int[0];
+final class IntMixin extends Mixin<IntOptions> implements ToInt {
 
     public IntMixin(IntOptions options, JsonFactory factory) {
         super(factory, options);
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -63,7 +63,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
 
     @Override
     public int parseMissing(JsonParser parser) throws IOException {
-        return IntMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
     }
 
     @Override
@@ -78,7 +78,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
         }
 
         @Override
-        public ArrayProcessorBase<int[]>.ArrayContextBase newContext() {
+        public IntArrayContext newContext() {
             return new IntArrayContext();
         }
 
@@ -87,8 +87,8 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             private int len = 0;
 
             @Override
-            public void processElement(int ix, JsonParser parser) throws IOException {
-                if (ix != len) {
+            public void processElement(JsonParser parser, int index) throws IOException {
+                if (index != len) {
                     throw new IllegalStateException();
                 }
                 arr = ArrayUtil.put(arr, len, IntMixin.this.parseValue(parser));
@@ -96,8 +96,8 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             }
 
             @Override
-            public void processElementMissing(int ix, JsonParser parser) throws IOException {
-                if (ix != len) {
+            public void processElementMissing(JsonParser parser, int index) throws IOException {
+                if (index != len) {
                     throw new IllegalStateException();
                 }
                 arr = ArrayUtil.put(arr, len, IntMixin.this.parseMissing(parser));
@@ -105,7 +105,10 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             }
 
             @Override
-            public int[] onDone() {
+            public int[] onDone(int length) {
+                if (length != len) {
+                    throw new IllegalStateException();
+                }
                 return arr.length == len ? arr : Arrays.copyOf(arr, len);
             }
         }

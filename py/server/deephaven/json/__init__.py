@@ -22,6 +22,7 @@ __all__ = [
     "array_",
     "object_",
     "tuple_",
+    "any_",
     "json",
     "JsonOptions",
     "JsonValueType",
@@ -47,6 +48,7 @@ _JStringOptions = jpy.get_type("io.deephaven.json.StringOptions")
 _JInstantOptions = jpy.get_type("io.deephaven.json.InstantOptions")
 _JBigIntegerOptions = jpy.get_type("io.deephaven.json.BigIntegerOptions")
 _JBigDecimalOptions = jpy.get_type("io.deephaven.json.BigDecimalOptions")
+_JAnyOptions = jpy.get_type("io.deephaven.json.AnyOptions")
 _JValueOptions = jpy.get_type("io.deephaven.json.ValueOptions")
 
 
@@ -402,6 +404,10 @@ def big_decimal_(
     return JsonOptions(builder.build())
 
 
+def any_() -> JsonOptions:
+    return JsonOptions(_JAnyOptions.of())
+
+
 def json(json_value_type: JsonValueType) -> JsonOptions:
     if isinstance(json_value_type, JsonOptions):
         return json_value_type
@@ -433,6 +439,7 @@ _dtype_dict = {
     dtypes.Instant: instant_(),
     dtypes.BigInteger: big_integer_(),
     dtypes.BigDecimal: big_decimal_(),
+    dtypes.JObject: any_(),
     dtypes.bool_array: array_(bool_()),
     dtypes.char_array: array_(char_()),
     dtypes.int8_array: array_(byte_()),
@@ -451,4 +458,5 @@ _type_dict = {
     float: double_(),
     str: string_(),
     datetime: instant_(),
+    object: any_(),
 }

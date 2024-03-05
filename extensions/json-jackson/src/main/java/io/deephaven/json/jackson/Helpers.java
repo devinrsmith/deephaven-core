@@ -78,7 +78,7 @@ final class Helpers {
         return new UnexpectedToken("Unexpected missing token", location);
     }
 
-    static byte parseStringAsByteBool(JsonParser parser) throws IOException {
+    static byte parseStringAsByteBool(JsonParser parser, byte onNull) throws IOException {
         final String text = parser.getText().trim();
         if ("true".equalsIgnoreCase(text)) {
             return BooleanUtils.TRUE_BOOLEAN_AS_BYTE;
@@ -87,7 +87,21 @@ final class Helpers {
             return BooleanUtils.FALSE_BOOLEAN_AS_BYTE;
         }
         if ("null".equalsIgnoreCase(text)) {
-            return BooleanUtils.NULL_BOOLEAN_AS_BYTE;
+            return onNull;
+        }
+        throw new IOException("todo");
+    }
+
+    static Boolean parseStringAsBoolean(JsonParser parser, Boolean onNull) throws IOException {
+        final String text = parser.getText().trim();
+        if ("true".equalsIgnoreCase(text)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equalsIgnoreCase(text)) {
+            return Boolean.FALSE;
+        }
+        if ("null".equalsIgnoreCase(text)) {
+            return onNull;
         }
         throw new IOException("todo");
     }

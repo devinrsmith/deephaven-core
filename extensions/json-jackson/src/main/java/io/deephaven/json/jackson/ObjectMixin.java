@@ -36,8 +36,8 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
     }
 
     @Override
-    public int outputCount() {
-        return options.fields().values().stream().map(this::mixin).mapToInt(Mixin::outputCount).sum();
+    public int numColumns() {
+        return options.fields().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum();
     }
 
     @Override
@@ -203,39 +203,40 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             for (Entry<String, ArrayProcessor> e : fieldProcessors.entrySet()) {
                 contexts.put(e.getKey(), e.getValue().start(parser));
             }
-            return new MyContext(contexts);
+            return new ObjectArrayContext(contexts);
         }
 
         @Override
-        public void processNull(JsonParser parser) throws IOException {
+        public void processNullArray(JsonParser parser) throws IOException {
             // array is null
             for (ArrayProcessor p : fieldProcessors.values()) {
-                p.processNull(parser);
+                p.processNullArray(parser);
             }
         }
 
         @Override
-        public void processMissing(JsonParser parser) throws IOException {
+        public void processMissingArray(JsonParser parser) throws IOException {
             // array is missing
             for (ArrayProcessor p : fieldProcessors.values()) {
-                p.processMissing(parser);
+                p.processMissingArray(parser);
             }
         }
 
-        final class MyContext implements Context {
+        final class ObjectArrayContext implements Context {
             private final Map<String, Context> contexts;
 
-            public MyContext(Map<String, Context> contexts) {
+            public ObjectArrayContext(Map<String, Context> contexts) {
                 this.contexts = Objects.requireNonNull(contexts);
             }
 
             @Override
             public boolean hasElement(JsonParser parser) {
+                // note: not checking each context.hasElement, but we could if we wanted to be extra safe
                 return !parser.hasToken(JsonToken.END_ARRAY);
             }
 
             @Override
-            public void processElement(int ix, JsonParser parser) throws IOException {
+            public void processElement(JsonParser parser, int index) throws IOException {
                 // see
                 // com.fasterxml.jackson.databind.JsonDeserializer.deserialize(com.fasterxml.jackson.core.JsonParser,
                 // com.fasterxml.jackson.databind.DeserializationContext)
@@ -243,7 +244,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                 switch (parser.currentToken()) {
                     case START_OBJECT:
                         if (parser.nextToken() == JsonToken.END_OBJECT) {
-                            processEmptyObject(ix, parser);
+                            processEmptyObject(parser, index);
                             return;
                         }
                         if (!parser.hasToken(JsonToken.FIELD_NAME)) {
@@ -251,34 +252,32 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                         }
                         // fall-through
                     case FIELD_NAME:
-                        processObjectFields(ix, parser);
+                        processObjectFields(parser, index);
                         return;
                     case VALUE_NULL:
-                        processNullObject(ix, parser);
+                        processNullObject(parser, index);
                         return;
                     default:
                         throw Helpers.mismatch(parser, Object.class);
                 }
             }
 
-            private void processNullObject(int ix, JsonParser parser) throws IOException {
+            private void processNullObject(JsonParser parser, int ix) throws IOException {
                 // element is null
-
-                // todo options
                 // pass-through JsonToken.VALUE_NULL
                 for (Context context : contexts.values()) {
-                    context.processElement(ix, parser);
+                    context.processElement(parser, ix);
                 }
             }
 
-            private void processEmptyObject(int ix, JsonParser parser) throws IOException {
+            private void processEmptyObject(JsonParser parser, int ix) throws IOException {
                 // This logic should be equivalent to processObjectFields, but where we know there are no fields
                 for (Context context : contexts.values()) {
-                    context.processElementMissing(ix, parser);
+                    context.processElementMissing(parser, ix);
                 }
             }
 
-            private void processObjectFields(int ix, JsonParser parser) throws IOException {
+            private void processObjectFields(JsonParser parser, int ix) throws IOException {
                 final Set<String> visited = new HashSet<>(contexts.size());
                 while (parser.hasToken(JsonToken.FIELD_NAME)) {
                     final String fieldName = parser.currentName();
@@ -293,7 +292,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                     } else if (visited.add(fieldName)) {
                         // First time seeing field
                         parser.nextToken();
-                        knownProcessor.processElement(ix, parser);
+                        knownProcessor.processElement(parser, ix);
                     } else if (options.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
                         parser.nextToken();
                         parser.skipChildren();
@@ -305,22 +304,22 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                 assertCurrentToken(parser, JsonToken.END_OBJECT);
                 for (Entry<String, Context> e : contexts.entrySet()) {
                     if (!visited.contains(e.getKey())) {
-                        e.getValue().processElementMissing(ix, parser);
+                        e.getValue().processElementMissing(parser, ix);
                     }
                 }
             }
 
             @Override
-            public void processElementMissing(int ix, JsonParser parser) throws IOException {
+            public void processElementMissing(JsonParser parser, int index) throws IOException {
                 for (Context context : contexts.values()) {
-                    context.processElementMissing(ix, parser);
+                    context.processElementMissing(parser, index);
                 }
             }
 
             @Override
-            public void done(JsonParser parser) throws IOException {
+            public void done(JsonParser parser, int length) throws IOException {
                 for (Context context : contexts.values()) {
-                    context.done(parser);
+                    context.done(parser, length);
                 }
             }
         }

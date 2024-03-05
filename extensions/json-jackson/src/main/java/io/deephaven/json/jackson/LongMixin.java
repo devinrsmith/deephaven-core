@@ -5,28 +5,23 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.LongOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.ToLong {
-
-    private static final long[] EMPTY_LONG_ARRAY = new long[0];
 
     public LongMixin(LongOptions options, JsonFactory config) {
         super(config, options);
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -46,11 +41,6 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new LongArrayProcessorImpl(allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
-    }
-
-    @Override
     public long parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_NUMBER_INT:
@@ -67,47 +57,12 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
 
     @Override
     public long parseMissing(JsonParser parser) throws IOException {
-        return LongMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
     }
 
-    final class LongArrayProcessorImpl extends ArrayProcessorBase<long[]> {
-
-        public LongArrayProcessorImpl(boolean allowMissing, boolean allowNull, Consumer<? super long[]> consumer) {
-            super(consumer, allowMissing, allowNull, null, null);
-        }
-
-        @Override
-        public LongArrayContext newContext() {
-            return new LongArrayContext();
-        }
-
-        final class LongArrayContext extends ArrayContextBase {
-            private long[] arr = EMPTY_LONG_ARRAY;
-            private int len = 0;
-
-            @Override
-            public void processElement(int ix, JsonParser parser) throws IOException {
-                if (ix != len) {
-                    throw new IllegalStateException();
-                }
-                arr = ArrayUtil.put(arr, len, LongMixin.this.parseValue(parser));
-                ++len;
-            }
-
-            @Override
-            public void processElementMissing(int ix, JsonParser parser) throws IOException {
-                if (ix != len) {
-                    throw new IllegalStateException();
-                }
-                arr = ArrayUtil.put(arr, len, LongMixin.this.parseMissing(parser));
-                ++len;
-            }
-
-            @Override
-            public long[] onDone() {
-                return arr.length == len ? arr : Arrays.copyOf(arr, len);
-            }
-        }
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new LongArrayProcessorImpl(this, allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     private long parseFromInt(JsonParser parser) throws IOException {

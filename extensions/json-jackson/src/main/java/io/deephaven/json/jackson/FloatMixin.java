@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.FloatOptions;
 import io.deephaven.json.jackson.FloatValueProcessor.ToFloat;
@@ -12,8 +13,12 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_FLOAT_ARRAY;
 
 final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
 
@@ -22,7 +27,7 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -42,12 +47,6 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
     public float parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_NUMBER_INT:
@@ -63,7 +62,55 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
 
     @Override
     public float parseMissing(JsonParser parser) throws IOException {
-        return FloatMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new FloatArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    }
+
+    final class FloatArrayProcessorImpl extends ArrayProcessorBase<float[]> {
+
+        public FloatArrayProcessorImpl(Consumer<? super float[]> consumer, boolean allowMissing, boolean allowNull) {
+            super(consumer, allowMissing, allowNull, null, null);
+        }
+
+        @Override
+        public FloatArrayContext newContext() {
+            return new FloatArrayContext();
+        }
+
+        final class FloatArrayContext extends ArrayContextBase {
+            private float[] arr = EMPTY_FLOAT_ARRAY;
+            private int len = 0;
+
+            @Override
+            public void processElement(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, FloatMixin.this.parseValue(parser));
+                ++len;
+            }
+
+            @Override
+            public void processElementMissing(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, FloatMixin.this.parseMissing(parser));
+                ++len;
+            }
+
+            @Override
+            public float[] onDone(int length) {
+                if (length != len) {
+                    throw new IllegalStateException();
+                }
+                return arr.length == len ? arr : Arrays.copyOf(arr, len);
+            }
+        }
     }
 
     private float onNullOrDefault() {

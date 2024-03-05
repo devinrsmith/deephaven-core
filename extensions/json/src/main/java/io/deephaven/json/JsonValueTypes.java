@@ -14,10 +14,8 @@ public enum JsonValueTypes {
     public static final EnumSet<JsonValueTypes> INT_LIKE = EnumSet.of(STRING, INT, NULL);
     public static final EnumSet<JsonValueTypes> STRING_LIKE = EnumSet.of(STRING, INT, DECIMAL, BOOL, NULL);
     public static final EnumSet<JsonValueTypes> STRING_OR_NULL = STRING.orNull();
-
     public static final EnumSet<JsonValueTypes> BOOL_LIKE = EnumSet.of(STRING, BOOL, NULL);
     public static final EnumSet<JsonValueTypes> BOOL_OR_NULL = BOOL.orNull();
-
     public static final EnumSet<JsonValueTypes> OBJECT_OR_NULL = OBJECT.orNull();
     public static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = ARRAY.orNull();
     public static final EnumSet<JsonValueTypes> INT_OR_NULL = INT.orNull();
@@ -29,7 +27,7 @@ public enum JsonValueTypes {
             throw new IllegalArgumentException("set is empty");
         }
         if (set.size() == 1 && set.contains(JsonValueTypes.NULL)) {
-            // does it ever make sense to _only_ accept null?
+            throw new IllegalArgumentException("Accepting only NULL");
         }
         if (set.contains(JsonValueTypes.DECIMAL) && !set.contains(JsonValueTypes.INT)) {
             throw new IllegalArgumentException("Accepting NUMBER_FLOAT but not NUMBER_INT");

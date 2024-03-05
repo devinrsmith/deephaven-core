@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.SkipOptions;
 import io.deephaven.qst.type.Type;
@@ -13,14 +14,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor {
+final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, ArrayProcessor.Context {
 
     public SkipMixin(SkipOptions options, JsonFactory factory) {
         super(factory, options);
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 0;
     }
 
@@ -41,8 +42,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor {
 
     @Override
     ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+        return new SkipArray(allowMissing, allowNull);
     }
 
     @Override
@@ -96,5 +96,54 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, void.class);
         }
+    }
+
+    private final class SkipArray implements ArrayProcessor {
+        private final boolean allowMissing;
+        private final boolean allowNull;
+
+        public SkipArray(boolean allowMissing, boolean allowNull) {
+            this.allowMissing = allowMissing;
+            this.allowNull = allowNull;
+        }
+
+        @Override
+        public Context start(JsonParser parser) throws IOException {
+            return SkipMixin.this;
+        }
+
+        @Override
+        public void processNullArray(JsonParser parser) throws IOException {
+            if (!allowNull) {
+                throw Helpers.mismatch(parser, void.class);
+            }
+        }
+
+        @Override
+        public void processMissingArray(JsonParser parser) throws IOException {
+            if (!allowMissing) {
+                throw Helpers.mismatch(parser, void.class);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasElement(JsonParser parser) {
+        return !parser.hasToken(JsonToken.END_ARRAY);
+    }
+
+    @Override
+    public void processElement(JsonParser parser, int index) throws IOException {
+        processCurrentValue(parser);
+    }
+
+    @Override
+    public void processElementMissing(JsonParser parser, int index) throws IOException {
+        processMissing(parser);
+    }
+
+    @Override
+    public void done(JsonParser parser, int length) throws IOException {
+        // no-op
     }
 }

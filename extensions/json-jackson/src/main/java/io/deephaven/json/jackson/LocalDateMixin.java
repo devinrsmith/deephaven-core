@@ -23,7 +23,7 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -43,12 +43,6 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorObjectImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
-                null, this, LocalDate.class);
-    }
-
-    @Override
     public LocalDate parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_STRING:
@@ -61,7 +55,13 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
 
     @Override
     public LocalDate parseMissing(JsonParser parser) throws IOException {
-        return LocalDateMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, this, LocalDate.class, LocalDate[].class);
     }
 
     private LocalDate parseFromString(JsonParser parser) throws IOException {

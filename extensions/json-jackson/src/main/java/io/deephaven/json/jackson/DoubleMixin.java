@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.DoubleOptions;
 import io.deephaven.json.jackson.DoubleValueProcessor.ToDouble;
@@ -12,8 +13,12 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_DOUBLE_ARRAY;
 
 final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
 
@@ -22,7 +27,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     @Override
-    public int outputCount() {
+    public int numColumns() {
         return 1;
     }
 
@@ -42,12 +47,6 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
-    }
-
-    @Override
     public double parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_NUMBER_INT:
@@ -63,7 +62,56 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
 
     @Override
     public double parseMissing(JsonParser parser) throws IOException {
-        return DoubleMixin.this.parseFromMissing(parser);
+        return parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new DoubleArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    }
+
+    final class DoubleArrayProcessorImpl extends ArrayProcessorBase<double[]> {
+
+        public DoubleArrayProcessorImpl(Consumer<? super double[]> consumer, boolean allowMissing, boolean allowNull) {
+            super(consumer, allowMissing, allowNull, null, null);
+        }
+
+        @Override
+        public DoubleArrayContext newContext() {
+            return new DoubleArrayContext();
+        }
+
+        final class DoubleArrayContext extends ArrayContextBase {
+            // todo: use WritableDoubleChunk & pools?
+            private double[] arr = EMPTY_DOUBLE_ARRAY;
+            private int len = 0;
+
+            @Override
+            public void processElement(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, DoubleMixin.this.parseValue(parser));
+                ++len;
+            }
+
+            @Override
+            public void processElementMissing(JsonParser parser, int index) throws IOException {
+                if (index != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, DoubleMixin.this.parseMissing(parser));
+                ++len;
+            }
+
+            @Override
+            public double[] onDone(int length) {
+                if (length != len) {
+                    throw new IllegalStateException();
+                }
+                return arr.length == len ? arr : Arrays.copyOf(arr, len);
+            }
+        }
     }
 
     private double onNullOrDefault() {

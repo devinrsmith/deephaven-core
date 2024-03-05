@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+dependencies {
+
+    Classpaths.inheritJacksonPlatform(project, 'api')
+    Classpaths.inheritJacksonPlatform(project, 'testImplementation')
+
+    api project(':engine-processor')
+
+    // If we were to break up this, we would have api on json, impl on jackson
+    api project(':extensions-json-jackson')
+
+    api 'com.fasterxml.jackson.core:jackson-core'
+    api 'de.undercouch:bson4jackson:2.15.0'
+
+    Classpaths.inheritImmutables(project)
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    Classpaths.inheritJUnitPlatform(project)
+    Classpaths.inheritAssertJ(project)
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+}
+
+test {
+    useJUnitPlatform()
+}

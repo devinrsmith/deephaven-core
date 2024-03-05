@@ -19,8 +19,8 @@ import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * An interface for processing data from one or more input objects into output chunks on a 1-to-1 input record to output
@@ -83,6 +83,47 @@ public interface ObjectProcessor<T> {
     }
 
     /**
+     * Creates a "combined" object processor. The resulting {@link ObjectProcessor#outputTypes()} is the combined
+     * in-order outputs from {@code processors} and the {@link ObjectProcessor#processAll(ObjectChunk, List)}
+     * implementation is the in-order processing of {@code processors}.
+     *
+     * @param processors the processors
+     * @return the combined object processor
+     * @param <T> the object type
+     */
+    static <T> ObjectProcessor<T> combined(List<ObjectProcessor<? super T>> processors) {
+        return ObjectProcessorCombined.of(processors);
+    }
+
+    /**
+     * Creates a mapped object processor by applying the function {@code f} to the in chunk of type {@code T} to produce
+     * a mapped in chunk of type {@code R}, and then delegates to {@code delegate} for processing.
+     * 
+     * @param f the function
+     * @param delegate the delegate
+     * @return the mapped object processor
+     * @param <T> the in type
+     * @param <R> the mapped in type
+     */
+    static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
+        return ObjectProcessorMap.of(f, delegate);
+    }
+
+    /**
+     *
+     * @param inType the input type
+     * @return the object processor
+     * @param <T> the input type
+     */
+    static <T> ObjectProcessor<T> simple(GenericType<T> inType) {
+        return ObjectProcessorSimple.of(inType);
+    }
+
+    static <T> ObjectProcessor<T> empty() {
+        return ObjectProcessorEmpty.of();
+    }
+
+    /**
      * The relationship between {@link #outputTypes() output types} and the {@link #processAll(ObjectChunk, List)
      * processAll out param} {@link WritableChunk#getChunkType()}.
      *
@@ -142,6 +183,15 @@ public interface ObjectProcessor<T> {
     }
 
     /**
+     * The number of outputs. Equivalent to {@code outputTypes().size()}.
+     *
+     * @return the number of outputs
+     */
+    default int size() {
+        return outputTypes().size();
+    }
+
+    /**
      * The logical output types {@code this} instance processes. The size and types correspond to the expected size and
      * {@link io.deephaven.chunk.ChunkType chunk types} for {@link #processAll(ObjectChunk, List)} as specified by
      * {@link #chunkType(Type)}.
@@ -168,4 +218,16 @@ public interface ObjectProcessor<T> {
      *        at least {@code in.size()}
      */
     void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
+
+    interface Provider {
+
+        /**
+         * Creates an object processor that can process the input type {@code inputType}.
+         *
+         * @param inputType the input type
+         * @return the object processor
+         * @param <T> the input type
+         */
+        <T> ObjectProcessor<? super T> processor(Class<T> inputType);
+    }
 }

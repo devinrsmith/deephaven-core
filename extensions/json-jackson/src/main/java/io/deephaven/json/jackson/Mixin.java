@@ -78,7 +78,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
 
-    abstract ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out);
+    abstract ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
 
     abstract int outputCount();
 

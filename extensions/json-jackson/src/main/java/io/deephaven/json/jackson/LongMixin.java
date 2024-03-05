@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
@@ -18,7 +17,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-final class LongMixin extends Mixin<LongOptions> implements  LongValueProcessor.ToLong {
+final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.ToLong {
 
     private static final long[] EMPTY_LONG_ARRAY = new long[0];
 
@@ -47,11 +46,8 @@ final class LongMixin extends Mixin<LongOptions> implements  LongValueProcessor.
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
-        if (options.element() != options()) {
-            throw new IllegalStateException();
-        }
-        return new LongArrayProcessorImpl(options, out.get(0).asWritableObjectChunk()::add);
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new LongArrayProcessorImpl(allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     @Override
@@ -76,8 +72,8 @@ final class LongMixin extends Mixin<LongOptions> implements  LongValueProcessor.
 
     final class LongArrayProcessorImpl extends ArrayProcessorBase<long[]> {
 
-        public LongArrayProcessorImpl(ArrayOptions options, Consumer<? super long[]> consumer) {
-            super(options, consumer, null, null);
+        public LongArrayProcessorImpl(boolean allowMissing, boolean allowNull, Consumer<? super long[]> consumer) {
+            super(consumer, allowMissing, allowNull, null, null);
         }
 
         @Override
@@ -95,6 +91,15 @@ final class LongMixin extends Mixin<LongOptions> implements  LongValueProcessor.
                     throw new IllegalStateException();
                 }
                 arr = ArrayUtil.put(arr, len, LongMixin.this.parseValue(parser));
+                ++len;
+            }
+
+            @Override
+            public void processElementMissing(int ix, JsonParser parser) throws IOException {
+                if (ix != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, LongMixin.this.parseMissing(parser));
                 ++len;
             }
 

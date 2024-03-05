@@ -6,7 +6,6 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BigIntegerOptions;
 import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
 import io.deephaven.qst.type.Type;
@@ -16,7 +15,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
+final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject<BigInteger> {
 
     public BigIntegerMixin(BigIntegerOptions options, JsonFactory factory) {
         super(factory, options);
@@ -39,13 +38,33 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), new Impl());
+        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ArrayProcessorObjectImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, this, BigInteger.class);
+    }
+
+    @Override
+    public BigInteger parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_NUMBER_INT:
+                return parseFromInt(parser);
+            case VALUE_NUMBER_FLOAT:
+                return parseFromDecimal(parser);
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, BigInteger.class);
+    }
+
+    @Override
+    public BigInteger parseMissing(JsonParser parser) throws IOException {
+        return BigIntegerMixin.this.parseFromMissing(parser);
     }
 
     private BigInteger parseFromInt(JsonParser parser) throws IOException {
@@ -83,27 +102,5 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> {
             throw Helpers.mismatchMissing(parser, BigInteger.class);
         }
         return options.onMissing().orElse(null);
-    }
-
-    private class Impl implements ToObject<BigInteger> {
-        @Override
-        public BigInteger parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                    return parseFromInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseFromDecimal(parser);
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, BigInteger.class);
-        }
-
-        @Override
-        public BigInteger parseMissing(JsonParser parser) throws IOException {
-            return BigIntegerMixin.this.parseFromMissing(parser);
-        }
     }
 }

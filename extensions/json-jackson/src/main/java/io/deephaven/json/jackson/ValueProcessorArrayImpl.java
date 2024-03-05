@@ -25,6 +25,7 @@ final class ValueProcessorArrayImpl implements ValueProcessor {
             return;
         }
         final Context context = arrayProcessor.start(parser);
+        parser.nextToken();
         for (int ix = 0; context.hasElement(parser); ++ix) {
             context.processElement(ix, parser);
             parser.nextToken();

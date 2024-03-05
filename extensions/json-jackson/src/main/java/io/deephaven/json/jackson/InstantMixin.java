@@ -6,8 +6,8 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.InstantOptions;
+import io.deephaven.json.jackson.LongValueProcessor.ToLong;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
 
@@ -18,7 +18,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class InstantMixin extends Mixin<InstantOptions> {
+final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
 
     public InstantMixin(InstantOptions options, JsonFactory factory) {
         super(factory, options);
@@ -41,13 +41,29 @@ final class InstantMixin extends Mixin<InstantOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return LongValueProcessor.of(out.get(0).asWritableLongChunk(), new ToLongImpl());
+        return LongValueProcessor.of(out.get(0).asWritableLongChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
+    }
+
+    @Override
+    public long parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, Instant.class);
+    }
+
+    @Override
+    public long parseMissing(JsonParser parser) throws IOException {
+        return InstantMixin.this.parseFromMissing(parser);
     }
 
     private long parseFromString(JsonParser parser) throws IOException {
@@ -69,23 +85,5 @@ final class InstantMixin extends Mixin<InstantOptions> {
             throw Helpers.mismatchMissing(parser, Instant.class);
         }
         return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
-    }
-
-    private class ToLongImpl implements LongValueProcessor.ToLong {
-        @Override
-        public long parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, Instant.class);
-        }
-
-        @Override
-        public long parseMissing(JsonParser parser) throws IOException {
-            return InstantMixin.this.parseFromMissing(parser);
-        }
     }
 }

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.TypedObjectOptions;
 import io.deephaven.json.ValueOptions;
@@ -76,7 +75,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }

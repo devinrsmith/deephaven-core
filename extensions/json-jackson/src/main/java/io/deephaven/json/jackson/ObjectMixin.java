@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ObjectOptions.RepeatedFieldBehavior;
 import io.deephaven.json.ValueOptions;
@@ -55,7 +54,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         int ix = 0;
         for (Entry<String, ValueOptions> e : options.fields().entrySet()) {
             final String fieldName = e.getKey();
-            final Mixin opts = mixin(e.getValue());
+            final Mixin<?> opts = mixin(e.getValue());
             final int numTypes = opts.numColumns();
             final ValueProcessor fieldProcessor =
                     opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
@@ -69,16 +68,32 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        if (out.size() != numColumns()) {
+            throw new IllegalArgumentException();
+        }
+        final Map<String, ArrayProcessor> processors = new LinkedHashMap<>(this.options.fields().size());
+        int ix = 0;
+        for (Entry<String, ValueOptions> e : this.options.fields().entrySet()) {
+            final String fieldName = e.getKey();
+            final Mixin<?> opts = mixin(e.getValue());
+            final int numTypes = opts.numColumns();
+            final ArrayProcessor fieldProcessor =
+                    opts.arrayProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
+            processors.put(fieldName, fieldProcessor);
+            ix += numTypes;
+        }
+        if (ix != out.size()) {
+            throw new IllegalStateException();
+        }
+        return new ObjectValueFieldArrayProcessor(processors);
     }
 
     ObjectValueFieldProcessor processorImpl(Map<String, ValueProcessor> processors) {
         return new ObjectValueFieldProcessor(processors);
     }
 
-    class ObjectValueFieldProcessor implements ValueProcessor {
+    final class ObjectValueFieldProcessor implements ValueProcessor {
         private final Map<String, ValueProcessor> fieldProcessors;
 
         ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {
@@ -168,6 +183,144 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             for (Entry<String, ValueProcessor> e : fieldProcessors.entrySet()) {
                 if (!visited.contains(e.getKey())) {
                     e.getValue().processMissing(parser);
+                }
+            }
+        }
+    }
+
+    final class ObjectValueFieldArrayProcessor implements ArrayProcessor {
+        private final Map<String, ArrayProcessor> fieldProcessors;
+
+
+        public ObjectValueFieldArrayProcessor(Map<String, ArrayProcessor> fieldProcessors) {
+            this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
+        }
+
+        @Override
+        public Context start(JsonParser parser) throws IOException {
+            Helpers.assertCurrentToken(parser, JsonToken.START_ARRAY);
+            final Map<String, Context> contexts = new LinkedHashMap<>(fieldProcessors.size());
+            for (Entry<String, ArrayProcessor> e : fieldProcessors.entrySet()) {
+                contexts.put(e.getKey(), e.getValue().start(parser));
+            }
+            return new MyContext(contexts);
+        }
+
+        @Override
+        public void processNull(JsonParser parser) throws IOException {
+            // array is null
+            for (ArrayProcessor p : fieldProcessors.values()) {
+                p.processNull(parser);
+            }
+        }
+
+        @Override
+        public void processMissing(JsonParser parser) throws IOException {
+            // array is missing
+            for (ArrayProcessor p : fieldProcessors.values()) {
+                p.processMissing(parser);
+            }
+        }
+
+        final class MyContext implements Context {
+            private final Map<String, Context> contexts;
+
+            public MyContext(Map<String, Context> contexts) {
+                this.contexts = Objects.requireNonNull(contexts);
+            }
+
+            @Override
+            public boolean hasElement(JsonParser parser) {
+                return !parser.hasToken(JsonToken.END_ARRAY);
+            }
+
+            @Override
+            public void processElement(int ix, JsonParser parser) throws IOException {
+                // see
+                // com.fasterxml.jackson.databind.JsonDeserializer.deserialize(com.fasterxml.jackson.core.JsonParser,
+                // com.fasterxml.jackson.databind.DeserializationContext)
+                // for notes on FIELD_NAME
+                switch (parser.currentToken()) {
+                    case START_OBJECT:
+                        if (parser.nextToken() == JsonToken.END_OBJECT) {
+                            processEmptyObject(ix, parser);
+                            return;
+                        }
+                        if (!parser.hasToken(JsonToken.FIELD_NAME)) {
+                            throw new IllegalStateException();
+                        }
+                        // fall-through
+                    case FIELD_NAME:
+                        processObjectFields(ix, parser);
+                        return;
+                    case VALUE_NULL:
+                        processNullObject(ix, parser);
+                        return;
+                    default:
+                        throw Helpers.mismatch(parser, Object.class);
+                }
+            }
+
+            private void processNullObject(int ix, JsonParser parser) throws IOException {
+                // element is null
+
+                // todo options
+                // pass-through JsonToken.VALUE_NULL
+                for (Context context : contexts.values()) {
+                    context.processElement(ix, parser);
+                }
+            }
+
+            private void processEmptyObject(int ix, JsonParser parser) throws IOException {
+                // This logic should be equivalent to processObjectFields, but where we know there are no fields
+                for (Context context : contexts.values()) {
+                    context.processElementMissing(ix, parser);
+                }
+            }
+
+            private void processObjectFields(int ix, JsonParser parser) throws IOException {
+                final Set<String> visited = new HashSet<>(contexts.size());
+                while (parser.hasToken(JsonToken.FIELD_NAME)) {
+                    final String fieldName = parser.currentName();
+                    final Context knownProcessor = contexts.get(fieldName);
+                    if (knownProcessor == null) {
+                        if (!options.allowUnknownFields()) {
+                            // todo json exception
+                            throw new IllegalStateException(String.format("Unexpected field '%s'", fieldName));
+                        }
+                        parser.nextToken();
+                        parser.skipChildren();
+                    } else if (visited.add(fieldName)) {
+                        // First time seeing field
+                        parser.nextToken();
+                        knownProcessor.processElement(ix, parser);
+                    } else if (options.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
+                        parser.nextToken();
+                        parser.skipChildren();
+                    } else {
+                        throw new IllegalStateException("todo");
+                    }
+                    parser.nextToken();
+                }
+                assertCurrentToken(parser, JsonToken.END_OBJECT);
+                for (Entry<String, Context> e : contexts.entrySet()) {
+                    if (!visited.contains(e.getKey())) {
+                        e.getValue().processElementMissing(ix, parser);
+                    }
+                }
+            }
+
+            @Override
+            public void processElementMissing(int ix, JsonParser parser) throws IOException {
+                for (Context context : contexts.values()) {
+                    context.processElementMissing(ix, parser);
+                }
+            }
+
+            @Override
+            public void done(JsonParser parser) throws IOException {
+                for (Context context : contexts.values()) {
+                    context.done(parser);
                 }
             }
         }

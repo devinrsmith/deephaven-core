@@ -6,7 +6,6 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.BoolOptions;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.BooleanUtils;
@@ -42,7 +41,7 @@ final class BoolMixin extends Mixin<BoolOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }

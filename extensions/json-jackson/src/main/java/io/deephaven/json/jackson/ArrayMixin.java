@@ -43,11 +43,11 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new ValueProcessorArrayImpl(element().arrayProcessor(options, out));
+        return new ValueProcessorArrayImpl(element().arrayProcessor(options.allowMissing(), options.allowNull(), out));
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }

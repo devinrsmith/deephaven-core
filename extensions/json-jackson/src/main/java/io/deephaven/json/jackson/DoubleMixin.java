@@ -6,17 +6,16 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.DoubleOptions;
+import io.deephaven.json.jackson.DoubleValueProcessor.ToDouble;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class DoubleMixin extends Mixin<DoubleOptions> {
+final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
 
     public DoubleMixin(DoubleOptions options, JsonFactory factory) {
         super(factory, options);
@@ -39,17 +38,32 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new DoubleValueProcessor(out.get(0).asWritableDoubleChunk(), doubleImpl());
+        return new DoubleValueProcessor(out.get(0).asWritableDoubleChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }
 
-    Impl doubleImpl() {
-        return new Impl();
+    @Override
+    public double parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_NUMBER_INT:
+            case VALUE_NUMBER_FLOAT:
+                return parseFromNumber(parser);
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, double.class);
+    }
+
+    @Override
+    public double parseMissing(JsonParser parser) throws IOException {
+        return DoubleMixin.this.parseFromMissing(parser);
     }
 
     private double onNullOrDefault() {
@@ -82,31 +96,10 @@ final class DoubleMixin extends Mixin<DoubleOptions> {
         return onNullOrDefault();
     }
 
-    private double parseMissing(JsonParser parser) throws IOException {
+    private double parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, double.class);
         }
         return onMissingOrDefault();
-    }
-
-    class Impl implements DoubleValueProcessor.ToDouble {
-        @Override
-        public double parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                case VALUE_NUMBER_FLOAT:
-                    return parseFromNumber(parser);
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, double.class);
-        }
-
-        @Override
-        public double parseMissing(JsonParser parser) throws IOException {
-            return DoubleMixin.this.parseMissing(parser);
-        }
     }
 }

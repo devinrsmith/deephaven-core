@@ -6,8 +6,8 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.CharOptions;
+import io.deephaven.json.jackson.CharValueProcessor.ToChar;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class CharMixin extends Mixin<CharOptions> {
+final class CharMixin extends Mixin<CharOptions> implements ToChar {
     public CharMixin(CharOptions options, JsonFactory factory) {
         super(factory, options);
     }
@@ -37,17 +37,29 @@ final class CharMixin extends Mixin<CharOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new CharValueProcessor(out.get(0).asWritableCharChunk(), charImpl());
+        return new CharValueProcessor(out.get(0).asWritableCharChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }
 
-    CharValueProcessor.ToChar charImpl() {
-        return new Impl();
+    @Override
+    public char parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, int.class);
+    }
+
+    @Override
+    public char parseMissing(JsonParser parser) throws IOException {
+        return CharMixin.this.parseFromMissing(parser);
     }
 
     private char parseFromString(JsonParser parser) throws IOException {
@@ -64,28 +76,10 @@ final class CharMixin extends Mixin<CharOptions> {
         return options.onNull().orElse(QueryConstants.NULL_CHAR);
     }
 
-    private char parseMissing(JsonParser parser) throws IOException {
+    private char parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, char.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_CHAR);
-    }
-
-    private class Impl implements CharValueProcessor.ToChar {
-        @Override
-        public char parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, int.class);
-        }
-
-        @Override
-        public char parseMissing(JsonParser parser) throws IOException {
-            return CharMixin.this.parseMissing(parser);
-        }
     }
 }

@@ -6,8 +6,8 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.FloatOptions;
+import io.deephaven.json.jackson.FloatValueProcessor.ToFloat;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class FloatMixin extends Mixin<FloatOptions> {
+final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
 
     public FloatMixin(FloatOptions options, JsonFactory factory) {
         super(factory, options);
@@ -38,13 +38,32 @@ final class FloatMixin extends Mixin<FloatOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return new FloatValueProcessor(out.get(0).asWritableFloatChunk(), new Impl());
+        return new FloatValueProcessor(out.get(0).asWritableFloatChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
+    }
+
+    @Override
+    public float parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_NUMBER_INT:
+            case VALUE_NUMBER_FLOAT:
+                return parseFromNumber(parser);
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, float.class);
+    }
+
+    @Override
+    public float parseMissing(JsonParser parser) throws IOException {
+        return FloatMixin.this.parseFromMissing(parser);
     }
 
     private float onNullOrDefault() {
@@ -78,31 +97,10 @@ final class FloatMixin extends Mixin<FloatOptions> {
         return onNullOrDefault();
     }
 
-    private float parseMissing(JsonParser parser) throws IOException {
+    private float parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
             throw Helpers.mismatchMissing(parser, float.class);
         }
         return onMissingOrDefault();
-    }
-
-    class Impl implements FloatValueProcessor.ToFloat {
-        @Override
-        public float parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_NUMBER_INT:
-                case VALUE_NUMBER_FLOAT:
-                    return parseFromNumber(parser);
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, float.class);
-        }
-
-        @Override
-        public float parseMissing(JsonParser parser) throws IOException {
-            return FloatMixin.this.parseMissing(parser);
-        }
     }
 }

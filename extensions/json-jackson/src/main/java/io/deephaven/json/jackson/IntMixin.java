@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.ArrayUtil;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.IntOptions;
 import io.deephaven.json.jackson.IntValueProcessor.ToInt;
 import io.deephaven.qst.type.Type;
@@ -68,14 +67,14 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
-        return new IntArrayProcessorImpl(options, out.get(0).asWritableObjectChunk()::add);
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new IntArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
     final class IntArrayProcessorImpl extends ArrayProcessorBase<int[]> {
 
-        public IntArrayProcessorImpl(ArrayOptions options, Consumer<? super int[]> consumer) {
-            super(options, consumer, null, null);
+        public IntArrayProcessorImpl(Consumer<? super int[]> consumer, boolean allowMissing, boolean allowNull) {
+            super(consumer, allowMissing, allowNull, null, null);
         }
 
         @Override
@@ -93,6 +92,15 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
                     throw new IllegalStateException();
                 }
                 arr = ArrayUtil.put(arr, len, IntMixin.this.parseValue(parser));
+                ++len;
+            }
+
+            @Override
+            public void processElementMissing(int ix, JsonParser parser) throws IOException {
+                if (ix != len) {
+                    throw new IllegalStateException();
+                }
+                arr = ArrayUtil.put(arr, len, IntMixin.this.parseMissing(parser));
                 ++len;
             }
 

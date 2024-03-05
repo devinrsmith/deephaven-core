@@ -6,7 +6,6 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.StringOptions;
 import io.deephaven.json.jackson.ObjectValueProcessor.ToObject;
 import io.deephaven.qst.type.Type;
@@ -15,7 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class StringMixin extends Mixin<StringOptions> {
+final class StringMixin extends Mixin<StringOptions> implements ToObject<String> {
 
     public StringMixin(StringOptions options, JsonFactory factory) {
         super(factory, options);
@@ -38,13 +37,36 @@ final class StringMixin extends Mixin<StringOptions> {
 
     @Override
     public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
-        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), new Impl());
+        return ObjectValueProcessor.of(out.get(0).asWritableObjectChunk(), this);
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+    public String parseValue(JsonParser parser) throws IOException {
+        switch (parser.currentToken()) {
+            case VALUE_STRING:
+                return parseFromString(parser);
+            case VALUE_NUMBER_INT:
+                return parseFromInt(parser);
+            case VALUE_NUMBER_FLOAT:
+                return parseFromDecimal(parser);
+            case VALUE_TRUE:
+            case VALUE_FALSE:
+                return parseFromBool(parser);
+            case VALUE_NULL:
+                return parseFromNull(parser);
+        }
+        throw Helpers.mismatch(parser, String.class);
+    }
+
+    @Override
+    public String parseMissing(JsonParser parser) throws IOException {
+        return StringMixin.this.parseFromMissing(parser);
+    }
+
+    @Override
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ArrayProcessorObjectImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+                null, this, String.class);
     }
 
     private String parseFromString(JsonParser parser) throws IOException {
@@ -87,30 +109,5 @@ final class StringMixin extends Mixin<StringOptions> {
             throw Helpers.mismatchMissing(parser, String.class);
         }
         return options.onMissing().orElse(null);
-    }
-
-    private class Impl implements ToObject<String> {
-        @Override
-        public String parseValue(JsonParser parser) throws IOException {
-            switch (parser.currentToken()) {
-                case VALUE_STRING:
-                    return parseFromString(parser);
-                case VALUE_NUMBER_INT:
-                    return parseFromInt(parser);
-                case VALUE_NUMBER_FLOAT:
-                    return parseFromDecimal(parser);
-                case VALUE_TRUE:
-                case VALUE_FALSE:
-                    return parseFromBool(parser);
-                case VALUE_NULL:
-                    return parseFromNull(parser);
-            }
-            throw Helpers.mismatch(parser, String.class);
-        }
-
-        @Override
-        public String parseMissing(JsonParser parser) throws IOException {
-            return StringMixin.this.parseFromMissing(parser);
-        }
     }
 }

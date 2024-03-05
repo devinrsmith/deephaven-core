@@ -5,7 +5,6 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import io.deephaven.json.ArrayOptions;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,16 +26,19 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
         public abstract T onDone();
     }
 
-    private final ArrayOptions options;
     private final Consumer<? super T> consumer;
+    private final boolean allowMissing;
+    private final boolean allowNull;
     private final T onMissing;
     private final T onNull;
 
-    public ArrayProcessorBase(ArrayOptions options, Consumer<? super T> consumer, T onMissing, T onNull) {
-        this.options = Objects.requireNonNull(options);
+    public ArrayProcessorBase(Consumer<? super T> consumer, boolean allowMissing, boolean allowNull, T onMissing,
+            T onNull) {
         this.consumer = Objects.requireNonNull(consumer);
         this.onMissing = onMissing;
         this.onNull = onNull;
+        this.allowNull = allowNull;
+        this.allowMissing = allowMissing;
     }
 
 
@@ -45,13 +47,12 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
     @Override
     public final Context start(JsonParser parser) throws IOException {
         Helpers.assertCurrentToken(parser, JsonToken.START_ARRAY);
-        parser.nextToken();
         return newContext();
     }
 
     @Override
     public final void processMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing) {
             throw Helpers.mismatchMissing(parser, void.class);
         }
         consumer.accept(onMissing);
@@ -59,7 +60,7 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
 
     @Override
     public final void processNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull) {
             throw Helpers.mismatch(parser, void.class);
         }
         consumer.accept(onNull);

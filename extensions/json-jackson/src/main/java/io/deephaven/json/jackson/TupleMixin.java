@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.TupleOptions;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
@@ -77,7 +76,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(ArrayOptions options, List<WritableChunk<?>> out) {
+    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         // array of arrays
         throw new UnsupportedOperationException("todo");
     }
@@ -93,10 +92,10 @@ final class TupleMixin extends Mixin<TupleOptions> {
         public void processCurrentValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case START_ARRAY:
-                    parseTuple(parser);
+                    parseFromArray(parser);
                     return;
                 case VALUE_NULL:
-                    parseNull(parser);
+                    parseFromNull(parser);
                     return;
                 default:
                     throw Helpers.mismatch(parser, Object.class);
@@ -105,10 +104,10 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
-            parseMissing(parser);
+            parseFromMissing(parser);
         }
 
-        private void parseTuple(JsonParser parser) throws IOException {
+        private void parseFromArray(JsonParser parser) throws IOException {
             for (ValueProcessor value : values) {
                 parser.nextToken();
                 value.processCurrentValue(parser);
@@ -117,7 +116,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
             assertCurrentToken(parser, JsonToken.END_ARRAY);
         }
 
-        private void parseNull(JsonParser parser) throws IOException {
+        private void parseFromNull(JsonParser parser) throws IOException {
             if (!options.allowNull()) {
                 throw Helpers.mismatch(parser, Object.class);
             }
@@ -128,7 +127,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
             }
         }
 
-        private void parseMissing(JsonParser parser) throws IOException {
+        private void parseFromMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
                 throw Helpers.mismatchMissing(parser, Object.class);
             }

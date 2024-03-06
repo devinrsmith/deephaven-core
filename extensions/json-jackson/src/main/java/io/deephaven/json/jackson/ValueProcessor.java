@@ -8,8 +8,8 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
 
-import static io.deephaven.json.jackson.Helpers.assertNextToken;
-import static io.deephaven.json.jackson.Helpers.assertNoCurrentToken;
+import static io.deephaven.json.jackson.Parsing.assertNextToken;
+import static io.deephaven.json.jackson.Parsing.assertNoCurrentToken;
 
 interface ValueProcessor {
 

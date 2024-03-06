@@ -53,7 +53,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
             case VALUE_STRING:
                 return parseFromString(parser);
         }
-        throw Helpers.mismatch(parser, boolean.class);
+        throw Parsing.mismatch(parser, boolean.class);
     }
 
     @Override
@@ -80,7 +80,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
                 case VALUE_STRING:
                     return parseFromStringBoolean(parser);
             }
-            throw Helpers.mismatch(parser, boolean.class);
+            throw Parsing.mismatch(parser, boolean.class);
         }
 
         @Override
@@ -91,57 +91,57 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
 
     private byte parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, boolean.class);
+            throw Parsing.mismatch(parser, boolean.class);
         }
         if (!options.allowNull()) {
-            final byte res = Helpers.parseStringAsByteBool(parser, BooleanUtils.NULL_BOOLEAN_AS_BYTE);
+            final byte res = Parsing.parseStringAsByteBool(parser, BooleanUtils.NULL_BOOLEAN_AS_BYTE);
             if (res == BooleanUtils.NULL_BOOLEAN_AS_BYTE) {
-                throw Helpers.mismatch(parser, boolean.class);
+                throw Parsing.mismatch(parser, boolean.class);
             }
             return res;
         }
-        return Helpers.parseStringAsByteBool(parser, BooleanUtils.booleanAsByte(options.onNull().orElse(null)));
+        return Parsing.parseStringAsByteBool(parser, BooleanUtils.booleanAsByte(options.onNull().orElse(null)));
     }
 
     private byte parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, boolean.class);
+            throw Parsing.mismatch(parser, boolean.class);
         }
         return BooleanUtils.booleanAsByte(options.onNull().orElse(null));
     }
 
     private byte parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, boolean.class);
+            throw Parsing.mismatchMissing(parser, boolean.class);
         }
         return BooleanUtils.booleanAsByte(options.onMissing().orElse(null));
     }
 
     private Boolean parseFromNullBoolean(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, Boolean.class);
+            throw Parsing.mismatch(parser, Boolean.class);
         }
         return options.onNull().orElse(null);
     }
 
     private Boolean parseFromMissingBoolean(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, Boolean.class);
+            throw Parsing.mismatchMissing(parser, Boolean.class);
         }
         return options.onMissing().orElse(null);
     }
 
     private Boolean parseFromStringBoolean(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, Boolean.class);
+            throw Parsing.mismatch(parser, Boolean.class);
         }
         if (!options.allowNull()) {
-            final Boolean result = Helpers.parseStringAsBoolean(parser, null);
+            final Boolean result = Parsing.parseStringAsBoolean(parser, null);
             if (result == null) {
-                throw Helpers.mismatch(parser, Boolean.class);
+                throw Parsing.mismatch(parser, Boolean.class);
             }
             return result;
         }
-        return Helpers.parseStringAsBoolean(parser, options.onNull().orElse(null));
+        return Parsing.parseStringAsBoolean(parser, options.onNull().orElse(null));
     }
 }

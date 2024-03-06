@@ -50,7 +50,7 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, LocalDateOptions.class);
+        throw Parsing.mismatch(parser, LocalDateOptions.class);
     }
 
     @Override
@@ -65,20 +65,20 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
     }
 
     private LocalDate parseFromString(JsonParser parser) throws IOException {
-        final TemporalAccessor accessor = options.dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));
+        final TemporalAccessor accessor = options.dateTimeFormatter().parse(Parsing.textAsCharSequence(parser));
         return LocalDate.from(accessor);
     }
 
     private LocalDate parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, LocalDate.class);
+            throw Parsing.mismatch(parser, LocalDate.class);
         }
         return options.onNull().orElse(null);
     }
 
     private LocalDate parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, LocalDate.class);
+            throw Parsing.mismatchMissing(parser, LocalDate.class);
         }
         return options.onMissing().orElse(null);
     }

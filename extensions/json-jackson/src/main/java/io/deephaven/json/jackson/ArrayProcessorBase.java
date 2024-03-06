@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
+abstract class ArrayProcessorBase<T> implements ArrayProcessor {
 
     private final Consumer<? super T> consumer;
     private final boolean allowMissing;
@@ -31,14 +31,14 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
 
     @Override
     public final Context start(JsonParser parser) throws IOException {
-        Helpers.assertCurrentToken(parser, JsonToken.START_ARRAY);
+        Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
         return newContext();
     }
 
     @Override
     public final void processMissingArray(JsonParser parser) throws IOException {
         if (!allowMissing) {
-            throw Helpers.mismatchMissing(parser, void.class);
+            throw Parsing.mismatchMissing(parser, void.class);
         }
         consumer.accept(onMissing);
     }
@@ -46,7 +46,7 @@ public abstract class ArrayProcessorBase<T> implements ArrayProcessor {
     @Override
     public final void processNullArray(JsonParser parser) throws IOException {
         if (!allowNull) {
-            throw Helpers.mismatch(parser, void.class);
+            throw Parsing.mismatch(parser, void.class);
         }
         consumer.accept(onNull);
     }

@@ -85,7 +85,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
         @Override
         public void processNullArray(JsonParser parser) throws IOException {
             if (!allowNull) {
-                throw Helpers.mismatch(parser, Object.class);
+                throw Parsing.mismatch(parser, Object.class);
             }
             for (WritableChunk<?> writableChunk : out) {
                 writableChunk.asWritableObjectChunk().add(null);
@@ -95,7 +95,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
         @Override
         public void processMissingArray(JsonParser parser) throws IOException {
             if (!allowMissing) {
-                throw Helpers.mismatchMissing(parser, Object.class);
+                throw Parsing.mismatchMissing(parser, Object.class);
             }
             for (WritableChunk<?> writableChunk : out) {
                 writableChunk.asWritableObjectChunk().add(null);

@@ -83,47 +83,6 @@ public interface ObjectProcessor<T> {
     }
 
     /**
-     * Creates a "combined" object processor. The resulting {@link ObjectProcessor#outputTypes()} is the combined
-     * in-order outputs from {@code processors} and the {@link ObjectProcessor#processAll(ObjectChunk, List)}
-     * implementation is the in-order processing of {@code processors}.
-     *
-     * @param processors the processors
-     * @return the combined object processor
-     * @param <T> the object type
-     */
-    static <T> ObjectProcessor<T> combined(List<ObjectProcessor<? super T>> processors) {
-        return ObjectProcessorCombined.of(processors);
-    }
-
-    /**
-     * Creates a mapped object processor by applying the function {@code f} to the in chunk of type {@code T} to produce
-     * a mapped in chunk of type {@code R}, and then delegates to {@code delegate} for processing.
-     * 
-     * @param f the function
-     * @param delegate the delegate
-     * @return the mapped object processor
-     * @param <T> the in type
-     * @param <R> the mapped in type
-     */
-    static <T, R> ObjectProcessor<T> map(Function<? super T, ? extends R> f, ObjectProcessor<? super R> delegate) {
-        return ObjectProcessorMap.of(f, delegate);
-    }
-
-    /**
-     *
-     * @param inType the input type
-     * @return the object processor
-     * @param <T> the input type
-     */
-    static <T> ObjectProcessor<T> simple(GenericType<T> inType) {
-        return ObjectProcessorSimple.of(inType);
-    }
-
-    static <T> ObjectProcessor<T> empty() {
-        return ObjectProcessorEmpty.of();
-    }
-
-    /**
      * The relationship between {@link #outputTypes() output types} and the {@link #processAll(ObjectChunk, List)
      * processAll out param} {@link WritableChunk#getChunkType()}.
      *

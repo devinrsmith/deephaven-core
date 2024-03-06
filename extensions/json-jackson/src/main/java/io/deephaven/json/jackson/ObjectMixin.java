@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
+import static io.deephaven.json.jackson.Parsing.assertCurrentToken;
 
 final class ObjectMixin extends Mixin<ObjectOptions> {
 
@@ -122,14 +122,14 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                     processNullObject(parser);
                     return;
                 default:
-                    throw Helpers.mismatch(parser, Object.class);
+                    throw Parsing.mismatch(parser, Object.class);
             }
         }
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Object.class);
+                throw Parsing.mismatchMissing(parser, Object.class);
             }
             for (ValueProcessor value : fieldProcessors.values()) {
                 value.processMissing(parser);
@@ -138,7 +138,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         private void processNullObject(JsonParser parser) throws IOException {
             if (!options.allowNull()) {
-                throw Helpers.mismatch(parser, Object.class);
+                throw Parsing.mismatch(parser, Object.class);
             }
             for (ValueProcessor value : fieldProcessors.values()) {
                 value.processCurrentValue(parser);
@@ -198,7 +198,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         @Override
         public Context start(JsonParser parser) throws IOException {
-            Helpers.assertCurrentToken(parser, JsonToken.START_ARRAY);
+            Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
             final Map<String, Context> contexts = new LinkedHashMap<>(fieldProcessors.size());
             for (Entry<String, ArrayProcessor> e : fieldProcessors.entrySet()) {
                 contexts.put(e.getKey(), e.getValue().start(parser));
@@ -258,7 +258,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                         processNullObject(parser, index);
                         return;
                     default:
-                        throw Helpers.mismatch(parser, Object.class);
+                        throw Parsing.mismatch(parser, Object.class);
                 }
             }
 

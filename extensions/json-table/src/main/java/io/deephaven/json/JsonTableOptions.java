@@ -41,8 +41,6 @@ public abstract class JsonTableOptions {
 
     @Default
     public boolean multiValueSupport() {
-        // TODO: newline delimited pretty common?
-        // todo: true by default?
         return false;
     }
 

@@ -52,7 +52,7 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> implements ToObject
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, BigDecimal.class);
+        throw Parsing.mismatch(parser, BigDecimal.class);
     }
 
     @Override
@@ -68,28 +68,28 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> implements ToObject
 
     private BigDecimal parseFromNumber(JsonParser parser) throws IOException {
         if (!options.allowNumberInt() && !options.allowDecimal()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
+            throw Parsing.mismatch(parser, BigDecimal.class);
         }
-        return Helpers.parseDecimalAsBigDecimal(parser);
+        return Parsing.parseDecimalAsBigDecimal(parser);
     }
 
     private BigDecimal parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
+            throw Parsing.mismatch(parser, BigDecimal.class);
         }
-        return Helpers.parseStringAsBigDecimal(parser);
+        return Parsing.parseStringAsBigDecimal(parser);
     }
 
     private BigDecimal parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, BigDecimal.class);
+            throw Parsing.mismatch(parser, BigDecimal.class);
         }
         return options.onNull().orElse(null);
     }
 
     private BigDecimal parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, BigDecimal.class);
+            throw Parsing.mismatchMissing(parser, BigDecimal.class);
         }
         return options.onMissing().orElse(null);
     }

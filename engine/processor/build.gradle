@@ -8,7 +8,6 @@ dependencies {
     api project(':qst-type')
     api project(':engine-chunk')
 
-    implementation project(':engine-time')
     Classpaths.inheritImmutables(project)
 
     Classpaths.inheritJUnitPlatform(project)

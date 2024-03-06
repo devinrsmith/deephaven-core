@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.deephaven.json.jackson.Helpers.assertCurrentToken;
+import static io.deephaven.json.jackson.Parsing.assertCurrentToken;
 
 final class TupleMixin extends Mixin<TupleOptions> {
 
@@ -113,7 +113,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
                     processNullTuple(parser);
                     return;
                 default:
-                    throw Helpers.mismatch(parser, Object.class);
+                    throw Parsing.mismatch(parser, Object.class);
             }
         }
 
@@ -133,7 +133,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
         private void processNullTuple(JsonParser parser) throws IOException {
             if (!options.allowNull()) {
-                throw Helpers.mismatch(parser, Object.class);
+                throw Parsing.mismatch(parser, Object.class);
             }
             // Note: we are treating a null tuple the same as a tuple of null objects
             // null ~= [null, ..., null]
@@ -144,7 +144,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
         private void parseFromMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Object.class);
+                throw Parsing.mismatchMissing(parser, Object.class);
             }
             // Note: we are treating a missing tuple the same as a tuple of missing objects (which, is technically
             // impossible w/ native json, but it's the semantics we are exposing).
@@ -174,7 +174,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         @Override
         public void processNullArray(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatch(parser, Object.class);
+                throw Parsing.mismatch(parser, Object.class);
             }
             for (ArrayProcessor value : values) {
                 value.processNullArray(parser);
@@ -184,7 +184,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         @Override
         public void processMissingArray(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Object.class);
+                throw Parsing.mismatchMissing(parser, Object.class);
             }
             for (ArrayProcessor value : values) {
                 value.processMissingArray(parser);
@@ -213,7 +213,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
                         processNullTuple(parser, index);
                         return;
                     default:
-                        throw Helpers.mismatch(parser, Object.class);
+                        throw Parsing.mismatch(parser, Object.class);
                 }
             }
 

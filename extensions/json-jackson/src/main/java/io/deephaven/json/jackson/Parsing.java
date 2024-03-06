@@ -13,15 +13,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadFeature;
 import io.deephaven.util.BooleanUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
 
-final class Helpers {
+final class Parsing {
 
     static void assertNoCurrentToken(JsonParser parser) {
         if (parser.hasCurrentToken()) {
@@ -130,7 +128,7 @@ final class Helpers {
 
     static byte parseDecimalStringAsTruncatedByte(JsonParser parser) throws IOException {
         // parse as float then cast to byte; no loss of whole number part (32 bit -> 8 bit) if in range
-        return (byte) Helpers.parseStringAsFloat(parser);
+        return (byte) Parsing.parseStringAsFloat(parser);
     }
 
     static byte parseStringAsByte(JsonParser parser) throws IOException {
@@ -147,7 +145,7 @@ final class Helpers {
 
     static short parseDecimalStringAsTruncatedShort(JsonParser parser) throws IOException {
         // parse as float then cast to short; no loss of whole number part (32 bit -> 16 bit) if in range
-        return (short) Helpers.parseStringAsFloat(parser);
+        return (short) Parsing.parseStringAsFloat(parser);
     }
 
     static short parseStringAsShort(JsonParser parser) throws IOException {
@@ -229,7 +227,7 @@ final class Helpers {
 
     static int parseDecimalStringAsTruncatedInt(JsonParser parser) throws IOException {
         // parse as double then cast to int; no loss of whole number part (64 bit -> 32 bit)
-        return (int) Helpers.parseStringAsDouble(parser);
+        return (int) Parsing.parseStringAsDouble(parser);
     }
 
     static long parseStringAsLong(JsonParser parser) throws IOException {

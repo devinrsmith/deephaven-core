@@ -57,7 +57,7 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, int.class);
+        throw Parsing.mismatch(parser, int.class);
     }
 
     @Override
@@ -116,37 +116,37 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
 
     private short parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, short.class);
+            throw Parsing.mismatch(parser, short.class);
         }
-        return Helpers.parseIntAsShort(parser);
+        return Parsing.parseIntAsShort(parser);
     }
 
     private short parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, short.class);
+            throw Parsing.mismatch(parser, short.class);
         }
-        return Helpers.parseDecimalAsTruncatedShort(parser);
+        return Parsing.parseDecimalAsTruncatedShort(parser);
     }
 
     private short parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, short.class);
+            throw Parsing.mismatch(parser, short.class);
         }
         return options.allowDecimal()
-                ? Helpers.parseDecimalStringAsTruncatedShort(parser)
-                : Helpers.parseStringAsShort(parser);
+                ? Parsing.parseDecimalStringAsTruncatedShort(parser)
+                : Parsing.parseStringAsShort(parser);
     }
 
     private short parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, short.class);
+            throw Parsing.mismatch(parser, short.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_SHORT);
     }
 
     private short parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, short.class);
+            throw Parsing.mismatchMissing(parser, short.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_SHORT);
     }

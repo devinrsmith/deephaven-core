@@ -55,7 +55,7 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, String.class);
+        throw Parsing.mismatch(parser, String.class);
     }
 
     @Override
@@ -71,42 +71,42 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
 
     private String parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, String.class);
+            throw Parsing.mismatch(parser, String.class);
         }
-        return Helpers.parseStringAsString(parser);
+        return Parsing.parseStringAsString(parser);
     }
 
     private String parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, String.class);
+            throw Parsing.mismatch(parser, String.class);
         }
-        return Helpers.parseIntAsString(parser);
+        return Parsing.parseIntAsString(parser);
     }
 
     private String parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, String.class);
+            throw Parsing.mismatch(parser, String.class);
         }
-        return Helpers.parseDecimalAsString(parser);
+        return Parsing.parseDecimalAsString(parser);
     }
 
     private String parseFromBool(JsonParser parser) throws IOException {
         if (!options.allowBool()) {
-            throw Helpers.mismatch(parser, String.class);
+            throw Parsing.mismatch(parser, String.class);
         }
-        return Helpers.parseBoolAsString(parser);
+        return Parsing.parseBoolAsString(parser);
     }
 
     private String parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, String.class);
+            throw Parsing.mismatch(parser, String.class);
         }
         return options.onNull().orElse(null);
     }
 
     private String parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, String.class);
+            throw Parsing.mismatchMissing(parser, String.class);
         }
         return options.onMissing().orElse(null);
     }

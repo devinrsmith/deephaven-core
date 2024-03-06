@@ -52,7 +52,7 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, long.class);
+        throw Parsing.mismatch(parser, long.class);
     }
 
     @Override
@@ -67,40 +67,40 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
 
     private long parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, long.class);
+            throw Parsing.mismatch(parser, long.class);
         }
-        return Helpers.parseIntAsLong(parser);
+        return Parsing.parseIntAsLong(parser);
     }
 
     private long parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, long.class);
+            throw Parsing.mismatch(parser, long.class);
         }
         // todo: allow caller to configure between lossy long and truncated long
-        return Helpers.parseDecimalAsLossyLong(parser);
+        return Parsing.parseDecimalAsLossyLong(parser);
     }
 
     private long parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, long.class);
+            throw Parsing.mismatch(parser, long.class);
         }
         return options.allowDecimal()
                 // todo: allow caller to configure between lossy long and truncated long
                 // ? Helpers.parseDecimalStringAsLossyLong(parser)
-                ? Helpers.parseDecimalStringAsTruncatedLong(parser)
-                : Helpers.parseStringAsLong(parser);
+                ? Parsing.parseDecimalStringAsTruncatedLong(parser)
+                : Parsing.parseStringAsLong(parser);
     }
 
     private long parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, long.class);
+            throw Parsing.mismatch(parser, long.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_LONG);
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, long.class);
+            throw Parsing.mismatchMissing(parser, long.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_LONG);
     }

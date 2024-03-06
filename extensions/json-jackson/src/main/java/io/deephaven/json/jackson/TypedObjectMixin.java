@@ -118,12 +118,12 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
             case VALUE_NULL:
                 // todo: allowNullType?
                 if (!options.allowNull()) {
-                    throw Helpers.mismatch(parser, String.class);
+                    throw Parsing.mismatch(parser, String.class);
                 }
                 // todo: onNull value?
                 return null;
             default:
-                throw Helpers.mismatch(parser, String.class);
+                throw Parsing.mismatch(parser, String.class);
         }
     }
 
@@ -183,14 +183,14 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
                     processNullObject(parser);
                     break;
                 default:
-                    throw Helpers.mismatch(parser, Object.class); // todo
+                    throw Parsing.mismatch(parser, Object.class); // todo
             }
         }
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Object.class); // todo
+                throw Parsing.mismatchMissing(parser, Object.class); // todo
             }
             // onMissingType()?
             typeOut.add(null);
@@ -201,7 +201,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
 
         private void processNullObject(JsonParser parser) throws IOException {
             if (!options.allowNull()) {
-                throw Helpers.mismatch(parser, Object.class); // todo
+                throw Parsing.mismatch(parser, Object.class); // todo
             }
             // onNullType()?
             typeOut.add(null);

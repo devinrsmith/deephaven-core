@@ -53,7 +53,7 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, BigInteger.class);
+        throw Parsing.mismatch(parser, BigInteger.class);
     }
 
     @Override
@@ -69,37 +69,37 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
 
     private BigInteger parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
+            throw Parsing.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
     private BigInteger parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
+            throw Parsing.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
     private BigInteger parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
+            throw Parsing.mismatch(parser, BigInteger.class);
         }
         return options.allowDecimal()
-                ? Helpers.parseStringAsTruncatedBigInteger(parser)
-                : Helpers.parseStringAsBigInteger(parser);
+                ? Parsing.parseStringAsTruncatedBigInteger(parser)
+                : Parsing.parseStringAsBigInteger(parser);
     }
 
     private BigInteger parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, BigInteger.class);
+            throw Parsing.mismatch(parser, BigInteger.class);
         }
         return options.onNull().orElse(null);
     }
 
     private BigInteger parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, BigInteger.class);
+            throw Parsing.mismatchMissing(parser, BigInteger.class);
         }
         return options.onMissing().orElse(null);
     }

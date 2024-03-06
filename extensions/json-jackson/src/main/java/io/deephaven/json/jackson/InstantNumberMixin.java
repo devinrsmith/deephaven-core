@@ -76,34 +76,34 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
                     if (!options.allowNumberInt()) {
-                        throw Helpers.mismatch(parser, Instant.class);
+                        throw Parsing.mismatch(parser, Instant.class);
                     }
                     return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
                     if (!options.allowDecimal()) {
-                        throw Helpers.mismatch(parser, Instant.class);
+                        throw Parsing.mismatch(parser, Instant.class);
                     }
                     return parseFromDecimal(parser);
                 case VALUE_STRING:
                     if (!options.allowString()) {
-                        throw Helpers.mismatch(parser, Instant.class);
+                        throw Parsing.mismatch(parser, Instant.class);
                     }
                     return options.allowDecimal()
                             ? parseFromDecimalString(parser)
                             : parseFromString(parser);
                 case VALUE_NULL:
                     if (!options.allowNull()) {
-                        throw Helpers.mismatch(parser, Instant.class);
+                        throw Parsing.mismatch(parser, Instant.class);
                     }
                     return DateTimeUtils.epochNanos(options.onNull().orElse(null));
             }
-            throw Helpers.mismatch(parser, Instant.class);
+            throw Parsing.mismatch(parser, Instant.class);
         }
 
         @Override
         public final long parseMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Helpers.mismatchMissing(parser, Instant.class);
+                throw Parsing.mismatchMissing(parser, Instant.class);
             }
             return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
         }
@@ -125,22 +125,22 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
         @Override
         long parseFromInt(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseIntAsLong(parser));
+            return epochNanos(Parsing.parseIntAsLong(parser));
         }
 
         @Override
         long parseFromDecimal(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalAsScaledTruncatedLong(parser, SCALED);
         }
 
         @Override
         long parseFromString(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseStringAsLong(parser));
+            return epochNanos(Parsing.parseStringAsLong(parser));
         }
 
         @Override
         long parseFromDecimalString(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
         }
     }
 
@@ -154,22 +154,22 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
         @Override
         long parseFromInt(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseIntAsLong(parser));
+            return epochNanos(Parsing.parseIntAsLong(parser));
         }
 
         @Override
         long parseFromDecimal(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalAsScaledTruncatedLong(parser, SCALED);
         }
 
         @Override
         long parseFromString(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseStringAsLong(parser));
+            return epochNanos(Parsing.parseStringAsLong(parser));
         }
 
         @Override
         long parseFromDecimalString(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
         }
     }
 
@@ -183,22 +183,22 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
         @Override
         long parseFromInt(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseIntAsLong(parser));
+            return epochNanos(Parsing.parseIntAsLong(parser));
         }
 
         @Override
         long parseFromDecimal(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalAsScaledTruncatedLong(parser, SCALED);
         }
 
         @Override
         long parseFromString(JsonParser parser) throws IOException {
-            return epochNanos(Helpers.parseStringAsLong(parser));
+            return epochNanos(Parsing.parseStringAsLong(parser));
         }
 
         @Override
         long parseFromDecimalString(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
+            return Parsing.parseDecimalStringAsScaledTruncatedLong(parser, SCALED);
         }
     }
 
@@ -206,22 +206,22 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
         @Override
         long parseFromInt(JsonParser parser) throws IOException {
-            return Helpers.parseIntAsLong(parser);
+            return Parsing.parseIntAsLong(parser);
         }
 
         @Override
         long parseFromDecimal(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalAsTruncatedLong(parser);
+            return Parsing.parseDecimalAsTruncatedLong(parser);
         }
 
         @Override
         long parseFromString(JsonParser parser) throws IOException {
-            return Helpers.parseStringAsLong(parser);
+            return Parsing.parseStringAsLong(parser);
         }
 
         @Override
         long parseFromDecimalString(JsonParser parser) throws IOException {
-            return Helpers.parseDecimalStringAsTruncatedLong(parser);
+            return Parsing.parseDecimalStringAsTruncatedLong(parser);
         }
     }
 }

@@ -14,9 +14,6 @@ dependencies {
     api project(':extensions-json')
     api project(':extensions-json-table')
 
-//    api project(':engine-table')
-//    api project(':engine-processor')
-
     implementation project(':engine-query-constants')
     implementation project(':engine-time')
     Classpaths.inheritImmutables(project)

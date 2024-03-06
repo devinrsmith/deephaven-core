@@ -58,7 +58,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, int.class);
+        throw Parsing.mismatch(parser, int.class);
     }
 
     @Override
@@ -116,37 +116,37 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
 
     private int parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, int.class);
+            throw Parsing.mismatch(parser, int.class);
         }
-        return Helpers.parseIntAsInt(parser);
+        return Parsing.parseIntAsInt(parser);
     }
 
     private int parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, int.class);
+            throw Parsing.mismatch(parser, int.class);
         }
-        return Helpers.parseDecimalAsTruncatedInt(parser);
+        return Parsing.parseDecimalAsTruncatedInt(parser);
     }
 
     private int parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, int.class);
+            throw Parsing.mismatch(parser, int.class);
         }
         return options.allowDecimal()
-                ? Helpers.parseDecimalStringAsTruncatedInt(parser)
-                : Helpers.parseStringAsInt(parser);
+                ? Parsing.parseDecimalStringAsTruncatedInt(parser)
+                : Parsing.parseStringAsInt(parser);
     }
 
     private int parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, int.class);
+            throw Parsing.mismatch(parser, int.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_INT);
     }
 
     private int parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, int.class);
+            throw Parsing.mismatchMissing(parser, int.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_INT);
     }

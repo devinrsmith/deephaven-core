@@ -57,7 +57,7 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, int.class);
+        throw Parsing.mismatch(parser, int.class);
     }
 
     @Override
@@ -115,37 +115,37 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
 
     private byte parseFromInt(JsonParser parser) throws IOException {
         if (!options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, byte.class);
+            throw Parsing.mismatch(parser, byte.class);
         }
-        return Helpers.parseIntAsByte(parser);
+        return Parsing.parseIntAsByte(parser);
     }
 
     private byte parseFromDecimal(JsonParser parser) throws IOException {
         if (!options.allowDecimal()) {
-            throw Helpers.mismatch(parser, byte.class);
+            throw Parsing.mismatch(parser, byte.class);
         }
-        return Helpers.parseDecimalAsTruncatedByte(parser);
+        return Parsing.parseDecimalAsTruncatedByte(parser);
     }
 
     private byte parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, byte.class);
+            throw Parsing.mismatch(parser, byte.class);
         }
         return options.allowDecimal()
-                ? Helpers.parseDecimalStringAsTruncatedByte(parser)
-                : Helpers.parseStringAsByte(parser);
+                ? Parsing.parseDecimalStringAsTruncatedByte(parser)
+                : Parsing.parseStringAsByte(parser);
     }
 
     private byte parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, byte.class);
+            throw Parsing.mismatch(parser, byte.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_BYTE);
     }
 
     private byte parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, byte.class);
+            throw Parsing.mismatchMissing(parser, byte.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_BYTE);
     }

@@ -57,7 +57,7 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, float.class);
+        throw Parsing.mismatch(parser, float.class);
     }
 
     @Override
@@ -125,28 +125,28 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
 
     private float parseFromNumber(JsonParser parser) throws IOException {
         if (!options.allowDecimal() && !options.allowNumberInt()) {
-            throw Helpers.mismatch(parser, float.class);
+            throw Parsing.mismatch(parser, float.class);
         }
-        return Helpers.parseNumberAsFloat(parser);
+        return Parsing.parseNumberAsFloat(parser);
     }
 
     private float parseFromString(JsonParser parser) throws IOException {
         if (!options.allowString()) {
-            throw Helpers.mismatch(parser, float.class);
+            throw Parsing.mismatch(parser, float.class);
         }
-        return Helpers.parseStringAsFloat(parser);
+        return Parsing.parseStringAsFloat(parser);
     }
 
     private float parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, float.class);
+            throw Parsing.mismatch(parser, float.class);
         }
         return onNullOrDefault();
     }
 
     private float parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, float.class);
+            throw Parsing.mismatchMissing(parser, float.class);
         }
         return onMissingOrDefault();
     }

@@ -52,7 +52,7 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
             case VALUE_NULL:
                 return parseFromNull(parser);
         }
-        throw Helpers.mismatch(parser, Instant.class);
+        throw Parsing.mismatch(parser, Instant.class);
     }
 
     @Override
@@ -66,7 +66,7 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     private long parseFromString(JsonParser parser) throws IOException {
-        final TemporalAccessor accessor = options.dateTimeFormatter().parse(Helpers.textAsCharSequence(parser));
+        final TemporalAccessor accessor = options.dateTimeFormatter().parse(Parsing.textAsCharSequence(parser));
         final long epochSeconds = accessor.getLong(ChronoField.INSTANT_SECONDS);
         final int nanoOfSecond = accessor.get(ChronoField.NANO_OF_SECOND);
         return epochSeconds * 1_000_000_000L + nanoOfSecond;
@@ -74,14 +74,14 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
 
     private long parseFromNull(JsonParser parser) throws IOException {
         if (!options.allowNull()) {
-            throw Helpers.mismatch(parser, Instant.class);
+            throw Parsing.mismatch(parser, Instant.class);
         }
         return DateTimeUtils.epochNanos(options.onNull().orElse(null));
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
         if (!options.allowMissing()) {
-            throw Helpers.mismatchMissing(parser, Instant.class);
+            throw Parsing.mismatchMissing(parser, Instant.class);
         }
         return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
     }

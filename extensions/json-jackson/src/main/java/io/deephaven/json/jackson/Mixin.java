@@ -68,7 +68,6 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
     }
 
     public static String toColumnName(List<String> path) {
-        // todo: allow user to configure
         return path.isEmpty() ? "Value" : String.join("_", path);
     }
 
@@ -82,10 +81,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract int numColumns();
 
-    // todo: is Map<List<String>, Type<?>> easier?
-    // or, Stream<(List<String>, Type<?>)>?
     abstract Stream<List<String>> paths();
-
 
     @SuppressWarnings("unchecked")
     @Override

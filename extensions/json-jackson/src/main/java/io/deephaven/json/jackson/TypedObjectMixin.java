@@ -76,8 +76,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
 
     @Override
     ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // array of arrays
-        throw new UnsupportedOperationException("todo");
+        throw new UnsupportedOperationException();
     }
 
     private static <T> List<T> concat(List<T> x, List<T> y) {

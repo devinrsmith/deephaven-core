@@ -54,6 +54,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             case VALUE_NUMBER_FLOAT:
                 return parseFromDecimal(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -67,13 +68,13 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new IntArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new IntRepeaterImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class IntArrayProcessorImpl extends ArrayProcessorBase<int[]> {
+    final class IntRepeaterImpl extends RepeaterProcessorBase<int[]> {
 
-        public IntArrayProcessorImpl(Consumer<? super int[]> consumer, boolean allowMissing, boolean allowNull) {
+        public IntRepeaterImpl(Consumer<? super int[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -82,7 +83,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
             return new IntArrayContext();
         }
 
-        final class IntArrayContext extends ArrayContextBase {
+        final class IntArrayContext extends RepeaterContextBase {
             private int[] arr = EMPTY_INT_ARRAY;
             private int len = 0;
 

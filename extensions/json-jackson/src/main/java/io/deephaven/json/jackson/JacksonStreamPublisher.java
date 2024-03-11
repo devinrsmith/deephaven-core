@@ -5,10 +5,8 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.json.ArrayOptions;
 import io.deephaven.json.JsonStreamPublisher;
 import io.deephaven.json.JsonStreamPublisherOptions;
 import io.deephaven.json.Source;
@@ -32,48 +30,35 @@ import java.util.stream.Collectors;
 public final class JacksonStreamPublisher implements JsonStreamPublisher {
     public static JacksonStreamPublisher of(JsonStreamPublisherOptions options, JsonFactory factory) {
         final Results results = PathToSingleValue.of(options.options());
-        final ValueOptions singleValue = results.options();
-        final ValueOptions element;
-        final boolean isArray;
-        if (singleValue instanceof ArrayOptions) {
-            isArray = true;
-            element = ((ArrayOptions) singleValue).element();
-        } else {
-            isArray = false;
-            element = singleValue;
-        }
-        return new JacksonStreamPublisher(results.path(), isArray, element, options.chunkSize(),
+        return new JacksonStreamPublisher(results.path(), results.options(), options.chunkSize(),
                 options.multiValueSupport(), factory);
     }
 
     private final List<Path> path;
-    private final boolean pathIsToArray;
     private final int chunkSize;
     private final boolean multiValue;
     private final JsonFactory factory;
-    private final Mixin<?> elementMixin;
+    private final Mixin<?> mixin;
     private final List<Type<?>> chunkTypes;
     private StreamConsumer consumer;
     private volatile boolean shutdown;
 
     private JacksonStreamPublisher(
             List<Path> path,
-            boolean pathIsToArray,
-            ValueOptions elementOptions,
+            ValueOptions options,
             int chunkSize,
             boolean multiValue,
             JsonFactory factory) {
         this.path = List.copyOf(path);
-        this.pathIsToArray = pathIsToArray;
         this.chunkSize = chunkSize;
         this.multiValue = multiValue;
         this.factory = Objects.requireNonNull(factory);
-        this.elementMixin = Objects.requireNonNull(Mixin.of(elementOptions, factory));
-        this.chunkTypes = elementMixin.outputTypes().collect(Collectors.toList());
+        this.mixin = Objects.requireNonNull(Mixin.of(options, factory));
+        this.chunkTypes = types();
     }
 
     public TableDefinition tableDefinition(Function<List<String>, String> namingFunction) {
-        return TableDefinition.from(elementMixin.names(namingFunction), chunkTypes);
+        return TableDefinition.from(mixin.names(namingFunction), chunkTypes);
     }
 
     @Override
@@ -94,15 +79,34 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
 
     @Override
     public void execute(Executor executor, Queue<Source> sources) {
-        executor.execute(new StatefulRunner(sources));
+        executor.execute(runner(sources));
     }
 
-    private class StatefulRunner implements Runnable, JsonProcess {
+    private List<Type<?>> types() {
+        if (mixin instanceof ArrayMixin) {
+            return ((ArrayMixin) mixin).elementOutputTypes().collect(Collectors.toList());
+        }
+        if (mixin instanceof ObjectKvMixin) {
+            return ((ObjectKvMixin) mixin).keyValueOutputTypes().collect(Collectors.toList());
+        }
+        return mixin.outputTypes().collect(Collectors.toList());
+    }
+
+    private Runnable runner(Queue<Source> sources) {
+        if (mixin instanceof ArrayMixin) {
+            return new ArrayRunner(sources);
+        }
+        if (mixin instanceof ObjectKvMixin) {
+            return new KvRunner(sources);
+        }
+        return new NormalRunner(sources);
+    }
+
+    private abstract class StatefulRunner implements Runnable, JsonProcess {
         private final Queue<Source> sources;
         @SuppressWarnings("rawtypes")
         private final WritableChunk[] outArray;
         private List<WritableChunk<?>> out;
-        private ValueProcessor elementProcessor;
         private int count;
 
         public StatefulRunner(Queue<Source> sources) {
@@ -110,8 +114,10 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             this.outArray = new WritableChunk[chunkTypes.size()];
             out = newProcessorChunks(chunkSize, chunkTypes);
             count = 0;
-            elementProcessor = elementMixin.processor(StatefulRunner.class.getName(), out);
+            prepare(out);
         }
+
+        public abstract void prepare(List<WritableChunk<?>> out);
 
         @Override
         public void run() {
@@ -142,44 +148,12 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             // todo: throw exception if not multi value and not null?
         }
 
-        @Override
-        public void process(JsonParser parser) throws IOException {
-            if (pathIsToArray) {
-                processArrayOfElements(parser);
-            } else if (parser.hasToken(null)) {
-                processMissingElement(parser);
-            } else {
-                processElement(parser);
-            }
-            parser.nextToken();
-        }
-
-        private void processArrayOfElements(JsonParser parser) throws IOException {
-            if (!parser.hasToken(JsonToken.START_ARRAY)) {
-                throw new IllegalStateException();
-            }
-            parser.nextToken();
-            while (!parser.hasToken(JsonToken.END_ARRAY)) {
-                processElement(parser);
-                parser.nextToken();
-            }
-        }
-
-        private void processElement(JsonParser parser) throws IOException {
-            elementProcessor.processCurrentValue(parser);
-            incAndMaybeFlush();
-        }
-
-        private void processMissingElement(JsonParser parser) throws IOException {
-            elementProcessor.processMissing(parser);
-            incAndMaybeFlush();
-        }
-
-        private void incAndMaybeFlush() throws IOException {
+        void incAndMaybeFlush() {
             if (shutdown) {
-                throw new IOException("shutdown");
+                throw new RuntimeException("shutdown");
             }
             if (++count == chunkSize) {
+                // todo: this may flush intra-source
                 flushImpl();
             }
         }
@@ -189,7 +163,71 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             consumer.accept(out.toArray(outArray));
             out = newProcessorChunks(chunkSize, chunkTypes);
             count = 0;
-            elementProcessor = elementMixin.processor("todo", out);
+            prepare(out);
+        }
+    }
+
+    private class NormalRunner extends StatefulRunner {
+        private ValueProcessor processor;
+
+        public NormalRunner(Queue<Source> sources) {
+            super(sources);
+        }
+
+        @Override
+        public void prepare(List<WritableChunk<?>> out) {
+            processor = mixin.processor(NormalRunner.class.getName(), out);
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            if (parser.hasToken(null)) {
+                processor.processMissing(parser);
+            } else {
+                processor.processCurrentValue(parser);
+            }
+            incAndMaybeFlush();
+            parser.nextToken();
+        }
+    }
+
+    private class ArrayRunner extends StatefulRunner {
+        private ValueProcessor processor;
+
+        public ArrayRunner(Queue<Source> sources) {
+            super(sources);
+        }
+
+        @Override
+        public void prepare(List<WritableChunk<?>> out) {
+            processor = ((ArrayMixin) mixin).elementAsValueProcessor(out);
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            ValueProcessorArrayImpl.processArray2(processor, parser, this::incAndMaybeFlush);
+            parser.nextToken();
+        }
+    }
+
+    private class KvRunner extends StatefulRunner {
+        private ValueProcessor keyProcessor;
+        private ValueProcessor valueProcessor;
+
+        public KvRunner(Queue<Source> sources) {
+            super(sources);
+        }
+
+        @Override
+        public void prepare(List<WritableChunk<?>> out) {
+            keyProcessor = ((ObjectKvMixin) mixin).keyAsValueProcessor(out);
+            valueProcessor = ((ObjectKvMixin) mixin).valueAsValueProcessor(out);
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            ValueProcessorKvImpl.processKeyValues2(keyProcessor, valueProcessor, parser, this::incAndMaybeFlush);
+            parser.nextToken();
         }
     }
 

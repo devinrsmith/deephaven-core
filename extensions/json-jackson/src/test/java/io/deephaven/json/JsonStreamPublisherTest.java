@@ -3,6 +3,7 @@
  */
 package io.deephaven.json;
 
+import io.deephaven.chunk.ByteChunk;
 import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.ChunkEquals;
 import io.deephaven.chunk.IntChunk;
@@ -12,6 +13,7 @@ import io.deephaven.chunk.attributes.Values;
 import io.deephaven.json.Source.Visitor;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
+import io.deephaven.util.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -105,7 +107,7 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
-    void missingObject() {
+    void emptyObject() {
         final JsonStreamPublisher publisher = publisher(nameAgeOptions(), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
@@ -119,11 +121,24 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
-    void missingArray() {
+    void emptyArray() {
         final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(nameAgeOptions()), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
             publisher.register(recorder);
             directExecute(publisher, arrayEmpty());
+            recorder.flushPublisher();
+            recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void emptyObjectKv() {
+        final JsonStreamPublisher publisher =
+                publisher(ObjectKvOptions.standard(StringOptions.standard(), IntOptions.standard()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            directExecute(publisher, objEmpty());
             recorder.flushPublisher();
             recorder.assertEmpty();
             recorder.clear();
@@ -176,6 +191,22 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
+    void singleBooleanArray() {
+        final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(BoolOptions.standard()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [true, null, false]
+            directExecute(publisher, Source.of("[true, null, false]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(ByteChunk.chunkWrap(new byte[] {
+                    BooleanUtils.TRUE_BOOLEAN_AS_BYTE,
+                    BooleanUtils.NULL_BOOLEAN_AS_BYTE,
+                    BooleanUtils.FALSE_BOOLEAN_AS_BYTE}));
+            recorder.clear();
+        }
+    }
+
+    @Test
     void singleObjectArray() {
         final JsonStreamPublisher publisher = publisher(ArrayOptions.strict(nameAgeOptions()), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
@@ -190,6 +221,41 @@ public class JsonStreamPublisherTest {
                     objEmpty()));
             recorder.flushPublisher();
             recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void singlePrimitiveKv() {
+        final JsonStreamPublisher publisher =
+                publisher(ObjectKvOptions.standard(StringOptions.standard(), IntOptions.standard()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // { "A": 42, "B": null, "C": 43}
+            directExecute(publisher, Source.of("{ \"A\": 42, \"B\": null, \"C\": 43}"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"A", "B", "C"}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void singleObjectKv() {
+        final JsonStreamPublisher publisher =
+                publisher(ObjectKvOptions.standard(StringOptions.standard(), nameAgeOptions()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // { "a": {"name": "foo", "age":42}, "b": null, "c": {"name": "bar", "age": 43}, "d": {"name": "baz"}, "e":
+            // {"age": 44}, "f": {} }
+            directExecute(publisher, Source.of(
+                    "{ \"a\": {\"name\": \"foo\", \"age\":42}, \"b\": null, \"c\": {\"name\": \"bar\", \"age\": 43}, \"d\": {\"name\": \"baz\"}, \"e\": {\"age\": 44}, \"f\": {} }"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"a", "b", "c", "d", "e", "f"}),
                     ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
                     IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
             recorder.clear();
@@ -242,8 +308,23 @@ public class JsonStreamPublisherTest {
                     array(nullToken(), _int(43)),
                     array(_int(44))));
             recorder.flushPublisher();
-            recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, 44}));
-            recorder.assertEmpty();
+            recorder.assertEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, 44}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void multiValuePrimitiveKv() {
+        final JsonStreamPublisher publisher =
+                publisher(ObjectKvOptions.standard(StringOptions.standard(), IntOptions.standard()), true);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // {"a": 42} {} {"b": null, "c": 43} {"d": 44}
+            directExecute(publisher, Source.of("{\"a\": 42} {} {\"b\": null, \"c\": 43} {\"d\": 44}"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"a", "b", "c", "d"}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, 44}));
             recorder.clear();
         }
     }
@@ -272,7 +353,29 @@ public class JsonStreamPublisherTest {
     }
 
     @Test
-    void nestedTuplePrimitiveArrays() {
+    void nestedPrimitiveKv() {
+        final JsonStreamPublisher publisher = publisher(ObjectOptions.builder()
+                .putFields("a", ObjectOptions.builder()
+                        .putFields("b", ObjectOptions.builder()
+                                .putFields("c",
+                                        ObjectKvOptions.standard(StringOptions.standard(), IntOptions.standard()))
+                                .build())
+                        .build())
+                .build(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // { "a": {"b": {"c": {"D": 42, "E": null, "F": 43}}}}
+            directExecute(publisher, Source.of("{ \"a\": {\"b\": {\"c\": {\"D\": 42, \"E\": null, \"F\": 43}}}}"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"D", "E", "F"}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void nestedTuplePrimitiveArray() {
         final JsonStreamPublisher publisher = publisher(TupleOptions.of(TupleOptions.of(TupleOptions.of(
                 ArrayOptions.strict(IntOptions.standard())))), false);
         try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
@@ -284,6 +387,22 @@ public class JsonStreamPublisherTest {
             recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
             recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
             recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void nestedTuplePrimitiveKv() {
+        final JsonStreamPublisher publisher = publisher(TupleOptions.of(TupleOptions.of(TupleOptions.of(
+                ObjectKvOptions.strict(StringOptions.standard(), IntOptions.standard())))), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [[[{"a": 42, "b": null, "c": 43}]]]
+            directExecute(publisher, Source.of("[[[{\"a\": 42, \"b\": null, \"c\": 43}]]]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"a", "b", "c"}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
             recorder.clear();
         }
     }
@@ -302,6 +421,72 @@ public class JsonStreamPublisherTest {
             recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
             recorder.assertNextChunksEquals(IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
             recorder.assertEmpty();
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void tupleNestedRefKv() {
+        final JsonStreamPublisher publisher = publisher(TupleOptions.of(ObjectOptions.builder()
+                .putFields("ref", ObjectKvOptions.strict(StringOptions.standard(), IntOptions.standard()))
+                .build()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [{"ref": {"a": 42, "b": null, "c": 43}}]
+            directExecute(publisher, Source.of("[{\"ref\": {\"a\": 42, \"b\": null, \"c\": 43}}]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"a", "b", "c"}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void booleanPrimitiveNotUnrolled() {
+        final JsonStreamPublisher publisher =
+                publisher(TupleOptions.of(StringOptions.standard(), BoolOptions.standard()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // ["foo", true]
+            directExecute(publisher, Source.of("[\"foo\", true]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo"}),
+                    ByteChunk.chunkWrap(new byte[] {BooleanUtils.TRUE_BOOLEAN_AS_BYTE}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void booleanArrayUnrolled() {
+        final JsonStreamPublisher publisher = publisher(BoolOptions.standard().array(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // [true, false, null]
+            directExecute(publisher, Source.of("[true, null, false]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(ByteChunk.chunkWrap(new byte[] {
+                    BooleanUtils.TRUE_BOOLEAN_AS_BYTE,
+                    BooleanUtils.NULL_BOOLEAN_AS_BYTE,
+                    BooleanUtils.FALSE_BOOLEAN_AS_BYTE}));
+            recorder.clear();
+        }
+    }
+
+
+    @Test
+    void booleanArrayNotUnrolled() {
+        final JsonStreamPublisher publisher =
+                publisher(TupleOptions.of(StringOptions.standard(), BoolOptions.standard().array()), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // ["foo", [true, null, false]]
+            directExecute(publisher, Source.of("[\"foo\", [true, null, false]]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo"}),
+                    ObjectChunk.chunkWrap(new Boolean[][] {new Boolean[] {true, null, false}}));
             recorder.clear();
         }
     }

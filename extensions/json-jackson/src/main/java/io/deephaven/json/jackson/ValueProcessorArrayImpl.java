@@ -5,37 +5,63 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import io.deephaven.json.jackson.ArrayProcessor.Context;
+import io.deephaven.json.jackson.RepeaterProcessor.Context;
 
 import java.io.IOException;
 import java.util.Objects;
 
 final class ValueProcessorArrayImpl implements ValueProcessor {
 
-    private final ArrayProcessor arrayProcessor;
+    static void processArray(
+            RepeaterProcessor elementProcessor,
+            JsonParser parser,
+            Runnable processElementCallback) throws IOException {
+        Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
+        final Context context = elementProcessor.start(parser);
+        parser.nextToken();
+        int ix;
+        for (ix = 0; !parser.hasToken(JsonToken.END_ARRAY); ++ix) {
+            context.processElement(parser, ix);
+            parser.nextToken();
+            if (processElementCallback != null) {
+                processElementCallback.run();
+            }
+        }
+        context.done(parser, ix);
+    }
 
-    ValueProcessorArrayImpl(ArrayProcessor arrayProcessor) {
-        this.arrayProcessor = Objects.requireNonNull(arrayProcessor);
+    static void processArray2(
+            ValueProcessor elementProcessor,
+            JsonParser parser,
+            Runnable processElementCallback) throws IOException {
+        Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
+        parser.nextToken();
+        while (!parser.hasToken(JsonToken.END_ARRAY)) {
+            elementProcessor.processCurrentValue(parser);
+            parser.nextToken();
+            if (processElementCallback != null) {
+                processElementCallback.run();
+            }
+        }
+    }
+
+    private final RepeaterProcessor elementProcessor;
+
+    ValueProcessorArrayImpl(RepeaterProcessor elementProcessor) {
+        this.elementProcessor = Objects.requireNonNull(elementProcessor);
     }
 
     @Override
     public void processCurrentValue(JsonParser parser) throws IOException {
         if (parser.hasToken(JsonToken.VALUE_NULL)) {
-            arrayProcessor.processNullArray(parser);
+            elementProcessor.processNullRepeater(parser);
             return;
         }
-        final Context context = arrayProcessor.start(parser);
-        parser.nextToken();
-        int ix;
-        for (ix = 0; context.hasElement(parser); ++ix) {
-            context.processElement(parser, ix);
-            parser.nextToken();
-        }
-        context.done(parser, ix);
+        processArray(elementProcessor, parser, null);
     }
 
     @Override
     public void processMissing(JsonParser parser) throws IOException {
-        arrayProcessor.processMissingArray(parser);
+        elementProcessor.processMissingRepeater(parser);
     }
 }

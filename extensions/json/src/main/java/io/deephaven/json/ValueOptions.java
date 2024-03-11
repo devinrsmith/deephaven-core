@@ -90,6 +90,8 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         T visit(ObjectOptions object);
 
+        T visit(ObjectKvOptions objectKv);
+
         T visit(InstantOptions instant);
 
         T visit(InstantNumberOptions instantNumber);
@@ -132,7 +134,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     void checkIllegalTypes() {
         for (JsonValueTypes type : desiredTypes()) {
             if (!allowableTypes().contains(type)) {
-                throw new IllegalArgumentException("Unexpected type");
+                throw new IllegalArgumentException("Unexpected type " + type);
             }
         }
     }

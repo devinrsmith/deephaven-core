@@ -21,8 +21,10 @@ __all__ = [
     "big_decimal_",
     "array_",
     "object_",
+    "object_kv_",
     "tuple_",
     "any_",
+    "skip_",
     "json",
     "JsonOptions",
     "JsonValueType",
@@ -31,6 +33,7 @@ __all__ = [
 
 _JObjectOptions = jpy.get_type("io.deephaven.json.ObjectOptions")
 _JArrayOptions = jpy.get_type("io.deephaven.json.ArrayOptions")
+_JObjectKvOptions = jpy.get_type("io.deephaven.json.ObjectKvOptions")
 _JTupleOptions = jpy.get_type("io.deephaven.json.TupleOptions")
 _JRepeatedFieldBehavior = jpy.get_type(
     "io.deephaven.json.ObjectOptions$RepeatedFieldBehavior"
@@ -45,6 +48,7 @@ _JLongOptions = jpy.get_type("io.deephaven.json.LongOptions")
 _JFloatOptions = jpy.get_type("io.deephaven.json.FloatOptions")
 _JDoubleOptions = jpy.get_type("io.deephaven.json.DoubleOptions")
 _JStringOptions = jpy.get_type("io.deephaven.json.StringOptions")
+_JSkipOptions = jpy.get_type("io.deephaven.json.SkipOptions")
 _JInstantOptions = jpy.get_type("io.deephaven.json.InstantOptions")
 _JInstantNumberOptions = jpy.get_type("io.deephaven.json.InstantNumberOptions")
 _JInstantNumberOptionsFormat = jpy.get_type(
@@ -144,6 +148,21 @@ def array_(
     builder = _JArrayOptions.builder()
     builder.element(json(element).j_options)
     _build(builder, allow_missing, allow_null, allow_array=True)
+    return JsonOptions(builder.build())
+
+
+def object_kv_(
+    key_element: Optional[JsonValueType] = None,
+    value_element: Optional[JsonValueType] = None,
+    allow_missing: bool = True,
+    allow_null: bool = True,
+) -> JsonOptions:
+    builder = _JObjectKvOptions.builder()
+    if key_element is not None:
+        builder.key(json(key_element).j_options)
+    if value_element is not None:
+        builder.value(json(value_element).j_options)
+    _build(builder, allow_missing, allow_null, allow_object=True)
     return JsonOptions(builder.build())
 
 
@@ -439,6 +458,31 @@ def big_decimal_(
 
 def any_() -> JsonOptions:
     return JsonOptions(_JAnyOptions.of())
+
+
+def skip_(
+    allow_missing: bool = True,
+    allow_null: bool = True,
+    allow_int: bool = True,
+    allow_decimal: bool = True,
+    allow_string: bool = True,
+    allow_bool: bool = True,
+    allow_object: bool = True,
+    allow_array: bool = True,
+) -> JsonOptions:
+    builder = _JSkipOptions.builder()
+    _build(
+        builder,
+        allow_missing=allow_missing,
+        allow_null=allow_null,
+        allow_int=allow_int,
+        allow_decimal=allow_decimal,
+        allow_string=allow_string,
+        allow_bool=allow_bool,
+        allow_object=allow_object,
+        allow_array=allow_array,
+    )
+    return JsonOptions(builder.build())
 
 
 def json(json_value_type: JsonValueType) -> JsonOptions:

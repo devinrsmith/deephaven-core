@@ -42,8 +42,8 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new LongArrayProcessorImpl(function(), allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new LongRepeaterImpl(function(), allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     private LongValueProcessor.ToLong function() {
@@ -85,6 +85,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
                     }
                     return parseFromDecimal(parser);
                 case VALUE_STRING:
+                case FIELD_NAME:
                     if (!options.allowString()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }

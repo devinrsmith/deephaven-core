@@ -14,11 +14,11 @@ import java.util.function.Consumer;
 
 import static io.deephaven.util.type.ArrayTypeUtils.EMPTY_LONG_ARRAY;
 
-final class LongArrayProcessorImpl extends ArrayProcessorBase<long[]> {
+final class LongRepeaterImpl extends RepeaterProcessorBase<long[]> {
 
     private final ToLong toLong;
 
-    public LongArrayProcessorImpl(ToLong toLong, boolean allowMissing, boolean allowNull,
+    public LongRepeaterImpl(ToLong toLong, boolean allowMissing, boolean allowNull,
             Consumer<? super long[]> consumer) {
         super(consumer, allowMissing, allowNull, null, null);
         this.toLong = Objects.requireNonNull(toLong);
@@ -29,7 +29,7 @@ final class LongArrayProcessorImpl extends ArrayProcessorBase<long[]> {
         return new LongArrayContext();
     }
 
-    final class LongArrayContext extends ArrayContextBase {
+    final class LongArrayContext extends RepeaterContextBase {
         private long[] arr = EMPTY_LONG_ARRAY;
         private int len = 0;
 

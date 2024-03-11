@@ -75,7 +75,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         throw new UnsupportedOperationException();
     }
 
@@ -113,6 +113,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         }
         switch (parser.nextToken()) {
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parser.getText();
             case VALUE_NULL:
                 // todo: allowNullType?

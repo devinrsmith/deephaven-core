@@ -33,7 +33,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
 
     @Override
     public Stream<Type<?>> outputTypes() {
-        return Stream.of(Type.booleanType());
+        return Stream.of(Type.booleanType().boxedType());
     }
 
     @Override
@@ -51,6 +51,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
             case VALUE_NULL:
                 return parseFromNull(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
         }
         throw Parsing.mismatch(parser, boolean.class);
@@ -62,8 +63,8 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new RepeaterGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
                 null, new ToBoolean(), Boolean.class, Boolean[].class);
     }
 
@@ -78,6 +79,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
                 case VALUE_NULL:
                     return parseFromNullBoolean(parser);
                 case VALUE_STRING:
+                case FIELD_NAME:
                     return parseFromStringBoolean(parser);
             }
             throw Parsing.mismatch(parser, boolean.class);

@@ -49,6 +49,7 @@ final class CharMixin extends Mixin<CharOptions> implements ToChar {
     public char parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -62,13 +63,13 @@ final class CharMixin extends Mixin<CharOptions> implements ToChar {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new CharArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new CharRepeaterImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class CharArrayProcessorImpl extends ArrayProcessorBase<char[]> {
+    final class CharRepeaterImpl extends RepeaterProcessorBase<char[]> {
 
-        public CharArrayProcessorImpl(Consumer<? super char[]> consumer, boolean allowMissing, boolean allowNull) {
+        public CharRepeaterImpl(Consumer<? super char[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -77,7 +78,7 @@ final class CharMixin extends Mixin<CharOptions> implements ToChar {
             return new CharArrayContext();
         }
 
-        final class CharArrayContext extends ArrayContextBase {
+        final class CharArrayContext extends RepeaterContextBase {
             private char[] arr = EMPTY_CHAR_ARRAY;
             private int len = 0;
 

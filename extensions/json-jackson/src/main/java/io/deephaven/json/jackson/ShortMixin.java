@@ -53,6 +53,7 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
             case VALUE_NUMBER_FLOAT:
                 return parseFromDecimal(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -66,14 +67,13 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-
-        return new ShortArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ShortRepeaterImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class ShortArrayProcessorImpl extends ArrayProcessorBase<short[]> {
+    final class ShortRepeaterImpl extends RepeaterProcessorBase<short[]> {
 
-        public ShortArrayProcessorImpl(Consumer<? super short[]> consumer, boolean allowMissing, boolean allowNull) {
+        public ShortRepeaterImpl(Consumer<? super short[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -82,7 +82,7 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
             return new ShortArrayContext();
         }
 
-        final class ShortArrayContext extends ArrayContextBase {
+        final class ShortArrayContext extends RepeaterContextBase {
             private short[] arr = EMPTY_SHORT_ARRAY;
             private int len = 0;
 

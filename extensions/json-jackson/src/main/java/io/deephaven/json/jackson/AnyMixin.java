@@ -43,8 +43,8 @@ final class AnyMixin extends Mixin<AnyOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new RepeaterGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
                 null, ToTreeNode.INSTANCE, TreeNode.class, TreeNode[].class);
     }
 

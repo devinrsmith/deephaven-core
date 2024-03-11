@@ -68,25 +68,25 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final Map<String, ArrayProcessor> processors = new LinkedHashMap<>(this.options.fields().size());
+        final Map<String, RepeaterProcessor> processors = new LinkedHashMap<>(this.options.fields().size());
         int ix = 0;
         for (Entry<String, ValueOptions> e : this.options.fields().entrySet()) {
             final String fieldName = e.getKey();
             final Mixin<?> opts = mixin(e.getValue());
             final int numTypes = opts.numColumns();
-            final ArrayProcessor fieldProcessor =
-                    opts.arrayProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
+            final RepeaterProcessor fieldProcessor =
+                    opts.repeaterProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
             processors.put(fieldName, fieldProcessor);
             ix += numTypes;
         }
         if (ix != out.size()) {
             throw new IllegalStateException();
         }
-        return new ObjectValueFieldArrayProcessor(processors);
+        return new ObjectValueRepeaterProcessor(processors);
     }
 
     ObjectValueFieldProcessor processorImpl(Map<String, ValueProcessor> processors) {
@@ -188,37 +188,34 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         }
     }
 
-    final class ObjectValueFieldArrayProcessor implements ArrayProcessor {
-        private final Map<String, ArrayProcessor> fieldProcessors;
+    final class ObjectValueRepeaterProcessor implements RepeaterProcessor {
+        private final Map<String, RepeaterProcessor> fieldProcessors;
 
 
-        public ObjectValueFieldArrayProcessor(Map<String, ArrayProcessor> fieldProcessors) {
+        public ObjectValueRepeaterProcessor(Map<String, RepeaterProcessor> fieldProcessors) {
             this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
         }
 
         @Override
         public Context start(JsonParser parser) throws IOException {
-            Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
             final Map<String, Context> contexts = new LinkedHashMap<>(fieldProcessors.size());
-            for (Entry<String, ArrayProcessor> e : fieldProcessors.entrySet()) {
+            for (Entry<String, RepeaterProcessor> e : fieldProcessors.entrySet()) {
                 contexts.put(e.getKey(), e.getValue().start(parser));
             }
             return new ObjectArrayContext(contexts);
         }
 
         @Override
-        public void processNullArray(JsonParser parser) throws IOException {
-            // array is null
-            for (ArrayProcessor p : fieldProcessors.values()) {
-                p.processNullArray(parser);
+        public void processNullRepeater(JsonParser parser) throws IOException {
+            for (RepeaterProcessor p : fieldProcessors.values()) {
+                p.processNullRepeater(parser);
             }
         }
 
         @Override
-        public void processMissingArray(JsonParser parser) throws IOException {
-            // array is missing
-            for (ArrayProcessor p : fieldProcessors.values()) {
-                p.processMissingArray(parser);
+        public void processMissingRepeater(JsonParser parser) throws IOException {
+            for (RepeaterProcessor p : fieldProcessors.values()) {
+                p.processMissingRepeater(parser);
             }
         }
 
@@ -227,12 +224,6 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
             public ObjectArrayContext(Map<String, Context> contexts) {
                 this.contexts = Objects.requireNonNull(contexts);
-            }
-
-            @Override
-            public boolean hasElement(JsonParser parser) {
-                // note: not checking each context.hasElement, but we could if we wanted to be extra safe
-                return !parser.hasToken(JsonToken.END_ARRAY);
             }
 
             @Override

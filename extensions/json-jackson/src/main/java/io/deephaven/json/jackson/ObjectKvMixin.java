@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Any;
-import io.deephaven.json.ArrayOptions;
+import io.deephaven.json.ObjectKvOptions;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.Type;
@@ -20,68 +20,83 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class ArrayMixin extends Mixin<ArrayOptions> {
+final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
 
-    public ArrayMixin(ArrayOptions options, JsonFactory factory) {
+    public ObjectKvMixin(ObjectKvOptions options, JsonFactory factory) {
         super(factory, options);
     }
 
-    Mixin<?> element() {
-        return mixin(options.element());
+    public Mixin<?> keyMixin() {
+        return mixin(options.key());
     }
 
-    @Override
-    public int numColumns() {
-        return element().numColumns();
-    }
-
-    @Override
-    public Stream<List<String>> paths() {
-        return element().paths();
+    public Mixin<?> valueMixin() {
+        return mixin(options.value());
     }
 
     @Override
     public Stream<NativeArrayType<?, ?>> outputTypes() {
-        return elementOutputTypes().map(Type::arrayType);
+        return keyValueOutputTypes().map(Type::arrayType);
     }
 
     @Override
-    public ValueProcessor processor(String context, List<WritableChunk<?>> out) {
+    public int numColumns() {
+        return keyMixin().numColumns() + valueMixin().numColumns();
+    }
+
+    @Override
+    public Stream<List<String>> paths() {
+        return Stream.concat(
+                keyMixin().paths(), // todo
+                valueMixin().paths());
+    }
+
+    @Override
+    public ValueProcessorKvImpl processor(String context, List<WritableChunk<?>> out) {
         return innerProcessor(out);
     }
 
-    Stream<? extends Type<?>> elementOutputTypes() {
-        return element().outputTypes();
+    Stream<Type<?>> keyValueOutputTypes() {
+        return Stream.concat(keyMixin().outputTypes(), valueMixin().outputTypes());
     }
 
-    ValueProcessor elementAsValueProcessor(List<WritableChunk<?>> out) {
-        return element().processor("todo", out);
+    ValueProcessor keyAsValueProcessor(List<WritableChunk<?>> out) {
+        final Mixin<?> key = keyMixin();
+        final List<WritableChunk<?>> keyColumns = out.subList(0, key.numColumns());
+        return key.processor("todo", keyColumns);
     }
 
-    RepeaterProcessor elementRepeater(List<WritableChunk<?>> out) {
-        return element().repeaterProcessor(options.allowMissing(), options.allowNull(), out);
+    ValueProcessor valueAsValueProcessor(List<WritableChunk<?>> out) {
+        final Mixin<?> key = keyMixin();
+        final Mixin<?> value = valueMixin();
+        final List<WritableChunk<?>> valueColumns =
+                out.subList(key.numColumns(), key.numColumns() + value.numColumns());
+        return value.processor("todo", valueColumns);
     }
 
-    private ValueProcessorArrayImpl innerProcessor(List<WritableChunk<?>> out) {
-        return new ValueProcessorArrayImpl(elementRepeater(out));
+    private ValueProcessorKvImpl innerProcessor(List<WritableChunk<?>> out) {
+        final Mixin<?> key = keyMixin();
+        final Mixin<?> value = valueMixin();
+        final List<WritableChunk<?>> keyColumns = out.subList(0, key.numColumns());
+        final List<WritableChunk<?>> valueColumns =
+                out.subList(key.numColumns(), key.numColumns() + value.numColumns());
+        final RepeaterProcessor kp = key.repeaterProcessor(options.allowMissing(), options.allowNull(), keyColumns);
+        final RepeaterProcessor vp = value.repeaterProcessor(options.allowMissing(), options.allowNull(), valueColumns);
+        return new ValueProcessorKvImpl(kp, vp);
     }
 
     @Override
     RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        // For example:
-        // double (element())
-        // double[] (processor())
-        // double[][] (arrayProcessor())
-        return new ArrayOfArrayProcessor(out, allowMissing, allowNull);
+        return new RepeaterImpl(out, allowMissing, allowNull);
     }
 
-    final class ArrayOfArrayProcessor implements RepeaterProcessor {
+    final class RepeaterImpl implements RepeaterProcessor {
         private final List<WritableChunk<?>> out;
         private final List<NativeArrayType<?, ?>> outerTypes;
         private final boolean allowMissing;
         private final boolean allowNull;
 
-        public ArrayOfArrayProcessor(List<WritableChunk<?>> out, boolean allowMissing, boolean allowNull) {
+        public RepeaterImpl(List<WritableChunk<?>> out, boolean allowMissing, boolean allowNull) {
             this.out = Objects.requireNonNull(out);
             this.outerTypes = outputTypes().map(NativeArrayType::arrayType).collect(Collectors.toList());
             this.allowMissing = allowMissing;
@@ -90,7 +105,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
         @Override
         public Context start(JsonParser parser) throws IOException {
-            return new ArrayOfArrayProcessorContext();
+            return new ContextImpl();
         }
 
         @Override
@@ -113,13 +128,13 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
             }
         }
 
-        final class ArrayOfArrayProcessorContext implements Context {
+        final class ContextImpl implements Context {
 
             private final List<WritableChunk<?>> innerChunks;
 
-            private ValueProcessorArrayImpl innerProcessor;
+            private ValueProcessorKvImpl innerProcessor;
 
-            public ArrayOfArrayProcessorContext() {
+            public ContextImpl() {
                 innerChunks = outputTypes()
                         .map(ObjectProcessor::chunkType)
                         .map(chunkType -> chunkType.makeWritableChunk(0))

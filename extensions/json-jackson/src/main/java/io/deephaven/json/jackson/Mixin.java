@@ -21,6 +21,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
+import io.deephaven.json.ObjectKvOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ShortOptions;
 import io.deephaven.json.SkipOptions;
@@ -77,7 +78,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
 
-    abstract ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
+    abstract RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
 
     abstract int numColumns();
 
@@ -114,7 +115,21 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     @Override
     public final List<String> names(Function<List<String>, String> f) {
-        return paths().map(f).collect(Collectors.toList());
+
+        final List<String> named = paths().map(f).collect(Collectors.toList());
+
+        final List<String> output = new ArrayList<>(named.size());
+        int count = 0;
+
+        for (String s : named) {
+            if (output.contains(s)) {
+                s = s + "_" + count;
+                ++count;
+            }
+            output.add(s);
+        }
+
+        return output;
     }
 
     @Override
@@ -292,6 +307,11 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         @Override
         public ObjectMixin visit(ObjectOptions object) {
             return new ObjectMixin(object, factory);
+        }
+
+        @Override
+        public Mixin<?> visit(ObjectKvOptions objectKv) {
+            return new ObjectKvMixin(objectKv, factory);
         }
 
         @Override

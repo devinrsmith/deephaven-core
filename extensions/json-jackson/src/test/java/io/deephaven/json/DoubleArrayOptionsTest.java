@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -14,8 +15,8 @@ public class DoubleArrayOptionsTest {
 
     @Test
     void standard() throws IOException {
-        parse(DoubleOptions.standard().array(), "[42.1, 43.2]",
-                ObjectChunk.chunkWrap(new Object[] {new double[] {42.1, 43.2}}));
+        parse(DoubleOptions.standard().array(), "[42.1, null, 43.2]",
+                ObjectChunk.chunkWrap(new Object[] {new double[] {42.1, QueryConstants.NULL_DOUBLE, 43.2}}));
     }
 
     @Test

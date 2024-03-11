@@ -76,17 +76,17 @@ final class TupleMixin extends Mixin<TupleOptions> {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final List<ArrayProcessor> processors = new ArrayList<>(options.values().size());
+        final List<RepeaterProcessor> processors = new ArrayList<>(options.values().size());
         int ix = 0;
         for (ValueOptions value : options.values()) {
             final Mixin<?> mixin = mixin(value);
             final int numTypes = mixin.numColumns();
-            final ArrayProcessor processor =
-                    mixin.arrayProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
+            final RepeaterProcessor processor =
+                    mixin.repeaterProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
             processors.add(processor);
             ix += numTypes;
         }
@@ -155,39 +155,39 @@ final class TupleMixin extends Mixin<TupleOptions> {
         }
     }
 
-    final class TupleArrayProcessor implements ArrayProcessor {
-        private final List<ArrayProcessor> values;
+    final class TupleArrayProcessor implements RepeaterProcessor {
+        private final List<RepeaterProcessor> values;
 
-        public TupleArrayProcessor(List<ArrayProcessor> values) {
+        public TupleArrayProcessor(List<RepeaterProcessor> values) {
             this.values = Objects.requireNonNull(values);
         }
 
         @Override
         public TupleArrayContext start(JsonParser parser) throws IOException {
             final List<Context> contexts = new ArrayList<>(values.size());
-            for (ArrayProcessor value : values) {
+            for (RepeaterProcessor value : values) {
                 contexts.add(value.start(parser));
             }
             return new TupleArrayContext(contexts);
         }
 
         @Override
-        public void processNullArray(JsonParser parser) throws IOException {
+        public void processNullRepeater(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
-            for (ArrayProcessor value : values) {
-                value.processNullArray(parser);
+            for (RepeaterProcessor value : values) {
+                value.processNullRepeater(parser);
             }
         }
 
         @Override
-        public void processMissingArray(JsonParser parser) throws IOException {
+        public void processMissingRepeater(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
-            for (ArrayProcessor value : values) {
-                value.processMissingArray(parser);
+            for (RepeaterProcessor value : values) {
+                value.processMissingRepeater(parser);
             }
         }
 
@@ -196,11 +196,6 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
             public TupleArrayContext(List<Context> contexts) {
                 this.contexts = Objects.requireNonNull(contexts);
-            }
-
-            @Override
-            public boolean hasElement(JsonParser parser) {
-                return !parser.hasToken(JsonToken.END_ARRAY);
             }
 
             @Override

@@ -48,6 +48,7 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     public long parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -61,8 +62,8 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new LongArrayProcessorImpl(this, allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new LongRepeaterImpl(this, allowMissing, allowNull, out.get(0).asWritableObjectChunk()::add);
     }
 
     private long parseFromString(JsonParser parser) throws IOException {

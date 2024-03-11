@@ -8,17 +8,36 @@ import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static io.deephaven.json.TestHelper.parse;
 
-public class ArrayOfArrayTest {
+public class RepeatedProcessorTests {
 
     @Test
-    void primitive() throws IOException {
+    void arrayArrayPrimitive() throws IOException {
         // [[1.1], null, [], [2.2, 3.3]]
         parse(DoubleOptions.standard().array().array(),
                 "[[1.1], null, [], [2.2, 3.3]]",
+                ObjectChunk.chunkWrap(new Object[] {
+                        new double[][] {new double[] {1.1}, null, new double[0], new double[] {2.2, 3.3}}}));
+    }
+
+    @Test
+    void arrayKvPrimitive() throws IOException {
+        // [{"a": 1.1}, null, {}, {"b": 2.2, "c": 3.3}]
+        parse(ObjectKvOptions.standard(SkipOptions.lenient(), DoubleOptions.standard()).array(),
+                "[{\"a\": 1.1}, null, {}, {\"b\": 2.2, \"c\": 3.3}]",
+                ObjectChunk.chunkWrap(new Object[] {
+                        new double[][] {new double[] {1.1}, null, new double[0], new double[] {2.2, 3.3}}}));
+    }
+
+    @Test
+    void kvArrayPrimitive() throws IOException {
+        // {"a": [1.1], "b": null, "c": [], "d": [2.2, 3.3]}
+        parse(ObjectKvOptions.standard(StringOptions.standard(), DoubleOptions.standard().array()),
+                "{\"a\": [1.1], \"b\": null, \"c\": [], \"d\": [2.2, 3.3]}",
+                ObjectChunk.chunkWrap(new Object[] {
+                        new String[] {"a", "b", "c", "d"}}),
                 ObjectChunk.chunkWrap(new Object[] {
                         new double[][] {new double[] {1.1}, null, new double[0], new double[] {2.2, 3.3}}}));
     }

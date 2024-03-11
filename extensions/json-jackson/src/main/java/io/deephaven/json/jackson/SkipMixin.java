@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, ArrayProcessor.Context {
+final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, RepeaterProcessor.Context {
 
     public SkipMixin(SkipOptions options, JsonFactory factory) {
         super(factory, options);
@@ -41,7 +41,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Arra
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
         return new SkipArray(allowMissing, allowNull);
     }
 
@@ -61,6 +61,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Arra
                 parser.skipChildren();
                 break;
             case VALUE_STRING:
+            case FIELD_NAME:
                 if (!options.allowString()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
@@ -98,7 +99,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Arra
         }
     }
 
-    private final class SkipArray implements ArrayProcessor {
+    private final class SkipArray implements RepeaterProcessor {
         private final boolean allowMissing;
         private final boolean allowNull;
 
@@ -113,23 +114,18 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Arra
         }
 
         @Override
-        public void processNullArray(JsonParser parser) throws IOException {
+        public void processNullRepeater(JsonParser parser) throws IOException {
             if (!allowNull) {
                 throw Parsing.mismatch(parser, void.class);
             }
         }
 
         @Override
-        public void processMissingArray(JsonParser parser) throws IOException {
+        public void processMissingRepeater(JsonParser parser) throws IOException {
             if (!allowMissing) {
                 throw Parsing.mismatch(parser, void.class);
             }
         }
-    }
-
-    @Override
-    public boolean hasElement(JsonParser parser) {
-        return !parser.hasToken(JsonToken.END_ARRAY);
     }
 
     @Override

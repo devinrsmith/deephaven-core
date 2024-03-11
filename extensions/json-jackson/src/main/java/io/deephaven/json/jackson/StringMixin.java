@@ -44,6 +44,7 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
     public String parseValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NUMBER_INT:
                 return parseFromInt(parser);
@@ -64,8 +65,8 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new RepeaterGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
                 null, this, String.class, String[].class);
     }
 

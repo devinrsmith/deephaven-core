@@ -48,6 +48,7 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> implements ToObject
             case VALUE_NUMBER_FLOAT:
                 return parseFromNumber(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -61,8 +62,8 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> implements ToObject
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ArrayProcessorGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new RepeaterGenericImpl<>(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull, null,
                 null, this, BigDecimal.class, BigDecimal[].class);
     }
 

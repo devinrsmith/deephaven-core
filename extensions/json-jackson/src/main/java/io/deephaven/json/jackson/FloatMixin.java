@@ -53,6 +53,7 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
             case VALUE_NUMBER_FLOAT:
                 return parseFromNumber(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -66,13 +67,13 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new FloatArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new FloatRepeaterImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class FloatArrayProcessorImpl extends ArrayProcessorBase<float[]> {
+    final class FloatRepeaterImpl extends RepeaterProcessorBase<float[]> {
 
-        public FloatArrayProcessorImpl(Consumer<? super float[]> consumer, boolean allowMissing, boolean allowNull) {
+        public FloatRepeaterImpl(Consumer<? super float[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -81,7 +82,7 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
             return new FloatArrayContext();
         }
 
-        final class FloatArrayContext extends ArrayContextBase {
+        final class FloatArrayContext extends RepeaterContextBase {
             private float[] arr = EMPTY_FLOAT_ARRAY;
             private int len = 0;
 

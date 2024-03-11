@@ -53,6 +53,7 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
             case VALUE_NUMBER_FLOAT:
                 return parseFromDecimal(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -66,13 +67,13 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new ByteArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new ByteRepeaterProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class ByteArrayProcessorImpl extends ArrayProcessorBase<byte[]> {
+    final class ByteRepeaterProcessorImpl extends RepeaterProcessorBase<byte[]> {
 
-        public ByteArrayProcessorImpl(Consumer<? super byte[]> consumer, boolean allowMissing, boolean allowNull) {
+        public ByteRepeaterProcessorImpl(Consumer<? super byte[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -81,7 +82,7 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
             return new ByteArrayContext();
         }
 
-        final class ByteArrayContext extends ArrayContextBase {
+        final class ByteArrayContext extends RepeaterContextBase {
             private byte[] arr = EMPTY_BYTE_ARRAY;
             private int len = 0;
 

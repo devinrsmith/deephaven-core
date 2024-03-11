@@ -13,12 +13,12 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-final class ArrayProcessorGenericImpl<T> extends ArrayProcessorBase<T[]> {
+final class RepeaterGenericImpl<T> extends RepeaterProcessorBase<T[]> {
     private final ToObject<T> toObject;
     private final Class<T> componentClazz;
     private final Class<? extends T[]> arrayClazz;
 
-    public ArrayProcessorGenericImpl(Consumer<? super T[]> consumer, boolean allowMissing, boolean allowNull,
+    public RepeaterGenericImpl(Consumer<? super T[]> consumer, boolean allowMissing, boolean allowNull,
             T[] onMissing, T[] onNull, ToObject<T> toObject, Class<T> componentClazz, Class<? extends T[]> arrayClazz) {
         super(consumer, allowMissing, allowNull, onMissing, onNull);
         this.toObject = Objects.requireNonNull(toObject);
@@ -27,11 +27,11 @@ final class ArrayProcessorGenericImpl<T> extends ArrayProcessorBase<T[]> {
     }
 
     @Override
-    public ArrayContextGenericImpl newContext() {
-        return new ArrayContextGenericImpl();
+    public GenericRepeaterContext newContext() {
+        return new GenericRepeaterContext();
     }
 
-    final class ArrayContextGenericImpl extends ArrayContextBase {
+    final class GenericRepeaterContext extends RepeaterContextBase {
         @SuppressWarnings("unchecked")
         private T[] arr = (T[]) Array.newInstance(componentClazz, 0);
         private int len;

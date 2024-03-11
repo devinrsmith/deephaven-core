@@ -53,6 +53,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
             case VALUE_NUMBER_FLOAT:
                 return parseFromNumber(parser);
             case VALUE_STRING:
+            case FIELD_NAME:
                 return parseFromString(parser);
             case VALUE_NULL:
                 return parseFromNull(parser);
@@ -66,13 +67,13 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     @Override
-    ArrayProcessor arrayProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
-        return new DoubleArrayProcessorImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
+    RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out) {
+        return new DoubleRepeaterImpl(out.get(0).asWritableObjectChunk()::add, allowMissing, allowNull);
     }
 
-    final class DoubleArrayProcessorImpl extends ArrayProcessorBase<double[]> {
+    final class DoubleRepeaterImpl extends RepeaterProcessorBase<double[]> {
 
-        public DoubleArrayProcessorImpl(Consumer<? super double[]> consumer, boolean allowMissing, boolean allowNull) {
+        public DoubleRepeaterImpl(Consumer<? super double[]> consumer, boolean allowMissing, boolean allowNull) {
             super(consumer, allowMissing, allowNull, null, null);
         }
 
@@ -81,7 +82,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
             return new DoubleArrayContext();
         }
 
-        final class DoubleArrayContext extends ArrayContextBase {
+        final class DoubleArrayContext extends RepeaterContextBase {
             // todo: use WritableDoubleChunk & pools?
             private double[] arr = EMPTY_DOUBLE_ARRAY;
             private int len = 0;

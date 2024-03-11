@@ -19,6 +19,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
+import io.deephaven.json.ObjectKvOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ShortOptions;
 import io.deephaven.json.SkipOptions;
@@ -90,6 +91,11 @@ final class PathToSingleValue implements Visitor<Results> {
         }
         builder.addPath(ImmutableArrayIndex.of(0));
         return tuple.values().iterator().next().walk(this);
+    }
+
+    @Override
+    public Results visit(ObjectKvOptions objectKv) {
+        return complete(objectKv);
     }
 
     @Override

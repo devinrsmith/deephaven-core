@@ -1,3 +1,6 @@
+#
+# Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+#
 import jpy
 
 from typing import Optional, Union, List

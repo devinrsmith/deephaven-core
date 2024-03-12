@@ -49,7 +49,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     public static ByteOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT.asSet())
+                .desiredTypes(JsonValueTypes.INT)
                 .build();
     }
 

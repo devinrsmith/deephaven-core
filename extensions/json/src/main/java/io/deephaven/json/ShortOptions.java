@@ -53,7 +53,7 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     public static ShortOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT.asSet())
+                .desiredTypes(JsonValueTypes.INT)
                 .build();
     }
 

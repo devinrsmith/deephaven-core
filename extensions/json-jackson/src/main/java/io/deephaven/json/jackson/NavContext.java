@@ -5,13 +5,16 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import io.deephaven.json.ObjectFieldOptions;
+import io.deephaven.json.ObjectFieldOptions.RepeatedBehavior;
+import io.deephaven.json.jackson.PathToSingleValue.ArrayIndex;
 import io.deephaven.json.jackson.PathToSingleValue.ObjectField;
 import io.deephaven.json.jackson.PathToSingleValue.Path;
-import io.deephaven.json.jackson.PathToSingleValue.ArrayIndex;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 final class NavContext {
 
@@ -20,7 +23,7 @@ final class NavContext {
         void process(JsonParser parser) throws IOException;
     }
 
-    static void processObjectField(JsonParser parser, String fieldName, JsonProcess inner) throws IOException {
+    static void processObjectField(JsonParser parser, ObjectFieldOptions field, JsonProcess inner) throws IOException {
         if (!parser.hasToken(JsonToken.START_OBJECT)) {
             throw new IOException("Expected START_OBJECT");
         }
@@ -28,11 +31,17 @@ final class NavContext {
         // Only process the first field with this name
         boolean processed = false;
         while (parser.hasToken(JsonToken.FIELD_NAME)) {
-            if (!processed && fieldName.equals(parser.currentName())) {
-                parser.nextToken();
-                inner.process(parser);
-                processed = true;
-                continue;
+            if (matches(parser.currentName(), field)) {
+                if (processed) {
+                    if (field.repeatedBehavior() == RepeatedBehavior.ERROR) {
+                        throw new IOException("TODO");
+                    }
+                } else {
+                    parser.nextToken();
+                    inner.process(parser);
+                    processed = true;
+                    continue;
+                }
             }
             // field value, skip
             skipField(parser);
@@ -114,5 +123,19 @@ final class NavContext {
         public void process(JsonParser parser) throws IOException {
             processPath(parser, paths, consumer);
         }
+    }
+
+    static boolean matches(String fieldName, ObjectFieldOptions fieldOptions) {
+        if (fieldOptions.aliases().isEmpty()) {
+            return fieldOptions.caseInsensitiveMatch()
+                    ? fieldOptions.name().equalsIgnoreCase(fieldName)
+                    : fieldOptions.name().equals(fieldName);
+        }
+        final Stream<String> allNames = Stream.concat(
+                Stream.of(fieldOptions.name()),
+                fieldOptions.aliases().stream());
+        return fieldOptions.caseInsensitiveMatch()
+                ? allNames.anyMatch(fieldName::equalsIgnoreCase)
+                : allNames.anyMatch(fieldName::equals);
     }
 }

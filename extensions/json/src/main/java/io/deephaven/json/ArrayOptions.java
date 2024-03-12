@@ -25,7 +25,7 @@ public abstract class ArrayOptions extends ValueOptions {
     public static ArrayOptions strict(ValueOptions element) {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.ARRAY.asSet())
+                .desiredTypes(JsonValueTypes.ARRAY)
                 .element(element)
                 .build();
     }

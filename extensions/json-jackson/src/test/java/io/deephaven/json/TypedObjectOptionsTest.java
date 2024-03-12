@@ -9,29 +9,35 @@ import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static io.deephaven.json.TestHelper.parse;
 
 public class TypedObjectOptionsTest {
-
-    // todo: enum side
-    private static final TypedObjectOptions OPTS = TypedObjectOptions.builder()
-            .typeFieldName("type")
-            .putSharedFields("symbol", StringOptions.strict())
-            .putObjects("quote", ObjectOptions.builder()
-                    .putFields("bid", DoubleOptions.standard())
-                    .putFields("ask", DoubleOptions.standard())
-                    .build())
-            .putObjects("trade", ObjectOptions.builder()
-                    .putFields("price", DoubleOptions.standard())
-                    .putFields("size", DoubleOptions.standard())
-                    .build())
+    private static final ObjectOptions QUOTE_OBJECT = ObjectOptions.builder()
+            .putFields("symbol", StringOptions.strict())
+            .putFields("bid", DoubleOptions.standard())
+            .putFields("ask", DoubleOptions.standard())
             .build();
+
+    private static final ObjectOptions TRADE_OBJECT = ObjectOptions.builder()
+            .putFields("symbol", StringOptions.strict())
+            .putFields("price", DoubleOptions.standard())
+            .putFields("size", DoubleOptions.standard())
+            .build();
+
+    private static final TypedObjectOptions QUOTE_OR_TRADE_OBJECT =
+            TypedObjectOptions.strict("type", new LinkedHashMap<>() {
+                {
+                    put("quote", QUOTE_OBJECT);
+                    put("trade", TRADE_OBJECT);
+                }
+            });
 
     @Test
     void typeDiscriminationQuoteTrade() throws IOException {
-        parse(OPTS, List.of(
+        parse(QUOTE_OR_TRADE_OBJECT, List.of(
                 // "",
                 // "null",
                 // "{}",

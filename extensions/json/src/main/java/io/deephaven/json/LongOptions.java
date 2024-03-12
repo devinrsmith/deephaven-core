@@ -51,7 +51,7 @@ public abstract class LongOptions extends ValueOptions {
     public static LongOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT.asSet())
+                .desiredTypes(JsonValueTypes.INT)
                 .build();
     }
 

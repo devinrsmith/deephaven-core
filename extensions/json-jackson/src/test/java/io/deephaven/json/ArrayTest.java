@@ -5,9 +5,11 @@ package io.deephaven.json;
 
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.util.QueryConstants;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static io.deephaven.json.TestHelper.parse;
 
@@ -51,6 +53,24 @@ public class ArrayTest {
                         .chunkWrap(new Object[] {new int[] {1, QueryConstants.NULL_INT, QueryConstants.NULL_INT, 4}}),
                 ObjectChunk.chunkWrap(new Object[] {
                         new double[] {1.1, QueryConstants.NULL_DOUBLE, QueryConstants.NULL_DOUBLE, 4.4}}));
+    }
+
+    // missing feature
+    @Disabled
+    @Test
+    void typedObject() throws IOException {
+        // [ {"type": "int", "value": 42}, {"type": "string", "value": "foo"} ]
+        parse(TypedObjectOptions.builder()
+                .typeFieldName("type")
+                .putObjects("int", ObjectOptions.standard(Map.of("value", IntOptions.standard())))
+                .putObjects("string", ObjectOptions.standard(Map.of("value", StringOptions.standard())))
+                .build()
+                .array(),
+                "[ {\"type\": \"int\", \"value\": 42}, {\"type\": \"string\", \"value\": \"foo\"} ]",
+                ObjectChunk.chunkWrap(new Object[] {new String[] {"int", "string"}}),
+                ObjectChunk
+                        .chunkWrap(new Object[] {new int[] {42, QueryConstants.NULL_INT}}),
+                ObjectChunk.chunkWrap(new Object[] {new String[] {null, "foo"}}));
     }
 
     @Test

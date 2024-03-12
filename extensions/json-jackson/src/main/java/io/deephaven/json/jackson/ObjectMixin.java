@@ -7,12 +7,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.ObjectFieldOptions;
+import io.deephaven.json.ObjectFieldOptions.RepeatedBehavior;
 import io.deephaven.json.ObjectOptions;
-import io.deephaven.json.ObjectOptions.RepeatedFieldBehavior;
-import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static io.deephaven.json.jackson.Parsing.assertCurrentToken;
@@ -32,12 +35,21 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
     @Override
     public Stream<Type<?>> outputTypes() {
-        return options.fields().values().stream().map(this::mixin).flatMap(Mixin::outputTypes);
+        return options.fields()
+                .stream()
+                .map(ObjectFieldOptions::options)
+                .map(this::mixin)
+                .flatMap(Mixin::outputTypes);
     }
 
     @Override
     public int numColumns() {
-        return options.fields().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum();
+        return options.fields()
+                .stream()
+                .map(ObjectFieldOptions::options)
+                .map(this::mixin)
+                .mapToInt(Mixin::numColumns)
+                .sum();
     }
 
     @Override
@@ -50,15 +62,14 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final Map<String, ValueProcessor> processors = new LinkedHashMap<>(options.fields().size());
+        final Map<ObjectFieldOptions, ValueProcessor> processors = new LinkedHashMap<>(options.fields().size());
         int ix = 0;
-        for (Entry<String, ValueOptions> e : options.fields().entrySet()) {
-            final String fieldName = e.getKey();
-            final Mixin<?> opts = mixin(e.getValue());
+        for (ObjectFieldOptions field : options.fields()) {
+            final Mixin<?> opts = mixin(field.options());
             final int numTypes = opts.numColumns();
             final ValueProcessor fieldProcessor =
-                    opts.processor(context + "/" + fieldName, out.subList(ix, ix + numTypes));
-            processors.put(fieldName, fieldProcessor);
+                    opts.processor(context + "/" + field.name(), out.subList(ix, ix + numTypes));
+            processors.put(field, fieldProcessor);
             ix += numTypes;
         }
         if (ix != out.size()) {
@@ -72,15 +83,16 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         if (out.size() != numColumns()) {
             throw new IllegalArgumentException();
         }
-        final Map<String, RepeaterProcessor> processors = new LinkedHashMap<>(this.options.fields().size());
+        final Map<ObjectFieldOptions, RepeaterProcessor> processors =
+                new LinkedHashMap<>(options.fields().size());
         int ix = 0;
-        for (Entry<String, ValueOptions> e : this.options.fields().entrySet()) {
-            final String fieldName = e.getKey();
-            final Mixin<?> opts = mixin(e.getValue());
+
+        for (ObjectFieldOptions field : options.fields()) {
+            final Mixin<?> opts = mixin(field.options());
             final int numTypes = opts.numColumns();
             final RepeaterProcessor fieldProcessor =
                     opts.repeaterProcessor(allowMissing, allowNull, out.subList(ix, ix + numTypes));
-            processors.put(fieldName, fieldProcessor);
+            processors.put(field, fieldProcessor);
             ix += numTypes;
         }
         if (ix != out.size()) {
@@ -89,15 +101,50 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         return new ObjectValueRepeaterProcessor(processors);
     }
 
-    ObjectValueFieldProcessor processorImpl(Map<String, ValueProcessor> processors) {
-        return new ObjectValueFieldProcessor(processors);
+    private boolean anyCaseInsensitive() {
+        return options.fields().stream().anyMatch(ObjectFieldOptions::caseInsensitiveMatch);
+    }
+
+    ObjectValueFieldProcessor processorImpl(Map<ObjectFieldOptions, ValueProcessor> fields) {
+        return new ObjectValueFieldProcessor(fields);
     }
 
     final class ObjectValueFieldProcessor implements ValueProcessor {
-        private final Map<String, ValueProcessor> fieldProcessors;
+        private final Map<ObjectFieldOptions, ValueProcessor> fields;
+        private final Map<String, ObjectFieldOptions> map;
 
-        ObjectValueFieldProcessor(Map<String, ValueProcessor> fieldProcessors) {
-            this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
+        ObjectValueFieldProcessor(Map<ObjectFieldOptions, ValueProcessor> fields) {
+            this.fields = fields;
+            // If _any_ fields are case-insensitive, we add all to TreeMap regardless.
+            this.map = anyCaseInsensitive()
+                    ? new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
+                    : new HashMap<>();
+            for (Entry<ObjectFieldOptions, ValueProcessor> e : fields.entrySet()) {
+                final ObjectFieldOptions field = e.getKey();
+                map.put(field.name(), field);
+                for (String alias : field.aliases()) {
+                    map.put(alias, field);
+                }
+            }
+        }
+
+        private ObjectFieldOptions lookupField(String fieldName) {
+            final ObjectFieldOptions field = map.get(fieldName);
+            if (field == null) {
+                return null;
+            }
+            if (field.caseInsensitiveMatch()) {
+                return field;
+            }
+            // Need to handle the case where some fields are case-insensitive, but this one is _not_.
+            if (field.name().equals(fieldName) || field.aliases().contains(fieldName)) {
+                return field;
+            }
+            return null;
+        }
+
+        private ValueProcessor processor(ObjectFieldOptions options) {
+            return Objects.requireNonNull(fields.get(options));
         }
 
         @Override
@@ -131,7 +178,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             if (!options.allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
-            for (ValueProcessor value : fieldProcessors.values()) {
+            for (ValueProcessor value : fields.values()) {
                 value.processMissing(parser);
             }
         }
@@ -140,14 +187,14 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             if (!options.allowNull()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
-            for (ValueProcessor value : fieldProcessors.values()) {
+            for (ValueProcessor value : fields.values()) {
                 value.processCurrentValue(parser);
             }
         }
 
         private void processEmptyObject(JsonParser parser) throws IOException {
             // This logic should be equivalent to processObjectFields, but where we know there are no fields
-            for (ValueProcessor value : fieldProcessors.values()) {
+            for (ValueProcessor value : fields.values()) {
                 value.processMissing(parser);
             }
         }
@@ -156,31 +203,33 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             // Note: we could try to build a stricter implementation that doesn't use Set; if the user can guarantee
             // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
             // counter to ensure all field processors were invoked.
-            final Set<String> visited = new HashSet<>(fieldProcessors.size());
+            final Set<ObjectFieldOptions> visited = new HashSet<>(fields.size());
             while (parser.hasToken(JsonToken.FIELD_NAME)) {
                 final String fieldName = parser.currentName();
-                final ValueProcessor knownProcessor = fieldProcessors.get(fieldName);
-                if (knownProcessor == null) {
+                final ObjectFieldOptions field = lookupField(fieldName);
+                if (field == null) {
                     if (!options.allowUnknownFields()) {
-                        // todo json exception
-                        throw new IllegalStateException(String.format("Unexpected field '%s'", fieldName));
+                        throw new IOException(
+                                String.format("Unexpected field '%s' and allowUnknownFields == false", fieldName));
                     }
                     parser.nextToken();
                     parser.skipChildren();
-                } else if (visited.add(fieldName)) {
+                } else if (visited.add(field)) {
                     // First time seeing field
                     parser.nextToken();
-                    knownProcessor.processCurrentValue(parser);
-                } else if (options.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
+                    processor(field).processCurrentValue(parser);
+                } else if (field.repeatedBehavior() == RepeatedBehavior.USE_FIRST) {
                     parser.nextToken();
                     parser.skipChildren();
                 } else {
-                    throw new IllegalStateException("todo");
+                    throw new IOException(
+                            String.format("Field '%s' has already been visited and repeatedBehavior == %s", fieldName,
+                                    field.repeatedBehavior()));
                 }
                 parser.nextToken();
             }
             assertCurrentToken(parser, JsonToken.END_OBJECT);
-            for (Entry<String, ValueProcessor> e : fieldProcessors.entrySet()) {
+            for (Entry<ObjectFieldOptions, ValueProcessor> e : fields.entrySet()) {
                 if (!visited.contains(e.getKey())) {
                     e.getValue().processMissing(parser);
                 }
@@ -189,17 +238,20 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
     }
 
     final class ObjectValueRepeaterProcessor implements RepeaterProcessor {
-        private final Map<String, RepeaterProcessor> fieldProcessors;
+        private final Map<ObjectFieldOptions, RepeaterProcessor> fields;
 
+        public ObjectValueRepeaterProcessor(Map<ObjectFieldOptions, RepeaterProcessor> fields) {
+            this.fields = Objects.requireNonNull(fields);
+        }
 
-        public ObjectValueRepeaterProcessor(Map<String, RepeaterProcessor> fieldProcessors) {
-            this.fieldProcessors = Objects.requireNonNull(fieldProcessors);
+        private Collection<RepeaterProcessor> processors() {
+            return fields.values();
         }
 
         @Override
         public Context start(JsonParser parser) throws IOException {
-            final Map<String, Context> contexts = new LinkedHashMap<>(fieldProcessors.size());
-            for (Entry<String, RepeaterProcessor> e : fieldProcessors.entrySet()) {
+            final Map<ObjectFieldOptions, Context> contexts = new LinkedHashMap<>(fields.size());
+            for (Entry<ObjectFieldOptions, RepeaterProcessor> e : fields.entrySet()) {
                 contexts.put(e.getKey(), e.getValue().start(parser));
             }
             return new ObjectArrayContext(contexts);
@@ -207,23 +259,54 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         @Override
         public void processNullRepeater(JsonParser parser) throws IOException {
-            for (RepeaterProcessor p : fieldProcessors.values()) {
+            for (RepeaterProcessor p : processors()) {
                 p.processNullRepeater(parser);
             }
         }
 
         @Override
         public void processMissingRepeater(JsonParser parser) throws IOException {
-            for (RepeaterProcessor p : fieldProcessors.values()) {
+            for (RepeaterProcessor p : processors()) {
                 p.processMissingRepeater(parser);
             }
         }
 
         final class ObjectArrayContext implements Context {
-            private final Map<String, Context> contexts;
+            private final Map<ObjectFieldOptions, Context> contexts;
+            private final Map<String, ObjectFieldOptions> map;
 
-            public ObjectArrayContext(Map<String, Context> contexts) {
+            public ObjectArrayContext(Map<ObjectFieldOptions, Context> contexts) {
                 this.contexts = Objects.requireNonNull(contexts);
+                // If _any_ fields are case-insensitive, we add all to TreeMap regardless.
+                this.map = anyCaseInsensitive()
+                        ? new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
+                        : new HashMap<>();
+                for (Entry<ObjectFieldOptions, RepeaterProcessor> e : fields.entrySet()) {
+                    final ObjectFieldOptions field = e.getKey();
+                    map.put(field.name(), field);
+                    for (String alias : field.aliases()) {
+                        map.put(alias, field);
+                    }
+                }
+            }
+
+            private ObjectFieldOptions lookupField(String fieldName) {
+                final ObjectFieldOptions field = map.get(fieldName);
+                if (field == null) {
+                    return null;
+                }
+                if (field.caseInsensitiveMatch()) {
+                    return field;
+                }
+                // Need to handle the case where some fields are case-insensitive, but this one is _not_.
+                if (field.name().equals(fieldName) || field.aliases().contains(fieldName)) {
+                    return field;
+                }
+                return null;
+            }
+
+            private Context context(ObjectFieldOptions o) {
+                return Objects.requireNonNull(contexts.get(o));
             }
 
             @Override
@@ -269,31 +352,33 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             }
 
             private void processObjectFields(JsonParser parser, int ix) throws IOException {
-                final Set<String> visited = new HashSet<>(contexts.size());
+                final Set<ObjectFieldOptions> visited = new HashSet<>(contexts.size());
                 while (parser.hasToken(JsonToken.FIELD_NAME)) {
                     final String fieldName = parser.currentName();
-                    final Context knownProcessor = contexts.get(fieldName);
-                    if (knownProcessor == null) {
+                    final ObjectFieldOptions field = lookupField(fieldName);
+                    if (field == null) {
                         if (!options.allowUnknownFields()) {
-                            // todo json exception
-                            throw new IllegalStateException(String.format("Unexpected field '%s'", fieldName));
+                            throw new IOException(
+                                    String.format("Unexpected field '%s' and allowUnknownFields == false", fieldName));
                         }
                         parser.nextToken();
                         parser.skipChildren();
-                    } else if (visited.add(fieldName)) {
+                    } else if (visited.add(field)) {
                         // First time seeing field
                         parser.nextToken();
-                        knownProcessor.processElement(parser, ix);
-                    } else if (options.repeatedFieldBehavior() == RepeatedFieldBehavior.USE_FIRST) {
+                        context(field).processElement(parser, ix);
+                    } else if (field.repeatedBehavior() == RepeatedBehavior.USE_FIRST) {
                         parser.nextToken();
                         parser.skipChildren();
                     } else {
-                        throw new IllegalStateException("todo");
+                        throw new IOException(
+                                String.format("Field '%s' has already been visited and repeatedBehavior == %s",
+                                        fieldName, field.repeatedBehavior()));
                     }
                     parser.nextToken();
                 }
                 assertCurrentToken(parser, JsonToken.END_OBJECT);
-                for (Entry<String, Context> e : contexts.entrySet()) {
+                for (Entry<ObjectFieldOptions, Context> e : contexts.entrySet()) {
                     if (!visited.contains(e.getKey())) {
                         e.getValue().processElementMissing(parser, ix);
                     }

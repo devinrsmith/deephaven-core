@@ -19,6 +19,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
+import io.deephaven.json.ObjectFieldOptions;
 import io.deephaven.json.ObjectKvOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ShortOptions;
@@ -33,7 +34,6 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 
 final class PathToSingleValue implements Visitor<Results> {
@@ -47,7 +47,7 @@ final class PathToSingleValue implements Visitor<Results> {
     static abstract class ObjectField implements Path {
 
         @Parameter
-        public abstract String field();
+        public abstract ObjectFieldOptions field();
     }
 
     @Immutable
@@ -79,9 +79,9 @@ final class PathToSingleValue implements Visitor<Results> {
         if (object.fields().size() != 1) {
             return complete(object);
         }
-        final Entry<String, ValueOptions> entry = object.fields().entrySet().iterator().next();
-        builder.addPath(ImmutableObjectField.of(entry.getKey()));
-        return entry.getValue().walk(this);
+        final ObjectFieldOptions field = object.fields().iterator().next();
+        builder.addPath(ImmutableObjectField.of(field));
+        return field.options().walk(this);
     }
 
     @Override

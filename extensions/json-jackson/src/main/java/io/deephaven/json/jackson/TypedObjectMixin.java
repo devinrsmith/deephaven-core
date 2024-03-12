@@ -8,18 +8,21 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
+import io.deephaven.json.ObjectFieldOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.TypedObjectOptions;
-import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
@@ -29,8 +32,19 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
 
     @Override
     public int numColumns() {
-        return 1 + options.sharedFields().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum()
-                + options.objects().values().stream().map(this::mixin).mapToInt(Mixin::numColumns).sum();
+        return 1
+                + options.sharedFields()
+                        .stream()
+                        .map(ObjectFieldOptions::options)
+                        .map(this::mixin)
+                        .mapToInt(Mixin::numColumns)
+                        .sum()
+                + options.objects()
+                        .values()
+                        .stream()
+                        .map(this::mixin)
+                        .mapToInt(Mixin::numColumns)
+                        .sum();
     }
 
     @Override
@@ -39,7 +53,8 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
                 Stream.of(List.of(options.typeFieldName())),
                 Stream.concat(
                         prefixWithKeys(options.sharedFields()),
-                        prefixWithKeys(options.objects())));
+                        prefixWithKeys(options.objects().values().stream().map(ObjectOptions::fields)
+                                .flatMap(Collection::stream).collect(Collectors.toList()))));
     }
 
     @Override
@@ -47,7 +62,8 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         return Stream.concat(
                 Stream.of(Type.stringType()),
                 Stream.concat(
-                        options.sharedFields().values().stream().map(this::mixin).flatMap(Mixin::outputTypes),
+                        options.sharedFields().stream().map(ObjectFieldOptions::options).map(this::mixin)
+                                .flatMap(Mixin::outputTypes),
                         options.objects().values().stream().map(this::mixin).flatMap(Mixin::outputTypes)));
     }
 
@@ -71,7 +87,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         if (outIx != out.size()) {
             throw new IllegalStateException();
         }
-        return new DescriminatedProcessor(typeOut, processors);
+        return new DiscriminatedProcessor(typeOut, processors);
     }
 
     @Override
@@ -93,34 +109,32 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     }
 
     private ObjectOptions combinedObject(ObjectOptions objectOpts) {
-        final Map<String, ValueOptions> sharedFields = options.sharedFields();
+        final Set<ObjectFieldOptions> sharedFields = options.sharedFields();
         if (sharedFields.isEmpty()) {
             return objectOpts;
         }
-        final ObjectOptions.Builder builder = ObjectOptions.builder()
+        return ObjectOptions.builder()
                 .allowUnknownFields(objectOpts.allowUnknownFields())
-                // .allowNull(objectOpts.allowNull())
-                .allowMissing(objectOpts.allowMissing());
-        builder.putAllFields(sharedFields);
-        builder.putAllFields(objectOpts.fields());
-        return builder.build();
+                .allowMissing(objectOpts.allowMissing())
+                .desiredTypes(objectOpts.desiredTypes())
+                .addAllFields(sharedFields)
+                .addAllFields(objectOpts.fields())
+                .build();
     }
 
     private String parseTypeField(JsonParser parser) throws IOException {
         final String currentFieldName = parser.currentName();
         if (!options.typeFieldName().equals(currentFieldName)) {
-            throw new IOException("todo");
+            throw new IOException("Can only processes when first field in object is the type");
         }
         switch (parser.nextToken()) {
             case VALUE_STRING:
             case FIELD_NAME:
                 return parser.getText();
             case VALUE_NULL:
-                // todo: allowNullType?
                 if (!options.allowNull()) {
                     throw Parsing.mismatch(parser, String.class);
                 }
-                // todo: onNull value?
                 return null;
             default:
                 throw Parsing.mismatch(parser, String.class);
@@ -141,25 +155,20 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         }
 
         void notApplicable() {
-            // We should be able to set this to false depending on the context - users should use the type to
-            // discriminate.
-            boolean nullOutput = true;
             for (WritableChunk<?> wc : specificChunks) {
                 final int size = wc.size();
-                if (nullOutput) {
-                    wc.fillWithNullValue(size, 1);
-                }
+                wc.fillWithNullValue(size, 1);
                 wc.setSize(size + 1);
             }
         }
     }
 
-    class DescriminatedProcessor implements ValueProcessor {
+    private class DiscriminatedProcessor implements ValueProcessor {
 
         private final WritableObjectChunk<String, ?> typeOut;
         private final Map<String, Processor> processors;
 
-        public DescriminatedProcessor(WritableObjectChunk<String, ?> typeOut, Map<String, Processor> processors) {
+        public DiscriminatedProcessor(WritableObjectChunk<String, ?> typeOut, Map<String, Processor> processors) {
             this.typeOut = Objects.requireNonNull(typeOut);
             this.processors = Objects.requireNonNull(processors);
         }
@@ -183,14 +192,14 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
                     processNullObject(parser);
                     break;
                 default:
-                    throw Parsing.mismatch(parser, Object.class); // todo
+                    throw Parsing.mismatch(parser, Object.class);
             }
         }
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
             if (!options.allowMissing()) {
-                throw Parsing.mismatchMissing(parser, Object.class); // todo
+                throw Parsing.mismatchMissing(parser, Object.class);
             }
             // onMissingType()?
             typeOut.add(null);
@@ -201,7 +210,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
 
         private void processNullObject(JsonParser parser) throws IOException {
             if (!options.allowNull()) {
-                throw Parsing.mismatch(parser, Object.class); // todo
+                throw Parsing.mismatch(parser, Object.class);
             }
             // onNullType()?
             typeOut.add(null);
@@ -220,7 +229,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
             final String typeFieldValue = parseTypeField(parser);
             if (!options.allowUnknownTypes()) {
                 if (!processors.containsKey(typeFieldValue)) {
-                    throw new IOException("todo - unmapped type");
+                    throw new IOException(String.format("Unmapped type '%s'", typeFieldValue));
                 }
             }
             typeOut.add(typeFieldValue);
@@ -228,7 +237,6 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
                 for (Processor processor : processors.values()) {
                     processor.notApplicable();
                 }
-                // todo: add testing to make sure this is correct
                 return;
             }
             if (!parser.hasToken(JsonToken.FIELD_NAME)) {

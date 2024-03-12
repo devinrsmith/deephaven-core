@@ -33,7 +33,7 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
     public static InstantOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .desiredTypes(JsonValueTypes.STRING)
                 .build();
     }
 

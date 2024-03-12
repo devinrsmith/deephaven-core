@@ -44,7 +44,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     public static BoolOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.BOOL.asSet())
+                .desiredTypes(JsonValueTypes.BOOL)
                 .build();
     }
 

@@ -4,7 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.json.ObjectOptions.RepeatedFieldBehavior;
+import io.deephaven.json.ObjectFieldOptions.RepeatedBehavior;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -30,8 +30,8 @@ public abstract class ObjectKvOptions extends ValueOptions {
     public static ObjectKvOptions strict(ValueOptions key, ValueOptions value) {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.OBJECT.asSet())
-                .repeatedFieldBehavior(RepeatedFieldBehavior.ERROR)
+                .desiredTypes(JsonValueTypes.OBJECT)
+                .repeatedFieldBehavior(RepeatedBehavior.ERROR)
                 .key(key)
                 .value(value)
                 .build();
@@ -51,8 +51,8 @@ public abstract class ObjectKvOptions extends ValueOptions {
     }
 
     @Default
-    public RepeatedFieldBehavior repeatedFieldBehavior() {
-        return RepeatedFieldBehavior.USE_FIRST;
+    public RepeatedBehavior repeatedFieldBehavior() {
+        return RepeatedBehavior.USE_FIRST;
     }
 
     @Override
@@ -66,7 +66,7 @@ public abstract class ObjectKvOptions extends ValueOptions {
 
         Builder value(ValueOptions value);
 
-        Builder repeatedFieldBehavior(RepeatedFieldBehavior repeatedFieldBehavior);
+        Builder repeatedFieldBehavior(RepeatedBehavior repeatedFieldBehavior);
     }
 
     @Override

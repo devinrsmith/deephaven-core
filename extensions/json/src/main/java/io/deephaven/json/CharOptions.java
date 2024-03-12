@@ -39,7 +39,7 @@ public abstract class CharOptions extends BoxedOptions<Character> {
     public static CharOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .desiredTypes(JsonValueTypes.STRING)
                 .build();
     }
 

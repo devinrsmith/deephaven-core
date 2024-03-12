@@ -21,6 +21,7 @@ import io.deephaven.json.InstantOptions;
 import io.deephaven.json.IntOptions;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
+import io.deephaven.json.ObjectFieldOptions;
 import io.deephaven.json.ObjectKvOptions;
 import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.ShortOptions;
@@ -40,9 +41,8 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -166,12 +166,11 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         return Stream.concat(Stream.of(prefix), path.stream()).collect(Collectors.toList());
     }
 
-    Stream<List<String>> prefixWithKeys(Map<String, ? extends ValueOptions> fields) {
-        final List<Stream<List<String>>> paths = new ArrayList<>();
-        for (Entry<String, ? extends ValueOptions> e : fields.entrySet()) {
-            final String key = e.getKey();
-            final ValueOptions value = e.getValue();
-            final Stream<List<String>> prefixedPaths = mixin(value).paths().map(x -> prefixWith(key, x));
+    Stream<List<String>> prefixWithKeys(Collection<ObjectFieldOptions> fields) {
+        final List<Stream<List<String>>> paths = new ArrayList<>(fields.size());
+        for (ObjectFieldOptions field : fields) {
+            final Stream<List<String>> prefixedPaths =
+                    mixin(field.options()).paths().map(x -> prefixWith(field.name(), x));
             paths.add(prefixedPaths);
         }
         return paths.stream().flatMap(Function.identity());

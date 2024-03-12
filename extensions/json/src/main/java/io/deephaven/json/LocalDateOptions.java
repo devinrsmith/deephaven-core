@@ -30,7 +30,7 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
     public static LocalDateOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .desiredTypes(JsonValueTypes.STRING)
                 .build();
     }
 

@@ -34,7 +34,7 @@ public abstract class StringOptions extends BoxedOptions<String> {
     public static StringOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING.asSet())
+                .desiredTypes(JsonValueTypes.STRING)
                 .build();
     }
 

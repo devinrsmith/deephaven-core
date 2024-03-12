@@ -51,7 +51,7 @@ public abstract class IntOptions extends ValueOptions {
     public static IntOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT.asSet())
+                .desiredTypes(JsonValueTypes.INT)
                 .build();
     }
 

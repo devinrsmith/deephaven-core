@@ -38,8 +38,9 @@ _JObjectOptions = jpy.get_type("io.deephaven.json.ObjectOptions")
 _JArrayOptions = jpy.get_type("io.deephaven.json.ArrayOptions")
 _JObjectKvOptions = jpy.get_type("io.deephaven.json.ObjectKvOptions")
 _JTupleOptions = jpy.get_type("io.deephaven.json.TupleOptions")
+_JObjectFieldOptions = jpy.get_type("io.deephaven.json.ObjectFieldOptions")
 _JRepeatedFieldBehavior = jpy.get_type(
-    "io.deephaven.json.ObjectOptions$RepeatedFieldBehavior"
+    "io.deephaven.json.ObjectFieldOptions$RepeatedBehavior"
 )
 _JJsonValueTypes = jpy.get_type("io.deephaven.json.JsonValueTypes")
 _JBoolOptions = jpy.get_type("io.deephaven.json.BoolOptions")
@@ -133,13 +134,20 @@ def object_(
     allow_missing: bool = True,
     allow_null: bool = True,
     repeated_field_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.USE_FIRST,
+    case_insensitive: bool = False,
 ) -> JsonOptions:
     builder = _JObjectOptions.builder()
     _build(builder, allow_missing, allow_null, allow_object=True)
-    builder.repeatedFieldBehavior(repeated_field_behavior.value)
     builder.allowUnknownFields(allow_unknown_fields)
     for field_name, field_opts in fields.items():
-        builder.putFields(field_name, json(field_opts).j_options)
+        builder.addFields(
+            _JObjectFieldOptions.builder()
+            .name(field_name)
+            .options(json(field_opts).j_options)
+            .repeatedBehavior(repeated_field_behavior.value)
+            .caseInsensitiveMatch(case_insensitive)
+            .build()
+        )
     return JsonOptions(builder.build())
 
 

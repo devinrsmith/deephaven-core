@@ -15,6 +15,7 @@ import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
 import io.deephaven.util.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
@@ -403,6 +404,48 @@ public class JsonStreamPublisherTest {
             recorder.assertEquals(
                     ObjectChunk.chunkWrap(new String[] {"a", "b", "c"}),
                     IntChunk.chunkWrap(new int[] {42, NULL_INT, 43}));
+            recorder.clear();
+        }
+    }
+
+    // @Disabled("feature not implemented")
+    @Test
+    void boundaryCollapse() {
+        // TODO: get this working
+        // TODO: have some options that will collect an ID so the user _could_ join on it?
+        // [ { "ref": [ { "name": "Foo", "age": 42 }, { "name": "Bar", "age": 43 } ] }, { "ref": [ { "name": "Baz",
+        // "age": 44 } ] } ]
+        final JsonStreamPublisher publisher = publisher(nameAgeOptions().array().field("ref").array(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            directExecute(publisher, Source.of(
+                    "[ { \"ref\": [ { \"name\": \"Foo\", \"age\": 42 }, { \"name\": \"Bar\", \"age\": 43 } ] }, { \"ref\": [ { \"name\": \"Baz\", \"age\": 44 } ] } ]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"Foo", "Bar", "Baz"}),
+                    IntChunk.chunkWrap(new int[] {42, 43, 44}));
+            recorder.clear();
+        }
+    }
+
+    @Test
+    void boundaryPreserve() {
+        // Same data as above, but we have a barrier that stops collapsing the single path
+        // [ { "ref": [ { "name": "Foo", "age": 42 }, { "name": "Bar", "age": 43 } ] }, { "ref": [ { "name": "Baz",
+        // "age": 44 } ] } ]
+        final JsonStreamPublisher publisher = publisher(ObjectOptions.builder()
+                .putFields("ref", nameAgeOptions().array())
+                .putFields("barrier", SkipOptions.lenient())
+                .build()
+                .array(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            directExecute(publisher, Source.of(
+                    "[ { \"ref\": [ { \"name\": \"Foo\", \"age\": 42 }, { \"name\": \"Bar\", \"age\": 43 } ] }, { \"ref\": [ { \"name\": \"Baz\", \"age\": 44 } ] } ]"));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new Object[] {new String[] {"Foo", "Bar"}, new String[] {"Baz"}}),
+                    ObjectChunk.chunkWrap(new Object[] {new int[] {42, 43}, new int[] {44}}));
             recorder.clear();
         }
     }

@@ -5,17 +5,38 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.json.AnyOptions;
+import io.deephaven.json.ArrayOptions;
+import io.deephaven.json.BigDecimalOptions;
+import io.deephaven.json.BigIntegerOptions;
+import io.deephaven.json.BoolOptions;
+import io.deephaven.json.ByteOptions;
+import io.deephaven.json.CharOptions;
+import io.deephaven.json.DoubleOptions;
+import io.deephaven.json.FloatOptions;
+import io.deephaven.json.InstantNumberOptions;
+import io.deephaven.json.InstantOptions;
+import io.deephaven.json.IntOptions;
 import io.deephaven.json.JsonStreamPublisher;
 import io.deephaven.json.JsonStreamPublisherOptions;
+import io.deephaven.json.LocalDateOptions;
+import io.deephaven.json.LongOptions;
+import io.deephaven.json.ObjectFieldOptions;
+import io.deephaven.json.ObjectKvOptions;
+import io.deephaven.json.ObjectOptions;
+import io.deephaven.json.ShortOptions;
+import io.deephaven.json.SkipOptions;
 import io.deephaven.json.Source;
+import io.deephaven.json.StringOptions;
+import io.deephaven.json.TupleOptions;
+import io.deephaven.json.TypedObjectOptions;
 import io.deephaven.json.ValueOptions;
+import io.deephaven.json.ValueOptions.Visitor;
 import io.deephaven.json.jackson.NavContext.JsonProcess;
-import io.deephaven.json.jackson.PathToSingleValue.Path;
-import io.deephaven.json.jackson.PathToSingleValue.Results;
 import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,36 +50,29 @@ import java.util.stream.Collectors;
 
 public final class JacksonStreamPublisher implements JsonStreamPublisher {
     public static JacksonStreamPublisher of(JsonStreamPublisherOptions options, JsonFactory factory) {
-        final Results results = PathToSingleValue.of(options.options());
-        return new JacksonStreamPublisher(results.path(), results.options(), options.chunkSize(),
-                options.multiValueSupport(), factory);
+        return new JacksonStreamPublisher(options, factory);
     }
 
-    private final List<Path> path;
-    private final int chunkSize;
-    private final boolean multiValue;
+    private final JsonStreamPublisherOptions publisherOptions;
     private final JsonFactory factory;
-    private final Mixin<?> mixin;
-    private final List<Type<?>> chunkTypes;
+    private final boolean collapseArrayBoundary = true;
     private StreamConsumer consumer;
     private volatile boolean shutdown;
 
     private JacksonStreamPublisher(
-            List<Path> path,
-            ValueOptions options,
-            int chunkSize,
-            boolean multiValue,
+            JsonStreamPublisherOptions publisherOptions,
             JsonFactory factory) {
-        this.path = List.copyOf(path);
-        this.chunkSize = chunkSize;
-        this.multiValue = multiValue;
+        this.publisherOptions = Objects.requireNonNull(publisherOptions);
         this.factory = Objects.requireNonNull(factory);
-        this.mixin = Objects.requireNonNull(Mixin.of(options, factory));
-        this.chunkTypes = types();
     }
 
     public TableDefinition tableDefinition(Function<List<String>, String> namingFunction) {
-        return TableDefinition.from(mixin.names(namingFunction), chunkTypes);
+        DrivenJsonProcess current = process();
+        while (!(current instanceof LeafBase)) {
+            current = ((DrivenJsonProcessSingleDelegateBase<?>) current).delegate;
+        }
+        final Mixin<?> mixin = ((LeafBase<?>) current).mixin;
+        return TableDefinition.from(mixin.names(namingFunction), mixin.outputTypes().collect(Collectors.toList()));
     }
 
     @Override
@@ -79,45 +93,52 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
 
     @Override
     public void execute(Executor executor, Queue<Source> sources) {
-        executor.execute(runner(sources));
+        executor.execute(new Driver(sources, process()));
     }
 
-    private List<Type<?>> types() {
-        if (mixin instanceof ArrayMixin) {
-            return ((ArrayMixin) mixin).elementOutputTypes().collect(Collectors.toList());
-        }
-        if (mixin instanceof ObjectKvMixin) {
-            return ((ObjectKvMixin) mixin).keyValueOutputTypes().collect(Collectors.toList());
-        }
-        return mixin.outputTypes().collect(Collectors.toList());
+    private DrivenJsonProcess process() {
+        return new VisitorImpl().of(publisherOptions.options());
     }
 
-    private Runnable runner(Queue<Source> sources) {
-        if (mixin instanceof ArrayMixin) {
-            return new ArrayRunner(sources);
-        }
-        if (mixin instanceof ObjectKvMixin) {
-            return new KvRunner(sources);
-        }
-        return new NormalRunner(sources);
+    interface DrivenJsonProcess extends JsonProcess {
+
+        @Override
+        void process(JsonParser parser) throws IOException;
+
+        // needs to know when it's done
+        void done();
     }
 
-    private abstract class StatefulRunner implements Runnable, JsonProcess {
+    interface LeafJsonProcess extends DrivenJsonProcess {
+
+        void prepare(List<WritableChunk<?>> out);
+
+        void incAndMaybeFlush();
+    }
+
+    static abstract class DrivenJsonProcessSingleDelegateBase<T extends ValueOptions> implements DrivenJsonProcess {
+        final T options;
+        final DrivenJsonProcess delegate;
+
+        DrivenJsonProcessSingleDelegateBase(T options, DrivenJsonProcess delegate) {
+            this.options = Objects.requireNonNull(options);
+            this.delegate = Objects.requireNonNull(delegate);
+        }
+
+        @Override
+        public final void done() {
+            delegate.done();
+        }
+    }
+
+    private final class Driver implements Runnable {
         private final Queue<Source> sources;
-        @SuppressWarnings("rawtypes")
-        private final WritableChunk[] outArray;
-        private List<WritableChunk<?>> out;
-        private int count;
+        private final DrivenJsonProcess process;
 
-        public StatefulRunner(Queue<Source> sources) {
+        public Driver(Queue<Source> sources, DrivenJsonProcess process) {
             this.sources = Objects.requireNonNull(sources);
-            this.outArray = new WritableChunk[chunkTypes.size()];
-            out = newProcessorChunks(chunkSize, chunkTypes);
-            count = 0;
-            prepare(out);
+            this.process = Objects.requireNonNull(process);
         }
-
-        public abstract void prepare(List<WritableChunk<?>> out);
 
         @Override
         public void run() {
@@ -133,27 +154,93 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
             while ((source = sources.poll()) != null) {
                 try (final JsonParser parser = JacksonSource.of(factory, source)) {
                     parser.nextToken();
-                    runImpl(parser);
+                    do {
+                        // todo: inner process should check for shutdown too
+                        process.process(parser);
+                        parser.nextToken();
+                    } while (publisherOptions.multiValueSupport() && !parser.hasToken(null) && !shutdown);
+                    // todo: throw exception if not multi value and not null?
                 }
             }
-            if (count != 0) {
+            process.done();
+        }
+    }
+
+    private static class ArrayProcess extends DrivenJsonProcessSingleDelegateBase<ArrayOptions> {
+
+        public ArrayProcess(ArrayOptions options, DrivenJsonProcess elementDelegate) {
+            super(options, elementDelegate);
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            // does callback here need to increment parser?
+            ValueProcessor.processArray(parser, delegate, null);
+        }
+    }
+
+    private static class ObjectFieldProcess extends DrivenJsonProcessSingleDelegateBase<ObjectOptions> {
+        private final ObjectFieldOptions field;
+
+        public ObjectFieldProcess(ObjectOptions options, ObjectFieldOptions field, DrivenJsonProcess fieldDelegate) {
+            super(options, fieldDelegate);
+            this.field = Objects.requireNonNull(field);
+            if (!options.fields().contains(field)) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            // todo: use options to handle cases
+            NavContext.processObjectField(parser, field, delegate);
+        }
+    }
+
+    private static class TupleIndexProcess extends DrivenJsonProcessSingleDelegateBase<TupleOptions> {
+        private final int index;
+
+        public TupleIndexProcess(TupleOptions tuple, int index, DrivenJsonProcess elementDelegate) {
+            super(tuple, elementDelegate);
+            this.index = index;
+        }
+
+        @Override
+        public void process(JsonParser parser) throws IOException {
+            // todo: options for error handling
+            NavContext.processTupleIndex(parser, index, delegate);
+        }
+    }
+
+    private abstract class LeafBase<T extends Mixin<?>> implements LeafJsonProcess {
+        final T mixin;
+        private final List<ChunkType> chunkTypes;
+        @SuppressWarnings("rawtypes")
+        private final WritableChunk[] outArray;
+        private List<WritableChunk<?>> out;
+        private int count;
+
+        LeafBase(T mixin, List<ChunkType> chunkTypes) {
+            this.mixin = Objects.requireNonNull(mixin);
+            this.chunkTypes = Objects.requireNonNull(chunkTypes);
+            this.outArray = new WritableChunk[chunkTypes.size()];
+            prepareImpl();
+        }
+
+        @Override
+        public final void incAndMaybeFlush() {
+            if (shutdown) {
+                throw new RuntimeException("shutdown");
+            }
+            count++;
+            if (count == publisherOptions.chunkSize()) {
                 flushImpl();
             }
         }
 
-        private void runImpl(JsonParser parser) throws IOException {
-            do {
-                NavContext.processPath(parser, path, this);
-            } while (multiValue && !parser.hasToken(null));
-            // todo: throw exception if not multi value and not null?
-        }
-
-        void incAndMaybeFlush() {
-            if (shutdown) {
-                throw new RuntimeException("shutdown");
-            }
-            if (++count == chunkSize) {
-                // todo: this may flush intra-source
+        @Override
+        public final void done() {
+            if (count != 0) {
                 flushImpl();
             }
         }
@@ -161,82 +248,224 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
         private void flushImpl() {
             // noinspection unchecked
             consumer.accept(out.toArray(outArray));
-            out = newProcessorChunks(chunkSize, chunkTypes);
-            count = 0;
+            prepareImpl();
+        }
+
+        private void prepareImpl() {
+            out = newProcessorChunks(publisherOptions.chunkSize(), chunkTypes);
             prepare(out);
+            count = 0;
         }
     }
 
-    private class NormalRunner extends StatefulRunner {
+    private final class SingleValueLeaf extends LeafBase<Mixin<?>> {
         private ValueProcessor processor;
 
-        public NormalRunner(Queue<Source> sources) {
-            super(sources);
+        public SingleValueLeaf(Mixin<?> mixin) {
+            super(mixin, mixin.outputTypes().map(ObjectProcessor::chunkType).collect(Collectors.toList()));
         }
 
         @Override
         public void prepare(List<WritableChunk<?>> out) {
-            processor = mixin.processor(NormalRunner.class.getName(), out);
+            processor = mixin.processor("todo", out);
         }
 
         @Override
         public void process(JsonParser parser) throws IOException {
-            if (parser.hasToken(null)) {
-                processor.processMissing(parser);
-            } else {
-                processor.processCurrentValue(parser);
-            }
+            ValueProcessor.process(parser, processor);
             incAndMaybeFlush();
-            parser.nextToken();
         }
     }
 
-    private class ArrayRunner extends StatefulRunner {
-        private ValueProcessor processor;
+    private final class ArrayLeaf extends LeafBase<ArrayMixin> {
+        private ValueProcessor elementDelegate;
 
-        public ArrayRunner(Queue<Source> sources) {
-            super(sources);
+        public ArrayLeaf(ArrayMixin mixin) {
+            super(mixin, mixin.elementOutputTypes().map(ObjectProcessor::chunkType).collect(Collectors.toList()));
         }
 
         @Override
         public void prepare(List<WritableChunk<?>> out) {
-            processor = ((ArrayMixin) mixin).elementAsValueProcessor(out);
+            elementDelegate = mixin.elementAsValueProcessor(out);
         }
 
         @Override
         public void process(JsonParser parser) throws IOException {
-            ValueProcessorArrayImpl.processArray2(processor, parser, this::incAndMaybeFlush);
-            parser.nextToken();
+            ValueProcessor.processArray(parser, elementDelegate::processCurrentValue, this::incAndMaybeFlush);
         }
     }
 
-    private class KvRunner extends StatefulRunner {
-        private ValueProcessor keyProcessor;
-        private ValueProcessor valueProcessor;
+    private final class KeyValueLeaf extends LeafBase<ObjectKvMixin> {
+        private ValueProcessor key;
+        private ValueProcessor value;
 
-        public KvRunner(Queue<Source> sources) {
-            super(sources);
+        public KeyValueLeaf(ObjectKvMixin mixin) {
+            super(mixin, mixin.keyValueOutputTypes().map(ObjectProcessor::chunkType).collect(Collectors.toList()));
         }
 
         @Override
         public void prepare(List<WritableChunk<?>> out) {
-            keyProcessor = ((ObjectKvMixin) mixin).keyAsValueProcessor(out);
-            valueProcessor = ((ObjectKvMixin) mixin).valueAsValueProcessor(out);
+            key = mixin.keyAsValueProcessor(out);
+            value = mixin.valueAsValueProcessor(out);
         }
 
         @Override
         public void process(JsonParser parser) throws IOException {
-            ValueProcessorKvImpl.processKeyValues2(keyProcessor, valueProcessor, parser, this::incAndMaybeFlush);
-            parser.nextToken();
+            ValueProcessor.processKeyValues(parser, key::processCurrentValue, value::processCurrentValue,
+                    this::incAndMaybeFlush);
         }
     }
 
-    private static List<WritableChunk<?>> newProcessorChunks(int chunkSize, List<Type<?>> types) {
+    private static List<WritableChunk<?>> newProcessorChunks(int chunkSize, List<ChunkType> types) {
         return types
                 .stream()
-                .map(ObjectProcessor::chunkType)
                 .map(chunkType -> chunkType.makeWritableChunk(chunkSize))
                 .peek(wc -> wc.setSize(0))
                 .collect(Collectors.toList());
+    }
+
+    class VisitorImpl implements Visitor<DrivenJsonProcess> {
+
+        DrivenJsonProcess of(ValueOptions options) {
+            return Objects.requireNonNull(options.walk(this));
+        }
+
+        DrivenJsonProcess of(ArrayOptions array) {
+            return collapseArrayBoundary
+                    ? new ArrayProcess(array, of(array.element()))
+                    : new ArrayLeaf(new ArrayMixin(array, factory));
+        }
+
+        DrivenJsonProcess of(ObjectKvOptions kvOptions) {
+            // can't boundary collapse past KV right now; logic is much more complicated due to the bifurcation of
+            // key AND value. We _could_ try to do it when key or value doesn't produce any output.
+            return new KeyValueLeaf(new ObjectKvMixin(kvOptions, factory));
+        }
+
+        DrivenJsonProcess of(ObjectOptions object) {
+            if (object.fields().size() == 1) {
+                final ObjectFieldOptions field = object.fields().iterator().next();
+                return new ObjectFieldProcess(object, field, of(field.options()));
+            }
+            return single(object);
+        }
+
+        DrivenJsonProcess of(TupleOptions tuple) {
+            // todo: see if all are skips except one
+            if (tuple.values().size() == 1) {
+                final ValueOptions element = tuple.values().get(0);
+                return new TupleIndexProcess(tuple, 0, of(element));
+            }
+            return single(tuple);
+        }
+
+        SingleValueLeaf single(ValueOptions options) {
+            return new SingleValueLeaf(Mixin.of(options, factory));
+        }
+
+        @Override
+        public DrivenJsonProcess visit(ArrayOptions array) {
+            return of(array);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(ObjectKvOptions objectKv) {
+            return of(objectKv);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(ObjectOptions object) {
+            return of(object);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(TupleOptions tuple) {
+            return of(tuple);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(StringOptions _string) {
+            return single(_string);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(BoolOptions _bool) {
+            return single(_bool);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(CharOptions _char) {
+            return single(_char);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(ByteOptions _byte) {
+            return single(_byte);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(ShortOptions _short) {
+            return single(_short);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(IntOptions _int) {
+            return single(_int);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(LongOptions _long) {
+            return single(_long);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(FloatOptions _float) {
+            return single(_float);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(DoubleOptions _double) {
+            return single(_double);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(InstantOptions instant) {
+            return single(instant);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(InstantNumberOptions instantNumber) {
+            return single(instantNumber);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(BigIntegerOptions bigInteger) {
+            return single(bigInteger);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(BigDecimalOptions bigDecimal) {
+            return single(bigDecimal);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(SkipOptions skip) {
+            return single(skip);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(TypedObjectOptions typedObject) {
+            return single(typedObject);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(LocalDateOptions localDate) {
+            return single(localDate);
+        }
+
+        @Override
+        public DrivenJsonProcess visit(AnyOptions any) {
+            return single(any);
+        }
     }
 }

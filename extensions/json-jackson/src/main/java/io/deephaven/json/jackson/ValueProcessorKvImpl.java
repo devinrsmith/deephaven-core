@@ -12,10 +12,10 @@ import java.util.Objects;
 
 final class ValueProcessorKvImpl implements ValueProcessor {
 
-    public static void processKeyValues(
+    public static void processKeyValues2(
+            JsonParser parser,
             RepeaterProcessor keyProcessor,
             RepeaterProcessor valueProcessor,
-            JsonParser parser,
             Runnable processElementCallback) throws IOException {
         Parsing.assertCurrentToken(parser, JsonToken.START_OBJECT);
         final Context keyContext = keyProcessor.start(parser);
@@ -36,26 +36,6 @@ final class ValueProcessorKvImpl implements ValueProcessor {
         valueContext.done(parser, ix);
     }
 
-    public static void processKeyValues2(
-            ValueProcessor keyProcessor,
-            ValueProcessor valueProcessor,
-            JsonParser parser,
-            Runnable processElementCallback) throws IOException {
-        Parsing.assertCurrentToken(parser, JsonToken.START_OBJECT);
-        parser.nextToken();
-        while (!parser.hasToken(JsonToken.END_OBJECT)) {
-            Parsing.assertCurrentToken(parser, JsonToken.FIELD_NAME);
-            keyProcessor.processCurrentValue(parser);
-            parser.nextToken();
-            valueProcessor.processCurrentValue(parser);
-            parser.nextToken();
-            if (processElementCallback != null) {
-                processElementCallback.run();
-            }
-        }
-    }
-
-
     private final RepeaterProcessor keyProcessor;
     private final RepeaterProcessor valueProcessor;
 
@@ -71,7 +51,7 @@ final class ValueProcessorKvImpl implements ValueProcessor {
             valueProcessor.processNullRepeater(parser);
             return;
         }
-        processKeyValues(keyProcessor, valueProcessor, parser, null);
+        processKeyValues2(parser, keyProcessor, valueProcessor, null);
     }
 
     @Override

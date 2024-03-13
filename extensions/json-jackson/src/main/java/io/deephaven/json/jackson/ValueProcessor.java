@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import io.deephaven.json.jackson.NavContext.JsonProcess;
 
 import java.io.IOException;
 
@@ -27,6 +28,61 @@ interface ValueProcessor {
         // assertCurrentToken(parser, endToken(startToken));
 
         assertNextToken(parser, null);
+    }
+
+    static void process(JsonParser parser, ValueProcessor processor) throws IOException {
+        if (parser.hasToken(null)) {
+            processor.processMissing(parser);
+        } else {
+            processor.processCurrentValue(parser);
+        }
+    }
+
+    static void processArray(
+            JsonParser parser,
+            JsonProcess processor,
+            Runnable callback) throws IOException {
+        Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
+        parser.nextToken();
+        while (!parser.hasToken(JsonToken.END_ARRAY)) {
+            processor.process(parser);
+            parser.nextToken();
+            if (callback != null) {
+                callback.run();
+            }
+        }
+    }
+
+    static JsonProcess keyAndValue(JsonProcess key, JsonProcess value) {
+        return p -> {
+            key.process(p);
+            p.nextToken();
+            value.process(p);
+        };
+    }
+
+    static void processKeyValues(
+            JsonParser parser,
+            JsonProcess keyAndValueProcessor,
+            Runnable processElementCallback) throws IOException {
+        Parsing.assertCurrentToken(parser, JsonToken.START_OBJECT);
+        parser.nextToken();
+        while (!parser.hasToken(JsonToken.END_OBJECT)) {
+            Parsing.assertCurrentToken(parser, JsonToken.FIELD_NAME);
+            keyAndValueProcessor.process(parser);
+            parser.nextToken();
+            if (processElementCallback != null) {
+                processElementCallback.run();
+            }
+        }
+    }
+
+    static void processKeyValues(
+            JsonParser parser,
+            JsonProcess keyProcessor,
+            JsonProcess valueProcessor,
+            Runnable processElementCallback) throws IOException {
+        processKeyValues(parser, keyAndValue(keyProcessor, valueProcessor), processElementCallback);
     }
 
     // semantically _similar_ to

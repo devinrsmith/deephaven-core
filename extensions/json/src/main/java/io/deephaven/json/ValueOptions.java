@@ -9,6 +9,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -57,13 +58,18 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     }
 
     public final SkipOptions skip() {
-        return SkipOptions.builder().allowMissing(allowMissing()).desiredTypes(desiredTypes()).build();
+        return SkipOptions.builder()
+                .allowMissing(allowMissing())
+                .desiredTypes(desiredTypes())
+                .build();
     }
 
     public final ArrayOptions array() {
-        // todo: allowMissing not applicable for elements,
-        // but should we use it to define whether array is strict or not?
         return ArrayOptions.standard(this);
+    }
+
+    public final ObjectOptions field(String name) {
+        return ObjectOptions.standard(Map.of(name, this));
     }
 
     public abstract <T> T walk(Visitor<T> visitor);

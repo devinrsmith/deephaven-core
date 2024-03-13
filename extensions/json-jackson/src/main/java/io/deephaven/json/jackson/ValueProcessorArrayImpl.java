@@ -12,9 +12,9 @@ import java.util.Objects;
 
 final class ValueProcessorArrayImpl implements ValueProcessor {
 
-    static void processArray(
-            RepeaterProcessor elementProcessor,
+    static void processArray2(
             JsonParser parser,
+            RepeaterProcessor elementProcessor,
             Runnable processElementCallback) throws IOException {
         Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
         final Context context = elementProcessor.start(parser);
@@ -30,21 +30,6 @@ final class ValueProcessorArrayImpl implements ValueProcessor {
         context.done(parser, ix);
     }
 
-    static void processArray2(
-            ValueProcessor elementProcessor,
-            JsonParser parser,
-            Runnable processElementCallback) throws IOException {
-        Parsing.assertCurrentToken(parser, JsonToken.START_ARRAY);
-        parser.nextToken();
-        while (!parser.hasToken(JsonToken.END_ARRAY)) {
-            elementProcessor.processCurrentValue(parser);
-            parser.nextToken();
-            if (processElementCallback != null) {
-                processElementCallback.run();
-            }
-        }
-    }
-
     private final RepeaterProcessor elementProcessor;
 
     ValueProcessorArrayImpl(RepeaterProcessor elementProcessor) {
@@ -57,7 +42,7 @@ final class ValueProcessorArrayImpl implements ValueProcessor {
             elementProcessor.processNullRepeater(parser);
             return;
         }
-        processArray(elementProcessor, parser, null);
+        processArray2(parser, elementProcessor, null);
     }
 
     @Override

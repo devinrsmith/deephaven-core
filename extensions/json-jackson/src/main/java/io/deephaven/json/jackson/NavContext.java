@@ -39,17 +39,20 @@ final class NavContext {
                 } else {
                     parser.nextToken();
                     inner.process(parser);
+                    parser.nextToken();
                     processed = true;
                     continue;
                 }
             }
             // field value, skip
-            skipField(parser);
+            skipElement(parser);
+
+            // setup next field name, or end object
+            parser.nextToken();
         }
         if (!parser.hasToken(JsonToken.END_OBJECT)) {
             throw new IOException("Expected END_OBJECT");
         }
-        parser.nextToken();
     }
 
     static void processTupleIndex(JsonParser parser, int index, JsonProcess inner) throws IOException {
@@ -61,10 +64,10 @@ final class NavContext {
             skipElement(parser);
         }
         inner.process(parser);
+        parser.nextToken();
         while (!parser.hasToken(JsonToken.END_ARRAY)) {
             skipElement(parser);
         }
-        parser.nextToken();
     }
 
     static void processPath(JsonParser parser, Path path, JsonProcess inner) throws IOException {
@@ -97,13 +100,6 @@ final class NavContext {
     // static JsonProcess singleFieldProcess(List<String> fieldPath, JsonProcess consumer) {
     // return fieldPath.isEmpty() ? consumer : new ProcessPath(fieldPath, consumer);
     // }
-
-    private static void skipField(JsonParser parser) throws IOException {
-        // field value, skip
-        skipElement(parser);
-        // setup next field name, or end object
-        parser.nextToken();
-    }
 
     private static void skipElement(JsonParser parser) throws IOException {
         parser.nextToken();

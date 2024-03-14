@@ -37,6 +37,7 @@ import io.deephaven.json.ValueOptions;
 import io.deephaven.json.ValueOptions.Visitor;
 import io.deephaven.json.jackson.NavContext.JsonProcess;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,13 +69,18 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
         this.factory = Objects.requireNonNull(factory);
     }
 
+    @Override
     public TableDefinition tableDefinition(Function<List<String>, String> namingFunction) {
         DrivenJsonProcess current = process();
         while (!(current instanceof LeafBase)) {
             current = ((DrivenJsonProcessSingleDelegateBase<?>) current).delegate;
         }
         final Mixin<?> mixin = ((LeafBase<?>) current).mixin;
-        return TableDefinition.from(mixin.names(namingFunction), mixin.outputTypes().collect(Collectors.toList()));
+        return TableDefinition.from(mixin.names(namingFunction), types(mixin).collect(Collectors.toList()));
+    }
+
+    private static Stream<? extends Type<?>> types(Mixin<?> mixin) {
+        return mixin.outputTypes();
     }
 
     @Override

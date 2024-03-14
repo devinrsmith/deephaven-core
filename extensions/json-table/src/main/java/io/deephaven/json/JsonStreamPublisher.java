@@ -3,12 +3,20 @@
 //
 package io.deephaven.json;
 
+import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.stream.StreamPublisher;
 
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 public interface JsonStreamPublisher extends StreamPublisher {
+
+    // Stream<? extends Type<?>> types();
+
+    // todo:
+    TableDefinition tableDefinition(Function<List<String>, String> namingFunction);
 
     /**
      * Adds a new job into {@code executor} that {@link Queue#poll() polls} from {@code sources} and process them as

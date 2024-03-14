@@ -19,6 +19,7 @@ import java.nio.CharBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Objects;
 
 final class JacksonSource implements Visitor<JsonParser> {
@@ -143,5 +144,10 @@ final class JacksonSource implements Visitor<JsonParser> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public JsonParser visit(Collection<Source> sources) {
+        throw new IllegalStateException("Expected single source");
     }
 }

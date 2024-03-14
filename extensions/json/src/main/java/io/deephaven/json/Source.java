@@ -9,7 +9,9 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public interface Source {
 
@@ -83,6 +85,20 @@ public interface Source {
         };
     }
 
+    static Source of(Collection<Source> sources) {
+        Objects.requireNonNull(sources);
+        return new Source() {
+            @Override
+            public <T> T walk(Visitor<T> visitor) {
+                return visitor.visit(sources);
+            }
+        };
+    }
+
+    static Stream<Source> stream(Source source) {
+        return source.walk(SourceToStream.INSTANCE);
+    }
+
     <T> T walk(Visitor<T> visitor);
 
     interface Visitor<T> {
@@ -100,5 +116,7 @@ public interface Source {
         T visit(InputStream inputStream);
 
         T visit(URL url);
+
+        T visit(Collection<Source> sources);
     }
 }

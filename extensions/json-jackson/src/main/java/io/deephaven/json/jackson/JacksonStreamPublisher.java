@@ -41,12 +41,14 @@ import io.deephaven.stream.StreamConsumer;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class JacksonStreamPublisher implements JsonStreamPublisher {
     public static JacksonStreamPublisher of(JsonStreamPublisherOptions options, JsonFactory factory) {
@@ -152,14 +154,19 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
         private void runImpl() throws IOException {
             Source source;
             while ((source = sources.poll()) != null) {
-                try (final JsonParser parser = JacksonSource.of(factory, source)) {
-                    parser.nextToken();
-                    do {
-                        // todo: inner process should check for shutdown too
-                        process.process(parser);
-                        parser.nextToken();
-                    } while (publisherOptions.multiValueSupport() && !parser.hasToken(null) && !shutdown);
-                    // todo: throw exception if not multi value and not null?
+                try (final Stream<Source> stream = Source.stream(source)) {
+                    final Iterator<Source> it = stream.iterator();
+                    while (it.hasNext()) {
+                        try (final JsonParser parser = JacksonSource.of(factory, it.next())) {
+                            parser.nextToken();
+                            do {
+                                // todo: inner process should check for shutdown too
+                                process.process(parser);
+                                parser.nextToken();
+                            } while (publisherOptions.multiValueSupport() && !parser.hasToken(null) && !shutdown);
+                            // todo: throw exception if not multi value and not null?
+                        }
+                    }
                 }
             }
             process.done();

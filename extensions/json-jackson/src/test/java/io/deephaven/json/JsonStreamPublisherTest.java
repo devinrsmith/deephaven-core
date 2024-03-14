@@ -686,5 +686,10 @@ public class JsonStreamPublisherTest {
         public String visit(URL url) {
             throw new IllegalStateException();
         }
+
+        @Override
+        public String visit(Collection<Source> sources) {
+            throw new IllegalStateException();
+        }
     }
 }

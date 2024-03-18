@@ -133,4 +133,31 @@ public class ObjectOptionsTest {
             assertThat(e).hasMessageContaining("Found overlapping field name 'foo'");
         }
     }
+
+    @Test
+    void columnNames() {
+        assertThat(OBJECT_NAME_AGE_FIELD.named(String.class).columnNames()).containsExactly("name", "age");
+    }
+
+    @Test
+    void columnNamesAlternateName() {
+        final ObjectOptions obj = ObjectOptions.builder()
+                .addFields(ObjectFieldOptions.builder()
+                        .name("MyName")
+                        .addAliases("name")
+                        .options(StringOptions.standard())
+                        .build())
+                .addFields(ObjectFieldOptions.of("age", IntOptions.standard()))
+                .build();
+        assertThat(obj.named(String.class).columnNames()).containsExactly("MyName", "age");
+    }
+
+    @Test
+    void columnNamesWithFieldThatIsNotColumnNameCompatible() {
+        final ObjectOptions objPlusOneMinusOneCount = ObjectOptions.builder()
+                .putFields("+1", IntOptions.standard())
+                .putFields("-1", IntOptions.standard())
+                .build();
+        assertThat(objPlusOneMinusOneCount.named(String.class).columnNames()).containsExactly("column_1", "column_12");
+    }
 }

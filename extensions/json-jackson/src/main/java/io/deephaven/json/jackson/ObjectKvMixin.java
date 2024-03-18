@@ -46,9 +46,15 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
 
     @Override
     public Stream<List<String>> paths() {
-        return Stream.concat(
-                keyMixin().paths(), // todo
-                valueMixin().paths());
+        final Stream<List<String>> keyPath =
+                keyMixin().numColumns() == 1 && keyMixin().paths().findFirst().orElseThrow().isEmpty()
+                        ? Stream.of(List.of("Key"))
+                        : keyMixin().paths();
+        final Stream<List<String>> valuePath =
+                valueMixin().numColumns() == 1 && valueMixin().paths().findFirst().orElseThrow().isEmpty()
+                        ? Stream.of(List.of("Value"))
+                        : valueMixin().paths();
+        return Stream.concat(keyPath, valuePath);
     }
 
     @Override

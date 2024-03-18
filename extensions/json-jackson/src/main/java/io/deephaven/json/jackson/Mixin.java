@@ -5,6 +5,7 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.api.util.NameValidator;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.AnyOptions;
@@ -41,6 +42,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -115,21 +117,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     @Override
     public final List<String> names(Function<List<String>, String> f) {
-
-        final List<String> named = paths().map(f).collect(Collectors.toList());
-
-        final List<String> output = new ArrayList<>(named.size());
-        int count = 0;
-
-        for (String s : named) {
-            if (output.contains(s)) {
-                s = s + "_" + count;
-                ++count;
-            }
-            output.add(s);
-        }
-
-        return output;
+        return Arrays.asList(NameValidator.legalizeColumnNames(paths().map(f).toArray(String[]::new), true));
     }
 
     @Override

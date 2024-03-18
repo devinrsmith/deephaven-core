@@ -1,6 +1,6 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.json;
 
 import io.deephaven.chunk.WritableObjectChunk;
@@ -34,9 +34,11 @@ public final class TableToJsonStreamPublisher extends ListenerImpl {
         final ColumnSource<Source> jsonColumnSource = parent.getColumnSource(columnName, Source.class);
         final JsonStreamPublisher publisher = options.execute();
         final TableDefinition tableDefinition = publisher.tableDefinition(JsonTableOptions::toColumnName);
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher, parent.getUpdateGraph(), name, Map.of(), true);
+        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher,
+                parent.getUpdateGraph(), name, Map.of(), true);
         final Table result = adapter.table();
-        final TableToJsonStreamPublisher listener = new TableToJsonStreamPublisher(name, parent, (BaseTable<?>) result, publisher, options.chunkSize(), jsonColumnSource);
+        final TableToJsonStreamPublisher listener = new TableToJsonStreamPublisher(name, parent, (BaseTable<?>) result,
+                publisher, options.chunkSize(), jsonColumnSource);
         parent.addUpdateListener(listener);
         return result;
     }

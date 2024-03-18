@@ -135,6 +135,43 @@ public class ObjectOptionsTest {
     }
 
     @Test
+    void objectFields() throws IOException {
+        // { "prices": [1.1, 2.2, 3.3], "other": [2, 4, 8, 16] }
+        parse(ObjectOptions.builder()
+                .putFields("prices", DoubleOptions.standard().array())
+                .putFields("other", LongOptions.standard().array())
+                .build(),
+                "{ \"prices\": [1.1, 2.2, 3.3], \"other\": [2, 4, 8, 16] }",
+                ObjectChunk
+                        .chunkWrap(new Object[] {new double[] {1.1, 2.2, 3.3}}),
+                ObjectChunk.chunkWrap(new Object[] {
+                        new long[] {2, 4, 8, 16}}));
+    }
+
+    @Test
+    void objectFieldsArrayGroup() throws IOException {
+        // Note: array groups don't cause any difference wrt ObjectProcessor based destructuring
+        // { "prices": [1.1, 2.2, 3.3], "sizes": [2, 4, 8] }
+        parse(ObjectOptions.builder()
+                .addFields(ObjectFieldOptions.builder()
+                        .name("prices")
+                        .options(DoubleOptions.standard().array())
+                        .arrayGroup("prices_and_sizes")
+                        .build())
+                .addFields(ObjectFieldOptions.builder()
+                        .name("sizes")
+                        .options(LongOptions.standard().array())
+                        .arrayGroup("prices_and_sizes")
+                        .build())
+                .build(),
+                "{ \"prices\": [1.1, 2.2, 3.3], \"sizes\": [2, 4, 8] }",
+                ObjectChunk
+                        .chunkWrap(new Object[] {new double[] {1.1, 2.2, 3.3}}),
+                ObjectChunk.chunkWrap(new Object[] {
+                        new long[] {2, 4, 8}}));
+    }
+
+    @Test
     void columnNames() {
         assertThat(OBJECT_NAME_AGE_FIELD.named(String.class).columnNames()).containsExactly("name", "age");
     }

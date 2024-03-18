@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -220,6 +221,48 @@ public class JsonStreamPublisherTest {
                     objName("baz"),
                     objAge(44),
                     objEmpty()));
+            recorder.flushPublisher();
+            recorder.assertEquals(
+                    ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),
+                    IntChunk.chunkWrap(new int[] {42, NULL_INT, 43, NULL_INT, 44, NULL_INT}));
+            recorder.clear();
+        }
+    }
+
+    // This is harder to implement than it looks like; right now, we expect chunks to be handed off at the same time and
+    // do it in a streaming fashion. But in the case where we have a very large grouped array, we'd need to buffer all
+    // of the first column.
+    //
+    // {
+    // "prices": [1.0, 2.0, ..., 1000000.0],
+    // "sizes": [1, 2, ..., 1000000]
+    // }
+    //
+    // whereas with the logical equivalent (from data perspective):
+    //
+    // [ { "price": 1.0, "size": 1 }, { "price": 2.0, "size": 2 }, ..., { "price": 1000000.0, "size": 1000000 } ]
+    //
+    // can process this in streaming fashion.
+    @Disabled("feature not implemented")
+    @Test
+    void singleObjectFieldArrayGroup() throws IOException {
+        final JsonStreamPublisher publisher = publisher(ObjectOptions.builder()
+                .addFields(ObjectFieldOptions.builder()
+                        .name("names")
+                        .options(StringOptions.standard().array())
+                        .arrayGroup("names_and_ages")
+                        .build())
+                .addFields(ObjectFieldOptions.builder()
+                        .name("ages")
+                        .options(IntOptions.standard().array())
+                        .arrayGroup("names_and_ages")
+                        .build())
+                .build(), false);
+        try (final StreamConsumerRecorder recorder = new StreamConsumerRecorder(publisher)) {
+            publisher.register(recorder);
+            // { "names": ["foo", null, "bar", "baz", null, null], "ages": [42, null, 43, null, 44, null] }
+            directExecute(publisher, Source.of(
+                    "{ \"names\": [\"foo\", null, \"bar\", \"baz\", null, null], \"ages\": [42, null, 43, null, 44, null] }"));
             recorder.flushPublisher();
             recorder.assertEquals(
                     ObjectChunk.chunkWrap(new String[] {"foo", null, "bar", "baz", null, null}),

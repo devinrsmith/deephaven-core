@@ -8,6 +8,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -56,6 +57,20 @@ public abstract class ObjectFieldOptions {
         return RepeatedBehavior.USE_FIRST;
     }
 
+    /**
+     * The array group for {@code this} field. This is useful in scenarios where {@code this} field's array is
+     * guaranteed to have the same cardinality as one or more other array fields. For example, in the following snippet,
+     * we would model "prices" and "quantities" as having the same array group:
+     *
+     * <pre>
+     * {
+     *   "prices": [1.1, 2.2, 3.3],
+     *   "quantities": [9, 5, 42],
+     * }
+     * </pre>
+     */
+    public abstract Optional<Object> arrayGroup();
+
     public enum RepeatedBehavior {
         /**
          * Throws an error if a repeated field is encountered
@@ -88,6 +103,8 @@ public abstract class ObjectFieldOptions {
 
         Builder caseInsensitiveMatch(boolean caseInsensitiveMatch);
 
+        Builder arrayGroup(Object arrayGroup);
+
         ObjectFieldOptions build();
     }
 
@@ -107,6 +124,16 @@ public abstract class ObjectFieldOptions {
                 throw new IllegalArgumentException(
                         String.format("name and aliases must be non-overlapping, found '%s' overlaps", name()));
             }
+        }
+    }
+
+    @Check
+    final void checkArrayGroup() {
+        if (arrayGroup().isEmpty()) {
+            return;
+        }
+        if (!(options() instanceof ArrayOptions)) {
+            throw new IllegalArgumentException("arrayGroup is only valid with ArrayOptions");
         }
     }
 }

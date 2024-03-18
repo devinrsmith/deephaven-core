@@ -9,6 +9,7 @@ import io.deephaven.json.jackson.NavContext.JsonProcess;
 
 import java.io.IOException;
 
+import static io.deephaven.json.jackson.Parsing.assertCurrentToken;
 import static io.deephaven.json.jackson.Parsing.assertNextToken;
 import static io.deephaven.json.jackson.Parsing.assertNoCurrentToken;
 
@@ -26,7 +27,6 @@ interface ValueProcessor {
         // clears out the token, so we can't necessarily check it.
         // parser.getLastClearedToken()
         // assertCurrentToken(parser, endToken(startToken));
-
         assertNextToken(parser, null);
     }
 
@@ -83,6 +83,26 @@ interface ValueProcessor {
             JsonProcess valueProcessor,
             Runnable processElementCallback) throws IOException {
         processKeyValues(parser, keyAndValue(keyProcessor, valueProcessor), processElementCallback);
+    }
+
+    interface FieldProcess {
+        void process(String fieldName, JsonParser parser) throws IOException;
+    }
+
+    static void processObject(JsonParser parser, FieldProcess fieldProcess) throws IOException {
+        Parsing.assertCurrentToken(parser, JsonToken.START_OBJECT);
+        parser.nextToken();
+        processFields(parser, fieldProcess);
+    }
+
+    static void processFields(JsonParser parser, FieldProcess fieldProcess) throws IOException {
+        while (parser.hasToken(JsonToken.FIELD_NAME)) {
+            final String fieldName = parser.currentName();
+            parser.nextToken();
+            fieldProcess.process(fieldName, parser);
+            parser.nextToken();
+        }
+        assertCurrentToken(parser, JsonToken.END_OBJECT);
     }
 
     // semantically _similar_ to

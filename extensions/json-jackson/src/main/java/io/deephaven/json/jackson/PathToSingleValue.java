@@ -30,6 +30,7 @@ import io.deephaven.json.TypedObjectOptions;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.json.ValueOptions.Visitor;
 import io.deephaven.json.jackson.PathToSingleValue.Results;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
@@ -47,7 +48,17 @@ final class PathToSingleValue implements Visitor<Results> {
     static abstract class ObjectField implements Path {
 
         @Parameter
+        public abstract ObjectOptions options();
+
+        @Parameter
         public abstract ObjectFieldOptions field();
+
+        @Check
+        final void check() {
+            if (!options().fields().contains(field())) {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     @Immutable
@@ -80,7 +91,7 @@ final class PathToSingleValue implements Visitor<Results> {
             return complete(object);
         }
         final ObjectFieldOptions field = object.fields().iterator().next();
-        builder.addPath(ImmutableObjectField.of(field));
+        builder.addPath(ImmutableObjectField.of(object, field));
         return field.options().walk(this);
     }
 

@@ -7,9 +7,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.json.ObjectFieldOptions;
 import io.deephaven.json.ObjectFieldOptions.RepeatedBehavior;
+import io.deephaven.json.ObjectOptions;
 import io.deephaven.json.jackson.PathToSingleValue.ArrayIndex;
 import io.deephaven.json.jackson.PathToSingleValue.ObjectField;
 import io.deephaven.json.jackson.PathToSingleValue.Path;
+import io.deephaven.json.jackson.ValueProcessor.FieldProcess;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,36 +25,51 @@ final class NavContext {
         void process(JsonParser parser) throws IOException;
     }
 
-    static void processObjectField(JsonParser parser, ObjectFieldOptions field, JsonProcess inner) throws IOException {
-        if (!parser.hasToken(JsonToken.START_OBJECT)) {
-            throw new IOException("Expected START_OBJECT");
-        }
-        parser.nextToken();
-        // Only process the first field with this name
-        boolean processed = false;
-        while (parser.hasToken(JsonToken.FIELD_NAME)) {
-            if (matches(parser.currentName(), field)) {
-                if (processed) {
-                    if (field.repeatedBehavior() == RepeatedBehavior.ERROR) {
-                        throw new IOException("TODO");
-                    }
-                } else {
-                    parser.nextToken();
-                    inner.process(parser);
-                    parser.nextToken();
-                    processed = true;
-                    continue;
-                }
-            }
-            // field value, skip
-            skipElement(parser);
+    private static class State implements FieldProcess {
+        private final ObjectOptions options;
+        private final ObjectFieldOptions field;
+        private final JsonProcess fieldProcess;
+        private boolean processed;
 
-            // setup next field name, or end object
-            parser.nextToken();
+        public State(ObjectOptions options, ObjectFieldOptions field, JsonProcess fieldProcess) {
+            this.options = Objects.requireNonNull(options);
+            this.field = Objects.requireNonNull(field);
+            this.fieldProcess = Objects.requireNonNull(fieldProcess);
         }
-        if (!parser.hasToken(JsonToken.END_OBJECT)) {
-            throw new IOException("Expected END_OBJECT");
+
+        @Override
+        public void process(String fieldName, JsonParser parser) throws IOException {
+            if (!matches(fieldName, field)) {
+                if (!options.allowUnknownFields()) {
+                    throw new IOException(String.format("Encountered unexpected unknown field '%s'", fieldName));
+                }
+                parser.skipChildren();
+                return;
+            }
+            if (processed) {
+                if (field.repeatedBehavior() != RepeatedBehavior.USE_FIRST) {
+                    throw new IOException(String
+                            .format("Encountered repeated field '%s' and repeatedBehavior != USE_FIRST", fieldName));
+                }
+                parser.skipChildren();
+                return;
+            }
+            processed = true;
+            fieldProcess.process(parser);
         }
+
+        void done() throws IOException {
+            if (!processed) {
+                throw new IOException(String.format("Processed object, but did not find field '%s'", field.name()));
+            }
+        }
+    }
+
+    static void processObjectField(JsonParser parser, ObjectOptions options, ObjectFieldOptions field,
+            JsonProcess inner) throws IOException {
+        final State fieldProcess = new State(options, field, inner);
+        ValueProcessor.processObject(parser, fieldProcess);
+        fieldProcess.done();
     }
 
     static void processTupleIndex(JsonParser parser, int index, JsonProcess inner) throws IOException {
@@ -72,7 +89,7 @@ final class NavContext {
 
     static void processPath(JsonParser parser, Path path, JsonProcess inner) throws IOException {
         if (path instanceof ObjectField) {
-            processObjectField(parser, ((ObjectField) path).field(), inner);
+            processObjectField(parser, ((ObjectField) path).options(), ((ObjectField) path).field(), inner);
             return;
         }
         if (path instanceof ArrayIndex) {

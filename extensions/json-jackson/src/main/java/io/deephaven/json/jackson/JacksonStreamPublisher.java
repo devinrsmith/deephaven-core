@@ -205,8 +205,7 @@ public final class JacksonStreamPublisher implements JsonStreamPublisher {
 
         @Override
         public void process(JsonParser parser) throws IOException {
-            // todo: use options to handle cases
-            NavContext.processObjectField(parser, field, delegate);
+            NavContext.processObjectField(parser, options, field, delegate);
         }
     }
 

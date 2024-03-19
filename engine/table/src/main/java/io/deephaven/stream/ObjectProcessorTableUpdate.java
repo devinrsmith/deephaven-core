@@ -15,6 +15,7 @@ import io.deephaven.engine.table.ModifiedColumnSet;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.WritableColumnSource;
+import io.deephaven.engine.table.impl.BaseTable;
 import io.deephaven.engine.table.impl.BaseTable.ListenerImpl;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.processor.ObjectProcessor;
@@ -41,6 +42,19 @@ final class ObjectProcessorTableUpdate<T> extends ListenerImpl {
     //                .collect(Collectors.toList());
 
 
+    public ObjectProcessorTableUpdate(String description, Table parent, BaseTable<?> dependent, Table source, String columnName, Class<T> columnType, ObjectProcessor<T> processor, WritableColumnSource<?>[] outputs, ModifiedColumnSet interest, ColumnSource<T> columnSource, int chunkSize, List<WritableChunk<Values>> cache) {
+        super(description, parent, dependent);
+        this.source = source;
+        this.columnName = columnName;
+        this.columnType = columnType;
+        this.processor = processor;
+        this.outputs = outputs;
+        this.interest = interest;
+        this.columnSource = columnSource;
+        this.chunkSize = chunkSize;
+        this.cache = cache;
+    }
+
     @Override
     public void onUpdate(TableUpdate upstream) {
         if (!needsCalc(upstream)) {
@@ -54,7 +68,7 @@ final class ObjectProcessorTableUpdate<T> extends ListenerImpl {
 
         if (upstream.added().isNonempty()) {
 
-            columnSource.
+            //columnSource.
         }
 
     }

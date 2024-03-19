@@ -1,6 +1,6 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.processor;
 
 import io.deephaven.chunk.ObjectChunk;
@@ -10,7 +10,7 @@ import io.deephaven.qst.type.Type;
 import java.util.List;
 
 public class OPToNoPImpl<T> implements ObjectProcessorToN<T> {
-    private final ObjectProcessor<T> op;
+    private final ObjectProcessor<T> op = null;
 
     @Override
     public List<Type<?>> outputTypes() {

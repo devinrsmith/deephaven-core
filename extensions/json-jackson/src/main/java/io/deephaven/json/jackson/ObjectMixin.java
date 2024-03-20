@@ -100,8 +100,8 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         return new ObjectValueRepeaterProcessor(processors);
     }
 
-    private boolean anyCaseInsensitive() {
-        return options.fields().stream().anyMatch(ObjectFieldOptions::caseInsensitiveMatch);
+    private boolean allCaseSensitive() {
+        return options.fields().stream().allMatch(ObjectFieldOptions::caseSensitive);
     }
 
     ObjectValueFieldProcessor processorImpl(Map<ObjectFieldOptions, ValueProcessor> fields) {
@@ -114,10 +114,9 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         ObjectValueFieldProcessor(Map<ObjectFieldOptions, ValueProcessor> fields) {
             this.fields = fields;
-            // If _any_ fields are case-insensitive, we add all to TreeMap regardless.
-            this.map = anyCaseInsensitive()
-                    ? new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
-                    : new HashMap<>();
+            this.map = allCaseSensitive()
+                    ? new HashMap<>()
+                    : new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             for (Entry<ObjectFieldOptions, ValueProcessor> e : fields.entrySet()) {
                 final ObjectFieldOptions field = e.getKey();
                 map.put(field.name(), field);
@@ -132,7 +131,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
             if (field == null) {
                 return null;
             }
-            if (field.caseInsensitiveMatch()) {
+            if (!field.caseSensitive()) {
                 return field;
             }
             // Need to handle the case where some fields are case-insensitive, but this one is _not_.
@@ -281,10 +280,9 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
             public ObjectArrayContext(Map<ObjectFieldOptions, Context> contexts) {
                 this.contexts = Objects.requireNonNull(contexts);
-                // If _any_ fields are case-insensitive, we add all to TreeMap regardless.
-                this.map = anyCaseInsensitive()
-                        ? new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
-                        : new HashMap<>();
+                this.map = allCaseSensitive()
+                        ? new HashMap<>()
+                        : new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 for (Entry<ObjectFieldOptions, RepeaterProcessor> e : fields.entrySet()) {
                     final ObjectFieldOptions field = e.getKey();
                     map.put(field.name(), field);
@@ -299,7 +297,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
                 if (field == null) {
                     return null;
                 }
-                if (field.caseInsensitiveMatch()) {
+                if (!field.caseSensitive()) {
                     return field;
                 }
                 // Need to handle the case where some fields are case-insensitive, but this one is _not_.

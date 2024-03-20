@@ -15,25 +15,33 @@ import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.processor.ObjectProcessor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public final class ObjectProcessorStreamPublisher<T> implements StreamPublisher {
     private final ObjectProcessor<T> processor;
+    private final Runnable onFlush;
+    private final boolean onFlushSynchronized;
+    private final Runnable onShutdown;
+    private final boolean onShutdownSynchronized;
     private StreamConsumer consumer;
-    private volatile boolean shutdown;
 
-    public ObjectProcessorStreamPublisher(ObjectProcessor<T> processor) {
+    public ObjectProcessorStreamPublisher(
+            ObjectProcessor<T> processor,
+            @Nullable Runnable onFlush,
+            boolean onFlushSynchronized,
+            @Nullable Runnable onShutdown,
+            boolean onShutdownSynchronized) {
         this.processor = Objects.requireNonNull(processor);
+        this.onFlush = onFlush;
+        this.onFlushSynchronized = onFlushSynchronized;
+        this.onShutdown = onShutdown;
+        this.onShutdownSynchronized = onShutdownSynchronized;
     }
 
     public ObjectProcessor<T> processor() {
         return processor;
-    }
-
-    public boolean isShutdown() {
-        return shutdown;
     }
 
     public synchronized void execute(ColumnSource<T> source, RowSet rowSet, int chunkSize, boolean prev) {
@@ -41,26 +49,38 @@ public final class ObjectProcessorStreamPublisher<T> implements StreamPublisher 
             return;
         }
         try (
-                final WritableObjectChunk<T, Values> dst = WritableObjectChunk.makeWritableChunk(chunkSize);
-                final FillContext context = source.makeFillContext(chunkSize);
-                final Iterator it = rowSet.getRowSequenceIterator()) {
+                final FillContext fillContext = source.makeFillContext(chunkSize);
+                final Iterator it = rowSet.getRowSequenceIterator();
+                final WritableObjectChunk<T, Values> srcChunk = WritableObjectChunk.makeWritableChunk(chunkSize)) {
             while (it.hasMore()) {
                 final RowSequence rowSeq = it.getNextRowSequenceWithLength(chunkSize);
                 if (prev) {
-                    source.fillPrevChunk(context, dst, rowSeq);
+                    source.fillPrevChunk(fillContext, srcChunk, rowSeq);
                 } else {
-                    source.fillChunk(context, dst, rowSeq);
+                    source.fillChunk(fillContext, srcChunk, rowSeq);
                 }
-                execute(dst);
+                executeImpl(srcChunk);
             }
+        } catch (Throwable t) {
+            consumer.acceptFailure(t);
         }
     }
 
     public synchronized void execute(ObjectChunk<T, ?> source) {
-        final List<WritableChunk<?>> out = makeChunks(source.size());
-        processor.processAll(source, out);
-        // noinspection unchecked
-        consumer.accept(out.toArray(WritableChunk[]::new));
+        if (source.size() == 0) {
+            return;
+        }
+        try {
+            executeImpl(source);
+        } catch (Throwable t) {
+            consumer.acceptFailure(t);
+        }
+    }
+
+    private void executeImpl(ObjectChunk<T, ?> source) {
+        final WritableChunk<Values>[] out = makeChunks(source.size());
+        processor.processAll(source, Arrays.asList(out));
+        consumer.accept(out);
     }
 
     @Override
@@ -69,21 +89,40 @@ public final class ObjectProcessorStreamPublisher<T> implements StreamPublisher 
     }
 
     @Override
-    public synchronized void flush() {
-        // synchronized to wait for any executes
+    public void flush() {
+        if (onFlush == null) {
+            return;
+        }
+        if (onFlushSynchronized) {
+            synchronized (this) {
+                onFlush.run();
+            }
+        } else {
+            onFlush.run();
+        }
     }
 
     @Override
     public void shutdown() {
-        shutdown = true;
+        if (onShutdown == null) {
+            return;
+        }
+        if (onShutdownSynchronized) {
+            synchronized (this) {
+                onShutdown.run();
+            }
+        } else {
+            onShutdown.run();
+        }
     }
 
-    private List<WritableChunk<?>> makeChunks(int size) {
+    private WritableChunk<Values>[] makeChunks(int size) {
+        // noinspection unchecked
         return processor.outputTypes()
                 .stream()
                 .map(ObjectProcessor::chunkType)
                 .map(c -> c.makeWritableChunk(size))
                 .peek(c -> c.setSize(0))
-                .collect(Collectors.toList());
+                .toArray(WritableChunk[]::new);
     }
 }

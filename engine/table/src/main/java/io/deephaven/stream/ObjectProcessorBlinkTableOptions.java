@@ -62,14 +62,20 @@ public abstract class ObjectProcessorBlinkTableOptions<T> {
     public abstract Map<String, Object> extraAttributes();
 
     public final Table execute() {
-        final ObjectProcessorStreamPublisher<T> publisher =
-                new ObjectProcessorStreamPublisher<>(processor().processor());
+        // todo: do we need to hook up onShutdown to remove the listener? lets say there is an error in the object
+        // processor and not the parent table
+        final ObjectProcessorStreamPublisher<T> publisher = new ObjectProcessorStreamPublisher<>(
+                processor().processor(),
+                null,
+                false,
+                null,
+                false);
         final TableDefinition tableDefinition =
                 TableDefinition.from(processor().columnNames(), processor().processor().outputTypes());
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher,
                 updateSourceRegistrar(), name(), extraAttributes(), true);
         final Table blinkTable = adapter.table();
-        final Listener listener = new Listener((BaseTable<?>) blinkTable, publisher);
+        final AddedListener listener = new AddedListener((BaseTable<?>) blinkTable, publisher);
         table().addUpdateListener(listener);
         if (publishInitial()) {
             // we can probably do better than this with ConstructSnapshot?
@@ -102,15 +108,19 @@ public abstract class ObjectProcessorBlinkTableOptions<T> {
         Builder<T> putAllExtraAttributes(Map<String, ? extends Object> entries);
 
         ObjectProcessorBlinkTableOptions<T> build();
+
+        default Table execute() {
+            return build().execute();
+        }
     }
 
-    private class Listener extends ListenerImpl {
+    private class AddedListener extends ListenerImpl {
 
         private final ObjectProcessorStreamPublisher<T> publisher;
         private final ColumnSource<T> columnSource;
 
-        public Listener(BaseTable<?> dependent, ObjectProcessorStreamPublisher<T> publisher) {
-            super(name() + "-Listener", table(), dependent);
+        public AddedListener(BaseTable<?> dependent, ObjectProcessorStreamPublisher<T> publisher) {
+            super(name() + "-AddedListener", table(), dependent);
             this.publisher = Objects.requireNonNull(publisher);
             this.columnSource = table().getColumnSource(columnName(), columnType());
         }
@@ -130,6 +140,23 @@ public abstract class ObjectProcessorBlinkTableOptions<T> {
             publisher.execute(columnSource, upstream.added(), chunkSize(), false);
             // todo: no need to pass rowsets, right?
             // should this be ListenerImpl?
+        }
+    }
+
+    private class RemovedListener extends ListenerImpl {
+
+        private final ObjectProcessorStreamPublisher<T> publisher;
+        private final ColumnSource<T> columnSource;
+
+        public RemovedListener(BaseTable<?> dependent, ObjectProcessorStreamPublisher<T> publisher) {
+            super(name() + "-RemovedListener", table(), dependent);
+            this.publisher = Objects.requireNonNull(publisher);
+            this.columnSource = table().getColumnSource(columnName(), columnType());
+        }
+
+        @Override
+        public void onUpdate(TableUpdate upstream) {
+            publisher.execute(columnSource, upstream.removed(), chunkSize(), true);
         }
     }
 

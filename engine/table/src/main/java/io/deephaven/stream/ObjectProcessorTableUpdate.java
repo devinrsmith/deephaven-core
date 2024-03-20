@@ -1,6 +1,6 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.stream;
 
 import io.deephaven.chunk.WritableChunk;
@@ -35,14 +35,17 @@ final class ObjectProcessorTableUpdate<T> extends ListenerImpl {
 
     private final int chunkSize;
     private final List<WritableChunk<Values>> cache;
-    //         final List<WritableChunk<Values>> out = processor.outputTypes()
-    //                .stream()
-    //                .map(ObjectProcessor::chunkType)
-    //                .map(o -> o.<Values>makeWritableChunk(chunkSize))
-    //                .collect(Collectors.toList());
+    // final List<WritableChunk<Values>> out = processor.outputTypes()
+    // .stream()
+    // .map(ObjectProcessor::chunkType)
+    // .map(o -> o.<Values>makeWritableChunk(chunkSize))
+    // .collect(Collectors.toList());
 
 
-    public ObjectProcessorTableUpdate(String description, Table parent, BaseTable<?> dependent, Table source, String columnName, Class<T> columnType, ObjectProcessor<T> processor, WritableColumnSource<?>[] outputs, ModifiedColumnSet interest, ColumnSource<T> columnSource, int chunkSize, List<WritableChunk<Values>> cache) {
+    public ObjectProcessorTableUpdate(String description, Table parent, BaseTable<?> dependent, Table source,
+            String columnName, Class<T> columnType, ObjectProcessor<T> processor, WritableColumnSource<?>[] outputs,
+            ModifiedColumnSet interest, ColumnSource<T> columnSource, int chunkSize,
+            List<WritableChunk<Values>> cache) {
         super(description, parent, dependent);
         this.source = source;
         this.columnName = columnName;
@@ -62,13 +65,13 @@ final class ObjectProcessorTableUpdate<T> extends ListenerImpl {
             return;
         }
 
-//        if (upstream.removed().isNonempty()) {
-//            outputs[0].setNull(upstream.removed());
-//        }
+        // if (upstream.removed().isNonempty()) {
+        // outputs[0].setNull(upstream.removed());
+        // }
 
         if (upstream.added().isNonempty()) {
 
-            //columnSource.
+            // columnSource.
         }
 
     }

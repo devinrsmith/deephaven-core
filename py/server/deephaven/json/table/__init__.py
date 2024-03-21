@@ -2,9 +2,8 @@
 # Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 #
 import jpy
-
-from typing import Optional, Union, List
 from pathlib import Path
+from typing import Optional, Union, List
 
 from deephaven.json import json, JsonValueType
 from deephaven.table import Table
@@ -16,6 +15,8 @@ _JSource = jpy.get_type("io.deephaven.json.Source")
 _JFile = jpy.get_type("java.io.File")
 _JUrl = jpy.get_type("java.net.URL")
 _JByteBuffer = jpy.get_type("java.nio.ByteBuffer")
+_JX = jpy.get_type("io.deephaven.json.TableToTableOptions")
+_JJsonFromTable = jpy.get_type("io.deephaven.json.JsonFromTable")
 
 # os.PathLike?
 
@@ -57,3 +58,19 @@ def json_table(
     if max_threads:
         builder.maxThreads(max_threads)
     return Table(builder.build().execute())
+
+
+def from_table(
+    table: Table,
+    column_name: str,
+    options: JsonValueType,
+    chunk_size: int = 1024,
+) -> Table:
+    return (
+        _JJsonFromTable.builder()
+        .table(table.j_table)
+        .columnName(column_name)
+        .options(json(options).j_object)
+        .chunkSize(chunk_size)
+        .execute()
+    )

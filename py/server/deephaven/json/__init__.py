@@ -100,6 +100,12 @@ class JsonOptions(JObjectWrapper):
     def j_object(self) -> jpy.JType:
         return self.j_options
 
+    def processor(self, input_type) -> jpy.JType:
+        return self.j_options.processor(input_type)
+
+    def named(self, input_type) -> jpy.JType:
+        return self.j_options.named(input_type)
+
 
 # todo use type alias instead of Any in the future
 # todo named tuple
@@ -167,7 +173,7 @@ class FieldOptions:
             .name(name)
             .options(json(self.value).j_options)
             .repeatedBehavior(self.repeated_behavior.value)
-            .caseInsensitiveMatch(self.case_insensitive)
+            .caseSensitive(self.case_sensitive)
         )
         if self.aliases:
             builder.addAliases(
@@ -986,14 +992,14 @@ def any_() -> JsonOptions:
 
 
 def skip_(
-    allow_missing: Option[bool] = None,
-    allow_null: Option[bool] = None,
-    allow_int: Option[bool] = None,
-    allow_decimal: Option[bool] = None,
-    allow_string: Option[bool] = None,
-    allow_bool: Option[bool] = None,
-    allow_object: Option[bool] = None,
-    allow_array: Option[bool] = None,
+    allow_missing: Optional[bool] = None,
+    allow_null: Optional[bool] = None,
+    allow_int: Optional[bool] = None,
+    allow_decimal: Optional[bool] = None,
+    allow_string: Optional[bool] = None,
+    allow_bool: Optional[bool] = None,
+    allow_object: Optional[bool] = None,
+    allow_array: Optional[bool] = None,
     allow_by_default: bool = True,
 ) -> JsonOptions:
     """Creates a "skip" type. No resulting type will be returned, but the JSON types will be validated as configured.
@@ -1008,21 +1014,21 @@ def skip_(
         object_({ "name": str, "age": skip_() }, allow_unknown_fields=False)
 
     Args:
-        allow_missing (Option[bool]): if a missing JSON value is allowed, by default is None
-        allow_null (Option[bool]): if a JSON null type is allowed, by default is None
-        allow_int (Option[bool]): if a JSON integer type is allowed, by default is None
-        allow_decimal (Option[bool]): if a JSON decimal type is allowed, by default is None
-        allow_string (Option[bool]): if a JSON string type is allowed, by default is None
-        allow_bool (Option[bool]): if a JSON boolean type is allowed, by default is None
-        allow_object (Option[bool]): if a JSON object type is allowed, by default is None
-        allow_array (Option[bool]): if a JSON array type is allowed, by default is None
+        allow_missing (Optional[bool]): if a missing JSON value is allowed, by default is None
+        allow_null (Optional[bool]): if a JSON null type is allowed, by default is None
+        allow_int (Optional[bool]): if a JSON integer type is allowed, by default is None
+        allow_decimal (Optional[bool]): if a JSON decimal type is allowed, by default is None
+        allow_string (Optional[bool]): if a JSON string type is allowed, by default is None
+        allow_bool (Optional[bool]): if a JSON boolean type is allowed, by default is None
+        allow_object (Optional[bool]): if a JSON object type is allowed, by default is None
+        allow_array (Optional[bool]): if a JSON array type is allowed, by default is None
         allow_by_default (bool): the default behavior for the other arguments when they are set to None, by default is True
 
     Returns:
         the "skip" options
     """
 
-    def _allow(x: Option[bool]) -> bool:
+    def _allow(x: Optional[bool]) -> bool:
         return x if x is not None else allow_by_default
 
     builder = _JSkipOptions.builder()

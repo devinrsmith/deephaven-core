@@ -88,30 +88,31 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     @SuppressWarnings("unchecked")
     @Override
-    public final <X> ObjectProcessor<? super X> processor(Class<X> inputType) {
-        if (String.class.isAssignableFrom(inputType)) {
+    public final <X> ObjectProcessor<? super X> processor(Type<X> inputType) {
+        final Class<X> clazz = inputType.clazz();
+        if (String.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) stringProcessor();
         }
-        if (byte[].class.isAssignableFrom(inputType)) {
+        if (byte[].class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) bytesProcessor();
         }
-        if (char[].class.isAssignableFrom(inputType)) {
+        if (char[].class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) charsProcessor();
         }
-        if (File.class.isAssignableFrom(inputType)) {
+        if (File.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) fileProcessor();
         }
-        if (URL.class.isAssignableFrom(inputType)) {
+        if (URL.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) urlProcessor();
         }
-        if (ByteBuffer.class.isAssignableFrom(inputType)) {
+        if (ByteBuffer.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) byteBufferProcessor();
         }
-        throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType.getName());
+        throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType);
     }
 
     @Override
-    public final <X> NamedObjectProcessor<? super X> named(Class<X> inputType) {
+    public final <X> NamedObjectProcessor<? super X> named(Type<X> inputType) {
         return NamedObjectProcessor.of(processor(inputType), names(TO_COLUMN_NAME));
     }
 

@@ -33,7 +33,7 @@ public abstract class ObjectOptions extends ValueOptions {
             builder.addFields(ObjectFieldOptions.builder()
                     .name(e.getKey())
                     .options(e.getValue())
-                    .caseInsensitiveMatch(true)
+                    .caseSensitive(false)
                     .build());
         }
         return builder.build();

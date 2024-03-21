@@ -4,6 +4,7 @@
 package io.deephaven.processor;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
@@ -61,7 +62,7 @@ public abstract class NamedObjectProcessor<T> {
          * @return the named object processor
          * @param <T> the input type
          */
-        <T> NamedObjectProcessor<? super T> named(Class<T> inputType);
+        <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
     }
 
     @Check

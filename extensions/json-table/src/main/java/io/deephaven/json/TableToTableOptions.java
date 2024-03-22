@@ -13,6 +13,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
+import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.qst.type.Type;
@@ -121,7 +122,8 @@ public abstract class TableToTableOptions {
                     .map(TableToTableOptions::sparse)
                     .collect(Collectors.toList());
         }
-        Yep.processAll(srcColumnSource, srcRowSet, processor.processor(), dstColumnSources, dstRowSet, chunkSize());
+        final List<WritableColumnSource<?>> dst = dstColumnSources.stream().map(ReinterpretUtils::maybeConvertToWritablePrimitive).collect(Collectors.toList());
+        Yep.processAll(srcColumnSource, srcRowSet, processor.processor(), dst, dstRowSet, chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         if (keepOriginalColumns()) {

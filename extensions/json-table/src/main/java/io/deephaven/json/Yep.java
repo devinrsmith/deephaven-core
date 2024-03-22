@@ -13,6 +13,7 @@ import io.deephaven.engine.table.ChunkSink.FillFromContext;
 import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.WritableColumnSource;
+import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.util.SafeCloseable;
 

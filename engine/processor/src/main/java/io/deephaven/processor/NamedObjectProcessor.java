@@ -62,7 +62,7 @@ public abstract class NamedObjectProcessor<T> {
          * @return the named object processor
          * @param <T> the input type
          */
-        <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
+        <T> NamedObjectProcessor<? super T> named(Type<T> inputType); // todo: should this be extends?
     }
 
     @Check

@@ -390,9 +390,7 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
     }
 
     public final Type<TYPE> type() {
-        return componentType == null
-                ? Type.find(dataType)
-                : NativeArrayType.of(dataType, Type.find(componentType));
+        return Type.find(dataType, componentType);
     }
 
     public ColumnDefinition<TYPE> withPartitioning() {

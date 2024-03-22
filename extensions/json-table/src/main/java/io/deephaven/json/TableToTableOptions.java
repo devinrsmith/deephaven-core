@@ -1,43 +1,36 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.chunk.WritableChunk;
-import io.deephaven.chunk.WritableObjectChunk;
-import io.deephaven.chunk.attributes.Values;
-import io.deephaven.engine.rowset.RowSequence;
-import io.deephaven.engine.rowset.RowSequence.Iterator;
-import io.deephaven.engine.rowset.RowSequenceFactory;
 import io.deephaven.engine.rowset.RowSetFactory;
-import io.deephaven.engine.table.ChunkSink.FillFromContext;
-import io.deephaven.engine.table.ChunkSource.FillContext;
+import io.deephaven.engine.rowset.TrackingRowSet;
+import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.QueryTable;
-import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
+import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
+import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
 import io.deephaven.processor.NamedObjectProcessor;
-import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
-import io.deephaven.util.SafeCloseable;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @BuildableStyle
 @Immutable
-public abstract class TableToTableOptions<T> {
+public abstract class TableToTableOptions {
 
-    public static <T> Builder<T> builder() {
+    public static Builder builder() {
         return ImmutableTableToTableOptions.builder();
     }
 
@@ -45,10 +38,7 @@ public abstract class TableToTableOptions<T> {
 
     public abstract Optional<String> columnName();
 
-    public abstract Type<? extends T> columnType();
-
-    // todo: change this to provider, get rid of type from interface?
-    public abstract NamedObjectProcessor<? super T> processor();
+    public abstract NamedObjectProcessor.Provider processor();
 
     @Default
     public int chunkSize() {
@@ -58,22 +48,27 @@ public abstract class TableToTableOptions<T> {
     // TODO: empty != null
     // public abstract Map<String, Object> extraAttributes();
 
+    @Default
+    public boolean keepOriginalColumns() {
+        return false;
+    }
+
     public final Table execute() {
         return executeImpl();
     }
 
-    public interface Builder<T> {
-        Builder<T> table(Table table);
+    public interface Builder {
+        Builder table(Table table);
 
-        Builder<T> columnName(String columnName);
+        Builder columnName(String columnName);
 
-        Builder<T> columnType(Type<? extends T> columnType);
+        Builder processor(NamedObjectProcessor.Provider processor);
 
-        Builder<T> processor(NamedObjectProcessor<? super T> processor);
+        Builder chunkSize(int chunkSize);
 
-        Builder<T> chunkSize(int chunkSize);
+        Builder keepOriginalColumns(boolean keepOriginalColumns);
 
-        TableToTableOptions<T> build();
+        TableToTableOptions build();
 
         default Table execute() {
             return build().execute();
@@ -87,80 +82,75 @@ public abstract class TableToTableOptions<T> {
         }
     }
 
-    private ColumnSource<? extends T> columnSource() {
-        // todo, type
-        final String columnName = columnName().orElse(table().getDefinition().getColumnNames().get(0));
-        return table().getColumnSource(columnName, columnType().clazz());
+    private Table executeImpl() {
+        return executeImpl(getColumnDefinition());
     }
 
-    private Table executeImpl() {
+    private ColumnDefinition<?> getColumnDefinition() {
+        final TableDefinition td = table().getDefinition();
+        return columnName().isPresent()
+                ? td.getColumn(columnName().get())
+                : td.getColumns().iterator().next();
+    }
+
+    private <T> Table executeImpl(ColumnDefinition<T> srcDefinition) {
+        final ColumnSource<T> srcColumnSource = table().getColumnSource(srcDefinition.getName(), srcDefinition.type());
+        final NamedObjectProcessor<? super T> processor = processor().named(srcDefinition.type());
+        return executeImpl(srcColumnSource, processor);
+    }
+
+    private <T> Table executeImpl(ColumnSource<? extends T> srcColumnSource,
+            NamedObjectProcessor<? super T> processor) {
         // todo: option to keep some original table column names in output? would need to flatten.
         // *or*, the new chunks would need to be in the original keyspace.
-        final long numRows = table().size();
-        final ObjectProcessor<? super T> objectProcessor = processor().processor();
-        final ColumnSource<? extends T> source = columnSource();
-        final int numColumns = objectProcessor.size();
-        final List<WritableColumnSource<?>> newColumns = objectProcessor.outputTypes()
-                .stream()
-                .map(type -> ArrayBackedColumnSource.getMemoryColumnSource(numRows, type.clazz()))
-                .collect(Collectors.toList());
-        long pos = 0;
-        {
-            final List<FillFromContext> fillFromContexts = newColumns.stream()
-                    .map(cs -> cs.makeFillFromContext(chunkSize()))
-                    .collect(Collectors.toList());
-            final List<WritableChunk<Values>> intermediateChunks = objectProcessor.outputTypes()
+        final TrackingRowSet srcRowSet = table().getRowSet();
+        final TrackingRowSet dstRowSet;
+        final List<WritableColumnSource<?>> dstColumnSources;
+        final List<Type<?>> dstOutputTypes = processor.processor().outputTypes();
+        if (!keepOriginalColumns() || srcRowSet.isFlat()) {
+            final long flatSize = srcRowSet.size();
+            dstRowSet = RowSetFactory.flat(flatSize).toTracking();
+            dstColumnSources = dstOutputTypes
                     .stream()
-                    .map(ObjectProcessor::chunkType)
-                    .map(o -> o.<Values>makeWritableChunk(chunkSize()))
+                    .map(type -> flat(flatSize, type))
                     .collect(Collectors.toList());
-            try (
-                    final WritableObjectChunk<? extends T, Values> src = WritableObjectChunk.makeWritableChunk(1024);
-                    final FillContext context = source.makeFillContext(chunkSize());
-                    final Iterator it = table().getRowSet().getRowSequenceIterator()) {
-                while (it.hasMore()) {
-                    final RowSequence rowSeq = it.getNextRowSequenceWithLength(chunkSize());
-                    final int rowSeqSize = rowSeq.intSize();
-                    final long lastRowKey = pos + rowSeqSize - 1;
-                    source.fillChunk(context, src, rowSeq);
-                    for (WritableChunk<?> chunk : intermediateChunks) {
-                        chunk.setSize(0);
-                    }
-                    //noinspection rawtypes,unchecked
-                    objectProcessor.processAll(src, (List) intermediateChunks);
-                    for (int i = 0; i < numColumns; ++i) {
-                        if (intermediateChunks.get(i).size() != rowSeqSize) {
-                            throw new IllegalStateException();
-                        }
-                        // todo: share this for all fillFromChunk?
-                        try (final RowSequence nextRows = RowSequenceFactory.forRange(pos, lastRowKey)) {
-                            newColumns.get(i).fillFromChunk(fillFromContexts.get(i), intermediateChunks.get(i), nextRows);
-                        }
-                    }
-                    pos = lastRowKey + 1;
-                }
-            } finally {
-                SafeCloseable.closeAll(Stream.concat(intermediateChunks.stream(), fillFromContexts.stream()));
-            }
+        } else {
+            dstRowSet = srcRowSet; // todo: do I need to make a copy
+            dstColumnSources = dstOutputTypes
+                    .stream()
+                    .map(TableToTableOptions::sparse)
+                    .collect(Collectors.toList());
         }
-        if (pos != numRows) {
-            throw new IllegalStateException();
+        Yep.processAll(srcColumnSource, srcRowSet, processor.processor(), dstColumnSources, dstRowSet, chunkSize());
+        final List<ColumnDefinition<?>> definitions = new ArrayList<>();
+        final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
+        if (keepOriginalColumns()) {
+            definitions.addAll(table().getDefinition().getColumns());
+            dstMap.putAll(table().getColumnSourceMap());
         }
-        final List<String> columnNames = processor().columnNames();
-        final TableDefinition tableDefinition = TableDefinition.from(columnNames, objectProcessor.outputTypes());
-        final LinkedHashMap<String, ColumnSource<?>> newColumnsMap = new LinkedHashMap<>(numColumns);
-        for (int i = 0; i < numColumns; i++) {
-            newColumnsMap.put(columnNames.get(i), newColumns.get(i));
+        final List<String> newNames = processor.columnNames();
+        for (int i = 0; i < newNames.size(); i++) {
+            definitions.add(ColumnDefinition.of(newNames.get(i), dstOutputTypes.get(i)));
+            dstMap.put(newNames.get(i), dstColumnSources.get(i));
         }
         // todo: extra attributes empty vs null
-        final QueryTable result = new QueryTable(
-                tableDefinition,
-                RowSetFactory.flat(numRows).toTracking(),
-                newColumnsMap,
-                null,
-                null);
+        final QueryTable result = new QueryTable(TableDefinition.of(definitions), dstRowSet, dstMap, null, null);
         result.setRefreshing(false);
-        result.setFlat();
+        if (dstRowSet.isFlat()) {
+            result.setFlat();
+        }
         return result;
+    }
+
+    private static WritableColumnSource<?> flat(long numRows, Type<?> type) {
+        // anything special we need to do to support immutable?
+        final WritableColumnSource<?> flat =
+                InMemoryColumnSource.getImmutableMemoryColumnSource(numRows, type.clazz(), null);
+        flat.ensureCapacity(numRows, false);
+        return flat;
+    }
+
+    private static WritableColumnSource<?> sparse(Type<?> type) {
+        return SparseArrayColumnSource.getSparseMemoryColumnSource(type.clazz(), null);
     }
 }

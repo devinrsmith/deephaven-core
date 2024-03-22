@@ -16,7 +16,7 @@ _JFile = jpy.get_type("java.io.File")
 _JUrl = jpy.get_type("java.net.URL")
 _JByteBuffer = jpy.get_type("java.nio.ByteBuffer")
 _JX = jpy.get_type("io.deephaven.json.TableToTableOptions")
-_JJsonFromTable = jpy.get_type("io.deephaven.json.JsonFromTable")
+_JTableToTableOptions = jpy.get_type("io.deephaven.json.TableToTableOptions")
 
 # os.PathLike?
 
@@ -61,16 +61,17 @@ def json_table(
 
 
 def from_table(
-    table: Table,
-    column_name: str,
     options: JsonValueType,
+    table: Table,
+    column_name: Optional[str] = None,
     chunk_size: int = 1024,
+    keep_original_columns: bool = False,
 ) -> Table:
-    return (
-        _JJsonFromTable.builder()
-        .table(table.j_table)
-        .columnName(column_name)
-        .options(json(options).j_object)
-        .chunkSize(chunk_size)
-        .execute()
-    )
+    builder = _JTableToTableOptions.builder()
+    builder.processor(json(options).j_object)
+    builder.table(table.j_table)
+    if column_name:
+        builder.columnName(column_name)
+    builder.chunkSize(chunk_size)
+    builder.keepOriginalColumns(keep_original_columns)
+    return Table(builder.execute())

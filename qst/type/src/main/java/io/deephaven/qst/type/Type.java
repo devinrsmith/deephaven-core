@@ -4,6 +4,7 @@
 package io.deephaven.qst.type;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -24,7 +25,7 @@ public interface Type<T> {
      * @return the type
      */
     static <T> Type<T> find(Class<T> clazz) {
-        Optional<Type<T>> found = TypeHelper.findStatic(clazz);
+        Optional<Type<T>> found = TypeHelper.findStatic(Objects.requireNonNull(clazz));
         if (found.isPresent()) {
             return found.get();
         }
@@ -32,6 +33,12 @@ public interface Type<T> {
             return NativeArrayType.of(clazz, find(clazz.getComponentType()));
         }
         return CustomType.of(clazz);
+    }
+
+    static <T> Type<T> find(Class<T> clazz, Class<?> componentType) {
+        return componentType == null
+                ? find(clazz)
+                : ArrayType.find(clazz, componentType);
     }
 
     /**

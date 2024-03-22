@@ -1,12 +1,10 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -31,10 +29,7 @@ public abstract class JsonFromTable {
     }
 
     public final Table execute() {
-        final ColumnDefinition<?> columnDefinition = columnName().isPresent()
-                ? table().getDefinition().getColumn(columnName().get())
-                : table().getDefinition().getColumns().get(0);
-        return tableToTable(columnDefinition).execute();
+        return tableToTable().execute();
     }
 
     public interface Builder {
@@ -53,12 +48,10 @@ public abstract class JsonFromTable {
         }
     }
 
-    private <T> TableToTableOptions<T> tableToTable(ColumnDefinition<T> columnDefinition) {
-        final Type<T> type = columnDefinition.type();
-        final TableToTableOptions.Builder<T> builder = TableToTableOptions.<T>builder()
+    private  TableToTableOptions tableToTable() {
+        final TableToTableOptions.Builder builder = TableToTableOptions.builder()
                 .table(table())
-                .columnType(type)
-                .processor(options().named(type))
+                .processor(options())
                 .chunkSize(chunkSize());
         columnName().ifPresent(builder::columnName);
         return builder.build();

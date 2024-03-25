@@ -13,7 +13,6 @@ import io.deephaven.engine.table.ChunkSink.FillFromContext;
 import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.WritableColumnSource;
-import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.util.SafeCloseable;
 
@@ -23,6 +22,16 @@ import java.util.stream.Stream;
 
 public class Yep {
 
+    /**
+     *
+     * @param srcColumnSource the source ColumnSource
+     * @param srcRowSet the source RowSet
+     * @param processor the processor
+     * @param dstColumnSources the destination ColumnSource
+     * @param dstRowSet the destination RowSet
+     * @param chunkSize the chunk size
+     * @param <T> the generic type
+     */
     public static <T> void processAll(
             ColumnSource<? extends T> srcColumnSource,
             RowSet srcRowSet,
@@ -52,12 +61,12 @@ public class Yep {
                 final FillContext srcFillContext = srcColumnSource.makeFillContext(chunkSize);
                 final Iterator srcIt = srcRowSet.getRowSequenceIterator();
                 final Iterator dstIt = dstRowSet.getRowSequenceIterator()) {
-            while (srcIt.hasMore() && dstIt.hasMore()) {
+            while (srcIt.hasMore() || dstIt.hasMore()) {
                 final RowSequence srcSeq = srcIt.getNextRowSequenceWithLength(chunkSize);
                 final RowSequence dstSeq = dstIt.getNextRowSequenceWithLength(chunkSize);
                 final int rowSeqSize = srcSeq.intSize();
                 if (dstSeq.intSize() != rowSeqSize) {
-                    throw new IllegalStateException();
+                    throw new IllegalArgumentException("srcRowSet (iterator) is not the same size as dstRowSet (iterator)");
                 }
                 srcColumnSource.fillChunk(srcFillContext, src, srcSeq);
                 for (WritableChunk<?> chunk : intermediateChunks) {
@@ -72,9 +81,6 @@ public class Yep {
                     }
                     dstColumnSources.get(i).fillFromChunk(fillFromContexts[i], chunk, dstSeq);
                 }
-            }
-            if (srcIt.hasMore() || dstIt.hasMore()) {
-                throw new IllegalStateException();
             }
         } finally {
             SafeCloseable.closeAll(Stream.concat(intermediateChunks.stream(), Stream.of(fillFromContexts)));

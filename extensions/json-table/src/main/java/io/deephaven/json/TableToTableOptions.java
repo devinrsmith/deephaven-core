@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.api.util.NameValidator;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -12,6 +13,7 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
@@ -22,9 +24,11 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @BuildableStyle
@@ -35,25 +39,47 @@ public abstract class TableToTableOptions {
         return ImmutableTableToTableOptions.builder();
     }
 
+    /**
+     * The input {@link Table}. Must be a static table.
+     */
     public abstract Table table();
 
+    /**
+     * The input column name. When unset, the first column from {@link #table()} will be used.
+     */
     public abstract Optional<String> columnName();
 
+    /**
+     * The named object processor provider. Must be capable of handling the input column type.
+     */
     public abstract NamedObjectProcessor.Provider processor();
 
-    @Default
-    public int chunkSize() {
-        return 1024; // todo
-    }
-
-    // TODO: empty != null
-    // public abstract Map<String, Object> extraAttributes();
-
+    /**
+     * If the columns from {@link #table()} should be in the output {@link Table}. By default, is {@code false}. When
+     * {@code false}, the resulting {@link Table} will be {@link Table#isFlat() flat}. Otherwise, the resulting
+     * {@link Table} will be in the keyspace of {@link #table()}. As such, callers may want to {@link Table#flatten()
+     * flatten} the input {@link #table()} when this is {@code true}.
+     */
     @Default
     public boolean keepOriginalColumns() {
         return false;
     }
 
+    /**
+     * The chunk size used to iterate through {@link #table()}. By default, is
+     * {@value ArrayBackedColumnSource#BLOCK_SIZE}.
+     */
+    @Default
+    public int chunkSize() {
+        return ArrayBackedColumnSource.BLOCK_SIZE;
+    }
+
+    // TODO: empty != null
+    // public abstract Map<String, Object> extraAttributes();
+
+    /**
+     * Creates a new {@link Table} based on the arguments from {@code this}.
+     */
     public final Table execute() {
         return executeImpl();
     }
@@ -65,9 +91,9 @@ public abstract class TableToTableOptions {
 
         Builder processor(NamedObjectProcessor.Provider processor);
 
-        Builder chunkSize(int chunkSize);
-
         Builder keepOriginalColumns(boolean keepOriginalColumns);
+
+        Builder chunkSize(int chunkSize);
 
         TableToTableOptions build();
 
@@ -100,15 +126,15 @@ public abstract class TableToTableOptions {
         return executeImpl(srcColumnSource, processor);
     }
 
-    private <T> Table executeImpl(ColumnSource<? extends T> srcColumnSource,
+    private <T> Table executeImpl(
+            ColumnSource<? extends T> srcColumnSource,
             NamedObjectProcessor<? super T> processor) {
-        // todo: option to keep some original table column names in output? would need to flatten.
-        // *or*, the new chunks would need to be in the original keyspace.
         final TrackingRowSet srcRowSet = table().getRowSet();
         final TrackingRowSet dstRowSet;
         final List<WritableColumnSource<?>> dstColumnSources;
+        final boolean dstFlat = !keepOriginalColumns() || srcRowSet.isFlat();
         final List<Type<?>> dstOutputTypes = processor.processor().outputTypes();
-        if (!keepOriginalColumns() || srcRowSet.isFlat()) {
+        if (dstFlat) {
             final long flatSize = srcRowSet.size();
             dstRowSet = RowSetFactory.flat(flatSize).toTracking();
             dstColumnSources = dstOutputTypes
@@ -122,23 +148,33 @@ public abstract class TableToTableOptions {
                     .map(TableToTableOptions::sparse)
                     .collect(Collectors.toList());
         }
-        final List<WritableColumnSource<?>> dst = dstColumnSources.stream().map(ReinterpretUtils::maybeConvertToWritablePrimitive).collect(Collectors.toList());
+        final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
+                .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
+                .collect(Collectors.toList());
         Yep.processAll(srcColumnSource, srcRowSet, processor.processor(), dst, dstRowSet, chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
+        final Set<String> usedNames = new HashSet<>();
         if (keepOriginalColumns()) {
             definitions.addAll(table().getDefinition().getColumns());
             dstMap.putAll(table().getColumnSourceMap());
+            usedNames.addAll(table().getDefinition().getColumnNames());
         }
         final List<String> newNames = processor.columnNames();
         for (int i = 0; i < newNames.size(); i++) {
-            definitions.add(ColumnDefinition.of(newNames.get(i), dstOutputTypes.get(i)));
-            dstMap.put(newNames.get(i), dstColumnSources.get(i));
+            final String name = NameValidator.legalizeColumnName(newNames.get(i), usedNames);
+            definitions.add(ColumnDefinition.of(name, dstOutputTypes.get(i)));
+            dstMap.put(name, dstColumnSources.get(i));
+            usedNames.add(name);
         }
-        // todo: extra attributes empty vs null
-        final QueryTable result = new QueryTable(TableDefinition.of(definitions), dstRowSet, dstMap, null, null);
+        final QueryTable result = new QueryTable(
+                TableDefinition.of(definitions),
+                dstRowSet,
+                dstMap,
+                null,
+                null);
         result.setRefreshing(false);
-        if (dstRowSet.isFlat()) {
+        if (dstFlat) {
             result.setFlat();
         }
         return result;
@@ -146,13 +182,12 @@ public abstract class TableToTableOptions {
 
     private static WritableColumnSource<?> flat(long numRows, Type<?> type) {
         // anything special we need to do to support immutable?
-        final WritableColumnSource<?> flat =
-                InMemoryColumnSource.getImmutableMemoryColumnSource(numRows, type.clazz(), null);
+        final WritableColumnSource<?> flat = InMemoryColumnSource.getImmutableMemoryColumnSource(numRows, type);
         flat.ensureCapacity(numRows, false);
         return flat;
     }
 
     private static WritableColumnSource<?> sparse(Type<?> type) {
-        return SparseArrayColumnSource.getSparseMemoryColumnSource(type.clazz(), null);
+        return SparseArrayColumnSource.getSparseMemoryColumnSource(type);
     }
 }

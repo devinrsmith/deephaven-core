@@ -16,13 +16,20 @@ import java.util.Objects;
  */
 public interface ArrayType<T, ComponentType> extends GenericType<T> {
 
-    static <T, ComponentType> ArrayType<T, ComponentType> find(Class<T> clazz, Class<ComponentType> componentType) {
+    static <T, ComponentType> ArrayType<T, ComponentType> find(Class<T> clazz,
+            Class<ComponentType> componentTypeClass) {
         Objects.requireNonNull(clazz);
-        Objects.requireNonNull(componentType);
+        Objects.requireNonNull(componentTypeClass);
         if (clazz.isArray()) {
-            return NativeArrayType.of(clazz, Type.find(componentType));
+            return NativeArrayType.of(clazz, Type.find(componentTypeClass));
         }
-        throw new UnsupportedOperationException("todo");
+        if (PrimitiveVectorType.isPrimitiveVectorType(clazz)) {
+            return PrimitiveVectorType.of(clazz, PrimitiveType.find(componentTypeClass));
+        }
+        if (GenericVectorType.isGenericVectorType(clazz)) {
+            return GenericVectorType.of(clazz, GenericType.find(componentTypeClass));
+        }
+        throw new IllegalArgumentException(String.format("Class '%s' is not an array type", clazz.getName()));
     }
 
     /**

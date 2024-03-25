@@ -48,7 +48,7 @@ public abstract class JsonFromTable {
         }
     }
 
-    private  TableToTableOptions tableToTable() {
+    private TableToTableOptions tableToTable() {
         final TableToTableOptions.Builder builder = TableToTableOptions.builder()
                 .table(table())
                 .processor(options())

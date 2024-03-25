@@ -17,6 +17,7 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
+import io.deephaven.engine.table.impl.sources.sparse.SparseConstants;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
@@ -67,15 +68,15 @@ public abstract class TableToTableOptions {
 
     /**
      * The chunk size used to iterate through {@link #table()}. By default, is
-     * {@value ArrayBackedColumnSource#BLOCK_SIZE}.
+     * {@value ArrayBackedColumnSource#BLOCK_SIZE} when {@link #keepOriginalColumns()}, and
+     * {@value SparseConstants#BLOCK_SIZE} otherwise.
      */
     @Default
     public int chunkSize() {
-        return ArrayBackedColumnSource.BLOCK_SIZE;
+        return keepOriginalColumns()
+                ? SparseConstants.BLOCK_SIZE
+                : ArrayBackedColumnSource.BLOCK_SIZE;
     }
-
-    // TODO: empty != null
-    // public abstract Map<String, Object> extraAttributes();
 
     /**
      * Creates a new {@link Table} based on the arguments from {@code this}.

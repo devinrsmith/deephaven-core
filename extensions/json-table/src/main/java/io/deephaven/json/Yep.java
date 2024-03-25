@@ -66,7 +66,8 @@ public class Yep {
                 final RowSequence dstSeq = dstIt.getNextRowSequenceWithLength(chunkSize);
                 final int rowSeqSize = srcSeq.intSize();
                 if (dstSeq.intSize() != rowSeqSize) {
-                    throw new IllegalArgumentException("srcRowSet (iterator) is not the same size as dstRowSet (iterator)");
+                    throw new IllegalArgumentException(
+                            "srcRowSet (iterator) is not the same size as dstRowSet (iterator)");
                 }
                 srcColumnSource.fillChunk(srcFillContext, src, srcSeq);
                 for (WritableChunk<?> chunk : intermediateChunks) {

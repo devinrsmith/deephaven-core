@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.json;
+package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.api.util.NameValidator;
@@ -17,7 +17,6 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
-import io.deephaven.engine.table.impl.sources.sparse.SparseConstants;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
 
 @BuildableStyle
 @Immutable
-public abstract class TableToTableOptions {
+public abstract class TableProcessorOptions {
 
     public static Builder builder() {
         return ImmutableTableToTableOptions.builder();
@@ -68,14 +67,11 @@ public abstract class TableToTableOptions {
 
     /**
      * The chunk size used to iterate through {@link #table()}. By default, is
-     * {@value ArrayBackedColumnSource#BLOCK_SIZE} when {@link #keepOriginalColumns()}, and
-     * {@value SparseConstants#BLOCK_SIZE} otherwise.
+     * {@value ArrayBackedColumnSource#BLOCK_SIZE}.
      */
     @Default
     public int chunkSize() {
-        return keepOriginalColumns()
-                ? SparseConstants.BLOCK_SIZE
-                : ArrayBackedColumnSource.BLOCK_SIZE;
+        return ArrayBackedColumnSource.BLOCK_SIZE;
     }
 
     /**
@@ -96,7 +92,7 @@ public abstract class TableToTableOptions {
 
         Builder chunkSize(int chunkSize);
 
-        TableToTableOptions build();
+        TableProcessorOptions build();
 
         default Table execute() {
             return build().execute();
@@ -136,6 +132,7 @@ public abstract class TableToTableOptions {
         final boolean dstFlat = !keepOriginalColumns() || srcRowSet.isFlat();
         final List<Type<?>> dstOutputTypes = processor.processor().outputTypes();
         if (dstFlat) {
+            // todo: we could also do this if we know the source is dense or contiguous (potentially w/ shift)
             final long flatSize = srcRowSet.size();
             dstRowSet = RowSetFactory.flat(flatSize).toTracking();
             dstColumnSources = dstOutputTypes
@@ -146,13 +143,13 @@ public abstract class TableToTableOptions {
             dstRowSet = srcRowSet; // todo: do I need to make a copy
             dstColumnSources = dstOutputTypes
                     .stream()
-                    .map(TableToTableOptions::sparse)
+                    .map(TableProcessorOptions::sparse)
                     .collect(Collectors.toList());
         }
         final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
                 .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
                 .collect(Collectors.toList());
-        Yep.processAll(srcColumnSource, srcRowSet, processor.processor(), dst, dstRowSet, chunkSize());
+        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, processor.processor(), dst, dstRowSet, chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         final Set<String> usedNames = new HashSet<>();

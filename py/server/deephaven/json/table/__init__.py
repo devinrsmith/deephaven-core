@@ -15,8 +15,7 @@ _JSource = jpy.get_type("io.deephaven.json.Source")
 _JFile = jpy.get_type("java.io.File")
 _JUrl = jpy.get_type("java.net.URL")
 _JByteBuffer = jpy.get_type("java.nio.ByteBuffer")
-_JX = jpy.get_type("io.deephaven.json.TableToTableOptions")
-_JTableToTableOptions = jpy.get_type("io.deephaven.json.TableToTableOptions")
+_JTableProcessorOptions = jpy.get_type("io.deephaven.engine.table.impl.processor.TableProcessorOptions")
 
 # os.PathLike?
 
@@ -67,7 +66,7 @@ def from_table(
     chunk_size: int = 1024,
     keep_original_columns: bool = False,
 ) -> Table:
-    builder = _JTableToTableOptions.builder()
+    builder = _JTableProcessorOptions.builder()
     builder.processor(json(options).j_object)
     builder.table(table.j_table)
     if column_name:

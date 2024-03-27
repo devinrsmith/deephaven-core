@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.json;
+package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
@@ -20,18 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Yep {
+final class TableProcessorImpl {
 
-    /**
-     *
-     * @param srcColumnSource the source ColumnSource
-     * @param srcRowSet the source RowSet
-     * @param processor the processor
-     * @param dstColumnSources the destination ColumnSource
-     * @param dstRowSet the destination RowSet
-     * @param chunkSize the chunk size
-     * @param <T> the generic type
-     */
     public static <T> void processAll(
             ColumnSource<? extends T> srcColumnSource,
             RowSet srcRowSet,
@@ -57,7 +47,7 @@ public class Yep {
                 .map(o -> o.<Values>makeWritableChunk(chunkSize))
                 .collect(Collectors.toList());
         try (
-                final WritableObjectChunk<? extends T, Values> src = WritableObjectChunk.makeWritableChunk(1024);
+                final WritableObjectChunk<? extends T, Values> src = WritableObjectChunk.makeWritableChunk(chunkSize);
                 final FillContext srcFillContext = srcColumnSource.makeFillContext(chunkSize);
                 final Iterator srcIt = srcRowSet.getRowSequenceIterator();
                 final Iterator dstIt = dstRowSet.getRowSequenceIterator()) {

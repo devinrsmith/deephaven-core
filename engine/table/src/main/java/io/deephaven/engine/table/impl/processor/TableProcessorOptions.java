@@ -149,7 +149,7 @@ public abstract class TableProcessorOptions {
         final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
                 .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
                 .collect(Collectors.toList());
-        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, processor.processor(), dst, dstRowSet, chunkSize());
+        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, false, processor.processor(), dst, dstRowSet, chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         final Set<String> usedNames = new HashSet<>();

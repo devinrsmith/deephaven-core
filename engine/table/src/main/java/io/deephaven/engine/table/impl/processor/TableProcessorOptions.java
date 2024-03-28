@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public abstract class TableProcessorOptions {
 
     public static Builder builder() {
-        return ImmutableTableToTableOptions.builder();
+        return ImmutableTableProcessorOptions.builder();
     }
 
     /**
@@ -55,15 +55,11 @@ public abstract class TableProcessorOptions {
     public abstract NamedObjectProcessor.Provider processor();
 
     /**
-     * If the columns from {@link #table()} should be in the output {@link Table}. By default, is {@code false}. When
-     * {@code false}, the resulting {@link Table} will be {@link Table#isFlat() flat}. Otherwise, the resulting
-     * {@link Table} will be in the keyspace of {@link #table()}. As such, callers may want to {@link Table#flatten()
-     * flatten} the input {@link #table()} when this is {@code true}.
+     * The columns from {@link #table()} that should be in the output {@link Table}. When empty, the resulting
+     * {@link Table} will be {@link Table#isFlat() flat}. Otherwise, the resulting {@link Table} will be in the keyspace
+     * of {@link #table()}.
      */
-    @Default
-    public boolean keepOriginalColumns() {
-        return false;
-    }
+    public abstract List<String> keepColumns();
 
     /**
      * The chunk size used to iterate through {@link #table()}. By default, is
@@ -88,7 +84,11 @@ public abstract class TableProcessorOptions {
 
         Builder processor(NamedObjectProcessor.Provider processor);
 
-        Builder keepOriginalColumns(boolean keepOriginalColumns);
+        Builder addKeepColumns(String element);
+
+        Builder addKeepColumns(String... elements);
+
+        Builder addAllKeepColumns(Iterable<String> elements);
 
         Builder chunkSize(int chunkSize);
 
@@ -103,6 +103,23 @@ public abstract class TableProcessorOptions {
     final void checkTableIsNotRefreshing() {
         if (table().isRefreshing()) {
             throw new IllegalArgumentException("Only supports non-refreshing tables right now");
+        }
+    }
+
+    @Check
+    final void checkColumnName() {
+        if (columnName().isEmpty()) {
+            return;
+        }
+        if (!table().hasColumns(columnName().get())) {
+            throw new IllegalArgumentException(String.format("table does not have column '%s'", columnName().get()));
+        }
+    }
+
+    @Check
+    final void checkKeepColumns() {
+        if (!table().hasColumns(keepColumns())) {
+            throw new IllegalArgumentException(String.format("table does not have all of the keep columns [%s]", String.join(", ", keepColumns())));
         }
     }
 
@@ -129,7 +146,7 @@ public abstract class TableProcessorOptions {
         final TrackingRowSet srcRowSet = table().getRowSet();
         final TrackingRowSet dstRowSet;
         final List<WritableColumnSource<?>> dstColumnSources;
-        final boolean dstFlat = !keepOriginalColumns() || srcRowSet.isFlat();
+        final boolean dstFlat = keepColumns().isEmpty() || srcRowSet.isFlat();
         final List<Type<?>> dstOutputTypes = processor.processor().outputTypes();
         if (dstFlat) {
             // todo: we could also do this if we know the source is dense or contiguous (potentially w/ shift)
@@ -149,14 +166,15 @@ public abstract class TableProcessorOptions {
         final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
                 .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
                 .collect(Collectors.toList());
-        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, false, processor.processor(), dst, dstRowSet, chunkSize());
+        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, false, processor.processor(), dst, dstRowSet,
+                chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         final Set<String> usedNames = new HashSet<>();
-        if (keepOriginalColumns()) {
-            definitions.addAll(table().getDefinition().getColumns());
-            dstMap.putAll(table().getColumnSourceMap());
-            usedNames.addAll(table().getDefinition().getColumnNames());
+        for (final String keepColumn : keepColumns()) {
+            definitions.add(table().getDefinition().getColumn(keepColumn));
+            dstMap.put(keepColumn, table().getColumnSource(keepColumn));
+            usedNames.add(keepColumn);
         }
         final List<String> newNames = processor.columnNames();
         for (int i = 0; i < newNames.size(); i++) {

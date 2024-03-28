@@ -15,7 +15,9 @@ _JSource = jpy.get_type("io.deephaven.json.Source")
 _JFile = jpy.get_type("java.io.File")
 _JUrl = jpy.get_type("java.net.URL")
 _JByteBuffer = jpy.get_type("java.nio.ByteBuffer")
-_JTableProcessorOptions = jpy.get_type("io.deephaven.engine.table.impl.processor.TableProcessorOptions")
+_JTableProcessorOptions = jpy.get_type(
+    "io.deephaven.engine.table.impl.processor.TableProcessorOptions"
+)
 
 # os.PathLike?
 
@@ -64,7 +66,7 @@ def from_table(
     table: Table,
     column_name: Optional[str] = None,
     chunk_size: int = 1024,
-    keep_original_columns: bool = False,
+    keep_columns: Union[bool, List[str]] = False,
 ) -> Table:
     builder = _JTableProcessorOptions.builder()
     builder.processor(json(options).j_object)
@@ -72,5 +74,11 @@ def from_table(
     if column_name:
         builder.columnName(column_name)
     builder.chunkSize(chunk_size)
-    builder.keepOriginalColumns(keep_original_columns)
+    if isinstance(keep_columns, bool):
+        if keep_columns:
+            builder.addKeepColumns([column.name for column in table.columns])
+    elif isinstance(keep_columns, List):
+        builder.addKeepColumns(keep_columns)
+    else:
+        raise TypeError("keep_columns must be a bool or List[str]")
     return Table(builder.execute())

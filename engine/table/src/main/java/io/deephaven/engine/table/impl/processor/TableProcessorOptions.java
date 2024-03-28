@@ -11,7 +11,10 @@ import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.WritableColumnSource;
+import io.deephaven.engine.table.impl.BaseTable;
+import io.deephaven.engine.table.impl.BaseTable.ListenerImpl;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
@@ -189,6 +192,19 @@ public abstract class TableProcessorOptions {
                 dstMap,
                 null,
                 null);
+
+//        table().addUpdateListener(new ListenerImpl("todo", table(), result) {
+//            @Override
+//            public void onUpdate(TableUpdate upstream) {
+//
+//                upstream.modifiedColumnSet().containsAny();
+//
+//
+//                TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor.processor(), dst, null, chunkSize());
+//                //result.notifyListeners(null);
+//            }
+//        });
+
         result.setRefreshing(false);
         if (dstFlat) {
             result.setFlat();

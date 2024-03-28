@@ -16,7 +16,7 @@ public class ObjectFieldOptionsTest {
         assertThat(field.name()).isEqualTo("Foo");
         assertThat(field.options()).isEqualTo(IntOptions.standard());
         assertThat(field.aliases()).isEmpty();
-        assertThat(field.caseInsensitiveMatch()).isFalse();
+        assertThat(field.caseSensitive()).isTrue();
         assertThat(field.repeatedBehavior()).isEqualTo(RepeatedBehavior.USE_FIRST);
     }
 
@@ -30,7 +30,7 @@ public class ObjectFieldOptionsTest {
         assertThat(field.name()).isEqualTo("Foo");
         assertThat(field.options()).isEqualTo(IntOptions.standard());
         assertThat(field.aliases()).isEmpty();
-        assertThat(field.caseInsensitiveMatch()).isTrue();
+        assertThat(field.caseSensitive()).isFalse();
         assertThat(field.repeatedBehavior()).isEqualTo(RepeatedBehavior.USE_FIRST);
     }
 
@@ -44,7 +44,7 @@ public class ObjectFieldOptionsTest {
         assertThat(field.name()).isEqualTo("Foo");
         assertThat(field.options()).isEqualTo(IntOptions.standard());
         assertThat(field.aliases()).isEmpty();
-        assertThat(field.caseInsensitiveMatch()).isFalse();
+        assertThat(field.caseSensitive()).isTrue();
         assertThat(field.repeatedBehavior()).isEqualTo(RepeatedBehavior.ERROR);
     }
 
@@ -58,7 +58,7 @@ public class ObjectFieldOptionsTest {
         assertThat(field.name()).isEqualTo("SomeName");
         assertThat(field.options()).isEqualTo(IntOptions.standard());
         assertThat(field.aliases()).containsExactly("someName");
-        assertThat(field.caseInsensitiveMatch()).isFalse();
+        assertThat(field.caseSensitive()).isTrue();
         assertThat(field.repeatedBehavior()).isEqualTo(RepeatedBehavior.USE_FIRST);
     }
 

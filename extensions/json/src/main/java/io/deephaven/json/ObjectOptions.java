@@ -11,7 +11,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -34,7 +33,7 @@ public abstract class ObjectOptions extends ValueOptions {
             builder.addFields(ObjectFieldOptions.builder()
                     .name(e.getKey())
                     .options(e.getValue())
-                    .caseInsensitiveMatch(true)
+                    .caseSensitive(false)
                     .build());
         }
         return builder.build();
@@ -114,9 +113,9 @@ public abstract class ObjectOptions extends ValueOptions {
     final void checkNonOverlapping() {
         // We need to make sure there is no inter-field overlapping. We will be stricter if _any_ field is
         // case-insensitive.
-        final Set<String> keys = fields().stream().anyMatch(ObjectFieldOptions::caseInsensitiveMatch)
-                ? new TreeSet<>(String.CASE_INSENSITIVE_ORDER)
-                : new HashSet<>();
+        final Set<String> keys = fields().stream().allMatch(ObjectFieldOptions::caseSensitive)
+                ? new HashSet<>()
+                : new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (ObjectFieldOptions field : fields()) {
             if (!keys.add(field.name())) {
                 throw new IllegalArgumentException(String.format("Found overlapping field name '%s'", field.name()));

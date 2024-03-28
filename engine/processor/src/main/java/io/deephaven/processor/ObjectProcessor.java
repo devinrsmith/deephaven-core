@@ -187,6 +187,6 @@ public interface ObjectProcessor<T> {
          * @return the object processor
          * @param <T> the input type
          */
-        <T> ObjectProcessor<? super T> processor(Class<T> inputType);
+        <T> ObjectProcessor<? super T> processor(Type<T> inputType);
     }
 }

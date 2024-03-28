@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 
@@ -39,7 +40,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @param <T> the input type
      */
     @Override
-    public final <T> ObjectProcessor<? super T> processor(Class<T> inputType) {
+    public final <T> ObjectProcessor<? super T> processor(Type<T> inputType) {
         return JsonProcessorProvider.serviceLoader().provider(this).processor(inputType);
     }
 
@@ -53,7 +54,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @param <T> the input type
      */
     @Override
-    public final <T> NamedObjectProcessor<? super T> named(Class<T> inputType) {
+    public final <T> NamedObjectProcessor<? super T> named(Type<T> inputType) {
         return JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType);
     }
 

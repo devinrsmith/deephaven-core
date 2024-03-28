@@ -22,6 +22,7 @@ dependencies {
     api project(':deephaven-jpy-ext')
     api project(':hotspot')
     api project(':IO')
+    api project(':engine-processor')
 
     implementation project(':DHProcess')
     implementation project(':engine-function')

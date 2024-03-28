@@ -50,7 +50,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
      * @see #byteBufferProcessor()
      */
     @Override
-    <T> ObjectProcessor<? super T> processor(Class<T> inputType);
+    <T> ObjectProcessor<? super T> processor(Type<T> inputType);
 
     /**
      * Creates a named object processor based on the {@code inputType} with a default {@link JsonFactory} and default
@@ -66,7 +66,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
      * @see Mixin#toColumnName(List)
      */
     @Override
-    <T> NamedObjectProcessor<? super T> named(Class<T> inputType);
+    <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
 
     List<String> names(Function<List<String>, String> f);
 

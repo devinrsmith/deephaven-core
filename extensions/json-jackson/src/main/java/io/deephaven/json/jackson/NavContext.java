@@ -140,15 +140,15 @@ final class NavContext {
 
     static boolean matches(String fieldName, ObjectFieldOptions fieldOptions) {
         if (fieldOptions.aliases().isEmpty()) {
-            return fieldOptions.caseInsensitiveMatch()
-                    ? fieldOptions.name().equalsIgnoreCase(fieldName)
-                    : fieldOptions.name().equals(fieldName);
+            return fieldOptions.caseSensitive()
+                    ? fieldOptions.name().equals(fieldName)
+                    : fieldOptions.name().equalsIgnoreCase(fieldName);
         }
         final Stream<String> allNames = Stream.concat(
                 Stream.of(fieldOptions.name()),
                 fieldOptions.aliases().stream());
-        return fieldOptions.caseInsensitiveMatch()
-                ? allNames.anyMatch(fieldName::equalsIgnoreCase)
-                : allNames.anyMatch(fieldName::equals);
+        return fieldOptions.caseSensitive()
+                ? allNames.anyMatch(fieldName::equals)
+                : allNames.anyMatch(fieldName::equalsIgnoreCase);
     }
 }

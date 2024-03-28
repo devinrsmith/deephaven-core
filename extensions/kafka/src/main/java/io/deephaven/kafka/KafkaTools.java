@@ -74,6 +74,7 @@ import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.protobuf.ProtobufDescriptorParserOptions;
 import io.deephaven.qst.column.header.ColumnHeader;
+import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamChunkUtils;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
@@ -623,7 +624,7 @@ public class KafkaTools {
          */
         public static KeyOrValueSpec objectProcessorSpec(NamedObjectProcessor.Provider provider) {
             final NamedObjectProcessor<? super byte[]> namedProcessor =
-                    (NamedObjectProcessor<? super byte[]>) provider.named(byte[].class);
+                    (NamedObjectProcessor<? super byte[]>) provider.named(Type.byteType().arrayType());
             return objectProcessorSpec(new ByteArrayDeserializer(), namedProcessor.processor(),
                     namedProcessor.columnNames());
         }

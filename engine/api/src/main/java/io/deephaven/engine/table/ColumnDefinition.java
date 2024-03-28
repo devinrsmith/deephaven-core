@@ -56,12 +56,6 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         Normal,
 
         /**
-         * A column that has "grouping" metadata associated with it, possibly allowing for indexed filters, joins, and
-         * aggregations.
-         */
-        Grouping,
-
-        /**
          * A column that helps define underlying partitions in the storage of the data, which consequently may also be
          * used for very efficient filtering.
          */
@@ -389,12 +383,12 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         return columnType;
     }
 
-    public ColumnDefinition<TYPE> withPartitioning() {
-        return isPartitioning() ? this : new ColumnDefinition<>(name, dataType, componentType, ColumnType.Partitioning);
+    public final Type<TYPE> type() {
+        return Type.find(dataType, componentType);
     }
 
-    public ColumnDefinition<TYPE> withGrouping() {
-        return isGrouping() ? this : new ColumnDefinition<>(name, dataType, componentType, ColumnType.Grouping);
+    public ColumnDefinition<TYPE> withPartitioning() {
+        return isPartitioning() ? this : new ColumnDefinition<>(name, dataType, componentType, ColumnType.Partitioning);
     }
 
     public ColumnDefinition<TYPE> withNormal() {
@@ -414,16 +408,12 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         return newName.equals(name) ? this : new ColumnDefinition<>(newName, dataType, componentType, columnType);
     }
 
-    public boolean isGrouping() {
-        return (columnType == ColumnType.Grouping);
-    }
-
     public boolean isPartitioning() {
         return (columnType == ColumnType.Partitioning);
     }
 
     public boolean isDirect() {
-        return (columnType == ColumnType.Normal || columnType == ColumnType.Grouping);
+        return (columnType == ColumnType.Normal);
     }
 
     /**

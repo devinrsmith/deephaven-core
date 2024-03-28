@@ -9,6 +9,7 @@ import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.sources.immutable.*;
 import io.deephaven.engine.table.impl.sources.immutable.Immutable2DCharArraySource;
 import io.deephaven.engine.table.impl.sources.immutable.ImmutableCharArraySource;
+import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.BooleanUtils;
 import io.deephaven.util.type.ArrayTypeUtils;
@@ -52,6 +53,11 @@ public interface InMemoryColumnSource {
             return makeImmutable2DSource(dataType, componentType);
         }
         return makeImmutableSource(dataType, componentType);
+    }
+
+    static <T> WritableColumnSource<T> getImmutableMemoryColumnSource(long longSize, Type<T> type) {
+        return getImmutableMemoryColumnSource(longSize, type.clazz(),
+                Type.componentType(type).map(Type::clazz).orElse(null));
     }
 
     @NotNull

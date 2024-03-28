@@ -47,9 +47,12 @@ public abstract class ObjectFieldOptions {
      */
     public abstract Set<String> aliases();
 
+    /**
+     * If the field name and aliases should be compared using case-sensitive equality. By default, is {@code true}.
+     */
     @Default
-    public boolean caseInsensitiveMatch() {
-        return false;
+    public boolean caseSensitive() {
+        return true;
     }
 
     @Default
@@ -101,7 +104,7 @@ public abstract class ObjectFieldOptions {
 
         Builder repeatedBehavior(RepeatedBehavior repeatedBehavior);
 
-        Builder caseInsensitiveMatch(boolean caseInsensitiveMatch);
+        Builder caseSensitive(boolean caseSensitive);
 
         Builder arrayGroup(Object arrayGroup);
 
@@ -110,7 +113,12 @@ public abstract class ObjectFieldOptions {
 
     @Check
     final void checkNonOverlapping() {
-        if (caseInsensitiveMatch()) {
+        if (caseSensitive()) {
+            if (aliases().contains(name())) {
+                throw new IllegalArgumentException(
+                        String.format("name and aliases must be non-overlapping, found '%s' overlaps", name()));
+            }
+        } else {
             final Set<String> set = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
             set.add(name());
             for (String alias : aliases()) {
@@ -118,11 +126,6 @@ public abstract class ObjectFieldOptions {
                     throw new IllegalArgumentException(
                             String.format("name and aliases must be non-overlapping, found '%s' overlaps", alias));
                 }
-            }
-        } else {
-            if (aliases().contains(name())) {
-                throw new IllegalArgumentException(
-                        String.format("name and aliases must be non-overlapping, found '%s' overlaps", name()));
             }
         }
     }

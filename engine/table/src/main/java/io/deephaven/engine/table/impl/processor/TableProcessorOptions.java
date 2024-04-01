@@ -5,6 +5,7 @@ package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.api.util.NameValidator;
+import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -14,6 +15,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.BaseTable;
+import io.deephaven.engine.table.impl.BaseTable.CopyAttributeOperation;
 import io.deephaven.engine.table.impl.BaseTable.ListenerImpl;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
@@ -21,6 +23,7 @@ import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
 import io.deephaven.processor.NamedObjectProcessor;
+import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -102,12 +106,12 @@ public abstract class TableProcessorOptions {
         }
     }
 
-    @Check
-    final void checkTableIsNotRefreshing() {
-        if (table().isRefreshing()) {
-            throw new IllegalArgumentException("Only supports non-refreshing tables right now");
-        }
-    }
+//    @Check
+//    final void checkTableIsNotRefreshing() {
+//        if (table().isRefreshing()) {
+//            throw new IllegalArgumentException("Only supports non-refreshing tables right now");
+//        }
+//    }
 
     @Check
     final void checkColumnName() {
@@ -126,6 +130,16 @@ public abstract class TableProcessorOptions {
         }
     }
 
+    @Check
+    final void checkColumnSpecified() {
+        if (columnName().isPresent()) {
+            return;
+        }
+        if (table().numColumns() != 1) {
+            throw new IllegalArgumentException("columnName must be specified when there isn't exactly 1 column in the source table");
+        }
+    }
+
     private Table executeImpl() {
         return executeImpl(getColumnDefinition());
     }
@@ -139,7 +153,12 @@ public abstract class TableProcessorOptions {
 
     private <T> Table executeImpl(ColumnDefinition<T> srcDefinition) {
         final ColumnSource<T> srcColumnSource = table().getColumnSource(srcDefinition.getName(), srcDefinition.type());
-        final NamedObjectProcessor<? super T> processor = processor().named(srcDefinition.type());
+        final NamedObjectProcessor<? super T> processor;
+        try {
+            processor = processor().named(srcDefinition.type());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unable to create processor for " + srcDefinition, e);
+        }
         return executeImpl(srcColumnSource, processor);
     }
 
@@ -149,18 +168,30 @@ public abstract class TableProcessorOptions {
         final TrackingRowSet srcRowSet = table().getRowSet();
         final TrackingRowSet dstRowSet;
         final List<WritableColumnSource<?>> dstColumnSources;
-        final boolean dstFlat = keepColumns().isEmpty() || srcRowSet.isFlat();
+        final boolean dstIsFlat;
         final List<Type<?>> dstOutputTypes = processor.processor().outputTypes();
-        if (dstFlat) {
-            // todo: we could also do this if we know the source is dense or contiguous (potentially w/ shift)
+        if (!table().isRefreshing() && (keepColumns().isEmpty() || srcRowSet.isFlat())) {
+            // immutable
             final long flatSize = srcRowSet.size();
+            dstIsFlat = true;
             dstRowSet = RowSetFactory.flat(flatSize).toTracking();
             dstColumnSources = dstOutputTypes
                     .stream()
-                    .map(type -> flat(flatSize, type))
+                    .map(type -> immutable(flatSize, type))
+                    .collect(Collectors.toList());
+        } else if (table().isFlat()) {
+            // array
+            final long initialSize = srcRowSet.size();
+            dstIsFlat = true;
+            dstRowSet = srcRowSet; // todo: do we need to make a copy?
+            dstColumnSources = dstOutputTypes
+                    .stream()
+                    .map(type -> array(initialSize, type))
                     .collect(Collectors.toList());
         } else {
-            dstRowSet = srcRowSet; // todo: do I need to make a copy
+            // sparse
+            dstIsFlat = false;
+            dstRowSet = srcRowSet; // todo: do we need to make a copy?
             dstColumnSources = dstOutputTypes
                     .stream()
                     .map(TableProcessorOptions::sparse)
@@ -186,33 +217,85 @@ public abstract class TableProcessorOptions {
             dstMap.put(name, dstColumnSources.get(i));
             usedNames.add(name);
         }
+        // todo: copy attributes according to formula-like pattern?
+        // todo: copy blink?
         final QueryTable result = new QueryTable(
                 TableDefinition.of(definitions),
                 dstRowSet,
                 dstMap,
                 null,
                 null);
-
-//        table().addUpdateListener(new ListenerImpl("todo", table(), result) {
-//            @Override
-//            public void onUpdate(TableUpdate upstream) {
-//
-//                upstream.modifiedColumnSet().containsAny();
-//
-//
-//                TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor.processor(), dst, null, chunkSize());
-//                //result.notifyListeners(null);
-//            }
-//        });
-
-        result.setRefreshing(false);
-        if (dstFlat) {
+        if (dstIsFlat) {
             result.setFlat();
+        }
+        result.setRefreshing(table().isRefreshing());
+
+        ((QueryTable)table()).copyAttributes(result, CopyAttributeOperation.View);
+
+        if (table().isRefreshing()) {
+            table().addUpdateListener(new ProcessorListener<>("todo", table(), result, srcColumnSource, processor.processor(), dst));
         }
         return result;
     }
 
-    private static WritableColumnSource<?> flat(long numRows, Type<?> type) {
+    class ProcessorListener<T> extends BaseTable.ListenerImpl {
+
+        private final ColumnSource<? extends T> srcColumnSource;
+        private final ObjectProcessor<? super T> processor;
+        private final List<WritableColumnSource<?>> dstColumnSources;
+
+        public ProcessorListener(
+                String description,
+                Table parent,
+                BaseTable<?> dependent,
+                ColumnSource<? extends T> srcColumnSource,
+                ObjectProcessor<? super T> processor,
+                List<WritableColumnSource<?>> dstColumnSources) {
+            super(description, parent, dependent);
+            if (parent.getRowSet() != dependent.getRowSet()) {
+                throw new IllegalArgumentException();
+            }
+            this.srcColumnSource = Objects.requireNonNull(srcColumnSource);
+            this.processor = Objects.requireNonNull(processor);
+            this.dstColumnSources = Objects.requireNonNull(dstColumnSources);
+        }
+
+        @Override
+        public void onUpdate(TableUpdate upstream) {
+            if (upstream.modified().isNonempty() || upstream.shifted().nonempty()) {
+                throw new IllegalStateException("Not expecting modifies or shifts");
+            }
+            ensureCapacity();
+            processRemoved(upstream);
+            processAdded(upstream);
+            getDependent().notifyListeners(upstream.acquire());
+        }
+
+        private void ensureCapacity() {
+            final long lastRowKey = getDependent().getRowSet().lastRowKey();
+            if (lastRowKey != RowSet.NULL_ROW_KEY) {
+                for (WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                    dstColumnSource.ensureCapacity(lastRowKey + 1, false);
+                }
+            }
+        }
+
+        private void processRemoved(TableUpdate upstream) {
+            for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                dstColumnSource.setNull(upstream.removed());
+            }
+        }
+
+        private void processAdded(TableUpdate upstream) {
+            TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources, upstream.added(), chunkSize());
+        }
+    }
+
+    private static WritableColumnSource<?> array(long numRows, Type<?> type) {
+        return ArrayBackedColumnSource.getMemoryColumnSource(numRows, type);
+    }
+
+    private static WritableColumnSource<?> immutable(long numRows, Type<?> type) {
         // anything special we need to do to support immutable?
         final WritableColumnSource<?> flat = InMemoryColumnSource.getImmutableMemoryColumnSource(numRows, type);
         flat.ensureCapacity(numRows, false);

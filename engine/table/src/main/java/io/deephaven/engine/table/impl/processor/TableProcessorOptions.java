@@ -106,12 +106,12 @@ public abstract class TableProcessorOptions {
         }
     }
 
-//    @Check
-//    final void checkTableIsNotRefreshing() {
-//        if (table().isRefreshing()) {
-//            throw new IllegalArgumentException("Only supports non-refreshing tables right now");
-//        }
-//    }
+    // @Check
+    // final void checkTableIsNotRefreshing() {
+    // if (table().isRefreshing()) {
+    // throw new IllegalArgumentException("Only supports non-refreshing tables right now");
+    // }
+    // }
 
     @Check
     final void checkColumnName() {
@@ -126,7 +126,8 @@ public abstract class TableProcessorOptions {
     @Check
     final void checkKeepColumns() {
         if (!table().hasColumns(keepColumns())) {
-            throw new IllegalArgumentException(String.format("table does not have all of the keep columns [%s]", String.join(", ", keepColumns())));
+            throw new IllegalArgumentException(String.format("table does not have all of the keep columns [%s]",
+                    String.join(", ", keepColumns())));
         }
     }
 
@@ -136,7 +137,8 @@ public abstract class TableProcessorOptions {
             return;
         }
         if (table().numColumns() != 1) {
-            throw new IllegalArgumentException("columnName must be specified when there isn't exactly 1 column in the source table");
+            throw new IllegalArgumentException(
+                    "columnName must be specified when there isn't exactly 1 column in the source table");
         }
     }
 
@@ -230,10 +232,11 @@ public abstract class TableProcessorOptions {
         }
         result.setRefreshing(table().isRefreshing());
 
-        ((QueryTable)table()).copyAttributes(result, CopyAttributeOperation.View);
+        ((QueryTable) table()).copyAttributes(result, CopyAttributeOperation.View);
 
         if (table().isRefreshing()) {
-            table().addUpdateListener(new ProcessorListener<>("todo", table(), result, srcColumnSource, processor.processor(), dst));
+            table().addUpdateListener(
+                    new ProcessorListener<>("todo", table(), result, srcColumnSource, processor.processor(), dst));
         }
         return result;
     }
@@ -287,7 +290,8 @@ public abstract class TableProcessorOptions {
         }
 
         private void processAdded(TableUpdate upstream) {
-            TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources, upstream.added(), chunkSize());
+            TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources,
+                    upstream.added(), chunkSize());
         }
     }
 

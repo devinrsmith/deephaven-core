@@ -1,6 +1,6 @@
-/**
- * Copyright (c) 2016-2023 Deephaven Data Labs and Patent Pending
- */
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.annotations.BuildableStyle;
@@ -50,17 +50,18 @@ public abstract class TableStreamPublisherOptions {
     private <T> Table what(ColumnSource<T> columnSource) {
         final NamedObjectProcessor<? super T> processor = processor().named(columnSource.type());
         final QueryTable newTable = null;
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(null, null, table().getUpdateGraph(), "test");
-        final TableProcessorStreamPublisher<T> streamPublisher = new TableProcessorStreamPublisher<>("todo", table(), newTable, columnSource, processor.processor(), chunkSize());
+        final StreamToBlinkTableAdapter adapter =
+                new StreamToBlinkTableAdapter(null, null, table().getUpdateGraph(), "test");
+        final TableProcessorStreamPublisher<T> streamPublisher = new TableProcessorStreamPublisher<>("todo", table(),
+                newTable, columnSource, processor.processor(), chunkSize());
 
 
         return null;
 
         /*
-                final JsonStreamPublisher publisher = options.execute();
-        final TableDefinition tableDefinition = publisher.tableDefinition(JsonTableOptions::toColumnName);
-        final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, publisher,
-                parent.getUpdateGraph(), name, Map.of(), true);
+         * final JsonStreamPublisher publisher = options.execute(); final TableDefinition tableDefinition =
+         * publisher.tableDefinition(JsonTableOptions::toColumnName); final StreamToBlinkTableAdapter adapter = new
+         * StreamToBlinkTableAdapter(tableDefinition, publisher, parent.getUpdateGraph(), name, Map.of(), true);
          */
     }
 }

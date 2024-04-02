@@ -289,6 +289,12 @@ public abstract class TableProcessorOptions {
             }
         }
 
+        private void processModified(TableUpdate upstream) {
+
+            TableProcessorImpl.processAll(srcColumnSource, upstream.modified(), false, processor, dstColumnSources,
+                    upstream.modified(), chunkSize());
+        }
+
         private void processAdded(TableUpdate upstream) {
             TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources,
                     upstream.added(), chunkSize());

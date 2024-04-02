@@ -48,7 +48,7 @@ def json_table(
     options: JsonValueType,
     sources: List,
     multi_value_support: bool = False,
-    chunk_size: int = 1024,
+    chunk_size: int = 2048,
     max_threads: Optional[int] = None,
 ) -> Table:
     builder = _JJsonTableOptions.builder()
@@ -65,7 +65,7 @@ def from_table(
     options: JsonValueType,
     table: Table,
     column_name: Optional[str] = None,
-    chunk_size: int = 1024,
+    chunk_size: int = 2048,
     keep_columns: Union[bool, List[str]] = False,
 ) -> Table:
     builder = _JTableProcessorOptions.builder()

@@ -428,6 +428,11 @@ public abstract class ArrayBackedColumnSource<T>
         return (WritableColumnSource<T>) result;
     }
 
+    public static <T> WritableColumnSource<T> getMemoryColumnSource(long longSize, Type<T> type) {
+        return getMemoryColumnSource(longSize, type.clazz(),
+                Type.componentType(type).map(Type::clazz).orElse(null));
+    }
+
     @Override
     public abstract void ensureCapacity(long size, boolean nullFill);
 

@@ -10,14 +10,15 @@ import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.ModifiedColumnSet;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.impl.BaseTable;
 import io.deephaven.engine.table.impl.BaseTable.CopyAttributeOperation;
-import io.deephaven.engine.table.impl.BaseTable.ListenerImpl;
 import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.TableUpdateImpl;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
@@ -154,20 +155,19 @@ public abstract class TableProcessorOptions {
     }
 
     private <T> Table executeImpl(ColumnDefinition<T> srcDefinition) {
-        final ColumnSource<T> srcColumnSource = table().getColumnSource(srcDefinition.getName(), srcDefinition.type());
         final NamedObjectProcessor<? super T> processor;
         try {
             processor = processor().named(srcDefinition.type());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unable to create processor for " + srcDefinition, e);
         }
-        return executeImpl(srcColumnSource, processor);
+        return executeImpl(srcDefinition, processor);
     }
 
     private <T> Table executeImpl(
-            ColumnSource<? extends T> srcColumnSource,
+            ColumnDefinition<? extends T> srcDefinition,
             NamedObjectProcessor<? super T> processor) {
-        final TrackingRowSet srcRowSet = table().getRowSet();
+       final TrackingRowSet srcRowSet = table().getRowSet();
         final TrackingRowSet dstRowSet;
         final List<WritableColumnSource<?>> dstColumnSources;
         final boolean dstIsFlat;
@@ -202,8 +202,7 @@ public abstract class TableProcessorOptions {
         final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
                 .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
                 .collect(Collectors.toList());
-        TableProcessorImpl.processAll(srcColumnSource, srcRowSet, false, processor.processor(), dst, dstRowSet,
-                chunkSize());
+        TableProcessorImpl.processAll(columnSource(srcDefinition), srcRowSet, false, processor.processor(), dst, dstRowSet, chunkSize());
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         final Set<String> usedNames = new HashSet<>();
@@ -236,9 +235,13 @@ public abstract class TableProcessorOptions {
 
         if (table().isRefreshing()) {
             table().addUpdateListener(
-                    new ProcessorListener<>("todo", table(), result, srcColumnSource, processor.processor(), dst));
+                    new ProcessorListener<>("todo", table(), result, srcDefinition, processor.processor(), dst));
         }
         return result;
+    }
+
+    private <T> ColumnSource<T> columnSource(ColumnDefinition<T> srcDefinition) {
+        return table().getColumnSource(srcDefinition.getName(), srcDefinition.type());
     }
 
     class ProcessorListener<T> extends BaseTable.ListenerImpl {
@@ -246,32 +249,37 @@ public abstract class TableProcessorOptions {
         private final ColumnSource<? extends T> srcColumnSource;
         private final ObjectProcessor<? super T> processor;
         private final List<WritableColumnSource<?>> dstColumnSources;
+        private final ModifiedColumnSet srcColumnMCS;
+        private final ModifiedColumnSet dstColumnsMCS;
 
         public ProcessorListener(
                 String description,
                 Table parent,
                 BaseTable<?> dependent,
-                ColumnSource<? extends T> srcColumnSource,
+                ColumnDefinition<? extends T> srcColumnDefinition,
                 ObjectProcessor<? super T> processor,
                 List<WritableColumnSource<?>> dstColumnSources) {
             super(description, parent, dependent);
             if (parent.getRowSet() != dependent.getRowSet()) {
                 throw new IllegalArgumentException();
             }
-            this.srcColumnSource = Objects.requireNonNull(srcColumnSource);
+            this.srcColumnSource = columnSource(srcColumnDefinition);
             this.processor = Objects.requireNonNull(processor);
             this.dstColumnSources = Objects.requireNonNull(dstColumnSources);
+            this.srcColumnMCS = ((QueryTable)parent).newModifiedColumnSet(srcColumnDefinition.getName());
+            this.dstColumnsMCS = ((QueryTable)dependent).newModifiedColumnSet("todo");
         }
 
         @Override
         public void onUpdate(TableUpdate upstream) {
-            if (upstream.modified().isNonempty() || upstream.shifted().nonempty()) {
-                throw new IllegalStateException("Not expecting modifies or shifts");
+            if (upstream.shifted().nonempty()) {
+                throw new IllegalStateException("Not expecting shifts");
             }
             ensureCapacity();
             processRemoved(upstream);
             processAdded(upstream);
-            getDependent().notifyListeners(upstream.acquire());
+            final boolean hasDstColumnMods = processModified(upstream);
+            getDependent().notifyListeners(updateForDownstream(upstream));
         }
 
         private void ensureCapacity() {
@@ -289,15 +297,32 @@ public abstract class TableProcessorOptions {
             }
         }
 
-        private void processModified(TableUpdate upstream) {
-
+        private boolean processModified(TableUpdate upstream) {
+            if (!upstream.modifiedColumnSet().containsAny(srcColumnMCS)) {
+                return false;
+            }
+            // todo: should we actually check prev vs current to discount any rows that haven't actually changed?
             TableProcessorImpl.processAll(srcColumnSource, upstream.modified(), false, processor, dstColumnSources,
                     upstream.modified(), chunkSize());
+            return true;
         }
 
         private void processAdded(TableUpdate upstream) {
             TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources,
                     upstream.added(), chunkSize());
+        }
+
+        private TableUpdate updateForDownstream(TableUpdate upstream, boolean hasDstColumnMods) {
+            final ModifiedColumnSet mcs = upstream.modifiedColumnSet();
+            if (mcs == null || mcs == ModifiedColumnSet.ALL || mcs.empty()) {
+                return upstream.acquire();
+            }
+            if (true) {
+                throw new RuntimeException("Todo");
+            }
+            final TableUpdateImpl copy = TableUpdateImpl.copy(upstream);
+            copy.modifiedColumnSet = null;
+            return copy;
         }
     }
 

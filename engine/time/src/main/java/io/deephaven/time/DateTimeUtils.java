@@ -3034,8 +3034,7 @@ public class DateTimeUtils {
         if (localTime == null) {
             return NULL_INT;
         }
-
-        return minuteOfDay(localTime) / 60;
+        return localTime.getHour();
     }
 
     /**

@@ -279,7 +279,7 @@ public abstract class TableProcessorOptions {
             processRemoved(upstream);
             processAdded(upstream);
             final boolean hasDstColumnMods = processModified(upstream);
-            getDependent().notifyListeners(updateForDownstream(upstream));
+            getDependent().notifyListeners(updateForDownstream(upstream, hasDstColumnMods));
         }
 
         private void ensureCapacity() {

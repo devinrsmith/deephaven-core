@@ -143,8 +143,8 @@ def parseJvmArgumentsFromEnv = { String envName, List<String> orElse ->
 // From the perspective of our application distribution, these options will be used as defaults for JAVA_OPTS
 // (if the user already has JAVA_OPTS set, these VM options will _not_ apply).
 def JAVA_OPTS = parseJvmArgumentsFromEnv('JAVA_OPTS', [
-  '-XX:+UseZGC',
-  '-XX:+ZGenerational',
+  '-XX:+UseG1GC',
+  '-XX:MaxGCPauseMillis=100',
   '-XX:+UseStringDeduplication',
 ])
 
@@ -156,8 +156,18 @@ def START_OPTS = parseJvmArgumentsFromEnv('START_OPTS', [
 ])
 
 def createVmOptions = tasks.register('createVmOptions') {
-  def vmOptionsFile = project.layout.buildDirectory.file('dh-default.vmoptions')
+  def vmOptionsFile = project.layout.buildDirectory.file('dh-default-regular.vmoptions')
   def vmOptionsText = JAVA_OPTS.join('\n')
+  it.inputs.property('vmOptionsText', vmOptionsText)
+  it.outputs.file(vmOptionsFile)
+  doFirst {
+    vmOptionsFile.get().asFile.text = vmOptionsText
+  }
+}
+
+def createVmOptions2 = tasks.register('createVmOptionsSpecial') {
+  def vmOptionsFile = project.layout.buildDirectory.file('dh-default.vmoptions')
+  def vmOptionsText = ['-XX:+UseZGC', '-XX:+ZGenerational', '-XX:+UseStringDeduplication'].join('\n')
   it.inputs.property('vmOptionsText', vmOptionsText)
   it.outputs.file(vmOptionsFile)
   doFirst {
@@ -195,7 +205,7 @@ JavaApplication application = extensions.findByType(JavaApplication)
 if (application) {
   application.applicationDistribution.into('etc') {
     from(createCompilerDirectives.get().outputs.files)
-    from(createVmOptions.get().outputs.files)
+    from(createVmOptions2.get().outputs.files)
   }
 }
 

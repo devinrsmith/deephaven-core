@@ -245,7 +245,6 @@ public abstract class TableProcessorOptions {
     }
 
     class ProcessorListener<T> extends BaseTable.ListenerImpl {
-
         private final ColumnSource<? extends T> srcColumnSource;
         private final ObjectProcessor<? super T> processor;
         private final List<WritableColumnSource<?>> dstColumnSources;
@@ -301,9 +300,11 @@ public abstract class TableProcessorOptions {
             if (!upstream.modifiedColumnSet().containsAny(srcColumnMCS)) {
                 return false;
             }
-            // todo: should we actually check prev vs current to discount any rows that haven't actually changed?
-            TableProcessorImpl.processAll(srcColumnSource, upstream.modified(), false, processor, dstColumnSources,
-                    upstream.modified(), chunkSize());
+            // Note: this is a two-pass process, first reading all the columns to see what actually changed, and then
+            // only actually acting on the rows that have been modified
+            try (final RowSet modified = ColumnSourceHelper.modified(srcColumnSource, upstream.modified(), chunkSize())) {
+                TableProcessorImpl.processAll(srcColumnSource, modified, false, processor, dstColumnSources, modified, chunkSize());
+            }
             return true;
         }
 

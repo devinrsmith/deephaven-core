@@ -4,12 +4,16 @@
 package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSequence.Iterator;
 import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.RowSetBuilderSequential;
+import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
 import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.ColumnSource;
 
@@ -25,6 +29,31 @@ final class ColumnSourceHelper {
             it.close();
             throw t;
         }
+    }
+
+    public static <T> RowSet modified(ColumnSource<? extends T> columnSource, RowSet rowSet, int chunkSize) {
+        final RowSetBuilderSequential builder = RowSetFactory.builderSequential();
+        try (
+                final FillContext context = columnSource.makeFillContext(chunkSize);
+                final WritableObjectChunk<T, Values> prev = WritableObjectChunk.makeWritableChunk(chunkSize);
+                final WritableObjectChunk<T, Values> curr = WritableObjectChunk.makeWritableChunk(chunkSize);
+                final WritableLongChunk<OrderedRowKeys> keys = WritableLongChunk.makeWritableChunk(chunkSize);
+                final CloseableIterator<RowSequence> it = rowSequenceIterator(rowSet, chunkSize)) {
+            while (it.hasNext()) {
+                final RowSequence rs = it.next();
+                rs.fillRowKeyChunk(keys);
+                columnSource.fillPrevChunk(context, prev, rs);
+                columnSource.fillChunk(context, curr, rs);
+                final int size = keys.size();
+                for (int i = 0; i < size; ++i) {
+                    // todo: BiPredicate?
+                    if (prev.get(i) != curr.get(i)) {
+                        builder.appendKey(keys.get(i));
+                    }
+                }
+            }
+        }
+        return builder.build();
     }
 
     public static <T> CloseableIterator<ObjectChunk<T, Values>> readFilledChunks(

@@ -11,6 +11,7 @@ import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.ModifiedColumnSet;
+import io.deephaven.engine.table.ModifiedColumnSet.Transformer;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.TableUpdate;
@@ -107,13 +108,6 @@ public abstract class TableProcessorOptions {
         }
     }
 
-    // @Check
-    // final void checkTableIsNotRefreshing() {
-    // if (table().isRefreshing()) {
-    // throw new IllegalArgumentException("Only supports non-refreshing tables right now");
-    // }
-    // }
-
     @Check
     final void checkColumnName() {
         if (columnName().isEmpty()) {
@@ -167,7 +161,7 @@ public abstract class TableProcessorOptions {
     private <T> Table executeImpl(
             ColumnDefinition<? extends T> srcDefinition,
             NamedObjectProcessor<? super T> processor) {
-       final TrackingRowSet srcRowSet = table().getRowSet();
+        final TrackingRowSet srcRowSet = table().getRowSet();
         final TrackingRowSet dstRowSet;
         final List<WritableColumnSource<?>> dstColumnSources;
         final boolean dstIsFlat;
@@ -202,7 +196,8 @@ public abstract class TableProcessorOptions {
         final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
                 .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
                 .collect(Collectors.toList());
-        TableProcessorImpl.processAll(columnSource(srcDefinition), srcRowSet, false, processor.processor(), dst, dstRowSet, chunkSize());
+
+
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
         final Set<String> usedNames = new HashSet<>();
@@ -211,13 +206,20 @@ public abstract class TableProcessorOptions {
             dstMap.put(keepColumn, table().getColumnSource(keepColumn));
             usedNames.add(keepColumn);
         }
+
         final List<String> newNames = processor.columnNames();
+        final LinkedHashMap<String, WritableColumnSource<?>> newDstMap = new LinkedHashMap<>();
         for (int i = 0; i < newNames.size(); i++) {
             final String name = NameValidator.legalizeColumnName(newNames.get(i), usedNames);
             definitions.add(ColumnDefinition.of(name, dstOutputTypes.get(i)));
             dstMap.put(name, dstColumnSources.get(i));
+            newDstMap.put(name, ReinterpretUtils.maybeConvertToWritablePrimitive(dstColumnSources.get(i)));
             usedNames.add(name);
         }
+
+        TableProcessorImpl.processAll(columnSource(srcDefinition), srcRowSet, false, processor.processor(),
+                newDstMap.values(), dstRowSet, chunkSize());
+
         // todo: copy attributes according to formula-like pattern?
         // todo: copy blink?
         final QueryTable result = new QueryTable(
@@ -235,7 +237,7 @@ public abstract class TableProcessorOptions {
 
         if (table().isRefreshing()) {
             table().addUpdateListener(
-                    new ProcessorListener<>("todo", table(), result, srcDefinition, processor.processor(), dst));
+                    new ProcessorListener<>("todo", table(), result, srcDefinition, processor.processor(), newDstMap));
         }
         return result;
     }
@@ -250,23 +252,31 @@ public abstract class TableProcessorOptions {
         private final List<WritableColumnSource<?>> dstColumnSources;
         private final ModifiedColumnSet srcColumnMCS;
         private final ModifiedColumnSet dstColumnsMCS;
+        private final Transformer srcToDstTransformer;
+        private final ModifiedColumnSet outputMcs;
 
-        public ProcessorListener(
+        ProcessorListener(
                 String description,
                 Table parent,
                 BaseTable<?> dependent,
                 ColumnDefinition<? extends T> srcColumnDefinition,
                 ObjectProcessor<? super T> processor,
-                List<WritableColumnSource<?>> dstColumnSources) {
+                LinkedHashMap<String, WritableColumnSource<?>> dstColumnSources) {
             super(description, parent, dependent);
             if (parent.getRowSet() != dependent.getRowSet()) {
                 throw new IllegalArgumentException();
             }
             this.srcColumnSource = columnSource(srcColumnDefinition);
             this.processor = Objects.requireNonNull(processor);
-            this.dstColumnSources = Objects.requireNonNull(dstColumnSources);
-            this.srcColumnMCS = ((QueryTable)parent).newModifiedColumnSet(srcColumnDefinition.getName());
-            this.dstColumnsMCS = ((QueryTable)dependent).newModifiedColumnSet("todo");
+            this.dstColumnSources = new ArrayList<>(dstColumnSources.values());
+            this.srcColumnMCS = ((QueryTable) parent).newModifiedColumnSet(srcColumnDefinition.getName());
+            this.dstColumnsMCS =
+                    ((QueryTable) dependent).newModifiedColumnSet(dstColumnSources.keySet().toArray(String[]::new));
+            srcToDstTransformer = keepColumns().isEmpty()
+                    ? null
+                    : ((QueryTable) parent).newModifiedColumnSetTransformer(((QueryTable) dependent),
+                            keepColumns().toArray(String[]::new));
+            outputMcs = ((QueryTable) dependent).getModifiedColumnSetForUpdates();
         }
 
         @Override
@@ -284,15 +294,19 @@ public abstract class TableProcessorOptions {
         private void ensureCapacity() {
             final long lastRowKey = getDependent().getRowSet().lastRowKey();
             if (lastRowKey != RowSet.NULL_ROW_KEY) {
-                for (WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
                     dstColumnSource.ensureCapacity(lastRowKey + 1, false);
                 }
             }
         }
 
         private void processRemoved(TableUpdate upstream) {
+            final RowSet removed = upstream.removed();
+            if (removed.isEmpty()) {
+                return;
+            }
             for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
-                dstColumnSource.setNull(upstream.removed());
+                dstColumnSource.setNull(removed);
             }
         }
 
@@ -300,30 +314,46 @@ public abstract class TableProcessorOptions {
             if (!upstream.modifiedColumnSet().containsAny(srcColumnMCS)) {
                 return false;
             }
+            if (upstream.modified().isEmpty()) {
+                return false;
+            }
             // Note: this is a two-pass process, first reading all the columns to see what actually changed, and then
-            // only actually acting on the rows that have been modified
-            try (final RowSet modified = ColumnSourceHelper.modified(srcColumnSource, upstream.modified(), chunkSize())) {
-                TableProcessorImpl.processAll(srcColumnSource, modified, false, processor, dstColumnSources, modified, chunkSize());
+            // only actually acting on the rows that have been modified.
+            try (final RowSet modified =
+                    ColumnSourceHelper.modified(srcColumnSource, upstream.modified(), chunkSize())) {
+                if (modified.isEmpty()) {
+                    return false;
+                }
+                TableProcessorImpl.processAll(srcColumnSource, modified, false, processor, dstColumnSources, modified,
+                        chunkSize());
             }
             return true;
         }
 
         private void processAdded(TableUpdate upstream) {
-            TableProcessorImpl.processAll(srcColumnSource, upstream.added(), false, processor, dstColumnSources,
-                    upstream.added(), chunkSize());
+            final RowSet added = upstream.added();
+            if (added.isEmpty()) {
+                return;
+            }
+            TableProcessorImpl.processAll(srcColumnSource, added, false, processor, dstColumnSources, added,
+                    chunkSize());
         }
 
         private TableUpdate updateForDownstream(TableUpdate upstream, boolean hasDstColumnMods) {
             final ModifiedColumnSet mcs = upstream.modifiedColumnSet();
-            if (mcs == null || mcs == ModifiedColumnSet.ALL || mcs.empty()) {
+            if (mcs == null || mcs.empty() || (hasDstColumnMods && mcs == ModifiedColumnSet.ALL)) {
                 return upstream.acquire();
             }
-            if (true) {
-                throw new RuntimeException("Todo");
+            outputMcs.clear();
+            if (srcToDstTransformer != null) {
+                // translate relevant keep columns as dirty
+                srcToDstTransformer.transform(mcs, outputMcs);
             }
-            final TableUpdateImpl copy = TableUpdateImpl.copy(upstream);
-            copy.modifiedColumnSet = null;
-            return copy;
+            if (hasDstColumnMods) {
+                // set all dst columns as dirty
+                outputMcs.setAll(dstColumnsMCS);
+            }
+            return TableUpdateImpl.copy(upstream, outputMcs);
         }
     }
 

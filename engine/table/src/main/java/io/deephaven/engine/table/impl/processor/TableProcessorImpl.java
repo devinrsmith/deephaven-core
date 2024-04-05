@@ -19,6 +19,7 @@ import io.deephaven.util.SafeCloseable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ final class TableProcessorImpl {
             RowSet srcRowSet,
             boolean srcUsePrev,
             ObjectProcessor<? super T> processor,
-            List<WritableColumnSource<?>> dstColumnSources,
+            Collection<WritableColumnSource<?>> dstColumnSources,
             RowSet dstRowSet,
             int chunkSize) {
         if (srcRowSet.size() != dstRowSet.size()) {
@@ -60,12 +61,12 @@ final class TableProcessorImpl {
                 if (srcChunk.size() != dstSeq.size()) {
                     throw new IllegalStateException();
                 }
-                for (WritableChunk<?> intermediate : intermediates) {
+                for (final WritableChunk<?> intermediate : intermediates) {
                     intermediate.setSize(0);
                 }
                 processor.processAll(srcChunk, intermediates);
                 int i = 0;
-                for (WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
                     // noinspection unchecked
                     dstColumnSource.fillFromChunk(fillContexts[i], (Chunk<? extends Values>) intermediates.get(i),
                             dstSeq);

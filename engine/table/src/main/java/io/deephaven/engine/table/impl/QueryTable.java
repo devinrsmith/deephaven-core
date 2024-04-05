@@ -432,9 +432,13 @@ public class QueryTable extends BaseTable<QueryTable> {
 
     /**
      * Producers of tables should use the modified column set embedded within the table for their result.
+     *
      * <p>
      * You must not mutate the result of this method if you are not generating the updates for this table. Callers
      * should not rely on the dirty state of this modified column set.
+     *
+     * <p>
+     * Producers may want to call this once and retain their own reference to save from repeated volatile reads.
      *
      * @return the modified column set for this table
      */
@@ -1028,10 +1032,11 @@ public class QueryTable extends BaseTable<QueryTable> {
         @InternalUseOnly
         void doRefilter(
                 final WhereListener listener,
-                final TableUpdate upstream) {
+                final TableUpdate upstream,
+                final ModifiedColumnSet mcs) {
             final TableUpdateImpl update = new TableUpdateImpl();
             if (upstream == null) {
-                update.modifiedColumnSet = getModifiedColumnSetForUpdates();
+                update.modifiedColumnSet = mcs;
                 update.modifiedColumnSet.clear();
             } else {
                 // we need to hold on to the upstream update until we are completely done with it
@@ -1795,6 +1800,7 @@ public class QueryTable extends BaseTable<QueryTable> {
     private static class ViewOrUpdateViewListener extends ListenerImpl {
         private final QueryTable dependent;
         private final ModifiedColumnSet.Transformer transformer;
+        private final ModifiedColumnSet downstreamMCS;
 
         /**
          * @param description Description of this listener
@@ -1817,12 +1823,12 @@ public class QueryTable extends BaseTable<QueryTable> {
                 ++nextIndex;
             }
             transformer = parent.newModifiedColumnSetTransformer(parentNames, mcss);
+            downstreamMCS = dependent.getModifiedColumnSetForUpdates();
         }
 
         @Override
         public void onUpdate(final TableUpdate upstream) {
-            final TableUpdateImpl downstream =
-                    TableUpdateImpl.copy(upstream, dependent.getModifiedColumnSetForUpdates());
+            final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
             transformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
             dependent.notifyListeners(downstream);
         }
@@ -1894,21 +1900,21 @@ public class QueryTable extends BaseTable<QueryTable> {
                                                 resultTable.getDefinition().getColumnNamesArray());
                                 final ListenerImpl listener = new ListenerImpl(
                                         "dropColumns(" + Arrays.deepToString(columnNames) + ')', this, resultTable) {
+                                    private final ModifiedColumnSet downstreamMCS =
+                                            resultTable.getModifiedColumnSetForUpdates();
+
                                     @Override
                                     public void onUpdate(final TableUpdate upstream) {
                                         final TableUpdateImpl downstream;
-                                        final ModifiedColumnSet resultModifiedColumnSet =
-                                                resultTable.getModifiedColumnSetForUpdates();
-                                        mcsTransformer.clearAndTransform(upstream.modifiedColumnSet(),
-                                                resultModifiedColumnSet);
-                                        if (upstream.modified().isEmpty() || resultModifiedColumnSet.empty()) {
+                                        mcsTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstreamMCS);
+                                        if (upstream.modified().isEmpty() || downstreamMCS.empty()) {
                                             downstream = TableUpdateImpl.copy(upstream, ModifiedColumnSet.EMPTY);
                                             if (downstream.modified().isNonempty()) {
                                                 downstream.modified().close();
                                                 downstream.modified = RowSetFactory.empty();
                                             }
                                         } else {
-                                            downstream = TableUpdateImpl.copy(upstream, resultModifiedColumnSet);
+                                            downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                                         }
                                         resultTable.notifyListeners(downstream);
                                     }
@@ -2037,12 +2043,14 @@ public class QueryTable extends BaseTable<QueryTable> {
                                     newModifiedColumnSetTransformer(resultTable, modifiedColumnSetPairs);
                             final ListenerImpl listener = new ListenerImpl(
                                     methodNuggetPrefix + pairsLogString + ')', this, resultTable) {
+                                private final ModifiedColumnSet downstreamMCS =
+                                        resultTable.getModifiedColumnSetForUpdates();
+
                                 @Override
                                 public void onUpdate(final TableUpdate upstream) {
                                     final TableUpdateImpl downstream;
                                     if (upstream.modified().isNonempty()) {
-                                        downstream = TableUpdateImpl.copy(upstream,
-                                                resultTable.getModifiedColumnSetForUpdates());
+                                        downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                                         mcsTransformer.clearAndTransform(upstream.modifiedColumnSet(),
                                                 downstream.modifiedColumnSet);
                                     } else {

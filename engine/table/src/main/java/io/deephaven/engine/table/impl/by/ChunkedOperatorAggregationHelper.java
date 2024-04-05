@@ -262,6 +262,8 @@ public class ChunkedOperatorAggregationHelper {
                 final StateChangeRecorder stateChangeRecorder =
                         preserveEmpty ? null : ac.getStateChangeRecorder();
 
+                private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                 @Override
                 public void onUpdate(@NotNull final TableUpdate upstream) {
                     incrementalStateManager.beginUpdateCycle();
@@ -278,7 +280,8 @@ public class ChunkedOperatorAggregationHelper {
                         downstream = kuc.computeDownstreamIndicesAndCopyKeys(input.getRowSet(),
                                 keyColumnsRaw,
                                 keyColumnsCopied,
-                                result.getModifiedColumnSetForUpdates(), resultModifiedColumnSetFactories);
+                                downstreamMCS,
+                                resultModifiedColumnSetFactories);
                     }
 
                     if (downstream.empty()) {
@@ -2069,6 +2072,8 @@ public class ChunkedOperatorAggregationHelper {
                 final UnaryOperator<ModifiedColumnSet>[] resultModifiedColumnSetFactories =
                         ac.initializeRefreshing(result, this);
 
+                private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                 int lastSize = initialResultSize;
                 int statesCreated = initialResultSize;
 
@@ -2198,7 +2203,7 @@ public class ChunkedOperatorAggregationHelper {
                         }
                         statesCreated = newStatesCreated;
 
-                        extractDownstreamModifiedColumnSet(downstream, result.getModifiedColumnSetForUpdates(),
+                        extractDownstreamModifiedColumnSet(downstream, downstreamMCS,
                                 modifiedOperators, upstreamModifiedColumnSet, resultModifiedColumnSetFactories);
 
                         if (downstream.empty()) {

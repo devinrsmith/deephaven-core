@@ -119,11 +119,11 @@ public class TickSuppressor {
                 new BaseTable.ListenerImpl("removeSpuriousModifications", coalesced, resultTable) {
                     final ModifiedColumnSet.Transformer identityTransformer =
                             coalesced.newModifiedColumnSetIdentityTransformer(resultTable);
+                    private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
 
                     @Override
                     public void onUpdate(TableUpdate upstream) {
-                        final TableUpdateImpl downstream =
-                                TableUpdateImpl.copy(upstream, resultTable.getModifiedColumnSetForUpdates());
+                        final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                         if (downstream.modified().isEmpty()) {
                             identityTransformer.clearAndTransform(upstream.modifiedColumnSet(),
                                     downstream.modifiedColumnSet());

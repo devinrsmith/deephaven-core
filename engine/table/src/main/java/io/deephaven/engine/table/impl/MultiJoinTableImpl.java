@@ -533,7 +533,7 @@ public class MultiJoinTableImpl implements MultiJoinTable {
             final RowSetBuilderRandom emptiedBuilder = RowSetFactory.builderRandom();
             final RowSetBuilderRandom reincarnatedBuilder = RowSetFactory.builderRandom();
 
-            downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+            downstream.modifiedColumnSet = downstreamMCS;
             downstream.modifiedColumnSet.clear();
 
             final byte notShift = (FLAG_ADD | FLAG_REMOVE | FLAG_MODIFY);
@@ -650,7 +650,7 @@ public class MultiJoinTableImpl implements MultiJoinTable {
         @Override
         protected void process() {
             final TableUpdateImpl downstream = new TableUpdateImpl();
-            downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+            downstream.modifiedColumnSet = downstreamMCS;
             downstream.shifted = RowSetShiftData.EMPTY;
 
             boolean resultModified = false;

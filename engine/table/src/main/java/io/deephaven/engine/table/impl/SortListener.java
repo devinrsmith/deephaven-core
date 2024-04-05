@@ -57,6 +57,7 @@ public class SortListener extends BaseTable.ListenerImpl {
 
     private final ModifiedColumnSet.Transformer mcsTransformer;
     private final ModifiedColumnSet sortColumnSet;
+    private final ModifiedColumnSet downstreamMCS;
 
     public SortListener(
             final Table parent,
@@ -86,6 +87,7 @@ public class SortListener extends BaseTable.ListenerImpl {
 
         this.mcsTransformer = mcsTransformer;
         this.sortColumnSet = sortColumnSet;
+        this.downstreamMCS = result.getModifiedColumnSetForUpdates();
     }
 
     // The new "onUpdate" algorithm.
@@ -348,7 +350,7 @@ public class SortListener extends BaseTable.ListenerImpl {
             if (downstream.modified().isEmpty()) {
                 downstream.modifiedColumnSet = ModifiedColumnSet.EMPTY;
             } else {
-                downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+                downstream.modifiedColumnSet = downstreamMCS;
                 mcsTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
             }
 

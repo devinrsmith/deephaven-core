@@ -241,10 +241,12 @@ public class ColumnsToRowsTransform {
             querySource.addUpdateListener(new BaseTable.ListenerImpl("columnsToRows(" + labelColumn + ", "
                     + Arrays.toString(valueColumns) + ", " + Arrays.deepToString(transposeColumns) + ")", querySource,
                     result) {
+                private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                 @Override
                 public void onUpdate(final TableUpdate upstream) {
                     final TableUpdateImpl downstream = new TableUpdateImpl();
-                    downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+                    downstream.modifiedColumnSet = downstreamMCS;
                     downstream.added = transformIndex(upstream.added(), fanout, fanoutPow2);
                     downstream.removed = transformIndex(upstream.removed(), fanout, fanoutPow2);
 

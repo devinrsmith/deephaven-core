@@ -346,8 +346,7 @@ public class WindowCheck {
                 // now add the new timestamps
                 addRowSequence(upstream.added(), rowKeyToEntry != null);
 
-                final TableUpdateImpl downstream =
-                        TableUpdateImpl.copy(upstream, result.getModifiedColumnSetForUpdates());
+                final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
 
                 try (final RowSet modifiedByTime = recomputeModified()) {
                     if (modifiedByTime.isNonempty()) {
@@ -371,7 +370,7 @@ public class WindowCheck {
                     downstream.added = RowSetFactory.empty();
                     downstream.removed = RowSetFactory.empty();
                     downstream.shifted = RowSetShiftData.EMPTY;
-                    downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+                    downstream.modifiedColumnSet = downstreamMCS;
                     downstream.modifiedColumnSet.clear();
                     downstream.modifiedColumnSet.setAll(mcsResultWindowColumn);
                     result.notifyListeners(downstream);

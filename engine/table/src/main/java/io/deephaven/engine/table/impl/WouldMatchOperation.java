@@ -204,7 +204,7 @@ public class WouldMatchOperation implements QueryTable.MemoizableOperation<Query
                     recorder.getRemoved().copy(),
                     recorder.getModified().copy(),
                     recorder.getShifted(),
-                    resultTable.getModifiedColumnSetForUpdates());
+                    downstreamMCS);
 
             transformer.clearAndTransform(recorder.getModifiedColumnSet(), downstream.modifiedColumnSet());
 
@@ -235,6 +235,7 @@ public class WouldMatchOperation implements QueryTable.MemoizableOperation<Query
      * is static (not ticking).
      */
     private class StaticListener extends MergedListener {
+
         StaticListener(@NotNull List<NotificationQueue.Dependency> dependencies) {
             super(Collections.emptyList(),
                     dependencies,
@@ -253,7 +254,7 @@ public class WouldMatchOperation implements QueryTable.MemoizableOperation<Query
                                         RowSetFactory.empty(),
                                         RowSetFactory.empty(),
                                         RowSetShiftData.EMPTY,
-                                        resultTable.getModifiedColumnSetForUpdates());
+                                        downstreamMCS);
                     }
 
                     downstream.modifiedColumnSet().setAll(holder.getColumnName());

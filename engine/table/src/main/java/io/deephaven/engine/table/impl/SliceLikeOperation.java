@@ -7,6 +7,7 @@ import io.deephaven.engine.rowset.TrackingWritableRowSet;
 import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.TrackingRowSet;
+import io.deephaven.engine.table.ModifiedColumnSet;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableUpdate;
 import io.deephaven.engine.table.TableUpdateListener;
@@ -145,9 +146,11 @@ public class SliceLikeOperation implements QueryTable.Operation<QueryTable> {
         TableUpdateListener resultListener = null;
         if (parent.isRefreshing()) {
             resultListener = new BaseTable.ListenerImpl(getDescription(), parent, resultTable) {
+                private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
+
                 @Override
                 public void onUpdate(TableUpdate upstream) {
-                    SliceLikeOperation.this.onUpdate(upstream);
+                    SliceLikeOperation.this.onUpdate(upstream, downstreamMCS);
                 }
             };
         }
@@ -155,7 +158,7 @@ public class SliceLikeOperation implements QueryTable.Operation<QueryTable> {
         return new Result<>(resultTable, resultListener);
     }
 
-    private void onUpdate(final TableUpdate upstream) {
+    private void onUpdate(final TableUpdate upstream, ModifiedColumnSet downstreamMCS) {
         final TrackingWritableRowSet rowSet = resultTable.getRowSet().writableCast();
         final RowSet sliceRowSet = computeSliceRowSet(parent.getRowSet());
 
@@ -181,7 +184,7 @@ public class SliceLikeOperation implements QueryTable.Operation<QueryTable> {
         // propagate an empty MCS if modified is empty
         downstream.modifiedColumnSet = upstream.modifiedColumnSet();
         if (downstream.modified().isEmpty()) {
-            downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+            downstream.modifiedColumnSet = downstreamMCS;
             downstream.modifiedColumnSet.clear();
         }
 

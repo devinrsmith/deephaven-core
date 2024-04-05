@@ -247,6 +247,8 @@ public class AsOfJoinHelper {
 
         leftTable.addUpdateListener(new BaseTable.ListenerImpl(makeListenerDescription(columnsToMatch,
                 stampPair, columnsToAdd, order == SortingOrder.Descending, disallowExactMatch), leftTable, result) {
+            private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
             @Override
             public void onUpdate(TableUpdate upstream) {
                 rowRedirection.removeAll(upstream.removed());
@@ -294,8 +296,7 @@ public class AsOfJoinHelper {
                     }
                 }
 
-                final TableUpdateImpl downstream =
-                        TableUpdateImpl.copy(upstream, result.getModifiedColumnSetForUpdates());
+                final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                 leftTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet());
                 if (keysModified) {
                     downstream.modifiedColumnSet().setAll(allRightColumns);
@@ -592,13 +593,15 @@ public class AsOfJoinHelper {
         rightTable.addUpdateListener(new BaseTable.ListenerImpl(
                 makeListenerDescription(columnsToMatch, stampPair, columnsToAdd, reverse, disallowExactMatch),
                 rightTable, result) {
+            private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
             @Override
             public void onUpdate(TableUpdate upstream) {
                 final TableUpdateImpl downstream = new TableUpdateImpl();
                 downstream.added = RowSetFactory.empty();
                 downstream.removed = RowSetFactory.empty();
                 downstream.shifted = RowSetShiftData.EMPTY;
-                downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+                downstream.modifiedColumnSet = downstreamMCS;
 
                 final boolean keysModified = upstream.modifiedColumnSet().containsAny(rightMatchColumns);
                 final boolean stampModified = upstream.modifiedColumnSet().containsAny(rightStampColumn);
@@ -1176,13 +1179,15 @@ public class AsOfJoinHelper {
         rightTable.addUpdateListener(
                 new BaseTable.ListenerImpl(makeListenerDescription(MatchPair.ZERO_LENGTH_MATCH_PAIR_ARRAY,
                         stampPair, columnsToAdd, reverse, disallowExactMatch), rightTable, result) {
+                    private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                     @Override
                     public void onUpdate(TableUpdate upstream) {
                         final TableUpdateImpl downstream = new TableUpdateImpl();
                         downstream.added = RowSetFactory.empty();
                         downstream.removed = RowSetFactory.empty();
                         downstream.shifted = RowSetShiftData.EMPTY;
-                        downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+                        downstream.modifiedColumnSet = downstreamMCS;
 
                         final boolean stampModified = upstream.modifiedColumnSet().containsAny(rightStampColumn);
 
@@ -1475,6 +1480,8 @@ public class AsOfJoinHelper {
                                             order == SortingOrder.Descending,
                                             disallowExactMatch),
                                     leftTable, result) {
+                                private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                                 @Override
                                 public void onUpdate(TableUpdate upstream) {
                                     rowRedirection.removeAll(upstream.removed());
@@ -1501,8 +1508,7 @@ public class AsOfJoinHelper {
                                                 compactedRightStampKeys, rowRedirection);
                                     }
 
-                                    final TableUpdateImpl downstream =
-                                            TableUpdateImpl.copy(upstream, result.getModifiedColumnSetForUpdates());
+                                    final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                                     leftTransformer.clearAndTransform(upstream.modifiedColumnSet(),
                                             downstream.modifiedColumnSet());
                                     if (stampModified) {

@@ -102,16 +102,18 @@ public class ReverseOperation implements QueryTable.MemoizableOperation<QueryTab
 
         final TableUpdateListener listener =
                 new BaseTable.ListenerImpl(getDescription(), parent, resultTable) {
+                    private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
+
                     @Override
                     public void onUpdate(final TableUpdate upstream) {
-                        ReverseOperation.this.onUpdate(upstream);
+                        ReverseOperation.this.onUpdate(upstream, downstreamMCS);
                     }
                 };
 
         return new Result<>(resultTable, listener);
     }
 
-    private void onUpdate(final TableUpdate upstream) {
+    private void onUpdate(final TableUpdate upstream, ModifiedColumnSet downstreamMCS) {
         final WritableRowSet resultRowSet = resultTable.getRowSet().writableCast();
         final TrackingRowSet parentRowSet = parent.getRowSet();
         if (resultRowSet.size() != parentRowSet.sizePrev()) {
@@ -214,7 +216,7 @@ public class ReverseOperation implements QueryTable.MemoizableOperation<QueryTab
         Assert.eq(downstream.modified().size(), "update.modified.size()", upstream.modified().size(),
                 "upstream.modified.size()");
 
-        downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+        downstream.modifiedColumnSet = downstreamMCS;
         downstream.modifiedColumnSet.clear();
         if (downstream.modified().isNonempty()) {
             mcsTransformer.transform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);

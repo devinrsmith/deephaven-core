@@ -8,6 +8,7 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.exceptions.UncheckedTableException;
 import io.deephaven.engine.liveness.LivenessArtifact;
+import io.deephaven.engine.table.ModifiedColumnSet;
 import io.deephaven.engine.table.TableListener;
 import io.deephaven.engine.table.impl.perf.BasePerformanceEntry;
 import io.deephaven.engine.table.impl.perf.PerformanceEntry;
@@ -52,6 +53,7 @@ public abstract class MergedListener extends LivenessArtifact implements Notific
     private final Iterable<NotificationQueue.Dependency> dependencies;
     private final String listenerDescription;
     protected final QueryTable result;
+    protected final ModifiedColumnSet downstreamMCS;
     @Nullable
     protected final PerformanceEntry entry;
     private final String logPrefix;
@@ -78,6 +80,7 @@ public abstract class MergedListener extends LivenessArtifact implements Notific
         this.dependencies = dependencies;
         this.listenerDescription = listenerDescription;
         this.result = result;
+        this.downstreamMCS = result == null ? null : result.getModifiedColumnSetForUpdates();
         this.entry = PeriodicUpdateGraph.createUpdatePerformanceEntry(this.updateGraph, listenerDescription);
         this.logPrefix = System.identityHashCode(this) + " " + listenerDescription + " Merged Listener: ";
     }

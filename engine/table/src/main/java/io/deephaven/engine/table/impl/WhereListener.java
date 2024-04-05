@@ -49,7 +49,6 @@ class WhereListener extends MergedListener {
     private final ListenerRecorder recorder;
     private final boolean permitParallelization;
     private final int segmentCount;
-
     private volatile long initialNotificationStep = NotificationStepReceiver.NULL_NOTIFICATION_STEP;
     private volatile long finalNotificationStep = NotificationStepReceiver.NULL_NOTIFICATION_STEP;
 
@@ -113,7 +112,7 @@ class WhereListener extends MergedListener {
 
         if (result.refilterRequested()) {
             final TableUpdate update = recorder != null ? recorder.getUpdate() : null;
-            result.doRefilter(this, update);
+            result.doRefilter(this, update, downstreamMCS);
             return;
         }
 
@@ -133,7 +132,7 @@ class WhereListener extends MergedListener {
         if (recorder.getModifiedColumnSet() != null) {
             sourceModColumns = recorder.getModifiedColumnSet();
         } else {
-            sourceModColumns = result.getModifiedColumnSetForUpdates();
+            sourceModColumns = downstreamMCS;
             sourceModColumns.clear();
         }
         return sourceModColumns;

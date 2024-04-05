@@ -201,6 +201,8 @@ public class CrossJoinHelper {
 
                 leftTable.addUpdateListener(new BaseTable.ListenerImpl(bucketingContext.listenerDescription,
                         leftTable, resultTable) {
+                    private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
+
                     @Override
                     public void onUpdate(final TableUpdate upstream) {
                         jsm.validateKeySpaceSize();
@@ -241,7 +243,7 @@ public class CrossJoinHelper {
                             if (downstream.modified().isEmpty()) {
                                 downstream.modifiedColumnSet = ModifiedColumnSet.EMPTY;
                             } else {
-                                downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+                                downstream.modifiedColumnSet = downstreamMCS;
                                 leftTransformer.transform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
                             }
                         } else if (upstream.modified().isNonempty()) {
@@ -256,7 +258,7 @@ public class CrossJoinHelper {
                                 }
                             });
                             downstream.modified = modBuilder.build();
-                            downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+                            downstream.modifiedColumnSet = downstreamMCS;
                             leftTransformer.transform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
                         } else {
                             downstream.modified = RowSetFactory.empty();
@@ -789,7 +791,7 @@ public class CrossJoinHelper {
                         if (downstream.modified().isEmpty()) {
                             downstream.modifiedColumnSet = ModifiedColumnSet.EMPTY;
                         } else {
-                            downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+                            downstream.modifiedColumnSet = downstreamMCS;
                             downstream.modifiedColumnSet().clear();
                             if (leftChanged && tracker.hasLeftModifies) {
                                 leftTransformer.transform(upstreamLeft.modifiedColumnSet(),
@@ -816,6 +818,7 @@ public class CrossJoinHelper {
                 rightTable.addUpdateListener(new BaseTable.ListenerImpl(bucketingContext.listenerDescription,
                         rightTable, resultTable) {
                     private final CrossJoinModifiedSlotTracker tracker = new CrossJoinModifiedSlotTracker(jsm);
+                    private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
 
                     @Override
                     public void onUpdate(TableUpdate upstream) {
@@ -976,7 +979,7 @@ public class CrossJoinHelper {
                         if (downstream.modified().isEmpty()) {
                             downstream.modifiedColumnSet = ModifiedColumnSet.EMPTY;
                         } else {
-                            downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+                            downstream.modifiedColumnSet = downstreamMCS;
                             rightTransformer.clearAndTransform(upstream.modifiedColumnSet(),
                                     downstream.modifiedColumnSet);
                         }
@@ -1059,6 +1062,7 @@ public class CrossJoinHelper {
         final ModifiedColumnSet.Transformer rightTransformer =
                 rightTable.newModifiedColumnSetTransformer(result, columnsToAdd);
 
+        final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
         final BiConsumer<TableUpdate, TableUpdate> onUpdate = (leftUpdate, rightUpdate) -> {
 
             final boolean leftChanged = leftUpdate != null;
@@ -1073,7 +1077,7 @@ public class CrossJoinHelper {
             }
 
             final TableUpdateImpl downstream = new TableUpdateImpl();
-            downstream.modifiedColumnSet = result.getModifiedColumnSetForUpdates();
+            downstream.modifiedColumnSet = downstreamMCS;
             downstream.modifiedColumnSet.clear();
 
             final RowSetShiftData.Builder shiftBuilder = new RowSetShiftData.Builder();

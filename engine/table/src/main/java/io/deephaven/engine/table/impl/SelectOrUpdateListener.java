@@ -27,6 +27,7 @@ class SelectOrUpdateListener extends BaseTable.ListenerImpl {
     private final TrackingRowSet resultRowSet;
     private final ModifiedColumnSet.Transformer transformer;
     private final SelectAndViewAnalyzer analyzer;
+    private final ModifiedColumnSet downstreamMCS;
 
     private volatile boolean updateInProgress = false;
     private final BitSet completedColumns = new BitSet();
@@ -62,6 +63,7 @@ class SelectOrUpdateListener extends BaseTable.ListenerImpl {
                                 && getUpdateGraph().parallelismFactor() > 1))
                         && analyzer.allowCrossColumnParallelization();
         analyzer.setAllNewColumns(allNewColumns);
+        downstreamMCS = dependent.getModifiedColumnSetForUpdates();
     }
 
     @Override
@@ -120,8 +122,7 @@ class SelectOrUpdateListener extends BaseTable.ListenerImpl {
     private void completionRoutine(TableUpdate upstream, JobScheduler jobScheduler,
             WritableRowSet toClear, SelectAndViewAnalyzer.UpdateHelper updateHelper) {
         try {
-            final TableUpdateImpl downstream = new TableUpdateImpl(upstream.added().copy(), upstream.removed().copy(),
-                    upstream.modified().copy(), upstream.shifted(), dependent.getModifiedColumnSetForUpdates());
+            final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
             transformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
             dependent.notifyListeners(downstream);
             upstream.release();

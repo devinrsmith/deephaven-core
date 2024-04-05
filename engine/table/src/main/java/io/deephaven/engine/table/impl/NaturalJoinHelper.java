@@ -303,10 +303,10 @@ class NaturalJoinHelper {
 
                 final MergedListener mergedListener = new MergedListener(Arrays.asList(leftRecorder, rightRecorder),
                         Collections.emptyList(), listenerDescription, result) {
+
                     @Override
                     protected void process() {
-                        final ModifiedColumnSet modifiedColumnSet = result.getModifiedColumnSetForUpdates();
-                        modifiedColumnSet.clear();
+                        downstreamMCS.clear();
 
                         final boolean rightChanged = rightRecorder.recordedVariablesAreValid();
                         final boolean leftChanged = leftRecorder.recordedVariablesAreValid();
@@ -316,9 +316,9 @@ class NaturalJoinHelper {
                         if (rightChanged) {
                             final boolean rightUpdated = updateRightRedirection(rightTable, rowRedirection);
                             if (rightUpdated) {
-                                modifiedColumnSet.setAll(allRightColumns);
+                                downstreamMCS.setAll(allRightColumns);
                             } else {
-                                rightTransformer.transform(rightRecorder.getModifiedColumnSet(), modifiedColumnSet);
+                                rightTransformer.transform(rightRecorder.getModifiedColumnSet(), downstreamMCS);
                             }
                         }
 
@@ -329,14 +329,14 @@ class NaturalJoinHelper {
                             } else {
                                 modified = leftRecorder.getModified().copy();
                             }
-                            leftTransformer.transform(leftRecorder.getModifiedColumnSet(), modifiedColumnSet);
+                            leftTransformer.transform(leftRecorder.getModifiedColumnSet(), downstreamMCS);
                             result.notifyListeners(new TableUpdateImpl(
                                     leftRecorder.getAdded().copy(), leftRecorder.getRemoved().copy(), modified,
-                                    leftRecorder.getShifted(), modifiedColumnSet));
+                                    leftRecorder.getShifted(), downstreamMCS));
                         } else if (rightChanged) {
                             result.notifyListeners(new TableUpdateImpl(
                                     RowSetFactory.empty(), RowSetFactory.empty(),
-                                    result.getRowSet().copy(), RowSetShiftData.EMPTY, modifiedColumnSet));
+                                    result.getRowSet().copy(), RowSetShiftData.EMPTY, downstreamMCS));
                         }
                     }
 
@@ -351,11 +351,12 @@ class NaturalJoinHelper {
             } else {
                 leftTable
                         .addUpdateListener(new BaseTable.ListenerImpl(listenerDescription, leftTable, result) {
+                            private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                             @Override
                             public void onUpdate(final TableUpdate upstream) {
                                 checkRightTableSizeZeroKeys(leftTable, rightTable, exactMatch);
-                                final TableUpdateImpl downstream =
-                                        TableUpdateImpl.copy(upstream, result.getModifiedColumnSetForUpdates());
+                                final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
                                 leftTransformer.clearAndTransform(upstream.modifiedColumnSet(),
                                         downstream.modifiedColumnSet);
                                 result.notifyListeners(downstream);
@@ -366,18 +367,19 @@ class NaturalJoinHelper {
             if (!leftTable.isEmpty()) {
                 rightTable.addUpdateListener(
                         new BaseTable.ListenerImpl(listenerDescription, rightTable, result) {
+                            private final ModifiedColumnSet downstreamMCS = result.getModifiedColumnSetForUpdates();
+
                             @Override
                             public void onUpdate(final TableUpdate upstream) {
                                 checkRightTableSizeZeroKeys(leftTable, rightTable, exactMatch);
                                 final boolean changed = updateRightRedirection(rightTable, rowRedirection);
-                                final ModifiedColumnSet modifiedColumnSet = result.getModifiedColumnSetForUpdates();
                                 if (!changed) {
-                                    rightTransformer.clearAndTransform(upstream.modifiedColumnSet(), modifiedColumnSet);
+                                    rightTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstreamMCS);
                                 }
                                 result.notifyListeners(
                                         new TableUpdateImpl(RowSetFactory.empty(), RowSetFactory.empty(),
                                                 result.getRowSet().copy(), RowSetShiftData.EMPTY,
-                                                changed ? allRightColumns : modifiedColumnSet));
+                                                changed ? allRightColumns : downstreamMCS));
                             }
                         });
             }
@@ -456,6 +458,7 @@ class NaturalJoinHelper {
         private final ModifiedColumnSet leftKeyColumns;
         private final ModifiedColumnSet rightModifiedColumns;
         private final ModifiedColumnSet.Transformer leftTransformer;
+        private final ModifiedColumnSet downstreamMCS;
 
         LeftTickingListener(String description, MatchPair[] columnsToMatch, MatchPair[] columnsToAdd,
                 QueryTable leftTable, QueryTable result, WritableRowRedirection rowRedirection,
@@ -472,6 +475,7 @@ class NaturalJoinHelper {
 
             leftTransformer =
                     leftTable.newModifiedColumnSetTransformer(result, leftTable.getDefinition().getColumnNamesArray());
+            downstreamMCS = result.getModifiedColumnSetForUpdates();
         }
 
         @Override
@@ -482,7 +486,7 @@ class NaturalJoinHelper {
                 rowRedirection.applyShift(prevRowSet, upstream.shifted());
             }
 
-            final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, result.getModifiedColumnSetForUpdates());
+            final TableUpdateImpl downstream = TableUpdateImpl.copy(upstream, downstreamMCS);
             leftTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
 
             if (upstream.modifiedColumnSet().containsAny(leftKeyColumns)) {
@@ -535,6 +539,7 @@ class NaturalJoinHelper {
         private final ModifiedColumnSet rightKeyColumns;
         private final ModifiedColumnSet.Transformer rightTransformer;
         private final NaturalJoinModifiedSlotTracker modifiedSlotTracker = new NaturalJoinModifiedSlotTracker();
+        private final ModifiedColumnSet downstreamMCS;
 
         RightTickingListener(String description, QueryTable rightTable, MatchPair[] columnsToMatch,
                 MatchPair[] columnsToAdd, QueryTable result, WritableRowRedirection rowRedirection,
@@ -550,6 +555,7 @@ class NaturalJoinHelper {
             rightKeyColumns = rightTable.newModifiedColumnSet(MatchPair.getRightColumns(columnsToMatch));
             allRightColumns = result.newModifiedColumnSet(MatchPair.getLeftColumns(columnsToAdd));
             rightTransformer = rightTable.newModifiedColumnSetTransformer(result, columnsToAdd);
+            downstreamMCS = result.getModifiedColumnSetForUpdates();
         }
 
         @Override
@@ -594,9 +600,8 @@ class NaturalJoinHelper {
 
                 jsm.removeRight(pc, upstream.removed(), rightSources, modifiedSlotTracker);
 
-                final ModifiedColumnSet modifiedColumnSet = result.getModifiedColumnSetForUpdates();
-                rightTransformer.clearAndTransform(upstream.modifiedColumnSet(), modifiedColumnSet);
-                addedRightColumnsChanged = modifiedColumnSet.size() != 0;
+                rightTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstreamMCS);
+                addedRightColumnsChanged = downstreamMCS.size() != 0;
 
                 if (rightKeysChanged) {
                     // It should make us somewhat sad that we have to add/remove, because we are doing two hash lookups
@@ -618,9 +623,8 @@ class NaturalJoinHelper {
             final ModifiedSlotUpdater slotUpdater = new ModifiedSlotUpdater(jsm, modifiedLeftBuilder, rowRedirection,
                     exactMatch, addedRightColumnsChanged);
             modifiedSlotTracker.forAllModifiedSlots(slotUpdater);
-            final ModifiedColumnSet modifiedColumnSet = result.getModifiedColumnSetForUpdates();
             if (slotUpdater.changedRedirection) {
-                modifiedColumnSet.setAll(allRightColumns);
+                downstreamMCS.setAll(allRightColumns);
             }
 
             // left is static, so the only thing that can happen is modifications
@@ -628,7 +632,7 @@ class NaturalJoinHelper {
 
             result.notifyListeners(new TableUpdateImpl(RowSetFactory.empty(), RowSetFactory.empty(),
                     modifiedLeft, RowSetShiftData.EMPTY,
-                    modifiedLeft.isNonempty() ? modifiedColumnSet : ModifiedColumnSet.EMPTY));
+                    modifiedLeft.isNonempty() ? downstreamMCS : ModifiedColumnSet.EMPTY));
         }
     }
 
@@ -748,8 +752,7 @@ class NaturalJoinHelper {
         @Override
         protected void process() {
             final RowSetBuilderRandom modifiedLeftBuilder = RowSetFactory.builderRandom();
-            final ModifiedColumnSet modifiedColumnSet = result.getModifiedColumnSetForUpdates();
-            modifiedColumnSet.clear();
+            downstreamMCS.clear();
             modifiedSlotTracker.clear();
 
             final boolean addedRightColumnsChanged;
@@ -786,8 +789,8 @@ class NaturalJoinHelper {
                         jsm.removeRight(pc, rightRemoved, rightSources, modifiedSlotTracker);
                     }
 
-                    rightTransformer.transform(rightModifiedColumns, modifiedColumnSet);
-                    addedRightColumnsChanged = modifiedColumnSet.size() > 0;
+                    rightTransformer.transform(rightModifiedColumns, downstreamMCS);
+                    addedRightColumnsChanged = downstreamMCS.size() > 0;
 
                     if (rightKeysModified) {
                         // It should make us somewhat sad that we have to add/remove, because we are doing two hash
@@ -910,7 +913,7 @@ class NaturalJoinHelper {
                         // row redirection as part of the jsm.removeLeft. We could then compare
                         // the old redirections to the new redirections, only lighting up allRightColumns if there was
                         // indeed a change.
-                        modifiedColumnSet.setAll(allRightColumns);
+                        downstreamMCS.setAll(allRightColumns);
                     }
 
                     if (leftAdditions) {
@@ -920,7 +923,7 @@ class NaturalJoinHelper {
                 }
 
                 // process left updates
-                leftTransformer.transform(leftModifiedColumns, modifiedColumnSet);
+                leftTransformer.transform(leftModifiedColumns, downstreamMCS);
 
                 modifiedLeftBuilder.addRowSet(leftModified);
             }
@@ -929,7 +932,7 @@ class NaturalJoinHelper {
                     exactMatch, addedRightColumnsChanged);
             modifiedSlotTracker.forAllModifiedSlots(slotUpdater);
             if (slotUpdater.changedRedirection) {
-                modifiedColumnSet.setAll(allRightColumns);
+                downstreamMCS.setAll(allRightColumns);
             }
 
             final WritableRowSet modifiedLeft = modifiedLeftBuilder.build();
@@ -937,7 +940,7 @@ class NaturalJoinHelper {
             modifiedLeft.remove(leftRecorder.getAdded());
 
             result.notifyListeners(new TableUpdateImpl(leftAdded.copy(), leftRemoved.copy(), modifiedLeft,
-                    leftShifted, modifiedColumnSet));
+                    leftShifted, downstreamMCS));
         }
 
         private void copyRedirections(final RowSet leftRows, @NotNull final LongArraySource leftRedirections) {

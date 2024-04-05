@@ -53,9 +53,11 @@ public class FlattenOperation implements QueryTable.MemoizableOperation<QueryTab
         TableUpdateListener resultListener = null;
         if (parent.isRefreshing()) {
             resultListener = new BaseTable.ListenerImpl(getDescription(), parent, resultTable) {
+                private final ModifiedColumnSet downstreamMCS = resultTable.getModifiedColumnSetForUpdates();
+
                 @Override
                 public void onUpdate(TableUpdate upstream) {
-                    FlattenOperation.this.onUpdate(upstream);
+                    FlattenOperation.this.onUpdate(upstream, downstreamMCS);
                 }
             };
         }
@@ -75,13 +77,13 @@ public class FlattenOperation implements QueryTable.MemoizableOperation<QueryTab
         this.parent = parent;
     }
 
-    private void onUpdate(final TableUpdate upstream) {
+    private void onUpdate(final TableUpdate upstream, ModifiedColumnSet downstreamMCS) {
         // Note: we can safely ignore shifted since shifts do not change data AND shifts are not allowed to reorder.
         final TrackingRowSet rowSet = parent.getRowSet();
         final long newSize = rowSet.size();
 
         final TableUpdateImpl downstream = new TableUpdateImpl();
-        downstream.modifiedColumnSet = resultTable.getModifiedColumnSetForUpdates();
+        downstream.modifiedColumnSet = downstreamMCS;
         mcsTransformer.clearAndTransform(upstream.modifiedColumnSet(), downstream.modifiedColumnSet);
 
         // Check to see if we can simply invert and pass-down.

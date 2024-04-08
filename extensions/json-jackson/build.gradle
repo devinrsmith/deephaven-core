@@ -12,7 +12,8 @@ dependencies {
     implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
 
     api project(':extensions-json')
-    api project(':extensions-json-table')
+
+    implementation project(':table-api') // only needs NameValidator, might be worth refactoring?
 
     implementation project(':engine-query-constants')
     implementation project(':engine-time')

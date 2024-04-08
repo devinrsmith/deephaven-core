@@ -169,16 +169,15 @@ public class TableUpdateImpl implements TableUpdate {
     }
 
     /**
-     * Make a deep copy of a {@link TableUpdate} with the given {@code newMCS}.
+     * Make a deep copy of a {@link TableUpdate} with the given {@code mcs}.
      */
-    public static TableUpdateImpl copy(@NotNull final TableUpdate tableUpdate,
-            @NotNull final ModifiedColumnSet newMCS) {
+    public static TableUpdateImpl copy(@NotNull final TableUpdate tableUpdate, @NotNull final ModifiedColumnSet mcs) {
         return new TableUpdateImpl(
                 tableUpdate.added().copy(),
                 tableUpdate.removed().copy(),
                 tableUpdate.modified().copy(),
                 tableUpdate.shifted(),
-                newMCS);
+                mcs);
     }
 
     @Override

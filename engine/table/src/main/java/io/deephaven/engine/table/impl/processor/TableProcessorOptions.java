@@ -193,10 +193,6 @@ public abstract class TableProcessorOptions {
                     .map(TableProcessorOptions::sparse)
                     .collect(Collectors.toList());
         }
-        final List<WritableColumnSource<?>> dst = dstColumnSources.stream()
-                .map(ReinterpretUtils::maybeConvertToWritablePrimitive)
-                .collect(Collectors.toList());
-
 
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
@@ -233,13 +229,17 @@ public abstract class TableProcessorOptions {
         }
         result.setRefreshing(table().isRefreshing());
 
-        ((QueryTable) table()).copyAttributes(result, CopyAttributeOperation.View);
+        parent().copyAttributes(result, CopyAttributeOperation.View);
 
         if (table().isRefreshing()) {
             table().addUpdateListener(
-                    new ProcessorListener<>("todo", table(), result, srcDefinition, processor.processor(), newDstMap));
+                    new ProcessorListener<>("todo", result, srcDefinition, processor.processor(), newDstMap));
         }
         return result;
+    }
+
+    private QueryTable parent() {
+        return (QueryTable) table();
     }
 
     private <T> ColumnSource<T> columnSource(ColumnDefinition<T> srcDefinition) {
@@ -252,31 +252,29 @@ public abstract class TableProcessorOptions {
         private final List<WritableColumnSource<?>> dstColumnSources;
         private final ModifiedColumnSet srcColumnMCS;
         private final ModifiedColumnSet dstColumnsMCS;
-        private final Transformer srcToDstTransformer;
-        private final ModifiedColumnSet outputMcs;
+        private final Transformer keepColumnsTransformer;
+        private final ModifiedColumnSet downstreamMCS;
 
         ProcessorListener(
                 String description,
-                Table parent,
-                BaseTable<?> dependent,
+                QueryTable result,
                 ColumnDefinition<? extends T> srcColumnDefinition,
                 ObjectProcessor<? super T> processor,
                 LinkedHashMap<String, WritableColumnSource<?>> dstColumnSources) {
-            super(description, parent, dependent);
-            if (parent.getRowSet() != dependent.getRowSet()) {
+            super(description, parent(), result);
+            if (parent().getRowSet() != result.getRowSet()) {
                 throw new IllegalArgumentException();
             }
             this.srcColumnSource = columnSource(srcColumnDefinition);
             this.processor = Objects.requireNonNull(processor);
             this.dstColumnSources = new ArrayList<>(dstColumnSources.values());
-            this.srcColumnMCS = ((QueryTable) parent).newModifiedColumnSet(srcColumnDefinition.getName());
+            this.srcColumnMCS = parent().newModifiedColumnSet(srcColumnDefinition.getName());
             this.dstColumnsMCS =
-                    ((QueryTable) dependent).newModifiedColumnSet(dstColumnSources.keySet().toArray(String[]::new));
-            srcToDstTransformer = keepColumns().isEmpty()
+                    result.newModifiedColumnSet(dstColumnSources.keySet().toArray(String[]::new));
+            keepColumnsTransformer = keepColumns().isEmpty()
                     ? null
-                    : ((QueryTable) parent).newModifiedColumnSetTransformer(((QueryTable) dependent),
-                            keepColumns().toArray(String[]::new));
-            outputMcs = ((QueryTable) dependent).getModifiedColumnSetForUpdates();
+                    : parent().newModifiedColumnSetTransformer(result, keepColumns().toArray(String[]::new));
+            downstreamMCS = result.getModifiedColumnSetForUpdates();
         }
 
         @Override
@@ -288,7 +286,7 @@ public abstract class TableProcessorOptions {
             processRemoved(upstream);
             processAdded(upstream);
             final boolean hasDstColumnMods = processModified(upstream);
-            getDependent().notifyListeners(updateForDownstream(upstream, hasDstColumnMods));
+            getDependent().notifyListeners(downstreamUpdate(upstream, hasDstColumnMods));
         }
 
         private void ensureCapacity() {
@@ -308,6 +306,15 @@ public abstract class TableProcessorOptions {
             for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
                 dstColumnSource.setNull(removed);
             }
+        }
+
+        private void processAdded(TableUpdate upstream) {
+            final RowSet added = upstream.added();
+            if (added.isEmpty()) {
+                return;
+            }
+            TableProcessorImpl.processAll(srcColumnSource, added, false, processor, dstColumnSources, added,
+                    chunkSize());
         }
 
         private boolean processModified(TableUpdate upstream) {
@@ -330,30 +337,25 @@ public abstract class TableProcessorOptions {
             return true;
         }
 
-        private void processAdded(TableUpdate upstream) {
-            final RowSet added = upstream.added();
-            if (added.isEmpty()) {
-                return;
-            }
-            TableProcessorImpl.processAll(srcColumnSource, added, false, processor, dstColumnSources, added,
-                    chunkSize());
-        }
-
-        private TableUpdate updateForDownstream(TableUpdate upstream, boolean hasDstColumnMods) {
+        private TableUpdate downstreamUpdate(TableUpdate upstream, boolean hasDstColumnMods) {
             final ModifiedColumnSet mcs = upstream.modifiedColumnSet();
             if (mcs == null || mcs.empty() || (hasDstColumnMods && mcs == ModifiedColumnSet.ALL)) {
                 return upstream.acquire();
             }
-            outputMcs.clear();
-            if (srcToDstTransformer != null) {
+            updateDownstreamMCS(hasDstColumnMods, mcs);
+            return TableUpdateImpl.copy(upstream, downstreamMCS);
+        }
+
+        private void updateDownstreamMCS(boolean hasDstColumnMods, ModifiedColumnSet upstreamMCS) {
+            downstreamMCS.clear();
+            if (keepColumnsTransformer != null) {
                 // translate relevant keep columns as dirty
-                srcToDstTransformer.transform(mcs, outputMcs);
+                keepColumnsTransformer.transform(upstreamMCS, downstreamMCS);
             }
             if (hasDstColumnMods) {
                 // set all dst columns as dirty
-                outputMcs.setAll(dstColumnsMCS);
+                downstreamMCS.setAll(dstColumnsMCS);
             }
-            return TableUpdateImpl.copy(upstream, outputMcs);
         }
     }
 

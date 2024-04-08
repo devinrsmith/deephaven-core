@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -52,12 +53,12 @@ public class ObjectOptionsTest {
     }
 
     @Test
-    void caseSensitive() throws IOException {
+    void caseInsensitive() throws IOException {
         final ObjectOptions options = ObjectOptions.builder()
                 .addFields(ObjectFieldOptions.builder()
                         .name("Foo")
                         .options(IntOptions.standard())
-                        .caseInsensitiveMatch(true)
+                        .caseSensitive(false)
                         .build())
                 .build();
         parse(options, List.of("{\"Foo\": 42}", "{\"fOO\": 43}"),
@@ -65,7 +66,7 @@ public class ObjectOptionsTest {
     }
 
     @Test
-    void caseInsensitive() throws IOException {
+    void caseSensitive() throws IOException {
         final ObjectFieldOptions f1 = ObjectFieldOptions.of("Foo", IntOptions.standard());
         final ObjectFieldOptions f2 = ObjectFieldOptions.of("foo", IntOptions.standard());
         final ObjectOptions options = ObjectOptions.builder()
@@ -97,7 +98,7 @@ public class ObjectOptionsTest {
                         .name("FooBar")
                         .options(IntOptions.standard())
                         .addAliases("Foo_Bar")
-                        .caseInsensitiveMatch(true)
+                        .caseSensitive(false)
                         .build())
                 .build();
         parse(options, List.of("{\"fooBar\": 42}", "{\"fOO_BAR\": 43}"),
@@ -121,7 +122,7 @@ public class ObjectOptionsTest {
         final ObjectFieldOptions f2 = ObjectFieldOptions.builder()
                 .name("foo")
                 .options(IntOptions.standard())
-                .caseInsensitiveMatch(true)
+                .caseSensitive(false)
                 .build();
         try {
             ObjectOptions.builder()
@@ -173,7 +174,7 @@ public class ObjectOptionsTest {
 
     @Test
     void columnNames() {
-        assertThat(OBJECT_NAME_AGE_FIELD.named(String.class).columnNames()).containsExactly("name", "age");
+        assertThat(OBJECT_NAME_AGE_FIELD.named(Type.stringType()).columnNames()).containsExactly("name", "age");
     }
 
     @Test
@@ -186,7 +187,7 @@ public class ObjectOptionsTest {
                         .build())
                 .addFields(ObjectFieldOptions.of("age", IntOptions.standard()))
                 .build();
-        assertThat(obj.named(String.class).columnNames()).containsExactly("MyName", "age");
+        assertThat(obj.named(Type.stringType()).columnNames()).containsExactly("MyName", "age");
     }
 
     @Test
@@ -195,6 +196,7 @@ public class ObjectOptionsTest {
                 .putFields("+1", IntOptions.standard())
                 .putFields("-1", IntOptions.standard())
                 .build();
-        assertThat(objPlusOneMinusOneCount.named(String.class).columnNames()).containsExactly("column_1", "column_12");
+        assertThat(objPlusOneMinusOneCount.named(Type.stringType()).columnNames()).containsExactly("column_1",
+                "column_12");
     }
 }

@@ -25,7 +25,7 @@ public class ObjectFieldOptionsTest {
         final ObjectFieldOptions field = ObjectFieldOptions.builder()
                 .name("Foo")
                 .options(IntOptions.standard())
-                .caseInsensitiveMatch(true)
+                .caseSensitive(false)
                 .build();
         assertThat(field.name()).isEqualTo("Foo");
         assertThat(field.options()).isEqualTo(IntOptions.standard());
@@ -84,7 +84,7 @@ public class ObjectFieldOptionsTest {
                     .name("SomeName")
                     .options(IntOptions.standard())
                     .addAliases("someName")
-                    .caseInsensitiveMatch(true)
+                    .caseSensitive(false)
                     .build();
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {

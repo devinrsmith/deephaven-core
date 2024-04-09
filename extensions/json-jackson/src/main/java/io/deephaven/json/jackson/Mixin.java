@@ -40,7 +40,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,6 +102,9 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         if (File.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) fileProcessor();
         }
+        if (Path.class.isAssignableFrom(clazz)) {
+            return (ObjectProcessor<? super X>) pathProcessor();
+        }
         if (URL.class.isAssignableFrom(clazz)) {
             return (ObjectProcessor<? super X>) urlProcessor();
         }
@@ -142,6 +145,11 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
     }
 
     @Override
+    public final ObjectProcessor<Path> pathProcessor() {
+        return new PathIn();
+    }
+
+    @Override
     public final ObjectProcessor<URL> urlProcessor() {
         return new URLIn();
     }
@@ -167,49 +175,56 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     private class StringIn extends ObjectProcessorJsonValue<String> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, String in) throws IOException {
+        protected JsonParser createParser(String in) throws IOException {
             return JacksonSource.of(factory, in);
         }
     }
 
     private class BytesIn extends ObjectProcessorJsonValue<byte[]> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, byte[] in) throws IOException {
-            return JacksonSource.of(factory, ByteBuffer.wrap(in));
+        protected JsonParser createParser(byte[] in) throws IOException {
+            return JacksonSource.of(factory, in, 0, in.length);
         }
     }
 
     private class ByteBufferIn extends ObjectProcessorJsonValue<ByteBuffer> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, ByteBuffer in) throws IOException {
+        protected JsonParser createParser(ByteBuffer in) throws IOException {
             return JacksonSource.of(factory, in);
         }
     }
 
     private class CharsIn extends ObjectProcessorJsonValue<char[]> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, char[] in) throws IOException {
-            return JacksonSource.of(factory, CharBuffer.wrap(in));
+        protected JsonParser createParser(char[] in) throws IOException {
+            return JacksonSource.of(factory, in, 0, in.length);
         }
     }
 
     private class FileIn extends ObjectProcessorJsonValue<File> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, File in) throws IOException {
+        protected JsonParser createParser(File in) throws IOException {
+            return JacksonSource.of(factory, in);
+        }
+    }
+
+    private class PathIn extends ObjectProcessorJsonValue<Path> {
+        @Override
+        protected JsonParser createParser(Path in) throws IOException {
             return JacksonSource.of(factory, in);
         }
     }
 
     private class URLIn extends ObjectProcessorJsonValue<URL> {
         @Override
-        protected JsonParser createParser(JsonFactory factory, URL in) throws IOException {
+        protected JsonParser createParser(URL in) throws IOException {
             return JacksonSource.of(factory, in);
         }
     }
 
     private abstract class ObjectProcessorJsonValue<X> implements ObjectProcessor<X> {
 
-        protected abstract JsonParser createParser(JsonFactory factory, X in) throws IOException;
+        protected abstract JsonParser createParser(X in) throws IOException;
 
         @Override
         public final int size() {
@@ -233,7 +248,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         void processAllImpl(ObjectChunk<? extends X, ?> in, List<WritableChunk<?>> out) throws IOException {
             final ValueProcessor valueProcessor = processor("<root>", out);
             for (int i = 0; i < in.size(); ++i) {
-                try (final JsonParser parser = createParser(factory, in.get(i))) {
+                try (final JsonParser parser = createParser(in.get(i))) {
                     ValueProcessor.processFullJson(valueProcessor, parser);
                 }
             }

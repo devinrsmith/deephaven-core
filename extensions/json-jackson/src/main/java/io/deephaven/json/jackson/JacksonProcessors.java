@@ -12,13 +12,14 @@ import io.deephaven.qst.type.Type;
 import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
  * A specific JSON processor implementation using Jackson. This provides more control over the default
- * {@link ValueOptions#processor(Class)} and {@link ValueOptions#named(Class)}.
+ * {@link ValueOptions#processor(Type)} and {@link ValueOptions#named(Type)}.
  */
 public interface JacksonProcessors extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
 
@@ -46,6 +47,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
      * @see #bytesProcessor()
      * @see #charsProcessor()
      * @see #fileProcessor()
+     * @see #pathProcessor()
      * @see #urlProcessor()
      * @see #byteBufferProcessor()
      */
@@ -61,7 +63,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
      * @return the named object processor
      * @param <T> the input type
      * @see NamedObjectProcessor#of(ObjectProcessor, Iterable)
-     * @see #processor(Class)
+     * @see #processor(Type)
      * @see #names(Function)
      * @see Mixin#toColumnName(List)
      */
@@ -101,6 +103,13 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
      * @see JsonFactory#createParser(File)
      */
     ObjectProcessor<File> fileProcessor();
+
+    /**
+     * Creates a {@link Path} json object processor.
+     *
+     * @return the object processor
+     */
+    ObjectProcessor<Path> pathProcessor();
 
     /**
      * Creates a {@link URL} json object processor.

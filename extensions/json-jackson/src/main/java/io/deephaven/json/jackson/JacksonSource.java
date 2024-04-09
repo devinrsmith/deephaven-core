@@ -48,18 +48,26 @@ final class JacksonSource {
         return factory.createParser(url);
     }
 
+    public static JsonParser of(JsonFactory factory, byte[] array, int pos, int len) throws IOException {
+        return factory.createParser(array, pos, len);
+    }
+
     // todo: suggest jackson build this in
     public static JsonParser of(JsonFactory factory, ByteBuffer buffer) throws IOException {
         if (buffer.hasArray()) {
-            return factory.createParser(buffer.array(), buffer.position(), buffer.remaining());
+            return of(factory, buffer.array(), buffer.position(), buffer.remaining());
         }
         return of(factory, ByteBufferInputStream.of(buffer));
+    }
+
+    public static JsonParser of(JsonFactory factory, char[] array, int pos, int len) throws IOException {
+        return factory.createParser(array, pos, len);
     }
 
     // todo: suggest jackson build this in
     public static JsonParser of(JsonFactory factory, CharBuffer buffer) throws IOException {
         if (buffer.hasArray()) {
-            return factory.createParser(buffer.array(), buffer.position(), buffer.remaining());
+            return of(factory, buffer.array(), buffer.position(), buffer.remaining());
         }
         // todo: we could build CharBufferReader. Surprised it's not build into JDK.
         throw new RuntimeException("todo");

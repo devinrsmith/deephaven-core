@@ -21,7 +21,7 @@ import java.util.stream.Stream;
  * A specific JSON processor implementation using Jackson. This provides more control over the default
  * {@link ValueOptions#processor(Type)} and {@link ValueOptions#named(Type)}.
  */
-public interface JacksonProcessors extends NamedObjectProcessor.Provider, ObjectProcessor.Provider {
+public interface JacksonProcessors extends NamedObjectProcessor.Provider {
 
     /**
      * Creates a jackson provider using the provided {@code factory}.
@@ -35,7 +35,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider, Object
     }
 
 
-    Stream<? extends Type<?>> outputTypes();
+    // Stream<? extends Type<?>> outputTypes();
 
     /**
      * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.

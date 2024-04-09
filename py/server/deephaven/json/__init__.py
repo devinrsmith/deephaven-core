@@ -194,7 +194,7 @@ def _build(
     allow_array: bool = False,
 ):
     builder.allowMissing(allow_missing)
-    builder.desiredTypes(
+    builder.allowedTypes(
         ([_VALUE_STRING] if allow_string else [])
         + ([_VALUE_NULL] if allow_null else [])
         + ([_VALUE_INT] if allow_int else [])

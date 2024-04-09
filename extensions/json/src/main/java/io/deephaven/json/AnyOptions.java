@@ -20,11 +20,17 @@ public abstract class AnyOptions extends ValueOptions {
         return ImmutableAnyOptions.of();
     }
 
+    /**
+     * Always {@link JsonValueTypes#ALL}.
+     */
     @Override
-    public final Set<JsonValueTypes> allowedTypes() {
+    public final EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ALL;
     }
 
+    /**
+     * Always {@code true}.
+     */
     @Override
     public final boolean allowMissing() {
         return true;

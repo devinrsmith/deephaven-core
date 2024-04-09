@@ -92,9 +92,12 @@ public abstract class TypedObjectOptions extends ValueOptions {
         return true;
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#OBJECT_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 

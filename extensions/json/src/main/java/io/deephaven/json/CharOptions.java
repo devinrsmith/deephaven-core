@@ -23,18 +23,18 @@ public abstract class CharOptions extends BoxedOptions<Character> {
 
 
     /**
-     * The standard Int options, equivalent to {@code builder().build()}.
+     * The standard char options.
      *
-     * @return the standard Int options
+     * @return the standard char options
      */
     public static CharOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Int options, equivalent to ....
+     * The strict char options.
      *
-     * @return the strict Int options
+     * @return the strict char options
      */
     public static CharOptions strict() {
         return builder()
@@ -44,12 +44,11 @@ public abstract class CharOptions extends BoxedOptions<Character> {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
-     * {@link JsonValueTypes#NULL}.
+     * The allowed types. By default is {@link JsonValueTypes#STRING_OR_NULL}.
      */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 

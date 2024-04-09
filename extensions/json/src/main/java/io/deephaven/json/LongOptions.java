@@ -24,9 +24,9 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * The lenient Long options, equivalent to ....
+     * The lenient long options.
      *
-     * @return the lenient Long options
+     * @return the lenient long options
      */
     public static LongOptions lenient() {
         return builder()
@@ -35,18 +35,18 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * The standard Long options, equivalent to {@code builder().build()}.
+     * The standard long options.
      *
-     * @return the standard Long options
+     * @return the standard long options
      */
     public static LongOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Long options, equivalent to ....
+     * The strict long options.
      *
-     * @return the strict Long options
+     * @return the strict long options
      */
     public static LongOptions strict() {
         return builder()
@@ -55,9 +55,12 @@ public abstract class LongOptions extends ValueOptions {
                 .build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -90,14 +93,14 @@ public abstract class LongOptions extends ValueOptions {
     @Check
     final void checkOnNull() {
         if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
         }
     }
 
     @Check
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
     }
 

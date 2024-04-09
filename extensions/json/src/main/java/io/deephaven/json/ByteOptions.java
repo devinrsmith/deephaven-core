@@ -22,9 +22,9 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     }
 
     /**
-     * The lenient Int options, equivalent to ....
+     * The lenient byte options.
      *
-     * @return the lenient Int options
+     * @return the lenient byte options
      */
     public static ByteOptions lenient() {
         return builder()
@@ -33,18 +33,18 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     }
 
     /**
-     * The standard Int options, equivalent to {@code builder().build()}.
+     * The standard byte options.
      *
-     * @return the standard Int options
+     * @return the standard byte options
      */
     public static ByteOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Int options, equivalent to ....
+     * The strict byte options.
      *
-     * @return the strict Int options
+     * @return the strict byte options
      */
     public static ByteOptions strict() {
         return builder()
@@ -54,12 +54,11 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
-     * {@link JsonValueTypes#NULL}.
+     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
      */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 

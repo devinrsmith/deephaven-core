@@ -24,9 +24,9 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     /**
-     * The lenient Int options, equivalent to ....
+     * The lenient int options.
      *
-     * @return the lenient Int options
+     * @return the lenient int options
      */
     public static IntOptions lenient() {
         return builder()
@@ -35,18 +35,18 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     /**
-     * The standard Int options, equivalent to {@code builder().build()}.
+     * The standard int options.
      *
-     * @return the standard Int options
+     * @return the standard int options
      */
     public static IntOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Int options, equivalent to ....
+     * The strict int options.
      *
-     * @return the strict Int options
+     * @return the strict int options
      */
     public static IntOptions strict() {
         return builder()
@@ -56,26 +56,21 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
-     * {@link JsonValueTypes#NULL}.
+     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
      */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
     /**
      * The on-null value.
-     *
-     * @return the on-null value
      */
     public abstract OptionalInt onNull();
 
     /**
      * The on-missing value.
-     *
-     * @return the on-missing value
      */
     public abstract OptionalInt onMissing();
 
@@ -95,14 +90,14 @@ public abstract class IntOptions extends ValueOptions {
     @Check
     final void checkOnNull() {
         if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
         }
     }
 
     @Check
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
     }
 

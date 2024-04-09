@@ -25,9 +25,12 @@ public abstract class SkipOptions extends ValueOptions {
         return builder().build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#ALL}.
+     */
     @Override
     @Default
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ALL;
     }
 

@@ -9,6 +9,7 @@ import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
@@ -21,10 +22,10 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     /**
      * The allowed types.
      */
-    public abstract Set<JsonValueTypes> allowedTypes();
+    public abstract EnumSet<JsonValueTypes> allowedTypes();
 
     /**
-     * If the processor should allow a missing JSON value. By default, is {@code true}.
+     * If the processor should allow a missing JSON value. By default is {@code true}.
      */
     @Default
     public boolean allowMissing() {
@@ -119,18 +120,18 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         T visit(ArrayOptions array);
 
         T visit(AnyOptions any);
-
-        // todo: bool, short, byte, char
     }
 
     public interface Builder<V extends ValueOptions, B extends Builder<V, B>> {
 
         B allowMissing(boolean allowMissing);
 
-        B allowedTypes(Set<JsonValueTypes> desiredTypes);
+        B allowedTypes(EnumSet<JsonValueTypes> allowedTypes);
 
-        default B allowedTypes(JsonValueTypes... desiredTypes) {
-            return allowedTypes(Set.of(desiredTypes));
+        default B allowedTypes(JsonValueTypes... allowedTypes) {
+            final EnumSet<JsonValueTypes> set = EnumSet.noneOf(JsonValueTypes.class);
+            set.addAll(Arrays.asList(allowedTypes));
+            return allowedTypes(set);
         }
 
         V build();
@@ -150,13 +151,5 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     @Check
     final void checkInvariants() {
         JsonValueTypes.checkInvariants(allowedTypes());
-    }
-
-    // for nested / typedescr cases
-    ValueOptions withMissingSupport() {
-        if (allowMissing()) {
-            return this;
-        }
-        throw new UnsupportedOperationException(); // todo
     }
 }

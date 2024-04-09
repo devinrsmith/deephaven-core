@@ -21,6 +21,11 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
         return ImmutableBoolOptions.builder();
     }
 
+    /**
+     * The lenient bool options.
+     *
+     * @return the lenient bool options
+     */
     public static BoolOptions lenient() {
         return builder()
                 .allowedTypes(JsonValueTypes.BOOL_LIKE)
@@ -28,18 +33,18 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     }
 
     /**
-     * The standard Int options, equivalent to {@code builder().build()}.
+     * The standard bool options.
      *
-     * @return the standard Int options
+     * @return the standard bool options
      */
     public static BoolOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Int options, equivalent to ....
+     * The strict bool options.
      *
-     * @return the strict Int options
+     * @return the strict bool options
      */
     public static BoolOptions strict() {
         return builder()
@@ -49,12 +54,11 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
-     * {@link JsonValueTypes#NULL}.
+     * The allowed types. By default is {@link JsonValueTypes#BOOL_OR_NULL}.
      */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.BOOL_OR_NULL;
     }
 

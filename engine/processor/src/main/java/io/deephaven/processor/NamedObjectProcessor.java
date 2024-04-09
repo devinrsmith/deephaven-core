@@ -53,7 +53,12 @@ public abstract class NamedObjectProcessor<T> {
     }
 
 
-    public interface Provider {
+    public interface Provider extends ObjectProcessor.Provider {
+
+        @Override
+        default <T> ObjectProcessor<? super T> processor(Type<T> inputType) {
+            return named(inputType).processor();
+        }
 
         /**
          * Creates a named object processor that can process the input type {@code inputType}.
@@ -62,7 +67,7 @@ public abstract class NamedObjectProcessor<T> {
          * @return the named object processor
          * @param <T> the input type
          */
-        <T> NamedObjectProcessor<? super T> named(Type<T> inputType); // todo: should this be extends?
+        <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
     }
 
     @Check

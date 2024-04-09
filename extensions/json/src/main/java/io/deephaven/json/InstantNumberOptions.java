@@ -39,7 +39,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
             return builder()
                     .format(this)
                     .allowMissing(false)
-                    .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
+                    .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : EnumSet.of(JsonValueTypes.INT))
                     .build();
         }
     }
@@ -50,14 +50,15 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     /**
      * The format to use.
-     *
-     * @return the format
      */
     public abstract Format format();
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 

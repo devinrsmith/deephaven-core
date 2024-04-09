@@ -38,9 +38,12 @@ public abstract class StringOptions extends BoxedOptions<String> {
                 .build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -51,23 +54,6 @@ public abstract class StringOptions extends BoxedOptions<String> {
 
     public interface Builder extends BoxedOptions.Builder<String, StringOptions, Builder> {
 
-    }
-
-    @Override
-    StringOptions withMissingSupport() {
-        throw new RuntimeException();
-        // if (allowMissing()) {
-        // return this;
-        // }
-        // final Builder builder = builder()
-        // .allowString(allowString())
-        // .allowNumberInt(allowNumberInt())
-        // .allowNumberFloat(allowNumberFloat())
-        // .allowNull(allowNull())
-        // .allowMissing(true);
-        // onNull().ifPresent(builder::onNull);
-        // // todo: option for onMissing?
-        // return builder.build();
     }
 
     @Override

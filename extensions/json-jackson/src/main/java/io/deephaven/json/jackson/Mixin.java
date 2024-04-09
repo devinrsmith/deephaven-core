@@ -87,6 +87,8 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract Stream<List<String>> paths();
 
+    abstract Stream<? extends Type<?>> outputTypes();
+
     public final boolean allowNull() {
         return options().allowedTypes().contains(JsonValueTypes.NULL);
     }

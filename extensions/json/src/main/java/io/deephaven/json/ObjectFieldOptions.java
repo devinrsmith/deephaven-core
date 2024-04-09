@@ -48,13 +48,16 @@ public abstract class ObjectFieldOptions {
     public abstract Set<String> aliases();
 
     /**
-     * If the field name and aliases should be compared using case-sensitive equality. By default, is {@code true}.
+     * If the field name and aliases should be compared using case-sensitive equality. By default is {@code true}.
      */
     @Default
     public boolean caseSensitive() {
         return true;
     }
 
+    /**
+     * The behavior when a repeated field is encountered. By default is {@link RepeatedBehavior#USE_FIRST}.
+     */
     @Default
     public RepeatedBehavior repeatedBehavior() {
         return RepeatedBehavior.USE_FIRST;
@@ -68,12 +71,22 @@ public abstract class ObjectFieldOptions {
      * <pre>
      * {
      *   "prices": [1.1, 2.2, 3.3],
-     *   "quantities": [9, 5, 42],
+     *   "quantities": [9, 5, 42]
      * }
      * </pre>
      */
     public abstract Optional<Object> arrayGroup();
 
+    /**
+     * The behavior when a repeated field is encountered in a JSON object. For example, as in:
+     *
+     * <pre>
+     * {
+     *   "foo": 1,
+     *   "foo": 2
+     * }
+     * </pre>
+     */
     public enum RepeatedBehavior {
         /**
          * Throws an error if a repeated field is encountered

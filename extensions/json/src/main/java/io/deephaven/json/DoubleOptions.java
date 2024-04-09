@@ -25,7 +25,7 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     /**
-     * The lenient double options, equivalent to {@code builder().onValue(ToDoubleImpl.lenient()).build()}.
+     * The lenient double options.
      *
      * @return the lenient double options
      */
@@ -34,7 +34,7 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     /**
-     * The standard double options, equivalent to {@code builder().build()}.
+     * The standard double options.
      *
      * @return the standard double options
      */
@@ -43,8 +43,7 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     /**
-     * The strict double options, equivalent to
-     * {@code builder().onValue(ToDoubleImpl.strict()).allowMissing(false).build()}.
+     * The strict double options.
      *
      * @return the strict double options
      */
@@ -55,9 +54,12 @@ public abstract class DoubleOptions extends ValueOptions {
                 .build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
     }
 
@@ -85,14 +87,14 @@ public abstract class DoubleOptions extends ValueOptions {
     @Check
     final void checkOnNull() {
         if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
         }
     }
 
     @Check
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
     }
 

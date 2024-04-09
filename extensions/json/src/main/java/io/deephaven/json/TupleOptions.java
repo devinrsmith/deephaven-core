@@ -32,18 +32,14 @@ public abstract class TupleOptions extends ValueOptions {
 
     public abstract List<ValueOptions> values();
 
+    // todo
     @Override
-    public final Set<JsonValueTypes> allowedTypes() {
+    public final EnumSet<JsonValueTypes> allowedTypes() {
         return values().stream().allMatch(valueOptions -> valueOptions.allowedTypes().contains(JsonValueTypes.NULL))
                 ? JsonValueTypes.ARRAY_OR_NULL
-                : JsonValueTypes.ARRAY.asSet();
+                : EnumSet.of(JsonValueTypes.ARRAY);
     }
 
-    // @Override
-    // public final boolean allowNull() {
-    // return values().stream().allMatch(ValueOptions::allowNull);
-    // }
-    //
     @Override
     public final boolean allowMissing() {
         return values().stream().allMatch(ValueOptions::allowMissing);

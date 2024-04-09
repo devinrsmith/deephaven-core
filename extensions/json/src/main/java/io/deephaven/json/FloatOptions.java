@@ -24,7 +24,7 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     /**
-     * The lenient float options, equivalent to {@code builder().onValue(ToFloatImpl.lenient()).build()}.
+     * The lenient float options.
      *
      * @return the lenient float options
      */
@@ -33,7 +33,7 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     /**
-     * The standard float options, equivalent to {@code builder().build()}.
+     * The standard float options..
      *
      * @return the standard float options
      */
@@ -42,8 +42,7 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     /**
-     * The strict float options, equivalent to
-     * {@code builder().onValue(ToFloatImpl.strict()).allowMissing(false).build()}.
+     * The strict float options.
      *
      * @return the strict float options
      */
@@ -54,9 +53,12 @@ public abstract class FloatOptions extends ValueOptions {
                 .build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
     }
 
@@ -85,14 +87,14 @@ public abstract class FloatOptions extends ValueOptions {
     @Check
     final void checkOnNull() {
         if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull() != null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
         }
     }
 
     @Check
     final void checkOnMissing() {
         if (!allowMissing() && onMissing() != null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
     }
 

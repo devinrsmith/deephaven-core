@@ -32,9 +32,12 @@ public abstract class ArrayOptions extends ValueOptions {
 
     public abstract ValueOptions element();
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#ARRAY_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ARRAY_OR_NULL;
     }
 

@@ -22,7 +22,6 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     }
 
     public static BigIntegerOptions lenient(boolean allowDecimal) {
-        // todo: float
         return builder()
                 .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                 .build();
@@ -30,21 +29,25 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
 
     public static BigIntegerOptions standard(boolean allowDecimal) {
         return builder()
+                .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL)
                 .build();
     }
 
     public static BigIntegerOptions strict(boolean allowDecimal) {
         return builder()
                 .allowMissing(false)
-                .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
+                .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : EnumSet.of(JsonValueTypes.INT))
                 .build();
     }
 
-    @Default
-    @Override
-    public Set<JsonValueTypes> allowedTypes() {
-        return JsonValueTypes.INT_OR_NULL;
-    }
+    // /**
+    // * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
+    // */
+    // @Default
+    // @Override
+    // public EnumSet<JsonValueTypes> allowedTypes() {
+    // return JsonValueTypes.NUMBER_OR_NULL;
+    // }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {

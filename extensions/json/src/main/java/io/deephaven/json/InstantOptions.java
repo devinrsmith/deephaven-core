@@ -37,9 +37,12 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
                 .build();
     }
 
+    /**
+     * The allowed types. By default is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 

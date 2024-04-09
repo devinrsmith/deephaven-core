@@ -13,7 +13,6 @@ public abstract class BoxedOptions<T> extends ValueOptions {
 
     public abstract Optional<T> onMissing();
 
-    // todo: should this be public?
     public interface Builder<T, V extends BoxedOptions<T>, B extends Builder<T, V, B>>
             extends ValueOptions.Builder<V, B> {
         B onNull(T onNull);
@@ -21,18 +20,17 @@ public abstract class BoxedOptions<T> extends ValueOptions {
         B onMissing(T onMissing);
     }
 
-
     @Check
     final void checkOnNull() {
         if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException("onNull is only relevant when allowing null");
+            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
         }
     }
 
     @Check
     final void checkOnMissing() {
         if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException("onMissing is only relevant when allowing missing");
+            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
     }
 }

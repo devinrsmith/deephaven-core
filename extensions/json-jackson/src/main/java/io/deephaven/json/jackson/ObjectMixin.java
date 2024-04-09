@@ -204,8 +204,8 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         }
 
         private class State implements FieldProcess {
-            // Note: we could try to build a stricter implementation that doesn't use Set; if the user can guarantee
-            // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
+            // Note: we could try to build a stricter implementation that doesn't use Set; if all of the fields disallow
+            // missing and the user knows that the data doesn't have any repeated fields, we could use a simple
             // counter to ensure all field processors were invoked.
             private final Set<ObjectFieldOptions> visited = new HashSet<>(fields.size());
 

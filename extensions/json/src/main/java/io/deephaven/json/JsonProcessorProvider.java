@@ -22,7 +22,19 @@ public interface JsonProcessorProvider {
         return provider;
     }
 
+    /**
+     * Create an object processor provider for the given JSON options.
+     *
+     * @param options the options
+     * @return the object processor provider
+     */
     ObjectProcessor.Provider provider(ValueOptions options);
 
+    /**
+     * Create a named object processor provider for the given JSON options.
+     *
+     * @param options the options
+     * @return the named object processor provider
+     */
     NamedObjectProcessor.Provider namedProvider(ValueOptions options);
 }

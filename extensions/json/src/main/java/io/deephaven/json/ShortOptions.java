@@ -22,9 +22,9 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     }
 
     /**
-     * The lenient Int options, equivalent to ....
+     * The lenient short options.
      *
-     * @return the lenient Int options
+     * @return the lenient short options
      */
     public static ShortOptions lenient() {
         return builder()
@@ -33,18 +33,18 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     }
 
     /**
-     * The standard Int options, equivalent to {@code builder().build()}.
+     * The standard short options.
      *
-     * @return the standard Int options
+     * @return the standard short options
      */
     public static ShortOptions standard() {
         return builder().build();
     }
 
     /**
-     * The strict Int options, equivalent to ....
+     * The strict short options.
      *
-     * @return the strict Int options
+     * @return the strict short options
      */
     public static ShortOptions strict() {
         return builder()
@@ -54,12 +54,11 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     }
 
     /**
-     * The desired types. By default, is TODO update based on allowDecimal {@link JsonValueTypes#INT} and
-     * {@link JsonValueTypes#NULL}.
+     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
      */
     @Default
     @Override
-    public Set<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 

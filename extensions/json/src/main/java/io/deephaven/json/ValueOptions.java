@@ -34,11 +34,12 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     /**
      * Creates a default object processor of type {@code inputType} from {@code this}. Callers wanting more control are
      * encouraged to depend on a specific implementation and construct an object processor from {@code this} more
-     * explicitly.
+     * explicitly. Equivalent to {@code JsonProcessorProvider.serviceLoader().provider(this).processor(inputType)}.
      *
      * @param inputType the input type
      * @return the object processor
      * @param <T> the input type
+     * @see JsonProcessorProvider#serviceLoader()
      */
     @Override
     public final <T> ObjectProcessor<? super T> processor(Type<T> inputType) {
@@ -48,17 +49,25 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     /**
      * Creates a default named object processor of type {@code inputType} from {@code this}. Callers wanting more
      * control are encouraged to depend on a specific implementation and construct a named object processor from
-     * {@code this} more explicitly.
+     * {@code this} more explicitly. Equivalent to
+     * {@code JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType)}.
      *
      * @param inputType the input type
      * @return the named object processor
      * @param <T> the input type
+     * @see JsonProcessorProvider#serviceLoader()
      */
     @Override
     public final <T> NamedObjectProcessor<? super T> named(Type<T> inputType) {
         return JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType);
     }
 
+    /**
+     * Wraps the allowed values of {@code this} as {@link SkipOptions}. Equivalent to
+     * {@code SkipOptions.builder().allowMissing(allowMissing()).allowedTypes(allowedTypes()).build()}.
+     *
+     * @return this allowed values of this as skip options
+     */
     public final SkipOptions skip() {
         return SkipOptions.builder()
                 .allowMissing(allowMissing())
@@ -66,10 +75,24 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
                 .build();
     }
 
+    /**
+     * Wraps {@code this} as the value of an {@link ArrayOptions}. Equivalent to {@code ArrayOptions.standard(this)}.
+     *
+     * @return this as the value of an array options
+     * @see ArrayOptions#standard(ValueOptions)
+     */
     public final ArrayOptions array() {
         return ArrayOptions.standard(this);
     }
 
+    /**
+     * Wraps {@code this} as a singular field of an {@link ObjectOptions}. Equivalent to
+     * {@code ObjectOptions.standard(Map.of(name, this))}.
+     *
+     * @param name the field name
+     * @return this as the singular field of an object options
+     * @see ObjectOptions#standard(Map)
+     */
     public final ObjectOptions field(String name) {
         return ObjectOptions.standard(Map.of(name, this));
     }

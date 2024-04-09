@@ -76,8 +76,11 @@ public abstract class TypedObjectOptions extends ValueOptionsRestrictedUniverseB
      * @return the typed object
      */
     public static TypedObjectOptions strict(String typeFieldName, Map<String, ObjectOptions> objects) {
-        return builder(typeFieldName, objects).allowUnknownTypes(false).allowMissing(false)
-                .allowedTypes(JsonValueTypes.OBJECT).build();
+        return builder(typeFieldName, objects)
+                .allowUnknownTypes(false)
+                .allowMissing(false)
+                .allowedTypes(JsonValueTypes.OBJECT)
+                .build();
     }
 
     public abstract String typeFieldName();

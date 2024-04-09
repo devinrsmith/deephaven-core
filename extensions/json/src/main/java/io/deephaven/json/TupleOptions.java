@@ -10,7 +10,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * Processes a JSON array as an tuple.
+ * Processes a JSON array as a tuple.
  */
 @Immutable
 @BuildableStyle
@@ -20,7 +20,6 @@ public abstract class TupleOptions extends ValueOptionsRestrictedUniverseBase {
         return ImmutableTupleOptions.builder();
     }
 
-    // todo: allow users to specify the indices they care about; maybe w/ Skip?
     public static TupleOptions of(ValueOptions... values) {
         return builder().addValues(values).build();
     }
@@ -29,11 +28,17 @@ public abstract class TupleOptions extends ValueOptionsRestrictedUniverseBase {
         return builder().addAllValues(values).build();
     }
 
+    /**
+     * The ordered values of the tuple.
+     */
     public abstract List<ValueOptions> values();
 
-    // todo
+    /**
+     * {@inheritDoc} By default is {@link JsonValueTypes#ARRAY_OR_NULL} when all the the {@link #values()} allow
+     * {@link JsonValueTypes#NULL}, otherwise defaults to {@link JsonValueTypes#ARRAY}.
+     */
     @Override
-    public final EnumSet<JsonValueTypes> allowedTypes() {
+    public EnumSet<JsonValueTypes> allowedTypes() {
         return values().stream().allMatch(valueOptions -> valueOptions.allowedTypes().contains(JsonValueTypes.NULL))
                 ? JsonValueTypes.ARRAY_OR_NULL
                 : EnumSet.of(JsonValueTypes.ARRAY);

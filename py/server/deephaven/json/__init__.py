@@ -162,8 +162,8 @@ class FieldOptions:
     """The json value type"""
     aliases: Union[str, List[str]] = field(default_factory=list)
     """The field name aliases. By default, is an empty list."""
-    repeated_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.USE_FIRST
-    """The repeated field behavior. By default, is USE_FIRST."""
+    repeated_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.ERROR
+    """The repeated field behavior. By default, is RepeatedFieldBehavior.ERROR."""
     case_sensitive: bool = True
     """If the field name and aliases should be compared using case-sensitive equality. By default, is True."""
 
@@ -210,7 +210,7 @@ def object_(
     allow_unknown_fields: bool = True,
     allow_missing: bool = True,
     allow_null: bool = True,
-    repeated_field_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.USE_FIRST,
+    repeated_field_behavior: RepeatedFieldBehavior = RepeatedFieldBehavior.ERROR,
     case_sensitive: bool = True,
 ) -> JsonOptions:
     """Creates an object options. For example, the JSON object
@@ -240,7 +240,7 @@ def object_(
         allow_missing (bool): if the object is allowed to be missing, by default is True
         allow_null (bool): if the object is allowed to be a JSON null type, by default is True
         repeated_field_behavior (RepeatedFieldBehavior): the default repeated field behavior, only used for fields that
-            are specified using JsonValueType
+            are specified using JsonValueType, by default is RepeatedFieldBehavior.ERROR
         case_sensitive (bool): if default to use for field case-sensitivity. Only used for fields that are specified
             using JsonValueType, by default is True
 

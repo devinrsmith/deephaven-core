@@ -10,6 +10,12 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 public interface JsonProcessorProvider {
+    /**
+     * Returns the single service-loader {@link JsonProcessorProvider}. If there are none or more than one, throws an
+     * {@link IllegalStateException}.
+     *
+     * @return the service-loader json processor provider
+     */
     static JsonProcessorProvider serviceLoader() {
         final Iterator<JsonProcessorProvider> it = ServiceLoader.load(JsonProcessorProvider.class).iterator();
         if (!it.hasNext()) {

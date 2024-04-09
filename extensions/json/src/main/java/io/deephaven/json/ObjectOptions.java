@@ -27,6 +27,14 @@ public abstract class ObjectOptions extends ValueOptionsRestrictedUniverseBase {
         return ImmutableObjectOptions.builder();
     }
 
+    /**
+     * The lenient object options. The object fields are constructed with {@link ObjectFieldOptions#caseSensitive()} as
+     * {@code false} and {@link ObjectFieldOptions#repeatedBehavior()} as
+     * {@link ObjectFieldOptions.RepeatedBehavior#USE_FIRST}.
+     *
+     * @param fields the fields
+     * @return the lenient object options
+     */
     public static ObjectOptions lenient(Map<String, ValueOptions> fields) {
         final Builder builder = builder();
         for (Entry<String, ValueOptions> e : fields.entrySet()) {
@@ -34,11 +42,18 @@ public abstract class ObjectOptions extends ValueOptionsRestrictedUniverseBase {
                     .name(e.getKey())
                     .options(e.getValue())
                     .caseSensitive(false)
+                    .repeatedBehavior(RepeatedBehavior.USE_FIRST)
                     .build());
         }
         return builder.build();
     }
 
+    /**
+     * The standard object options.
+     *
+     * @param fields the fields
+     * @return the standard object options
+     */
     public static ObjectOptions standard(Map<String, ValueOptions> fields) {
         final Builder builder = builder();
         for (Entry<String, ValueOptions> e : fields.entrySet()) {
@@ -47,16 +62,18 @@ public abstract class ObjectOptions extends ValueOptionsRestrictedUniverseBase {
         return builder.build();
     }
 
+    /**
+     * The strict object options.
+     *
+     * @param fields the fields
+     * @return the strict object options
+     */
     public static ObjectOptions strict(Map<String, ValueOptions> fields) {
         final Builder builder = builder()
                 .allowMissing(false)
                 .allowedTypes(JsonValueTypes.OBJECT);
         for (Entry<String, ValueOptions> e : fields.entrySet()) {
-            builder.addFields(ObjectFieldOptions.builder()
-                    .name(e.getKey())
-                    .options(e.getValue())
-                    .repeatedBehavior(RepeatedBehavior.ERROR)
-                    .build());
+            builder.addFields(ObjectFieldOptions.of(e.getKey(), e.getValue()));
         }
         return builder.build();
     }

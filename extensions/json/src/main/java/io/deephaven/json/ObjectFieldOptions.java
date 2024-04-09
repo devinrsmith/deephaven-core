@@ -21,8 +21,7 @@ public abstract class ObjectFieldOptions {
     }
 
     /**
-     * Creates a case-sensitive field with a single {@code name}. Equivalent to
-     * {@code builder().name(name).options(options).build()}.
+     * Creates a field with a single {@code name}. Equivalent to {@code builder().name(name).options(options).build()}.
      *
      * @param name the name
      * @param options the options
@@ -56,11 +55,11 @@ public abstract class ObjectFieldOptions {
     }
 
     /**
-     * The behavior when a repeated field is encountered. By default is {@link RepeatedBehavior#USE_FIRST}.
+     * The behavior when a repeated field is encountered. By default is {@link RepeatedBehavior#ERROR}.
      */
     @Default
     public RepeatedBehavior repeatedBehavior() {
-        return RepeatedBehavior.USE_FIRST;
+        return RepeatedBehavior.ERROR;
     }
 
     /**

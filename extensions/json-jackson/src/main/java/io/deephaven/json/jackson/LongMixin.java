@@ -67,14 +67,14 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
     }
 
     private long parseFromInt(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt()) {
+        if (!allowNumberInt()) {
             throw Parsing.mismatch(parser, long.class);
         }
         return Parsing.parseIntAsLong(parser);
     }
 
     private long parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowDecimal()) {
+        if (!allowDecimal()) {
             throw Parsing.mismatch(parser, long.class);
         }
         // todo: allow caller to configure between lossy long and truncated long
@@ -82,10 +82,10 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
     }
 
     private long parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, long.class);
         }
-        return options.allowDecimal()
+        return allowDecimal()
                 // todo: allow caller to configure between lossy long and truncated long
                 // ? Helpers.parseDecimalStringAsLossyLong(parser)
                 ? Parsing.parseDecimalStringAsTruncatedLong(parser)
@@ -93,14 +93,14 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
     }
 
     private long parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, long.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_LONG);
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, long.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_LONG);

@@ -59,7 +59,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
     }
 
     RepeaterProcessor elementRepeater(List<WritableChunk<?>> out) {
-        return element().repeaterProcessor(options.allowMissing(), options.allowNull(), out);
+        return element().repeaterProcessor(allowMissing(), allowNull(), out);
     }
 
     private ValueProcessorArrayImpl innerProcessor(List<WritableChunk<?>> out) {

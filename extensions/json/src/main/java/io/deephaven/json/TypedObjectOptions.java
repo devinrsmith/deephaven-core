@@ -77,7 +77,7 @@ public abstract class TypedObjectOptions extends ValueOptions {
      */
     public static TypedObjectOptions strict(String typeFieldName, Map<String, ObjectOptions> objects) {
         return builder(typeFieldName, objects).allowUnknownTypes(false).allowMissing(false)
-                .desiredTypes(JsonValueTypes.OBJECT).build();
+                .allowedTypes(JsonValueTypes.OBJECT).build();
     }
 
     public abstract String typeFieldName();
@@ -94,7 +94,7 @@ public abstract class TypedObjectOptions extends ValueOptions {
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -119,7 +119,7 @@ public abstract class TypedObjectOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -127,7 +127,7 @@ public abstract class TypedObjectOptions extends ValueOptions {
         final ObjectOptions.Builder builder = ObjectOptions.builder()
                 .allowUnknownFields(options.allowUnknownFields())
                 .allowMissing(options.allowMissing())
-                .desiredTypes(options.desiredTypes());
+                .allowedTypes(options.allowedTypes());
         for (ObjectFieldOptions field : options.fields()) {
             if (!excludedFields.contains(field)) {
                 builder.addFields(field);

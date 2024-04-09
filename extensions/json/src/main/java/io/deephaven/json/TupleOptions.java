@@ -33,8 +33,8 @@ public abstract class TupleOptions extends ValueOptions {
     public abstract List<ValueOptions> values();
 
     @Override
-    public final Set<JsonValueTypes> desiredTypes() {
-        return values().stream().allMatch(ValueOptions::allowNull)
+    public final Set<JsonValueTypes> allowedTypes() {
+        return values().stream().allMatch(valueOptions -> valueOptions.allowedTypes().contains(JsonValueTypes.NULL))
                 ? JsonValueTypes.ARRAY_OR_NULL
                 : JsonValueTypes.ARRAY.asSet();
     }
@@ -68,7 +68,7 @@ public abstract class TupleOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.ARRAY_OR_NULL;
     }
 }

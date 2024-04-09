@@ -30,7 +30,7 @@ public abstract class ObjectKvOptions extends ValueOptions {
     public static ObjectKvOptions strict(ValueOptions key, ValueOptions value) {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.OBJECT)
+                .allowedTypes(JsonValueTypes.OBJECT)
                 .repeatedFieldBehavior(RepeatedBehavior.ERROR)
                 .key(key)
                 .value(value)
@@ -46,7 +46,7 @@ public abstract class ObjectKvOptions extends ValueOptions {
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -70,13 +70,13 @@ public abstract class ObjectKvOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
     @Check
     final void checkKey() {
-        if (!key().desiredTypes().contains(JsonValueTypes.STRING)) {
+        if (!key().allowedTypes().contains(JsonValueTypes.STRING)) {
             throw new IllegalArgumentException("key argument must support STRING");
         }
     }

@@ -21,7 +21,7 @@ public abstract class AnyOptions extends ValueOptions {
     }
 
     @Override
-    public final Set<JsonValueTypes> desiredTypes() {
+    public final Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ALL;
     }
 
@@ -36,7 +36,7 @@ public abstract class AnyOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.ALL;
     }
 }

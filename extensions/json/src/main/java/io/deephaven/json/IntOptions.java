@@ -30,7 +30,7 @@ public abstract class IntOptions extends ValueOptions {
      */
     public static IntOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.INT_LIKE)
+                .allowedTypes(JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -51,7 +51,7 @@ public abstract class IntOptions extends ValueOptions {
     public static IntOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT)
+                .allowedTypes(JsonValueTypes.INT)
                 .build();
     }
 
@@ -61,7 +61,7 @@ public abstract class IntOptions extends ValueOptions {
      */
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -94,7 +94,7 @@ public abstract class IntOptions extends ValueOptions {
 
     @Check
     final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
+        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
             throw new IllegalArgumentException();
         }
     }
@@ -107,7 +107,7 @@ public abstract class IntOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

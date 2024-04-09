@@ -29,7 +29,7 @@ public abstract class FloatOptions extends ValueOptions {
      * @return the lenient float options
      */
     public static FloatOptions lenient() {
-        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
+        return builder().allowedTypes(JsonValueTypes.NUMBER_LIKE).build();
     }
 
     /**
@@ -50,13 +50,13 @@ public abstract class FloatOptions extends ValueOptions {
     public static FloatOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER)
+                .allowedTypes(JsonValueTypes.NUMBER)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
     }
 
@@ -84,7 +84,7 @@ public abstract class FloatOptions extends ValueOptions {
 
     @Check
     final void checkOnNull() {
-        if (!allowNull() && onNull() != null) {
+        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull() != null) {
             throw new IllegalArgumentException();
         }
     }
@@ -97,7 +97,7 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

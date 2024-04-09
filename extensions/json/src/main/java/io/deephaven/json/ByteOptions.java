@@ -28,7 +28,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
      */
     public static ByteOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.INT_LIKE)
+                .allowedTypes(JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -49,7 +49,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     public static ByteOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT)
+                .allowedTypes(JsonValueTypes.INT)
                 .build();
     }
 
@@ -59,7 +59,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
      */
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -84,7 +84,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

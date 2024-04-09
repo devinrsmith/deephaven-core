@@ -30,7 +30,7 @@ public abstract class DoubleOptions extends ValueOptions {
      * @return the lenient double options
      */
     public static DoubleOptions lenient() {
-        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
+        return builder().allowedTypes(JsonValueTypes.NUMBER_LIKE).build();
     }
 
     /**
@@ -51,13 +51,13 @@ public abstract class DoubleOptions extends ValueOptions {
     public static DoubleOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER)
+                .allowedTypes(JsonValueTypes.NUMBER)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
     }
 
@@ -84,7 +84,7 @@ public abstract class DoubleOptions extends ValueOptions {
 
     @Check
     final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
+        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
             throw new IllegalArgumentException();
         }
     }
@@ -97,7 +97,7 @@ public abstract class DoubleOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

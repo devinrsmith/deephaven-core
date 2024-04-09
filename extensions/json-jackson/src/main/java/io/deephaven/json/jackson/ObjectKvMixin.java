@@ -86,8 +86,8 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
         final List<WritableChunk<?>> keyColumns = out.subList(0, key.numColumns());
         final List<WritableChunk<?>> valueColumns =
                 out.subList(key.numColumns(), key.numColumns() + value.numColumns());
-        final RepeaterProcessor kp = key.repeaterProcessor(options.allowMissing(), options.allowNull(), keyColumns);
-        final RepeaterProcessor vp = value.repeaterProcessor(options.allowMissing(), options.allowNull(), valueColumns);
+        final RepeaterProcessor kp = key.repeaterProcessor(allowMissing(), allowNull(), keyColumns);
+        final RepeaterProcessor vp = value.repeaterProcessor(allowMissing(), allowNull(), valueColumns);
         return new ValueProcessorKvImpl(kp, vp);
     }
 

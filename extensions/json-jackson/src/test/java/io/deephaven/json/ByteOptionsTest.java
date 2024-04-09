@@ -145,14 +145,14 @@ public class ByteOptionsTest {
     @Test
     void allowDecimal() throws IOException {
         parse(ByteOptions.builder()
-                .desiredTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(), List.of("42.42", "43.999"), ByteChunk.chunkWrap(new byte[] {42, 43}));
     }
 
     @Test
     void allowDecimalString() throws IOException {
         parse(ByteOptions.builder()
-                .desiredTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(),
                 List.of("\"42.42\"", "\"43.999\""), ByteChunk.chunkWrap(new byte[] {42, 43}));
     }
@@ -160,7 +160,7 @@ public class ByteOptionsTest {
     @Test
     void decimalStringLimitsNearMinValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(ByteOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(ByteOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Byte.MIN_VALUE + i)),
                     ByteChunk.chunkWrap(new byte[] {(byte) (Byte.MIN_VALUE + i)}));
@@ -170,7 +170,7 @@ public class ByteOptionsTest {
     @Test
     void decimalStringLimitsNearMaxValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(ByteOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(ByteOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Byte.MAX_VALUE - i)),
                     ByteChunk.chunkWrap(new byte[] {(byte) (Byte.MAX_VALUE - i)}));

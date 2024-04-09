@@ -4,14 +4,10 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import javax.annotation.Nullable;
-import java.time.Instant;
 import java.util.EnumSet;
-import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -32,7 +28,7 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
      */
     public static ShortOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.INT_LIKE)
+                .allowedTypes(JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -53,7 +49,7 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     public static ShortOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.INT)
+                .allowedTypes(JsonValueTypes.INT)
                 .build();
     }
 
@@ -63,7 +59,7 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
      */
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -88,7 +84,7 @@ public abstract class ShortOptions extends BoxedOptions<Short> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

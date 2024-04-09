@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -25,14 +24,14 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
         public InstantNumberOptions lenient(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
+                    .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                     .build();
         }
 
         public InstantNumberOptions standard(boolean allowDecimal) {
             return builder()
                     .format(this)
-                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL)
+                    .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER_OR_NULL : JsonValueTypes.INT_OR_NULL)
                     .build();
         }
 
@@ -40,7 +39,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
             return builder()
                     .format(this)
                     .allowMissing(false)
-                    .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
+                    .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                     .build();
         }
     }
@@ -58,7 +57,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -72,7 +71,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

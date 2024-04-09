@@ -30,7 +30,7 @@ public enum JsonValueTypes {
             throw new IllegalArgumentException("Accepting only NULL");
         }
         if (set.contains(JsonValueTypes.DECIMAL) && !set.contains(JsonValueTypes.INT)) {
-            throw new IllegalArgumentException("Accepting NUMBER_FLOAT but not NUMBER_INT");
+            throw new IllegalArgumentException("Accepting DECIMAL but not INT");
         }
     }
 

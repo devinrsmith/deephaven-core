@@ -39,7 +39,7 @@ public abstract class CharOptions extends BoxedOptions<Character> {
     public static CharOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING)
+                .allowedTypes(JsonValueTypes.STRING)
                 .build();
     }
 
@@ -49,7 +49,7 @@ public abstract class CharOptions extends BoxedOptions<Character> {
      */
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -74,7 +74,7 @@ public abstract class CharOptions extends BoxedOptions<Character> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 }

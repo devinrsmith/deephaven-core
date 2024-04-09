@@ -92,10 +92,10 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
     }
 
     private byte parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, boolean.class);
         }
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             final byte res = Parsing.parseStringAsByteBool(parser, BooleanUtils.NULL_BOOLEAN_AS_BYTE);
             if (res == BooleanUtils.NULL_BOOLEAN_AS_BYTE) {
                 throw Parsing.mismatch(parser, boolean.class);
@@ -106,38 +106,38 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
     }
 
     private byte parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, boolean.class);
         }
         return BooleanUtils.booleanAsByte(options.onNull().orElse(null));
     }
 
     private byte parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, boolean.class);
         }
         return BooleanUtils.booleanAsByte(options.onMissing().orElse(null));
     }
 
     private Boolean parseFromNullBoolean(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, Boolean.class);
         }
         return options.onNull().orElse(null);
     }
 
     private Boolean parseFromMissingBoolean(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, Boolean.class);
         }
         return options.onMissing().orElse(null);
     }
 
     private Boolean parseFromStringBoolean(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, Boolean.class);
         }
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             final Boolean result = Parsing.parseStringAsBoolean(parser, null);
             if (result == null) {
                 throw Parsing.mismatch(parser, Boolean.class);

@@ -20,6 +20,7 @@ import io.deephaven.json.FloatOptions;
 import io.deephaven.json.InstantNumberOptions;
 import io.deephaven.json.InstantOptions;
 import io.deephaven.json.IntOptions;
+import io.deephaven.json.JsonValueTypes;
 import io.deephaven.json.LocalDateOptions;
 import io.deephaven.json.LongOptions;
 import io.deephaven.json.ObjectFieldOptions;
@@ -85,6 +86,39 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
     abstract int numColumns();
 
     abstract Stream<List<String>> paths();
+
+    public final boolean allowNull() {
+        return options().allowedTypes().contains(JsonValueTypes.NULL);
+    }
+
+    public final boolean allowMissing() {
+        return options().allowMissing();
+    }
+
+    public final boolean allowString() {
+        return options().allowedTypes().contains(JsonValueTypes.STRING);
+    }
+
+    public final boolean allowNumberInt() {
+        return options().allowedTypes().contains(JsonValueTypes.INT);
+    }
+
+    public final boolean allowDecimal() {
+        return options().allowedTypes().contains(JsonValueTypes.DECIMAL);
+    }
+
+    public final boolean allowBool() {
+        return options().allowedTypes().contains(JsonValueTypes.BOOL);
+    }
+
+    public final boolean allowObject() {
+        return options().allowedTypes().contains(JsonValueTypes.OBJECT);
+    }
+
+    public final boolean allowArray() {
+        return options().allowedTypes().contains(JsonValueTypes.ARRAY);
+    }
+
 
     @SuppressWarnings("unchecked")
     @Override

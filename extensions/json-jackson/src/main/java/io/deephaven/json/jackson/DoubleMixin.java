@@ -124,7 +124,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     private double parseFromNumber(JsonParser parser) throws IOException {
-        if (!options.allowDecimal() && !options.allowNumberInt()) {
+        if (!allowDecimal() && !allowNumberInt()) {
             throw Parsing.mismatch(parser, double.class);
         }
         // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
@@ -132,21 +132,21 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     private double parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, double.class);
         }
         return Parsing.parseStringAsDouble(parser);
     }
 
     private double parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, double.class);
         }
         return onNullOrDefault();
     }
 
     private double parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, double.class);
         }
         return onMissingOrDefault();

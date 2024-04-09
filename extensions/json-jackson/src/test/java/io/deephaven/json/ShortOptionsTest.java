@@ -145,14 +145,14 @@ public class ShortOptionsTest {
     @Test
     void allowDecimal() throws IOException {
         parse(ShortOptions.builder()
-                .desiredTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(), List.of("42.42", "43.999"), ShortChunk.chunkWrap(new short[] {42, 43}));
     }
 
     @Test
     void allowDecimalString() throws IOException {
         parse(ShortOptions.builder()
-                .desiredTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(),
                 List.of("\"42.42\"", "\"43.999\""), ShortChunk.chunkWrap(new short[] {42, 43}));
     }
@@ -160,7 +160,7 @@ public class ShortOptionsTest {
     @Test
     void decimalStringLimitsNearMinValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(ShortOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(ShortOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Short.MIN_VALUE + i)),
                     ShortChunk.chunkWrap(new short[] {(short) (Short.MIN_VALUE + i)}));
@@ -170,7 +170,7 @@ public class ShortOptionsTest {
     @Test
     void decimalStringLimitsNearMaxValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(ShortOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(ShortOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Short.MAX_VALUE - i)),
                     ShortChunk.chunkWrap(new short[] {(short) (Short.MAX_VALUE - i)}));

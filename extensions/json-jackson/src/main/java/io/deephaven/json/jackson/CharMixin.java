@@ -111,21 +111,21 @@ final class CharMixin extends Mixin<CharOptions> implements ToChar {
     }
 
     private char parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, char.class);
         }
         return Parsing.parseStringAsChar(parser);
     }
 
     private char parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, char.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_CHAR);
     }
 
     private char parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, char.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_CHAR);

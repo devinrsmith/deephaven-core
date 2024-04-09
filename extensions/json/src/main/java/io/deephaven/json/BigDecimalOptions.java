@@ -4,13 +4,11 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.math.BigDecimal;
 import java.util.EnumSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -25,7 +23,7 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
     }
 
     public static BigDecimalOptions lenient() {
-        return builder().desiredTypes(JsonValueTypes.NUMBER_LIKE).build();
+        return builder().allowedTypes(JsonValueTypes.NUMBER_LIKE).build();
     }
 
     public static BigDecimalOptions standard() {
@@ -35,13 +33,13 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
     public static BigDecimalOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.NUMBER)
+                .allowedTypes(JsonValueTypes.NUMBER)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
     }
 
@@ -55,7 +53,7 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

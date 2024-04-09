@@ -23,7 +23,7 @@ public abstract class StringOptions extends BoxedOptions<String> {
 
     public static StringOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.STRING_LIKE)
+                .allowedTypes(JsonValueTypes.STRING_LIKE)
                 .build();
     }
 
@@ -34,13 +34,13 @@ public abstract class StringOptions extends BoxedOptions<String> {
     public static StringOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING)
+                .allowedTypes(JsonValueTypes.STRING)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -71,7 +71,7 @@ public abstract class StringOptions extends BoxedOptions<String> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.STRING_LIKE;
     }
 }

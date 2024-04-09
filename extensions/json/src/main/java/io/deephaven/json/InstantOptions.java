@@ -33,13 +33,13 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
     public static InstantOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING)
+                .allowedTypes(JsonValueTypes.STRING)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -72,7 +72,7 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 }

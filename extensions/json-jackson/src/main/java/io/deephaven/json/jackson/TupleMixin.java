@@ -132,7 +132,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         }
 
         private void processNullTuple(JsonParser parser) throws IOException {
-            if (!options.allowNull()) {
+            if (!allowNull()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
             // Note: we are treating a null tuple the same as a tuple of null objects
@@ -143,7 +143,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         }
 
         private void parseFromMissing(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
             // Note: we are treating a missing tuple the same as a tuple of missing objects (which, is technically
@@ -173,7 +173,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
         @Override
         public void processNullRepeater(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
             for (RepeaterProcessor value : values) {
@@ -183,7 +183,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
 
         @Override
         public void processMissingRepeater(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
             for (RepeaterProcessor value : values) {

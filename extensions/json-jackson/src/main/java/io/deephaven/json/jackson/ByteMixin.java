@@ -115,37 +115,37 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     }
 
     private byte parseFromInt(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt()) {
+        if (!allowNumberInt()) {
             throw Parsing.mismatch(parser, byte.class);
         }
         return Parsing.parseIntAsByte(parser);
     }
 
     private byte parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowDecimal()) {
+        if (!allowDecimal()) {
             throw Parsing.mismatch(parser, byte.class);
         }
         return Parsing.parseDecimalAsTruncatedByte(parser);
     }
 
     private byte parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, byte.class);
         }
-        return options.allowDecimal()
+        return allowDecimal()
                 ? Parsing.parseDecimalStringAsTruncatedByte(parser)
                 : Parsing.parseStringAsByte(parser);
     }
 
     private byte parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, byte.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_BYTE);
     }
 
     private byte parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, byte.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_BYTE);

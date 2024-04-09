@@ -75,25 +75,25 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
         public final long parseValue(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case VALUE_NUMBER_INT:
-                    if (!options.allowNumberInt()) {
+                    if (!allowNumberInt()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }
                     return parseFromInt(parser);
                 case VALUE_NUMBER_FLOAT:
-                    if (!options.allowDecimal()) {
+                    if (!allowDecimal()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }
                     return parseFromDecimal(parser);
                 case VALUE_STRING:
                 case FIELD_NAME:
-                    if (!options.allowString()) {
+                    if (!allowString()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }
-                    return options.allowDecimal()
+                    return allowDecimal()
                             ? parseFromDecimalString(parser)
                             : parseFromString(parser);
                 case VALUE_NULL:
-                    if (!options.allowNull()) {
+                    if (!allowNull()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }
                     return DateTimeUtils.epochNanos(options.onNull().orElse(null));
@@ -103,7 +103,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
         @Override
         public final long parseMissing(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Instant.class);
             }
             return DateTimeUtils.epochNanos(options.onMissing().orElse(null));

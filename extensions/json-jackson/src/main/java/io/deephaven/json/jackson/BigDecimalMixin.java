@@ -68,28 +68,28 @@ final class BigDecimalMixin extends Mixin<BigDecimalOptions> implements ToObject
     }
 
     private BigDecimal parseFromNumber(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt() && !options.allowDecimal()) {
+        if (!allowNumberInt() && !allowDecimal()) {
             throw Parsing.mismatch(parser, BigDecimal.class);
         }
         return Parsing.parseDecimalAsBigDecimal(parser);
     }
 
     private BigDecimal parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, BigDecimal.class);
         }
         return Parsing.parseStringAsBigDecimal(parser);
     }
 
     private BigDecimal parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, BigDecimal.class);
         }
         return options.onNull().orElse(null);
     }
 
     private BigDecimal parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, BigDecimal.class);
         }
         return options.onMissing().orElse(null);

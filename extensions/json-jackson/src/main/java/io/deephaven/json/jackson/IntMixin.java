@@ -116,37 +116,37 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
     }
 
     private int parseFromInt(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt()) {
+        if (!allowNumberInt()) {
             throw Parsing.mismatch(parser, int.class);
         }
         return Parsing.parseIntAsInt(parser);
     }
 
     private int parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowDecimal()) {
+        if (!allowDecimal()) {
             throw Parsing.mismatch(parser, int.class);
         }
         return Parsing.parseDecimalAsTruncatedInt(parser);
     }
 
     private int parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, int.class);
         }
-        return options.allowDecimal()
+        return allowDecimal()
                 ? Parsing.parseDecimalStringAsTruncatedInt(parser)
                 : Parsing.parseStringAsInt(parser);
     }
 
     private int parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, int.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_INT);
     }
 
     private int parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, int.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_INT);

@@ -71,14 +71,14 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
     }
 
     private LocalDate parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, LocalDate.class);
         }
         return options.onNull().orElse(null);
     }
 
     private LocalDate parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, LocalDate.class);
         }
         return options.onMissing().orElse(null);

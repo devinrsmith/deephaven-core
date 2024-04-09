@@ -69,37 +69,37 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
     }
 
     private BigInteger parseFromInt(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt()) {
+        if (!allowNumberInt()) {
             throw Parsing.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
     private BigInteger parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowDecimal()) {
+        if (!allowDecimal()) {
             throw Parsing.mismatch(parser, BigInteger.class);
         }
         return parser.getBigIntegerValue();
     }
 
     private BigInteger parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, BigInteger.class);
         }
-        return options.allowDecimal()
+        return allowDecimal()
                 ? Parsing.parseStringAsTruncatedBigInteger(parser)
                 : Parsing.parseStringAsBigInteger(parser);
     }
 
     private BigInteger parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, BigInteger.class);
         }
         return options.onNull().orElse(null);
     }
 
     private BigInteger parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, BigInteger.class);
         }
         return options.onMissing().orElse(null);

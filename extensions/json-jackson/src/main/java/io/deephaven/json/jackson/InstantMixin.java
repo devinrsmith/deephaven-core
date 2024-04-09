@@ -74,14 +74,14 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     private long parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, Instant.class);
         }
         return DateTimeUtils.epochNanos(options.onNull().orElse(null));
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, Instant.class);
         }
         return DateTimeUtils.epochNanos(options.onMissing().orElse(null));

@@ -27,7 +27,7 @@ public abstract class SkipOptions extends ValueOptions {
 
     @Override
     @Default
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ALL;
     }
 
@@ -41,7 +41,7 @@ public abstract class SkipOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.ALL;
     }
 }

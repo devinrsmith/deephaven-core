@@ -24,7 +24,7 @@ public abstract class BoxedOptions<T> extends ValueOptions {
 
     @Check
     final void checkOnNull() {
-        if (!allowNull() && onNull().isPresent()) {
+        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
             throw new IllegalArgumentException("onNull is only relevant when allowing null");
         }
     }

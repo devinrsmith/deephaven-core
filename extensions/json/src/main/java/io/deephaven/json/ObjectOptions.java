@@ -50,7 +50,7 @@ public abstract class ObjectOptions extends ValueOptions {
     public static ObjectOptions strict(Map<String, ValueOptions> fields) {
         final Builder builder = builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.OBJECT);
+                .allowedTypes(JsonValueTypes.OBJECT);
         for (Entry<String, ValueOptions> e : fields.entrySet()) {
             builder.addFields(ObjectFieldOptions.builder()
                     .name(e.getKey())
@@ -76,7 +76,7 @@ public abstract class ObjectOptions extends ValueOptions {
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -105,7 +105,7 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 

@@ -30,13 +30,13 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
     public static LocalDateOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.STRING)
+                .allowedTypes(JsonValueTypes.STRING)
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -64,7 +64,7 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
 
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 }

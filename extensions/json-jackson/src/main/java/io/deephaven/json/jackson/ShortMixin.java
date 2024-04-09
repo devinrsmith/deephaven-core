@@ -115,37 +115,37 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
     }
 
     private short parseFromInt(JsonParser parser) throws IOException {
-        if (!options.allowNumberInt()) {
+        if (!allowNumberInt()) {
             throw Parsing.mismatch(parser, short.class);
         }
         return Parsing.parseIntAsShort(parser);
     }
 
     private short parseFromDecimal(JsonParser parser) throws IOException {
-        if (!options.allowDecimal()) {
+        if (!allowDecimal()) {
             throw Parsing.mismatch(parser, short.class);
         }
         return Parsing.parseDecimalAsTruncatedShort(parser);
     }
 
     private short parseFromString(JsonParser parser) throws IOException {
-        if (!options.allowString()) {
+        if (!allowString()) {
             throw Parsing.mismatch(parser, short.class);
         }
-        return options.allowDecimal()
+        return allowDecimal()
                 ? Parsing.parseDecimalStringAsTruncatedShort(parser)
                 : Parsing.parseStringAsShort(parser);
     }
 
     private short parseFromNull(JsonParser parser) throws IOException {
-        if (!options.allowNull()) {
+        if (!allowNull()) {
             throw Parsing.mismatch(parser, short.class);
         }
         return options.onNull().orElse(QueryConstants.NULL_SHORT);
     }
 
     private short parseFromMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, short.class);
         }
         return options.onMissing().orElse(QueryConstants.NULL_SHORT);

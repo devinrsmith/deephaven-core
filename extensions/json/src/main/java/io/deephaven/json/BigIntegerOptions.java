@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
@@ -25,7 +24,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     public static BigIntegerOptions lenient(boolean allowDecimal) {
         // todo: float
         return builder()
-                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
+                .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER_LIKE : JsonValueTypes.INT_LIKE)
                 .build();
     }
 
@@ -37,13 +36,13 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     public static BigIntegerOptions strict(boolean allowDecimal) {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
+                .allowedTypes(allowDecimal ? JsonValueTypes.NUMBER : JsonValueTypes.INT.asSet())
                 .build();
     }
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
     }
 
@@ -57,7 +56,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.NUMBER_LIKE;
     }
 }

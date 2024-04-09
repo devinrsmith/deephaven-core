@@ -173,7 +173,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
             for (ValueProcessor value : fields.values()) {
@@ -182,7 +182,7 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
         }
 
         private void processNullObject(JsonParser parser) throws IOException {
-            if (!options.allowNull()) {
+            if (!allowNull()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
             for (ValueProcessor value : fields.values()) {

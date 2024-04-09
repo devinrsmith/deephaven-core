@@ -23,7 +23,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
 
     public static BoolOptions lenient() {
         return builder()
-                .desiredTypes(JsonValueTypes.BOOL_LIKE)
+                .allowedTypes(JsonValueTypes.BOOL_LIKE)
                 .build();
     }
 
@@ -44,7 +44,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     public static BoolOptions strict() {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.BOOL)
+                .allowedTypes(JsonValueTypes.BOOL)
                 .build();
     }
 
@@ -54,7 +54,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
      */
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.BOOL_OR_NULL;
     }
 
@@ -79,7 +79,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.BOOL_LIKE;
     }
 }

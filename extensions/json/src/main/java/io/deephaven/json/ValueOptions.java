@@ -15,12 +15,13 @@ import java.util.Set;
 
 /**
  * The base configuration for JSON values.
- *
- * @see StringOptions
  */
 public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
 
-    public abstract Set<JsonValueTypes> desiredTypes();
+    /**
+     * The allowed types.
+     */
+    public abstract Set<JsonValueTypes> allowedTypes();
 
     /**
      * If the processor should allow a missing JSON value. By default, is {@code true}.
@@ -61,7 +62,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     public final SkipOptions skip() {
         return SkipOptions.builder()
                 .allowMissing(allowMissing())
-                .desiredTypes(desiredTypes())
+                .allowedTypes(allowedTypes())
                 .build();
     }
 
@@ -126,21 +127,21 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
         B allowMissing(boolean allowMissing);
 
-        B desiredTypes(Set<JsonValueTypes> desiredTypes);
+        B allowedTypes(Set<JsonValueTypes> desiredTypes);
 
-        default B desiredTypes(JsonValueTypes... desiredTypes) {
-            return desiredTypes(Set.of(desiredTypes));
+        default B allowedTypes(JsonValueTypes... desiredTypes) {
+            return allowedTypes(Set.of(desiredTypes));
         }
 
         V build();
     }
 
-    abstract EnumSet<JsonValueTypes> allowableTypes();
+    abstract EnumSet<JsonValueTypes> restrictedToTypes();
 
     @Check
     void checkIllegalTypes() {
-        for (JsonValueTypes type : desiredTypes()) {
-            if (!allowableTypes().contains(type)) {
+        for (JsonValueTypes type : allowedTypes()) {
+            if (!restrictedToTypes().contains(type)) {
                 throw new IllegalArgumentException("Unexpected type " + type);
             }
         }
@@ -148,35 +149,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
 
     @Check
     final void checkInvariants() {
-        JsonValueTypes.checkInvariants(desiredTypes());
-    }
-
-    public final boolean allowNull() {
-        return desiredTypes().contains(JsonValueTypes.NULL);
-    }
-
-    public final boolean allowString() {
-        return desiredTypes().contains(JsonValueTypes.STRING);
-    }
-
-    public final boolean allowNumberInt() {
-        return desiredTypes().contains(JsonValueTypes.INT);
-    }
-
-    public final boolean allowDecimal() {
-        return desiredTypes().contains(JsonValueTypes.DECIMAL);
-    }
-
-    public final boolean allowBool() {
-        return desiredTypes().contains(JsonValueTypes.BOOL);
-    }
-
-    public final boolean allowObject() {
-        return desiredTypes().contains(JsonValueTypes.OBJECT);
-    }
-
-    public final boolean allowArray() {
-        return desiredTypes().contains(JsonValueTypes.ARRAY);
+        JsonValueTypes.checkInvariants(allowedTypes());
     }
 
     // for nested / typedescr cases

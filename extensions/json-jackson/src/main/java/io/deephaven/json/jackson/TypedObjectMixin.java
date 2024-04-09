@@ -116,7 +116,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         return ObjectOptions.builder()
                 .allowUnknownFields(objectOpts.allowUnknownFields())
                 .allowMissing(objectOpts.allowMissing())
-                .desiredTypes(objectOpts.desiredTypes())
+                .allowedTypes(objectOpts.allowedTypes())
                 .addAllFields(sharedFields)
                 .addAllFields(objectOpts.fields())
                 .build();
@@ -132,7 +132,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
             case FIELD_NAME:
                 return parser.getText();
             case VALUE_NULL:
-                if (!options.allowNull()) {
+                if (!allowNull()) {
                     throw Parsing.mismatch(parser, String.class);
                 }
                 return null;
@@ -198,7 +198,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
 
         @Override
         public void processMissing(JsonParser parser) throws IOException {
-            if (!options.allowMissing()) {
+            if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Object.class);
             }
             // onMissingType()?
@@ -209,7 +209,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
         }
 
         private void processNullObject(JsonParser parser) throws IOException {
-            if (!options.allowNull()) {
+            if (!allowNull()) {
                 throw Parsing.mismatch(parser, Object.class);
             }
             // onNullType()?

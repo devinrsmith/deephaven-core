@@ -3,10 +3,8 @@
 //
 package io.deephaven.json;
 
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.exc.InputCoercionException;
 import io.deephaven.chunk.IntChunk;
-import io.deephaven.chunk.LongChunk;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
 
@@ -147,14 +145,14 @@ public class IntOptionsTest {
     @Test
     void allowDecimal() throws IOException {
         parse(IntOptions.builder()
-                .desiredTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(), List.of("42.42", "43.999"), IntChunk.chunkWrap(new int[] {42, 43}));
     }
 
     @Test
     void allowDecimalString() throws IOException {
         parse(IntOptions.builder()
-                .desiredTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
+                .allowedTypes(JsonValueTypes.STRING, JsonValueTypes.INT, JsonValueTypes.DECIMAL)
                 .build(),
                 List.of("\"42.42\"", "\"43.999\""), IntChunk.chunkWrap(new int[] {42, 43}));
     }
@@ -162,7 +160,7 @@ public class IntOptionsTest {
     @Test
     void decimalStringLimitsNearMinValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(IntOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(IntOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Integer.MIN_VALUE + i)),
                     IntChunk.chunkWrap(new int[] {Integer.MIN_VALUE + i}));
@@ -172,7 +170,7 @@ public class IntOptionsTest {
     @Test
     void decimalStringLimitsNearMaxValue() throws IOException {
         for (int i = 0; i < 100; ++i) {
-            parse(IntOptions.builder().desiredTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
+            parse(IntOptions.builder().allowedTypes(JsonValueTypes.STRING, JsonValueTypes.DECIMAL, JsonValueTypes.INT)
                     .build(),
                     List.of(String.format("\"%d.0\"", Integer.MAX_VALUE - i)),
                     IntChunk.chunkWrap(new int[] {Integer.MAX_VALUE - i}));

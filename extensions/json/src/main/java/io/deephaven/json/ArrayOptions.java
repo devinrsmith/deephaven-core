@@ -25,7 +25,7 @@ public abstract class ArrayOptions extends ValueOptions {
     public static ArrayOptions strict(ValueOptions element) {
         return builder()
                 .allowMissing(false)
-                .desiredTypes(JsonValueTypes.ARRAY)
+                .allowedTypes(JsonValueTypes.ARRAY)
                 .element(element)
                 .build();
     }
@@ -34,7 +34,7 @@ public abstract class ArrayOptions extends ValueOptions {
 
     @Default
     @Override
-    public Set<JsonValueTypes> desiredTypes() {
+    public Set<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.ARRAY_OR_NULL;
     }
 
@@ -49,7 +49,7 @@ public abstract class ArrayOptions extends ValueOptions {
     }
 
     @Override
-    final EnumSet<JsonValueTypes> allowableTypes() {
+    final EnumSet<JsonValueTypes> restrictedToTypes() {
         return JsonValueTypes.ARRAY_OR_NULL;
     }
 }

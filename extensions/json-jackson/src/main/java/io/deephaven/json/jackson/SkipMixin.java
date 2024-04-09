@@ -49,41 +49,41 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Repe
     public void processCurrentValue(JsonParser parser) throws IOException {
         switch (parser.currentToken()) {
             case START_OBJECT:
-                if (!options.allowObject()) {
+                if (!allowObject()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 parser.skipChildren();
                 break;
             case START_ARRAY:
-                if (!options.allowArray()) {
+                if (!allowArray()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 parser.skipChildren();
                 break;
             case VALUE_STRING:
             case FIELD_NAME:
-                if (!options.allowString()) {
+                if (!allowString()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 break;
             case VALUE_NUMBER_INT:
-                if (!options.allowNumberInt()) {
+                if (!allowNumberInt()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 break;
             case VALUE_NUMBER_FLOAT:
-                if (!options.allowDecimal()) {
+                if (!allowDecimal()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 break;
             case VALUE_TRUE:
             case VALUE_FALSE:
-                if (!options.allowBool()) {
+                if (!allowBool()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 break;
             case VALUE_NULL:
-                if (!options.allowNull()) {
+                if (!allowNull()) {
                     throw Parsing.mismatch(parser, void.class);
                 }
                 break;
@@ -94,7 +94,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Repe
 
     @Override
     public void processMissing(JsonParser parser) throws IOException {
-        if (!options.allowMissing()) {
+        if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, void.class);
         }
     }

@@ -12,7 +12,6 @@ import org.immutables.value.Value.Default;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The base configuration for JSON values.
@@ -135,17 +134,6 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
         }
 
         V build();
-    }
-
-    abstract EnumSet<JsonValueTypes> restrictedToTypes();
-
-    @Check
-    void checkIllegalTypes() {
-        for (JsonValueTypes type : allowedTypes()) {
-            if (!restrictedToTypes().contains(type)) {
-                throw new IllegalArgumentException("Unexpected type " + type);
-            }
-        }
     }
 
     @Check

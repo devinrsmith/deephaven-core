@@ -7,7 +7,6 @@ import io.deephaven.annotations.SimpleStyle;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as an implementation-specific object.
@@ -39,10 +38,5 @@ public abstract class AnyOptions extends ValueOptions {
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.ALL;
     }
 }

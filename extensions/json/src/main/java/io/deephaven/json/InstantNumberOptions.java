@@ -9,7 +9,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.time.Instant;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON number as an {@link Instant}.
@@ -54,12 +53,20 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
     public abstract Format format();
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#INT_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#NUMBER_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 
     @Override
@@ -69,10 +76,5 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
 
     public interface Builder extends BoxedOptions.Builder<Instant, InstantNumberOptions, Builder> {
         Builder format(Format format);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
     }
 }

@@ -9,7 +9,6 @@ import org.immutables.value.Value.Immutable;
 
 import java.math.BigDecimal;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@link BigDecimal}.
@@ -38,12 +37,20 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#NUMBER_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 
     @Override
@@ -53,10 +60,5 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
 
     public interface Builder extends BoxedOptions.Builder<BigDecimal, BigDecimalOptions, Builder> {
 
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
     }
 }

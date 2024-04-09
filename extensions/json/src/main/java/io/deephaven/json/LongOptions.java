@@ -10,14 +10,13 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.OptionalLong;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code long}.
  */
 @Immutable
 @BuildableStyle
-public abstract class LongOptions extends ValueOptions {
+public abstract class LongOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableLongOptions.builder();
@@ -56,12 +55,20 @@ public abstract class LongOptions extends ValueOptions {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#INT_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#INT_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.INT_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#NUMBER_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 
     /**
@@ -102,10 +109,5 @@ public abstract class LongOptions extends ValueOptions {
         if (!allowMissing() && onMissing().isPresent()) {
             throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
     }
 }

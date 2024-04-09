@@ -8,7 +8,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code char}.
@@ -44,11 +43,19 @@ public abstract class CharOptions extends BoxedOptions<Character> {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#STRING_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#STRING_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -70,10 +77,5 @@ public abstract class CharOptions extends BoxedOptions<Character> {
         default Builder onMissing(Character onMissing) {
             return onMissing((char) onMissing);
         }
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.STRING_OR_NULL;
     }
 }

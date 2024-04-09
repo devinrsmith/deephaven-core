@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON string as an {@link LocalDate}.
@@ -34,9 +33,20 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
                 .build();
     }
 
+    /**
+     * {@inheritDoc} By default is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -60,11 +70,5 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
     public interface Builder extends BoxedOptions.Builder<LocalDate, LocalDateOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
-    }
-
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.STRING_OR_NULL;
     }
 }

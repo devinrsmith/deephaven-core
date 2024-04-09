@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Immutable
 @BuildableStyle
-public abstract class TypedObjectOptions extends ValueOptions {
+public abstract class TypedObjectOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableTypedObjectOptions.builder();
@@ -87,17 +87,28 @@ public abstract class TypedObjectOptions extends ValueOptions {
     // canonical name
     public abstract Map<String, ObjectOptions> objects();
 
+    /**
+     * If unknown fields are allowed. By default is {@code true}.
+     */
     @Default
     public boolean allowUnknownTypes() {
         return true;
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#OBJECT_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#OBJECT_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#OBJECT_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -119,11 +130,6 @@ public abstract class TypedObjectOptions extends ValueOptions {
         Builder putObjects(String key, ObjectOptions value);
 
         Builder allowUnknownTypes(boolean allowUnknownTypes);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.OBJECT_OR_NULL;
     }
 
     private static ObjectOptions without(ObjectOptions options, Set<ObjectFieldOptions> excludedFields) {

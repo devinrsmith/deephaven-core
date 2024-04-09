@@ -10,14 +10,13 @@ import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Nullable;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code float}.
  */
 @Immutable
 @BuildableStyle
-public abstract class FloatOptions extends ValueOptions {
+public abstract class FloatOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableFloatOptions.builder();
@@ -54,12 +53,20 @@ public abstract class FloatOptions extends ValueOptions {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.NUMBER_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#NUMBER_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.NUMBER_LIKE;
     }
 
     @Nullable
@@ -96,10 +103,5 @@ public abstract class FloatOptions extends ValueOptions {
         if (!allowMissing() && onMissing() != null) {
             throw new IllegalArgumentException("onMissing set, but allowMissing is false");
         }
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
     }
 }

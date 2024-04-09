@@ -21,7 +21,7 @@ import java.util.TreeSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class ObjectOptions extends ValueOptions {
+public abstract class ObjectOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableObjectOptions.builder();
@@ -67,7 +67,7 @@ public abstract class ObjectOptions extends ValueOptions {
     public abstract Set<ObjectFieldOptions> fields();
 
     /**
-     * If unknown fields are allowed for {@code this} object.
+     * If unknown fields are allowed. By default is {@code true}.
      */
     @Default
     public boolean allowUnknownFields() {
@@ -75,11 +75,19 @@ public abstract class ObjectOptions extends ValueOptions {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#OBJECT_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#OBJECT_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.OBJECT_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#OBJECT_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.OBJECT_OR_NULL;
     }
 
@@ -105,11 +113,6 @@ public abstract class ObjectOptions extends ValueOptions {
         Builder addFields(ObjectFieldOptions... elements);
 
         Builder addAllFields(Iterable<? extends ObjectFieldOptions> elements);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.OBJECT_OR_NULL;
     }
 
     @Check

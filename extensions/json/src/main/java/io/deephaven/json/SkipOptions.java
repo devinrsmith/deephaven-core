@@ -8,7 +8,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value by skipping it.
@@ -41,10 +40,5 @@ public abstract class SkipOptions extends ValueOptions {
 
     public interface Builder extends ValueOptions.Builder<SkipOptions, Builder> {
 
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.ALL;
     }
 }

@@ -8,11 +8,10 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 @Immutable
 @BuildableStyle
-public abstract class ArrayOptions extends ValueOptions {
+public abstract class ArrayOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableArrayOptions.builder();
@@ -33,11 +32,19 @@ public abstract class ArrayOptions extends ValueOptions {
     public abstract ValueOptions element();
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#ARRAY_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#ARRAY_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.ARRAY_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#ARRAY_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.ARRAY_OR_NULL;
     }
 
@@ -49,10 +56,5 @@ public abstract class ArrayOptions extends ValueOptions {
     public interface Builder extends ValueOptions.Builder<ArrayOptions, Builder> {
 
         Builder element(ValueOptions options);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.ARRAY_OR_NULL;
     }
 }

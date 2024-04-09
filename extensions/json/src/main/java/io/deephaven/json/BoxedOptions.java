@@ -7,10 +7,17 @@ import org.immutables.value.Value.Check;
 
 import java.util.Optional;
 
-public abstract class BoxedOptions<T> extends ValueOptions {
+public abstract class BoxedOptions<T> extends ValueOptionsRestrictedUniverseBase {
 
+    /**
+     * The value to use when {@link JsonValueTypes#NULL} is encountered. {@link #allowedTypes()} must contain
+     * {@link JsonValueTypes#NULL}.
+     */
     public abstract Optional<T> onNull();
 
+    /**
+     * The value to use when a value is missing. {@link #allowMissing()} must be {@code true}.
+     */
     public abstract Optional<T> onMissing();
 
     public interface Builder<T, V extends BoxedOptions<T>, B extends Builder<T, V, B>>

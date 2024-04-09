@@ -8,7 +8,6 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@code boolean}.
@@ -54,12 +53,20 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#BOOL_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#BOOL_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
         return JsonValueTypes.BOOL_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#BOOL_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.BOOL_LIKE;
     }
 
     @Override
@@ -80,10 +87,5 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
         default Builder onMissing(Boolean onMissing) {
             return onMissing((boolean) onMissing);
         }
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.BOOL_LIKE;
     }
 }

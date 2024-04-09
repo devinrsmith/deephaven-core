@@ -8,14 +8,13 @@ import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Processes a JSON array as an tuple.
  */
 @Immutable
 @BuildableStyle
-public abstract class TupleOptions extends ValueOptions {
+public abstract class TupleOptions extends ValueOptionsRestrictedUniverseBase {
 
     public static Builder builder() {
         return ImmutableTupleOptions.builder();
@@ -40,6 +39,14 @@ public abstract class TupleOptions extends ValueOptions {
                 : EnumSet.of(JsonValueTypes.ARRAY);
     }
 
+    /**
+     * The universe, is {@link JsonValueTypes#ARRAY_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.ARRAY_OR_NULL;
+    }
+
     @Override
     public final boolean allowMissing() {
         return values().stream().allMatch(ValueOptions::allowMissing);
@@ -61,10 +68,5 @@ public abstract class TupleOptions extends ValueOptions {
         Builder addAllValues(Iterable<? extends ValueOptions> elements);
 
         TupleOptions build();
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.ARRAY_OR_NULL;
     }
 }

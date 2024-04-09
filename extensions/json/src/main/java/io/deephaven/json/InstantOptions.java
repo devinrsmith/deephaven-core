@@ -11,7 +11,6 @@ import java.lang.Runtime.Version;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON string as an {@link Instant}.
@@ -38,11 +37,19 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
     }
 
     /**
-     * The allowed types. By default is {@link JsonValueTypes#STRING_OR_NULL}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#STRING_OR_NULL}.
      */
     @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
+        return JsonValueTypes.STRING_OR_NULL;
+    }
+
+    /**
+     * The universe, is {@link JsonValueTypes#STRING_OR_NULL}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
         return JsonValueTypes.STRING_OR_NULL;
     }
 
@@ -72,10 +79,5 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
     public interface Builder extends BoxedOptions.Builder<Instant, InstantOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.STRING_OR_NULL;
     }
 }

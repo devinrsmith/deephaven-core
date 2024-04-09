@@ -4,12 +4,10 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.math.BigInteger;
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Processes a JSON value as a {@link BigInteger}.
@@ -40,14 +38,13 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
                 .build();
     }
 
-    // /**
-    // * The allowed types. By default is {@link JsonValueTypes#NUMBER_OR_NULL}.
-    // */
-    // @Default
-    // @Override
-    // public EnumSet<JsonValueTypes> allowedTypes() {
-    // return JsonValueTypes.NUMBER_OR_NULL;
-    // }
+    /**
+     * The universe, is {@link JsonValueTypes#NUMBER_LIKE}.
+     */
+    @Override
+    public final EnumSet<JsonValueTypes> universe() {
+        return JsonValueTypes.NUMBER_LIKE;
+    }
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {
@@ -56,10 +53,5 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
 
     public interface Builder extends BoxedOptions.Builder<BigInteger, BigIntegerOptions, Builder> {
 
-    }
-
-    @Override
-    final EnumSet<JsonValueTypes> restrictedToTypes() {
-        return JsonValueTypes.NUMBER_LIKE;
     }
 }

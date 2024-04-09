@@ -6,30 +6,18 @@ package io.deephaven.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamReadFeature;
-import io.deephaven.json.Source;
-import io.deephaven.json.Source.Visitor;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Objects;
 
-final class JacksonSource implements Visitor<JsonParser> {
-    public static JsonParser of(JsonFactory factory, Source source) throws IOException {
-        try {
-            return source.walk(new JacksonSource(factory));
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
-    }
+final class JacksonSource {
 
     public static JsonParser of(JsonFactory factory, String content) throws IOException {
         return factory.createParser(content);
@@ -75,79 +63,5 @@ final class JacksonSource implements Visitor<JsonParser> {
         }
         // todo: we could build CharBufferReader. Surprised it's not build into JDK.
         throw new RuntimeException("todo");
-    }
-
-    private final JsonFactory factory;
-
-    public JacksonSource(JsonFactory factory) {
-        this.factory = Objects.requireNonNull(factory);
-    }
-
-    @Override
-    public JsonParser visit(String content) {
-        try {
-            return of(factory, content);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(ByteBuffer buffer) {
-        try {
-            return of(factory, buffer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(CharBuffer buffer) {
-        try {
-            return of(factory, buffer);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(File file) {
-        try {
-            return of(factory, file);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(Path path) {
-        try {
-            return of(factory, path);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(InputStream inputStream) {
-        try {
-            return of(factory, inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(URL url) {
-        try {
-            return of(factory, url);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public JsonParser visit(Collection<Source> sources) {
-        throw new IllegalStateException("Expected single source");
     }
 }

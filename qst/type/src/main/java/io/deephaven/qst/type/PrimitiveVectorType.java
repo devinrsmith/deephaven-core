@@ -43,10 +43,6 @@ public abstract class PrimitiveVectorType<T, ComponentType>
         return ImmutablePrimitiveVectorType.of(clazz, primitiveType);
     }
 
-    public static boolean isPrimitiveVectorType(Class<?> clazz) {
-        return VALID_CLASSES.contains(clazz.getName());
-    }
-
     static List<PrimitiveVectorType<?, ?>> types() throws ClassNotFoundException,
             NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         List<PrimitiveVectorType<?, ?>> out = new ArrayList<>(VALID_CLASSES.size());
@@ -78,7 +74,7 @@ public abstract class PrimitiveVectorType<T, ComponentType>
 
     @Check
     final void checkClazz() {
-        if (!isPrimitiveVectorType(clazz())) {
+        if (!VALID_CLASSES.contains(clazz().getName())) {
             throw new IllegalArgumentException(String.format("Class '%s' is not a valid '%s'",
                     clazz(), PrimitiveVectorType.class));
         }

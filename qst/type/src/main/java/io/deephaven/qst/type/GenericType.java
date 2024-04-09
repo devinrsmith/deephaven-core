@@ -15,14 +15,6 @@ package io.deephaven.qst.type;
  */
 public interface GenericType<T> extends Type<T> {
 
-    static <T> GenericType<T> find(Class<T> clazz) {
-        final Type<T> type = Type.find(clazz);
-        if (!(type instanceof GenericType)) {
-            throw new IllegalArgumentException(String.format("Class '%s' is not a generic type", clazz.getName()));
-        }
-        return (GenericType<T>) type;
-    }
-
     NativeArrayType<T[], T> arrayType();
 
     <R> R walk(Visitor<R> visitor);

@@ -32,14 +32,6 @@ public interface PrimitiveType<T> extends Type<T> {
                 DoubleType.of());
     }
 
-    static <T> PrimitiveType<T> find(Class<T> clazz) {
-        final PrimitiveType<T> primitiveType = TypeHelper.findStaticPrimitive(clazz).orElse(null);
-        if (primitiveType == null) {
-            throw new IllegalArgumentException(String.format("Class '%s' is not a primitive type", clazz.getName()));
-        }
-        return primitiveType;
-    }
-
     BoxedType<T> boxedType();
 
     <R> R walk(Visitor<R> visitor);

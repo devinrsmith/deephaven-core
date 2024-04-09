@@ -4,7 +4,6 @@
 package io.deephaven.qst.type;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -25,7 +24,7 @@ public interface Type<T> {
      * @return the type
      */
     static <T> Type<T> find(Class<T> clazz) {
-        Optional<Type<T>> found = TypeHelper.findStatic(Objects.requireNonNull(clazz));
+        Optional<Type<T>> found = TypeHelper.findStatic(clazz);
         if (found.isPresent()) {
             return found.get();
         }
@@ -33,33 +32,6 @@ public interface Type<T> {
             return NativeArrayType.of(clazz, find(clazz.getComponentType()));
         }
         return CustomType.of(clazz);
-    }
-
-    /**
-     * Finds the type given the data type {@code clazz} and component type {@code componentType}. Equivalent to
-     * {@code componentType == null ? find(clazz) : ArrayType.find(clazz, componentType)}.
-     *
-     * @param clazz the clazz
-     * @param componentType the optional component type
-     * @return the type
-     * @param <T> the type
-     * @see #find(Class)
-     * @see ArrayType#find(Class, Class)
-     */
-    static <T> Type<T> find(Class<T> clazz, Class<?> componentType) {
-        return componentType == null ? find(clazz) : ArrayType.find(clazz, componentType);
-    }
-
-    /**
-     * When {@code type} is an {@link ArrayType}, returns the {@link ArrayType#componentType()}.
-     *
-     * @param type the type
-     * @return the component type
-     */
-    static Optional<Type<?>> componentType(Type<?> type) {
-        return type instanceof ArrayType
-                ? Optional.of(((ArrayType<?, ?>) type).componentType())
-                : Optional.empty();
     }
 
     /**

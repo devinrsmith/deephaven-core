@@ -3,8 +3,6 @@
 //
 package io.deephaven.qst.type;
 
-import java.util.Objects;
-
 /**
  * An array-like type.
  *
@@ -15,22 +13,6 @@ import java.util.Objects;
  * @see GenericVectorType
  */
 public interface ArrayType<T, ComponentType> extends GenericType<T> {
-
-    static <T, ComponentType> ArrayType<T, ComponentType> find(Class<T> clazz,
-            Class<ComponentType> componentTypeClass) {
-        Objects.requireNonNull(clazz);
-        Objects.requireNonNull(componentTypeClass);
-        if (clazz.isArray()) {
-            return NativeArrayType.of(clazz, Type.find(componentTypeClass));
-        }
-        if (PrimitiveVectorType.isPrimitiveVectorType(clazz)) {
-            return PrimitiveVectorType.of(clazz, PrimitiveType.find(componentTypeClass));
-        }
-        if (GenericVectorType.isGenericVectorType(clazz)) {
-            return GenericVectorType.of(clazz, GenericType.find(componentTypeClass));
-        }
-        throw new IllegalArgumentException(String.format("Class '%s' is not an array type", clazz.getName()));
-    }
 
     /**
      * The component type.

@@ -51,16 +51,6 @@ class TypeHelper {
         return Optional.ofNullable((Type<T>) MAPPINGS.get(clazz));
     }
 
-    static <T> Optional<PrimitiveType<T>> findStaticPrimitive(Class<T> clazz) {
-        return findStatic(clazz)
-                .filter(TypeHelper::isPrimitive)
-                .<PrimitiveType<T>>map(PrimitiveType.class::cast);
-    }
-
-    static boolean isPrimitive(Type<?> type) {
-        return type instanceof PrimitiveType;
-    }
-
     static class AddMappings implements Type.Visitor<Void>, GenericType.Visitor<Void> {
 
         private final Map<Class<?>, Type<?>> mappings = new HashMap<>();

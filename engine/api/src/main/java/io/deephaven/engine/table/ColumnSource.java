@@ -8,8 +8,6 @@ import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.WritableRowSet;
-import io.deephaven.qst.type.ArrayType;
-import io.deephaven.qst.type.Type;
 import io.deephaven.util.annotations.FinalDefault;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,11 +29,6 @@ public interface ColumnSource<T>
     Class<T> getType();
 
     Class<?> getComponentType();
-
-    @FinalDefault
-    default Type<T> type() {
-        return Type.find(getType(), getComponentType());
-    }
 
     @FinalDefault
     default ChunkType getChunkType() {
@@ -219,15 +212,6 @@ public interface ColumnSource<T>
         TypeHelper.checkCastTo("ColumnSource", getType(), getComponentType(), clazz, componentType);
         // noinspection unchecked
         return (ColumnSource<TYPE>) this;
-    }
-
-    @FinalDefault
-    default <TYPE> ColumnSource<TYPE> cast(Type<? extends TYPE> type) {
-        Require.neqNull(type, "type");
-        final Class<?> componentTypeClazz = type instanceof ArrayType
-                ? ((ArrayType<? extends TYPE, ?>) type).componentType().clazz()
-                : null;
-        return cast(type.clazz(), componentTypeClazz);
     }
 
     /**

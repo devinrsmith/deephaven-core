@@ -34,9 +34,6 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
         return Mixin.of(options, factory);
     }
 
-
-    // Stream<? extends Type<?>> outputTypes();
-
     /**
      * Creates an object processor based on the {@code inputType} with a default {@link JsonFactory}.
      *

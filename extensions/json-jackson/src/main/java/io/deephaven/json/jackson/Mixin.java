@@ -59,16 +59,12 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         return options.walk(new MixinImpl(factory));
     }
 
-    private final JsonFactory factory; // todo: probably shouldn't take factory at this level, work w/ Source instead
+    private final JsonFactory factory;
     final T options;
 
     Mixin(JsonFactory factory, T options) {
         this.factory = Objects.requireNonNull(factory);
         this.options = Objects.requireNonNull(options);
-    }
-
-    public final T options() {
-        return options;
     }
 
     public static String toColumnName(List<String> path) {
@@ -89,38 +85,37 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
     abstract Stream<? extends Type<?>> outputTypes();
 
-    public final boolean allowNull() {
-        return options().allowedTypes().contains(JsonValueTypes.NULL);
+    final boolean allowNull() {
+        return options.allowedTypes().contains(JsonValueTypes.NULL);
     }
 
-    public final boolean allowMissing() {
-        return options().allowMissing();
+    final boolean allowMissing() {
+        return options.allowMissing();
     }
 
-    public final boolean allowString() {
-        return options().allowedTypes().contains(JsonValueTypes.STRING);
+    final boolean allowString() {
+        return options.allowedTypes().contains(JsonValueTypes.STRING);
     }
 
-    public final boolean allowNumberInt() {
-        return options().allowedTypes().contains(JsonValueTypes.INT);
+    final boolean allowNumberInt() {
+        return options.allowedTypes().contains(JsonValueTypes.INT);
     }
 
-    public final boolean allowDecimal() {
-        return options().allowedTypes().contains(JsonValueTypes.DECIMAL);
+    final boolean allowDecimal() {
+        return options.allowedTypes().contains(JsonValueTypes.DECIMAL);
     }
 
-    public final boolean allowBool() {
-        return options().allowedTypes().contains(JsonValueTypes.BOOL);
+    final boolean allowBool() {
+        return options.allowedTypes().contains(JsonValueTypes.BOOL);
     }
 
-    public final boolean allowObject() {
-        return options().allowedTypes().contains(JsonValueTypes.OBJECT);
+    final boolean allowObject() {
+        return options.allowedTypes().contains(JsonValueTypes.OBJECT);
     }
 
-    public final boolean allowArray() {
-        return options().allowedTypes().contains(JsonValueTypes.ARRAY);
+    final boolean allowArray() {
+        return options.allowedTypes().contains(JsonValueTypes.ARRAY);
     }
-
 
     @SuppressWarnings("unchecked")
     @Override

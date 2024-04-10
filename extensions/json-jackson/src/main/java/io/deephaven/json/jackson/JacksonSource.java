@@ -27,8 +27,8 @@ final class JacksonSource {
         return factory.createParser(file);
     }
 
-    // todo: suggest jackson build this in
     public static JsonParser of(JsonFactory factory, Path path) throws IOException {
+        // TODO: suggest jackson build this in
         if (FileSystems.getDefault() == path.getFileSystem()) {
             return of(factory, path.toFile());
         }
@@ -52,8 +52,8 @@ final class JacksonSource {
         return factory.createParser(array, pos, len);
     }
 
-    // todo: suggest jackson build this in
     public static JsonParser of(JsonFactory factory, ByteBuffer buffer) throws IOException {
+        // TODO: suggest jackson build this in
         if (buffer.hasArray()) {
             return of(factory, buffer.array(), buffer.position(), buffer.remaining());
         }
@@ -64,12 +64,12 @@ final class JacksonSource {
         return factory.createParser(array, pos, len);
     }
 
-    // todo: suggest jackson build this in
     public static JsonParser of(JsonFactory factory, CharBuffer buffer) throws IOException {
+        // TODO: suggest jackson build this in
         if (buffer.hasArray()) {
             return of(factory, buffer.array(), buffer.position(), buffer.remaining());
         }
-        // todo: we could build CharBufferReader. Surprised it's not build into JDK.
-        throw new RuntimeException("todo");
+        // We could build CharBufferReader. Surprised it's not build into JDK.
+        throw new RuntimeException("Only supports CharBuffer when backed by array");
     }
 }

@@ -83,7 +83,6 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
         }
 
         final class DoubleArrayContext extends RepeaterContextBase {
-            // todo: use WritableDoubleChunk & pools?
             private double[] arr = EMPTY_DOUBLE_ARRAY;
             private int len = 0;
 

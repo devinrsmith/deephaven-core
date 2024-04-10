@@ -36,7 +36,7 @@ final class TupleMixin extends Mixin<TupleOptions> {
         if (options.values().size() == 1) {
             return mixin(options.values().get(0)).paths();
         }
-        // todo, give user naming option?
+        // TODO: give user naming option?
         final List<Stream<List<String>>> prefixed = new ArrayList<>();
         int i = 0;
         for (ValueOptions value : options.values()) {

@@ -20,8 +20,6 @@ final class AnyMixin extends Mixin<AnyOptions> {
         super(factory, options);
     }
 
-    // TODO: ALLOW NULL USAGE?
-
     @Override
     public int numColumns() {
         return 1;

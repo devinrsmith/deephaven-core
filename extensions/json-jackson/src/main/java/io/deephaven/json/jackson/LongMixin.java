@@ -77,7 +77,7 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
         if (!allowDecimal()) {
             throw Parsing.mismatch(parser, long.class);
         }
-        // todo: allow caller to configure between lossy long and truncated long
+        // TODO: allow caller to configure between lossy long and truncated long?
         return Parsing.parseDecimalAsLossyLong(parser);
     }
 
@@ -86,7 +86,7 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
             throw Parsing.mismatch(parser, long.class);
         }
         return allowDecimal()
-                // todo: allow caller to configure between lossy long and truncated long
+                // TODO: allow caller to configure between lossy long and truncated long?
                 // ? Helpers.parseDecimalStringAsLossyLong(parser)
                 ? Parsing.parseDecimalStringAsTruncatedLong(parser)
                 : Parsing.parseStringAsLong(parser);

@@ -66,20 +66,6 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
         return Stream.concat(keyMixin().outputTypes(), valueMixin().outputTypes());
     }
 
-    ValueProcessor keyAsValueProcessor(List<WritableChunk<?>> out) {
-        final Mixin<?> key = keyMixin();
-        final List<WritableChunk<?>> keyColumns = out.subList(0, key.numColumns());
-        return key.processor("todo", keyColumns);
-    }
-
-    ValueProcessor valueAsValueProcessor(List<WritableChunk<?>> out) {
-        final Mixin<?> key = keyMixin();
-        final Mixin<?> value = valueMixin();
-        final List<WritableChunk<?>> valueColumns =
-                out.subList(key.numColumns(), key.numColumns() + value.numColumns());
-        return value.processor("todo", valueColumns);
-    }
-
     private ValueProcessorKvImpl innerProcessor(List<WritableChunk<?>> out) {
         final Mixin<?> key = keyMixin();
         final Mixin<?> value = valueMixin();

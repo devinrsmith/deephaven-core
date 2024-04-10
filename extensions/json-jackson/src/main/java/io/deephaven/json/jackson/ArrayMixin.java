@@ -54,10 +54,6 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
         return element().outputTypes();
     }
 
-    ValueProcessor elementAsValueProcessor(List<WritableChunk<?>> out) {
-        return element().processor("todo", out);
-    }
-
     RepeaterProcessor elementRepeater(List<WritableChunk<?>> out) {
         return element().repeaterProcessor(allowMissing(), allowNull(), out);
     }

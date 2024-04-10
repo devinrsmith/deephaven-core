@@ -43,21 +43,11 @@ final class Parsing {
         }
     }
 
-    static void assertNextTokenIsValue(JsonParser parser) throws IOException {
-        final JsonToken actual = parser.nextToken();
-        if (!actual.isScalarValue() && !actual.isStructStart()) {
-            throw new IllegalStateException(
-                    String.format("Unexpected next token. expected value type, actual=%s", actual));
-        }
-    }
-
     static CharSequence textAsCharSequence(JsonParser parser) throws IOException {
         return parser.hasTextCharacters()
                 ? CharBuffer.wrap(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength())
                 : parser.getText();
     }
-
-
 
     static class UnexpectedToken extends JsonProcessingException {
         public UnexpectedToken(String msg, JsonLocation loc) {
@@ -87,7 +77,7 @@ final class Parsing {
         if ("null".equalsIgnoreCase(text)) {
             return onNull;
         }
-        throw new IOException("todo");
+        throw new IOException(String.format("Unexpected string as boolean '%s'", text));
     }
 
     static Boolean parseStringAsBoolean(JsonParser parser, Boolean onNull) throws IOException {
@@ -101,19 +91,22 @@ final class Parsing {
         if ("null".equalsIgnoreCase(text)) {
             return onNull;
         }
-        throw new IOException("todo");
+        throw new IOException(String.format("Unexpected string as boolean '%s'", text));
     }
 
     static char parseStringAsChar(JsonParser parser) throws IOException {
         if (parser.hasTextCharacters()) {
-            if (parser.getTextLength() != 1) {
-                throw new IOException("todo");
+            final int textLength = parser.getTextLength();
+            if (textLength != 1) {
+                throw new IOException(
+                        String.format("Expected char to be string of length 1, is instead %d", textLength));
             }
             return parser.getTextCharacters()[parser.getTextOffset()];
         }
         final String text = parser.getText();
         if (text.length() != 1) {
-            throw new IOException("todo");
+            throw new IOException(
+                    String.format("Expected char to be string of length 1, is instead %d", text.length()));
         }
         return text.charAt(0);
     }
@@ -211,10 +204,6 @@ final class Parsing {
     }
 
     static int parseStringAsInt(JsonParser parser) throws IOException {
-        // 23mm / s; 19 bytes garbage
-        // return parser.getValueAsInt();
-        // No apparent difference in this case like in the long case.
-        // 23mm / s; 19 bytes garbage
         if (parser.hasTextCharacters()) {
             // TODO: potential to write parseInt optimized for char[]
             final int len = parser.getTextLength();
@@ -231,9 +220,6 @@ final class Parsing {
     }
 
     static long parseStringAsLong(JsonParser parser) throws IOException {
-        // 11mm / s; 88 bytes garbage
-        // return parser.getValueAsLong();
-        // 17mm / s; 24 bytes garbage
         if (parser.hasTextCharacters()) {
             // TODO: potential to write parseInt optimized for char[]
             final int len = parser.getTextLength();
@@ -268,9 +254,6 @@ final class Parsing {
 
     static double parseStringAsDouble(JsonParser parser) throws IOException {
         // TODO: improve after https://github.com/FasterXML/jackson-core/issues/1229
-        // 14mm / s; 73 bytes of garbage
-        // return p.getValueAsDouble();
-        // 20mm / s; 8 bytes of garbage
         return parser.isEnabled(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
                 ? parseStringAsDoubleFast(parser)
                 : Double.parseDouble(parser.getText());

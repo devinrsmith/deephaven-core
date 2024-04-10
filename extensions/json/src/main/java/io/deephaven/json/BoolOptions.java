@@ -14,7 +14,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class BoolOptions extends BoxedOptions<Boolean> {
+public abstract class BoolOptions extends ValueOptionsSingleValueBase<Boolean> {
 
     public static Builder builder() {
         return ImmutableBoolOptions.builder();
@@ -74,7 +74,7 @@ public abstract class BoolOptions extends BoxedOptions<Boolean> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<Boolean, BoolOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Boolean, BoolOptions, Builder> {
 
         Builder onNull(boolean onNull);
 

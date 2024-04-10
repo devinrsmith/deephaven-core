@@ -4,19 +4,17 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import java.util.EnumSet;
-import java.util.OptionalDouble;
 
 /**
  * Processes a JSON value as a {@code double}.
  */
 @Immutable
 @BuildableStyle
-public abstract class DoubleOptions extends ValueOptionsRestrictedUniverseBase {
+public abstract class DoubleOptions extends ValueOptionsSingleValueBase<Double> {
 
 
     public static Builder builder() {
@@ -70,38 +68,24 @@ public abstract class DoubleOptions extends ValueOptionsRestrictedUniverseBase {
         return JsonValueTypes.NUMBER_LIKE;
     }
 
-    public abstract OptionalDouble onNull();
-
-    /**
-     * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
-     **/
-    public abstract OptionalDouble onMissing();
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<DoubleOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Double, DoubleOptions, Builder> {
 
         Builder onNull(double onNull);
 
         Builder onMissing(double onMissing);
-    }
 
-    // todo: check float/number must be the same
-
-    @Check
-    final void checkOnNull() {
-        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
+        default Builder onNull(Double onNull) {
+            return onNull((double) onNull);
         }
-    }
 
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
+        default Builder onMissing(Double onMissing) {
+            return onMissing((double) onMissing);
         }
     }
 }

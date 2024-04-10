@@ -17,7 +17,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
+public abstract class LocalDateOptions extends ValueOptionsSingleValueBase<LocalDate> {
     public static Builder builder() {
         return ImmutableLocalDateOptions.builder();
     }
@@ -67,7 +67,7 @@ public abstract class LocalDateOptions extends BoxedOptions<LocalDate> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<LocalDate, LocalDateOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<LocalDate, LocalDateOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
     }

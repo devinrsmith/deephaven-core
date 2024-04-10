@@ -16,7 +16,7 @@ import java.util.OptionalLong;
  */
 @Immutable
 @BuildableStyle
-public abstract class LongOptions extends ValueOptionsRestrictedUniverseBase {
+public abstract class LongOptions extends ValueOptionsSingleValueBase<Long> {
 
     public static Builder builder() {
         return ImmutableLongOptions.builder();
@@ -71,20 +71,6 @@ public abstract class LongOptions extends ValueOptionsRestrictedUniverseBase {
         return JsonValueTypes.NUMBER_LIKE;
     }
 
-    /**
-     * The on-null value.
-     *
-     * @return the on-null value
-     */
-    public abstract OptionalLong onNull();
-
-    /**
-     * The on-missing value.
-     *
-     * @return the on-missing value
-     */
-    public abstract OptionalLong onMissing();
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
@@ -95,19 +81,13 @@ public abstract class LongOptions extends ValueOptionsRestrictedUniverseBase {
         Builder onNull(long onNull);
 
         Builder onMissing(long onMissing);
-    }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
+        default Builder onNull(Long onNull) {
+            return onNull((long) onNull);
         }
-    }
 
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
+        default Builder onMissing(Long onMissing) {
+            return onMissing((long) onMissing);
         }
     }
 }

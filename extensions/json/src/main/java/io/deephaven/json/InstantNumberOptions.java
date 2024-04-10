@@ -15,7 +15,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
+public abstract class InstantNumberOptions extends ValueOptionsSingleValueBase<Instant> {
 
     public enum Format {
         EPOCH_SECONDS, EPOCH_MILLIS, EPOCH_MICROS, EPOCH_NANOS;
@@ -74,7 +74,7 @@ public abstract class InstantNumberOptions extends BoxedOptions<Instant> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<Instant, InstantNumberOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Instant, InstantNumberOptions, Builder> {
         Builder format(Format format);
     }
 }

@@ -17,7 +17,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class InstantOptions extends BoxedOptions<Instant> {
+public abstract class InstantOptions extends ValueOptionsSingleValueBase<Instant> {
 
     private static final Version VERSION_12 = Version.parse("12");
 
@@ -76,7 +76,7 @@ public abstract class InstantOptions extends BoxedOptions<Instant> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<Instant, InstantOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Instant, InstantOptions, Builder> {
 
         Builder dateTimeFormatter(DateTimeFormatter formatter);
     }

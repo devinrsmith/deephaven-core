@@ -7,7 +7,12 @@ import org.immutables.value.Value.Check;
 
 import java.util.Optional;
 
-public abstract class BoxedOptions<T> extends ValueOptionsRestrictedUniverseBase {
+/**
+ * A base {@link ValueOptions} where the JSON value represents a single value.
+ *
+ * @param <T> the value type
+ */
+public abstract class ValueOptionsSingleValueBase<T> extends ValueOptionsRestrictedUniverseBase {
 
     /**
      * The value to use when {@link JsonValueTypes#NULL} is encountered. {@link #allowedTypes()} must contain
@@ -20,7 +25,7 @@ public abstract class BoxedOptions<T> extends ValueOptionsRestrictedUniverseBase
      */
     public abstract Optional<T> onMissing();
 
-    public interface Builder<T, V extends BoxedOptions<T>, B extends Builder<T, V, B>>
+    public interface Builder<T, V extends ValueOptionsSingleValueBase<T>, B extends Builder<T, V, B>>
             extends ValueOptions.Builder<V, B> {
         B onNull(T onNull);
 

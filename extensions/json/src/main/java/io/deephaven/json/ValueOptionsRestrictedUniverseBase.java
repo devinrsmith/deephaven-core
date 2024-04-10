@@ -7,6 +7,9 @@ import org.immutables.value.Value.Check;
 
 import java.util.EnumSet;
 
+/**
+ * A base {@link ValueOptions} where the implementation has a clearly defined {@link #universe()}.
+ */
 public abstract class ValueOptionsRestrictedUniverseBase extends ValueOptions {
 
     /**

@@ -14,7 +14,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class StringOptions extends BoxedOptions<String> {
+public abstract class StringOptions extends ValueOptionsSingleValueBase<String> {
 
     public static Builder builder() {
         return ImmutableStringOptions.builder();
@@ -59,7 +59,7 @@ public abstract class StringOptions extends BoxedOptions<String> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<String, StringOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<String, StringOptions, Builder> {
 
     }
 }

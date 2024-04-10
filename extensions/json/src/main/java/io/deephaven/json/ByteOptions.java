@@ -14,7 +14,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class ByteOptions extends BoxedOptions<Byte> {
+public abstract class ByteOptions extends ValueOptionsSingleValueBase<Byte> {
 
     public static Builder builder() {
         return ImmutableByteOptions.builder();
@@ -74,7 +74,7 @@ public abstract class ByteOptions extends BoxedOptions<Byte> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<Byte, ByteOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Byte, ByteOptions, Builder> {
 
         Builder onNull(byte onNull);
 

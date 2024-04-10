@@ -15,7 +15,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
+public abstract class BigDecimalOptions extends ValueOptionsSingleValueBase<BigDecimal> {
 
     public static Builder builder() {
         return ImmutableBigDecimalOptions.builder();
@@ -58,7 +58,7 @@ public abstract class BigDecimalOptions extends BoxedOptions<BigDecimal> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<BigDecimal, BigDecimalOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<BigDecimal, BigDecimalOptions, Builder> {
 
     }
 }

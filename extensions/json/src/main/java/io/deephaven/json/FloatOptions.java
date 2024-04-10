@@ -4,11 +4,9 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
-import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
-import javax.annotation.Nullable;
 import java.util.EnumSet;
 
 /**
@@ -16,7 +14,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class FloatOptions extends ValueOptionsRestrictedUniverseBase {
+public abstract class FloatOptions extends ValueOptionsSingleValueBase<Float> {
 
     public static Builder builder() {
         return ImmutableFloatOptions.builder();
@@ -69,39 +67,22 @@ public abstract class FloatOptions extends ValueOptionsRestrictedUniverseBase {
         return JsonValueTypes.NUMBER_LIKE;
     }
 
-    @Nullable
-    public abstract Float onNull();
-
-    /**
-     * The onMissing value to use. Must not set if {@link #allowMissing()} is {@code false}.
-     **/
-    @Nullable
-    public abstract Float onMissing();
-
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
     public interface Builder extends ValueOptions.Builder<FloatOptions, Builder> {
-        Builder onNull(Float onNull);
+        Builder onNull(float onNull);
 
-        Builder onMissing(Float onMissing);
-    }
+        Builder onMissing(float onMissing);
 
-    // todo: check float/number must be the same
-
-    @Check
-    final void checkOnNull() {
-        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull() != null) {
-            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
+        default Builder onNull(Float onNull) {
+            return onNull((float) onNull);
         }
-    }
 
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing() != null) {
-            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
+        default Builder onMissing(Float onMissing) {
+            return onMissing((float) onMissing);
         }
     }
 }

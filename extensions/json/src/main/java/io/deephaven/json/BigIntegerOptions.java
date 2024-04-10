@@ -14,7 +14,7 @@ import java.util.EnumSet;
  */
 @Immutable
 @BuildableStyle
-public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
+public abstract class BigIntegerOptions extends ValueOptionsSingleValueBase<BigInteger> {
     public static Builder builder() {
         return ImmutableBigIntegerOptions.builder();
     }
@@ -51,7 +51,7 @@ public abstract class BigIntegerOptions extends BoxedOptions<BigInteger> {
         return visitor.visit(this);
     }
 
-    public interface Builder extends BoxedOptions.Builder<BigInteger, BigIntegerOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<BigInteger, BigIntegerOptions, Builder> {
 
     }
 }

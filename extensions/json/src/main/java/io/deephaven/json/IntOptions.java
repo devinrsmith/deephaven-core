@@ -16,7 +16,7 @@ import java.util.OptionalInt;
  */
 @Immutable
 @BuildableStyle
-public abstract class IntOptions extends ValueOptionsRestrictedUniverseBase {
+public abstract class IntOptions extends ValueOptionsSingleValueBase<Integer> {
 
     public static Builder builder() {
         return ImmutableIntOptions.builder();
@@ -71,40 +71,24 @@ public abstract class IntOptions extends ValueOptionsRestrictedUniverseBase {
         return JsonValueTypes.NUMBER_LIKE;
     }
 
-    /**
-     * The on-null value.
-     */
-    public abstract OptionalInt onNull();
-
-    /**
-     * The on-missing value.
-     */
-    public abstract OptionalInt onMissing();
-
 
     @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    public interface Builder extends ValueOptions.Builder<IntOptions, Builder> {
+    public interface Builder extends ValueOptionsSingleValueBase.Builder<Integer, IntOptions, Builder> {
 
         Builder onNull(int onNull);
 
         Builder onMissing(int onMissing);
-    }
 
-    @Check
-    final void checkOnNull() {
-        if (!allowedTypes().contains(JsonValueTypes.NULL) && onNull().isPresent()) {
-            throw new IllegalArgumentException("onNull set, but NULL is not allowed");
+        default Builder onNull(Integer onNull) {
+            return onNull((int) onNull);
         }
-    }
 
-    @Check
-    final void checkOnMissing() {
-        if (!allowMissing() && onMissing().isPresent()) {
-            throw new IllegalArgumentException("onMissing set, but allowMissing is false");
+        default Builder onMissing(Integer onMissing) {
+            return onMissing((int) onMissing);
         }
     }
 }

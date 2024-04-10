@@ -20,8 +20,13 @@ import java.util.stream.Stream;
 
 final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
 
+    private final long onNull;
+    private final long onMissing;
+
     public InstantMixin(InstantOptions options, JsonFactory factory) {
         super(factory, options);
+        onNull = DateTimeUtils.epochNanos(options.onNull().orElse(null));
+        onMissing = DateTimeUtils.epochNanos(options.onMissing().orElse(null));
     }
 
     @Override
@@ -77,13 +82,13 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
         if (!allowNull()) {
             throw Parsing.mismatch(parser, Instant.class);
         }
-        return DateTimeUtils.epochNanos(options.onNull().orElse(null));
+        return onNull;
     }
 
     private long parseFromMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, Instant.class);
         }
-        return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
+        return onMissing;
     }
 }

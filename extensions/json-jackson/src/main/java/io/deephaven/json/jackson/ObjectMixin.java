@@ -10,7 +10,6 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ObjectFieldOptions;
 import io.deephaven.json.ObjectFieldOptions.RepeatedBehavior;
 import io.deephaven.json.ObjectOptions;
-import io.deephaven.json.jackson.ValueProcessor.FieldProcess;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
@@ -199,11 +198,11 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
         private void processObjectFields(JsonParser parser) throws IOException {
             final State state = new State();
-            ValueProcessor.processFields(parser, state);
+            FieldProcessor.processFields(parser, state);
             state.processMissing(parser);
         }
 
-        private class State implements FieldProcess {
+        private class State implements FieldProcessor {
             // Note: we could try to build a stricter implementation that doesn't use Set; if all of the fields disallow
             // missing and the user knows that the data doesn't have any repeated fields, we could use a simple
             // counter to ensure all field processors were invoked.
@@ -355,11 +354,11 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
 
             private void processObjectFields(JsonParser parser, int ix) throws IOException {
                 final State state = new State(ix);
-                ValueProcessor.processFields(parser, state);
+                FieldProcessor.processFields(parser, state);
                 state.processMissing(parser);
             }
 
-            private class State implements FieldProcess {
+            private class State implements FieldProcessor {
                 // Note: we could try to build a stricter implementation that doesn't use Set; if the user can guarantee
                 // that none of the fields will be missing and there won't be any repeated fields, we could use a simple
                 // counter to ensure all field processors were invoked.

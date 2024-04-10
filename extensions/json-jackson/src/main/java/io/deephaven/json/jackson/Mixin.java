@@ -280,7 +280,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
             final ValueProcessor valueProcessor = processor("<root>", out);
             for (int i = 0; i < in.size(); ++i) {
                 try (final JsonParser parser = createParser(in.get(i))) {
-                    ValueProcessor.processFullJson(valueProcessor, parser);
+                    ValueProcessor.processFullJson(parser, valueProcessor);
                 }
             }
         }

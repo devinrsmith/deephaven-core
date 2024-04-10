@@ -114,16 +114,6 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
         }
     }
 
-    private float onNullOrDefault() {
-        final Float onNull = options.onNull();
-        return onNull != null ? onNull : QueryConstants.NULL_FLOAT;
-    }
-
-    private float onMissingOrDefault() {
-        final Float onMissing = options.onMissing();
-        return onMissing != null ? onMissing : QueryConstants.NULL_FLOAT;
-    }
-
     private float parseFromNumber(JsonParser parser) throws IOException {
         if (!allowDecimal() && !allowNumberInt()) {
             throw Parsing.mismatch(parser, float.class);
@@ -142,13 +132,13 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
         if (!allowNull()) {
             throw Parsing.mismatch(parser, float.class);
         }
-        return onNullOrDefault();
+        return options.onNull().orElse(QueryConstants.NULL_FLOAT);
     }
 
     private float parseFromMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, float.class);
         }
-        return onMissingOrDefault();
+        return options.onMissing().orElse(QueryConstants.NULL_FLOAT);
     }
 }

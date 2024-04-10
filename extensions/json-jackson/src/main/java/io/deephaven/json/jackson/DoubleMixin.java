@@ -115,14 +115,6 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
         }
     }
 
-    private double onNullOrDefault() {
-        return options.onNull().orElse(QueryConstants.NULL_DOUBLE);
-    }
-
-    private double onMissingOrDefault() {
-        return options.onMissing().orElse(QueryConstants.NULL_DOUBLE);
-    }
-
     private double parseFromNumber(JsonParser parser) throws IOException {
         if (!allowDecimal() && !allowNumberInt()) {
             throw Parsing.mismatch(parser, double.class);
@@ -142,13 +134,13 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
         if (!allowNull()) {
             throw Parsing.mismatch(parser, double.class);
         }
-        return onNullOrDefault();
+        return options.onNull().orElse(QueryConstants.NULL_DOUBLE);
     }
 
     private double parseFromMissing(JsonParser parser) throws IOException {
         if (!allowMissing()) {
             throw Parsing.mismatchMissing(parser, double.class);
         }
-        return onMissingOrDefault();
+        return options.onMissing().orElse(QueryConstants.NULL_DOUBLE);
     }
 }

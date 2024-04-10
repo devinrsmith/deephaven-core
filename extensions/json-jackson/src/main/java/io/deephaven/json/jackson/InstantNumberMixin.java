@@ -17,8 +17,13 @@ import java.util.stream.Stream;
 
 final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
 
+    private final long onNull;
+    private final long onMissing;
+
     public InstantNumberMixin(InstantNumberOptions options, JsonFactory factory) {
         super(factory, options);
+        onNull = DateTimeUtils.epochNanos(options.onNull().orElse(null));
+        onMissing = DateTimeUtils.epochNanos(options.onMissing().orElse(null));
     }
 
     @Override
@@ -96,7 +101,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
                     if (!allowNull()) {
                         throw Parsing.mismatch(parser, Instant.class);
                     }
-                    return DateTimeUtils.epochNanos(options.onNull().orElse(null));
+                    return onNull;
             }
             throw Parsing.mismatch(parser, Instant.class);
         }
@@ -106,7 +111,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
             if (!allowMissing()) {
                 throw Parsing.mismatchMissing(parser, Instant.class);
             }
-            return DateTimeUtils.epochNanos(options.onMissing().orElse(null));
+            return onMissing;
         }
     }
 

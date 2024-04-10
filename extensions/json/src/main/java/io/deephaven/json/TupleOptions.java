@@ -4,10 +4,13 @@
 package io.deephaven.json;
 
 import io.deephaven.annotations.BuildableStyle;
+import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Processes a JSON array as a tuple.
@@ -20,28 +23,43 @@ public abstract class TupleOptions extends ValueOptionsRestrictedUniverseBase {
         return ImmutableTupleOptions.builder();
     }
 
+    /**
+     * Creates a tuple of the given {@code values}, with name incrementing, starting from "0".
+     *
+     * @param values the values
+     * @return the tuple options
+     */
     public static TupleOptions of(ValueOptions... values) {
-        return builder().addValues(values).build();
+        return of(Arrays.asList(values));
     }
 
+    /**
+     * Creates a tuple of the given {@code values}, with name incrementing, starting from "0".
+     *
+     * @param values the values
+     * @return the tuple options
+     */
     public static TupleOptions of(Iterable<? extends ValueOptions> values) {
-        return builder().addAllValues(values).build();
+        final Builder builder = builder();
+        final Iterator<? extends ValueOptions> it = values.iterator();
+        for (int i = 0; it.hasNext(); ++i) {
+            builder.putNamedValues(Integer.toString(i), it.next());
+        }
+        return builder.build();
     }
 
     /**
-     * The ordered values of the tuple.
+     * The named, ordered values of the tuple.
      */
-    public abstract List<ValueOptions> values();
+    public abstract Map<String, ValueOptions> namedValues();
 
     /**
-     * {@inheritDoc} By default is {@link JsonValueTypes#ARRAY_OR_NULL} when all the the {@link #values()} allow
-     * {@link JsonValueTypes#NULL}, otherwise defaults to {@link JsonValueTypes#ARRAY}.
+     * {@inheritDoc} By default is {@link JsonValueTypes#ARRAY_OR_NULL}.
      */
+    @Default
     @Override
     public EnumSet<JsonValueTypes> allowedTypes() {
-        return values().stream().allMatch(valueOptions -> valueOptions.allowedTypes().contains(JsonValueTypes.NULL))
-                ? JsonValueTypes.ARRAY_OR_NULL
-                : EnumSet.of(JsonValueTypes.ARRAY);
+        return JsonValueTypes.ARRAY_OR_NULL;
     }
 
     /**
@@ -53,24 +71,17 @@ public abstract class TupleOptions extends ValueOptionsRestrictedUniverseBase {
     }
 
     @Override
-    public final boolean allowMissing() {
-        return values().stream().allMatch(ValueOptions::allowMissing);
-    }
-
-    @Override
     public final <T> T walk(Visitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    // Note: Builder does not extend ValueOptions.Builder b/c allowNull / allowMissing is implicitly set
+    public interface Builder extends ValueOptions.Builder<TupleOptions, Builder> {
 
-    public interface Builder {
+        Builder putNamedValues(String key, ValueOptions value);
 
-        Builder addValues(ValueOptions element);
+        Builder putNamedValues(Map.Entry<String, ? extends ValueOptions> entry);
 
-        Builder addValues(ValueOptions... elements);
-
-        Builder addAllValues(Iterable<? extends ValueOptions> elements);
+        Builder putAllNamedValues(Map<String, ? extends ValueOptions> entries);
 
         TupleOptions build();
     }

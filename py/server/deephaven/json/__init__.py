@@ -46,6 +46,9 @@ __all__ = [
     "FieldOptions",
 ]
 
+# https://deephaven.atlassian.net/browse/DH-15061
+# It is important that ValueOptions gets imported before the others.
+_JValueOptions = jpy.get_type("io.deephaven.json.ValueOptions")
 _JObjectOptions = jpy.get_type("io.deephaven.json.ObjectOptions")
 _JArrayOptions = jpy.get_type("io.deephaven.json.ArrayOptions")
 _JObjectKvOptions = jpy.get_type("io.deephaven.json.ObjectKvOptions")
@@ -73,7 +76,6 @@ _JInstantNumberOptionsFormat = jpy.get_type(
 _JBigIntegerOptions = jpy.get_type("io.deephaven.json.BigIntegerOptions")
 _JBigDecimalOptions = jpy.get_type("io.deephaven.json.BigDecimalOptions")
 _JAnyOptions = jpy.get_type("io.deephaven.json.AnyOptions")
-_JValueOptions = jpy.get_type("io.deephaven.json.ValueOptions")
 
 
 _VALUE_STRING = _JJsonValueTypes.STRING
@@ -92,6 +94,7 @@ _EPOCH_NANOS = _JInstantNumberOptionsFormat.EPOCH_NANOS
 
 class JsonOptions(JObjectWrapper):
     """The JSON options object. Provides a named object processor provider."""
+
     j_object_type = _JValueOptions
 
     def __init__(self, j_options: jpy.JType):
@@ -339,7 +342,11 @@ def object_kv_(
     return JsonOptions(builder.build())
 
 
-def tuple_(values: Tuple[JsonValueType, ...]) -> JsonOptions:
+def tuple_(
+    values: Union[Tuple[JsonValueType, ...], Dict[str, JsonValueType]],
+    allow_missing: bool = True,
+    allow_null: bool = True,
+) -> JsonOptions:
     """Creates a tuple options. For example, the JSON array
 
     .. code-block:: json
@@ -350,8 +357,13 @@ def tuple_(values: Tuple[JsonValueType, ...]) -> JsonOptions:
     .. code-block:: python
         tuple_((str, int, float))
 
-    In contexts where the user needs to create a JsonValueType and isn't changing any default values, the user can
-    simplify passing through a python tuple type. For example,
+    To provide meaningful names, a dictionary can be used:
+
+    .. code-block:: python
+        tuple_({"name": str, "age": int, "height": float})
+
+    In contexts where the user needs to create a JsonValueType and isn't changing any default values nor is setting
+    names, the user can simplify passing through a python tuple type. For example,
 
     .. code-block:: python
         some_method(tuple_((tuple_type_1, tuple_type_2)))
@@ -362,12 +374,28 @@ def tuple_(values: Tuple[JsonValueType, ...]) -> JsonOptions:
         some_method((tuple_type_1, tuple_type_2))
 
     Args:
-        values (Tuple[JsonValueType, ...]): the tuple value types
-
+        values (Union[Tuple[JsonValueType, ...], Dict[str, JsonValueType]]): the tuple value types
+        allow_missing (bool): if the array is allowed to be missing, by default is True
+        allow_null (bool): if the array is allowed to be a JSON null type, by default is True
     Returns:
         the tuple options
     """
-    return JsonOptions(_JTupleOptions.of([json(opt).j_options for opt in values]))
+    if isinstance(values, Tuple):
+        kvs = enumerate(values)
+    elif isinstance(values, Dict):
+        kvs = values.items()
+    else:
+        raise TypeError(f"Invalid tuple type: {type(values)}")
+    builder = _JTupleOptions.builder()
+    _build(
+        builder,
+        allow_missing,
+        allow_null,
+        allow_array=True,
+    )
+    for name, json_value_type in kvs:
+        builder.putNamedValues(str(name), json(json_value_type).j_options)
+    return JsonOptions(builder.build())
 
 
 def bool_(
@@ -888,7 +916,7 @@ def instant_(
         return JsonOptions(builder.build())
     else:
         if allow_decimal:
-            raise TypeError(f"allow_decimal is only valid when using number_format")
+            raise TypeError("allow_decimal is only valid when using number_format")
         builder = _JInstantOptions.builder()
         if on_missing:
             builder.onMull(to_j_instant(on_missing))

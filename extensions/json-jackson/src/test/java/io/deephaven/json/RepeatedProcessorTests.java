@@ -25,7 +25,7 @@ public class RepeatedProcessorTests {
     @Test
     void arrayKvPrimitive() throws IOException {
         // [{"a": 1.1}, null, {}, {"b": 2.2, "c": 3.3}]
-        parse(ObjectKvOptions.standard(SkipOptions.lenient(), DoubleOptions.standard()).array(),
+        parse(ObjectKvOptions.builder().key(SkipOptions.lenient()).value(DoubleOptions.standard()).build().array(),
                 "[{\"a\": 1.1}, null, {}, {\"b\": 2.2, \"c\": 3.3}]",
                 ObjectChunk.chunkWrap(new Object[] {
                         new double[][] {new double[] {1.1}, null, new double[0], new double[] {2.2, 3.3}}}));
@@ -34,7 +34,7 @@ public class RepeatedProcessorTests {
     @Test
     void kvArrayPrimitive() throws IOException {
         // {"a": [1.1], "b": null, "c": [], "d": [2.2, 3.3]}
-        parse(ObjectKvOptions.standard(StringOptions.standard(), DoubleOptions.standard().array()),
+        parse(ObjectKvOptions.standard(DoubleOptions.standard().array()),
                 "{\"a\": [1.1], \"b\": null, \"c\": [], \"d\": [2.2, 3.3]}",
                 ObjectChunk.chunkWrap(new Object[] {
                         new String[] {"a", "b", "c", "d"}}),

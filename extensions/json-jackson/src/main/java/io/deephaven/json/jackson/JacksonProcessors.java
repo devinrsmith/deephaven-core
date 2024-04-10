@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * A specific JSON processor implementation using Jackson. This provides more control over the default
@@ -32,6 +31,33 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      */
     static JacksonProcessors of(ValueOptions options, JsonFactory factory) {
         return Mixin.of(options, factory);
+    }
+
+    /**
+     * The supported types. Includes {@link String}, {@code byte[]}, {@code char[]}, {@link File}, {@link Path},
+     * {@link URL}, and {@link ByteBuffer}.
+     *
+     * @return the supported types
+     */
+    static List<Type<?>> getSupportedTypes() {
+        return List.of(
+                Type.stringType(),
+                Type.byteType().arrayType(),
+                Type.charType().arrayType(),
+                Type.ofCustom(File.class),
+                Type.ofCustom(Path.class),
+                Type.ofCustom(URL.class),
+                Type.ofCustom(ByteBuffer.class));
+    }
+
+    /**
+     * The supported types. Equivalent to {@link #getSupportedTypes()}.
+     *
+     * @return the supported types
+     */
+    @Override
+    default List<Type<?>> supportedTypes() {
+        return getSupportedTypes();
     }
 
     /**

@@ -35,6 +35,7 @@ import io.deephaven.json.ValueOptions;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -290,7 +291,7 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         private final JsonFactory factory;
 
         public MixinImpl(JsonFactory factory) {
-            this.factory = factory;
+            this.factory = Objects.requireNonNull(factory);
         }
 
         @Override

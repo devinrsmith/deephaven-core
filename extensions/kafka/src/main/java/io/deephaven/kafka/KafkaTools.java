@@ -618,7 +618,6 @@ public class KafkaTools {
          * Creates a kafka key or value spec implementation from a named object processor provider. It must be capable
          * of supporting {@code byte[]}.
          *
-         *
          * @param provider the named object processor provider
          * @return the Kafka key or value spec
          */

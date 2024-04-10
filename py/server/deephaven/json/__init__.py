@@ -91,6 +91,7 @@ _EPOCH_NANOS = _JInstantNumberOptionsFormat.EPOCH_NANOS
 
 
 class JsonOptions(JObjectWrapper):
+    """The JSON options object. Provides a named object processor provider."""
     j_object_type = _JValueOptions
 
     def __init__(self, j_options: jpy.JType):
@@ -99,12 +100,6 @@ class JsonOptions(JObjectWrapper):
     @property
     def j_object(self) -> jpy.JType:
         return self.j_options
-
-    def processor(self, input_type) -> jpy.JType:
-        return self.j_options.processor(input_type)
-
-    def named(self, input_type) -> jpy.JType:
-        return self.j_options.named(input_type)
 
 
 # todo use type alias instead of Any in the future
@@ -1069,7 +1064,7 @@ def json(json_value_type: JsonValueType) -> JsonOptions:
         return array_(json_value_type[0])
     if isinstance(json_value_type, Tuple):
         return tuple_(json_value_type)
-    raise TypeError("unexpected")
+    raise TypeError(f"Unsupported JSON value type {type(json_value_type)}")
 
 
 _dtype_dict = {

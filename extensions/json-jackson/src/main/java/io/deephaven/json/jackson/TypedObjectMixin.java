@@ -125,7 +125,7 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     private String parseTypeField(JsonParser parser) throws IOException {
         final String currentFieldName = parser.currentName();
         if (!options.typeFieldName().equals(currentFieldName)) {
-            throw new IOException("Can only processes when first field in object is the type");
+            throw new IOException("Can only process when first field in object is the type");
         }
         switch (parser.nextToken()) {
             case VALUE_STRING:

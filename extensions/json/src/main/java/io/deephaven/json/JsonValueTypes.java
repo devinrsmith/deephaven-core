@@ -4,7 +4,6 @@
 package io.deephaven.json;
 
 import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * The JSON value types.
@@ -74,19 +73,15 @@ public enum JsonValueTypes {
      */
     public static final EnumSet<JsonValueTypes> ARRAY_OR_NULL = EnumSet.of(ARRAY, NULL);
 
-    public EnumSet<JsonValueTypes> asSet() {
-        return EnumSet.of(this);
-    }
-
-    static void checkInvariants(Set<JsonValueTypes> set) {
-        if (set.isEmpty()) {
-            throw new IllegalArgumentException("set is empty");
+    static void checkAllowedTypeInvariants(EnumSet<JsonValueTypes> allowedTypes) {
+        if (allowedTypes.isEmpty()) {
+            throw new IllegalArgumentException("allowedTypes is empty");
         }
-        if (set.size() == 1 && set.contains(JsonValueTypes.NULL)) {
-            throw new IllegalArgumentException("Accepting only NULL");
+        if (allowedTypes.size() == 1 && allowedTypes.contains(JsonValueTypes.NULL)) {
+            throw new IllegalArgumentException("allowedTypes is only accepting NULL");
         }
-        if (set.contains(JsonValueTypes.DECIMAL) && !set.contains(JsonValueTypes.INT)) {
-            throw new IllegalArgumentException("Accepting DECIMAL but not INT");
+        if (allowedTypes.contains(JsonValueTypes.DECIMAL) && !allowedTypes.contains(JsonValueTypes.INT)) {
+            throw new IllegalArgumentException("allowedTypes is accepting DECIMAL but not INT");
         }
     }
 }

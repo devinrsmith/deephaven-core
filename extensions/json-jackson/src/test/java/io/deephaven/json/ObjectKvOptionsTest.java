@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ObjectKvOptionsTest {
 
     private static final ObjectKvOptions STRING_INT_KV =
-            ObjectKvOptions.standard(StringOptions.standard(), IntOptions.standard());
+            ObjectKvOptions.standard(IntOptions.standard());
 
     private static final ObjectOptions NAME_AGE_OBJ = ObjectOptions.builder()
             .putFields("name", StringOptions.standard())
             .putFields("age", IntOptions.standard())
             .build();
-    private static final ObjectKvOptions STRING_OBJ_KV =
-            ObjectKvOptions.standard(StringOptions.standard(), NAME_AGE_OBJ);
+
+    private static final ObjectKvOptions STRING_OBJ_KV = ObjectKvOptions.standard(NAME_AGE_OBJ);
 
     @Test
     void kvPrimitiveValue() throws IOException {
@@ -45,14 +45,14 @@ public class ObjectKvOptionsTest {
 
     @Test
     void kvPrimitiveKey() throws IOException {
-        parse(ObjectKvOptions.standard(IntOptions.lenient(), SkipOptions.lenient()), List.of(
+        parse(ObjectKvOptions.builder().key(IntOptions.lenient()).value(SkipOptions.lenient()).build(), List.of(
                 "{\"42\": null, \"43\": null}"),
                 ObjectChunk.chunkWrap(new Object[] {new int[] {42, 43}}));
     }
 
     @Test
     void kvObjectKey() throws IOException {
-        parse(ObjectKvOptions.standard(InstantOptions.standard(), SkipOptions.lenient()), List.of(
+        parse(ObjectKvOptions.builder().key(InstantOptions.standard()).value(SkipOptions.lenient()).build(), List.of(
                 "{\"2009-02-13T23:31:30.123456788Z\": null, \"2009-02-13T23:31:30.123456789Z\": null}"),
                 ObjectChunk.chunkWrap(new Object[] {new long[] {1234567890123456788L, 1234567890123456789L}}));
     }

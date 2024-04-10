@@ -5,13 +5,15 @@ package io.deephaven.json;
 
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.Type;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 
 public interface JsonProcessorProvider {
     /**
-     * Returns the single service-loader {@link JsonProcessorProvider}. If there are none or more than one, throws an
+     * Returns the single service-loader {@link JsonProcessorProvider}. If there is none or more than one, throws an
      * {@link IllegalStateException}.
      *
      * @return the service-loader json processor provider
@@ -27,6 +29,14 @@ public interface JsonProcessorProvider {
         }
         return provider;
     }
+
+    /**
+     * The supported types for the providers produced by {@link #provider(ValueOptions)} and
+     * {@link #namedProvider(ValueOptions)}.
+     *
+     * @return the supported types
+     */
+    List<Type<?>> supportedTypes();
 
     /**
      * Create an object processor provider for the given JSON options.

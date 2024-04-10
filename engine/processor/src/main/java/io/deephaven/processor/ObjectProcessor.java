@@ -181,6 +181,13 @@ public interface ObjectProcessor<T> {
     interface Provider {
 
         /**
+         * The supported input types for {@code this} provider.
+         *
+         * @return the supported input types
+         */
+        List<Type<?>> supportedTypes();
+
+        /**
          * Creates an object processor that can process the input type {@code inputType}.
          *
          * @param inputType the input type

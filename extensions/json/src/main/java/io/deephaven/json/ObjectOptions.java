@@ -17,7 +17,15 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Processes a JSON object as map of processors.
+ * Processes a JSON object as set of named fields. For example:
+ *
+ * <pre>
+ * {
+ *     "name": "Foo",
+ *     "age": 42,
+ *     "height": 6.5
+ * }
+ * </pre>
  */
 @Immutable
 @BuildableStyle

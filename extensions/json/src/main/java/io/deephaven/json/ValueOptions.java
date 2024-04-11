@@ -11,8 +11,8 @@ import org.immutables.value.Value.Default;
 
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The base configuration for JSON values.
@@ -40,7 +40,7 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
      * @see JsonProcessorProvider#serviceLoader()
      */
     @Override
-    public final List<Type<?>> supportedTypes() {
+    public final Set<Type<?>> supportedTypes() {
         return JsonProcessorProvider.serviceLoader().supportedTypes();
     }
 

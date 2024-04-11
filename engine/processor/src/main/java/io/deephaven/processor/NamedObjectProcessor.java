@@ -61,10 +61,12 @@ public abstract class NamedObjectProcessor<T> {
         }
 
         /**
-         * Creates a named object processor that can process the input type {@code inputType}.
+         * Creates a named object processor that can process the {@code inputType}. This will successfully create a
+         * named processor when {@code inputType} is one of, or extends from one of, {@link #supportedTypes()}.
+         * Otherwise, an {@link IllegalArgumentException} will be thrown.
          *
          * @param inputType the input type
-         * @return the named object processor
+         * @return the object processor
          * @param <T> the input type
          */
         <T> NamedObjectProcessor<? super T> named(Type<T> inputType);

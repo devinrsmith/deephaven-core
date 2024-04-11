@@ -10,6 +10,7 @@ import io.deephaven.qst.type.Type;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 public interface JsonProcessorProvider {
     /**
@@ -36,7 +37,7 @@ public interface JsonProcessorProvider {
      *
      * @return the supported types
      */
-    List<Type<?>> supportedTypes();
+    Set<Type<?>> supportedTypes();
 
     /**
      * Create an object processor provider for the given JSON options.

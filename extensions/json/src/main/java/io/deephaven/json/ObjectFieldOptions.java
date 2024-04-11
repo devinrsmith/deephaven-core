@@ -65,7 +65,7 @@ public abstract class ObjectFieldOptions {
     /**
      * The array group for {@code this} field. This is useful in scenarios where {@code this} field's array is
      * guaranteed to have the same cardinality as one or more other array fields. For example, in the following snippet,
-     * we would model "prices" and "quantities" as having the same array group:
+     * we might model "prices" and "quantities" as having the same array group:
      *
      * <pre>
      * {

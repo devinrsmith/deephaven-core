@@ -9,11 +9,7 @@ import io.deephaven.json.JsonProcessorProvider;
 import io.deephaven.json.ValueOptions;
 import io.deephaven.qst.type.Type;
 
-import java.io.File;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.util.List;
+import java.util.Set;
 
 /**
  * The Jackson {@link JsonProcessorProvider}.
@@ -29,7 +25,7 @@ public final class JacksonJsonProvider implements JsonProcessorProvider {
      * @return the supported types
      */
     @Override
-    public List<Type<?>> supportedTypes() {
+    public Set<Type<?>> supportedTypes() {
         return JacksonProcessors.getSupportedTypes();
     }
 

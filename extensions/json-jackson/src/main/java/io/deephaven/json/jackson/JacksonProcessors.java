@@ -14,6 +14,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -39,8 +40,8 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      *
      * @return the supported types
      */
-    static List<Type<?>> getSupportedTypes() {
-        return List.of(
+    static Set<Type<?>> getSupportedTypes() {
+        return Set.of(
                 Type.stringType(),
                 Type.byteType().arrayType(),
                 Type.charType().arrayType(),
@@ -56,7 +57,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      * @return the supported types
      */
     @Override
-    default List<Type<?>> supportedTypes() {
+    default Set<Type<?>> supportedTypes() {
         return getSupportedTypes();
     }
 

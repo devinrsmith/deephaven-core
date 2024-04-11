@@ -20,7 +20,7 @@ import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.Type;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.Set;
 
 /**
  * An interface for processing data from one or more input objects into output chunks on a 1-to-1 input record to output
@@ -185,10 +185,12 @@ public interface ObjectProcessor<T> {
          *
          * @return the supported input types
          */
-        List<Type<?>> supportedTypes();
+        Set<Type<?>> supportedTypes();
 
         /**
-         * Creates an object processor that can process the input type {@code inputType}.
+         * Creates an object processor that can process the {@code inputType}. This will successfully create a processor
+         * when {@code inputType} is one of, or extends from one of, {@link #supportedTypes()}. Otherwise, an
+         * {@link IllegalArgumentException} will be thrown.
          *
          * @param inputType the input type
          * @return the object processor

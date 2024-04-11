@@ -10,7 +10,7 @@ import io.deephaven.json.ValueOptions;
 import io.deephaven.json.jackson.JacksonProcessors;
 import io.deephaven.qst.type.Type;
 
-import java.util.List;
+import java.util.Set;
 
 // Not hooking up auto-service, is not the default
 public final class JacksonBsonProvider implements JsonProcessorProvider {
@@ -34,7 +34,7 @@ public final class JacksonBsonProvider implements JsonProcessorProvider {
      * @return the supported types
      */
     @Override
-    public List<Type<?>> supportedTypes() {
+    public Set<Type<?>> supportedTypes() {
         return JacksonProcessors.getSupportedTypes();
     }
 

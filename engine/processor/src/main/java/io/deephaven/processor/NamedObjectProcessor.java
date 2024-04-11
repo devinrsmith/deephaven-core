@@ -20,12 +20,12 @@ public abstract class NamedObjectProcessor<T> {
         return ImmutableNamedObjectProcessor.builder();
     }
 
-    public static <T> NamedObjectProcessor<T> of(ObjectProcessor<T> processor, String... names) {
-        return NamedObjectProcessor.<T>builder().processor(processor).addColumnNames(names).build();
+    public static <T> NamedObjectProcessor<T> of(ObjectProcessor<? super T> processor, String... names) {
+        return NamedObjectProcessor.<T>builder().processor(processor).addNames(names).build();
     }
 
-    public static <T> NamedObjectProcessor<T> of(ObjectProcessor<T> processor, Iterable<String> names) {
-        return NamedObjectProcessor.<T>builder().processor(processor).addAllColumnNames(names).build();
+    public static <T> NamedObjectProcessor<T> of(ObjectProcessor<? super T> processor, Iterable<String> names) {
+        return NamedObjectProcessor.<T>builder().processor(processor).addAllNames(names).build();
     }
 
     public static <T> NamedObjectProcessor<T> prefix(ObjectProcessor<T> processor, String prefix) {
@@ -36,48 +36,59 @@ public abstract class NamedObjectProcessor<T> {
         return of(processor, IntStream.range(0, size).mapToObj(ix -> prefix + "_" + ix).collect(Collectors.toList()));
     }
 
-    public abstract ObjectProcessor<T> processor();
+    /**
+     * The name for each output of {@link #processor()}.
+     */
+    public abstract List<String> names();
 
-    public abstract List<String> columnNames();
+    /**
+     * The object processor.
+     */
+    public abstract ObjectProcessor<? super T> processor();
 
     public interface Builder<T> {
-        Builder<T> processor(ObjectProcessor<T> processor);
+        Builder<T> processor(ObjectProcessor<? super T> processor);
 
-        Builder<T> addColumnNames(String element);
+        Builder<T> addNames(String element);
 
-        Builder<T> addColumnNames(String... elements);
+        Builder<T> addNames(String... elements);
 
-        Builder<T> addAllColumnNames(Iterable<String> elements);
+        Builder<T> addAllNames(Iterable<String> elements);
 
         NamedObjectProcessor<T> build();
     }
 
-
     public interface Provider extends ObjectProcessor.Provider {
 
-        @Override
-        default <T> ObjectProcessor<? super T> processor(Type<T> inputType) {
-            return named(inputType).processor();
-        }
+        /**
+         * The name for each output of the processors. Equivalent to the named processors'
+         * {@link NamedObjectProcessor#names()}.
+         *
+         * @return the names
+         */
+        List<String> names();
 
         /**
          * Creates a named object processor that can process the {@code inputType}. This will successfully create a
-         * named processor when {@code inputType} is one of, or extends from one of, {@link #supportedTypes()}.
-         * Otherwise, an {@link IllegalArgumentException} will be thrown.
+         * named processor when {@code inputType} is one of, or extends from one of, {@link #inputTypes()}. Otherwise,
+         * an {@link IllegalArgumentException} will be thrown. Equivalent to
+         * {@code NamedObjectProcessor.of(processor(inputType), names())}.
          *
          * @param inputType the input type
          * @return the object processor
          * @param <T> the input type
          */
-        <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
+        default <T> NamedObjectProcessor<? super T> named(Type<T> inputType) {
+            return NamedObjectProcessor.of(processor(inputType), names());
+        }
     }
 
     @Check
     final void checkSizes() {
-        if (columnNames().size() != processor().size()) {
+        if (names().size() != processor().size()) {
             throw new IllegalArgumentException(
                     String.format("Unmatched sizes; columnNames().size()=%d, processor().size()=%d",
-                            columnNames().size(), processor().size()));
+                            names().size(), processor().size()));
         }
     }
 }

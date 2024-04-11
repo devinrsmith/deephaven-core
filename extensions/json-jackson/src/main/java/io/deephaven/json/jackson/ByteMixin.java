@@ -36,7 +36,7 @@ final class ByteMixin extends Mixin<ByteOptions> implements ToByte {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.byteType());
     }
 

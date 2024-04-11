@@ -40,7 +40,7 @@ final class InstantMixin extends Mixin<InstantOptions> implements ToLong {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.instantType());
     }
 

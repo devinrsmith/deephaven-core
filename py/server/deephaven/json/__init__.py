@@ -10,6 +10,9 @@ of JSON. This module can also service other use cases where the JSON structuring
 JSON value from a Deephaven structure).
 """
 
+# todo: should be on the classpath by default, but doesn't have to be
+# todo: would be nice if this code could live in the JSON jar
+
 import jpy
 from dataclasses import dataclass, field
 from datetime import datetime

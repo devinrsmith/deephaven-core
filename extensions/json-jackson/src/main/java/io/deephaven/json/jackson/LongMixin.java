@@ -31,7 +31,7 @@ final class LongMixin extends Mixin<LongOptions> implements LongValueProcessor.T
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.longType());
     }
 

@@ -32,7 +32,7 @@ final class BoolMixin extends Mixin<BoolOptions> implements ToByte {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.booleanType().boxedType());
     }
 

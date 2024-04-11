@@ -32,12 +32,12 @@ final class ObjectMixin extends Mixin<ObjectOptions> {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return options.fields()
                 .stream()
                 .map(ObjectFieldOptions::options)
                 .map(this::mixin)
-                .flatMap(Mixin::outputTypes);
+                .flatMap(Mixin::outputTypesImpl);
     }
 
     @Override

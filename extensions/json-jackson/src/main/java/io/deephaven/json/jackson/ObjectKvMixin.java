@@ -35,7 +35,7 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
     }
 
     @Override
-    public Stream<NativeArrayType<?, ?>> outputTypes() {
+    public Stream<NativeArrayType<?, ?>> outputTypesImpl() {
         return keyValueOutputTypes().map(Type::arrayType);
     }
 
@@ -63,7 +63,7 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
     }
 
     Stream<Type<?>> keyValueOutputTypes() {
-        return Stream.concat(keyMixin().outputTypes(), valueMixin().outputTypes());
+        return Stream.concat(keyMixin().outputTypesImpl(), valueMixin().outputTypesImpl());
     }
 
     private ValueProcessorKvImpl innerProcessor(List<WritableChunk<?>> out) {
@@ -90,7 +90,7 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
 
         public RepeaterImpl(List<WritableChunk<?>> out, boolean allowMissing, boolean allowNull) {
             this.out = Objects.requireNonNull(out);
-            this.outerTypes = outputTypes().map(NativeArrayType::arrayType).collect(Collectors.toList());
+            this.outerTypes = outputTypesImpl().map(NativeArrayType::arrayType).collect(Collectors.toList());
             this.allowMissing = allowMissing;
             this.allowNull = allowNull;
         }
@@ -127,7 +127,7 @@ final class ObjectKvMixin extends Mixin<ObjectKvOptions> {
             private ValueProcessorKvImpl innerProcessor;
 
             public ContextImpl() {
-                innerChunks = outputTypes()
+                innerChunks = outputTypesImpl()
                         .map(ObjectProcessor::chunkType)
                         .map(chunkType -> chunkType.makeWritableChunk(0))
                         .collect(Collectors.toList());

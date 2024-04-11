@@ -37,7 +37,7 @@ final class DoubleMixin extends Mixin<DoubleOptions> implements ToDouble {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.doubleType());
     }
 

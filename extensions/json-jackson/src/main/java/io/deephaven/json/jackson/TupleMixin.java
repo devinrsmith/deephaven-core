@@ -45,8 +45,8 @@ final class TupleMixin extends Mixin<TupleOptions> {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
-        return options.namedValues().values().stream().map(this::mixin).flatMap(Mixin::outputTypes);
+    public Stream<Type<?>> outputTypesImpl() {
+        return options.namedValues().values().stream().map(this::mixin).flatMap(Mixin::outputTypesImpl);
     }
 
     @Override

@@ -4,6 +4,7 @@
 package io.deephaven.json;
 
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -59,11 +60,13 @@ public class ObjectKvOptionsTest {
 
     @Test
     void columnNames() {
-        assertThat(STRING_INT_KV.named(Type.stringType()).columnNames()).containsExactly("Key", "Value");
+        assertThat(JacksonProvider.of(STRING_INT_KV).named(Type.stringType()).names()).containsExactly("Key",
+                "Value");
     }
 
     @Test
     void columnNamesValueIsObject() {
-        assertThat(STRING_OBJ_KV.named(Type.stringType()).columnNames()).containsExactly("Key", "name", "age");
+        assertThat(JacksonProvider.of(STRING_OBJ_KV).named(Type.stringType()).names()).containsExactly("Key",
+                "name", "age");
     }
 }

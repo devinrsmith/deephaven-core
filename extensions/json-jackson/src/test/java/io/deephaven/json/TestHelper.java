@@ -16,8 +16,7 @@ import io.deephaven.chunk.ShortChunk;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Any;
-import io.deephaven.json.jackson.JacksonJsonProvider;
-import io.deephaven.json.jackson.JacksonProcessors;
+import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.processor.ObjectProcessor;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public class TestHelper {
     }
 
     public static void parse(ValueOptions options, List<String> jsonRows, Chunk<?>... expectedCols) throws IOException {
-        parse(new JacksonJsonProvider().provider(options).stringProcessor(), jsonRows, expectedCols);
+        parse(JacksonProvider.of(options).stringProcessor(), jsonRows, expectedCols);
     }
 
     public static <T> void parse(ObjectProcessor<? super T> processor, List<T> rows, Chunk<?>... expectedCols)

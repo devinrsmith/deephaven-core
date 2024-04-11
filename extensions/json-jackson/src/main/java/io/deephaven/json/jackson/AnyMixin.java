@@ -31,7 +31,7 @@ final class AnyMixin extends Mixin<AnyOptions> {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.ofCustom(TreeNode.class));
     }
 

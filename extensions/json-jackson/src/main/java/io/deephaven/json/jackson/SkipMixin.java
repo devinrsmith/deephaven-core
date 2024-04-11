@@ -31,7 +31,7 @@ final class SkipMixin extends Mixin<SkipOptions> implements ValueProcessor, Repe
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.empty();
     }
 

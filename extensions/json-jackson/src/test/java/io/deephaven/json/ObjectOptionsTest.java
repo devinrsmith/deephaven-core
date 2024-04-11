@@ -5,6 +5,7 @@ package io.deephaven.json;
 
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.QueryConstants;
 import org.junit.jupiter.api.Test;
@@ -174,7 +175,8 @@ public class ObjectOptionsTest {
 
     @Test
     void columnNames() {
-        assertThat(OBJECT_NAME_AGE_FIELD.named(Type.stringType()).columnNames()).containsExactly("name", "age");
+        assertThat(JacksonProvider.of(OBJECT_NAME_AGE_FIELD).named(Type.stringType()).names())
+                .containsExactly("name", "age");
     }
 
     @Test
@@ -187,7 +189,7 @@ public class ObjectOptionsTest {
                         .build())
                 .addFields(ObjectFieldOptions.of("age", IntOptions.standard()))
                 .build();
-        assertThat(obj.named(Type.stringType()).columnNames()).containsExactly("MyName", "age");
+        assertThat(JacksonProvider.of(obj).named(Type.stringType()).names()).containsExactly("MyName", "age");
     }
 
     @Test
@@ -196,7 +198,7 @@ public class ObjectOptionsTest {
                 .putFields("+1", IntOptions.standard())
                 .putFields("-1", IntOptions.standard())
                 .build();
-        assertThat(objPlusOneMinusOneCount.named(Type.stringType()).columnNames()).containsExactly("column_1",
-                "column_12");
+        assertThat(JacksonProvider.of(objPlusOneMinusOneCount).named(Type.stringType()).names())
+                .containsExactly("column_1", "column_12");
     }
 }

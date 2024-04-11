@@ -178,18 +178,36 @@ public interface ObjectProcessor<T> {
      */
     void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
 
+    /**
+     * An abstraction over {@link ObjectProcessor} that provides the same logical object processor for different input
+     * types.
+     */
     interface Provider {
 
         /**
-         * The supported input types for {@code this} provider.
+         * The base input types for {@link #processor(Type)}.
          *
-         * @return the supported input types
+         * @return the input types
          */
-        Set<Type<?>> supportedTypes();
+        Set<Type<?>> inputTypes();
+
+        /**
+         * The output types for the processors. Equivalent to the processors' {@link ObjectProcessor#outputTypes()}.
+         *
+         * @return the output types
+         */
+        List<Type<?>> outputTypes();
+
+        /**
+         * The number of output types for the processors. Equivalent to the processors' {@link ObjectProcessor#size()}.
+         *
+         * @return the number of output types
+         */
+        int size();
 
         /**
          * Creates an object processor that can process the {@code inputType}. This will successfully create a processor
-         * when {@code inputType} is one of, or extends from one of, {@link #supportedTypes()}. Otherwise, an
+         * when {@code inputType} is one of, or extends from one of, {@link #inputTypes()}. Otherwise, an
          * {@link IllegalArgumentException} will be thrown.
          *
          * @param inputType the input type

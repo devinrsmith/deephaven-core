@@ -3,62 +3,31 @@
 //
 package io.deephaven.bson.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import de.undercouch.bson4jackson.BsonFactory;
-import io.deephaven.json.JsonProcessorProvider;
 import io.deephaven.json.ValueOptions;
-import io.deephaven.json.jackson.JacksonProcessors;
-import io.deephaven.qst.type.Type;
+import io.deephaven.json.jackson.JacksonProvider;
 
-import java.util.Set;
-
-// Not hooking up auto-service, is not the default
-public final class JacksonBsonProvider implements JsonProcessorProvider {
+public final class JacksonBsonProvider {
 
     /**
-     * Creates a jackson BSON provider using the provided BSON {@code factory}. Equivalent to
-     * {@code JacksonProcessors.of(options, factory)}.
+     * Creates a jackson BSON provider using a default factory.
      *
-     * @param options the options
-     * @param factory the BSON factory
+     * @param options the object options
      * @return the jackson BSON provider
-     * @see JacksonProcessors#of(ValueOptions, JsonFactory)
-     */
-    public static JacksonProcessors of(ValueOptions options, BsonFactory factory) {
-        return JacksonProcessors.of(options, factory);
-    }
-
-    /**
-     * The jackson BSON supported types. Equivalent to {@link JacksonProcessors#getSupportedTypes()}.
-     *
-     * @return the supported types
-     */
-    @Override
-    public Set<Type<?>> supportedTypes() {
-        return JacksonProcessors.getSupportedTypes();
-    }
-
-    /**
-     * Creates a jackson BSON object processor provider with a default BSON factory.
-     *
-     * @param options the options
-     * @return the object processor provider
      * @see #of(ValueOptions, BsonFactory)
      */
-    @Override
-    public JacksonProcessors provider(ValueOptions options) {
+    public static JacksonProvider of(ValueOptions options) {
         return of(options, JacksonBsonConfiguration.defaultFactory());
     }
 
     /**
-     * Creates a jackson BSON named object processor provider with a default BSON factory.
+     * Creates a jackson BSON provider using the provided {@code factory}.
      *
-     * @param options the options
-     * @return the object processor provider
-     * @see #of(ValueOptions, BsonFactory)
+     * @param options the object options
+     * @param factory the jackson BSON factory
+     * @return the jackson BSON provider
      */
-    @Override
-    public JacksonProcessors namedProvider(ValueOptions options) {
-        return of(options, JacksonBsonConfiguration.defaultFactory());
+    public static JacksonProvider of(ValueOptions options, BsonFactory factory) {
+        return JacksonProvider.of(options, factory);
     }
 }

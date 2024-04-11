@@ -36,7 +36,7 @@ final class ShortMixin extends Mixin<ShortOptions> implements ToShort {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.shortType());
     }
 

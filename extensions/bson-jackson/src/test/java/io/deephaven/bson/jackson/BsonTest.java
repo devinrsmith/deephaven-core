@@ -31,7 +31,7 @@ public class BsonTest {
                 "name", "foo",
                 "age", 42));
         parse(
-                new JacksonBsonProvider().provider(OBJECT_NAME_AGE_FIELD).bytesProcessor(),
+                JacksonBsonProvider.of(OBJECT_NAME_AGE_FIELD).bytesProcessor(),
                 List.of(bsonExample),
                 ObjectChunk.chunkWrap(new String[] {"foo"}),
                 IntChunk.chunkWrap(new int[] {42}));

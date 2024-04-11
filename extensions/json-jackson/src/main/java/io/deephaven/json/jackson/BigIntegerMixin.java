@@ -32,7 +32,7 @@ final class BigIntegerMixin extends Mixin<BigIntegerOptions> implements ToObject
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.ofCustom(BigInteger.class));
     }
 

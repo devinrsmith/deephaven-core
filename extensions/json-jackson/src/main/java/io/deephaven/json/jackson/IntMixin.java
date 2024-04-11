@@ -37,7 +37,7 @@ final class IntMixin extends Mixin<IntOptions> implements ToInt {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.intType());
     }
 

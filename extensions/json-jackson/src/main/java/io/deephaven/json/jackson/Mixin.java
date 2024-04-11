@@ -32,10 +32,8 @@ import io.deephaven.json.StringOptions;
 import io.deephaven.json.TupleOptions;
 import io.deephaven.json.TypedObjectOptions;
 import io.deephaven.json.ValueOptions;
-import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,9 +50,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
+abstract class Mixin<T extends ValueOptions> implements JacksonProvider {
 
     static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
+
+    public static String toColumnName(List<String> path) {
+        return path.isEmpty() ? "Value" : String.join("_", path);
+    }
 
     static Mixin<?> of(ValueOptions options, JsonFactory factory) {
         return options.walk(new MixinImpl(factory));
@@ -68,54 +70,24 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
         this.options = Objects.requireNonNull(options);
     }
 
-    public static String toColumnName(List<String> path) {
-        return path.isEmpty() ? "Value" : String.join("_", path);
+    @Override
+    public final int size() {
+        return numColumns();
     }
 
-    final Mixin<?> mixin(ValueOptions options) {
-        return of(options, factory);
+    @Override
+    public final List<Type<?>> outputTypes() {
+        return outputTypesImpl().collect(Collectors.toList());
     }
 
-    abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
-
-    abstract RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
-
-    abstract int numColumns();
-
-    abstract Stream<List<String>> paths();
-
-    abstract Stream<? extends Type<?>> outputTypes();
-
-    final boolean allowNull() {
-        return options.allowedTypes().contains(JsonValueTypes.NULL);
+    @Override
+    public final List<String> names() {
+        return names(TO_COLUMN_NAME);
     }
 
-    final boolean allowMissing() {
-        return options.allowMissing();
-    }
-
-    final boolean allowString() {
-        return options.allowedTypes().contains(JsonValueTypes.STRING);
-    }
-
-    final boolean allowNumberInt() {
-        return options.allowedTypes().contains(JsonValueTypes.INT);
-    }
-
-    final boolean allowDecimal() {
-        return options.allowedTypes().contains(JsonValueTypes.DECIMAL);
-    }
-
-    final boolean allowBool() {
-        return options.allowedTypes().contains(JsonValueTypes.BOOL);
-    }
-
-    final boolean allowObject() {
-        return options.allowedTypes().contains(JsonValueTypes.OBJECT);
-    }
-
-    final boolean allowArray() {
-        return options.allowedTypes().contains(JsonValueTypes.ARRAY);
+    @Override
+    public final List<String> names(Function<List<String>, String> f) {
+        return Arrays.asList(NameValidator.legalizeColumnNames(paths().map(f).toArray(String[]::new), true));
     }
 
     @SuppressWarnings("unchecked")
@@ -144,16 +116,6 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
             return (ObjectProcessor<? super X>) byteBufferProcessor();
         }
         throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType);
-    }
-
-    @Override
-    public final <X> NamedObjectProcessor<? super X> named(Type<X> inputType) {
-        return NamedObjectProcessor.of(processor(inputType), names(TO_COLUMN_NAME));
-    }
-
-    @Override
-    public final List<String> names(Function<List<String>, String> f) {
-        return Arrays.asList(NameValidator.legalizeColumnNames(paths().map(f).toArray(String[]::new), true));
     }
 
     @Override
@@ -189,6 +151,52 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
     @Override
     public final ObjectProcessor<ByteBuffer> byteBufferProcessor() {
         return new ByteBufferIn();
+    }
+
+    final Mixin<?> mixin(ValueOptions options) {
+        return of(options, factory);
+    }
+
+    abstract ValueProcessor processor(String context, List<WritableChunk<?>> out);
+
+    abstract RepeaterProcessor repeaterProcessor(boolean allowMissing, boolean allowNull, List<WritableChunk<?>> out);
+
+    abstract int numColumns();
+
+    abstract Stream<List<String>> paths();
+
+    abstract Stream<? extends Type<?>> outputTypesImpl();
+
+    final boolean allowNull() {
+        return options.allowedTypes().contains(JsonValueTypes.NULL);
+    }
+
+    final boolean allowMissing() {
+        return options.allowMissing();
+    }
+
+    final boolean allowString() {
+        return options.allowedTypes().contains(JsonValueTypes.STRING);
+    }
+
+    final boolean allowNumberInt() {
+        return options.allowedTypes().contains(JsonValueTypes.INT);
+    }
+
+    final boolean allowDecimal() {
+        return options.allowedTypes().contains(JsonValueTypes.DECIMAL);
+    }
+
+    final boolean allowBool() {
+        return options.allowedTypes().contains(JsonValueTypes.BOOL);
+    }
+
+    final boolean allowObject() {
+        return options.allowedTypes().contains(JsonValueTypes.OBJECT);
+    }
+
+    final boolean allowArray() {
+        return options.allowedTypes().contains(JsonValueTypes.ARRAY);
     }
 
     static List<String> prefixWith(String prefix, List<String> path) {
@@ -260,12 +268,12 @@ abstract class Mixin<T extends ValueOptions> implements JacksonProcessors {
 
         @Override
         public final int size() {
-            return numColumns();
+            return Mixin.this.size();
         }
 
         @Override
         public final List<Type<?>> outputTypes() {
-            return Mixin.this.outputTypes().collect(Collectors.toList());
+            return Mixin.this.outputTypes();
         }
 
         @Override

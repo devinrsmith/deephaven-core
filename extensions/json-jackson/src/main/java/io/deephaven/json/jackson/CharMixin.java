@@ -36,7 +36,7 @@ final class CharMixin extends Mixin<CharOptions> implements ToChar {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.charType());
     }
 

@@ -37,7 +37,7 @@ final class InstantNumberMixin extends Mixin<InstantNumberOptions> {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.instantType());
     }
 

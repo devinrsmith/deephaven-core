@@ -37,7 +37,7 @@ final class FloatMixin extends Mixin<FloatOptions> implements ToFloat {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.floatType());
     }
 

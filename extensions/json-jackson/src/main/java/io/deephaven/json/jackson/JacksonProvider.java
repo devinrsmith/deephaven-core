@@ -18,10 +18,22 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * A specific JSON processor implementation using Jackson. This provides more control over the default
- * {@link ValueOptions#processor(Type)} and {@link ValueOptions#named(Type)}.
+ * A specific JSON processor implementation using Jackson.
  */
-public interface JacksonProcessors extends NamedObjectProcessor.Provider {
+public interface JacksonProvider extends NamedObjectProcessor.Provider {
+
+    /**
+     * Creates a jackson provider using a default factory. Equivalent to
+     * {@code of(options, JacksonConfiguration.defaultFactoryBuilder().build())}.
+     *
+     * @param options the object options
+     * @return the jackson provider
+     * @see #of(ValueOptions, JsonFactory)
+     * @see JacksonConfiguration#defaultFactoryBuilder()
+     */
+    static JacksonProvider of(ValueOptions options) {
+        return of(options, JacksonConfiguration.defaultFactory());
+    }
 
     /**
      * Creates a jackson provider using the provided {@code factory}.
@@ -30,7 +42,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      * @param factory the jackson factory
      * @return the jackson provider
      */
-    static JacksonProcessors of(ValueOptions options, JsonFactory factory) {
+    static JacksonProvider of(ValueOptions options, JsonFactory factory) {
         return Mixin.of(options, factory);
     }
 
@@ -40,7 +52,7 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      *
      * @return the supported types
      */
-    static Set<Type<?>> getSupportedTypes() {
+    static Set<Type<?>> getInputTypes() {
         return Set.of(
                 Type.stringType(),
                 Type.byteType().arrayType(),
@@ -52,13 +64,13 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
     }
 
     /**
-     * The supported types. Equivalent to {@link #getSupportedTypes()}.
+     * The supported types. Equivalent to {@link #getInputTypes()}.
      *
      * @return the supported types
      */
     @Override
-    default Set<Type<?>> supportedTypes() {
-        return getSupportedTypes();
+    default Set<Type<?>> inputTypes() {
+        return getInputTypes();
     }
 
     /**
@@ -77,22 +89,6 @@ public interface JacksonProcessors extends NamedObjectProcessor.Provider {
      */
     @Override
     <T> ObjectProcessor<? super T> processor(Type<T> inputType);
-
-    /**
-     * Creates a named object processor based on the {@code inputType} with a default {@link JsonFactory} and default
-     * naming function. Equivalent to
-     * {@code NamedObjectProcessor.of(processor(inputType), names(JacksonProcessor::toColumnName))}.
-     *
-     * @param inputType the input type
-     * @return the named object processor
-     * @param <T> the input type
-     * @see NamedObjectProcessor#of(ObjectProcessor, Iterable)
-     * @see #processor(Type)
-     * @see #names(Function)
-     * @see Mixin#toColumnName(List)
-     */
-    @Override
-    <T> NamedObjectProcessor<? super T> named(Type<T> inputType);
 
     List<String> names(Function<List<String>, String> f);
 

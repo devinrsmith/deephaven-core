@@ -3,21 +3,17 @@
 //
 package io.deephaven.json;
 
-import io.deephaven.processor.NamedObjectProcessor;
-import io.deephaven.processor.ObjectProcessor;
-import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The base configuration for JSON values.
  */
-public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObjectProcessor.Provider {
+public abstract class ValueOptions {
 
     /**
      * The allowed types.
@@ -30,49 +26,6 @@ public abstract class ValueOptions implements ObjectProcessor.Provider, NamedObj
     @Default
     public boolean allowMissing() {
         return true;
-    }
-
-    /**
-     * The supported types for the default provider. Equivalent to
-     * {@code JsonProcessorProvider.serviceLoader().supportedTypes()}.
-     *
-     * @return the supported types
-     * @see JsonProcessorProvider#serviceLoader()
-     */
-    @Override
-    public final Set<Type<?>> supportedTypes() {
-        return JsonProcessorProvider.serviceLoader().supportedTypes();
-    }
-
-    /**
-     * Creates a default object processor of type {@code inputType} from {@code this}. Callers wanting more control are
-     * encouraged to depend on a specific implementation and construct an object processor from {@code this} more
-     * explicitly. Equivalent to {@code JsonProcessorProvider.serviceLoader().provider(this).processor(inputType)}.
-     *
-     * @param inputType the input type
-     * @return the object processor
-     * @param <T> the input type
-     * @see JsonProcessorProvider#serviceLoader()
-     */
-    @Override
-    public final <T> ObjectProcessor<? super T> processor(Type<T> inputType) {
-        return JsonProcessorProvider.serviceLoader().provider(this).processor(inputType);
-    }
-
-    /**
-     * Creates a default named object processor of type {@code inputType} from {@code this}. Callers wanting more
-     * control are encouraged to depend on a specific implementation and construct a named object processor from
-     * {@code this} more explicitly. Equivalent to
-     * {@code JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType)}.
-     *
-     * @param inputType the input type
-     * @return the named object processor
-     * @param <T> the input type
-     * @see JsonProcessorProvider#serviceLoader()
-     */
-    @Override
-    public final <T> NamedObjectProcessor<? super T> named(Type<T> inputType) {
-        return JsonProcessorProvider.serviceLoader().namedProvider(this).named(inputType);
     }
 
     /**

@@ -33,7 +33,7 @@ final class LocalDateMixin extends Mixin<LocalDateOptions> implements ToObject<L
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.ofCustom(LocalDate.class));
     }
 

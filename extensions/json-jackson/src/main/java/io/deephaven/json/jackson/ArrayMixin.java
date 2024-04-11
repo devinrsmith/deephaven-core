@@ -41,7 +41,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
     }
 
     @Override
-    public Stream<NativeArrayType<?, ?>> outputTypes() {
+    public Stream<NativeArrayType<?, ?>> outputTypesImpl() {
         return elementOutputTypes().map(Type::arrayType);
     }
 
@@ -51,7 +51,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
     }
 
     Stream<? extends Type<?>> elementOutputTypes() {
-        return element().outputTypes();
+        return element().outputTypesImpl();
     }
 
     RepeaterProcessor elementRepeater(List<WritableChunk<?>> out) {
@@ -79,7 +79,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
 
         public ArrayOfArrayProcessor(List<WritableChunk<?>> out, boolean allowMissing, boolean allowNull) {
             this.out = Objects.requireNonNull(out);
-            this.outerTypes = outputTypes().map(NativeArrayType::arrayType).collect(Collectors.toList());
+            this.outerTypes = outputTypesImpl().map(NativeArrayType::arrayType).collect(Collectors.toList());
             this.allowMissing = allowMissing;
             this.allowNull = allowNull;
         }
@@ -116,7 +116,7 @@ final class ArrayMixin extends Mixin<ArrayOptions> {
             private ValueProcessorArrayImpl innerProcessor;
 
             public ArrayOfArrayProcessorContext() {
-                innerChunks = outputTypes()
+                innerChunks = outputTypesImpl()
                         .map(ObjectProcessor::chunkType)
                         .map(chunkType -> chunkType.makeWritableChunk(0))
                         .collect(Collectors.toList());

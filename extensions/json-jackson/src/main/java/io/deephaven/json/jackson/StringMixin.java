@@ -31,7 +31,7 @@ final class StringMixin extends Mixin<StringOptions> implements ToObject<String>
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.of(Type.stringType());
     }
 

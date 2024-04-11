@@ -58,13 +58,13 @@ final class TypedObjectMixin extends Mixin<TypedObjectOptions> {
     }
 
     @Override
-    public Stream<Type<?>> outputTypes() {
+    public Stream<Type<?>> outputTypesImpl() {
         return Stream.concat(
                 Stream.of(Type.stringType()),
                 Stream.concat(
                         options.sharedFields().stream().map(ObjectFieldOptions::options).map(this::mixin)
-                                .flatMap(Mixin::outputTypes),
-                        options.objects().values().stream().map(this::mixin).flatMap(Mixin::outputTypes)));
+                                .flatMap(Mixin::outputTypesImpl),
+                        options.objects().values().stream().map(this::mixin).flatMap(Mixin::outputTypesImpl)));
     }
 
     @Override

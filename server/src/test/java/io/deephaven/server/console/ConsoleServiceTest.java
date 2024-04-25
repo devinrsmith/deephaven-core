@@ -15,23 +15,25 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ConsoleServiceTest extends DeephavenApiServerSingleAuthenticatedBase {
 
-    private static class Observer implements ClientResponseObserver<LogSubscriptionRequest, LogSubscriptionData> {
-        private final CountDownLatch latch;
-        private final CountDownLatch done;
+    private class Observer implements ClientResponseObserver<LogSubscriptionRequest, LogSubscriptionData> {
+        private final CountDownLatch onNext;
+        private final CountDownLatch onDone;
         private ClientCallStreamObserver<?> stream;
         private volatile Throwable error;
 
         public Observer(int expected) {
-            latch = new CountDownLatch(expected);
-            done = new CountDownLatch(1);
+            onNext = new CountDownLatch(expected);
+            onDone = new CountDownLatch(1);
         }
 
         @Override
@@ -41,54 +43,89 @@ public class ConsoleServiceTest extends DeephavenApiServerSingleAuthenticatedBas
 
         @Override
         public void onNext(LogSubscriptionData value) {
-            if (latch.getCount() == 0) {
+            if (onNext.getCount() == 0) {
                 throw new IllegalStateException("Expected latch count exceeded");
             }
-            latch.countDown();
+            onNext.countDown();
         }
 
         @Override
         public void onError(Throwable t) {
             error = t;
-            done.countDown();
+            onDone.countDown();
         }
 
         @Override
         public void onCompleted() {
-            done.countDown();
+            onDone.countDown();
+        }
+
+        void cancel(String message, Throwable cause) {
+            stream.cancel(message, cause);
+        }
+
+        void subscribeToLogs() {
+            channel().console().subscribeToLogs(LogSubscriptionRequest.getDefaultInstance(), this);
+        }
+
+        void awaitRpcEstablished(Duration duration) throws InterruptedException, TimeoutException {
+            // There is no other way afaict (at least w/ the observer interfaces that gRPC libraries provide) to know
+            // that an RPC has been established _besides_ waiting for an onNext message.
+            assertThat(onNext.getCount()).isEqualTo(1);
+            logBuffer().record(record(Instant.now(), LogLevel.STDOUT, "hello, world!"));
+            awaitOnNext(duration);
+        }
+
+        void awaitOnNext(Duration duration) throws InterruptedException, TimeoutException {
+            if (!onNext.await(duration.toNanos(), TimeUnit.NANOSECONDS)) {
+                cancel("onNext latch timed out", null);
+                throw new TimeoutException();
+            }
+        }
+
+        void awaitOnDone(Duration duration) throws InterruptedException, TimeoutException {
+            if (!onDone.await(duration.toNanos(), TimeUnit.NANOSECONDS)) {
+                cancel("onDone latch timed out", null);
+                throw new TimeoutException();
+            }
         }
     }
 
     @Test
-    public void subscribeToLogsHistory() throws InterruptedException {
-        final LogBufferRecord record1 = record(Instant.now(), LogLevel.STDOUT, "hello");
-        final LogBufferRecord record2 = record(Instant.now(), LogLevel.STDOUT, "world");
-        logBuffer().record(record1);
-        logBuffer().record(record2);
-        final LogSubscriptionRequest request = LogSubscriptionRequest.getDefaultInstance();
+    public void subscribeToLogsHistory() throws InterruptedException, TimeoutException {
+        logBuffer().record(record(Instant.now(), LogLevel.STDOUT, "hello"));
+        logBuffer().record(record(Instant.now(), LogLevel.STDOUT, "world"));
         final Observer observer = new Observer(2);
-        channel().console().subscribeToLogs(request, observer);
-        assertThat(observer.latch.await(3, TimeUnit.SECONDS)).isTrue();
-        observer.stream.cancel("done", null);
-        assertThat(observer.done.await(3, TimeUnit.SECONDS)).isTrue();
+        observer.subscribeToLogs();
+        observer.awaitOnNext(Duration.ofSeconds(3));
+        observer.cancel("done", null);
+        observer.awaitOnDone(Duration.ofSeconds(3));
         assertThat(observer.error).isInstanceOf(StatusRuntimeException.class);
         assertThat(observer.error).hasMessage("CANCELLED: done");
     }
 
     @Test
-    public void subscribeToLogsInline() throws InterruptedException {
-        final LogSubscriptionRequest request = LogSubscriptionRequest.getDefaultInstance();
+    public void subscribeToLogsInline() throws InterruptedException, TimeoutException {
         final Observer observer = new Observer(2);
-        channel().console().subscribeToLogs(request, observer);
-        final LogBufferRecord record1 = record(Instant.now(), LogLevel.STDOUT, "hello");
-        final LogBufferRecord record2 = record(Instant.now(), LogLevel.STDOUT, "world");
-        logBuffer().record(record1);
-        logBuffer().record(record2);
-        assertThat(observer.latch.await(3, TimeUnit.SECONDS)).isTrue();
-        observer.stream.cancel("done", null);
-        assertThat(observer.done.await(3, TimeUnit.SECONDS)).isTrue();
+        observer.subscribeToLogs();
+        logBuffer().record(record(Instant.now(), LogLevel.STDOUT, "hello"));
+        logBuffer().record(record(Instant.now(), LogLevel.STDOUT, "world"));
+        observer.awaitOnNext(Duration.ofSeconds(3));
+        observer.cancel("done", null);
+        observer.awaitOnDone(Duration.ofSeconds(3));
         assertThat(observer.error).isInstanceOf(StatusRuntimeException.class);
         assertThat(observer.error).hasMessage("CANCELLED: done");
+    }
+
+    @Test
+    public void closingSessionCancelsSubscribeToLogs() throws InterruptedException, TimeoutException {
+        final Observer observer = new Observer(1);
+        observer.subscribeToLogs();
+        observer.awaitRpcEstablished(Duration.ofSeconds(3));
+        closeSession();
+        observer.awaitOnDone(Duration.ofSeconds(3));
+        assertThat(observer.error).isInstanceOf(StatusRuntimeException.class);
+        assertThat(observer.error).hasMessage("CANCELLED: Session closed");
     }
 
     private static LogBufferRecord record(Instant timestamp, LogLevel level, String message) {

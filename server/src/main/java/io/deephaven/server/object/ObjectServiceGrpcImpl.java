@@ -23,10 +23,12 @@ import io.deephaven.server.session.SessionState.ExportObject;
 import io.deephaven.server.session.TicketRouter;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.function.ThrowingRunnable;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.io.Closeable;
 import java.lang.Object;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ public class ObjectServiceGrpcImpl extends ObjectServiceGrpc.ObjectServiceImplBa
     private enum EnqueuedState {
         WAITING, RUNNING, CLOSED
     }
-    private final class SendMessageObserver implements StreamObserver<StreamRequest> {
+    private final class SendMessageObserver implements StreamObserver<StreamRequest>, Closeable {
         private final SessionState session;
         private final StreamObserver<StreamResponse> responseObserver;
 
@@ -114,6 +116,23 @@ public class ObjectServiceGrpcImpl extends ObjectServiceGrpc.ObjectServiceImplBa
         private SendMessageObserver(SessionState session, StreamObserver<StreamResponse> responseObserver) {
             this.session = session;
             this.responseObserver = responseObserver;
+            session.addOnCloseCallback(this);
+            ((ServerCallStreamObserver<StreamResponse>) responseObserver).setOnCancelHandler(this::onCancelHandler);
+            ((ServerCallStreamObserver<StreamResponse>) responseObserver).setOnCloseHandler(this::onCloseHandler);
+        }
+
+        private void onCancelHandler() {
+            session.removeOnCloseCallback(this);
+        }
+
+        private void onCloseHandler() {
+            session.removeOnCloseCallback(this);
+        }
+
+        @Override
+        public void close() {
+            // SessionState.addOnCloseCallback
+            GrpcUtil.safelyError(responseObserver, Code.CANCELLED, "Session cancelled");
         }
 
         @Override

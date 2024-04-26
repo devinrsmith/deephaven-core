@@ -228,11 +228,7 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
             @NotNull final ExportNotificationRequest request,
             @NotNull final StreamObserver<ExportNotification> responseObserver) {
         final SessionState session = service.getCurrentSession();
-
-        session.addExportListener(responseObserver);
-        ((ServerCallStreamObserver<ExportNotification>) responseObserver).setOnCancelHandler(() -> {
-            session.removeExportListener(responseObserver);
-        });
+        session.registerExportListener((ServerCallStreamObserver<ExportNotification>) responseObserver);
     }
 
     @Override

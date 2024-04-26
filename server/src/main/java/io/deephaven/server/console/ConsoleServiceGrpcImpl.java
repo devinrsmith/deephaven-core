@@ -48,7 +48,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -373,8 +372,7 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         super.cancelAutoComplete(request, responseObserver);
     }
 
-    private final class LogsClient implements LogBufferRecordListener, Runnable, Closeable {
-        private final SessionState session;
+    private final class LogsClient implements LogBufferRecordListener, Runnable {
         private final LogSubscriptionRequest request;
         private final ServerCallStreamObserver<LogSubscriptionData> client;
         private final LockFreeArrayQueue<LogSubscriptionData> buffer;
@@ -386,7 +384,6 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
                 final SessionState session,
                 final LogSubscriptionRequest request,
                 final ServerCallStreamObserver<LogSubscriptionData> client) {
-            this.session = Objects.requireNonNull(session);
             this.request = Objects.requireNonNull(request);
             this.client = Objects.requireNonNull(client);
             // Our buffer capacity should always be greater than the capacity of the logBuffer; otherwise, the initial
@@ -396,10 +393,8 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
             // clients subscribing to logs.
             this.buffer = LockFreeArrayQueue.of(Math.max(SUBSCRIBE_TO_LOGS_BUFFER_SIZE, logBuffer.capacity() * 2));
             this.guard = new AtomicBoolean(false);
-            this.session.addOnCloseCallback(this);
-            this.client.setOnReadyHandler(this::onReadyHandler);
-            this.client.setOnCancelHandler(this::onCancelHandler);
-            this.client.setOnCloseHandler(this::onCloseHandler);
+            session.registerSessionClosedNotification(client, this::onCloseHandler, this::onCancelHandler);
+            client.setOnReadyHandler(this::onReadyHandler);
         }
 
         public void start() {
@@ -501,20 +496,11 @@ public class ConsoleServiceGrpcImpl extends ConsoleServiceGrpc.ConsoleServiceImp
         private void onCloseHandler() {
             done = true;
             logBuffer.unsubscribe(this);
-            session.removeOnCloseCallback(this);
         }
 
         private void onCancelHandler() {
             done = true;
             logBuffer.unsubscribe(this);
-            session.removeOnCloseCallback(this);
-        }
-
-        @Override
-        public void close() {
-            // this is exclusively for session.addOnCloseCallback
-            // Note: SessionCloseableObserver prefers to do onComplete, but I think this is better?
-            GrpcUtil.safelyError(client, Code.CANCELLED, "Session closed");
         }
 
         // ------------------------------------------------------------------------------------------------------------

@@ -28,7 +28,6 @@ import io.grpc.stub.StreamObserver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.io.Closeable;
 import java.lang.Object;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -68,7 +67,7 @@ public class ObjectServiceGrpcImpl extends ObjectServiceGrpc.ObjectServiceImplBa
     private enum EnqueuedState {
         WAITING, RUNNING, CLOSED
     }
-    private final class SendMessageObserver implements StreamObserver<StreamRequest>, Closeable {
+    private final class SendMessageObserver implements StreamObserver<StreamRequest> {
         private final SessionState session;
         private final StreamObserver<StreamResponse> responseObserver;
 
@@ -113,26 +112,10 @@ public class ObjectServiceGrpcImpl extends ObjectServiceGrpc.ObjectServiceImplBa
             }
         }
 
-        private SendMessageObserver(SessionState session, StreamObserver<StreamResponse> responseObserver) {
+        private SendMessageObserver(SessionState session, ServerCallStreamObserver<StreamResponse> responseObserver) {
             this.session = session;
             this.responseObserver = responseObserver;
-            session.addOnCloseCallback(this);
-            ((ServerCallStreamObserver<StreamResponse>) responseObserver).setOnCancelHandler(this::onCancelHandler);
-            ((ServerCallStreamObserver<StreamResponse>) responseObserver).setOnCloseHandler(this::onCloseHandler);
-        }
-
-        private void onCancelHandler() {
-            session.removeOnCloseCallback(this);
-        }
-
-        private void onCloseHandler() {
-            session.removeOnCloseCallback(this);
-        }
-
-        @Override
-        public void close() {
-            // SessionState.addOnCloseCallback
-            GrpcUtil.safelyError(responseObserver, Code.CANCELLED, "Session cancelled");
+            this.session.registerSessionClosedNotification(responseObserver, null, null);
         }
 
         @Override
@@ -342,7 +325,7 @@ public class ObjectServiceGrpcImpl extends ObjectServiceGrpc.ObjectServiceImplBa
     @Override
     public StreamObserver<StreamRequest> messageStream(StreamObserver<StreamResponse> responseObserver) {
         SessionState session = sessionService.getCurrentSession();
-        return new SendMessageObserver(session, responseObserver);
+        return new SendMessageObserver(session, (ServerCallStreamObserver<StreamResponse>) responseObserver);
     }
 
     @NotNull

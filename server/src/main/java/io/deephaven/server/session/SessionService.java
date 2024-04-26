@@ -481,7 +481,6 @@ public class SessionService {
 
         @Override
         protected void onClose() {
-            GrpcUtil.safelyError(responseObserver, Code.UNAUTHENTICATED, "Session has ended");
             terminationListeners.remove(this);
         }
 

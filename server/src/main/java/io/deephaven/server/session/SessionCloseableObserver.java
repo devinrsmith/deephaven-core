@@ -20,8 +20,7 @@ public abstract class SessionCloseableObserver<T> implements Closeable {
             final StreamObserver<T> responseObserver) {
         this.session = session;
         this.responseObserver = responseObserver;
-        session.addOnCloseCallback(this);
-        ((ServerCallStreamObserver<T>) responseObserver).setOnCancelHandler(this::close);
+        session.registerSessionClosedNotification(((ServerCallStreamObserver<T>) responseObserver), this::close, this::close);
     }
 
     @Override

@@ -9,6 +9,8 @@ import io.deephaven.proto.backplane.grpc.AuthenticationConstantsRequest;
 import io.deephaven.proto.backplane.grpc.ConnectRequest;
 import io.deephaven.proto.backplane.grpc.ExportNotification;
 import io.deephaven.proto.backplane.grpc.ExportNotificationRequest;
+import io.deephaven.proto.backplane.grpc.ExportedTableUpdateMessage;
+import io.deephaven.proto.backplane.grpc.ExportedTableUpdatesRequest;
 import io.deephaven.proto.backplane.grpc.FieldsChangeUpdate;
 import io.deephaven.proto.backplane.grpc.ListFieldsRequest;
 import io.deephaven.proto.backplane.grpc.StreamRequest;
@@ -27,11 +29,10 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -56,12 +57,10 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        // Is non-deterministic
-        observer.assertError(StatusRuntimeException.class,
-                Set.of("CANCELLED: subscription cancelled", "UNAUTHENTICATED: session has expired"));
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
     }
 
-    final class NotificationObserver extends OnDoneObserver<ExportNotificationRequest, ExportNotification> {
+    final class ExportNotificationsObserver extends OnDoneObserver<ExportNotificationRequest, ExportNotification> {
 
         @Override
         void sendImpl() {
@@ -71,12 +70,30 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
 
     @Test
     public void exportNotifications() throws ExecutionException, InterruptedException, TimeoutException {
-        final NotificationObserver observer = new NotificationObserver();
+        final ExportNotificationsObserver observer = new ExportNotificationsObserver();
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
         observer.assertCompleted();
     }
+
+    final class ExportedTableUpdatesObserver extends OnDoneObserver<ExportedTableUpdatesRequest, ExportedTableUpdateMessage> {
+
+        @Override
+        void sendImpl() {
+            channel().table().exportedTableUpdates(ExportedTableUpdatesRequest.getDefaultInstance(), this);
+        }
+    }
+
+//    @Ignore
+//    @Test
+//    public void exportedTableUpdates() throws ExecutionException, InterruptedException, TimeoutException {
+//        final ExportedTableUpdatesObserver observer = new ExportedTableUpdatesObserver();
+//        observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
+//        closeSession();
+//        observer.awaitOnDone(Duration.ofSeconds(3));
+//        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
+//    }
 
     final class MessageStreamNoConnectRequestObserver extends OnDoneObserver<StreamRequest, StreamResponse> {
 
@@ -133,7 +150,7 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session cancelled");
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
     }
 
     @Test
@@ -143,7 +160,7 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session cancelled");
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
     }
 
     final class SubscribeToLogsObserver extends OnDoneObserver<LogSubscriptionRequest, LogSubscriptionData> {
@@ -160,7 +177,7 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        observer.assertCompleted();
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
     }
 
     final class AutoCompleteStreamObserver extends OnDoneObserver<AutoCompleteRequest, AutoCompleteResponse> {
@@ -177,7 +194,7 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        observer.assertCompleted();
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
     }
 
     final class TerminationObserver
@@ -195,7 +212,8 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
         observer.sendAndWaitForRpcEstablished(Duration.ofSeconds(3));
         closeSession();
         observer.awaitOnDone(Duration.ofSeconds(3));
-        observer.assertError(StatusRuntimeException.class, "UNAUTHENTICATED: Session has ended");
+        observer.assertError(StatusRuntimeException.class, "CANCELLED: Session closed");
+//        observer.assertError(StatusRuntimeException.class, "UNAUTHENTICATED: Session has ended");
     }
 
     abstract class OnDoneObserver<ReqT, RespT> implements ClientResponseObserver<ReqT, RespT> {
@@ -258,13 +276,6 @@ public class SessionServiceCloseTest extends DeephavenApiServerSingleAuthenticat
             assertThat(t).isNotNull();
             assertThat(t).isInstanceOf(exceptionType);
             assertThat(t).hasMessage(message);
-        }
-
-        final void assertError(Class<? extends Throwable> exceptionType, Collection<String> oneOf) {
-            assertThat(onCompleted).isFalse();
-            assertThat(t).isNotNull();
-            assertThat(t).isInstanceOf(exceptionType);
-            assertThat(oneOf).contains(t.getMessage());
         }
     }
 }

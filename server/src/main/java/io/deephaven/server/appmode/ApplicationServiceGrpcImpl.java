@@ -130,7 +130,7 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
             @NotNull final ListFieldsRequest request,
             @NotNull final StreamObserver<FieldsChangeUpdate> responseObserver) {
         final SessionState session = sessionService.getCurrentSession();
-        final Subscription subscription = new Subscription(session, responseObserver);
+        final Subscription subscription = new Subscription(session, (ServerCallStreamObserver<FieldsChangeUpdate>) responseObserver);
 
         final FieldsChangeUpdate.Builder responseBuilder = FieldsChangeUpdate.newBuilder();
         for (FieldInfo fieldInfo : known.values()) {
@@ -144,9 +144,7 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
     }
 
     synchronized void remove(Subscription sub) {
-        if (subscriptions.remove(sub)) {
-            sub.notifyObserverCancelled();
-        }
+        subscriptions.remove(sub);
     }
 
     private static TypedTicket typedTicket(AppFieldId id, String type) {
@@ -205,31 +203,19 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
      *
      * @implNote gRPC observers are not thread safe; we must synchronize around observer communication
      */
-    private class Subscription implements Closeable {
-        private final SessionState session;
+    private class Subscription {
 
         // guarded by parent sync
         private final StreamObserver<FieldsChangeUpdate> observer;
 
-        public Subscription(final SessionState session, final StreamObserver<FieldsChangeUpdate> observer) {
-            this.session = session;
+        public Subscription(final SessionState session, final ServerCallStreamObserver<FieldsChangeUpdate> observer) {
             this.observer = observer;
-            if (observer instanceof ServerCallStreamObserver) {
-                final ServerCallStreamObserver<FieldsChangeUpdate> serverCall =
-                        (ServerCallStreamObserver<FieldsChangeUpdate>) observer;
-                serverCall.setOnCancelHandler(this::onCancel);
-            }
-            session.addOnCloseCallback(this);
+            session.registerSessionClosedNotification(observer, null, this::onCancel);
         }
+
+        // todo: onClose
 
         void onCancel() {
-            if (session.removeOnCloseCallback(this)) {
-                close();
-            }
-        }
-
-        @Override
-        public void close() {
             remove(this);
         }
 
@@ -247,11 +233,6 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
                 return false;
             }
             return true;
-        }
-
-        // must be sync wrt parent
-        private void notifyObserverCancelled() {
-            GrpcUtil.safelyError(observer, Code.CANCELLED, "subscription cancelled");
         }
     }
 

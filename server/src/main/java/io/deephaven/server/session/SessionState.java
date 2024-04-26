@@ -8,8 +8,10 @@ import com.google.rpc.Code;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
+import io.deephaven.auth.AuthContext;
 import io.deephaven.base.reference.WeakSimpleReference;
 import io.deephaven.base.verify.Assert;
+import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.liveness.LivenessArtifact;
 import io.deephaven.engine.liveness.LivenessReferent;
 import io.deephaven.engine.liveness.LivenessScopeStack;
@@ -18,6 +20,7 @@ import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.table.impl.perf.QueryState;
 import io.deephaven.engine.table.impl.util.EngineMetrics;
 import io.deephaven.engine.updategraph.DynamicNode;
+import io.deephaven.extensions.barrage.util.GrpcUtil;
 import io.deephaven.hash.KeyedIntObjectHash;
 import io.deephaven.hash.KeyedIntObjectHashMap;
 import io.deephaven.hash.KeyedIntObjectKey;
@@ -30,13 +33,12 @@ import io.deephaven.proto.flight.util.FlightExportTicketHelper;
 import io.deephaven.proto.util.Exceptions;
 import io.deephaven.proto.util.ExportTicketHelper;
 import io.deephaven.server.util.Scheduler;
-import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.VisibleForTesting;
-import io.deephaven.auth.AuthContext;
 import io.deephaven.util.datastructures.SimpleReferenceManager;
 import io.deephaven.util.process.ProcessEnvironment;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.apache.arrow.flight.impl.Flight;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -431,6 +433,76 @@ public class SessionState {
                 throw Exceptions.statusRuntimeException(Code.UNAUTHENTICATED, "session has expired");
             }
             onCloseCallbacks.add(onClose);
+        }
+    }
+
+    /**
+     * Writes a {@link Code#CANCELLED} "Session closed" message to the {@code observer} in a try/catch block to minimize
+     * damage caused by failing observer call. This is the preferred way to notify a stream that it has been closed due
+     * to a session closing. This will typically be called as part of an on-close callback from {@link #addOnCloseCallback(Closeable)}.
+     *
+     * <p>
+     * This will always synchronize on the {@code observer} to ensure thread safety when interacting with the grpc
+     * response stream.
+     *
+     * @param observer the observer
+     */
+    public static void notifySessionClosed(final StreamObserver<?> observer) {
+        GrpcUtil.safelyError(observer, Code.CANCELLED, "Session closed");
+    }
+
+    /**
+     * Registers an {@code observer} to receive a {@link #notifySessionClosed(StreamObserver)} when {@code this} session
+     * closes. If the {@code observer} finishes before {@code this} session is closed, the session close notification
+     * (and thus the reference) to the {@code observer} is removed.
+     *
+     * <p>
+     * The implementation specifically hooks into {@link ServerCallStreamObserver#setOnCloseHandler(Runnable)} and
+     * {@link ServerCallStreamObserver#setOnCancelHandler(Runnable)}. If the caller needs to add additional logic, they
+     * can provide {@code onCloseHandler} and {@code onCancelHandler}. These handlers will run when the {@code observer}
+     * is closed or cancelled regardless of whether it is in response to {@code this} session closing, or the stream
+     * ending via other means.
+     *
+     * @param observer the observer
+     * @param onCloseHandler the onCloseHandler, may be {@code null}
+     * @param onCancelHandler the onCancelHandler, may be {@code null}
+     */
+    public void registerSessionClosedNotification(
+            ServerCallStreamObserver<?> observer, @Nullable Runnable onCloseHandler, @Nullable Runnable onCancelHandler) {
+        final SessionCloseCallback callback = new SessionCloseCallback(observer, onCloseHandler, onCancelHandler);
+        addOnCloseCallback(callback);
+        observer.setOnCloseHandler(callback::onCloseHandler);
+        observer.setOnCancelHandler(callback::onCancelHandler);
+    }
+
+    private final class SessionCloseCallback implements Closeable {
+        private final ServerCallStreamObserver<?> observer;
+        private final Runnable onCloseHandler;
+        private final Runnable onCancelHandler;
+
+        public SessionCloseCallback(ServerCallStreamObserver<?> observer, Runnable onCloseHandler, Runnable onCancelHandler) {
+            this.observer = Objects.requireNonNull(observer);
+            this.onCloseHandler = onCloseHandler;
+            this.onCancelHandler = onCancelHandler;
+        }
+
+        private void onCloseHandler() {
+            removeOnCloseCallback(this);
+            if (onCloseHandler != null) {
+                onCloseHandler.run();
+            }
+        }
+
+        private void onCancelHandler() {
+            removeOnCloseCallback(this);
+            if (onCancelHandler != null) {
+                onCancelHandler.run();
+            }
+        }
+
+        @Override
+        public void close() {
+            notifySessionClosed(observer);
         }
     }
 
@@ -1160,6 +1232,12 @@ public class SessionState {
 
             return builder.build();
         }
+    }
+
+    public void registerExportListener(ServerCallStreamObserver<ExportNotification> observer) {
+        addExportListener(observer);
+        final Runnable onObserverDone = () -> removeExportListener(observer);
+        registerSessionClosedNotification(observer, onObserverDone, onObserverDone);
     }
 
     public void addExportListener(final StreamObserver<ExportNotification> observer) {

@@ -582,8 +582,8 @@ public class TableServiceGrpcImpl extends TableServiceGrpc.TableServiceImplBase 
         final ExportedTableUpdateListener listener =
                 exportedTableUpdateListenerFactory.create(session, responseObserver);
         session.addExportListener(listener);
-        ((ServerCallStreamObserver<ExportedTableUpdateMessage>) responseObserver).setOnCancelHandler(
-                () -> session.removeExportListener(listener));
+        final Runnable onDone = () -> session.removeExportListener(listener);
+        session.registerSessionClosedNotification((ServerCallStreamObserver<?>) responseObserver, onDone, onDone);
     }
 
     @Override

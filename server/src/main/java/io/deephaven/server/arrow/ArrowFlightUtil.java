@@ -116,7 +116,7 @@ public class ArrowFlightUtil {
     /**
      * This is a stateful observer; a DoPut stream begins with its schema.
      */
-    public static class DoPutObserver extends ArrowToTableConverter implements StreamObserver<InputStream>, Closeable {
+    public static class DoPutObserver extends ArrowToTableConverter implements StreamObserver<InputStream> {
 
         private final SessionState session;
         private final TicketRouter ticketRouter;
@@ -135,8 +135,6 @@ public class ArrowFlightUtil {
             this.ticketRouter = ticketRouter;
             this.errorTransformer = errorTransformer;
             this.observer = observer;
-
-            this.session.addOnCloseCallback(this);
             if (observer instanceof ServerCallStreamObserver) {
                 ((ServerCallStreamObserver<Flight.PutResult>) observer).setOnCancelHandler(this::onCancel);
             }
@@ -211,8 +209,6 @@ public class ArrowFlightUtil {
                 });
                 resultExportBuilder = null;
             }
-
-            session.removeOnCloseCallback(this);
         }
 
         @Override
@@ -229,8 +225,6 @@ public class ArrowFlightUtil {
                 });
                 resultExportBuilder = null;
             }
-
-            session.removeOnCloseCallback(this);
         }
 
         @Override
@@ -255,7 +249,6 @@ public class ArrowFlightUtil {
             if (!localExportBuilder.getExport().tryManage(localResultTable)) {
                 GrpcUtil.safelyError(observer, Code.DATA_LOSS, "Result export already destroyed");
                 localResultTable.dropReference();
-                session.removeOnCloseCallback(this);
                 return;
             }
             localResultTable.dropReference();
@@ -263,12 +256,10 @@ public class ArrowFlightUtil {
             // let's finally export the table to our listener
             localExportBuilder.submit(() -> {
                 GrpcUtil.safelyComplete(observer);
-                session.removeOnCloseCallback(this);
                 return localResultTable;
             });
         }
 
-        @Override
         public void close() {
             // close() is intended to be invoked only though session expiration
             GrpcUtil.safelyError(observer, Code.UNAUTHENTICATED, "Session expired");
@@ -307,7 +298,7 @@ public class ArrowFlightUtil {
      * subscription changes may be coalesced by the BarrageMessageProducer.
      */
     public static class DoExchangeMarshaller extends SingletonLivenessManager
-            implements StreamObserver<InputStream>, Closeable {
+            implements StreamObserver<InputStream> {
 
         @AssistedFactory
         public interface Factory {
@@ -363,8 +354,6 @@ public class ArrowFlightUtil {
             this.session = session;
             this.listener = listenerAdapter.adapt(responseObserver);
             this.errorTransformer = errorTransformer;
-
-            this.session.addOnCloseCallback(this);
             if (responseObserver instanceof ServerCallStreamObserver) {
                 ((ServerCallStreamObserver<InputStream>) responseObserver).setOnCancelHandler(this::onCancel);
             }
@@ -437,7 +426,6 @@ public class ArrowFlightUtil {
             tryClose();
         }
 
-        @Override
         public void close() {
             synchronized (this) {
                 if (isClosed) {
@@ -459,9 +447,7 @@ public class ArrowFlightUtil {
         }
 
         private void tryClose() {
-            if (session.removeOnCloseCallback(this)) {
-                close();
-            }
+            close();
         }
 
         /**

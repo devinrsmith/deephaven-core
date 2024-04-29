@@ -36,6 +36,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.Object;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -373,7 +375,7 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
     }
 
     private static class SessionServiceCallListener<ReqT, RespT> extends
-            ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
+            ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> implements Closeable {
         private final ServerCall<ReqT, RespT> call;
         private final Context context;
         private final SessionState session;
@@ -390,6 +392,19 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
             this.context = context;
             this.session = session;
             this.errorTransformer = errorTransformer;
+            if (session != null) {
+                session.addOnCloseCallback(this);
+            }
+        }
+
+        @Override
+        public void close() {
+            // session.addOnCloseCallback
+            try {
+                call.close(Status.CANCELLED.withDescription("Session closed"), new Metadata());
+            } catch (Exception e) {
+                // ignore
+            }
         }
 
         @Override
@@ -405,11 +420,17 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
         @Override
         public void onCancel() {
             rpcWrapper(call, context, session, errorTransformer, super::onCancel);
+            if (session != null) {
+                session.removeOnCloseCallback(this);
+            }
         }
 
         @Override
         public void onComplete() {
             rpcWrapper(call, context, session, errorTransformer, super::onComplete);
+            if (session != null) {
+                session.removeOnCloseCallback(this);
+            }
         }
 
         @Override

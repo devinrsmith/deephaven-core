@@ -17,7 +17,7 @@ import io.grpc.stub.StreamObserver;
 
 import java.io.Closeable;
 
-public class BrowserStream<T> implements Closeable {
+public class BrowserStream<T> {
     public enum Mode {
         /**
          * Messages must be processed in order, if a gap is observed in sequences wait until the missing message
@@ -124,8 +124,6 @@ public class BrowserStream<T> implements Closeable {
         this.logIdentity = "BrowserStream(" + Integer.toHexString(System.identityHashCode(this)) + "): ";
         this.session = session;
         this.marshaller = marshaller;
-
-        this.session.addOnCloseCallback(this);
     }
 
     public void onMessageReceived(T message, StreamData streamData) {
@@ -238,22 +236,17 @@ public class BrowserStream<T> implements Closeable {
     }
 
     public void onError(final RuntimeException e) {
-        if (session.removeOnCloseCallback(this)) {
-            log.error().append(logIdentity).append("closing browser stream on unexpected exception: ").append(e).endl();
-            this.marshaller.onError(e);
-        }
+        log.error().append(logIdentity).append("closing browser stream on unexpected exception: ").append(e).endl();
+        this.marshaller.onError(e);
     }
 
-    @Override
     public void close() {
         this.marshaller.onCancel();
     }
 
     private void onComplete() {
-        if (session.removeOnCloseCallback(this)) {
-            log.debug().append(logIdentity).append("browser stream completed").endl();
-            this.marshaller.onCompleted();
-        }
+        log.debug().append(logIdentity).append("browser stream completed").endl();
+        this.marshaller.onCompleted();
     }
 
     private static class MessageInfoQueueAdapter implements RAPriQueue.Adapter<Message<?>> {

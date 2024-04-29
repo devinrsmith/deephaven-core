@@ -10,7 +10,7 @@ import java.io.Closeable;
 
 import static io.deephaven.extensions.barrage.util.GrpcUtil.safelyComplete;
 
-public abstract class SessionCloseableObserver<T> implements Closeable {
+public abstract class SessionCloseableObserver<T> {
     protected final SessionState session;
     protected final StreamObserver<T> responseObserver;
     private boolean isClosed = false;
@@ -20,14 +20,10 @@ public abstract class SessionCloseableObserver<T> implements Closeable {
             final StreamObserver<T> responseObserver) {
         this.session = session;
         this.responseObserver = responseObserver;
-        session.addOnCloseCallback(this);
         ((ServerCallStreamObserver<T>) responseObserver).setOnCancelHandler(this::close);
     }
 
-    @Override
     public final void close() {
-        session.removeOnCloseCallback(this);
-
         synchronized (this) {
             if (isClosed) {
                 return;

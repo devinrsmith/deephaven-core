@@ -205,7 +205,7 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
      *
      * @implNote gRPC observers are not thread safe; we must synchronize around observer communication
      */
-    private class Subscription implements Closeable {
+    private class Subscription {
         private final SessionState session;
 
         // guarded by parent sync
@@ -219,16 +219,12 @@ public class ApplicationServiceGrpcImpl extends ApplicationServiceGrpc.Applicati
                         (ServerCallStreamObserver<FieldsChangeUpdate>) observer;
                 serverCall.setOnCancelHandler(this::onCancel);
             }
-            session.addOnCloseCallback(this);
         }
 
         void onCancel() {
-            if (session.removeOnCloseCallback(this)) {
-                close();
-            }
+            close();
         }
 
-        @Override
         public void close() {
             remove(this);
         }

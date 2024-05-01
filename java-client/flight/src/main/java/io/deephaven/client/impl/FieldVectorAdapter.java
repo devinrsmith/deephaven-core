@@ -19,10 +19,10 @@ import io.deephaven.qst.type.*;
 import io.deephaven.qst.type.GenericType.Visitor;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.*;
+import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.types.pojo.Field;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -126,8 +126,60 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
 
             @Override
             public FieldVector visit(ArrayType<?, ?> arrayType) {
-                if (arrayType.componentType().equals(Type.find(byte.class))) {
-                    return visitByteVectorArray(generic.cast(arrayType));
+                return arrayType.componentType().walk(new Type.Visitor<FieldVector>() {
+                    @Override
+                    public FieldVector visit(PrimitiveType<?> primitiveType) {
+                        return primitiveType.walk(new PrimitiveType.Visitor<FieldVector>() {
+                            @Override
+                            public FieldVector visit(BooleanType booleanType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(ByteType byteType) {
+                                return visitByteArrayArray(generic.cast(byteType.arrayType()));
+                            }
+
+                            @Override
+                            public FieldVector visit(CharType charType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(ShortType shortType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(IntType intType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(LongType longType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(FloatType floatType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(DoubleType doubleType) {
+                                return null;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public FieldVector visit(GenericType<?> genericType) {
+                        return null;
+                    }
+                });
+
+                if (arrayType.componentType().equals(Type.byteType())) {
+                    return visitByteArrayArray(generic.cast(arrayType));
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -267,10 +319,17 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
         return vector;
     }
 
-    FieldVector visitByteVectorArray(GenericArray<?> byteVectorArray) {
+    FieldVector visitByteArrayArray(GenericArray<byte[]> byteArrayArray) {
         Field field = FieldAdapter.byteVectorField(name);
         VarBinaryVector vector = new VarBinaryVector(field, allocator);
-        VectorHelper.fill(vector, (List<byte[]>) byteVectorArray.values());
+        VectorHelper.fill(vector, byteArrayArray.values());
+        return vector;
+    }
+
+    FieldVector visitDoubleArrayArray(GenericArray<double[]> doubleArrayArray) {
+        Field field = FieldAdapter.doubleVectorField(name);
+        ListVector vector = new ListVector(field.getName(), allocator, field.getFieldType(), null);
+        VectorHelper.fill(vector, doubleArrayArray.values());
         return vector;
     }
 

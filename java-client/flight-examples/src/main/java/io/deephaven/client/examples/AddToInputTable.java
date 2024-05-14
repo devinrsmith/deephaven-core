@@ -11,6 +11,7 @@ import io.deephaven.qst.table.InMemoryAppendOnlyInputTable;
 import io.deephaven.qst.table.NewTable;
 import io.deephaven.qst.table.TableHeader;
 import io.deephaven.qst.table.TableSpec;
+import io.deephaven.qst.type.Type;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -38,7 +39,9 @@ class AddToInputTable extends FlightExampleBase {
                 ColumnHeader.ofDouble("Double"),
                 ColumnHeader.ofString("String"),
                 ColumnHeader.ofInstant("Instant"),
-                ColumnHeader.of("ByteVector", byte[].class));
+                ColumnHeader.of("ByteVector", Type.byteType().arrayType()),
+                ColumnHeader.of("DoubleVector", Type.doubleType().arrayType()),
+                ColumnHeader.of("DoubleDoubleVector", Type.doubleType().arrayType().arrayType()));
         final TableSpec timestamp = InMemoryAppendOnlyInputTable.of(TableHeader.of(header));
         final TableSpec timestampLastBy =
                 timestamp.aggBy(Collections.singletonList(Aggregation.AggLast("Instant")));
@@ -55,7 +58,7 @@ class AddToInputTable extends FlightExampleBase {
             while (true) {
                 // Add a new row, at least once every second
                 final NewTable newRow = header.row(true, (byte) 42, 'a', (short) 32_000, 1234567, 1234567890123L, 3.14f,
-                        3.14d, "Hello, World", Instant.now(), "abc".getBytes()).newTable();
+                        3.14d, "Hello, World", Instant.now(), "abc".getBytes(), new double[] { 1.1, 2.2, 3.3 }, new double[][] { { 1.1 }, {2.2, 3.3}, {4.4, 5.5, 6.6} }).newTable();
                 flight.addToInputTable(timestampHandle, newRow, bufferAllocator).get(5, TimeUnit.SECONDS);
                 Thread.sleep(ThreadLocalRandom.current().nextLong(1000));
             }

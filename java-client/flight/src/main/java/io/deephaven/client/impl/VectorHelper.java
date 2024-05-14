@@ -13,9 +13,8 @@ import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.TimeStampNanoTZVector;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.UInt2Vector;
-import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VarBinaryVector;
-import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.VarCharVector;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -223,31 +222,6 @@ public class VectorHelper {
 
     public static void fill(VarBinaryVector vector, Collection<byte[]> array) {
         vector.allocateNew(array.size());
-        int i = 0;
-        for (byte[] value : array) {
-            if (value == null) {
-                vector.setNull(i);
-            } else {
-                vector.setSafe(i, value);
-            }
-            ++i;
-        }
-        vector.setValueCount(array.size());
-    }
-
-    public static void fillDoubleArray(ListVector vector, Collection<double[]> array) {
-
-        vector.allocateNewSafe();
-        vector.setInitialCapacity(array.size());
-
-
-        for (double[] arrs : array) {
-
-        }
-        vector.set
-
-        vector.allocateNew(array.size());
-        vector.setInitialCapacity();
         int i = 0;
         for (byte[] value : array) {
             if (value == null) {

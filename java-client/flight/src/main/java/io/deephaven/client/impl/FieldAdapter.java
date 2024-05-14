@@ -33,7 +33,7 @@ import java.util.Objects;
 /**
  * Utilities for creating a {@link Field}.
  */
-public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<Field> {
+public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<Field>, GenericType.Visitor<Field> {
 
     /**
      * Convert a {@code header} into a {@link Field}.
@@ -50,7 +50,7 @@ public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<
     }
 
     public static Field booleanField(String name) {
-        return field(name, MinorType.BIT.getType(), "boolean");
+        return field(name, MinorType.BIT.getType(), "boolean"); // todo: should this be Boolean?
     }
 
     public static Field charField(String name) {
@@ -95,7 +95,11 @@ public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<
 
     private static Field field(String name, ArrowType arrowType, String deephavenType) {
         return field(name,
-                new FieldType(true, arrowType, null, Collections.singletonMap("deephaven:type", deephavenType)));
+                fieldType(arrowType, deephavenType));
+    }
+
+    static FieldType fieldType(ArrowType arrowType, String deephavenType) {
+        return new FieldType(true, arrowType, null, Collections.singletonMap("deephaven:type", deephavenType));
     }
 
     private static Field field(String name, FieldType type) {
@@ -115,36 +119,7 @@ public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<
 
     @Override
     public Field visit(GenericType<?> generic) {
-        return generic.walk(new Visitor<Field>() {
-            @Override
-            public Field visit(BoxedType<?> boxedType) {
-                return FieldAdapter.this.visit(boxedType.primitiveType());
-            }
-
-            @Override
-            public Field visit(StringType stringType) {
-                return stringField(name);
-            }
-
-            @Override
-            public Field visit(InstantType instantType) {
-                return instantField(name);
-            }
-
-            @Override
-            public Field visit(ArrayType<?, ?> arrayType) {
-                if (arrayType.componentType().equals(Type.byteType())) {
-                    return byteVectorField(name);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
-
-            @Override
-            public Field visit(CustomType<?> customType) {
-                throw new UnsupportedOperationException();
-            }
-        });
+        return generic.walk((GenericType.Visitor<Field>) this);
     }
 
     @Override
@@ -185,5 +160,156 @@ public class FieldAdapter implements Type.Visitor<Field>, PrimitiveType.Visitor<
     @Override
     public Field visit(DoubleType doubleType) {
         return doubleField(name);
+    }
+
+    @Override
+    public Field visit(BoxedType<?> boxedType) {
+        return FieldAdapter.this.visit(boxedType.primitiveType());
+    }
+
+    @Override
+    public Field visit(StringType stringType) {
+        return stringField(name);
+    }
+
+    @Override
+    public Field visit(InstantType instantType) {
+        return instantField(name);
+    }
+
+    @Override
+    public Field visit(ArrayType<?, ?> arrayType) {
+        // todo: walk array type not component
+        return arrayType.componentType().walk(new Type.Visitor<Field>() {
+            @Override
+            public Field visit(PrimitiveType<?> primitiveType) {
+                return primitiveType.walk(new PrimitiveType.Visitor<Field>() {
+                    @Override
+                    public Field visit(BooleanType booleanType) {
+                        return field(name, MinorType.LIST.getType(), "Boolean[]"); // is this correct?
+                    }
+
+                    @Override
+                    public Field visit(ByteType byteType) {
+                        return byteVectorField(name);
+                    }
+
+                    @Override
+                    public Field visit(CharType charType) {
+                        return field(name, MinorType.LIST.getType(), "char[]");
+                    }
+
+                    @Override
+                    public Field visit(ShortType shortType) {
+                        return field(name, MinorType.LIST.getType(), "short[]");
+                    }
+
+                    @Override
+                    public Field visit(IntType intType) {
+                        return field(name, MinorType.LIST.getType(), "int[]");
+                    }
+
+                    @Override
+                    public Field visit(LongType longType) {
+                        return field(name, MinorType.LIST.getType(), "long[]");
+                    }
+
+                    @Override
+                    public Field visit(FloatType floatType) {
+                        return field(name, MinorType.LIST.getType(), "float[]");
+                    }
+
+                    @Override
+                    public Field visit(DoubleType doubleType) {
+                        return field(name, MinorType.LIST.getType(), "double[]");
+                    }
+                });
+            }
+
+            @Override
+            public Field visit(GenericType<?> genericType) {
+                return genericType.walk(new GenericType.Visitor<Field>() {
+                    @Override
+                    public Field visit(BoxedType<?> boxedType) {
+                        return null;
+                    }
+
+                    @Override
+                    public Field visit(StringType stringType) {
+                        return null;
+                    }
+
+                    @Override
+                    public Field visit(InstantType instantType) {
+                        return null;
+                    }
+
+                    @Override
+                    public Field visit(ArrayType<?, ?> arrayType) {
+                        return arrayType.componentType().walk(new Type.Visitor<Field>() {
+                            @Override
+                            public Field visit(PrimitiveType<?> primitiveType) {
+                                return primitiveType.walk(new PrimitiveType.Visitor<Field>() {
+                                    @Override
+                                    public Field visit(BooleanType booleanType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(ByteType byteType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(CharType charType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(ShortType shortType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(IntType intType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(LongType longType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(FloatType floatType) {
+                                        return null;
+                                    }
+
+                                    @Override
+                                    public Field visit(DoubleType doubleType) {
+                                        return field(name, MinorType.LIST.getType(), "double[][]");
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public Field visit(GenericType<?> genericType) {
+                                return null;
+                            }
+                        });
+                    }
+
+                    @Override
+                    public Field visit(CustomType<?> customType) {
+                        return null;
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public Field visit(CustomType<?> customType) {
+        throw new UnsupportedOperationException();
     }
 }

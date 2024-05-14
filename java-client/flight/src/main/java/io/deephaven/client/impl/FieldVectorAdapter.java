@@ -20,7 +20,12 @@ import io.deephaven.qst.type.GenericType.Visitor;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.impl.UnionListWriter;
+import org.apache.arrow.vector.complex.writer.BaseWriter.ListWriter;
+import org.apache.arrow.vector.complex.writer.FieldWriter;
+import org.apache.arrow.vector.types.Types.MinorType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -126,13 +131,14 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
 
             @Override
             public FieldVector visit(ArrayType<?, ?> arrayType) {
+                // todo: don't walk the componentType, wale the arraytype
                 return arrayType.componentType().walk(new Type.Visitor<FieldVector>() {
                     @Override
                     public FieldVector visit(PrimitiveType<?> primitiveType) {
                         return primitiveType.walk(new PrimitiveType.Visitor<FieldVector>() {
                             @Override
                             public FieldVector visit(BooleanType booleanType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
@@ -142,47 +148,117 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
 
                             @Override
                             public FieldVector visit(CharType charType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
                             public FieldVector visit(ShortType shortType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
                             public FieldVector visit(IntType intType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
                             public FieldVector visit(LongType longType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
                             public FieldVector visit(FloatType floatType) {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override
                             public FieldVector visit(DoubleType doubleType) {
-                                return null;
+                                return visitDoubleArrayArray(generic.cast(doubleType.arrayType()));
                             }
                         });
                     }
 
                     @Override
                     public FieldVector visit(GenericType<?> genericType) {
-                        return null;
+                        return genericType.walk(new GenericType.Visitor<FieldVector>() {
+
+                            @Override
+                            public FieldVector visit(BoxedType<?> boxedType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(StringType stringType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(InstantType instantType) {
+                                return null;
+                            }
+
+                            @Override
+                            public FieldVector visit(ArrayType<?, ?> arrayType) {
+                                return arrayType.componentType().walk(new Type.Visitor<FieldVector>() {
+                                    @Override
+                                    public FieldVector visit(PrimitiveType<?> primitiveType) {
+                                        return primitiveType.walk(new PrimitiveType.Visitor<FieldVector>() {
+                                            @Override
+                                            public FieldVector visit(BooleanType booleanType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(ByteType byteType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(CharType charType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(ShortType shortType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(IntType intType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(LongType longType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(FloatType floatType) {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public FieldVector visit(DoubleType doubleType) {
+                                                return visitDoubleArrayArrayArray(generic.cast(doubleType.arrayType().arrayType()));
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public FieldVector visit(GenericType<?> genericType) {
+                                        return null;
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public FieldVector visit(CustomType<?> customType) {
+                                return null;
+                            }
+                        });
                     }
                 });
-
-                if (arrayType.componentType().equals(Type.byteType())) {
-                    return visitByteArrayArray(generic.cast(arrayType));
-                } else {
-                    throw new UnsupportedOperationException();
-                }
             }
 
             @Override
@@ -327,10 +403,56 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
     }
 
     FieldVector visitDoubleArrayArray(GenericArray<double[]> doubleArrayArray) {
-        Field field = FieldAdapter.doubleVectorField(name);
-        ListVector vector = new ListVector(field.getName(), allocator, field.getFieldType(), null);
-        VectorHelper.fill(vector, doubleArrayArray.values());
-        return vector;
+        final FieldType fieldType = FieldAdapter.fieldType(MinorType.LIST.getType(), "double[]");
+        final ListVector listVector = new ListVector(name, allocator, fieldType, null);
+        // todo: helper for this?
+        // todo: verify we don't need to close writer
+        final UnionListWriter listWriter = listVector.getWriter();
+        final int L = doubleArrayArray.size();
+        for (int i = 0; i < L; ++i) {
+            listWriter.setPosition(i);
+            listWriter.startList();
+            final double[] elements = doubleArrayArray.get(i);
+            for (double element : elements) {
+                listWriter.writeFloat8(element);
+            }
+            listWriter.setValueCount(elements.length);
+            listWriter.endList();
+        }
+        listVector.setValueCount(L);
+        return listVector;
+    }
+
+    FieldVector visitDoubleArrayArrayArray(GenericArray<double[][]> vector) {
+        final FieldType fieldType = FieldAdapter.fieldType(MinorType.LIST.getType(), "double[][]");
+        final ListVector listVector = new ListVector(name, allocator, fieldType, null);
+        final UnionListWriter listWriter = listVector.getWriter();
+        final int vectorCount = vector.size();
+        for (int i = 0; i < vectorCount; ++i) {
+            listWriter.setPosition(i);
+
+            // outerList
+            listWriter.startList();
+            final double[][] outerList = vector.get(i);
+
+            final ListWriter anotherWriter = listWriter.list();
+            // todo: null
+            for (double[] innerList : outerList) {
+                // todo: null
+                anotherWriter.startList();
+                for (double v : innerList) {
+                    // todo: null
+                    anotherWriter.float8().writeFloat8(v); // todo: NULL_DOUBLE
+                }
+                anotherWriter.endList();
+            }
+
+            // outerList
+            listWriter.setValueCount(outerList.length);
+            listWriter.endList();
+        }
+        listVector.setValueCount(vectorCount);
+        return listVector;
     }
 
     FieldVector visitInstantArray(GenericArray<Instant> instantArray) {

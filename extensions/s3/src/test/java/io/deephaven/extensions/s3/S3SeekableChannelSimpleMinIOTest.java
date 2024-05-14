@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Tag;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 @Tag("testcontainers")
-public class S3SeekableChannelMinIOTest extends S3SeekableChannelTestBase {
+public class S3SeekableChannelSimpleMinIOTest extends S3SeekableChannelSimpleTestBase {
 
     @BeforeAll
     static void initContainer() {

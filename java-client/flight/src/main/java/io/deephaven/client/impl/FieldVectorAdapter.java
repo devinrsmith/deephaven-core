@@ -20,9 +20,11 @@ import io.deephaven.qst.type.GenericType.Visitor;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.complex.impl.Float8WriterImpl;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter.ListWriter;
 import org.apache.arrow.vector.complex.writer.FieldWriter;
+import org.apache.arrow.vector.complex.writer.Float8Writer;
 import org.apache.arrow.vector.types.Types.MinorType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
@@ -328,7 +330,11 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
     public FieldVector visit(DoubleArray doubleArray) {
         Field field = FieldAdapter.doubleField(name);
         Float8Vector vector = new Float8Vector(field, allocator);
-        VectorHelper.fill(vector, doubleArray.values(), 0, doubleArray.size());
+
+        Writer.writes(new Float8WriterImpl(vector), doubleArray.values(), 0, doubleArray.size());
+
+
+        //VectorHelper.fill(vector, doubleArray.values(), 0, doubleArray.size());
         return vector;
     }
 
@@ -408,25 +414,42 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
         // todo: helper for this?
         // todo: verify we don't need to close writer
         final UnionListWriter listWriter = listVector.getWriter();
+
         final int L = doubleArrayArray.size();
+
+//        Writer.writes(listWriter, doubleArrayArray.values(), Type.doubleType().arrayType());
+
+
         for (int i = 0; i < L; ++i) {
-            listWriter.setPosition(i);
+            //listWriter.setPosition(i);
             listWriter.startList();
+
+            final Float8Writer inner = listWriter.float8();
             final double[] elements = doubleArrayArray.get(i);
             for (double element : elements) {
-                listWriter.writeFloat8(element);
+                inner.writeFloat8(element);
             }
-            listWriter.setValueCount(elements.length);
+            //listWriter.setValueCount(elements.length);
             listWriter.endList();
         }
+
         listVector.setValueCount(L);
         return listVector;
     }
 
     FieldVector visitDoubleArrayArrayArray(GenericArray<double[][]> vector) {
+
         final FieldType fieldType = FieldAdapter.fieldType(MinorType.LIST.getType(), "double[][]");
         final ListVector listVector = new ListVector(name, allocator, fieldType, null);
+
+        // this breaks it
+        //final ListWriter listWriter = listVector.getWriter().list();
+
         final UnionListWriter listWriter = listVector.getWriter();
+
+//        listWriter.setPosition(0);
+//        Writer.writes(listWriter, vector.values(), Type.doubleType().arrayType().arrayType());
+
         final int vectorCount = vector.size();
         for (int i = 0; i < vectorCount; ++i) {
             listWriter.setPosition(i);
@@ -448,10 +471,11 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
             }
 
             // outerList
-            listWriter.setValueCount(outerList.length);
+            //listWriter.setValueCount(outerList.length);
             listWriter.endList();
         }
-        listVector.setValueCount(vectorCount);
+
+        listVector.setValueCount(vector.size());
         return listVector;
     }
 

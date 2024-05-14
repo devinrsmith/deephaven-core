@@ -40,6 +40,16 @@ public abstract class NativeArrayType<T, ComponentType> extends ArrayTypeBase<T,
         return (NativeArrayType<ComponentType[], ComponentType>) NativeArrayType.of(clazz, type);
     }
 
+
+    public static <ComponentType> GenericType<ComponentType> genericComponentType(
+            NativeArrayType<ComponentType[], ComponentType> arrayType) {
+        // When the array type is ComponentType[], we know that ComponentType is a GenericType.
+        // For example, NativeArrayType<Double[], Double>.
+        // The primitive counterpart is NativeArrayType<double[], Double>.
+        // This also applies to nested arrays: NativeArrayType<double[][], double[]>, double[] is a GenericType.
+        return (GenericType<ComponentType>) arrayType.componentType();
+    }
+
     @Parameter
     public abstract Class<T> clazz();
 

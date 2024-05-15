@@ -12,6 +12,7 @@ import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.table.impl.perf.QueryPerformanceNugget;
 import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.extensions.barrage.util.GrpcUtil;
+import io.deephaven.flightjs.protocol.BrowserFlightServiceGrpc;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.proto.backplane.grpc.*;
@@ -22,6 +23,7 @@ import io.grpc.Context;
 import io.grpc.ForwardingServerCall.SimpleForwardingServerCall;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
@@ -31,6 +33,7 @@ import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.apache.arrow.flight.auth.AuthConstants;
 import org.apache.arrow.flight.auth2.Auth2Constants;
+import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -315,6 +318,9 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
         private static final Status AUTHENTICATION_DETAILS_INVALID =
                 Status.UNAUTHENTICATED.withDescription("Authentication details invalid");
 
+        private static final Status AUTHENTICATION_NEEDED =
+                Status.UNAUTHENTICATED.withDescription("Authentication needed");
+
         // We can't use just io.grpc.MethodDescriptor (unless we chose provide and inject the named method descriptors),
         // some of our methods are overridden from stock gRPC; for example,
         // io.deephaven.server.object.ObjectServiceGrpcBinding.bindService.
@@ -322,6 +328,21 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
         private static final Set<String> CANCEL_RPC_ON_SESSION_CLOSE = Set.of(
                 ConsoleServiceGrpc.getSubscribeToLogsMethod().getFullMethodName(),
                 ObjectServiceGrpc.getMessageStreamMethod().getFullMethodName());
+
+        // todo: look into injecting this; session needed by default, but callers can setup exclusions.
+        // These are the only methods that are allowed to proceed without a session / authentication. This is somewhat
+        // of a layered check, as we expect all of the RPC impls to explicitly check as well (typically, with them
+        // calling SessionService.getCurrentSession).
+        private static final Set<String> NO_SESSION_NEEDED = Set.of(
+                SessionServiceGrpc.getNewSessionMethod().getFullMethodName(),
+                ConsoleServiceGrpc.getGetConsoleTypesMethod().getFullMethodName(),
+                ConfigServiceGrpc.getGetAuthenticationConstantsMethod().getFullMethodName(),
+                FlightServiceGrpc.getHandshakeMethod().getFullMethodName(),
+                FlightServiceGrpc.getListFlightsMethod().getFullMethodName(),
+                FlightServiceGrpc.getGetFlightInfoMethod().getFullMethodName(),
+                FlightServiceGrpc.getGetSchemaMethod().getFullMethodName(),
+                BrowserFlightServiceGrpc.getOpenHandshakeMethod().getFullMethodName(),
+                BrowserFlightServiceGrpc.getNextHandshakeMethod().getFullMethodName());
 
         private final SessionService service;
         private final SessionService.ErrorTransformer errorTransformer;
@@ -361,6 +382,12 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
                 }
             }
 
+            // Safety check
+            if (session == null && authenticationNeeded(call.getMethodDescriptor())) {
+                safeClose(call, AUTHENTICATION_NEEDED, new Metadata(), false);
+                return new ServerCall.Listener<>() {};
+            }
+
             // On the outer half of the call we'll install the context that includes our session.
             final InterceptedCall<ReqT, RespT> serverCall = new InterceptedCall<>(service, call, session);
             final Context context = Context.current().withValues(
@@ -390,6 +417,11 @@ public class SessionServiceGrpcImpl extends SessionServiceGrpc.SessionServiceImp
                     session,
                     errorTransformer,
                     CANCEL_RPC_ON_SESSION_CLOSE.contains(serverCall.getMethodDescriptor().getFullMethodName()));
+        }
+
+        private static boolean authenticationNeeded(MethodDescriptor<?, ?> methodDescriptor) {
+            // todo: this is burdensome on advanced user adding their own services
+            return !NO_SESSION_NEEDED.contains(methodDescriptor.getFullMethodName());
         }
     }
 

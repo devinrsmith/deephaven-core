@@ -417,21 +417,21 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
 
         final int L = doubleArrayArray.size();
 
-//        Writer.writes(listWriter, doubleArrayArray.values(), Type.doubleType().arrayType());
+        Writer.writes(listWriter, doubleArrayArray.values(), Type.doubleType().arrayType(), true);
 
-
-        for (int i = 0; i < L; ++i) {
-            //listWriter.setPosition(i);
-            listWriter.startList();
-
-            final Float8Writer inner = listWriter.float8();
-            final double[] elements = doubleArrayArray.get(i);
-            for (double element : elements) {
-                inner.writeFloat8(element);
-            }
-            //listWriter.setValueCount(elements.length);
-            listWriter.endList();
-        }
+//
+//        for (int i = 0; i < L; ++i) {
+//            //listWriter.setPosition(i);
+//            listWriter.startList();
+//
+//            final Float8Writer inner = listWriter.float8();
+//            final double[] elements = doubleArrayArray.get(i);
+//            for (double element : elements) {
+//                inner.writeFloat8(element);
+//            }
+//            //listWriter.setValueCount(elements.length);
+//            listWriter.endList();
+//        }
 
         listVector.setValueCount(L);
         return listVector;
@@ -448,7 +448,7 @@ public class FieldVectorAdapter implements Array.Visitor<FieldVector>, Primitive
         final UnionListWriter listWriter = listVector.getWriter();
 
 //        listWriter.setPosition(0);
-//        Writer.writes(listWriter, vector.values(), Type.doubleType().arrayType().arrayType());
+//        Writer.writes(listWriter, vector.values(), Type.doubleType().arrayType().arrayType(), true);
 
         final int vectorCount = vector.size();
         for (int i = 0; i < vectorCount; ++i) {

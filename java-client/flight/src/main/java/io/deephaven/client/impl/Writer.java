@@ -28,6 +28,7 @@ import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter.ListWriter;
 import org.apache.arrow.vector.complex.writer.BigIntWriter;
 import org.apache.arrow.vector.complex.writer.Float4Writer;
@@ -41,24 +42,24 @@ import java.util.function.Consumer;
 
 final class Writer {
 
-    static <T> void writes(ListWriter writer, T array, int offset, int length, NativeArrayType<T, ?> type) {
-        ArrayValues.writes(writer, array, offset, length, type);
+    static <T> void writes(ListWriter writer, T array, int offset, int length, NativeArrayType<T, ?> type, boolean isTopLevel) {
+        ArrayValues.writes(isTopLevel ? writer : writer.list(), array, offset, length, type);
     }
 
-    static <CT> void writes(ListWriter writer, CT[] array, int offset, int len, NativeArrayType<CT[], CT> type) {
+    static <CT> void writes(ListWriter writer, CT[] array, int offset, int len, NativeArrayType<CT[], CT> type, boolean isTopLevel) {
         final GenericType<CT> componentType = NativeArrayType.genericComponentType(type);
-        final Consumer<CT> consumer = GenericValue.writer(writer, componentType);
+        final Consumer<CT> consumer = GenericValue.writer(isTopLevel ? writer : writer.list(), componentType);
         for (int i = 0; i < len; ++i) {
-            writer.setPosition(i);
+//            writer.setPosition(i);
             consumer.accept(array[offset + i]);
         }
     }
 
-    static <CT> void writes(ListWriter writer, Iterable<CT> values, GenericType<CT> componentType) {
+    static <CT> void writes(ListWriter writer, Iterable<CT> values, GenericType<CT> componentType, boolean isTopLevel) {
         int i = 0;
-        final Consumer<CT> consumer = GenericValue.writer(writer, componentType);
+        final Consumer<CT> consumer = GenericValue.writer(isTopLevel ? writer : writer.list(), componentType);
         for (CT element : values) {
-            writer.setPosition(i);
+//            writer.setPosition(i);
             consumer.accept(element);
             ++i;
         }
@@ -230,8 +231,9 @@ final class Writer {
         }
 
         private <AT> Consumer<T> listWriter(NativeArrayType<AT, ?> type) {
-            final ListWriter listWriter = writer.list();
-            return consumer(type, array -> write(listWriter, type, array));
+            // we only apply .list() if it's _not_ the top-level
+//            final ListWriter listWriter = writer instanceof UnionListWriter ? writer : writer.list();
+            return consumer(type, array -> write(writer, type, array));
         }
 
         private static <AT> void write(ListWriter listWriter, NativeArrayType<AT, ?> type, AT value) {
@@ -240,7 +242,7 @@ final class Writer {
             } else {
                 listWriter.startList();
                 final int L = Array.getLength(value);
-                Writer.writes(listWriter, value, 0, L, type);
+                Writer.writes(listWriter, value, 0, L, type, false);
                 listWriter.endList();
             }
         }
@@ -280,7 +282,7 @@ final class Writer {
 
         private <ComponentType> void writesGeneric(GenericType<ComponentType> componentType) {
             final NativeArrayType<ComponentType[], ComponentType> arrayType = componentType.arrayType();
-            Writer.writes(writer, array(arrayType), offset, length, arrayType);
+            Writer.writes(writer, array(arrayType), offset, length, arrayType, false);
         }
 
         @Override

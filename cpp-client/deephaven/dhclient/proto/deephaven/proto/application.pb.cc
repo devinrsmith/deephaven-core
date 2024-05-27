@@ -119,33 +119,35 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_deephaven_2fproto_2fapplication_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n!deephaven/proto/application.proto\022!io."
-  "deephaven.proto.backplane.grpc\032\034deephave"
-  "n/proto/ticket.proto\"\023\n\021ListFieldsReques"
-  "t\"\321\001\n\022FieldsChangeUpdate\022=\n\007created\030\001 \003("
+  "deephaven.proto.backplane.grpc\032 deephave"
+  "n/proto/extensions.proto\032\034deephaven/prot"
+  "o/ticket.proto\"\023\n\021ListFieldsRequest\"\321\001\n\022"
+  "FieldsChangeUpdate\022=\n\007created\030\001 \003(\0132,.io"
+  ".deephaven.proto.backplane.grpc.FieldInf"
+  "o\022=\n\007updated\030\002 \003(\0132,.io.deephaven.proto."
+  "backplane.grpc.FieldInfo\022=\n\007removed\030\003 \003("
   "\0132,.io.deephaven.proto.backplane.grpc.Fi"
-  "eldInfo\022=\n\007updated\030\002 \003(\0132,.io.deephaven."
-  "proto.backplane.grpc.FieldInfo\022=\n\007remove"
-  "d\030\003 \003(\0132,.io.deephaven.proto.backplane.g"
-  "rpc.FieldInfo\"\262\001\n\tFieldInfo\022D\n\014typed_tic"
-  "ket\030\001 \001(\0132..io.deephaven.proto.backplane"
-  ".grpc.TypedTicket\022\022\n\nfield_name\030\002 \001(\t\022\031\n"
-  "\021field_description\030\003 \001(\t\022\030\n\020application_"
-  "name\030\004 \001(\t\022\026\n\016application_id\030\005 \001(\t2\223\001\n\022A"
-  "pplicationService\022}\n\nListFields\0224.io.dee"
-  "phaven.proto.backplane.grpc.ListFieldsRe"
-  "quest\0325.io.deephaven.proto.backplane.grp"
-  "c.FieldsChangeUpdate\"\0000\001BGH\001P\001ZAgithub.c"
-  "om/deephaven/deephaven-core/go/internal/"
-  "proto/applicationb\006proto3"
+  "eldInfo\"\262\001\n\tFieldInfo\022D\n\014typed_ticket\030\001 "
+  "\001(\0132..io.deephaven.proto.backplane.grpc."
+  "TypedTicket\022\022\n\nfield_name\030\002 \001(\t\022\031\n\021field"
+  "_description\030\003 \001(\t\022\030\n\020application_name\030\004"
+  " \001(\t\022\026\n\016application_id\030\005 \001(\t2\232\001\n\022Applica"
+  "tionService\022\203\001\n\nListFields\0224.io.deephave"
+  "n.proto.backplane.grpc.ListFieldsRequest"
+  "\0325.io.deephaven.proto.backplane.grpc.Fie"
+  "ldsChangeUpdate\"\006\272\265\030\002\010\0010\001BGH\001P\001ZAgithub."
+  "com/deephaven/deephaven-core/go/internal"
+  "/proto/applicationb\006proto3"
   ;
-static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fapplication_2eproto_deps[1] = {
+static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fapplication_2eproto_deps[2] = {
+  &::descriptor_table_deephaven_2fproto_2fextensions_2eproto,
   &::descriptor_table_deephaven_2fproto_2fticket_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_deephaven_2fproto_2fapplication_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_deephaven_2fproto_2fapplication_2eproto = {
-    false, false, 745, descriptor_table_protodef_deephaven_2fproto_2fapplication_2eproto,
+    false, false, 786, descriptor_table_protodef_deephaven_2fproto_2fapplication_2eproto,
     "deephaven/proto/application.proto",
-    &descriptor_table_deephaven_2fproto_2fapplication_2eproto_once, descriptor_table_deephaven_2fproto_2fapplication_2eproto_deps, 1, 3,
+    &descriptor_table_deephaven_2fproto_2fapplication_2eproto_once, descriptor_table_deephaven_2fproto_2fapplication_2eproto_deps, 2, 3,
     schemas, file_default_instances, TableStruct_deephaven_2fproto_2fapplication_2eproto::offsets,
     file_level_metadata_deephaven_2fproto_2fapplication_2eproto, file_level_enum_descriptors_deephaven_2fproto_2fapplication_2eproto,
     file_level_service_descriptors_deephaven_2fproto_2fapplication_2eproto,

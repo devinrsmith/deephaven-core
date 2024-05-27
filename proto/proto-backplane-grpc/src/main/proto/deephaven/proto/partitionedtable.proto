@@ -10,6 +10,7 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/partitionedtable";
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/table.proto";
 import "deephaven/proto/ticket.proto";
 
@@ -21,11 +22,15 @@ service PartitionedTableService {
    * Transforms a table into a partitioned table, consisting of many separate tables, each individually
    * addressable. The result will be a FetchObjectResponse populated with a PartitionedTable.
    */
-  rpc PartitionBy(PartitionByRequest) returns (PartitionByResponse);
+  rpc PartitionBy(PartitionByRequest) returns (PartitionByResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
   /*
    * Given a partitioned table, returns a table with the contents of all of the constituent tables.
    */
-  rpc Merge(MergeRequest) returns (ExportedTableCreationResponse);
+  rpc Merge(MergeRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
   /*
    * Given a partitioned table and a row described by another table's contents, returns a table
    * that matched that row, if any. If none is present, NOT_FOUND will be sent in response. If
@@ -40,7 +45,9 @@ service PartitionedTableService {
    * is not required to wait for it to complete), that new table ticket can be used to make this
    * GetTable request.
    */
-  rpc GetTable(GetTableRequest) returns (ExportedTableCreationResponse);
+  rpc GetTable(GetTableRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 }
 
 message PartitionByRequest {

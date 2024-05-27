@@ -11,10 +11,11 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from pydeephaven.proto import extensions_pb2 as deephaven_dot_proto_dot_extensions__pb2
 from pydeephaven.proto import ticket_pb2 as deephaven_dot_proto_dot_ticket__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n deephaven/proto/inputtable.proto\x12!io.deephaven.proto.backplane.grpc\x1a\x1c\x64\x65\x65phaven/proto/ticket.proto\"\x92\x01\n\x0f\x41\x64\x64TableRequest\x12>\n\x0binput_table\x18\x01 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\x12?\n\x0ctable_to_add\x18\x02 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\"\x12\n\x10\x41\x64\x64TableResponse\"\x98\x01\n\x12\x44\x65leteTableRequest\x12>\n\x0binput_table\x18\x01 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\x12\x42\n\x0ftable_to_remove\x18\x02 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\"\x15\n\x13\x44\x65leteTableResponse2\xa6\x02\n\x11InputTableService\x12\x81\x01\n\x14\x41\x64\x64TableToInputTable\x12\x32.io.deephaven.proto.backplane.grpc.AddTableRequest\x1a\x33.io.deephaven.proto.backplane.grpc.AddTableResponse\"\x00\x12\x8c\x01\n\x19\x44\x65leteTableFromInputTable\x12\x35.io.deephaven.proto.backplane.grpc.DeleteTableRequest\x1a\x36.io.deephaven.proto.backplane.grpc.DeleteTableResponse\"\x00\x42\x46H\x01P\x01Z@github.com/deephaven/deephaven-core/go/internal/proto/inputtableb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n deephaven/proto/inputtable.proto\x12!io.deephaven.proto.backplane.grpc\x1a deephaven/proto/extensions.proto\x1a\x1c\x64\x65\x65phaven/proto/ticket.proto\"\x92\x01\n\x0f\x41\x64\x64TableRequest\x12>\n\x0binput_table\x18\x01 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\x12?\n\x0ctable_to_add\x18\x02 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\"\x12\n\x10\x41\x64\x64TableResponse\"\x98\x01\n\x12\x44\x65leteTableRequest\x12>\n\x0binput_table\x18\x01 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\x12\x42\n\x0ftable_to_remove\x18\x02 \x01(\x0b\x32).io.deephaven.proto.backplane.grpc.Ticket\"\x15\n\x13\x44\x65leteTableResponse2\xb2\x02\n\x11InputTableService\x12\x87\x01\n\x14\x41\x64\x64TableToInputTable\x12\x32.io.deephaven.proto.backplane.grpc.AddTableRequest\x1a\x33.io.deephaven.proto.backplane.grpc.AddTableResponse\"\x06\xba\xb5\x18\x02\x08\x01\x12\x92\x01\n\x19\x44\x65leteTableFromInputTable\x12\x35.io.deephaven.proto.backplane.grpc.DeleteTableRequest\x1a\x36.io.deephaven.proto.backplane.grpc.DeleteTableResponse\"\x06\xba\xb5\x18\x02\x08\x01\x42\x46H\x01P\x01Z@github.com/deephaven/deephaven-core/go/internal/proto/inputtableb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'deephaven.proto.inputtable_pb2', globals())
@@ -22,14 +23,18 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'H\001P\001Z@github.com/deephaven/deephaven-core/go/internal/proto/inputtable'
-  _ADDTABLEREQUEST._serialized_start=102
-  _ADDTABLEREQUEST._serialized_end=248
-  _ADDTABLERESPONSE._serialized_start=250
-  _ADDTABLERESPONSE._serialized_end=268
-  _DELETETABLEREQUEST._serialized_start=271
-  _DELETETABLEREQUEST._serialized_end=423
-  _DELETETABLERESPONSE._serialized_start=425
-  _DELETETABLERESPONSE._serialized_end=446
-  _INPUTTABLESERVICE._serialized_start=449
-  _INPUTTABLESERVICE._serialized_end=743
+  _INPUTTABLESERVICE.methods_by_name['AddTableToInputTable']._options = None
+  _INPUTTABLESERVICE.methods_by_name['AddTableToInputTable']._serialized_options = b'\272\265\030\002\010\001'
+  _INPUTTABLESERVICE.methods_by_name['DeleteTableFromInputTable']._options = None
+  _INPUTTABLESERVICE.methods_by_name['DeleteTableFromInputTable']._serialized_options = b'\272\265\030\002\010\001'
+  _ADDTABLEREQUEST._serialized_start=136
+  _ADDTABLEREQUEST._serialized_end=282
+  _ADDTABLERESPONSE._serialized_start=284
+  _ADDTABLERESPONSE._serialized_end=302
+  _DELETETABLEREQUEST._serialized_start=305
+  _DELETETABLEREQUEST._serialized_end=457
+  _DELETETABLERESPONSE._serialized_start=459
+  _DELETETABLERESPONSE._serialized_end=480
+  _INPUTTABLESERVICE._serialized_start=483
+  _INPUTTABLESERVICE._serialized_end=789
 # @@protoc_insertion_point(module_scope)

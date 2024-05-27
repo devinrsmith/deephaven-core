@@ -171,51 +171,53 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_deephaven_2fproto_2fpartitionedtable_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n&deephaven/proto/partitionedtable.proto"
-  "\022!io.deephaven.proto.backplane.grpc\032\033dee"
-  "phaven/proto/table.proto\032\034deephaven/prot"
-  "o/ticket.proto\"\274\001\n\022PartitionByRequest\022;\n"
-  "\010table_id\030\001 \001(\0132).io.deephaven.proto.bac"
-  "kplane.grpc.Ticket\022<\n\tresult_id\030\002 \001(\0132)."
-  "io.deephaven.proto.backplane.grpc.Ticket"
-  "\022\030\n\020key_column_names\030\003 \003(\t\022\021\n\tdrop_keys\030"
-  "\004 \001(\010\"\025\n\023PartitionByResponse\"\222\001\n\014MergeRe"
-  "quest\022D\n\021partitioned_table\030\001 \001(\0132).io.de"
-  "ephaven.proto.backplane.grpc.Ticket\022<\n\tr"
-  "esult_id\030\002 \001(\0132).io.deephaven.proto.back"
-  "plane.grpc.Ticket\"\332\001\n\017GetTableRequest\022D\n"
-  "\021partitioned_table\030\001 \001(\0132).io.deephaven."
-  "proto.backplane.grpc.Ticket\022C\n\020key_table"
-  "_ticket\030\002 \001(\0132).io.deephaven.proto.backp"
-  "lane.grpc.Ticket\022<\n\tresult_id\030\004 \001(\0132).io"
-  ".deephaven.proto.backplane.grpc.Ticket\"\272"
-  "\001\n\032PartitionedTableDescriptor\022\030\n\020key_col"
-  "umn_names\030\001 \003(\t\022\037\n\027constituent_column_na"
-  "me\030\004 \001(\t\022\023\n\013unique_keys\030\002 \001(\010\022%\n\035constit"
-  "uent_definition_schema\030\003 \001(\014\022%\n\035constitu"
-  "ent_changes_permitted\030\005 \001(\0102\226\003\n\027Partitio"
-  "nedTableService\022|\n\013PartitionBy\0225.io.deep"
-  "haven.proto.backplane.grpc.PartitionByRe"
-  "quest\0326.io.deephaven.proto.backplane.grp"
-  "c.PartitionByResponse\022z\n\005Merge\022/.io.deep"
-  "haven.proto.backplane.grpc.MergeRequest\032"
-  "@.io.deephaven.proto.backplane.grpc.Expo"
-  "rtedTableCreationResponse\022\200\001\n\010GetTable\0222"
-  ".io.deephaven.proto.backplane.grpc.GetTa"
-  "bleRequest\032@.io.deephaven.proto.backplan"
-  "e.grpc.ExportedTableCreationResponseBLH\001"
-  "P\001ZFgithub.com/deephaven/deephaven-core/"
-  "go/internal/proto/partitionedtableb\006prot"
-  "o3"
+  "\022!io.deephaven.proto.backplane.grpc\032 dee"
+  "phaven/proto/extensions.proto\032\033deephaven"
+  "/proto/table.proto\032\034deephaven/proto/tick"
+  "et.proto\"\274\001\n\022PartitionByRequest\022;\n\010table"
+  "_id\030\001 \001(\0132).io.deephaven.proto.backplane"
+  ".grpc.Ticket\022<\n\tresult_id\030\002 \001(\0132).io.dee"
+  "phaven.proto.backplane.grpc.Ticket\022\030\n\020ke"
+  "y_column_names\030\003 \003(\t\022\021\n\tdrop_keys\030\004 \001(\010\""
+  "\025\n\023PartitionByResponse\"\222\001\n\014MergeRequest\022"
+  "D\n\021partitioned_table\030\001 \001(\0132).io.deephave"
+  "n.proto.backplane.grpc.Ticket\022<\n\tresult_"
+  "id\030\002 \001(\0132).io.deephaven.proto.backplane."
+  "grpc.Ticket\"\332\001\n\017GetTableRequest\022D\n\021parti"
+  "tioned_table\030\001 \001(\0132).io.deephaven.proto."
+  "backplane.grpc.Ticket\022C\n\020key_table_ticke"
+  "t\030\002 \001(\0132).io.deephaven.proto.backplane.g"
+  "rpc.Ticket\022<\n\tresult_id\030\004 \001(\0132).io.deeph"
+  "aven.proto.backplane.grpc.Ticket\"\272\001\n\032Par"
+  "titionedTableDescriptor\022\030\n\020key_column_na"
+  "mes\030\001 \003(\t\022\037\n\027constituent_column_name\030\004 \001"
+  "(\t\022\023\n\013unique_keys\030\002 \001(\010\022%\n\035constituent_d"
+  "efinition_schema\030\003 \001(\014\022%\n\035constituent_ch"
+  "anges_permitted\030\005 \001(\0102\260\003\n\027PartitionedTab"
+  "leService\022\204\001\n\013PartitionBy\0225.io.deephaven"
+  ".proto.backplane.grpc.PartitionByRequest"
+  "\0326.io.deephaven.proto.backplane.grpc.Par"
+  "titionByResponse\"\006\272\265\030\002\010\001\022\202\001\n\005Merge\022/.io."
+  "deephaven.proto.backplane.grpc.MergeRequ"
+  "est\032@.io.deephaven.proto.backplane.grpc."
+  "ExportedTableCreationResponse\"\006\272\265\030\002\010\001\022\210\001"
+  "\n\010GetTable\0222.io.deephaven.proto.backplan"
+  "e.grpc.GetTableRequest\032@.io.deephaven.pr"
+  "oto.backplane.grpc.ExportedTableCreation"
+  "Response\"\006\272\265\030\002\010\001BLH\001P\001ZFgithub.com/deeph"
+  "aven/deephaven-core/go/internal/proto/pa"
+  "rtitionedtableb\006proto3"
   ;
-static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_deps[2] = {
+static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_deps[3] = {
+  &::descriptor_table_deephaven_2fproto_2fextensions_2eproto,
   &::descriptor_table_deephaven_2fproto_2ftable_2eproto,
   &::descriptor_table_deephaven_2fproto_2fticket_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto = {
-    false, false, 1402, descriptor_table_protodef_deephaven_2fproto_2fpartitionedtable_2eproto,
+    false, false, 1462, descriptor_table_protodef_deephaven_2fproto_2fpartitionedtable_2eproto,
     "deephaven/proto/partitionedtable.proto",
-    &descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_once, descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_deps, 2, 5,
+    &descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_once, descriptor_table_deephaven_2fproto_2fpartitionedtable_2eproto_deps, 3, 5,
     schemas, file_default_instances, TableStruct_deephaven_2fproto_2fpartitionedtable_2eproto::offsets,
     file_level_metadata_deephaven_2fproto_2fpartitionedtable_2eproto, file_level_enum_descriptors_deephaven_2fproto_2fpartitionedtable_2eproto,
     file_level_service_descriptors_deephaven_2fproto_2fpartitionedtable_2eproto,

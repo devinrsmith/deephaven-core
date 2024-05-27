@@ -19,6 +19,7 @@ RUN set -eux; \
     -I/includes \
     /dependencies/BrowserFlight.proto \
     /includes/deephaven/proto/ticket.proto \
+    /includes/deephaven/proto/extensions.proto \
     /includes/deephaven/proto/console.proto \
     /includes/deephaven/proto/object.proto \
     /includes/deephaven/proto/session.proto \
@@ -38,6 +39,7 @@ RUN set -eux; \
     /dependencies/BrowserFlight.proto \
     /dependencies/Flight.proto \
     /includes/deephaven/proto/ticket.proto \
+    /includes/deephaven/proto/extensions.proto \
     /includes/deephaven/proto/console.proto \
     /includes/deephaven/proto/object.proto \
     /includes/deephaven/proto/session.proto \
@@ -53,6 +55,7 @@ RUN set -eux; \
     --python_out=/generated/python \
     -I/includes \
     /includes/deephaven/proto/ticket.proto \
+    /includes/deephaven/proto/extensions.proto \
     /includes/deephaven/proto/console.proto \
     /includes/deephaven/proto/object.proto \
     /includes/deephaven/proto/session.proto \
@@ -75,6 +78,7 @@ RUN set -eux; \
     --cpp_grpc_out=generated/cpp \
     -I/includes \
     /includes/deephaven/proto/ticket.proto \
+    /includes/deephaven/proto/extensions.proto \
     /includes/deephaven/proto/console.proto \
     /includes/deephaven/proto/object.proto \
     /includes/deephaven/proto/session.proto \

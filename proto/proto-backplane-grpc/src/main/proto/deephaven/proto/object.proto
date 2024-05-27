@@ -9,6 +9,7 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/object";
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/ticket.proto";
 
 service ObjectService {
@@ -23,6 +24,7 @@ service ObjectService {
      */
     rpc FetchObject(FetchObjectRequest) returns (FetchObjectResponse) {
         option deprecated = true;
+        option (rpc_options).requires_authentication = true;
     }
 
     /*
@@ -65,17 +67,23 @@ service ObjectService {
      * will only be informed that the stream closed.
      *
      */
-    rpc MessageStream(stream StreamRequest) returns (stream StreamResponse) {}
+    rpc MessageStream(stream StreamRequest) returns (stream StreamResponse) {
+        option (rpc_options).requires_authentication = true;
+    }
 
     /*
      * Half of the browser-based (browser's can't do bidirectional streams without websockets)
      * implementation for MessageStream.
      */
-    rpc OpenMessageStream(StreamRequest) returns (stream StreamResponse) {}
+    rpc OpenMessageStream(StreamRequest) returns (stream StreamResponse) {
+        option (rpc_options).requires_authentication = true;
+    }
     /*
      * Other half of the browser-based implementation for MessageStream.
      */
-    rpc NextMessageStream(StreamRequest) returns (BrowserNextResponse) {}
+    rpc NextMessageStream(StreamRequest) returns (BrowserNextResponse) {
+        option (rpc_options).requires_authentication = true;
+    }
 }
 
 message FetchObjectRequest {

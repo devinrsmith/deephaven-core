@@ -32,6 +32,7 @@
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
+#include "deephaven/proto/extensions.pb.h"
 #include "deephaven/proto/ticket.pb.h"
 #include "deephaven/proto/application.pb.h"
 // @@protoc_insertion_point(includes)

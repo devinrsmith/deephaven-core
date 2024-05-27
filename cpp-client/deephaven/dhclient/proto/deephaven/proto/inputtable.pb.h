@@ -31,6 +31,7 @@
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
+#include "deephaven/proto/extensions.pb.h"
 #include "deephaven/proto/ticket.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>

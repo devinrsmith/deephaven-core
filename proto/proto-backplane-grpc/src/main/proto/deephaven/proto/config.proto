@@ -9,14 +9,20 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/config";
 
+import "deephaven/proto/extensions.proto";
+
 /**
  * Provides simple configuration data to users. Unauthenticated users may call GetAuthenticationConstants
  * to discover hints on how they should proceed with providing their identity, while already-authenticated
  * clients may call GetConfigurationConstants for details on using the platform.
  */
 service ConfigService {
-  rpc GetAuthenticationConstants(AuthenticationConstantsRequest) returns (AuthenticationConstantsResponse) {}
-  rpc GetConfigurationConstants(ConfigurationConstantsRequest) returns (ConfigurationConstantsResponse) {}
+  rpc GetAuthenticationConstants(AuthenticationConstantsRequest) returns (AuthenticationConstantsResponse) {
+    option (rpc_options).requires_authentication = false;
+  }
+  rpc GetConfigurationConstants(ConfigurationConstantsRequest) returns (ConfigurationConstantsResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 }
 
 message AuthenticationConstantsRequest {}

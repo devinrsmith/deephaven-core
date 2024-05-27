@@ -9,6 +9,7 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/inputtable";
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/ticket.proto";
 
 /*
@@ -19,13 +20,17 @@ service InputTableService {
      * Adds the provided table to the specified input table. The new data to add must only have
      * columns (name, types, and order) which match the given input table's columns.
      */
-    rpc AddTableToInputTable(AddTableRequest) returns (AddTableResponse) {}
+    rpc AddTableToInputTable(AddTableRequest) returns (AddTableResponse) {
+        option (rpc_options).requires_authentication = true;
+    }
 
     /*
     * Removes the provided table from the specified input tables. The tables indicating which rows
     * to remove are expected to only have columns that match the key columns of the input table.
     */
-    rpc DeleteTableFromInputTable(DeleteTableRequest) returns (DeleteTableResponse) {}
+    rpc DeleteTableFromInputTable(DeleteTableRequest) returns (DeleteTableResponse) {
+        option (rpc_options).requires_authentication = true;
+    }
 
 }
 

@@ -230,52 +230,54 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_deephaven_2fproto_2fobject_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\034deephaven/proto/object.proto\022!io.deeph"
-  "aven.proto.backplane.grpc\032\034deephaven/pro"
-  "to/ticket.proto\"W\n\022FetchObjectRequest\022A\n"
-  "\tsource_id\030\001 \001(\0132..io.deephaven.proto.ba"
-  "ckplane.grpc.TypedTicket\"{\n\023FetchObjectR"
-  "esponse\022\014\n\004type\030\001 \001(\t\022\014\n\004data\030\002 \001(\014\022H\n\020t"
-  "yped_export_ids\030\003 \003(\0132..io.deephaven.pro"
-  "to.backplane.grpc.TypedTicket\"S\n\016Connect"
-  "Request\022A\n\tsource_id\030\001 \001(\0132..io.deephave"
-  "n.proto.backplane.grpc.TypedTicket\"a\n\nCl"
-  "ientData\022\017\n\007payload\030\001 \001(\014\022B\n\nreferences\030"
-  "\002 \003(\0132..io.deephaven.proto.backplane.grp"
-  "c.TypedTicket\"j\n\nServerData\022\017\n\007payload\030\001"
-  " \001(\014\022K\n\023exported_references\030\002 \003(\0132..io.d"
-  "eephaven.proto.backplane.grpc.TypedTicke"
-  "t\"\237\001\n\rStreamRequest\022D\n\007connect\030\001 \001(\01321.i"
-  "o.deephaven.proto.backplane.grpc.Connect"
-  "RequestH\000\022=\n\004data\030\002 \001(\0132-.io.deephaven.p"
-  "roto.backplane.grpc.ClientDataH\000B\t\n\007mess"
-  "age\"Z\n\016StreamResponse\022=\n\004data\030\001 \001(\0132-.io"
-  ".deephaven.proto.backplane.grpc.ServerDa"
-  "taH\000B\t\n\007message\"\025\n\023BrowserNextResponse2\216"
-  "\004\n\rObjectService\022\201\001\n\013FetchObject\0225.io.de"
-  "ephaven.proto.backplane.grpc.FetchObject"
-  "Request\0326.io.deephaven.proto.backplane.g"
-  "rpc.FetchObjectResponse\"\003\210\002\001\022z\n\rMessageS"
-  "tream\0220.io.deephaven.proto.backplane.grp"
-  "c.StreamRequest\0321.io.deephaven.proto.bac"
-  "kplane.grpc.StreamResponse\"\000(\0010\001\022|\n\021Open"
-  "MessageStream\0220.io.deephaven.proto.backp"
-  "lane.grpc.StreamRequest\0321.io.deephaven.p"
-  "roto.backplane.grpc.StreamResponse\"\0000\001\022\177"
-  "\n\021NextMessageStream\0220.io.deephaven.proto"
-  ".backplane.grpc.StreamRequest\0326.io.deeph"
-  "aven.proto.backplane.grpc.BrowserNextRes"
-  "ponse\"\000BBH\001P\001Z<github.com/deephaven/deep"
-  "haven-core/go/internal/proto/objectb\006pro"
-  "to3"
+  "aven.proto.backplane.grpc\032 deephaven/pro"
+  "to/extensions.proto\032\034deephaven/proto/tic"
+  "ket.proto\"W\n\022FetchObjectRequest\022A\n\tsourc"
+  "e_id\030\001 \001(\0132..io.deephaven.proto.backplan"
+  "e.grpc.TypedTicket\"{\n\023FetchObjectRespons"
+  "e\022\014\n\004type\030\001 \001(\t\022\014\n\004data\030\002 \001(\014\022H\n\020typed_e"
+  "xport_ids\030\003 \003(\0132..io.deephaven.proto.bac"
+  "kplane.grpc.TypedTicket\"S\n\016ConnectReques"
+  "t\022A\n\tsource_id\030\001 \001(\0132..io.deephaven.prot"
+  "o.backplane.grpc.TypedTicket\"a\n\nClientDa"
+  "ta\022\017\n\007payload\030\001 \001(\014\022B\n\nreferences\030\002 \003(\0132"
+  "..io.deephaven.proto.backplane.grpc.Type"
+  "dTicket\"j\n\nServerData\022\017\n\007payload\030\001 \001(\014\022K"
+  "\n\023exported_references\030\002 \003(\0132..io.deephav"
+  "en.proto.backplane.grpc.TypedTicket\"\237\001\n\r"
+  "StreamRequest\022D\n\007connect\030\001 \001(\01321.io.deep"
+  "haven.proto.backplane.grpc.ConnectReques"
+  "tH\000\022=\n\004data\030\002 \001(\0132-.io.deephaven.proto.b"
+  "ackplane.grpc.ClientDataH\000B\t\n\007message\"Z\n"
+  "\016StreamResponse\022=\n\004data\030\001 \001(\0132-.io.deeph"
+  "aven.proto.backplane.grpc.ServerDataH\000B\t"
+  "\n\007message\"\025\n\023BrowserNextResponse2\251\004\n\rObj"
+  "ectService\022\207\001\n\013FetchObject\0225.io.deephave"
+  "n.proto.backplane.grpc.FetchObjectReques"
+  "t\0326.io.deephaven.proto.backplane.grpc.Fe"
+  "tchObjectResponse\"\t\210\002\001\272\265\030\002\010\001\022\200\001\n\rMessage"
+  "Stream\0220.io.deephaven.proto.backplane.gr"
+  "pc.StreamRequest\0321.io.deephaven.proto.ba"
+  "ckplane.grpc.StreamResponse\"\006\272\265\030\002\010\001(\0010\001\022"
+  "\202\001\n\021OpenMessageStream\0220.io.deephaven.pro"
+  "to.backplane.grpc.StreamRequest\0321.io.dee"
+  "phaven.proto.backplane.grpc.StreamRespon"
+  "se\"\006\272\265\030\002\010\0010\001\022\205\001\n\021NextMessageStream\0220.io."
+  "deephaven.proto.backplane.grpc.StreamReq"
+  "uest\0326.io.deephaven.proto.backplane.grpc"
+  ".BrowserNextResponse\"\006\272\265\030\002\010\001BBH\001P\001Z<gith"
+  "ub.com/deephaven/deephaven-core/go/inter"
+  "nal/proto/objectb\006proto3"
   ;
-static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fobject_2eproto_deps[1] = {
+static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fobject_2eproto_deps[2] = {
+  &::descriptor_table_deephaven_2fproto_2fextensions_2eproto,
   &::descriptor_table_deephaven_2fproto_2fticket_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_deephaven_2fproto_2fobject_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_deephaven_2fproto_2fobject_2eproto = {
-    false, false, 1483, descriptor_table_protodef_deephaven_2fproto_2fobject_2eproto,
+    false, false, 1544, descriptor_table_protodef_deephaven_2fproto_2fobject_2eproto,
     "deephaven/proto/object.proto",
-    &descriptor_table_deephaven_2fproto_2fobject_2eproto_once, descriptor_table_deephaven_2fproto_2fobject_2eproto_deps, 1, 8,
+    &descriptor_table_deephaven_2fproto_2fobject_2eproto_once, descriptor_table_deephaven_2fproto_2fobject_2eproto_deps, 2, 8,
     schemas, file_default_instances, TableStruct_deephaven_2fproto_2fobject_2eproto::offsets,
     file_level_metadata_deephaven_2fproto_2fobject_2eproto, file_level_enum_descriptors_deephaven_2fproto_2fobject_2eproto,
     file_level_service_descriptors_deephaven_2fproto_2fobject_2eproto,

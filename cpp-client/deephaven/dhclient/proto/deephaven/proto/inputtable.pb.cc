@@ -130,35 +130,37 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_deephaven_2fproto_2finputtable_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n deephaven/proto/inputtable.proto\022!io.d"
-  "eephaven.proto.backplane.grpc\032\034deephaven"
-  "/proto/ticket.proto\"\222\001\n\017AddTableRequest\022"
-  ">\n\013input_table\030\001 \001(\0132).io.deephaven.prot"
-  "o.backplane.grpc.Ticket\022\?\n\014table_to_add\030"
-  "\002 \001(\0132).io.deephaven.proto.backplane.grp"
-  "c.Ticket\"\022\n\020AddTableResponse\"\230\001\n\022DeleteT"
-  "ableRequest\022>\n\013input_table\030\001 \001(\0132).io.de"
-  "ephaven.proto.backplane.grpc.Ticket\022B\n\017t"
-  "able_to_remove\030\002 \001(\0132).io.deephaven.prot"
-  "o.backplane.grpc.Ticket\"\025\n\023DeleteTableRe"
-  "sponse2\246\002\n\021InputTableService\022\201\001\n\024AddTabl"
-  "eToInputTable\0222.io.deephaven.proto.backp"
-  "lane.grpc.AddTableRequest\0323.io.deephaven"
-  ".proto.backplane.grpc.AddTableResponse\"\000"
-  "\022\214\001\n\031DeleteTableFromInputTable\0225.io.deep"
+  "eephaven.proto.backplane.grpc\032 deephaven"
+  "/proto/extensions.proto\032\034deephaven/proto"
+  "/ticket.proto\"\222\001\n\017AddTableRequest\022>\n\013inp"
+  "ut_table\030\001 \001(\0132).io.deephaven.proto.back"
+  "plane.grpc.Ticket\022\?\n\014table_to_add\030\002 \001(\0132"
+  ").io.deephaven.proto.backplane.grpc.Tick"
+  "et\"\022\n\020AddTableResponse\"\230\001\n\022DeleteTableRe"
+  "quest\022>\n\013input_table\030\001 \001(\0132).io.deephave"
+  "n.proto.backplane.grpc.Ticket\022B\n\017table_t"
+  "o_remove\030\002 \001(\0132).io.deephaven.proto.back"
+  "plane.grpc.Ticket\"\025\n\023DeleteTableResponse"
+  "2\262\002\n\021InputTableService\022\207\001\n\024AddTableToInp"
+  "utTable\0222.io.deephaven.proto.backplane.g"
+  "rpc.AddTableRequest\0323.io.deephaven.proto"
+  ".backplane.grpc.AddTableResponse\"\006\272\265\030\002\010\001"
+  "\022\222\001\n\031DeleteTableFromInputTable\0225.io.deep"
   "haven.proto.backplane.grpc.DeleteTableRe"
   "quest\0326.io.deephaven.proto.backplane.grp"
-  "c.DeleteTableResponse\"\000BFH\001P\001Z@github.co"
-  "m/deephaven/deephaven-core/go/internal/p"
-  "roto/inputtableb\006proto3"
+  "c.DeleteTableResponse\"\006\272\265\030\002\010\001BFH\001P\001Z@git"
+  "hub.com/deephaven/deephaven-core/go/inte"
+  "rnal/proto/inputtableb\006proto3"
   ;
-static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2finputtable_2eproto_deps[1] = {
+static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2finputtable_2eproto_deps[2] = {
+  &::descriptor_table_deephaven_2fproto_2fextensions_2eproto,
   &::descriptor_table_deephaven_2fproto_2fticket_2eproto,
 };
 static ::_pbi::once_flag descriptor_table_deephaven_2fproto_2finputtable_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_deephaven_2fproto_2finputtable_2eproto = {
-    false, false, 823, descriptor_table_protodef_deephaven_2fproto_2finputtable_2eproto,
+    false, false, 869, descriptor_table_protodef_deephaven_2fproto_2finputtable_2eproto,
     "deephaven/proto/inputtable.proto",
-    &descriptor_table_deephaven_2fproto_2finputtable_2eproto_once, descriptor_table_deephaven_2fproto_2finputtable_2eproto_deps, 1, 4,
+    &descriptor_table_deephaven_2fproto_2finputtable_2eproto_once, descriptor_table_deephaven_2fproto_2finputtable_2eproto_deps, 2, 4,
     schemas, file_default_instances, TableStruct_deephaven_2fproto_2finputtable_2eproto::offsets,
     file_level_metadata_deephaven_2fproto_2finputtable_2eproto, file_level_enum_descriptors_deephaven_2fproto_2finputtable_2eproto,
     file_level_service_descriptors_deephaven_2fproto_2finputtable_2eproto,

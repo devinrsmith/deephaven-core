@@ -9,139 +9,154 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/table";
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/ticket.proto";
 
 service TableService {
   /*
    * Request an ETCR for this ticket. Ticket must reference a Table.
    */
-  rpc GetExportedTableCreationResponse(Ticket) returns (ExportedTableCreationResponse) {}
+  rpc GetExportedTableCreationResponse(Ticket) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Fetches a Table from an existing source ticket and exports it to the local session result ticket.
    */
-  rpc FetchTable(FetchTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc FetchTable(FetchTableRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Create a table that has preview columns applied to an existing source table.
    */
-  rpc ApplyPreviewColumns(ApplyPreviewColumnsRequest) returns (ExportedTableCreationResponse) {}
+  rpc ApplyPreviewColumns(ApplyPreviewColumnsRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Create an empty table with the given column names and types.
    */
-  rpc EmptyTable(EmptyTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc EmptyTable(EmptyTableRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Create a time table with the given start time and period.
    */
-  rpc TimeTable(TimeTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc TimeTable(TimeTableRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Drop columns from the parent table.
    */
-  rpc DropColumns(DropColumnsRequest) returns (ExportedTableCreationResponse) {}
+  rpc DropColumns(DropColumnsRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Add columns to the given table using the given column specifications and the update table operation.
    */
-  rpc Update(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {}
+  rpc Update(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Add columns to the given table using the given column specifications and the lazyUpdate table operation.
    */
-  rpc LazyUpdate(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {}
+  rpc LazyUpdate(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Add columns to the given table using the given column specifications and the view table operation.
    */
-  rpc View(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {}
+  rpc View(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Add columns to the given table using the given column specifications and the updateView table operation.
    */
-  rpc UpdateView(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {}
+  rpc UpdateView(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Select the given columns from the given table.
    */
-  rpc Select(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) {}
+  rpc Select(SelectOrUpdateRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of an updateBy table operation.
    */
-  rpc UpdateBy(UpdateByRequest) returns (ExportedTableCreationResponse) {}
+  rpc UpdateBy(UpdateByRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns a new table definition with the unique tuples of the specified columns
    */
-  rpc SelectDistinct(SelectDistinctRequest) returns (ExportedTableCreationResponse) {}
+  rpc SelectDistinct(SelectDistinctRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Filter parent table with structured filters.
    */
-  rpc Filter(FilterTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc Filter(FilterTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Filter parent table with unstructured filters.
    */
-  rpc UnstructuredFilter(UnstructuredFilterTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc UnstructuredFilter(UnstructuredFilterTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Sort parent table via the provide sort descriptors.
    */
-  rpc Sort(SortTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc Sort(SortTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Extract rows from the head of the parent table.
    */
-  rpc Head(HeadOrTailRequest) returns (ExportedTableCreationResponse) {}
+  rpc Head(HeadOrTailRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Extract rows from the tail of the parent table.
    */
-  rpc Tail(HeadOrTailRequest) returns (ExportedTableCreationResponse) {}
+  rpc Tail(HeadOrTailRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Run the headBy table operation for the given group by columns on the given table.
    */
-  rpc HeadBy(HeadOrTailByRequest) returns (ExportedTableCreationResponse) {}
+  rpc HeadBy(HeadOrTailByRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Run the tailBy operation for the given group by columns on the given table.
    */
-  rpc TailBy(HeadOrTailByRequest) returns (ExportedTableCreationResponse) {}
+  rpc TailBy(HeadOrTailByRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Ungroup the given columns (all columns will be ungrouped if columnsToUngroup is empty or unspecified).
    */
-  rpc Ungroup(UngroupRequest) returns (ExportedTableCreationResponse) {}
+  rpc Ungroup(UngroupRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Create a merged table from the given input tables. If a key column is provided (not null), a sorted
    * merged will be performed using that column.
    */
-  rpc MergeTables(MergeTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc MergeTables(MergeTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of a cross join operation. Also known as the cartesian product.
    */
-  rpc CrossJoinTables(CrossJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc CrossJoinTables(CrossJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of a natural join operation.
    */
-  rpc NaturalJoinTables(NaturalJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc NaturalJoinTables(NaturalJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of an exact join operation.
    */
-  rpc ExactJoinTables(ExactJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc ExactJoinTables(ExactJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of a left join operation.
    */
-  rpc LeftJoinTables(LeftJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc LeftJoinTables(LeftJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of an as of join operation.
@@ -150,27 +165,28 @@ service TableService {
    */
   rpc AsOfJoinTables(AsOfJoinTablesRequest) returns (ExportedTableCreationResponse) {
     option deprecated = true;
+    option (rpc_options).requires_authentication = true;
   }
 
   /*
    * Returns the result of an aj operation.
    */
-  rpc AjTables(AjRajTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc AjTables(AjRajTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of an raj operation.
    */
-  rpc RajTables(AjRajTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc RajTables(AjRajTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of a multi-join operation.
    */
-  rpc MultiJoinTables(MultiJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc MultiJoinTables(MultiJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of a range join operation.
    */
-  rpc RangeJoinTables(RangeJoinTablesRequest) returns (ExportedTableCreationResponse) {}
+  rpc RangeJoinTables(RangeJoinTablesRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns the result of an aggregate table operation.
@@ -179,12 +195,13 @@ service TableService {
    */
   rpc ComboAggregate(ComboAggregateRequest) returns (ExportedTableCreationResponse) {
     option deprecated = true;
+    option (rpc_options).requires_authentication = true;
   }
 
   /*
    * Aggregates all non-grouping columns against a single aggregation specification.
    */
-  rpc AggregateAll(AggregateAllRequest) returns (ExportedTableCreationResponse) {};
+  rpc AggregateAll(AggregateAllRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; };
 
   /*
    * Produce an aggregated result by grouping the source_id table according to the group_by_columns and applying
@@ -192,12 +209,12 @@ service TableService {
    * the encounter order within the source_id table, thereby ensuring that the row key for a given group never
    * changes.
    */
-  rpc Aggregate(AggregateRequest) returns (ExportedTableCreationResponse) {};
+  rpc Aggregate(AggregateRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; };
 
   /*
    * Takes a single snapshot of the source_id table.
    */
-  rpc Snapshot(SnapshotTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc Snapshot(SnapshotTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Snapshot base_id, triggered by trigger_id, and export the resulting new table.
@@ -205,25 +222,25 @@ service TableService {
    * "snapshot key" which is a subset (possibly all) of the base_id table's columns. The
    * remaining columns in the result table come from base_id table, the table being snapshotted.
    */
-  rpc SnapshotWhen(SnapshotWhenTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc SnapshotWhen(SnapshotWhenTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Returns a new table with a flattened row set.
    */
-  rpc Flatten(FlattenRequest) returns (ExportedTableCreationResponse) {}
+  rpc Flatten(FlattenRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /**
    * Downsamples a table assume its contents will be rendered in a run chart, with each subsequent row holding a later
    * X value (i.e., sorted on that column). Multiple Y columns can be specified, as can a range of values for the X
    * column to support zooming in.
    */
-  rpc RunChartDownsample(RunChartDownsampleRequest) returns (ExportedTableCreationResponse) {}
+  rpc RunChartDownsample(RunChartDownsampleRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /**
    * Creates a new Table based on the provided configuration. This can be used as a regular table from the other methods
    * in this interface, or can be interacted with via the InputTableService to modify its contents.
    */
-  rpc CreateInputTable(CreateInputTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc CreateInputTable(CreateInputTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /**
    * Filters the left table based on the set of values in the right table.
@@ -231,14 +248,16 @@ service TableService {
    * Note that when the right table ticks, all of the rows in the left table are going to be re-evaluated,
    * thus the intention is that the right table is fairly slow moving compared with the left table.
    */
-  rpc WhereIn(WhereInRequest) returns (ExportedTableCreationResponse) {}
+  rpc WhereIn(WhereInRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /*
    * Batch a series of requests and send them all at once. This enables the user to create intermediate tables without
    * requiring them to be exported and managed by the client. The server will automatically release any tables when they
    * are no longer depended upon.
    */
-  rpc Batch(BatchTableRequest) returns (stream ExportedTableCreationResponse) {}
+  rpc Batch(BatchTableRequest) returns (stream ExportedTableCreationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Establish a stream of table updates for cheap notifications of table size updates.
@@ -247,24 +266,28 @@ service TableService {
    * exports have sent their refresh update. Table updates may be intermingled with initial refresh updates after their
    * initial update had been sent.
    */
-  rpc ExportedTableUpdates(ExportedTableUpdatesRequest) returns (stream ExportedTableUpdateMessage) {}
+  rpc ExportedTableUpdates(ExportedTableUpdatesRequest) returns (stream ExportedTableUpdateMessage) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Seek a row number within a table.
    */
-  rpc SeekRow(SeekRowRequest) returns (SeekRowResponse) {}
+  rpc SeekRow(SeekRowRequest) returns (SeekRowResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Returns the meta table of a table.
    */
-  rpc MetaTable(MetaTableRequest) returns (ExportedTableCreationResponse) {}
+  rpc MetaTable(MetaTableRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 
   /**
    * Returns a new table representing statistics about a single column of the provided table. This
    * result table will be static - use Aggregation() instead for updating results. Presently, the
    * primary use case for this is the Deephaven Web UI.
    */
-  rpc ComputeColumnStatistics(ColumnStatisticsRequest) returns (ExportedTableCreationResponse) {}
+  rpc ComputeColumnStatistics(ColumnStatisticsRequest) returns (ExportedTableCreationResponse) { option (rpc_options).requires_authentication = true; }
 }
 
 message TableReference {

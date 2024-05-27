@@ -3,11 +3,14 @@
 //
 package io.deephaven.auth;
 
+import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.rpc.Code;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.proto.backplane.grpc.Extensions;
+import io.deephaven.proto.backplane.grpc.Extensions.RpcOptions;
 import io.deephaven.proto.util.Exceptions;
 import io.deephaven.util.function.ThrowingRunnable;
 import io.grpc.ForwardingServerCallListener;
@@ -18,6 +21,9 @@ import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.grpc.protobuf.ProtoMethodDescriptorSupplier;
+
+import java.util.Optional;
 
 /**
  * This class is a marker interface for the generated service auth wiring classes.
@@ -52,12 +58,27 @@ public interface ServiceAuthWiring<ServiceImplBase> {
     class AuthorizingServerCallHandler<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
         private static final Logger log = LoggerFactory.getLogger(AuthorizingServerCallHandler.class);
 
+        private static Optional<RpcOptions> rpcOptions(ServerMethodDefinition<?, ?> method) {
+            final ProtoMethodDescriptorSupplier pmds =
+                    (ProtoMethodDescriptorSupplier) method.getMethodDescriptor().getSchemaDescriptor();
+            if (pmds == null) {
+                return Optional.empty();
+            }
+            final MethodDescriptor methodDescriptor = pmds.getMethodDescriptor();
+            if (!methodDescriptor.getOptions().hasField(Extensions.rpcOptions.getDescriptor())) {
+                return Optional.empty();
+            }
+            return Optional
+                    .of((RpcOptions) methodDescriptor.getOptions().getField(Extensions.rpcOptions.getDescriptor()));
+        }
+
         private final ServerCallHandler<ReqT, RespT> delegate;
         private final CallStartedCallback callStartedCallback;
         private final MessageReceivedCallback<ReqT> messageReceivedCallback;
 
         private final boolean mustHaveRequest;
         private final String fullMethodName;
+        private final RpcOptions rpcOptions;
 
         public AuthorizingServerCallHandler(
                 final ServerCallHandler<ReqT, RespT> delegate,
@@ -74,11 +95,20 @@ public interface ServiceAuthWiring<ServiceImplBase> {
                 Assert.neqNull(callStartedCallback, "callStartedCallback");
             }
             Assert.neqNull(messageReceivedCallback, "messageReceivedCallback");
+            rpcOptions = rpcOptions(method).orElse(null);
+            if (method.getMethodDescriptor().getFullMethodName().startsWith("io.deephaven.")) {
+                Assert.neqNull(rpcOptions, "rpcOptions");
+            }
         }
 
         @Override
         public ServerCall.Listener<ReqT> startCall(ServerCall<ReqT, RespT> call, Metadata headers) {
             final AuthContext authContext = ExecutionContext.getContext().getAuthContext();
+
+            if (rpcOptions != null && rpcOptions.getRequiresAuthentication() && authContext == null) {
+                quietlyCloseCall(call, Status.UNAUTHENTICATED, new Metadata());
+                return new ServerCall.Listener<>() {};
+            }
 
             if (!mustHaveRequest && !validateAuth(call, () -> callStartedCallback.callStarted(authContext))) {
                 return new ServerCall.Listener<>() {};

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2016-2022 Deephaven Data Labs and Patent Pending
+ */
+syntax = "proto3";
+
+package io.deephaven.proto.backplane.grpc;
+
+option java_multiple_files = false;
+option optimize_for = SPEED;
+option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/extensions";
+
+import "google/protobuf/descriptor.proto";
+
+message RpcOptions {
+  bool requires_authentication = 1;
+}
+
+extend google.protobuf.MethodOptions {
+  optional RpcOptions rpc_options = 50007;
+}

@@ -196,39 +196,43 @@ static const ::_pb::Message* const file_default_instances[] = {
 
 const char descriptor_table_protodef_deephaven_2fproto_2fconfig_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\034deephaven/proto/config.proto\022!io.deeph"
-  "aven.proto.backplane.grpc\" \n\036Authenticat"
-  "ionConstantsRequest\"\037\n\035ConfigurationCons"
-  "tantsRequest\"\363\001\n\037AuthenticationConstants"
-  "Response\022k\n\rconfig_values\030\001 \003(\0132T.io.dee"
-  "phaven.proto.backplane.grpc.Authenticati"
-  "onConstantsResponse.ConfigValuesEntry\032c\n"
-  "\021ConfigValuesEntry\022\013\n\003key\030\001 \001(\t\022=\n\005value"
-  "\030\002 \001(\0132..io.deephaven.proto.backplane.gr"
-  "pc.ConfigValue:\0028\001\"\361\001\n\036ConfigurationCons"
-  "tantsResponse\022j\n\rconfig_values\030\001 \003(\0132S.i"
-  "o.deephaven.proto.backplane.grpc.Configu"
-  "rationConstantsResponse.ConfigValuesEntr"
-  "y\032c\n\021ConfigValuesEntry\022\013\n\003key\030\001 \001(\t\022=\n\005v"
-  "alue\030\002 \001(\0132..io.deephaven.proto.backplan"
-  "e.grpc.ConfigValue:\0028\001\"-\n\013ConfigValue\022\026\n"
-  "\014string_value\030\003 \001(\tH\000B\006\n\004kind2\334\002\n\rConfig"
-  "Service\022\245\001\n\032GetAuthenticationConstants\022A"
-  ".io.deephaven.proto.backplane.grpc.Authe"
-  "nticationConstantsRequest\032B.io.deephaven"
+  "aven.proto.backplane.grpc\032 deephaven/pro"
+  "to/extensions.proto\" \n\036AuthenticationCon"
+  "stantsRequest\"\037\n\035ConfigurationConstantsR"
+  "equest\"\363\001\n\037AuthenticationConstantsRespon"
+  "se\022k\n\rconfig_values\030\001 \003(\0132T.io.deephaven"
   ".proto.backplane.grpc.AuthenticationCons"
-  "tantsResponse\"\000\022\242\001\n\031GetConfigurationCons"
+  "tantsResponse.ConfigValuesEntry\032c\n\021Confi"
+  "gValuesEntry\022\013\n\003key\030\001 \001(\t\022=\n\005value\030\002 \001(\013"
+  "2..io.deephaven.proto.backplane.grpc.Con"
+  "figValue:\0028\001\"\361\001\n\036ConfigurationConstantsR"
+  "esponse\022j\n\rconfig_values\030\001 \003(\0132S.io.deep"
+  "haven.proto.backplane.grpc.Configuration"
+  "ConstantsResponse.ConfigValuesEntry\032c\n\021C"
+  "onfigValuesEntry\022\013\n\003key\030\001 \001(\t\022=\n\005value\030\002"
+  " \001(\0132..io.deephaven.proto.backplane.grpc"
+  ".ConfigValue:\0028\001\"-\n\013ConfigValue\022\026\n\014strin"
+  "g_value\030\003 \001(\tH\000B\006\n\004kind2\350\002\n\rConfigServic"
+  "e\022\253\001\n\032GetAuthenticationConstants\022A.io.de"
+  "ephaven.proto.backplane.grpc.Authenticat"
+  "ionConstantsRequest\032B.io.deephaven.proto"
+  ".backplane.grpc.AuthenticationConstantsR"
+  "esponse\"\006\272\265\030\002\010\000\022\250\001\n\031GetConfigurationCons"
   "tants\022@.io.deephaven.proto.backplane.grp"
   "c.ConfigurationConstantsRequest\032A.io.dee"
   "phaven.proto.backplane.grpc.Configuratio"
-  "nConstantsResponse\"\000BBH\001P\001Z<github.com/d"
-  "eephaven/deephaven-core/go/internal/prot"
-  "o/configb\006proto3"
+  "nConstantsResponse\"\006\272\265\030\002\010\001BBH\001P\001Z<github"
+  ".com/deephaven/deephaven-core/go/interna"
+  "l/proto/configb\006proto3"
   ;
+static const ::_pbi::DescriptorTable* const descriptor_table_deephaven_2fproto_2fconfig_2eproto_deps[1] = {
+  &::descriptor_table_deephaven_2fproto_2fextensions_2eproto,
+};
 static ::_pbi::once_flag descriptor_table_deephaven_2fproto_2fconfig_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_deephaven_2fproto_2fconfig_2eproto = {
-    false, false, 1096, descriptor_table_protodef_deephaven_2fproto_2fconfig_2eproto,
+    false, false, 1142, descriptor_table_protodef_deephaven_2fproto_2fconfig_2eproto,
     "deephaven/proto/config.proto",
-    &descriptor_table_deephaven_2fproto_2fconfig_2eproto_once, nullptr, 0, 7,
+    &descriptor_table_deephaven_2fproto_2fconfig_2eproto_once, descriptor_table_deephaven_2fproto_2fconfig_2eproto_deps, 1, 7,
     schemas, file_default_instances, TableStruct_deephaven_2fproto_2fconfig_2eproto::offsets,
     file_level_metadata_deephaven_2fproto_2fconfig_2eproto, file_level_enum_descriptors_deephaven_2fproto_2fconfig_2eproto,
     file_level_service_descriptors_deephaven_2fproto_2fconfig_2eproto,

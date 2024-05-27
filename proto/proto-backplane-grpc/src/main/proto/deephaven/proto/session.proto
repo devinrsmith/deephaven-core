@@ -5,6 +5,7 @@ syntax = "proto3";
 
 package io.deephaven.proto.backplane.grpc;
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/ticket.proto";
 
 option java_multiple_files = true;
@@ -35,6 +36,7 @@ service SessionService {
    */
   rpc NewSession(HandshakeRequest) returns (HandshakeResponse) {
     option deprecated = true;
+    option (rpc_options).requires_authentication = false;
   }
 
   /*
@@ -45,6 +47,7 @@ service SessionService {
    */
   rpc RefreshSessionToken(HandshakeRequest) returns (HandshakeResponse) {
     option deprecated = true;
+    option (rpc_options).requires_authentication = true;
   }
 
 
@@ -52,7 +55,9 @@ service SessionService {
    * Proactively close an open session. Sessions will automatically close on timeout. When a session is closed, all
    * unreleased exports will be automatically released.
    */
-  rpc CloseSession(HandshakeRequest) returns (CloseSessionResponse) {}
+  rpc CloseSession(HandshakeRequest) returns (CloseSessionResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Attempts to release an export by its ticket. Returns true if an existing export was found. It is the client's
@@ -60,19 +65,25 @@ service SessionService {
    * not release a ticket that is needed by dependent work that has not yet finished
    * (i.e. the dependencies that are staying around should first be in EXPORTED state).
    */
-  rpc Release(ReleaseRequest) returns (ReleaseResponse) {}
+  rpc Release(ReleaseRequest) returns (ReleaseResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Makes a copy from a source ticket to a client managed result ticket. The source ticket does not need to be
    * a client managed ticket.
    */
-  rpc ExportFromTicket(ExportRequest) returns (ExportResponse) {}
+  rpc ExportFromTicket(ExportRequest) returns (ExportResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Makes a copy from a source ticket and publishes to a result ticket. Neither the source ticket, nor the destination
    * ticket, need to be a client managed ticket.
    */
-  rpc PublishFromTicket(PublishRequest) returns (PublishResponse) {}
+  rpc PublishFromTicket(PublishRequest) returns (PublishResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Establish a stream to manage all session exports, including those lost due to partially complete rpc calls.
@@ -81,13 +92,17 @@ service SessionService {
    * for all live exports. After the refresh of existing state, subscribers will receive notifications of new and
    * updated exports. An export id of zero will be sent to indicate all pre-existing exports have been sent.
    */
-  rpc ExportNotifications(ExportNotificationRequest) returns (stream ExportNotification) {}
+  rpc ExportNotifications(ExportNotificationRequest) returns (stream ExportNotification) {
+    option (rpc_options).requires_authentication = true;
+  }
 
   /*
    * Receive a best-effort message on-exit indicating why this server is exiting. Reception of this message cannot be
    * guaranteed.
    */
-  rpc TerminationNotification(TerminationNotificationRequest) returns (TerminationNotificationResponse) {}
+  rpc TerminationNotification(TerminationNotificationRequest) returns (TerminationNotificationResponse) {
+    option (rpc_options).requires_authentication = true;
+  }
 }
 
 message WrappedAuthenticationRequest {

@@ -9,6 +9,7 @@ option java_multiple_files = true;
 option optimize_for = SPEED;
 option go_package = "github.com/deephaven/deephaven-core/go/internal/proto/console";
 
+import "deephaven/proto/extensions.proto";
 import "deephaven/proto/ticket.proto";
 import "deephaven/proto/application.proto";
 
@@ -16,16 +17,30 @@ import "deephaven/proto/application.proto";
  * Console interaction service
 */
 service ConsoleService {
-    rpc GetConsoleTypes(GetConsoleTypesRequest) returns (GetConsoleTypesResponse) {}
-    rpc StartConsole(StartConsoleRequest) returns (StartConsoleResponse) {}
-    rpc GetHeapInfo(GetHeapInfoRequest) returns (GetHeapInfoResponse) {}
+    rpc GetConsoleTypes(GetConsoleTypesRequest) returns (GetConsoleTypesResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = false;
+    }
+    rpc StartConsole(StartConsoleRequest) returns (StartConsoleResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
+    rpc GetHeapInfo(GetHeapInfoRequest) returns (GetHeapInfoResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 
-    rpc SubscribeToLogs(LogSubscriptionRequest) returns (stream LogSubscriptionData) {}
+    rpc SubscribeToLogs(LogSubscriptionRequest) returns (stream LogSubscriptionData) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 
-    rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse) {}
-    rpc CancelCommand(CancelCommandRequest) returns (CancelCommandResponse) {}
+    rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
+    rpc CancelCommand(CancelCommandRequest) returns (CancelCommandResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 
-    rpc BindTableToVariable(BindTableToVariableRequest) returns (BindTableToVariableResponse) {}
+    rpc BindTableToVariable(BindTableToVariableRequest) returns (BindTableToVariableResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 
     /*
      * Starts a stream for autocomplete on the current session. More than one console,
@@ -33,18 +48,26 @@ service ConsoleService {
      * be closed as well. A given document should only be edited within one stream at a
      * time.
      */
-    rpc AutoCompleteStream(stream AutoCompleteRequest) returns (stream AutoCompleteResponse) {}
-    rpc CancelAutoComplete(CancelAutoCompleteRequest) returns (CancelAutoCompleteResponse) {}
+    rpc AutoCompleteStream(stream AutoCompleteRequest) returns (stream AutoCompleteResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
+    rpc CancelAutoComplete(CancelAutoCompleteRequest) returns (CancelAutoCompleteResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 
     /*
      * Half of the browser-based (browser's can't do bidirectional streams without websockets)
      * implementation for AutoCompleteStream.
      */
-    rpc OpenAutoCompleteStream(AutoCompleteRequest) returns (stream AutoCompleteResponse) {}
+    rpc OpenAutoCompleteStream(AutoCompleteRequest) returns (stream AutoCompleteResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
     /*
      * Other half of the browser-based implementation for AutoCompleteStream.
      */
-    rpc NextAutoCompleteStream(AutoCompleteRequest) returns (BrowserNextResponse) {}
+    rpc NextAutoCompleteStream(AutoCompleteRequest) returns (BrowserNextResponse) {
+        option (io.deephaven.proto.backplane.grpc.rpc_options).requires_authentication = true;
+    }
 }
 
 

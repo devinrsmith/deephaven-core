@@ -17,7 +17,7 @@ import io.deephaven.util.type.TypeUtils;
 import static io.deephaven.chunk.util.hashing.ChunkHasher.scrambleHash;
 
 public class IntChunkHasher implements ChunkHasher {
-    public static IntChunkHasher INSTANCE = new IntChunkHasher();
+    public static final IntChunkHasher INSTANCE = new IntChunkHasher();
 
     private static void hashInitial(IntChunk<Values> values, WritableIntChunk<HashCodes> destination) {
         for (int ii = 0; ii < values.size(); ++ii) {

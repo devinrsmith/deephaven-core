@@ -9,7 +9,7 @@ import io.deephaven.chunk.attributes.ChunkPositions;
 
 // region name
 public class CharChunkEquals implements ChunkEquals {
-    public static CharChunkEquals INSTANCE = new CharChunkEquals();
+    public static final CharChunkEquals INSTANCE = new CharChunkEquals();
     // endregion name
 
     public static boolean equalReduce(CharChunk<? extends Any> lhs, CharChunk<? extends Any> rhs) {

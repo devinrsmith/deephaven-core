@@ -13,7 +13,7 @@ import io.deephaven.util.type.TypeUtils;
 import static io.deephaven.chunk.util.hashing.ChunkHasher.scrambleHash;
 
 public class CharChunkHasher implements ChunkHasher {
-    public static CharChunkHasher INSTANCE = new CharChunkHasher();
+    public static final CharChunkHasher INSTANCE = new CharChunkHasher();
 
     private static void hashInitial(CharChunk<Values> values, WritableIntChunk<HashCodes> destination) {
         for (int ii = 0; ii < values.size(); ++ii) {

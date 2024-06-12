@@ -15,7 +15,7 @@ import io.deephaven.chunk.attributes.ChunkPositions;
 
 // region name
 public class ObjectChunkEquals implements ChunkEquals {
-    public static ObjectChunkEquals INSTANCE = new ObjectChunkEquals();
+    public static final ObjectChunkEquals INSTANCE = new ObjectChunkEquals();
     // endregion name
 
     public static boolean equalReduce(ObjectChunk<Object, ? extends Any> lhs, ObjectChunk<Object, ? extends Any> rhs) {

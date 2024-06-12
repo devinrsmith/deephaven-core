@@ -13,7 +13,7 @@ import io.deephaven.chunk.attributes.ChunkPositions;
 
 // region name
 public class FloatChunkEquals implements ChunkEquals {
-    public static FloatChunkEquals INSTANCE = new FloatChunkEquals();
+    public static final FloatChunkEquals INSTANCE = new FloatChunkEquals();
     // endregion name
 
     public static boolean equalReduce(FloatChunk<? extends Any> lhs, FloatChunk<? extends Any> rhs) {

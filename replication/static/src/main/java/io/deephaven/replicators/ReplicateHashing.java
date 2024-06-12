@@ -27,6 +27,12 @@ public class ReplicateHashing {
                 charToObject(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharChunkHasher.java");
         fixupObjectChunkHasher(objectHasher);
 
+        charToAll(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharArrayChunkHasher.java");
+        final String objectArrayHasher =
+                charToObject(TASK,
+                        "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharArrayChunkHasher.java");
+        // fixupObjectChunkHasher(objectArrayHasher);
+
         charToIntegers(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharToIntegerCast.java");
         charToIntegers(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharToLongCast.java");
         charToIntegers(TASK,

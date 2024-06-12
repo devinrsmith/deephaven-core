@@ -13,7 +13,7 @@ import io.deephaven.chunk.attributes.ChunkPositions;
 
 // region name
 public class BooleanChunkEquals implements ChunkEquals {
-    public static BooleanChunkEquals INSTANCE = new BooleanChunkEquals();
+    public static final BooleanChunkEquals INSTANCE = new BooleanChunkEquals();
     // endregion name
 
     public static boolean equalReduce(BooleanChunk<? extends Any> lhs, BooleanChunk<? extends Any> rhs) {

@@ -43,20 +43,6 @@ final class S3Request extends SoftReference<ByteBuffer>
         implements AsyncResponseTransformer<GetObjectResponse, Boolean>, BiConsumer<Boolean, Throwable>,
         CleanupReference<ByteBuffer> {
 
-    static class AcquiredRequest {
-        final S3Request request;
-        /**
-         * The ownership token keeps the request alive. When the ownership token is GC'd, the request is no longer
-         * usable and will be cleaned up.
-         */
-        final Object ownershipToken;
-
-        AcquiredRequest(final S3Request request, final Object ownershipToken) {
-            this.request = request;
-            this.ownershipToken = ownershipToken;
-        }
-    }
-
     /**
      * A unique identifier for a request, consisting of the URI and fragment index.
      */
@@ -120,7 +106,7 @@ final class S3Request extends SoftReference<ByteBuffer>
         final long requestLength = to - from + 1;
         final ByteBuffer buffer = ByteBuffer.allocate((int) requestLength);
         final S3Request request = new S3Request(fragmentIndex, context, buffer, from, to);
-        return new AcquiredRequest(request, buffer);
+        return request.acquire(buffer);
     }
 
     private S3Request(final long fragmentIndex, @NotNull final S3ChannelContext context,
@@ -151,11 +137,15 @@ final class S3Request extends SoftReference<ByteBuffer>
      */
     @Nullable
     AcquiredRequest tryAcquire() {
-        final Object token = get();
+        final ByteBuffer token = get();
         if (token == null) {
             return null;
         }
-        return new AcquiredRequest(this, token);
+        return acquire(token);
+    }
+
+    private AcquiredRequest acquire(ByteBuffer token) {
+        return new AcquiredRequest(token);
     }
 
     /**
@@ -180,35 +170,52 @@ final class S3Request extends SoftReference<ByteBuffer>
         return consumerFuture.isDone();
     }
 
-    /**
-     * Fill the provided buffer with data from this request, starting at the given local position. Returns the number of
-     * bytes filled. Note that the request must be acquired before calling this method.
-     */
-    int fill(long localPosition, ByteBuffer dest) throws IOException {
-        if (get() == null) {
-            throw new IllegalStateException(String.format("Trying to fill data after release, %s", requestStr()));
+    class AcquiredRequest {
+        /**
+         * The ownership token keeps the request alive. When the ownership token is GC'd, the request is no longer
+         * usable and will be cleaned up.
+         */
+        final ByteBuffer ownershipToken;
+
+        AcquiredRequest(final ByteBuffer ownershipToken) {
+            this.ownershipToken = ownershipToken;
         }
-        final int resultOffset = (int) (localPosition - from);
-        final int resultLength = Math.min((int) (to - localPosition + 1), dest.remaining());
-        final ByteBuffer fullFragment;
-        try {
-            fullFragment = getFullFragment().asReadOnlyBuffer();
-        } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-            throw S3ChannelContext.handleS3Exception(e, String.format("fetching fragment %s", requestStr()),
-                    instructions);
+
+        boolean isDone() {
+            return S3Request.this.isDone();
         }
-        // fullFragment has limit == capacity. This lets us have safety around math and the ability to simply
-        // clear to reset.
-        fullFragment.limit(resultOffset + resultLength);
-        fullFragment.position(resultOffset);
-        try {
-            dest.put(fullFragment);
-        } finally {
-            fullFragment.clear();
+
+        void sendRequest() {
+            S3Request.this.sendRequest();
         }
-        ++fillCount;
-        fillBytes += resultLength;
-        return resultLength;
+
+        /**
+         * Fill the provided buffer with data from this request, starting at the given local position. Returns the
+         * number of bytes filled. Note that the request must be acquired before calling this method.
+         */
+        int fill(long localPosition, ByteBuffer dest) throws IOException {
+            final int resultOffset = (int) (localPosition - from);
+            final int resultLength = Math.min((int) (to - localPosition + 1), dest.remaining());
+            try {
+                awaitComplete();
+            } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
+                throw S3ChannelContext.handleS3Exception(e, String.format("fetching fragment %s", requestStr()),
+                        instructions);
+            }
+            final ByteBuffer fullFragment = ownershipToken.asReadOnlyBuffer();
+            // fullFragment has limit == capacity. This lets us have safety around math and the ability to simply
+            // clear to reset.
+            fullFragment.limit(resultOffset + resultLength);
+            fullFragment.position(resultOffset);
+            try {
+                dest.put(fullFragment);
+            } finally {
+                fullFragment.clear();
+            }
+            ++fillCount;
+            fillBytes += resultLength;
+            return resultLength;
+        }
     }
 
     @Override
@@ -268,7 +275,7 @@ final class S3Request extends SoftReference<ByteBuffer>
 
     // --------------------------------------------------------------------------------------------------
 
-    private ByteBuffer getFullFragment() throws ExecutionException, InterruptedException, TimeoutException {
+    private void awaitComplete() throws ExecutionException, InterruptedException, TimeoutException {
         // Giving our own get() a bit of overhead - the clients should already be constructed with appropriate
         // apiCallTimeout.
         final long readNanos = instructions.readTimeout().plusMillis(100).toNanos();
@@ -276,17 +283,6 @@ final class S3Request extends SoftReference<ByteBuffer>
         if (!Boolean.TRUE.equals(isComplete)) {
             throw new IllegalStateException(String.format("Failed to complete request %s", requestStr()));
         }
-        final ByteBuffer result = get();
-        if (result == null) {
-            throw new IllegalStateException(
-                    String.format("Tried to read from no-longer-acquired Request, %s", requestStr()));
-        }
-        if (result.position() != 0 || result.limit() != result.capacity() || result.limit() != requestLength()) {
-            throw new IllegalStateException(String.format(
-                    "Expected: pos=0, limit=%d, capacity=%d. Actual: pos=%d, limit=%d, capacity=%d",
-                    requestLength(), requestLength(), result.position(), result.limit(), result.capacity()));
-        }
-        return result;
     }
 
     boolean isFragment(final long fragmentIndex) {

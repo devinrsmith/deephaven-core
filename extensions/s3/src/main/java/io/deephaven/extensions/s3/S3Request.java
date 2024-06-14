@@ -196,13 +196,7 @@ final class S3Request extends SoftReference<ByteBuffer>
         int fill(long localPosition, ByteBuffer dest) throws IOException {
             final int resultOffset = (int) (localPosition - from);
             final int resultLength = Math.min((int) (to - localPosition + 1), dest.remaining());
-            try {
-                awaitComplete();
-            } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-                throw S3ChannelContext.handleS3Exception(e, String.format("fetching fragment %s", requestStr()),
-                        instructions);
-            }
-            final ByteBuffer fullFragment = ownershipToken.asReadOnlyBuffer();
+            final ByteBuffer fullFragment = getFullFragment();
             // fullFragment has limit == capacity. This lets us have safety around math and the ability to simply
             // clear to reset.
             fullFragment.limit(resultOffset + resultLength);
@@ -215,6 +209,24 @@ final class S3Request extends SoftReference<ByteBuffer>
             ++fillCount;
             fillBytes += resultLength;
             return resultLength;
+        }
+
+        private ByteBuffer getFullFragment() throws IOException {
+            try {
+                awaitComplete();
+            } catch (final InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
+                throw S3ChannelContext.handleS3Exception(e, String.format("fetching fragment %s", requestStr()),
+                        instructions);
+            }
+            final ByteBuffer fullFragment = ownershipToken.asReadOnlyBuffer();
+            if (fullFragment.position() != 0 || fullFragment.limit() != fullFragment.capacity()
+                    || fullFragment.limit() != requestLength()) {
+                throw new IllegalStateException(String.format(
+                        "Expected: pos=0, limit=%d, capacity=%d. Actual: pos=%d, limit=%d, capacity=%d",
+                        requestLength(), requestLength(), fullFragment.position(), fullFragment.limit(),
+                        fullFragment.capacity()));
+            }
+            return fullFragment;
         }
     }
 

@@ -4,29 +4,39 @@
 package io.deephaven.engine.table.impl.sources;
 
 import io.deephaven.base.verify.Assert;
+import io.deephaven.chunk.Chunk;
+import io.deephaven.chunk.LongChunk;
+import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.chunkattributes.RowKeys;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.table.WritableSourceWithPrepareForParallelPopulation;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
-import io.deephaven.engine.table.impl.util.ShiftData;
-import io.deephaven.util.type.ArrayTypeUtils;
-import io.deephaven.engine.rowset.chunkattributes.RowKeys;
-import io.deephaven.chunk.attributes.Values;
-import io.deephaven.chunk.LongChunk;
-import io.deephaven.chunk.Chunk;
-import io.deephaven.chunk.WritableChunk;
 import io.deephaven.engine.table.impl.sources.sparse.LongOneOrN;
-import io.deephaven.engine.rowset.RowSequence;
-import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.table.impl.util.ShiftData;
+import io.deephaven.qst.type.Type;
 import io.deephaven.util.SoftRecycler;
+import io.deephaven.util.type.ArrayTypeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.BLOCK0_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.BLOCK1_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.BLOCK2_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.BLOCK_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.IN_USE_BLOCK_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.LOG_BLOCK0_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.LOG_BLOCK1_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.LOG_BLOCK2_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.LOG_BLOCK_SIZE;
+import static io.deephaven.engine.table.impl.sources.sparse.SparseConstants.LOG_INUSE_BITSET_SIZE;
 
 /**
  * A column source backed by arrays that may not be filled in all blocks.
@@ -298,6 +308,10 @@ public abstract class SparseArrayColumnSource<T>
 
     public static <T> WritableColumnSource<T> getSparseMemoryColumnSource(Class<T> type, Class<?> componentType) {
         return getSparseMemoryColumnSource(0, type, componentType);
+    }
+
+    public static <T> WritableColumnSource<T> getSparseMemoryColumnSource(Type<T> type) {
+        return getSparseMemoryColumnSource(type.clazz(), Type.componentType(type).map(Type::clazz).orElse(null));
     }
 
     public static <T> WritableColumnSource<T> getSparseMemoryColumnSource(long size, Class<T> type) {

@@ -18,6 +18,7 @@ import io.deephaven.engine.table.impl.select.WouldMatchPairFactory;
 import io.deephaven.api.util.ConcurrentMethod;
 import io.deephaven.engine.util.ColumnFormatting;
 import io.deephaven.engine.liveness.LivenessScopeStack;
+import io.deephaven.qst.type.Type;
 import io.deephaven.util.annotations.FinalDefault;
 
 import javax.annotation.Nullable;
@@ -131,6 +132,16 @@ public interface TableDefaults extends Table, TableOperationsDefaults<Table, Tab
         // noinspection unchecked
         return rawColumnSource.cast(clazz, componentType);
     }
+
+    @Override
+    @FinalDefault
+    default <T> ColumnSource<T> getColumnSource(String sourceName, Type<? extends T> type) {
+        @SuppressWarnings("rawtypes")
+        ColumnSource rawColumnSource = getColumnSource(sourceName);
+        // noinspection unchecked
+        return rawColumnSource.cast(type);
+    }
+
 
     // -----------------------------------------------------------------------------------------------------------------
     // Filter Operations

@@ -9,6 +9,7 @@ import io.deephaven.engine.table.WritableColumnSource;
 import io.deephaven.engine.rowset.chunkattributes.RowKeys;
 import io.deephaven.qst.type.BoxedType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.Type;
 import io.deephaven.util.type.ArrayTypeUtils;
 import io.deephaven.chunk.*;
 import io.deephaven.chunk.attributes.Values;
@@ -379,6 +380,10 @@ public abstract class ArrayBackedColumnSource<T>
         return getMemoryColumnSource(0, dataType, componentType);
     }
 
+    public static <T> WritableColumnSource<T> getMemoryColumnSource(@NotNull final Type<T> type) {
+        return getMemoryColumnSource(type.clazz(), Type.componentType(type).map(Type::clazz).orElse(null));
+    }
+
     /**
      * Produces an empty ArrayBackedColumnSource with the given type and capacity.
      *
@@ -421,6 +426,11 @@ public abstract class ArrayBackedColumnSource<T>
         }
         // noinspection unchecked
         return (WritableColumnSource<T>) result;
+    }
+
+    public static <T> WritableColumnSource<T> getMemoryColumnSource(long longSize, Type<T> type) {
+        return getMemoryColumnSource(longSize, type.clazz(),
+                Type.componentType(type).map(Type::clazz).orElse(null));
     }
 
     @Override

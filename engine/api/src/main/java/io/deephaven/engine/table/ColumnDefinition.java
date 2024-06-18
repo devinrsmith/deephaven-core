@@ -383,6 +383,10 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         return columnType;
     }
 
+    public final Type<TYPE> type() {
+        return Type.find(dataType, componentType);
+    }
+
     public ColumnDefinition<TYPE> withPartitioning() {
         return isPartitioning() ? this : new ColumnDefinition<>(name, dataType, componentType, ColumnType.Partitioning);
     }

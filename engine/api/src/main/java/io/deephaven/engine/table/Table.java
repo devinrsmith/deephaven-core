@@ -15,6 +15,7 @@ import io.deephaven.api.util.ConcurrentMethod;
 import io.deephaven.engine.updategraph.DynamicNode;
 import io.deephaven.engine.updategraph.NotificationQueue;
 import io.deephaven.engine.util.systemicmarking.SystemicObject;
+import io.deephaven.qst.type.Type;
 import io.deephaven.util.datastructures.LongSizedDataStructure;
 import org.jetbrains.annotations.NotNull;
 
@@ -275,6 +276,8 @@ public interface Table extends
      * @see TableDefinition#checkHasColumn(String, Class, Class)
      */
     <T> ColumnSource<T> getColumnSource(String sourceName, Class<? extends T> clazz, @Nullable Class<?> componentType);
+
+    <T> ColumnSource<T> getColumnSource(String sourceName, Type<? extends T> type);
 
     Map<String, ? extends ColumnSource<?>> getColumnSourceMap();
 

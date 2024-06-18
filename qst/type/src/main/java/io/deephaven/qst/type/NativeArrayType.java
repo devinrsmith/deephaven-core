@@ -40,6 +40,10 @@ public abstract class NativeArrayType<T, ComponentType> extends ArrayTypeBase<T,
         return (NativeArrayType<ComponentType[], ComponentType>) NativeArrayType.of(clazz, type);
     }
 
+    public static boolean isNativeArrayType(Class<?> clazz) {
+        return clazz.isArray();
+    }
+
     @Parameter
     public abstract Class<T> clazz();
 
@@ -53,7 +57,7 @@ public abstract class NativeArrayType<T, ComponentType> extends ArrayTypeBase<T,
 
     @Check
     final void checkArrayType() {
-        if (!clazz().isArray()) {
+        if (!isNativeArrayType(clazz())) {
             throw new IllegalArgumentException("clazz() must be an array type");
         }
         Class<?> componentType = clazz().getComponentType();

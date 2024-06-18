@@ -13,8 +13,8 @@ import io.deephaven.engine.table.impl.naturaljoin.*;
 import io.deephaven.engine.table.impl.sources.*;
 import io.deephaven.engine.table.impl.util.*;
 import io.deephaven.util.annotations.VisibleForTesting;
+import io.deephaven.util.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -496,7 +496,7 @@ class NaturalJoinHelper {
                 final MutableBoolean updatedRightRow = new MutableBoolean(false);
                 final MutableInt position = new MutableInt(0);
                 downstream.modified().forAllRowKeys((long modifiedKey) -> {
-                    final long newRedirection = newLeftRedirections.getLong(position.intValue());
+                    final long newRedirection = newLeftRedirections.getLong(position.get());
                     final long old;
                     if (newRedirection == RowSequence.NULL_ROW_KEY) {
                         old = rowRedirection.remove(modifiedKey);
@@ -518,7 +518,7 @@ class NaturalJoinHelper {
             jsm.decorateLeftSide(downstream.added(), leftSources, newLeftRedirections);
             final MutableInt position = new MutableInt(0);
             downstream.added().forAllRowKeys((long ll) -> {
-                final long newRedirection = newLeftRedirections.getLong(position.intValue());
+                final long newRedirection = newLeftRedirections.getLong(position.get());
                 if (newRedirection != RowSequence.NULL_ROW_KEY) {
                     rowRedirection.putVoid(ll, newRedirection);
                 }
@@ -946,7 +946,7 @@ class NaturalJoinHelper {
         private void copyRedirections(final RowSet leftRows, @NotNull final LongArraySource leftRedirections) {
             final MutableInt position = new MutableInt(0);
             leftRows.forAllRowKeys((long ll) -> {
-                final long rightKey = leftRedirections.getLong(position.intValue());
+                final long rightKey = leftRedirections.getLong(position.get());
                 jsm.checkExactMatch(exactMatch, ll, rightKey);
                 if (rightKey == RowSequence.NULL_ROW_KEY) {
                     rowRedirection.removeVoid(ll);

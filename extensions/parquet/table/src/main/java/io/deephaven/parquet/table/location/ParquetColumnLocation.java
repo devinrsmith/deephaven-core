@@ -120,12 +120,6 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ParquetTableLocation) getTableLocation();
     }
 
-    @Override
-    @Nullable
-    public <METADATA_TYPE> METADATA_TYPE getMetadata(@NotNull final ColumnDefinition<?> columnDefinition) {
-        return null;
-    }
-
     private <SOURCE, REGION_TYPE> REGION_TYPE makeColumnRegion(
             @NotNull final Function<ColumnDefinition<?>, SOURCE[]> sourceArrayFactory,
             @NotNull final ColumnDefinition<?> columnDefinition,
@@ -382,7 +376,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                         toPage = ToLongPage.create(pageType);
                         break;
                     case INT96:
-                        toPage = ToInstantPageFromInt96.create(pageType);
+                        toPage = ToInstantPage.create(pageType);
                         break;
                     case DOUBLE:
                         toPage = ToDoublePage.create(pageType);
@@ -467,20 +461,19 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         public Optional<ToPage<ATTR, ?>> visit(
                 final LogicalTypeAnnotation.TimestampLogicalTypeAnnotation timestampLogicalType) {
             if (timestampLogicalType.isAdjustedToUTC()) {
-                return Optional.of(ToInstantPage.create(componentType, timestampLogicalType.getUnit()));
+                return Optional.of(ToInstantPage.create(componentType));
             }
-            return Optional.of(ToLocalDateTimePage.create(componentType, timestampLogicalType.getUnit()));
+            return Optional.of(ToLocalDateTimePage.create(componentType));
         }
 
         @Override
         public Optional<ToPage<ATTR, ?>> visit(final LogicalTypeAnnotation.IntLogicalTypeAnnotation intLogicalType) {
-
             if (intLogicalType.isSigned()) {
                 switch (intLogicalType.getBitWidth()) {
                     case 8:
-                        return Optional.of(ToBytePageFromInt.create(componentType));
+                        return Optional.of(ToBytePage.create(componentType));
                     case 16:
-                        return Optional.of(ToShortPageFromInt.create(componentType));
+                        return Optional.of(ToShortPage.create(componentType));
                     case 32:
                         return Optional.of(ToIntPage.create(componentType));
                     case 64:
@@ -490,24 +483,22 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                 switch (intLogicalType.getBitWidth()) {
                     case 8:
                     case 16:
-                        return Optional.of(ToCharPageFromInt.create(componentType));
+                        return Optional.of(ToCharPage.create(componentType));
                     case 32:
                         return Optional.of(ToLongPage.create(componentType));
                 }
             }
-
             return Optional.empty();
         }
 
         @Override
         public Optional<ToPage<ATTR, ?>> visit(final LogicalTypeAnnotation.DateLogicalTypeAnnotation dateLogicalType) {
-            return Optional.of(ToDatePageFromInt.create(componentType));
+            return Optional.of(ToLocalDatePage.create(componentType));
         }
 
         @Override
         public Optional<ToPage<ATTR, ?>> visit(final LogicalTypeAnnotation.TimeLogicalTypeAnnotation timeLogicalType) {
-            return Optional
-                    .of(ToTimePage.create(componentType, timeLogicalType.getUnit(), timeLogicalType.isAdjustedToUTC()));
+            return Optional.of(ToLocalTimePage.create(componentType));
         }
 
         @Override

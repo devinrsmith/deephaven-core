@@ -51,6 +51,7 @@ final class TableProcessorImpl {
                 .map(cs -> cs.makeFillFromContext(chunkSize))
                 .toArray(FillFromContext[]::new);
         try (
+                // todo: why am I using fillChunk instead of getChunk?
                 final CloseableIterator<ObjectChunk<T, Values>> srcChunkIt =
                         ColumnSourceHelper.readFilledChunks(srcColumnSource, srcRowSet, srcUsePrev, chunkSize);
                 final CloseableIterator<RowSequence> dstRowSeqIt =

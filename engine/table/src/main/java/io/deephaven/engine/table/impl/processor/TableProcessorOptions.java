@@ -49,9 +49,10 @@ public abstract class TableProcessorOptions {
     }
 
     /**
-     * The input {@link Table}. Must be a static table.
+     * The input {@link Table}.
      */
     public abstract Table table();
+    // todo: recommend user flatten if necessary?
 
     /**
      * The input column name. When unset, the first column from {@link #table()} will be used.
@@ -62,6 +63,7 @@ public abstract class TableProcessorOptions {
      * The named object processor provider. Must be capable of handling the input column type.
      */
     public abstract NamedObjectProcessor.Provider processor();
+    // todo: consider parallelization? new objectprocessor per thread?
 
     /**
      * The columns from {@link #table()} that should be in the output {@link Table}. When empty, the resulting
@@ -185,6 +187,7 @@ public abstract class TableProcessorOptions {
                     .map(type -> array(initialSize, type))
                     .collect(Collectors.toList());
         } else {
+            // semi-flat / dense: 100-200? (we could have user option to specify dense)
             // sparse
             dstIsFlat = false;
             dstRowSet = srcRowSet; // todo: do we need to make a copy?
@@ -193,6 +196,7 @@ public abstract class TableProcessorOptions {
                     .map(TableProcessorOptions::sparse)
                     .collect(Collectors.toList());
         }
+        // todo: what about blink. probably, flatten it?
 
         final List<ColumnDefinition<?>> definitions = new ArrayList<>();
         final LinkedHashMap<String, ColumnSource<?>> dstMap = new LinkedHashMap<>();
@@ -282,6 +286,7 @@ public abstract class TableProcessorOptions {
             if (upstream.shifted().nonempty()) {
                 throw new IllegalStateException("Not expecting shifts");
             }
+            // io.deephaven.engine.table.impl.updateby.internal.BaseFloatUpdateByOperator#applyOutputShift
             ensureCapacity();
             processRemoved(upstream);
             processAdded(upstream);
@@ -303,7 +308,9 @@ public abstract class TableProcessorOptions {
             if (removed.isEmpty()) {
                 return;
             }
+            // todo: fill with null value ChunkUtils
             for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                // todo: does sparse cleanup all null blocks?
                 dstColumnSource.setNull(removed);
             }
         }
@@ -321,13 +328,14 @@ public abstract class TableProcessorOptions {
             if (!upstream.modifiedColumnSet().containsAny(srcColumnMCS)) {
                 return false;
             }
-            if (upstream.modified().isEmpty()) {
+            final RowSet modifiedRs = upstream.modified();
+            if (modifiedRs.isEmpty()) {
                 return false;
             }
             // Note: this is a two-pass process, first reading all the columns to see what actually changed, and then
             // only actually acting on the rows that have been modified.
             try (final RowSet modified =
-                    ColumnSourceHelper.modified(srcColumnSource, upstream.modified(), chunkSize())) {
+                    ColumnSourceHelper.modified(srcColumnSource, modifiedRs, chunkSize())) {
                 if (modified.isEmpty()) {
                     return false;
                 }

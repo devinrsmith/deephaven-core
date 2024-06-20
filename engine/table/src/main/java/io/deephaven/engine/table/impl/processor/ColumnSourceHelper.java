@@ -18,6 +18,7 @@ import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.ColumnSource;
 
 import java.util.Objects;
+import java.util.function.BiPredicate;
 
 final class ColumnSourceHelper {
 
@@ -32,6 +33,17 @@ final class ColumnSourceHelper {
     }
 
     public static <T> RowSet modified(ColumnSource<? extends T> columnSource, RowSet rowSet, int chunkSize) {
+        return x(columnSource, rowSet, chunkSize, (BiPredicate<T, T>) ColumnSourceHelper::neqIdentity);
+    }
+
+    private static <T> boolean neqIdentity(T x, T y) {
+        // todo: user specified?
+        // object processor might set timestamp for example
+        return x != y;
+    }
+
+    public static <T> RowSet x(ColumnSource<? extends T> columnSource, RowSet rowSet, int chunkSize,
+            BiPredicate<? super T, ? super T> predicate) {
         final RowSetBuilderSequential builder = RowSetFactory.builderSequential();
         try (
                 final FillContext context = columnSource.makeFillContext(chunkSize);
@@ -39,6 +51,9 @@ final class ColumnSourceHelper {
                 final WritableObjectChunk<T, Values> curr = WritableObjectChunk.makeWritableChunk(chunkSize);
                 final WritableLongChunk<OrderedRowKeys> keys = WritableLongChunk.makeWritableChunk(chunkSize);
                 final CloseableIterator<RowSequence> it = rowSequenceIterator(rowSet, chunkSize)) {
+            // todo: if had shifts, would need to update this code to deal w/ preshift space getModifiedPreShift
+            // io.deephaven.engine.table.impl.select.analyzers.SelectColumnLayer.doApplyUpdate
+            // io.deephaven.engine.table.impl.by.ChunkedOperatorAggregationHelper.KeyedUpdateContext.splitKeyModificationsAndDoKeyChangeRemoves
             while (it.hasNext()) {
                 final RowSequence rs = it.next();
                 rs.fillRowKeyChunk(keys);
@@ -46,8 +61,7 @@ final class ColumnSourceHelper {
                 columnSource.fillChunk(context, curr, rs);
                 final int size = keys.size();
                 for (int i = 0; i < size; ++i) {
-                    // todo: BiPredicate?
-                    if (prev.get(i) != curr.get(i)) {
+                    if (predicate.test(prev.get(i), curr.get(i))) {
                         builder.appendKey(keys.get(i));
                     }
                 }

@@ -172,9 +172,9 @@ public class TickSuppressor {
                             }
 
                             while (postRsIt.hasMore()) {
-                                try (final RowSequence postChunkOk = postRsIt.getNextRowSequenceWithLength(chunkSize);
+                                final RowSequence postChunkOk = postRsIt.getNextRowSequenceWithLength(chunkSize);
                                         final RowSequence preChunkOk =
-                                                preRsIt.getNextRowSequenceWithLength(chunkSize)) {
+                                                preRsIt.getNextRowSequenceWithLength(chunkSize);
                                     currentSharedContext.reset();
                                     prevSharedContext.reset();
 
@@ -203,7 +203,6 @@ public class TickSuppressor {
                                         }
                                         pos.increment();
                                     });
-                                }
                             }
                         }
 

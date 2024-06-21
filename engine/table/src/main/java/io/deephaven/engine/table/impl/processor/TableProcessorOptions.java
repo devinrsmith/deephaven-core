@@ -346,11 +346,8 @@ public abstract class TableProcessorOptions {
             for (final WritableColumnSource<?> dstColumnSource : dstCss) {
                 // todo: does sparse cleanup all null blocks?
                 //dstColumnSource.setNull(removed);
-
                 ChunkUtils.fillWithNullValue(dstColumnSource, removed);
             }
-
-
         }
 
         private void processAdded(TableUpdate upstream) {
@@ -366,16 +363,26 @@ public abstract class TableProcessorOptions {
                 return false;
             }
             final RowSet upstreamModified = upstream.modified();
-            try (final RowSet subset = neq == null
-                    ? null
-                    : ModifiedColumnHelper.comparePrevChunkToChunk(srcCs, upstreamModified, chunkSize(), neq)) {
-                final RowSet modified = Objects.requireNonNullElse(subset, upstreamModified);
-                if (modified.isEmpty()) {
+            if (neq == null) {
+                if (upstreamModified.isEmpty()) {
                     return false;
                 }
-                TableProcessorImpl.processAll(srcCs, modified, false, processor, dstCss, modified, chunkSize());
+                TableProcessorImpl.processAll(srcCs, upstreamModified, false, processor, dstCss, upstreamModified, chunkSize());
                 return true;
+            } else {
+                return TableProcessorImpl.processSubset(srcCs, upstreamModified, processor, dstCss, upstreamModified, chunkSize(), neq);
             }
+            // todo: this 2 stage process is potentially expensive; may prefer to move this filter logic internal.
+//            try (final RowSet subset = neq == null
+//                    ? null
+//                    : ModifiedColumnHelper.comparePrevChunkToChunk(srcCs, upstreamModified, chunkSize(), neq)) {
+//                final RowSet modified = Objects.requireNonNullElse(subset, upstreamModified);
+//                if (modified.isEmpty()) {
+//                    return false;
+//                }
+//                TableProcessorImpl.processAll(srcCs, modified, false, processor, dstCss, modified, chunkSize());
+//                return true;
+//            }
         }
 
         private TableUpdate downstreamUpdate(TableUpdate upstream, boolean hasDstColumnMods) {

@@ -4,21 +4,16 @@
 package io.deephaven.engine.table.impl.processor;
 
 import io.deephaven.chunk.ObjectChunk;
-import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.RowSequence.Iterator;
 import io.deephaven.engine.rowset.RowSet;
-import io.deephaven.engine.rowset.RowSetBuilderSequential;
-import io.deephaven.engine.rowset.RowSetFactory;
-import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
 import io.deephaven.engine.table.ChunkSource.FillContext;
 import io.deephaven.engine.table.ColumnSource;
 
 import java.util.Objects;
-import java.util.function.BiPredicate;
 
 final class ColumnSourceHelper {
 
@@ -30,44 +25,6 @@ final class ColumnSourceHelper {
             it.close();
             throw t;
         }
-    }
-
-    public static <T> RowSet modified(ColumnSource<? extends T> columnSource, RowSet rowSet, int chunkSize) {
-        return x(columnSource, rowSet, chunkSize, (BiPredicate<T, T>) ColumnSourceHelper::neqIdentity);
-    }
-
-    private static <T> boolean neqIdentity(T x, T y) {
-        // todo: user specified?
-        // object processor might set timestamp for example
-        return x != y;
-    }
-
-    public static <T> RowSet x(ColumnSource<? extends T> columnSource, RowSet rowSet, int chunkSize,
-            BiPredicate<? super T, ? super T> predicate) {
-        final RowSetBuilderSequential builder = RowSetFactory.builderSequential();
-        try (
-                final FillContext context = columnSource.makeFillContext(chunkSize);
-                final WritableObjectChunk<T, Values> prev = WritableObjectChunk.makeWritableChunk(chunkSize);
-                final WritableObjectChunk<T, Values> curr = WritableObjectChunk.makeWritableChunk(chunkSize);
-                final WritableLongChunk<OrderedRowKeys> keys = WritableLongChunk.makeWritableChunk(chunkSize);
-                final CloseableIterator<RowSequence> it = rowSequenceIterator(rowSet, chunkSize)) {
-            // todo: if had shifts, would need to update this code to deal w/ preshift space getModifiedPreShift
-            // io.deephaven.engine.table.impl.select.analyzers.SelectColumnLayer.doApplyUpdate
-            // io.deephaven.engine.table.impl.by.ChunkedOperatorAggregationHelper.KeyedUpdateContext.splitKeyModificationsAndDoKeyChangeRemoves
-            while (it.hasNext()) {
-                final RowSequence rs = it.next();
-                rs.fillRowKeyChunk(keys);
-                columnSource.fillPrevChunk(context, prev, rs);
-                columnSource.fillChunk(context, curr, rs);
-                final int size = keys.size();
-                for (int i = 0; i < size; ++i) {
-                    if (predicate.test(prev.get(i), curr.get(i))) {
-                        builder.appendKey(keys.get(i));
-                    }
-                }
-            }
-        }
-        return builder.build();
     }
 
     public static <T> CloseableIterator<ObjectChunk<T, Values>> readFilledChunks(

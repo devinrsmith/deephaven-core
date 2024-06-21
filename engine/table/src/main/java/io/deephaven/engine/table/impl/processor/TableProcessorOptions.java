@@ -26,6 +26,7 @@ import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
+import io.deephaven.qst.type.GenericType;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 @BuildableStyle
@@ -88,6 +90,29 @@ public abstract class TableProcessorOptions {
         return executeImpl();
     }
 
+    enum ModifiedMode {
+        ALL, IDENTITY, EQUALS, DEEP_EQUALS,
+    }
+
+    final ModifiedMode modifiedMode() {
+        return ModifiedMode.IDENTITY;
+    }
+
+    private static <T> BiPredicate<T, T> neq(GenericType<T> type, ModifiedMode mode) {
+        switch (mode) {
+            case ALL:
+                return null;
+            case IDENTITY:
+                return BiPredicateHelper.<T>identity().negate();
+            case EQUALS:
+                return BiPredicateHelper.equals(type).negate();
+            case DEEP_EQUALS:
+                return BiPredicateHelper.deepEquals(type).negate();
+            default:
+                throw new IllegalStateException("Unexpected mode " + mode);
+        }
+    }
+
     public interface Builder {
         Builder table(Table table);
 
@@ -136,6 +161,13 @@ public abstract class TableProcessorOptions {
         if (table().numColumns() != 1) {
             throw new IllegalArgumentException(
                     "columnName must be specified when there isn't exactly 1 column in the source table");
+        }
+    }
+
+    @Check
+    final void checkObjectColumn() {
+        if (!(getColumnDefinition().type() instanceof GenericType)) {
+            throw new IllegalArgumentException("Processor column must be an Object");
         }
     }
 
@@ -251,34 +283,35 @@ public abstract class TableProcessorOptions {
     }
 
     class ProcessorListener<T> extends BaseTable.ListenerImpl {
-        private final ColumnSource<? extends T> srcColumnSource;
+        private final ColumnSource<T> srcCs;
         private final ObjectProcessor<? super T> processor;
-        private final List<WritableColumnSource<?>> dstColumnSources;
-        private final ModifiedColumnSet srcColumnMCS;
-        private final ModifiedColumnSet dstColumnsMCS;
+        private final List<WritableColumnSource<?>> dstCss;
+        private final ModifiedColumnSet srcMCS;
+        private final ModifiedColumnSet dstMCS;
         private final Transformer keepColumnsTransformer;
         private final ModifiedColumnSet downstreamMCS;
+        private final BiPredicate<T, T> neq;
 
         ProcessorListener(
                 String description,
                 QueryTable result,
-                ColumnDefinition<? extends T> srcColumnDefinition,
+                ColumnDefinition<T> srcColumnDefinition,
                 ObjectProcessor<? super T> processor,
-                LinkedHashMap<String, WritableColumnSource<?>> dstColumnSources) {
+                LinkedHashMap<String, WritableColumnSource<?>> dstCss) {
             super(description, parent(), result);
             if (parent().getRowSet() != result.getRowSet()) {
                 throw new IllegalArgumentException();
             }
-            this.srcColumnSource = columnSource(srcColumnDefinition);
+            this.srcCs = columnSource(srcColumnDefinition);
             this.processor = Objects.requireNonNull(processor);
-            this.dstColumnSources = new ArrayList<>(dstColumnSources.values());
-            this.srcColumnMCS = parent().newModifiedColumnSet(srcColumnDefinition.getName());
-            this.dstColumnsMCS =
-                    result.newModifiedColumnSet(dstColumnSources.keySet().toArray(String[]::new));
+            this.dstCss = new ArrayList<>(dstCss.values());
+            this.srcMCS = parent().newModifiedColumnSet(srcColumnDefinition.getName());
+            this.dstMCS = result.newModifiedColumnSet(dstCss.keySet().toArray(String[]::new));
             keepColumnsTransformer = keepColumns().isEmpty()
                     ? null
                     : parent().newModifiedColumnSetTransformer(result, keepColumns().toArray(String[]::new));
             downstreamMCS = result.getModifiedColumnSetForUpdates();
+            neq = neq((GenericType<T>) srcColumnDefinition.type(), modifiedMode());
         }
 
         @Override
@@ -297,7 +330,7 @@ public abstract class TableProcessorOptions {
         private void ensureCapacity() {
             final long lastRowKey = getDependent().getRowSet().lastRowKey();
             if (lastRowKey != RowSet.NULL_ROW_KEY) {
-                for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+                for (final WritableColumnSource<?> dstColumnSource : dstCss) {
                     dstColumnSource.ensureCapacity(lastRowKey + 1, false);
                 }
             }
@@ -309,7 +342,7 @@ public abstract class TableProcessorOptions {
                 return;
             }
             // todo: fill with null value ChunkUtils
-            for (final WritableColumnSource<?> dstColumnSource : dstColumnSources) {
+            for (final WritableColumnSource<?> dstColumnSource : dstCss) {
                 // todo: does sparse cleanup all null blocks?
                 dstColumnSource.setNull(removed);
             }
@@ -320,29 +353,24 @@ public abstract class TableProcessorOptions {
             if (added.isEmpty()) {
                 return;
             }
-            TableProcessorImpl.processAll(srcColumnSource, added, false, processor, dstColumnSources, added,
-                    chunkSize());
+            TableProcessorImpl.processAll(srcCs, added, false, processor, dstCss, added, chunkSize());
         }
 
         private boolean processModified(TableUpdate upstream) {
-            if (!upstream.modifiedColumnSet().containsAny(srcColumnMCS)) {
+            if (!upstream.modifiedColumnSet().containsAny(srcMCS)) {
                 return false;
             }
-            final RowSet modifiedRs = upstream.modified();
-            if (modifiedRs.isEmpty()) {
-                return false;
-            }
-            // Note: this is a two-pass process, first reading all the columns to see what actually changed, and then
-            // only actually acting on the rows that have been modified.
-            try (final RowSet modified =
-                    ColumnSourceHelper.modified(srcColumnSource, modifiedRs, chunkSize())) {
+            final RowSet upstreamModified = upstream.modified();
+            try (final RowSet subset = neq == null
+                    ? null
+                    : ModifiedColumnHelper.comparePrevChunkToChunk(srcCs, upstreamModified, chunkSize(), neq)) {
+                final RowSet modified = Objects.requireNonNullElse(subset, upstreamModified);
                 if (modified.isEmpty()) {
                     return false;
                 }
-                TableProcessorImpl.processAll(srcColumnSource, modified, false, processor, dstColumnSources, modified,
-                        chunkSize());
+                TableProcessorImpl.processAll(srcCs, modified, false, processor, dstCss, modified, chunkSize());
+                return true;
             }
-            return true;
         }
 
         private TableUpdate downstreamUpdate(TableUpdate upstream, boolean hasDstColumnMods) {
@@ -362,7 +390,7 @@ public abstract class TableProcessorOptions {
             }
             if (hasDstColumnMods) {
                 // set all dst columns as dirty
-                downstreamMCS.setAll(dstColumnsMCS);
+                downstreamMCS.setAll(dstMCS);
             }
         }
     }

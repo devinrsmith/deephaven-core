@@ -24,6 +24,7 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.ReinterpretUtils;
 import io.deephaven.engine.table.impl.sources.SparseArrayColumnSource;
+import io.deephaven.engine.table.impl.util.ChunkUtils;
 import io.deephaven.processor.NamedObjectProcessor;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.GenericType;
@@ -167,7 +168,7 @@ public abstract class TableProcessorOptions {
     @Check
     final void checkObjectColumn() {
         if (!(getColumnDefinition().type() instanceof GenericType)) {
-            throw new IllegalArgumentException("Processor column must be an Object");
+            throw new IllegalArgumentException("column must be an Object");
         }
     }
 
@@ -344,8 +345,12 @@ public abstract class TableProcessorOptions {
             // todo: fill with null value ChunkUtils
             for (final WritableColumnSource<?> dstColumnSource : dstCss) {
                 // todo: does sparse cleanup all null blocks?
-                dstColumnSource.setNull(removed);
+                //dstColumnSource.setNull(removed);
+
+                ChunkUtils.fillWithNullValue(dstColumnSource, removed);
             }
+
+
         }
 
         private void processAdded(TableUpdate upstream) {

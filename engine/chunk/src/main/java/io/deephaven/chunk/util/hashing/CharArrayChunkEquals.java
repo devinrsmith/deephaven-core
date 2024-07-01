@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 // region name
 public class CharArrayChunkEquals implements ChunkEquals {
-    public static CharArrayChunkEquals INSTANCE = new CharArrayChunkEquals();
+    public static final CharArrayChunkEquals INSTANCE = new CharArrayChunkEquals();
     // endregion name
 
     public static boolean equalReduce(ObjectChunk<char[], ? extends Any> lhs, ObjectChunk<char[], ? extends Any> rhs) {

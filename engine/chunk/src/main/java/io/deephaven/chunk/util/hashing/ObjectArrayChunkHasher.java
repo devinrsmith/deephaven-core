@@ -20,7 +20,7 @@ import static io.deephaven.chunk.util.hashing.ChunkHasher.scrambleHash;
 
 
 public class ObjectArrayChunkHasher implements ChunkHasher {
-    public static ObjectArrayChunkHasher INSTANCE = new ObjectArrayChunkHasher();
+    public static final ObjectArrayChunkHasher INSTANCE = new ObjectArrayChunkHasher();
 
     private static void hashInitial(ObjectChunk<Object[], Values> values, WritableIntChunk<HashCodes> destination) {
         for (int ii = 0; ii < values.size(); ++ii) {

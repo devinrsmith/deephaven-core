@@ -50,6 +50,8 @@ public class ReplicateHashing {
         fixupFloatChunkEquals(floatPath);
         fixupDoubleChunkEquals(doublePath);
 
+        charToByte(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharArrayChunkEquals.java");
+
         final String objectIdentityEquals =
                 charToObject(TASK, "engine/chunk/src/main/java/io/deephaven/chunk/util/hashing/CharChunkEquals.java");
         fixupObjectChunkIdentityEquals(objectIdentityEquals);

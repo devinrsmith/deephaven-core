@@ -17,31 +17,31 @@ public class BaseSeekableChannelContext implements SeekableChannelContext {
     /**
      * A sentinel value to indicate that a resource is {@code null}.
      */
-    private static final SafeCloseable NULL_SENTINEL = () -> {
-    };
+    private static final Object NULL_SENTINEL = new Object();
 
     /**
      * An empty cache of resources.
      */
-    private static final Map<String, SafeCloseable> EMPTY_CACHE = Map.of();
+    private static final Map<Key<?>, Object> EMPTY_CACHE = Map.of();
 
     /**
      * A cache of opaque resource objects hosted by this context.
      */
-    private Map<String, SafeCloseable> resourceCache = EMPTY_CACHE;
+    private Map<Key<?>, Object> resourceCache = EMPTY_CACHE;
 
     @Override
     @Nullable
-    public final SafeCloseable apply(final String key, @NotNull final Supplier<SafeCloseable> resourceFactory) {
-        final Map<String, SafeCloseable> localResourceCache = resourceCache == EMPTY_CACHE
+    public final <T> T cache(final Key<T> key, @NotNull final Supplier<T> supplier) {
+        final Map<Key<?>, Object> localResourceCache = resourceCache == EMPTY_CACHE
                 ? resourceCache = new HashMap<>(1)
                 : resourceCache;
-        SafeCloseable resource = localResourceCache.get(key);
+        // noinspection unchecked
+        T resource = (T) localResourceCache.get(key);
         if (resource == NULL_SENTINEL) {
             return null;
         }
         if (resource == null) {
-            resourceCache.put(key, (resource = resourceFactory.get()) == null ? NULL_SENTINEL : resource);
+            resourceCache.put(key, (resource = supplier.get()) == null ? NULL_SENTINEL : resource);
         }
         return resource;
     }
@@ -49,7 +49,11 @@ public class BaseSeekableChannelContext implements SeekableChannelContext {
     @Override
     @OverridingMethodsMustInvokeSuper
     public void close() {
-        SafeCloseable.closeAll(resourceCache.values().iterator());
+        SafeCloseable.closeAll(resourceCache.values().stream().filter(BaseSeekableChannelContext::isAutoCloseable));
         resourceCache = EMPTY_CACHE;
+    }
+
+    private static boolean isAutoCloseable(Object x) {
+        return x instanceof AutoCloseable;
     }
 }

@@ -232,7 +232,7 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
                 } else {
                     payload = BytesInput.from(
                             decompressor.decompress(in, compressedPageSize, pageHeader.getUncompressed_page_size(),
-                                    holder.get()),
+                                    new CacheAdapter(holder.get())),
                             pageHeader.getUncompressed_page_size());
                 }
                 final Encoding encoding = Encoding.valueOf(dictHeader.getEncoding().name());

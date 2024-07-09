@@ -29,7 +29,6 @@ import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -46,9 +45,12 @@ import static org.apache.parquet.column.ValuesType.VALUES;
 
 final class ColumnPageReaderImpl implements ColumnPageReader {
     private static final int NULL_OFFSET = -1;
-    private static final String REPETITION_LEVELS_BUFFER_KEY = "PARQUET_REPETITION_LEVELS_BUFFER";
-    private static final String DEFINITION_LEVELS_BUFFER_KEY = "PARQUET_DEFINITION_LEVELS_BUFFER";
-    private static final String PAGE_BUFFER_KEY = "PARQUET_PAGE_BUFFER";
+    private static final SeekableChannelContext.Key<ByteBufferHolder> REPETITION_LEVELS_BUFFER_KEY =
+            SeekableChannelContext.Key.of("REPETITION_LEVELS_BUFFER_KEY");
+    private static final SeekableChannelContext.Key<ByteBufferHolder> DEFINITION_LEVELS_BUFFER_KEY =
+            SeekableChannelContext.Key.of("DEFINITION_LEVELS_BUFFER_KEY");
+    private static final SeekableChannelContext.Key<ByteBufferHolder> PAGE_BUFFER_KEY =
+            SeekableChannelContext.Key.of("PAGE_BUFFER_KEY");
 
     private final String columnName;
     private final SeekableChannelsProvider channelsProvider;
@@ -154,7 +156,8 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
         }
         final int uncompressedPageSize = pageHeader.getUncompressed_page_size();
         final int compressedPageSize = pageHeader.getCompressed_page_size();
-        return compressorAdapter.decompress(in, compressedPageSize, uncompressedPageSize, channelContext);
+        return compressorAdapter.decompress(in, compressedPageSize, uncompressedPageSize,
+                new CacheAdapter(channelContext));
     }
 
     /**
@@ -210,7 +213,7 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
                 getCachedBuffer(channelContext, DEFINITION_LEVELS_BUFFER_KEY, definitionLevelsLength);
         readNBytes(in, definitionLevels.array(), 0, definitionLevelsLength);
         final InputStream decompressed =
-                compressorAdapter.decompress(in, compressedSize, uncompressedSize, channelContext);
+                compressorAdapter.decompress(in, compressedSize, uncompressedSize, new CacheAdapter(channelContext));
         return new DataPageV2Helper(repetitionLevels, definitionLevels, decompressed, uncompressedSize);
     }
 
@@ -314,9 +317,10 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
      * Get a cached byte array from the channel context for the provided key, or create a new one if it doesn't exist or
      * is too small.
      */
-    private static ByteBuffer getCachedBuffer(@NotNull final SeekableChannelContext channelContext, final String key,
+    private static ByteBuffer getCachedBuffer(@NotNull final SeekableChannelContext channelContext,
+            final SeekableChannelContext.Key<ByteBufferHolder> key,
             final int size) {
-        final ByteBufferHolder byteBufferHolder = (ByteBufferHolder) channelContext.apply(key, ByteBufferHolder::new);
+        final ByteBufferHolder byteBufferHolder = channelContext.cache(key, ByteBufferHolder::new);
         // Not checking for null here because we know the above factory will create a new instance if it doesn't exist
         return byteBufferHolder.ensureCapacity(size).position(0).limit(size);
     }

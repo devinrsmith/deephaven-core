@@ -191,8 +191,9 @@ public class CachedChannelProviderTest {
         AtomicInteger count = new AtomicInteger(0);
 
         private final class TestChannelContext implements SeekableChannelContext {
+
             @Override
-            public @Nullable SafeCloseable apply(String key, Supplier<SafeCloseable> resourceFactory) {
+            public <T> @Nullable T cache(Key<T> key, Supplier<T> supplier) {
                 throw new UnsupportedOperationException("apply");
             }
         }

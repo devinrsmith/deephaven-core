@@ -3,7 +3,6 @@
 //
 package io.deephaven.util.channel;
 
-import java.util.function.BiFunction;
 import io.deephaven.util.SafeCloseable;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,8 +15,7 @@ import java.util.function.Supplier;
  * plugged into the context by calling the {@link #apply(String, Supplier)} method. These resources will be closed when
  * the context is closed.
  */
-public interface SeekableChannelContext
-        extends BiFunction<String, Supplier<SafeCloseable>, SafeCloseable>, SafeCloseable {
+public interface SeekableChannelContext extends SafeCloseable {
 
     SeekableChannelContext NULL = SeekableChannelContextNull.NULL_CONTEXT_INSTANCE;
 
@@ -40,13 +38,21 @@ public interface SeekableChannelContext
         return () -> context;
     }
 
+
+    interface Key<T> {
+
+        static <T> Key<T> of(String name) {
+            return new SimpleKey<>(name);
+        }
+    }
+
     /**
-     * If this instance holds a resource corresponding to the given key, return it. Otherwise, use the resource factory
+     * If this instance holds a resource corresponding to the given key, return it. Otherwise, use the resource supplier
      * to create a new resource, store it, and return it. This method can return a {@code null} if the factory returns a
-     * {@code null}.
+     * {@code null}. Any values created that implement {@link AutoCloseable} will be closed as part of {@link #close()}.
      */
     @Nullable
-    SafeCloseable apply(String key, Supplier<SafeCloseable> resourceFactory);
+    <T> T cache(Key<T> key, Supplier<T> supplier);
 
     /**
      * Release any resources associated with this context. The context should not be used afterward.

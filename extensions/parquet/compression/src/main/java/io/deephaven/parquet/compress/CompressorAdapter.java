@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
@@ -36,7 +35,7 @@ public interface CompressorAdapter extends SafeCloseable {
         @Override
         public InputStream decompress(final InputStream inputStream, final int compressedSize,
                 final int uncompressedSize,
-                final BiFunction<String, Supplier<SafeCloseable>, SafeCloseable> decompressorCache) {
+                Cache decompressorCache) {
             return inputStream;
         }
 
@@ -130,12 +129,12 @@ public interface CompressorAdapter extends SafeCloseable {
      * @param inputStream an input stream containing compressed data
      * @param compressedSize the number of bytes in the compressed data
      * @param uncompressedSize the number of bytes that should be present when decompressed
-     * @param decompressorCache Used to cache {@link Decompressor} instances for reuse
+     * @param cache Used to cache {@link Decompressor} instances for reuse
      * @return an input stream that will return uncompressed data
      * @throws IOException thrown if an error occurs reading data.
      */
-    InputStream decompress(InputStream inputStream, int compressedSize, int uncompressedSize,
-            BiFunction<String, Supplier<SafeCloseable>, SafeCloseable> decompressorCache) throws IOException;
+    InputStream decompress(InputStream inputStream, int compressedSize, int uncompressedSize, Cache cache)
+            throws IOException;
 
     /**
      * @return the CompressionCodecName enum value that represents this compressor.
@@ -150,4 +149,16 @@ public interface CompressorAdapter extends SafeCloseable {
      * manage their own state.
      */
     void reset();
+
+    interface Cache {
+
+        interface Key<T> {
+
+            static <T> Key<T> of(String name) {
+                return new SimpleKey<>(name);
+            }
+        }
+
+        <T> T get(Key<T> key, Supplier<T> supplier);
+    }
 }

@@ -8,15 +8,15 @@ import io.airlift.compress.gzip.JdkGzipCodec;
 import io.airlift.compress.lz4.Lz4Codec;
 import io.airlift.compress.lzo.LzoCodec;
 import io.airlift.compress.zstd.ZstdCodec;
-import io.deephaven.util.SafeCloseable;
+import io.deephaven.parquet.compress.CompressorAdapter.Cache.Key;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.Compressor;
 import org.apache.hadoop.io.compress.Decompressor;
-import org.apache.parquet.hadoop.codec.SnappyCodec;
 import org.apache.parquet.hadoop.codec.Lz4RawCodec;
+import org.apache.parquet.hadoop.codec.SnappyCodec;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
 import java.io.IOException;
@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 
 /**
@@ -39,7 +37,8 @@ import java.util.function.Supplier;
  * CompressionCodecName enum value having loaded the codec in this way.
  */
 public class DeephavenCompressorAdapterFactory {
-    private static final String DECOMPRESSOR_HOLDER_KEY = "DECOMPRESSOR_HOLDER";
+    private static final CompressorAdapter.Cache.Key<DecompressorHolder> DECOMPRESSOR_HOLDER_KEY =
+            Key.of("DECOMPRESSOR_HOLDER_KEY");
     private static volatile DeephavenCompressorAdapterFactory INSTANCE;
 
     public static DeephavenCompressorAdapterFactory getInstance() {
@@ -128,13 +127,13 @@ public class DeephavenCompressorAdapterFactory {
         @Override
         public InputStream decompress(final InputStream inputStream, final int compressedSize,
                 final int uncompressedSize,
-                final BiFunction<String, Supplier<SafeCloseable>, SafeCloseable> decompressorCache) throws IOException {
+                Cache cache) throws IOException {
             final Decompressor decompressor;
             if (canCreateDecompressorObject) {
                 // Currently, we only cache a single decompressor object inside the holder. If needed in the future, we
                 // can cache multiple decompressor objects based on the codec name.
                 final DecompressorHolder decompressorHolder =
-                        (DecompressorHolder) decompressorCache.apply(DECOMPRESSOR_HOLDER_KEY, DecompressorHolder::new);
+                        cache.get(DECOMPRESSOR_HOLDER_KEY, DecompressorHolder::new);
                 if (decompressorHolder.holdsDecompressor(compressionCodecName)) {
                     decompressor = decompressorHolder.getDecompressor();
                     decompressor.reset();

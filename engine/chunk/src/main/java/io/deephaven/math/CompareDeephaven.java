@@ -11,7 +11,7 @@ final class CompareDeephaven extends CompareBase {
     public static final CompareDeephaven INSTANCE = new CompareDeephaven();
 
     private CompareDeephaven() {
-        super(Math.deephaven());
+        super(Equals.deephaven());
     }
 
     @Override

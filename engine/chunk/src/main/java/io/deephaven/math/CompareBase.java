@@ -14,12 +14,12 @@ abstract class CompareBase implements Compare {
     private static final Comparator<int[]> INT_ARRAY_COMPARE = Arrays::compare;
     private static final Comparator<long[]> LONG_ARRAY_COMPARE = Arrays::compare;
 
-    private final Math math;
+    private final Equals math;
     private final Comparator<char[]> compareCharArray;
     private final Comparator<float[]> compareFloatArray;
     private final Comparator<double[]> compareDoubleArray;
 
-    CompareBase(Math math) {
+    CompareBase(Equals math) {
         this.math = Objects.requireNonNull(math);
         this.compareCharArray = this::compare;
         this.compareFloatArray = this::compare;
@@ -27,7 +27,7 @@ abstract class CompareBase implements Compare {
     }
 
     @Override
-    public final Math math() {
+    public final Equals math() {
         return math;
     }
 

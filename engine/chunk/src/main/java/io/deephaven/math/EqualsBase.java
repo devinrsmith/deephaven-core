@@ -6,9 +6,10 @@ package io.deephaven.math;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-abstract class MathBase implements Math {
+abstract class EqualsBase implements Equals {
     static final BiPredicate<boolean[], boolean[]> BOOLEAN_ARRAY_EQUALS = Arrays::equals;
     static final BiPredicate<byte[], byte[]> BYTE_ARRAY_EQUALS = Arrays::equals;
     static final BiPredicate<char[], char[]> CHAR_ARRAY_EQUALS = Arrays::equals;
@@ -27,13 +28,15 @@ abstract class MathBase implements Math {
     static final ToIntFunction<Object> OBJECTS_HASHCODE = Objects::hashCode;
     static final ToIntFunction<Object[]> ARRAYS_HASHCODE = Arrays::hashCode;
 
+    private static final Function<boolean[], boolean[]> BOOLEAN_ARRAY_CLONE = boolean[]::clone;
+
     private final BiPredicate<float[], float[]> equalsFloatArray;
     private final BiPredicate<double[], double[]> equalsDoubleArray;
 
     private final ToIntFunction<float[]> hasherFloatArray;
     private final ToIntFunction<double[]> hasherDoubleArray;
 
-    MathBase() {
+    EqualsBase() {
         equalsFloatArray = this::equals;
         equalsDoubleArray = this::equals;
         hasherFloatArray = this::hashCode;
@@ -63,7 +66,7 @@ abstract class MathBase implements Math {
     private <T> BiPredicate<T, T> predicate(Class<T> clazz, boolean deep) {
         if (!clazz.isArray()) {
             if (clazz.isPrimitive()) {
-                throw new IllegalArgumentException("Primitive types not supported");
+                throw new IllegalArgumentException("Primitive types not supported: " + clazz);
             }
             if (deep && Objects.class == clazz) {
                 // ie; new Object[] { 1, new int[] { 1, 2 }, new double[] { 3, 4 } }
@@ -71,10 +74,19 @@ abstract class MathBase implements Math {
                 // Object[] x = new Object[1]
                 // x[0] = x;
                 throw new IllegalArgumentException(
-                        "Should not set deep equals with Object leaf; would require runtime type and break for recursive types");
+                        "Should not set deep equals with Object leaf; would require runtime type check and break for recursive types");
             }
             // noinspection unchecked
             return (BiPredicate<T, T>) OBJECTS_EQUALS;
+        }
+        if (Object[].class.isAssignableFrom(clazz)) {
+            if (deep) {
+                // noinspection unchecked
+                return (BiPredicate<T, T>) new ArrayEquals<>(predicate(clazz.getComponentType(), deep));
+            } else {
+                // noinspection unchecked
+                return (BiPredicate<T, T>) ARRAYS_EQUALS;
+            }
         }
         if (boolean[].class == clazz) {
             // noinspection unchecked
@@ -108,22 +120,13 @@ abstract class MathBase implements Math {
             // noinspection unchecked
             return (BiPredicate<T, T>) equalsDoubleArray;
         }
-        if (Object[].class.isAssignableFrom(clazz)) {
-            if (deep) {
-                // noinspection unchecked
-                return (BiPredicate<T, T>) new ArrayEquals<>(predicate(clazz.getComponentType(), deep));
-            } else {
-                // noinspection unchecked
-                return (BiPredicate<T, T>) ARRAYS_EQUALS;
-            }
-        }
-        throw new IllegalStateException();
+        throw new IllegalStateException("Unexpected class: " + clazz);
     }
 
     private <T> ToIntFunction<T> hasher(Class<T> clazz, boolean deep) {
         if (!clazz.isArray()) {
             if (clazz.isPrimitive()) {
-                throw new IllegalArgumentException("Primitive types not supported");
+                throw new IllegalArgumentException("Primitive types not supported: " + clazz);
             }
             if (deep && Objects.class == clazz) {
                 // ie; new Object[] { 1, new int[] { 1, 2 }, new double[] { 3, 4 } }
@@ -131,10 +134,19 @@ abstract class MathBase implements Math {
                 // Object[] x = new Object[1]
                 // x[0] = x;
                 throw new IllegalArgumentException(
-                        "Should not set deep hashcode with Object leaf; would require runtime type and break for recursive types");
+                        "Should not set deep hashcode with Object leaf; would require runtime type check and break for recursive types");
             }
             // noinspection unchecked
             return (ToIntFunction<T>) OBJECTS_HASHCODE;
+        }
+        if (Object[].class.isAssignableFrom(clazz)) {
+            if (deep) {
+                // noinspection unchecked
+                return (ToIntFunction<T>) new ArrayHasher<>(hasher(clazz.getComponentType(), deep));
+            } else {
+                // noinspection unchecked
+                return (ToIntFunction<T>) ARRAYS_HASHCODE;
+            }
         }
         if (boolean[].class == clazz) {
             // noinspection unchecked
@@ -168,19 +180,10 @@ abstract class MathBase implements Math {
             // noinspection unchecked
             return (ToIntFunction<T>) hasherDoubleArray;
         }
-        if (Object[].class.isAssignableFrom(clazz)) {
-            if (deep) {
-                // noinspection unchecked
-                return (ToIntFunction<T>) new ArrayHasher<>(hasher(clazz.getComponentType(), deep));
-            } else {
-                // noinspection unchecked
-                return (ToIntFunction<T>) ARRAYS_HASHCODE;
-            }
-        }
-        throw new IllegalStateException();
+        throw new IllegalStateException("Unexpected class: " + clazz);
     }
 
-    static int hashCode(Math math, float[] x, int xFrom, int xTo) {
+    static int hashCode(Equals math, float[] x, int xFrom, int xTo) {
         int result = 1;
         for (int i = xFrom; i < xTo; ++i) {
             result = 31 * result + math.hashCode(x[i]);
@@ -188,7 +191,7 @@ abstract class MathBase implements Math {
         return result;
     }
 
-    static int hashCode(Math math, double[] x, int xFrom, int xTo) {
+    static int hashCode(Equals math, double[] x, int xFrom, int xTo) {
         int result = 1;
         for (int i = xFrom; i < xTo; ++i) {
             result = 31 * result + math.hashCode(x[i]);

@@ -8,7 +8,7 @@ final class CompareBitwise extends CompareBasicBase {
     public static final CompareBitwise INSTANCE = new CompareBitwise();
 
     private CompareBitwise() {
-        super(Math.bitwise());
+        super(Equals.bitwise());
     }
 
     @Override

@@ -4,29 +4,30 @@
 package io.deephaven.math;
 
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-public interface Math {
+public interface Equals {
 
     /**
      * -0.0f == 0.0f -0.0 == 0.0 All NaNs equals
      */
-    static Math deephaven() {
-        return MathDeephaven.INSTANCE;
+    static Equals deephaven() {
+        return EqualsDeephaven.INSTANCE;
     }
 
     /**
      * -0.0f != 0.0f -0.0 != 0.0 All NaNs equals
      */
-    static Math java() {
-        return MathJava.INSTANCE;
+    static Equals java() {
+        return EqualsJava.INSTANCE;
     }
 
     /**
      * -0.0f != 0.0f -0.0 != 0.0 NaN only equal to same exact bit NaN
      */
-    static Math bitwise() {
-        return MathBitwise.INSTANCE;
+    static Equals bitwise() {
+        return EqualsBitwise.INSTANCE;
     }
 
     // --------------------------------
@@ -86,6 +87,4 @@ public interface Math {
     <T> ToIntFunction<T> hashCode(Class<T> clazz);
 
     <T> ToIntFunction<T> deepHashCode(Class<T> clazz);
-
-    // --------------------------------
 }

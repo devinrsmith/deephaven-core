@@ -3,11 +3,11 @@
 //
 package io.deephaven.math;
 
-final class MathBitwise extends MathDelegateBase {
+final class EqualsBitwise extends EqualsDelegateBase {
 
-    public static final MathBitwise INSTANCE = new MathBitwise();
+    public static final EqualsBitwise INSTANCE = new EqualsBitwise();
 
-    private MathBitwise() {}
+    private EqualsBitwise() {}
 
     @Override
     public boolean equals(float x, float y) {

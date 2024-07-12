@@ -30,7 +30,7 @@ public interface Compare {
 
     // -------------------------------
 
-    Math math();
+    Equals math();
 
     // -------------------------------
 

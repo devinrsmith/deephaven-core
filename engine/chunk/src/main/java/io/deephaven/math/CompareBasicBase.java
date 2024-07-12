@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 abstract class CompareBasicBase extends CompareBase {
 
-    CompareBasicBase(Math math) {
+    CompareBasicBase(Equals math) {
         super(math);
     }
 

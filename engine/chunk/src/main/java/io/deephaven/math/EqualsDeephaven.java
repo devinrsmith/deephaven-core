@@ -6,11 +6,11 @@ package io.deephaven.math;
 import io.deephaven.util.compare.DoubleComparisons;
 import io.deephaven.util.compare.FloatComparisons;
 
-final class MathDeephaven extends MathDelegateBase {
+final class EqualsDeephaven extends EqualsDelegateBase {
 
-    public static final MathDeephaven INSTANCE = new MathDeephaven();
+    public static final EqualsDeephaven INSTANCE = new EqualsDeephaven();
 
-    private MathDeephaven() {}
+    private EqualsDeephaven() {}
 
     @Override
     public boolean equals(float x, float y) {

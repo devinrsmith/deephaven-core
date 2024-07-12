@@ -3,7 +3,7 @@
 //
 package io.deephaven.math;
 
-abstract class MathDelegateBase extends MathBase {
+abstract class EqualsDelegateBase extends EqualsBase {
 
     @Override
     public final boolean equals(float[] x, float[] y) {

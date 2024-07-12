@@ -5,11 +5,11 @@ package io.deephaven.math;
 
 import java.util.Arrays;
 
-final class MathJava extends MathBase {
+final class EqualsJava extends EqualsBase {
 
-    public static final MathJava INSTANCE = new MathJava();
+    public static final EqualsJava INSTANCE = new EqualsJava();
 
-    private MathJava() {}
+    private EqualsJava() {}
 
     @Override
     public boolean equals(float x, float y) {

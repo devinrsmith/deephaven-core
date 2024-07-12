@@ -10,7 +10,7 @@ final class CompareJava extends CompareBasicBase {
     public static final CompareJava INSTANCE = new CompareJava();
 
     private CompareJava() {
-        super(Math.java());
+        super(Equals.java());
     }
 
     @Override

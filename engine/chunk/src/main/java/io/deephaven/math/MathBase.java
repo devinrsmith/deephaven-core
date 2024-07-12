@@ -4,12 +4,11 @@
 package io.deephaven.math;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 
-final class ConsistentMathImpl {
+abstract class MathBase implements Math {
     static final BiPredicate<boolean[], boolean[]> BOOLEAN_ARRAY_EQUALS = Arrays::equals;
     static final BiPredicate<byte[], byte[]> BYTE_ARRAY_EQUALS = Arrays::equals;
     static final BiPredicate<char[], char[]> CHAR_ARRAY_EQUALS = Arrays::equals;
@@ -28,14 +27,40 @@ final class ConsistentMathImpl {
     static final ToIntFunction<Object> OBJECTS_HASHCODE = Objects::hashCode;
     static final ToIntFunction<Object[]> ARRAYS_HASHCODE = Arrays::hashCode;
 
-    static final Comparator<boolean[]> BOOLEAN_ARRAY_COMPARE = Arrays::compare;
-    static final Comparator<byte[]> BYTE_ARRAY_COMPARE = Arrays::compare;
-    static final Comparator<char[]> CHAR_ARRAY_COMPARE = Arrays::compare;
-    static final Comparator<short[]> SHORT_ARRAY_COMPARE = Arrays::compare;
-    static final Comparator<int[]> INT_ARRAY_COMPARE = Arrays::compare;
-    static final Comparator<long[]> LONG_ARRAY_COMPARE = Arrays::compare;
+    private final BiPredicate<float[], float[]> equalsFloatArray;
+    private final BiPredicate<double[], double[]> equalsDoubleArray;
 
-    static <T> BiPredicate<T, T> predicate(ConsistentMath math, Class<T> clazz, boolean deep) {
+    private final ToIntFunction<float[]> hasherFloatArray;
+    private final ToIntFunction<double[]> hasherDoubleArray;
+
+    MathBase() {
+        equalsFloatArray = this::equals;
+        equalsDoubleArray = this::equals;
+        hasherFloatArray = this::hashCode;
+        hasherDoubleArray = this::hashCode;
+    }
+
+    @Override
+    public final <T> BiPredicate<T, T> equals(Class<T> clazz) {
+        return predicate(clazz, false);
+    }
+
+    @Override
+    public final <T> BiPredicate<T, T> deepEquals(Class<T> clazz) {
+        return predicate(clazz, true);
+    }
+
+    @Override
+    public final <T> ToIntFunction<T> hashCode(Class<T> clazz) {
+        return hasher(clazz, false);
+    }
+
+    @Override
+    public final <T> ToIntFunction<T> deepHashCode(Class<T> clazz) {
+        return hasher(clazz, true);
+    }
+
+    private <T> BiPredicate<T, T> predicate(Class<T> clazz, boolean deep) {
         if (!clazz.isArray()) {
             if (clazz.isPrimitive()) {
                 throw new IllegalArgumentException("Primitive types not supported");
@@ -77,16 +102,16 @@ final class ConsistentMathImpl {
         }
         if (float[].class == clazz) {
             // noinspection unchecked
-            return (BiPredicate<T, T>) (BiPredicate<float[], float[]>) math::equals;
+            return (BiPredicate<T, T>) equalsFloatArray;
         }
         if (double[].class == clazz) {
             // noinspection unchecked
-            return (BiPredicate<T, T>) (BiPredicate<double[], double[]>) math::equals;
+            return (BiPredicate<T, T>) equalsDoubleArray;
         }
         if (Object[].class.isAssignableFrom(clazz)) {
             if (deep) {
                 // noinspection unchecked
-                return (BiPredicate<T, T>) new ArrayEquals<>(predicate(math, clazz.getComponentType(), deep));
+                return (BiPredicate<T, T>) new ArrayEquals<>(predicate(clazz.getComponentType(), deep));
             } else {
                 // noinspection unchecked
                 return (BiPredicate<T, T>) ARRAYS_EQUALS;
@@ -95,7 +120,7 @@ final class ConsistentMathImpl {
         throw new IllegalStateException();
     }
 
-    static <T> ToIntFunction<T> hasher(ConsistentMath math, Class<T> clazz, boolean deep) {
+    private <T> ToIntFunction<T> hasher(Class<T> clazz, boolean deep) {
         if (!clazz.isArray()) {
             if (clazz.isPrimitive()) {
                 throw new IllegalArgumentException("Primitive types not supported");
@@ -137,16 +162,16 @@ final class ConsistentMathImpl {
         }
         if (float[].class == clazz) {
             // noinspection unchecked
-            return (ToIntFunction<T>) (ToIntFunction<float[]>) math::hashCode;
+            return (ToIntFunction<T>) hasherFloatArray;
         }
         if (double[].class == clazz) {
             // noinspection unchecked
-            return (ToIntFunction<T>) (ToIntFunction<double[]>) math::hashCode;
+            return (ToIntFunction<T>) hasherDoubleArray;
         }
         if (Object[].class.isAssignableFrom(clazz)) {
             if (deep) {
                 // noinspection unchecked
-                return (ToIntFunction<T>) new ArrayHasher<>(hasher(math, clazz.getComponentType(), deep));
+                return (ToIntFunction<T>) new ArrayHasher<>(hasher(clazz.getComponentType(), deep));
             } else {
                 // noinspection unchecked
                 return (ToIntFunction<T>) ARRAYS_HASHCODE;
@@ -155,53 +180,19 @@ final class ConsistentMathImpl {
         throw new IllegalStateException();
     }
 
-    static <T> Comparator<T> comparator(ConsistentMath math, Class<T> clazz) {
-        if (!clazz.isArray()) {
-            if (clazz.isPrimitive()) {
-                throw new IllegalArgumentException("Primitive types not supported");
-            }
-            if (!Comparable.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException("Leaf type must be Comparable");
-            }
-            // noinspection unchecked
-            return (Comparator<T>) Comparator.naturalOrder();
+    static int hashCode(Math math, float[] x, int xFrom, int xTo) {
+        int result = 1;
+        for (int i = xFrom; i < xTo; ++i) {
+            result = 31 * result + math.hashCode(x[i]);
         }
-        if (boolean[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) BOOLEAN_ARRAY_COMPARE;
+        return result;
+    }
+
+    static int hashCode(Math math, double[] x, int xFrom, int xTo) {
+        int result = 1;
+        for (int i = xFrom; i < xTo; ++i) {
+            result = 31 * result + math.hashCode(x[i]);
         }
-        if (byte[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) BYTE_ARRAY_COMPARE;
-        }
-        if (char[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) CHAR_ARRAY_COMPARE;
-        }
-        if (short[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) SHORT_ARRAY_COMPARE;
-        }
-        if (int[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) INT_ARRAY_COMPARE;
-        }
-        if (long[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) LONG_ARRAY_COMPARE;
-        }
-        if (float[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) (Comparator<float[]>) math::compare;
-        }
-        if (double[].class == clazz) {
-            // noinspection unchecked
-            return (Comparator<T>) (Comparator<double[]>) math::compare;
-        }
-        if (Object[].class.isAssignableFrom(clazz)) {
-            // noinspection unchecked
-            return (Comparator<T>) new ArrayComparator<>(comparator(math, clazz.getComponentType()));
-        }
-        throw new IllegalStateException();
+        return result;
     }
 }

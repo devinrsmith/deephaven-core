@@ -3,22 +3,30 @@
 //
 package io.deephaven.math;
 
-import java.util.Comparator;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 
-public interface ConsistentMath {
+public interface Math {
 
-    static ConsistentMath java() {
-        return ConsistentMathJava.JAVA;
+    /**
+     * -0.0f == 0.0f -0.0 == 0.0 All NaNs equals
+     */
+    static Math deephaven() {
+        return MathDeephaven.INSTANCE;
     }
 
-    static ConsistentMath deephaven() {
-        return ConsistentMathDh.INSTANCE;
+    /**
+     * -0.0f != 0.0f -0.0 != 0.0 All NaNs equals
+     */
+    static Math java() {
+        return MathJava.INSTANCE;
     }
 
-    static ConsistentMath bitwise() {
-        return ConsistentMathBitwise.INSTANCE;
+    /**
+     * -0.0f != 0.0f -0.0 != 0.0 NaN only equal to same exact bit NaN
+     */
+    static Math bitwise() {
+        return MathBitwise.INSTANCE;
     }
 
     // --------------------------------
@@ -32,13 +40,6 @@ public interface ConsistentMath {
     int hashCode(float x);
 
     int hashCode(double x);
-
-    // --------------------------------
-
-
-    int compare(float x, float y);
-
-    int compare(double x, double y);
 
     // --------------------------------
 
@@ -66,16 +67,6 @@ public interface ConsistentMath {
 
     // --------------------------------
 
-    int compare(float[] x, float[] y);
-
-    int compare(double[] x, double[] y);
-
-    int compare(float[] x, int xFrom, int xTo, float[] y, int yFrom, int yTo);
-
-    int compare(double[] x, int xFrom, int xTo, double[] y, int yFrom, int yTo);
-
-    // --------------------------------
-
     int mismatch(float[] x, float[] y);
 
     int mismatch(double[] x, double[] y);
@@ -95,10 +86,6 @@ public interface ConsistentMath {
     <T> ToIntFunction<T> hashCode(Class<T> clazz);
 
     <T> ToIntFunction<T> deepHashCode(Class<T> clazz);
-
-    // --------------------------------
-
-    <T> Comparator<T> comparator(Class<T> clazz);
 
     // --------------------------------
 }

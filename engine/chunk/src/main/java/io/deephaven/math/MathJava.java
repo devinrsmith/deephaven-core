@@ -4,14 +4,12 @@
 package io.deephaven.math;
 
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.function.BiPredicate;
-import java.util.function.ToIntFunction;
 
-// NaNs are all equal
-// -0.0 / 0.0 are not equal
-enum ConsistentMathJava implements ConsistentMath {
-    JAVA;
+final class MathJava extends MathBase {
+
+    public static final MathJava INSTANCE = new MathJava();
+
+    private MathJava() {}
 
     @Override
     public boolean equals(float x, float y) {
@@ -65,50 +63,12 @@ enum ConsistentMathJava implements ConsistentMath {
 
     @Override
     public int hashCode(float[] x, int xFrom, int xTo) {
-        int result = 1;
-        for (int i = xFrom; i < xTo; ++i) {
-            result = 31 * result + hashCode(x[i]);
-        }
-        return result;
+        return hashCode(this, x, xFrom, xTo);
     }
 
     @Override
     public int hashCode(double[] x, int xFrom, int xTo) {
-        int result = 1;
-        for (int i = xFrom; i < xTo; ++i) {
-            result = 31 * result + hashCode(x[i]);
-        }
-        return result;
-    }
-
-    @Override
-    public int compare(float x, float y) {
-        return Float.compare(x, y);
-    }
-
-    @Override
-    public int compare(double x, double y) {
-        return Double.compare(x, y);
-    }
-
-    @Override
-    public int compare(float[] x, float[] y) {
-        return Arrays.compare(x, y);
-    }
-
-    @Override
-    public int compare(double[] x, double[] y) {
-        return Arrays.compare(x, y);
-    }
-
-    @Override
-    public int compare(float[] x, int xFrom, int xTo, float[] y, int yFrom, int yTo) {
-        return Arrays.compare(x, xFrom, xTo, y, yFrom, yTo);
-    }
-
-    @Override
-    public int compare(double[] x, int xFrom, int xTo, double[] y, int yFrom, int yTo) {
-        return Arrays.compare(x, xFrom, xTo, y, yFrom, yTo);
+        return hashCode(this, x, xFrom, xTo);
     }
 
     @Override
@@ -129,30 +89,5 @@ enum ConsistentMathJava implements ConsistentMath {
     @Override
     public int mismatch(double[] x, int xFrom, int xTo, double[] y, int yFrom, int yTo) {
         return Arrays.mismatch(x, xFrom, xTo, y, yFrom, yTo);
-    }
-
-    @Override
-    public final <T> BiPredicate<T, T> equals(Class<T> clazz) {
-        return ConsistentMathImpl.predicate(this, clazz, false);
-    }
-
-    @Override
-    public final <T> BiPredicate<T, T> deepEquals(Class<T> clazz) {
-        return ConsistentMathImpl.predicate(this, clazz, true);
-    }
-
-    @Override
-    public final <T> ToIntFunction<T> hashCode(Class<T> clazz) {
-        return ConsistentMathImpl.hasher(this, clazz, false);
-    }
-
-    @Override
-    public final <T> ToIntFunction<T> deepHashCode(Class<T> clazz) {
-        return ConsistentMathImpl.hasher(this, clazz, true);
-    }
-
-    @Override
-    public final <T> Comparator<T> comparator(Class<T> clazz) {
-        return ConsistentMathImpl.comparator(this, clazz);
     }
 }

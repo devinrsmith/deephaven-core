@@ -6,12 +6,11 @@ package io.deephaven.math;
 import io.deephaven.util.compare.DoubleComparisons;
 import io.deephaven.util.compare.FloatComparisons;
 
-// NaNs are all equal
-// -0.0 / 0.0 are equal
-final class ConsistentMathDh extends ConsistentMathBase {
-    public static final ConsistentMathDh INSTANCE = new ConsistentMathDh();
+final class MathDeephaven extends MathDelegateBase {
 
-    private ConsistentMathDh() {}
+    public static final MathDeephaven INSTANCE = new MathDeephaven();
+
+    private MathDeephaven() {}
 
     @Override
     public boolean equals(float x, float y) {
@@ -32,18 +31,6 @@ final class ConsistentMathDh extends ConsistentMathBase {
     @Override
     public int hashCode(double x) {
         // todo: compare speed w/ branching on outside
-        return Double.hashCode(x == -0.0 ? 0.0 : x);
-    }
-
-    @Override
-    public int compare(float x, float y) {
-        // expensive; we could have a cheaper one if we didn't care about "natural" looking order
-        return FloatComparisons.compare(x, y);
-    }
-
-    @Override
-    public int compare(double x, double y) {
-        // expensive; we could have a cheaper one if we didn't care about "natural" looking order
-        return DoubleComparisons.compare(x, y);
+        return Double.hashCode(x == -0.0d ? 0.0d : x);
     }
 }

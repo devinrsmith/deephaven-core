@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.engine.table.impl.sort.permute;
 
 import io.deephaven.qst.type.ArrayType;
@@ -89,7 +92,8 @@ public final class ArrayCopyPermuteKernel {
         }
     }
 
-    private enum NativeArrayComponentVisitor implements Type.Visitor<PermuteKernel>, PrimitiveType.Visitor<PermuteKernel> {
+    private enum NativeArrayComponentVisitor
+            implements Type.Visitor<PermuteKernel>, PrimitiveType.Visitor<PermuteKernel> {
         INSTANCE;
 
         @Override

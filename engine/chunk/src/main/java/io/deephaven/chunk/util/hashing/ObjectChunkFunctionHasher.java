@@ -23,13 +23,13 @@ public final class ObjectChunkFunctionHasher<T> implements ChunkHasher {
 
     @Override
     public int hashInitial(Object value) {
-        //noinspection unchecked
+        // noinspection unchecked
         return hashInitialSingle(hashFunction, (T) value);
     }
 
     @Override
     public int hashUpdate(int existing, Object value) {
-        //noinspection unchecked
+        // noinspection unchecked
         return hashUpdateSingle(hashFunction, existing, (T) value);
     }
 
@@ -43,14 +43,16 @@ public final class ObjectChunkFunctionHasher<T> implements ChunkHasher {
         hashSecondary(hashFunction, values.asObjectChunk(), destination);
     }
 
-    private static <T> void hashInitial(ToIntFunction<T> hashFunction, ObjectChunk<T, Values> values, WritableIntChunk<HashCodes> destination) {
+    private static <T> void hashInitial(ToIntFunction<T> hashFunction, ObjectChunk<T, Values> values,
+            WritableIntChunk<HashCodes> destination) {
         for (int ii = 0; ii < values.size(); ++ii) {
             destination.set(ii, hashInitialSingle(hashFunction, values.get(ii)));
         }
         destination.setSize(values.size());
     }
 
-    private static <T> void hashSecondary(ToIntFunction<T> hashFunction, ObjectChunk<T, Values> values, WritableIntChunk<HashCodes> destination) {
+    private static <T> void hashSecondary(ToIntFunction<T> hashFunction, ObjectChunk<T, Values> values,
+            WritableIntChunk<HashCodes> destination) {
         for (int ii = 0; ii < values.size(); ++ii) {
             destination.set(ii, hashUpdateSingle(hashFunction, destination.get(ii), values.get(ii)));
         }

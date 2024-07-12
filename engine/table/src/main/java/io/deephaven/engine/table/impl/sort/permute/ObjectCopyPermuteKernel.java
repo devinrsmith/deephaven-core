@@ -30,7 +30,8 @@ public final class ObjectCopyPermuteKernel<X> implements PermuteKernel {
             Chunk<? extends T> inputValues,
             IntChunk<ChunkPositions> outputPositions,
             WritableChunk<? super T> outputValues) {
-        ObjectCopyPermuteKernel.permute(f, inputValues.asObjectChunk(), outputPositions, outputValues.asWritableObjectChunk());
+        ObjectCopyPermuteKernel.permute(f, inputValues.asObjectChunk(), outputPositions,
+                outputValues.asWritableObjectChunk());
     }
 
     @Override
@@ -39,7 +40,8 @@ public final class ObjectCopyPermuteKernel<X> implements PermuteKernel {
             Chunk<? extends T> inputValues,
             IntChunk<ChunkPositions> outputPositions,
             WritableChunk<? super T> outputValues) {
-        ObjectCopyPermuteKernel.permute(f, inputPositions, inputValues.asObjectChunk(), outputPositions, outputValues.asWritableObjectChunk());
+        ObjectCopyPermuteKernel.permute(f, inputPositions, inputValues.asObjectChunk(), outputPositions,
+                outputValues.asWritableObjectChunk());
     }
 
     @Override
@@ -47,10 +49,11 @@ public final class ObjectCopyPermuteKernel<X> implements PermuteKernel {
             Chunk<? extends T> inputValues,
             IntChunk<ChunkPositions> inputPositions,
             WritableChunk<? super T> outputValues) {
-        ObjectCopyPermuteKernel.permuteInput(f, inputValues.asObjectChunk(), inputPositions, outputValues.asWritableObjectChunk());
+        ObjectCopyPermuteKernel.permuteInput(f, inputValues.asObjectChunk(), inputPositions,
+                outputValues.asWritableObjectChunk());
     }
 
-    private static<TYPE_T, T extends Any> void permute(
+    private static <TYPE_T, T extends Any> void permute(
             Function<TYPE_T, TYPE_T> copyFunction,
             ObjectChunk<TYPE_T, ? extends T> inputValues,
             IntChunk<ChunkPositions> outputPositions,
@@ -60,7 +63,7 @@ public final class ObjectCopyPermuteKernel<X> implements PermuteKernel {
         }
     }
 
-    private static<TYPE_T, T extends Any> void permuteInput(
+    private static <TYPE_T, T extends Any> void permuteInput(
             Function<TYPE_T, TYPE_T> copyFunction,
             ObjectChunk<TYPE_T, ? extends T> inputValues,
             IntChunk<ChunkPositions> inputPositions,
@@ -70,7 +73,7 @@ public final class ObjectCopyPermuteKernel<X> implements PermuteKernel {
         }
     }
 
-    private static<TYPE_T, T extends Any> void permute(
+    private static <TYPE_T, T extends Any> void permute(
             Function<TYPE_T, TYPE_T> copyFunction,
             IntChunk<ChunkPositions> inputPositions,
             ObjectChunk<TYPE_T, ? extends T> inputValues,

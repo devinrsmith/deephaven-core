@@ -1,4 +1,6 @@
-
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.chunk.util.hashing;
 
 import io.deephaven.chunk.Chunk;
@@ -47,17 +49,20 @@ public class ObjectChunkPredicateEquals<T> implements ChunkEquals {
     }
 
     @Override
-    public void equalPermuted(IntChunk<ChunkPositions> lhsPositions, IntChunk<ChunkPositions> rhsPositions, Chunk<? extends Any> lhs, Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
+    public void equalPermuted(IntChunk<ChunkPositions> lhsPositions, IntChunk<ChunkPositions> rhsPositions,
+            Chunk<? extends Any> lhs, Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
         equalPermuted(predicate, lhsPositions, rhsPositions, lhs.asObjectChunk(), rhs.asObjectChunk(), destination);
     }
 
     @Override
-    public void equalLhsPermuted(IntChunk<ChunkPositions> lhsPositions, Chunk<? extends Any> lhs, Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
+    public void equalLhsPermuted(IntChunk<ChunkPositions> lhsPositions, Chunk<? extends Any> lhs,
+            Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
         equalLhsPermuted(predicate, lhsPositions, lhs.asObjectChunk(), rhs.asObjectChunk(), destination);
     }
 
     @Override
-    public void andEqualPermuted(IntChunk<ChunkPositions> lhsPositions, IntChunk<ChunkPositions> rhsPositions, Chunk<? extends Any> lhs, Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
+    public void andEqualPermuted(IntChunk<ChunkPositions> lhsPositions, IntChunk<ChunkPositions> rhsPositions,
+            Chunk<? extends Any> lhs, Chunk<? extends Any> rhs, WritableBooleanChunk destination) {
         andEqualPermuted(predicate, lhsPositions, rhsPositions, lhs.asObjectChunk(), rhs.asObjectChunk(), destination);
     }
 
@@ -78,12 +83,14 @@ public class ObjectChunkPredicateEquals<T> implements ChunkEquals {
     }
 
     @Override
-    public void equalPairs(IntChunk<ChunkPositions> chunkPositionsToCheckForEquality, Chunk<? extends Any> valuesChunk, WritableBooleanChunk destinations) {
+    public void equalPairs(IntChunk<ChunkPositions> chunkPositionsToCheckForEquality, Chunk<? extends Any> valuesChunk,
+            WritableBooleanChunk destinations) {
         equalPairs(predicate, chunkPositionsToCheckForEquality, valuesChunk.asObjectChunk(), destinations);
     }
 
     @Override
-    public void andEqualPairs(IntChunk<ChunkPositions> chunkPositionsToCheckForEquality, Chunk<? extends Any> valuesChunk, WritableBooleanChunk destinations) {
+    public void andEqualPairs(IntChunk<ChunkPositions> chunkPositionsToCheckForEquality,
+            Chunk<? extends Any> valuesChunk, WritableBooleanChunk destinations) {
         andEqualPairs(predicate, chunkPositionsToCheckForEquality, valuesChunk.asObjectChunk(), destinations);
     }
 

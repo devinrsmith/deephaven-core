@@ -1,12 +1,12 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.chunk.util.hashing;
+package io.deephaven.math;
 
 import java.util.Objects;
 import java.util.function.BiPredicate;
 
-final class ArrayEquals<T> implements BiPredicate<T[], T[]> {
+public final class ArrayEquals<T> implements BiPredicate<T[], T[]> {
 
     private final BiPredicate<T, T> componentPredicate;
 

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.chunk.util.hashing;
+package io.deephaven.math;
 
 import java.util.Comparator;
 import java.util.function.BiPredicate;
@@ -43,7 +43,8 @@ public interface ConsistentMath {
     // --------------------------------
 
     /**
-     * The equivalent to {@link java.util.Arrays#equals(float[], float[])} with respect to {@link #equals(float, float)}.
+     * The equivalent to {@link java.util.Arrays#equals(float[], float[])} with respect to
+     * {@link #equals(float, float)}.
      */
     boolean equals(float[] x, float[] y);
 
@@ -97,7 +98,7 @@ public interface ConsistentMath {
 
     // --------------------------------
 
-    <T>Comparator<T> comparator(Class<T> clazz);
+    <T> Comparator<T> comparator(Class<T> clazz);
 
     // --------------------------------
 }

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.chunk.util.hashing;
+package io.deephaven.math;
 
 // specific NaNs are equal
 // -0.0 / 0.0 are not equal

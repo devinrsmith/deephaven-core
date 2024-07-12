@@ -1,4 +1,7 @@
-package io.deephaven.chunk.util.hashing;
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
+package io.deephaven.math;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -160,7 +163,7 @@ final class ConsistentMathImpl {
             if (!Comparable.class.isAssignableFrom(clazz)) {
                 throw new IllegalArgumentException("Leaf type must be Comparable");
             }
-            //noinspection unchecked
+            // noinspection unchecked
             return (Comparator<T>) Comparator.naturalOrder();
         }
         if (boolean[].class == clazz) {

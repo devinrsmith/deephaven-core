@@ -1,12 +1,12 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.chunk.util.hashing;
+package io.deephaven.math;
 
 import java.util.Objects;
 import java.util.function.ToIntFunction;
 
-final class ArrayHasher<T> implements ToIntFunction<T[]> {
+public final class ArrayHasher<T> implements ToIntFunction<T[]> {
 
     private final ToIntFunction<T> elementHasher;
 

@@ -1,9 +1,10 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.chunk.util.hashing;
+package io.deephaven.math;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntFunction;
 
@@ -148,5 +149,10 @@ enum ConsistentMathJava implements ConsistentMath {
     @Override
     public final <T> ToIntFunction<T> deepHashCode(Class<T> clazz) {
         return ConsistentMathImpl.hasher(this, clazz, true);
+    }
+
+    @Override
+    public final <T> Comparator<T> comparator(Class<T> clazz) {
+        return ConsistentMathImpl.comparator(this, clazz);
     }
 }

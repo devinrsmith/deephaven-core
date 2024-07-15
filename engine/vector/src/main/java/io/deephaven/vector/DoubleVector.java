@@ -13,10 +13,9 @@ import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.DoubleComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive doubles.
@@ -52,6 +51,25 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
 
     @Override
     DoubleVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && DoubleComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see DoubleComparisons#eq(double[], double[])
+     */
+    @Override
+    boolean equals(@Nullable DoubleVector other);
+
+    /**
+     * Logically equivalent to {@code DoubleComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see DoubleComparisons#hashCode(double[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link DoubleVector#equals(DoubleVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link DoubleVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link DoubleComparisons#eq(double, double)}.
      *
-     * @param aVector The LHS of the equality test (always a DoubleVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final DoubleVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final DoubleVector aVector, @NotNull final DoubleVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof DoubleVector)) {
-            return false;
-        }
-        final DoubleVector bVector = (DoubleVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
         try (final CloseablePrimitiveIteratorOfDouble aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfDouble bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (Double.doubleToLongBits(aIterator.nextDouble()) != Double.doubleToLongBits(bIterator.nextDouble())) {
+                if (!DoubleComparisons.eq(aIterator.nextDouble(), bIterator.nextDouble())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(double[])}.
+     * Helper method for implementing {@link DoubleVector#hashCode()}. An iterative equivalent of
+     * {@code DoubleComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The DoubleVector to hash
      * @return The hash code
+     * @see DoubleComparisons#hashCode(double[])
      */
     static int hashCode(@NotNull final DoubleVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
         }
         try (final CloseablePrimitiveIteratorOfDouble iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Double.hashCode(iterator.nextDouble());
+                result = 31 * result + DoubleComparisons.hashCode(iterator.nextDouble());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
 
         @Override
         public double[] toArray() {
-            final int size = intSize("DoubleVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public double[] copyToArray() {
+            final int size = intSize("DoubleVector.copyToArray");
             final double[] result = new double[size];
             try (final CloseablePrimitiveIteratorOfDouble iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
         }
 
         @Override
-        public double[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public DoubleVector getDirect() {
-            return new DoubleVectorDirect(toArray());
+            return new DoubleVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface DoubleVector extends Vector<DoubleVector>, Iterable<Double> {
             return DoubleVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return DoubleVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof DoubleVector && DoubleVector.equals(this, (DoubleVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable DoubleVector other) {
+            return other != null && DoubleVector.equals(this, other);
         }
 
         @Override

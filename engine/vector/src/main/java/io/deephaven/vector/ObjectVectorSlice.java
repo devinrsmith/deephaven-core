@@ -78,15 +78,16 @@ public class ObjectVectorSlice<COMPONENT_TYPE> extends ObjectVector.Indirect<COM
     }
 
     @Override
-    public COMPONENT_TYPE[] toArray() {
+    public COMPONENT_TYPE[] copyToArray() {
         if (innerVector instanceof ObjectVectorDirect
                 && offsetIndex >= innerVectorValidFromInclusive
                 && offsetIndex + length <= innerVectorValidToExclusive) {
             // In this case, innerVectorValidFromInclusive must be in range [0, MAX_ARRAY_SIZE) and
             // innerVectorValidToExclusive must be in range [0, MAX_ARRAY_SIZE].
-            return Arrays.copyOfRange(innerVector.toArray(), (int) offsetIndex, (int) (offsetIndex + length));
+            return ((ObjectVectorDirect<COMPONENT_TYPE>) innerVector).copyOfRange((int) offsetIndex,
+                    (int) (offsetIndex + length));
         }
-        return super.toArray();
+        return super.copyToArray();
     }
 
     @Override

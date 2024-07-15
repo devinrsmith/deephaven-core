@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfLong;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.LongComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class LongVectorDirect implements LongVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public long[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfLong iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class LongVectorDirect implements LongVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof LongVectorDirect) {
-            return Arrays.equals(data, ((LongVectorDirect) obj).data);
+        return obj instanceof LongVector && equals((LongVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable LongVector other) {
+        if (other == null) {
+            return false;
         }
-        return LongVector.equals(this, obj);
+        return other instanceof LongVectorDirect
+                ? LongComparisons.eq(data, ((LongVectorDirect) other).data)
+                : LongVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return LongVector.hashCode(this);
+        return LongComparisons.hashCode(data);
     }
 }

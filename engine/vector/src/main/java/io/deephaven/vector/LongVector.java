@@ -13,10 +13,9 @@ import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.LongComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive longs.
@@ -52,6 +51,25 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
 
     @Override
     LongVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && LongComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see LongComparisons#eq(long[], long[])
+     */
+    @Override
+    boolean equals(@Nullable LongVector other);
+
+    /**
+     * Logically equivalent to {@code LongComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see LongComparisons#hashCode(long[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link LongVector#equals(LongVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link LongVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link LongComparisons#eq(long, long)}.
      *
-     * @param aVector The LHS of the equality test (always a LongVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final LongVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final LongVector aVector, @NotNull final LongVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof LongVector)) {
-            return false;
-        }
-        final LongVector bVector = (LongVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
         try (final CloseablePrimitiveIteratorOfLong aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfLong bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (aIterator.nextLong() != bIterator.nextLong()) {
+                if (!LongComparisons.eq(aIterator.nextLong(), bIterator.nextLong())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(long[])}.
+     * Helper method for implementing {@link LongVector#hashCode()}. An iterative equivalent of
+     * {@code LongComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The LongVector to hash
      * @return The hash code
+     * @see LongComparisons#hashCode(long[])
      */
     static int hashCode(@NotNull final LongVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
         }
         try (final CloseablePrimitiveIteratorOfLong iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Long.hashCode(iterator.nextLong());
+                result = 31 * result + LongComparisons.hashCode(iterator.nextLong());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
 
         @Override
         public long[] toArray() {
-            final int size = intSize("LongVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public long[] copyToArray() {
+            final int size = intSize("LongVector.copyToArray");
             final long[] result = new long[size];
             try (final CloseablePrimitiveIteratorOfLong iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
         }
 
         @Override
-        public long[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public LongVector getDirect() {
-            return new LongVectorDirect(toArray());
+            return new LongVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface LongVector extends Vector<LongVector>, Iterable<Long> {
             return LongVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return LongVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof LongVector && LongVector.equals(this, (LongVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable LongVector other) {
+            return other != null && LongVector.equals(this, other);
         }
 
         @Override

@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfInt;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.IntComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class IntVectorDirect implements IntVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public int[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfInt iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class IntVectorDirect implements IntVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof IntVectorDirect) {
-            return Arrays.equals(data, ((IntVectorDirect) obj).data);
+        return obj instanceof IntVector && equals((IntVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable IntVector other) {
+        if (other == null) {
+            return false;
         }
-        return IntVector.equals(this, obj);
+        return other instanceof IntVectorDirect
+                ? IntComparisons.eq(data, ((IntVectorDirect) other).data)
+                : IntVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return IntVector.hashCode(this);
+        return IntComparisons.hashCode(data);
     }
 }

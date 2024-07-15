@@ -12,8 +12,9 @@ import io.deephaven.vector.LongSubVector;
 import io.deephaven.vector.LongVector;
 import io.deephaven.vector.LongVectorDirect;
 import io.deephaven.vector.LongVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class LongRingBufferVectorWrapper implements LongVector, RingBufferVectorWrapper {
+public class LongRingBufferVectorWrapper extends LongVector.Indirect implements RingBufferVectorWrapper {
     private final LongRingBuffer ringBuffer;
 
     public LongRingBufferVectorWrapper(final LongRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class LongRingBufferVectorWrapper implements LongVector, RingBufferVector
     }
 
     @Override
-    public long[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public long[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public LongVector getDirect() {
-        return new LongVectorDirect(ringBuffer.getAll());
     }
 }

@@ -95,11 +95,11 @@ public class LongVectorColumnWrapper extends LongVector.Indirect {
     }
 
     @Override
-    public long[] toArray() {
-        return toArray(false, Integer.MAX_VALUE);
+    public long[] copyToArray() {
+        return copyToArray(false, Integer.MAX_VALUE);
     }
 
-    public long[] toArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
+    public long[] copyToArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
         if (shouldBeNullIfOutOfBounds && (startPadding > 0 || endPadding > 0)) {
             return null;
         }

@@ -13,10 +13,9 @@ import io.deephaven.qst.type.ByteType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.ByteComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive bytes.
@@ -52,6 +51,25 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
 
     @Override
     ByteVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && ByteComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see ByteComparisons#eq(byte[], byte[])
+     */
+    @Override
+    boolean equals(@Nullable ByteVector other);
+
+    /**
+     * Logically equivalent to {@code ByteComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see ByteComparisons#hashCode(byte[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link ByteVector#equals(ByteVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link ByteVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link ByteComparisons#eq(byte, byte)}.
      *
-     * @param aVector The LHS of the equality test (always a ByteVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final ByteVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final ByteVector aVector, @NotNull final ByteVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof ByteVector)) {
-            return false;
-        }
-        final ByteVector bVector = (ByteVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
         try (final CloseablePrimitiveIteratorOfByte aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfByte bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (aIterator.nextByte() != bIterator.nextByte()) {
+                if (!ByteComparisons.eq(aIterator.nextByte(), bIterator.nextByte())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(byte[])}.
+     * Helper method for implementing {@link ByteVector#hashCode()}. An iterative equivalent of
+     * {@code ByteComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The ByteVector to hash
      * @return The hash code
+     * @see ByteComparisons#hashCode(byte[])
      */
     static int hashCode(@NotNull final ByteVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
         }
         try (final CloseablePrimitiveIteratorOfByte iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Byte.hashCode(iterator.nextByte());
+                result = 31 * result + ByteComparisons.hashCode(iterator.nextByte());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
 
         @Override
         public byte[] toArray() {
-            final int size = intSize("ByteVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public byte[] copyToArray() {
+            final int size = intSize("ByteVector.copyToArray");
             final byte[] result = new byte[size];
             try (final CloseablePrimitiveIteratorOfByte iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
         }
 
         @Override
-        public byte[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public ByteVector getDirect() {
-            return new ByteVectorDirect(toArray());
+            return new ByteVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface ByteVector extends Vector<ByteVector>, Iterable<Byte> {
             return ByteVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return ByteVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof ByteVector && ByteVector.equals(this, (ByteVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable ByteVector other) {
+            return other != null && ByteVector.equals(this, other);
         }
 
         @Override

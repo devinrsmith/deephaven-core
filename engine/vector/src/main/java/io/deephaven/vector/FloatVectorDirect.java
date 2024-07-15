@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfFloat;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.FloatComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class FloatVectorDirect implements FloatVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public float[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfFloat iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class FloatVectorDirect implements FloatVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof FloatVectorDirect) {
-            return Arrays.equals(data, ((FloatVectorDirect) obj).data);
+        return obj instanceof FloatVector && equals((FloatVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable FloatVector other) {
+        if (other == null) {
+            return false;
         }
-        return FloatVector.equals(this, obj);
+        return other instanceof FloatVectorDirect
+                ? FloatComparisons.eq(data, ((FloatVectorDirect) other).data)
+                : FloatVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return FloatVector.hashCode(this);
+        return FloatComparisons.hashCode(data);
     }
 }

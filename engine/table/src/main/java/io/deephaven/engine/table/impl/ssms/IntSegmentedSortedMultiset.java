@@ -11,7 +11,6 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.vector.IntVector;
 import io.deephaven.vector.IntVectorDirect;
-import io.deephaven.vector.ObjectVector;
 import io.deephaven.util.compare.IntComparisons;
 import io.deephaven.util.type.ArrayTypeUtils;
 import io.deephaven.engine.table.impl.by.SumIntChunk;
@@ -25,11 +24,11 @@ import io.deephaven.util.mutable.MutableLong;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 import static io.deephaven.util.QueryConstants.NULL_INT;
 
-public final class IntSegmentedSortedMultiset implements SegmentedSortedMultiSet<Integer>, IntVector {
+public final class IntSegmentedSortedMultiset extends IntVector.Indirect
+        implements SegmentedSortedMultiSet<Integer> {
     private final int leafSize;
     private int leafCount;
     private int size;
@@ -2362,13 +2361,8 @@ public final class IntSegmentedSortedMultiset implements SegmentedSortedMultiSet
     }
 
     @Override
-    public int[] toArray() {
-        return keyArray();
-    }
-
-    @Override
     public int[] copyToArray() {
-        return toArray();
+        return keyArray();
     }
 
     @Override
@@ -2380,189 +2374,8 @@ public final class IntSegmentedSortedMultiset implements SegmentedSortedMultiSet
     public IntVector getDirect() {
         return new IntVectorDirect(keyArray());
     }
+
+    // TODO implement iterator()?
+
     // endregion
-
-    // region VectorEquals
-    private boolean equalsArray(IntVector o) {
-        if (size() != o.size()) {
-            return false;
-        }
-
-        if (leafCount == 1) {
-            for (int ii = 0; ii < size; ii++) {
-                // region DirObjectEquals
-                if (directoryValues[ii] != o.get(ii)) {
-                    return false;
-                }
-                // endregion DirObjectEquals
-            }
-
-            return true;
-        }
-
-        int nCompared = 0;
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                if (leafValues[li][ai] != o.get(nCompared++)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-    // endregion VectorEquals
-
-    private boolean equalsArray(ObjectVector<?> o) {
-        // region EqualsArrayTypeCheck
-        if (o.getComponentType() != int.class && o.getComponentType() != Integer.class) {
-            return false;
-        }
-        // endregion EqualsArrayTypeCheck
-
-        if (size() != o.size()) {
-            return false;
-        }
-
-        if (leafCount == 1) {
-            for (int ii = 0; ii < size; ii++) {
-                final Integer val = (Integer) o.get(ii);
-                // region VectorEquals
-                if (directoryValues[ii] == NULL_INT && val != null && val != NULL_INT) {
-                    return false;
-                }
-                // endregion VectorEquals
-
-                if (!Objects.equals(directoryValues[ii], val)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        int nCompared = 0;
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                final Integer val = (Integer) o.get(nCompared++);
-                // region VectorEquals
-                if (leafValues[li][ai] == NULL_INT && val != null && val != NULL_INT) {
-                    return false;
-                }
-                // endregion VectorEquals
-
-                if (!Objects.equals(leafValues[li][ai], val)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof IntSegmentedSortedMultiset)) {
-            // region VectorEquals
-            if (o instanceof IntVector) {
-                return equalsArray((IntVector) o);
-            }
-            // endregion VectorEquals
-
-            if (o instanceof ObjectVector) {
-                return equalsArray((ObjectVector) o);
-            }
-            return false;
-        }
-        final IntSegmentedSortedMultiset that = (IntSegmentedSortedMultiset) o;
-
-        if (size() != that.size()) {
-            return false;
-        }
-
-        if (leafCount == 1) {
-            if (that.leafCount != 1 || size != that.size) {
-                return false;
-            }
-
-            for (int ii = 0; ii < size; ii++) {
-                // region DirObjectEquals
-                if (directoryValues[ii] != that.directoryValues[ii]) {
-                    return false;
-                }
-                // endregion DirObjectEquals
-            }
-
-            return true;
-        }
-
-        int otherLeaf = 0;
-        int otherLeafIdx = 0;
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                // region LeafObjectEquals
-                if (leafValues[li][ai] != that.leafValues[otherLeaf][otherLeafIdx++]) {
-                    return false;
-                }
-                // endregion LeafObjectEquals
-
-                if (otherLeafIdx >= that.leafSizes[otherLeaf]) {
-                    otherLeaf++;
-                    otherLeafIdx = 0;
-                }
-
-                if (otherLeaf >= that.leafCount) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        if (leafCount == 1) {
-            int result = Objects.hash(size);
-            for (int ii = 0; ii < size; ii++) {
-                result = result * 31 + Objects.hash(directoryValues[ii]);
-            }
-
-            return result;
-        }
-
-        int result = Objects.hash(leafCount, size);
-
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                result = result * 31 + Objects.hash(leafValues[li][ai]);
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        if (leafCount == 1) {
-            return ArrayTypeUtils.toString(directoryValues, 0, intSize());
-        } else if (leafCount > 0) {
-            StringBuilder arrAsString = new StringBuilder("[");
-            for (int li = 0; li < leafCount; ++li) {
-                for (int ai = 0; ai < leafSizes[li]; ai++) {
-                    arrAsString.append(leafValues[li][ai]).append(", ");
-                }
-            }
-
-            arrAsString.replace(arrAsString.length() - 2, arrAsString.length(), "]");
-            return arrAsString.toString();
-        }
-
-        return "[]";
-    }
-
-    // region Extensions
-    // endregion Extensions
 }

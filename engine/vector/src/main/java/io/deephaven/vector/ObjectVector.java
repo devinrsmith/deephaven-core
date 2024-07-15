@@ -8,6 +8,7 @@ import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.qst.type.GenericVectorType;
 import io.deephaven.qst.type.GenericType;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.ObjectComparisons;
 import io.deephaven.util.datastructures.LongSizedDataStructure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -128,17 +129,13 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
      * Helper method for implementing {@link Object#equals(Object)}.
      *
      * @param aVector The LHS of the equality test (always an ObjectVector)
-     * @param bObj The RHS of the equality test
+     * @param bVector The RHS of the equality test (always an ObjectVector)
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final ObjectVector<?> aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final ObjectVector<?> aVector, @NotNull final ObjectVector<?> bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof ObjectVector)) {
-            return false;
-        }
-        final ObjectVector<?> bVector = (ObjectVector<?>) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -151,7 +148,7 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
              final CloseableIterator<?> bIterator = bVector.iterator()) {
             // @formatter:on
             while (aIterator.hasNext()) {
-                if (!Objects.equals(aIterator.next(), bIterator.next())) {
+                if (!ObjectComparisons.eq(aIterator.next(), bIterator.next())) {
                     return false;
                 }
             }
@@ -173,7 +170,7 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
         }
         try (final CloseableIterator<?> iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Objects.hashCode(iterator.next());
+                result = 31 * result + ObjectComparisons.hashCode(iterator.next());
             }
         }
         return result;
@@ -186,7 +183,12 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
 
         @Override
         public COMPONENT_TYPE[] toArray() {
-            final int size = intSize("ObjectVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public COMPONENT_TYPE[] copyToArray() {
+            final int size = intSize("ObjectVector.copyToArray");
             // noinspection unchecked
             final COMPONENT_TYPE[] result = (COMPONENT_TYPE[]) Array.newInstance(getComponentType(), size);
             try (final CloseableIterator<COMPONENT_TYPE> iterator = iterator()) {
@@ -195,11 +197,6 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
                 }
             }
             return result;
-        }
-
-        @Override
-        public COMPONENT_TYPE[] copyToArray() {
-            return toArray();
         }
 
         @Override
@@ -221,19 +218,23 @@ public interface ObjectVector<COMPONENT_TYPE> extends Vector<ObjectVector<COMPON
                 }
                 return new ObjectVectorDirect<>(array);
             } else {
-                return new ObjectVectorDirect<>(toArray());
+                return new ObjectVectorDirect<>(copyToArray());
             }
         }
 
         @Override
-        public final String toString() {
+        public String toString() {
             return ObjectVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(final Object obj) {
-            return ObjectVector.equals(this, obj);
+        public final boolean equals(final Object other) {
+            return other instanceof ObjectVector && ObjectVector.equals(this, (ObjectVector<?>) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable ObjectVector<COMPONENT_TYPE> other) {
+            return other != null && ObjectVector.equals(this, other);
         }
 
         @Override

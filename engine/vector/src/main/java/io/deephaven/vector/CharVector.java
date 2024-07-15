@@ -9,10 +9,9 @@ import io.deephaven.qst.type.CharType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.CharComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive chars.
@@ -48,6 +47,25 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
 
     @Override
     CharVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && CharComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see CharComparisons#eq(char[], char[])
+     */
+    @Override
+    boolean equals(@Nullable CharVector other);
+
+    /**
+     * Logically equivalent to {@code CharComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see CharComparisons#hashCode(char[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -128,20 +146,18 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link CharVector#equals(CharVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link CharVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link CharComparisons#eq(char, char)}.
      *
-     * @param aVector The LHS of the equality test (always a CharVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final CharVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final CharVector aVector, @NotNull final CharVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof CharVector)) {
-            return false;
-        }
-        final CharVector bVector = (CharVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -152,21 +168,24 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
         try (final CloseablePrimitiveIteratorOfChar aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfChar bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (aIterator.nextChar() != bIterator.nextChar()) {
+                if (!CharComparisons.eq(aIterator.nextChar(), bIterator.nextChar())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(char[])}.
+     * Helper method for implementing {@link CharVector#hashCode()}. An iterative equivalent of
+     * {@code CharComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The CharVector to hash
      * @return The hash code
+     * @see CharComparisons#hashCode(char[])
      */
     static int hashCode(@NotNull final CharVector vector) {
         int result = 1;
@@ -175,7 +194,7 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
         }
         try (final CloseablePrimitiveIteratorOfChar iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Character.hashCode(iterator.nextChar());
+                result = 31 * result + CharComparisons.hashCode(iterator.nextChar());
             }
         }
         return result;
@@ -188,7 +207,12 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
 
         @Override
         public char[] toArray() {
-            final int size = intSize("CharVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public char[] copyToArray() {
+            final int size = intSize("CharVector.copyToArray");
             final char[] result = new char[size];
             try (final CloseablePrimitiveIteratorOfChar iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -199,13 +223,8 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
         }
 
         @Override
-        public char[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public CharVector getDirect() {
-            return new CharVectorDirect(toArray());
+            return new CharVectorDirect(copyToArray());
         }
 
         @Override
@@ -213,10 +232,14 @@ public interface CharVector extends Vector<CharVector>, Iterable<Character> {
             return CharVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return CharVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof CharVector && CharVector.equals(this, (CharVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable CharVector other) {
+            return other != null && CharVector.equals(this, other);
         }
 
         @Override

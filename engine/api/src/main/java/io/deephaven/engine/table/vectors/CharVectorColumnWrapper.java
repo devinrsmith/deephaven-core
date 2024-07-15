@@ -91,11 +91,11 @@ public class CharVectorColumnWrapper extends CharVector.Indirect {
     }
 
     @Override
-    public char[] toArray() {
-        return toArray(false, Integer.MAX_VALUE);
+    public char[] copyToArray() {
+        return copyToArray(false, Integer.MAX_VALUE);
     }
 
-    public char[] toArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
+    public char[] copyToArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
         if (shouldBeNullIfOutOfBounds && (startPadding > 0 || endPadding > 0)) {
             return null;
         }

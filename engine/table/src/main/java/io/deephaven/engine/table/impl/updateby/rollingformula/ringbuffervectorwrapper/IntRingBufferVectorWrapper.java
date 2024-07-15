@@ -12,8 +12,9 @@ import io.deephaven.vector.IntSubVector;
 import io.deephaven.vector.IntVector;
 import io.deephaven.vector.IntVectorDirect;
 import io.deephaven.vector.IntVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class IntRingBufferVectorWrapper implements IntVector, RingBufferVectorWrapper {
+public class IntRingBufferVectorWrapper extends IntVector.Indirect implements RingBufferVectorWrapper {
     private final IntRingBuffer ringBuffer;
 
     public IntRingBufferVectorWrapper(final IntRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class IntRingBufferVectorWrapper implements IntVector, RingBufferVectorWr
     }
 
     @Override
-    public int[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public int[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public IntVector getDirect() {
-        return new IntVectorDirect(ringBuffer.getAll());
     }
 }

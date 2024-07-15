@@ -13,10 +13,9 @@ import io.deephaven.qst.type.FloatType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.FloatComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive floats.
@@ -52,6 +51,25 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
 
     @Override
     FloatVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && FloatComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see FloatComparisons#eq(float[], float[])
+     */
+    @Override
+    boolean equals(@Nullable FloatVector other);
+
+    /**
+     * Logically equivalent to {@code FloatComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see FloatComparisons#hashCode(float[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link FloatVector#equals(FloatVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link FloatVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link FloatComparisons#eq(float, float)}.
      *
-     * @param aVector The LHS of the equality test (always a FloatVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final FloatVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final FloatVector aVector, @NotNull final FloatVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof FloatVector)) {
-            return false;
-        }
-        final FloatVector bVector = (FloatVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
         try (final CloseablePrimitiveIteratorOfFloat aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfFloat bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (Float.floatToIntBits(aIterator.nextFloat()) != Float.floatToIntBits(bIterator.nextFloat())) {
+                if (!FloatComparisons.eq(aIterator.nextFloat(), bIterator.nextFloat())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(float[])}.
+     * Helper method for implementing {@link FloatVector#hashCode()}. An iterative equivalent of
+     * {@code FloatComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The FloatVector to hash
      * @return The hash code
+     * @see FloatComparisons#hashCode(float[])
      */
     static int hashCode(@NotNull final FloatVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
         }
         try (final CloseablePrimitiveIteratorOfFloat iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Float.hashCode(iterator.nextFloat());
+                result = 31 * result + FloatComparisons.hashCode(iterator.nextFloat());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
 
         @Override
         public float[] toArray() {
-            final int size = intSize("FloatVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public float[] copyToArray() {
+            final int size = intSize("FloatVector.copyToArray");
             final float[] result = new float[size];
             try (final CloseablePrimitiveIteratorOfFloat iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
         }
 
         @Override
-        public float[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public FloatVector getDirect() {
-            return new FloatVectorDirect(toArray());
+            return new FloatVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface FloatVector extends Vector<FloatVector>, Iterable<Float> {
             return FloatVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return FloatVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof FloatVector && FloatVector.equals(this, (FloatVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable FloatVector other) {
+            return other != null && FloatVector.equals(this, other);
         }
 
         @Override

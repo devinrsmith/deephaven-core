@@ -3,17 +3,16 @@
 //
 package io.deephaven.engine.table.impl.by.ssmcountdistinct;
 
-import io.deephaven.vector.LongVector;
-import io.deephaven.vector.ObjectVector;
-import io.deephaven.vector.ObjectVectorDirect;
 import io.deephaven.engine.table.impl.AbstractColumnSource;
 import io.deephaven.engine.table.impl.ColumnSourceGetDefaults;
 import io.deephaven.engine.table.impl.MutableColumnSourceGetDefaults;
 import io.deephaven.engine.table.impl.ssms.LongSegmentedSortedMultiset;
+import io.deephaven.vector.LongVector;
+import io.deephaven.vector.ObjectVector;
+import io.deephaven.vector.ObjectVectorDirect;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
-import java.util.Objects;
 
 import static io.deephaven.time.DateTimeUtils.epochNanosToInstant;
 
@@ -60,10 +59,10 @@ public class InstantSsmSourceWrapper extends AbstractColumnSource<ObjectVector>
         underlying.startTrackingPrevValues();
     }
 
-    public static class ValueWrapper implements ObjectVector<Instant> {
-        final LongSegmentedSortedMultiset underlying;
+    public static class ValueWrapper extends ObjectVector.Indirect<Instant> {
+        final LongVector underlying;
 
-        public ValueWrapper(LongSegmentedSortedMultiset underlying) {
+        public ValueWrapper(LongVector underlying) {
             this.underlying = underlying;
         }
 
@@ -74,22 +73,12 @@ public class InstantSsmSourceWrapper extends AbstractColumnSource<ObjectVector>
 
         @Override
         public ObjectVector<Instant> subVector(long fromIndexInclusive, long toIndexExclusive) {
-            return underlying.subArrayAsInstants(fromIndexInclusive, toIndexExclusive);
+            return new ValueWrapper(underlying.subVector(fromIndexInclusive, toIndexExclusive));
         }
 
         @Override
         public ObjectVector<Instant> subVectorByPositions(long[] positions) {
-            return underlying.subArrayByPositionsAsInstants(positions);
-        }
-
-        @Override
-        public Instant[] toArray() {
-            return underlying.toInstantArray();
-        }
-
-        @Override
-        public Instant[] copyToArray() {
-            return toArray();
+            return new ValueWrapper(underlying.subVectorByPositions(positions));
         }
 
         @Override
@@ -104,7 +93,7 @@ public class InstantSsmSourceWrapper extends AbstractColumnSource<ObjectVector>
 
         @Override
         public ObjectVector<Instant> getDirect() {
-            return underlying.getDirectAsInstants();
+            return new ValueWrapper(underlying.getDirect());
         }
 
         @Override
@@ -129,26 +118,6 @@ public class InstantSsmSourceWrapper extends AbstractColumnSource<ObjectVector>
             }
 
             return new ObjectVectorDirect<>(asInstants);
-        }
-
-        @Override
-        public String toString() {
-            return underlying.toInstantString();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            ValueWrapper that = (ValueWrapper) o;
-            return underlying.equals(that.underlying);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(underlying);
         }
     }
 }

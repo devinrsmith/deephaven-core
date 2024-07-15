@@ -5,7 +5,9 @@ package io.deephaven.vector;
 
 import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
+import io.deephaven.util.compare.ObjectComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -60,6 +62,10 @@ public final class ObjectVectorDirect<COMPONENT_TYPE> implements ObjectVector<CO
         return Arrays.copyOf(data, data.length);
     }
 
+    public COMPONENT_TYPE[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseableIterator<COMPONENT_TYPE> iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -90,14 +96,22 @@ public final class ObjectVectorDirect<COMPONENT_TYPE> implements ObjectVector<CO
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof ObjectVectorDirect) {
-            return Arrays.equals(data, ((ObjectVectorDirect<?>) obj).data);
+        // noinspection unchecked
+        return obj instanceof ObjectVector && equals((ObjectVector<COMPONENT_TYPE>) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable ObjectVector<COMPONENT_TYPE> other) {
+        if (other == null) {
+            return false;
         }
-        return ObjectVector.equals(this, obj);
+        return other instanceof ObjectVectorDirect
+                ? ObjectComparisons.eq(data, ((ObjectVectorDirect<COMPONENT_TYPE>) other).data)
+                : ObjectVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return ObjectVector.hashCode(this);
+        return ObjectComparisons.hashCode(data);
     }
 }

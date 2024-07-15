@@ -83,15 +83,15 @@ public class LongVectorSlice extends LongVector.Indirect {
     }
 
     @Override
-    public long[] toArray() {
+    public long[] copyToArray() {
         if (innerVector instanceof LongVectorDirect
                 && offsetIndex >= innerVectorValidFromInclusive
                 && offsetIndex + length <= innerVectorValidToExclusive) {
             // In this case, innerVectorValidFromInclusive must be in range [0, MAX_ARRAY_SIZE) and
             // innerVectorValidToExclusive must be in range [0, MAX_ARRAY_SIZE].
-            return Arrays.copyOfRange(innerVector.toArray(), (int) offsetIndex, (int) (offsetIndex + length));
+            return ((LongVectorDirect) innerVector).copyOfRange((int) offsetIndex, (int) (offsetIndex + length));
         }
-        return super.toArray();
+        return super.copyToArray();
     }
 
     @Override

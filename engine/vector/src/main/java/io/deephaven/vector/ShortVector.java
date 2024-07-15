@@ -13,10 +13,9 @@ import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.ShortComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive shorts.
@@ -52,6 +51,25 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
 
     @Override
     ShortVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && ShortComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see ShortComparisons#eq(short[], short[])
+     */
+    @Override
+    boolean equals(@Nullable ShortVector other);
+
+    /**
+     * Logically equivalent to {@code ShortComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see ShortComparisons#hashCode(short[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link ShortVector#equals(ShortVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link ShortVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link ShortComparisons#eq(short, short)}.
      *
-     * @param aVector The LHS of the equality test (always a ShortVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final ShortVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final ShortVector aVector, @NotNull final ShortVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof ShortVector)) {
-            return false;
-        }
-        final ShortVector bVector = (ShortVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
         try (final CloseablePrimitiveIteratorOfShort aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfShort bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (aIterator.nextShort() != bIterator.nextShort()) {
+                if (!ShortComparisons.eq(aIterator.nextShort(), bIterator.nextShort())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(short[])}.
+     * Helper method for implementing {@link ShortVector#hashCode()}. An iterative equivalent of
+     * {@code ShortComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The ShortVector to hash
      * @return The hash code
+     * @see ShortComparisons#hashCode(short[])
      */
     static int hashCode(@NotNull final ShortVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
         }
         try (final CloseablePrimitiveIteratorOfShort iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Short.hashCode(iterator.nextShort());
+                result = 31 * result + ShortComparisons.hashCode(iterator.nextShort());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
 
         @Override
         public short[] toArray() {
-            final int size = intSize("ShortVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public short[] copyToArray() {
+            final int size = intSize("ShortVector.copyToArray");
             final short[] result = new short[size];
             try (final CloseablePrimitiveIteratorOfShort iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
         }
 
         @Override
-        public short[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public ShortVector getDirect() {
-            return new ShortVectorDirect(toArray());
+            return new ShortVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface ShortVector extends Vector<ShortVector>, Iterable<Short> {
             return ShortVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return ShortVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof ShortVector && ShortVector.equals(this, (ShortVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable ShortVector other) {
+            return other != null && ShortVector.equals(this, other);
         }
 
         @Override

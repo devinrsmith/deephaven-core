@@ -83,15 +83,15 @@ public class ShortVectorSlice extends ShortVector.Indirect {
     }
 
     @Override
-    public short[] toArray() {
+    public short[] copyToArray() {
         if (innerVector instanceof ShortVectorDirect
                 && offsetIndex >= innerVectorValidFromInclusive
                 && offsetIndex + length <= innerVectorValidToExclusive) {
             // In this case, innerVectorValidFromInclusive must be in range [0, MAX_ARRAY_SIZE) and
             // innerVectorValidToExclusive must be in range [0, MAX_ARRAY_SIZE].
-            return Arrays.copyOfRange(innerVector.toArray(), (int) offsetIndex, (int) (offsetIndex + length));
+            return ((ShortVectorDirect) innerVector).copyOfRange((int) offsetIndex, (int) (offsetIndex + length));
         }
-        return super.toArray();
+        return super.copyToArray();
     }
 
     @Override

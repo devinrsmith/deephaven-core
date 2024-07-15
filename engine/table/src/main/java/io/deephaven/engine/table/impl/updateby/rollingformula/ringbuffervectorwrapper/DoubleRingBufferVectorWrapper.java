@@ -12,8 +12,9 @@ import io.deephaven.vector.DoubleSubVector;
 import io.deephaven.vector.DoubleVector;
 import io.deephaven.vector.DoubleVectorDirect;
 import io.deephaven.vector.DoubleVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class DoubleRingBufferVectorWrapper implements DoubleVector, RingBufferVectorWrapper {
+public class DoubleRingBufferVectorWrapper extends DoubleVector.Indirect implements RingBufferVectorWrapper {
     private final DoubleRingBuffer ringBuffer;
 
     public DoubleRingBufferVectorWrapper(final DoubleRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class DoubleRingBufferVectorWrapper implements DoubleVector, RingBufferVe
     }
 
     @Override
-    public double[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public double[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public DoubleVector getDirect() {
-        return new DoubleVectorDirect(ringBuffer.getAll());
     }
 }

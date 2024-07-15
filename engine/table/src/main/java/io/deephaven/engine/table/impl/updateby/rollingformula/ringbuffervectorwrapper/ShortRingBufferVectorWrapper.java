@@ -12,8 +12,9 @@ import io.deephaven.vector.ShortSubVector;
 import io.deephaven.vector.ShortVector;
 import io.deephaven.vector.ShortVectorDirect;
 import io.deephaven.vector.ShortVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class ShortRingBufferVectorWrapper implements ShortVector, RingBufferVectorWrapper {
+public class ShortRingBufferVectorWrapper extends ShortVector.Indirect implements RingBufferVectorWrapper {
     private final ShortRingBuffer ringBuffer;
 
     public ShortRingBufferVectorWrapper(final ShortRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class ShortRingBufferVectorWrapper implements ShortVector, RingBufferVect
     }
 
     @Override
-    public short[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public short[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public ShortVector getDirect() {
-        return new ShortVectorDirect(ringBuffer.getAll());
     }
 }

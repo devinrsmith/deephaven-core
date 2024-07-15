@@ -7,7 +7,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfChar;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.CharComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -57,6 +59,10 @@ public final class CharVectorDirect implements CharVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public char[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfChar iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -82,14 +88,21 @@ public final class CharVectorDirect implements CharVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof CharVectorDirect) {
-            return Arrays.equals(data, ((CharVectorDirect) obj).data);
+        return obj instanceof CharVector && equals((CharVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable CharVector other) {
+        if (other == null) {
+            return false;
         }
-        return CharVector.equals(this, obj);
+        return other instanceof CharVectorDirect
+                ? CharComparisons.eq(data, ((CharVectorDirect) other).data)
+                : CharVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return CharVector.hashCode(this);
+        return CharComparisons.hashCode(data);
     }
 }

@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfDouble;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.DoubleComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class DoubleVectorDirect implements DoubleVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public double[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfDouble iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class DoubleVectorDirect implements DoubleVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof DoubleVectorDirect) {
-            return Arrays.equals(data, ((DoubleVectorDirect) obj).data);
+        return obj instanceof DoubleVector && equals((DoubleVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable DoubleVector other) {
+        if (other == null) {
+            return false;
         }
-        return DoubleVector.equals(this, obj);
+        return other instanceof DoubleVectorDirect
+                ? DoubleComparisons.eq(data, ((DoubleVectorDirect) other).data)
+                : DoubleVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return DoubleVector.hashCode(this);
+        return DoubleComparisons.hashCode(data);
     }
 }

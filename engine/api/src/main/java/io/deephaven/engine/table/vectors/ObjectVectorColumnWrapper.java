@@ -91,11 +91,11 @@ public class ObjectVectorColumnWrapper<T> extends ObjectVector.Indirect<T> {
     }
 
     @Override
-    public T[] toArray() {
-        return toArray(false, Long.MAX_VALUE);
+    public T[] copyToArray() {
+        return copyToArray(false, Long.MAX_VALUE);
     }
 
-    public T[] toArray(final boolean shouldBeNullIfOutOfBounds, final long maxSize) {
+    public T[] copyToArray(final boolean shouldBeNullIfOutOfBounds, final long maxSize) {
         if (shouldBeNullIfOutOfBounds && (startPadding > 0 || endPadding > 0)) {
             return null;
         }

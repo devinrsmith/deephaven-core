@@ -6,10 +6,9 @@ package io.deephaven.engine.table.impl.updateby.rollingformula.ringbuffervectorw
 import io.deephaven.base.ringbuffer.ObjectRingBuffer;
 import io.deephaven.vector.ObjectSubVector;
 import io.deephaven.vector.ObjectVector;
-import io.deephaven.vector.ObjectVectorDirect;
 import io.deephaven.vector.ObjectVectorSlice;
 
-public class ObjectRingBufferVectorWrapper<T> implements ObjectVector<T>, RingBufferVectorWrapper {
+public class ObjectRingBufferVectorWrapper<T> extends ObjectVector.Indirect<T> implements RingBufferVectorWrapper {
     private final ObjectRingBuffer<T> ringBuffer;
     private final Class<T> componentType;
 
@@ -39,18 +38,8 @@ public class ObjectRingBufferVectorWrapper<T> implements ObjectVector<T>, RingBu
     }
 
     @Override
-    public T[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public T[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public ObjectVector<T> getDirect() {
-        return new ObjectVectorDirect<>(ringBuffer.getAll());
     }
 
     @Override

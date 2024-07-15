@@ -95,11 +95,11 @@ public class DoubleVectorColumnWrapper extends DoubleVector.Indirect {
     }
 
     @Override
-    public double[] toArray() {
-        return toArray(false, Integer.MAX_VALUE);
+    public double[] copyToArray() {
+        return copyToArray(false, Integer.MAX_VALUE);
     }
 
-    public double[] toArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
+    public double[] copyToArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
         if (shouldBeNullIfOutOfBounds && (startPadding > 0 || endPadding > 0)) {
             return null;
         }

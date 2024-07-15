@@ -6,6 +6,7 @@ package io.deephaven.vector;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.util.datastructures.LongSizedDataStructure;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -74,6 +75,19 @@ public interface Vector<VECTOR_TYPE extends Vector<VECTOR_TYPE>> extends Seriali
      * @return The specified prefix String representation
      */
     String toString(int prefixLength);
+
+    /**
+     * {@link io.deephaven.util.compare Deephaven equality}
+     *
+     * @param other the other vector
+     * @return if the two vectors
+     */
+    boolean equals(@Nullable VECTOR_TYPE other);
+
+    /**
+     * {@link io.deephaven.util.compare Deephaven hashCode}
+     */
+    int hashCode();
 
     /**
      * @return Whether this Vector is empty

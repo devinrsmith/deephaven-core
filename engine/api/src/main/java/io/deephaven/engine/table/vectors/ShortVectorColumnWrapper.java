@@ -95,11 +95,11 @@ public class ShortVectorColumnWrapper extends ShortVector.Indirect {
     }
 
     @Override
-    public short[] toArray() {
-        return toArray(false, Integer.MAX_VALUE);
+    public short[] copyToArray() {
+        return copyToArray(false, Integer.MAX_VALUE);
     }
 
-    public short[] toArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
+    public short[] copyToArray(final boolean shouldBeNullIfOutOfBounds, final int maxSize) {
         if (shouldBeNullIfOutOfBounds && (startPadding > 0 || endPadding > 0)) {
             return null;
         }

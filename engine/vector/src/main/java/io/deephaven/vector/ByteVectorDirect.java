@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfByte;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.ByteComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class ByteVectorDirect implements ByteVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public byte[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfByte iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class ByteVectorDirect implements ByteVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof ByteVectorDirect) {
-            return Arrays.equals(data, ((ByteVectorDirect) obj).data);
+        return obj instanceof ByteVector && equals((ByteVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable ByteVector other) {
+        if (other == null) {
+            return false;
         }
-        return ByteVector.equals(this, obj);
+        return other instanceof ByteVectorDirect
+                ? ByteComparisons.eq(data, ((ByteVectorDirect) other).data)
+                : ByteVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return ByteVector.hashCode(this);
+        return ByteComparisons.hashCode(data);
     }
 }

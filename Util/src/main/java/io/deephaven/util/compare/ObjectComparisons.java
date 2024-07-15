@@ -3,6 +3,8 @@
 //
 package io.deephaven.util.compare;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class ObjectComparisons {
@@ -25,6 +27,10 @@ public class ObjectComparisons {
         return Objects.equals(lhs, rhs);
     }
 
+    public static int hashCode(Object x) {
+        return Objects.hashCode(x);
+    }
+
     public static boolean gt(Object lhs, Object rhs) {
         return compare(lhs, rhs) > 0;
     }
@@ -39,5 +45,28 @@ public class ObjectComparisons {
 
     public static boolean leq(Object lhs, Object rhs) {
         return compare(lhs, rhs) <= 0;
+    }
+
+    public static boolean eq(Object[] lhs, Object[] rhs) {
+        return Arrays.equals(lhs, rhs);
+    }
+
+    /**
+     * Returns a hash code for a {@code Object[]} value consistent with {@link #eq(Object[], Object[])}; that is,
+     * {@code eq(x, y) ⇒ hashCode(x) == hashCode(y)}. Furthermore, this follows the {@link List#hashCode()} convention
+     *
+     * <pre>{@code
+     * int hashCode = 1;
+     * for (E e : array)
+     *     hashCode = 31 * hashCode + hashCode(e);
+     * }</pre>
+     *
+     * If {@code x} is {@code null}, this method returns 0.
+     *
+     * @param x the value to hash
+     * @return a hash code value for a {@code Object[]} value.
+     */
+    public static int hashCode(Object[] x) {
+        return Arrays.hashCode(x);
     }
 }

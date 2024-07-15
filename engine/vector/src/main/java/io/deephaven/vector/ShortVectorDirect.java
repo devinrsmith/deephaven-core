@@ -11,7 +11,9 @@ import io.deephaven.base.verify.Require;
 import io.deephaven.engine.primitive.iterator.CloseablePrimitiveIteratorOfShort;
 import io.deephaven.util.annotations.ArrayType;
 import io.deephaven.util.annotations.ArrayTypeGetter;
+import io.deephaven.util.compare.ShortComparisons;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,6 +63,10 @@ public final class ShortVectorDirect implements ShortVector {
         return Arrays.copyOf(data, data.length);
     }
 
+    public short[] copyOfRange(int from, int to) {
+        return Arrays.copyOfRange(data, from, to);
+    }
+
     @Override
     public CloseablePrimitiveIteratorOfShort iterator(final long fromIndexInclusive, final long toIndexExclusive) {
         if (fromIndexInclusive == 0 && toIndexExclusive == data.length) {
@@ -86,14 +92,21 @@ public final class ShortVectorDirect implements ShortVector {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj instanceof ShortVectorDirect) {
-            return Arrays.equals(data, ((ShortVectorDirect) obj).data);
+        return obj instanceof ShortVector && equals((ShortVector) obj);
+    }
+
+    @Override
+    public boolean equals(@Nullable ShortVector other) {
+        if (other == null) {
+            return false;
         }
-        return ShortVector.equals(this, obj);
+        return other instanceof ShortVectorDirect
+                ? ShortComparisons.eq(data, ((ShortVectorDirect) other).data)
+                : ShortVector.equals(this, other);
     }
 
     @Override
     public int hashCode() {
-        return ShortVector.hashCode(this);
+        return ShortComparisons.hashCode(data);
     }
 }

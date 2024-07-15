@@ -12,8 +12,9 @@ import io.deephaven.vector.ByteSubVector;
 import io.deephaven.vector.ByteVector;
 import io.deephaven.vector.ByteVectorDirect;
 import io.deephaven.vector.ByteVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class ByteRingBufferVectorWrapper implements ByteVector, RingBufferVectorWrapper {
+public class ByteRingBufferVectorWrapper extends ByteVector.Indirect implements RingBufferVectorWrapper {
     private final ByteRingBuffer ringBuffer;
 
     public ByteRingBufferVectorWrapper(final ByteRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class ByteRingBufferVectorWrapper implements ByteVector, RingBufferVector
     }
 
     @Override
-    public byte[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public byte[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public ByteVector getDirect() {
-        return new ByteVectorDirect(ringBuffer.getAll());
     }
 }

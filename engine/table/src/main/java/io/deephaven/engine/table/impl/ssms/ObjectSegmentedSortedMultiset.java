@@ -15,7 +15,6 @@ import io.deephaven.base.verify.Assert;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ObjectVectorDirect;
-import io.deephaven.vector.ObjectVector;
 import io.deephaven.util.compare.ObjectComparisons;
 import io.deephaven.util.type.ArrayTypeUtils;
 import io.deephaven.engine.table.impl.by.SumIntChunk;
@@ -28,10 +27,10 @@ import io.deephaven.util.mutable.MutableInt;
 import io.deephaven.util.mutable.MutableLong;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 
-public final class ObjectSegmentedSortedMultiset implements SegmentedSortedMultiSet<Object>, ObjectVector {
+public final class ObjectSegmentedSortedMultiset extends ObjectVector.Indirect
+        implements SegmentedSortedMultiSet<Object> {
     private final int leafSize;
     private int leafCount;
     private int size;
@@ -2373,13 +2372,8 @@ public final class ObjectSegmentedSortedMultiset implements SegmentedSortedMulti
     }
 
     @Override
-    public Object[] toArray() {
-        return keyArray();
-    }
-
-    @Override
     public Object[] copyToArray() {
-        return toArray();
+        return keyArray();
     }
 
     @Override
@@ -2391,152 +2385,8 @@ public final class ObjectSegmentedSortedMultiset implements SegmentedSortedMulti
     public ObjectVector getDirect() {
         return new ObjectVectorDirect(keyArray());
     }
+
+    // TODO implement iterator()?
+
     // endregion
-
-    // region VectorEquals
-    // endregion VectorEquals
-
-    private boolean equalsArray(ObjectVector<?> o) {
-        // region EqualsArrayTypeCheck
-        if(o.getComponentType() != o.getComponentType()) {
-            return false;
-        }
-        // endregion EqualsArrayTypeCheck
-
-        if (size() != o.size()) {
-            return false;
-        }
-
-        if (leafCount == 1) {
-            for (int ii = 0; ii < size; ii++) {
-                final Object val = (Object) o.get(ii);
-                // region VectorEquals
-                // endregion VectorEquals
-
-                if (!Objects.equals(directoryValues[ii], val)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        int nCompared = 0;
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                final Object val = (Object) o.get(nCompared++);
-                // region VectorEquals
-                // endregion VectorEquals
-
-                if (!Objects.equals(leafValues[li][ai], val)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof ObjectSegmentedSortedMultiset)) {
-            // region VectorEquals
-            // endregion VectorEquals
-
-            if (o instanceof ObjectVector) {
-                return equalsArray((ObjectVector) o);
-            }
-            return false;
-        }
-        final ObjectSegmentedSortedMultiset that = (ObjectSegmentedSortedMultiset) o;
-
-        if (size() != that.size()) {
-            return false;
-        }
-
-        if (leafCount == 1) {
-            if (that.leafCount != 1 || size != that.size) {
-                return false;
-            }
-
-            for (int ii = 0; ii < size; ii++) {
-                // region DirObjectEquals
-                if(!Objects.equals(directoryValues[ii], that.directoryValues[ii])) {
-                    return false;
-                }
-                // endregion DirObjectEquals
-            }
-
-            return true;
-        }
-
-        int otherLeaf = 0;
-        int otherLeafIdx = 0;
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                // region LeafObjectEquals
-                if(!Objects.equals(leafValues[li][ai], that.leafValues[otherLeaf][otherLeafIdx++])) {
-                    return false;
-                }
-                // endregion LeafObjectEquals
-
-                if (otherLeafIdx >= that.leafSizes[otherLeaf]) {
-                    otherLeaf++;
-                    otherLeafIdx = 0;
-                }
-
-                if (otherLeaf >= that.leafCount) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        if (leafCount == 1) {
-            int result = Objects.hash(size);
-            for (int ii = 0; ii < size; ii++) {
-                result = result * 31 + Objects.hash(directoryValues[ii]);
-            }
-
-            return result;
-        }
-
-        int result = Objects.hash(leafCount, size);
-
-        for (int li = 0; li < leafCount; ++li) {
-            for (int ai = 0; ai < leafSizes[li]; ai++) {
-                result = result * 31 + Objects.hash(leafValues[li][ai]);
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        if (leafCount == 1) {
-            return ArrayTypeUtils.toString(directoryValues, 0, intSize());
-        } else if (leafCount > 0) {
-            StringBuilder arrAsString = new StringBuilder("[");
-            for (int li = 0; li < leafCount; ++li) {
-                for (int ai = 0; ai < leafSizes[li]; ai++) {
-                    arrAsString.append(leafValues[li][ai]).append(", ");
-                }
-            }
-
-            arrAsString.replace(arrAsString.length() - 2, arrAsString.length(), "]");
-            return arrAsString.toString();
-        }
-
-        return "[]";
-    }
-
-    // region Extensions
-    // endregion Extensions
 }

@@ -12,8 +12,9 @@ import io.deephaven.vector.FloatSubVector;
 import io.deephaven.vector.FloatVector;
 import io.deephaven.vector.FloatVectorDirect;
 import io.deephaven.vector.FloatVectorSlice;
+import org.jetbrains.annotations.Nullable;
 
-public class FloatRingBufferVectorWrapper implements FloatVector, RingBufferVectorWrapper {
+public class FloatRingBufferVectorWrapper extends FloatVector.Indirect implements RingBufferVectorWrapper {
     private final FloatRingBuffer ringBuffer;
 
     public FloatRingBufferVectorWrapper(final FloatRingBuffer ringBuffer) {
@@ -40,17 +41,7 @@ public class FloatRingBufferVectorWrapper implements FloatVector, RingBufferVect
     }
 
     @Override
-    public float[] toArray() {
-        return ringBuffer.getAll();
-    }
-
-    @Override
     public float[] copyToArray() {
         return ringBuffer.getAll();
-    }
-
-    @Override
-    public FloatVector getDirect() {
-        return new FloatVectorDirect(ringBuffer.getAll());
     }
 }

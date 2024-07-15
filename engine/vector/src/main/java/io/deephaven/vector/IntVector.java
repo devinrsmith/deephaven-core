@@ -13,10 +13,9 @@ import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.util.annotations.FinalDefault;
+import io.deephaven.util.compare.IntComparisons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 /**
  * A {@link Vector} of primitive ints.
@@ -52,6 +51,25 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
 
     @Override
     IntVector getDirect();
+
+    /**
+     * Logically equivalent to {@code other != null && IntComparisons.eq(toArray(), other.toArray())}.
+     *
+     * @param other the other vector
+     * @return {@code true} if the two vectors are equal
+     * @see IntComparisons#eq(int[], int[])
+     */
+    @Override
+    boolean equals(@Nullable IntVector other);
+
+    /**
+     * Logically equivalent to {@code IntComparisons.hashCode(toArray())}.
+     *
+     * @return the hash code value for this vector
+     * @see IntComparisons#hashCode(int[])
+     */
+    @Override
+    int hashCode();
 
     @Override
     @FinalDefault
@@ -132,20 +150,18 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
     }
 
     /**
-     * Helper method for implementing {@link Object#equals(Object)}.
+     * Helper method for implementing {@link IntVector#equals(IntVector)}. Two vectors are considered equal if both
+     * vectors are the same {@link IntVector#size() size} and all corresponding pairs of elements in the two vectors
+     * are {@link IntComparisons#eq(int, int)}.
      *
-     * @param aVector The LHS of the equality test (always a IntVector)
-     * @param bObj The RHS of the equality test
+     * @param aVector The LHS of the equality test
+     * @param bVector The RHS of the equality test
      * @return Whether the two inputs are equal
      */
-    static boolean equals(@NotNull final IntVector aVector, @Nullable final Object bObj) {
-        if (aVector == bObj) {
+    static boolean equals(@NotNull final IntVector aVector, @NotNull final IntVector bVector) {
+        if (aVector == bVector) {
             return true;
         }
-        if (!(bObj instanceof IntVector)) {
-            return false;
-        }
-        final IntVector bVector = (IntVector) bObj;
         final long size = aVector.size();
         if (size != bVector.size()) {
             return false;
@@ -156,21 +172,24 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
         try (final CloseablePrimitiveIteratorOfInt aIterator = aVector.iterator();
                 final CloseablePrimitiveIteratorOfInt bIterator = bVector.iterator()) {
             while (aIterator.hasNext()) {
-                // region ElementEquals
-                if (aIterator.nextInt() != bIterator.nextInt()) {
+                if (!IntComparisons.eq(aIterator.nextInt(), bIterator.nextInt())) {
                     return false;
                 }
-                // endregion ElementEquals
+            }
+            if (bIterator.hasNext()) {
+                throw new IllegalStateException("Vector size / iterator mismatch, expected iterator to be exhausted");
             }
         }
         return true;
     }
 
     /**
-     * Helper method for implementing {@link Object#hashCode()}. Follows the pattern in {@link Arrays#hashCode(int[])}.
+     * Helper method for implementing {@link IntVector#hashCode()}. An iterative equivalent of
+     * {@code IntComparisons.hashCode(vector.toArray())}.
      *
      * @param vector The IntVector to hash
      * @return The hash code
+     * @see IntComparisons#hashCode(int[])
      */
     static int hashCode(@NotNull final IntVector vector) {
         int result = 1;
@@ -179,7 +198,7 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
         }
         try (final CloseablePrimitiveIteratorOfInt iterator = vector.iterator()) {
             while (iterator.hasNext()) {
-                result = 31 * result + Integer.hashCode(iterator.nextInt());
+                result = 31 * result + IntComparisons.hashCode(iterator.nextInt());
             }
         }
         return result;
@@ -192,7 +211,12 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
 
         @Override
         public int[] toArray() {
-            final int size = intSize("IntVector.toArray");
+            return copyToArray();
+        }
+
+        @Override
+        public int[] copyToArray() {
+            final int size = intSize("IntVector.copyToArray");
             final int[] result = new int[size];
             try (final CloseablePrimitiveIteratorOfInt iterator = iterator()) {
                 for (int ei = 0; ei < size; ++ei) {
@@ -203,13 +227,8 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
         }
 
         @Override
-        public int[] copyToArray() {
-            return toArray();
-        }
-
-        @Override
         public IntVector getDirect() {
-            return new IntVectorDirect(toArray());
+            return new IntVectorDirect(copyToArray());
         }
 
         @Override
@@ -217,10 +236,14 @@ public interface IntVector extends Vector<IntVector>, Iterable<Integer> {
             return IntVector.toString(this, 10);
         }
 
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
-        public final boolean equals(Object obj) {
-            return IntVector.equals(this, obj);
+        public final boolean equals(Object other) {
+            return other instanceof IntVector && IntVector.equals(this, (IntVector) other);
+        }
+
+        @Override
+        public final boolean equals(@Nullable IntVector other) {
+            return other != null && IntVector.equals(this, other);
         }
 
         @Override

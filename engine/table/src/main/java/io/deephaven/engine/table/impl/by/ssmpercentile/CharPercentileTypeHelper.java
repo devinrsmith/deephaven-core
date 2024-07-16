@@ -103,7 +103,7 @@ public class CharPercentileTypeHelper implements SsmChunkedPercentileOperator.Pe
         while (lo < hi) {
             final int mid = (lo + hi) >>> 1;
             final char testValue = valuesToSearch.get(mid);
-            final boolean moveHi = gt(testValue, searchValue);
+            final boolean moveHi = CharComparisons.gt(testValue, searchValue);
             if (moveHi) {
                 hi = mid;
             } else {
@@ -114,11 +114,4 @@ public class CharPercentileTypeHelper implements SsmChunkedPercentileOperator.Pe
         return hi;
     }
 
-    private static int doComparison(char lhs, char rhs) {
-        return CharComparisons.compare(lhs, rhs);
-    }
-
-    private static boolean gt(char lhs, char rhs) {
-        return doComparison(lhs, rhs) > 0;
-    }
 }

@@ -7,6 +7,8 @@ plugins {
 description 'Iceberg: Support to read iceberg catalogs.'
 
 dependencies {
+    implementation 'org.xerial:sqlite-jdbc:3.46.0.0'
+
     api project(':engine-api')
     api project(':engine-table')
 

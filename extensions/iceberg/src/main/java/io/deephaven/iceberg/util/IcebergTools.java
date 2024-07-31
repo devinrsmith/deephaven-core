@@ -62,6 +62,7 @@ public abstract class IcebergTools {
      * @param properties the map containing the Iceberg catalog properties to use
      * @return the Iceberg catalog adapter
      */
+    @SuppressWarnings("unused")
     public static IcebergCatalogAdapter createAdapter(
             @Nullable final String name,
             @NotNull final Map<String, String> properties) {
@@ -82,6 +83,11 @@ public abstract class IcebergTools {
 
         final String catalogUri = properties.get(CatalogProperties.URI);
         final String catalogName = name != null ? name : "IcebergCatalog-" + catalogUri;
+        final String fileIOImpl = properties.get(CatalogProperties.FILE_IO_IMPL);
+
+        final Configuration hadoopConf = HadoopFileIO.class.getName().equals(fileIOImpl)
+                ? new Configuration()
+                : null;
 
         final String fileIOImpl = properties.get(CatalogProperties.FILE_IO_IMPL);
 

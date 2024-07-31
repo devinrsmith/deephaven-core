@@ -89,12 +89,6 @@ public abstract class IcebergTools {
                 ? new Configuration()
                 : null;
 
-        final String fileIOImpl = properties.get(CatalogProperties.FILE_IO_IMPL);
-
-        final Configuration hadoopConf = HadoopFileIO.class.getName().equals(fileIOImpl)
-                ? new Configuration()
-                : null;
-
         // Create the Iceberg catalog from the properties.
         final Catalog catalog = CatalogUtil.buildIcebergCatalog(catalogName, properties, hadoopConf);
 

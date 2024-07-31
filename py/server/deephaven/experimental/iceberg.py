@@ -323,3 +323,16 @@ def adapter(
     except Exception as e:
         raise DHError(e, "Failed to build Iceberg Catalog Adapter") from e
 
+
+def read_static_table(
+    metadata_file_location: str,
+    instructions: Optional[IcebergInstructions] = None,
+    properties: Optional[Dict[str, str]] = None,
+    adapt_properties: bool = True,
+) -> Table:
+    return _JIcebergTools.readStatic(
+        metadata_file_location,
+        instructions.j_object if instructions else None,
+        j_hashmap(properties) if properties else None,
+        adapt_properties,
+    )

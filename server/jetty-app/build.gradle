@@ -14,6 +14,8 @@ dependencies {
     runtimeOnly project(':logback-print-stream-globals')
     runtimeOnly project(':logback-logbuffer')
     runtimeOnly libs.logback.classic
+
+    //implementation 'org.apache.hadoop:hadoop-aws:3.4.0'
 }
 
 distributions {

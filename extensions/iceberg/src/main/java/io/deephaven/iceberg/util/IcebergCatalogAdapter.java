@@ -515,10 +515,17 @@ public class IcebergCatalogAdapter {
             @NotNull final TableIdentifier tableIdentifier,
             @Nullable final Snapshot tableSnapshot,
             @Nullable final IcebergInstructions instructions) {
-
         // Load the table from the catalog.
         final org.apache.iceberg.Table table = catalog.loadTable(tableIdentifier);
+        return readTableInternal2(table, fileIO, properties, tableSnapshot, instructions);
+    }
 
+    public static Table readTableInternal2(
+            @NotNull final org.apache.iceberg.Table table,
+            @NotNull final FileIO fileIO,
+            @NotNull final Map<String, String> properties,
+            @Nullable final Snapshot tableSnapshot,
+            @Nullable final IcebergInstructions instructions) {
         // Do we want the latest or a specific snapshot?
         final Snapshot snapshot = tableSnapshot != null ? tableSnapshot : table.currentSnapshot();
         final Schema schema = table.schemas().get(snapshot.schemaId());

@@ -3,15 +3,22 @@
 //
 package io.deephaven.iceberg.util;
 
+import io.deephaven.engine.table.Table;
+import io.deephaven.iceberg.util.internal.PropertyAdapter;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.StaticTableOperations;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.ResolvingFileIO;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -85,9 +92,14 @@ public abstract class IcebergTools {
         final String catalogName = name != null ? name : "IcebergCatalog-" + catalogUri;
         final String fileIOImpl = properties.get(CatalogProperties.FILE_IO_IMPL);
 
-        final Configuration hadoopConf = HadoopFileIO.class.getName().equals(fileIOImpl)
-                ? new Configuration()
-                : null;
+        // todo: fix this up
+        final Configuration hadoopConf =
+                true || HadoopCatalog.class.getName().equals(properties.get(CatalogProperties.CATALOG_IMPL))
+                        || HadoopFileIO.class.getName().equals(fileIOImpl)
+                                ? new Configuration()
+                                : null;
+        hadoopConf.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider");
+
 
         // Create the Iceberg catalog from the properties.
         final Catalog catalog = CatalogUtil.buildIcebergCatalog(catalogName, properties, hadoopConf);
@@ -96,5 +108,36 @@ public abstract class IcebergTools {
         final FileIO fileIO = CatalogUtil.loadFileIO(fileIOImpl, properties, hadoopConf);
 
         return new IcebergCatalogAdapter(catalog, fileIO, properties);
+    }
+
+    public static Table readStatic(
+            String metadataFileLocation,
+            IcebergInstructions instructions,
+            Map<String, String> properties,
+            boolean adaptProperties) {
+        if (properties == null) {
+            properties = new HashMap<>();
+        }
+        if (instructions != null && adaptProperties) {
+            final Object dataInstructions = instructions.dataInstructions().orElse(null);
+            if (dataInstructions != null) {
+                PropertyAdapter.serviceLoaderAdapt(dataInstructions, properties);
+            }
+        }
+        final Configuration hadoopConf = new Configuration();
+        return readStatic(metadataFileLocation, instructions, properties, hadoopConf);
+    }
+
+    public static Table readStatic(
+            String metadataFileLocation,
+            IcebergInstructions instructions,
+            Map<String, String> properties,
+            Configuration hadoopConf) {
+        // final HadoopTables tables = new HadoopTables(hadoopConf);
+        // final org.apache.iceberg.Table table = tables.load(uri);
+        final FileIO fileIO = CatalogUtil.loadFileIO(ResolvingFileIO.class.getName(), properties, hadoopConf);
+        final BaseTable table =
+                new BaseTable(new StaticTableOperations(metadataFileLocation, fileIO), metadataFileLocation);
+        return IcebergCatalogAdapter.readTableInternal2(table, fileIO, properties, null, instructions);
     }
 }

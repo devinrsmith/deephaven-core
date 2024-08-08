@@ -1319,30 +1319,24 @@ public final class DoubleSegmentedSortedMultiset implements SegmentedSortedMulti
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(double lhs, double rhs) {
-        return DoubleComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(double lhs, double rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return DoubleComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(double lhs, double rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return DoubleComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(double lhs, double rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return DoubleComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(double lhs, double rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return DoubleComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(double lhs, double rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return DoubleComparisons.eq(lhs, rhs);
     }
     // endregion
 

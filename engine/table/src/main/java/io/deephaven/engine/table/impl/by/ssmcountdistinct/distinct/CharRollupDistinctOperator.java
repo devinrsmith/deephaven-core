@@ -36,7 +36,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
     private final CharSsmBackedSource internalResult;
     private final ColumnSource<?> externalResult;
     private final Supplier<SegmentedSortedMultiSet.RemoveContext> removeContextFactory;
-    private final boolean countNull;
+    private final boolean includeNullAndNans;
 
     private UpdateCommitter<CharRollupDistinctOperator> prevFlusher = null;
     private WritableRowSet touchedStates;
@@ -45,9 +45,9 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
             // region Constructor
             // endregion Constructor
             String name,
-            boolean countNulls) {
+            boolean includeNullAndNans) {
         this.name = name;
-        this.countNull = countNulls;
+        this.includeNullAndNans = includeNullAndNans;
         // region SsmCreation
         this.internalResult = new CharSsmBackedSource();
         // endregion SsmCreation
@@ -99,7 +99,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
                 bucketedContext.counts.ensureCapacityPreserve(currentPos + newLength);
                 bucketedContext.counts.get().setSize(currentPos + newLength);
                 newLength = CharCompactKernel.compactAndCount(bucketedContext.valueCopy.get().asWritableCharChunk(),
-                        bucketedContext.counts.get(), currentPos, newLength, countNull);
+                        bucketedContext.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             bucketedContext.lengthCopy.set(ii, newLength);
@@ -178,7 +178,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = CharCompactKernel.compactAndCount(context.valueCopy.get().asWritableCharChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -260,7 +260,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = CharCompactKernel.compactAndCount(context.valueCopy.get().asWritableCharChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -358,7 +358,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             CharCompactKernel.compactAndCount(context.valueCopy.get().asWritableCharChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
         return context;
     }
@@ -407,7 +407,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             CharCompactKernel.compactAndCount(context.valueCopy.get().asWritableCharChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
         return context;
     }
@@ -462,7 +462,7 @@ public class CharRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             CharCompactKernel.compactAndCount(context.valueCopy.get().asWritableCharChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
     }
 

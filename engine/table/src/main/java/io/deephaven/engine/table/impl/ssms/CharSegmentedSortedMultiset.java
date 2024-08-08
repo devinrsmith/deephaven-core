@@ -1315,30 +1315,24 @@ public final class CharSegmentedSortedMultiset implements SegmentedSortedMultiSe
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(char lhs, char rhs) {
-        return CharComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(char lhs, char rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return CharComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(char lhs, char rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return CharComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(char lhs, char rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return CharComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(char lhs, char rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return CharComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(char lhs, char rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return CharComparisons.eq(lhs, rhs);
     }
     // endregion
 

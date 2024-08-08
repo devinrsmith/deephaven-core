@@ -42,7 +42,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
     private final FloatSsmBackedSource ssms;
     private final Supplier<SegmentedSortedMultiSet.RemoveContext> removeContextFactory;
     private final LongArraySource resultColumn;
-    private final boolean countNull;
+    private final boolean countNullAndNans;
 
     private UpdateCommitter<FloatRollupCountDistinctOperator> prevFlusher = null;
     private WritableRowSet touchedStates;
@@ -51,9 +51,9 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
             // region Constructor
             // endregion Constructor
             String name,
-            boolean countNulls) {
+            boolean countNullAndNans) {
         this.name = name;
-        this.countNull = countNulls;
+        this.countNullAndNans = countNullAndNans;
         this.resultColumn = new LongArraySource();
 
         // region SsmCreation
@@ -105,7 +105,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
                 bucketedContext.counts.ensureCapacityPreserve(currentPos + newLength);
                 bucketedContext.counts.get().setSize(currentPos + newLength);
                 newLength = FloatCompactKernel.compactAndCount(bucketedContext.valueCopy.get().asWritableFloatChunk(),
-                        bucketedContext.counts.get(), currentPos, newLength, countNull);
+                        bucketedContext.counts.get(), currentPos, newLength, countNullAndNans);
             }
 
             bucketedContext.lengthCopy.set(ii, newLength);
@@ -186,7 +186,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = FloatCompactKernel.compactAndCount(context.valueCopy.get().asWritableFloatChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, countNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -271,7 +271,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = FloatCompactKernel.compactAndCount(context.valueCopy.get().asWritableFloatChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, countNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -374,7 +374,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             FloatCompactKernel.compactAndCount(context.valueCopy.get().asWritableFloatChunk(), context.counts.get(),
-                    countNull);
+                    countNullAndNans);
         }
         return context;
     }
@@ -426,7 +426,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             FloatCompactKernel.compactAndCount(context.valueCopy.get().asWritableFloatChunk(), context.counts.get(),
-                    countNull);
+                    countNullAndNans);
         }
         return context;
     }
@@ -482,7 +482,7 @@ public class FloatRollupCountDistinctOperator implements IterativeChunkedAggrega
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             FloatCompactKernel.compactAndCount(context.valueCopy.get().asWritableFloatChunk(), context.counts.get(),
-                    countNull);
+                    countNullAndNans);
         }
     }
 

@@ -1319,30 +1319,24 @@ public final class ShortSegmentedSortedMultiset implements SegmentedSortedMultiS
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(short lhs, short rhs) {
-        return ShortComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(short lhs, short rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return ShortComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(short lhs, short rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return ShortComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(short lhs, short rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return ShortComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(short lhs, short rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return ShortComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(short lhs, short rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return ShortComparisons.eq(lhs, rhs);
     }
     // endregion
 

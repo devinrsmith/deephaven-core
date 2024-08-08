@@ -1319,30 +1319,24 @@ public final class FloatSegmentedSortedMultiset implements SegmentedSortedMultiS
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(float lhs, float rhs) {
-        return FloatComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(float lhs, float rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return FloatComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(float lhs, float rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return FloatComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(float lhs, float rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return FloatComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(float lhs, float rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return FloatComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(float lhs, float rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return FloatComparisons.eq(lhs, rhs);
     }
     // endregion
 

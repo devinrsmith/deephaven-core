@@ -1550,82 +1550,82 @@ public class AggregationProcessor implements AggregationContextFactory {
     private static IterativeChunkedAggregationOperator makeCountDistinctOperator(
             @NotNull final Class<?> type,
             @NotNull final String name,
-            final boolean countNulls,
+            final boolean countNullAndNans,
             final boolean exposeInternal,
             final boolean reaggregated) {
         if (type == Byte.class || type == byte.class) {
             return reaggregated
-                    ? new ByteRollupCountDistinctOperator(name, countNulls)
-                    : new ByteChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new ByteRollupCountDistinctOperator(name, countNullAndNans)
+                    : new ByteChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Character.class || type == char.class) {
             return reaggregated
-                    ? new CharRollupCountDistinctOperator(name, countNulls)
-                    : new CharChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new CharRollupCountDistinctOperator(name, countNullAndNans)
+                    : new CharChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Double.class || type == double.class) {
             return reaggregated
-                    ? new DoubleRollupCountDistinctOperator(name, countNulls)
-                    : new DoubleChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new DoubleRollupCountDistinctOperator(name, countNullAndNans)
+                    : new DoubleChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Float.class || type == float.class) {
             return reaggregated
-                    ? new FloatRollupCountDistinctOperator(name, countNulls)
-                    : new FloatChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new FloatRollupCountDistinctOperator(name, countNullAndNans)
+                    : new FloatChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Integer.class || type == int.class) {
             return reaggregated
-                    ? new IntRollupCountDistinctOperator(name, countNulls)
-                    : new IntChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new IntRollupCountDistinctOperator(name, countNullAndNans)
+                    : new IntChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Long.class || type == long.class || type == Instant.class) {
             return reaggregated
-                    ? new LongRollupCountDistinctOperator(name, countNulls)
-                    : new LongChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new LongRollupCountDistinctOperator(name, countNullAndNans)
+                    : new LongChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else if (type == Short.class || type == short.class) {
             return reaggregated
-                    ? new ShortRollupCountDistinctOperator(name, countNulls)
-                    : new ShortChunkedCountDistinctOperator(name, countNulls, exposeInternal);
+                    ? new ShortRollupCountDistinctOperator(name, countNullAndNans)
+                    : new ShortChunkedCountDistinctOperator(name, countNullAndNans, exposeInternal);
         } else {
             return reaggregated
-                    ? new ObjectRollupCountDistinctOperator(type, name, countNulls)
-                    : new ObjectChunkedCountDistinctOperator(type, name, countNulls, exposeInternal);
+                    ? new ObjectRollupCountDistinctOperator(type, name, countNullAndNans)
+                    : new ObjectChunkedCountDistinctOperator(type, name, countNullAndNans, exposeInternal);
         }
     }
 
     private static IterativeChunkedAggregationOperator makeDistinctOperator(
             @NotNull final Class<?> type,
             @NotNull final String name,
-            final boolean includeNulls,
+            final boolean includeNullAndNans,
             final boolean exposeInternal,
             final boolean reaggregated) {
         if (type == Byte.class || type == byte.class) {
             return reaggregated
-                    ? new ByteRollupDistinctOperator(name, includeNulls)
-                    : new ByteChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new ByteRollupDistinctOperator(name, includeNullAndNans)
+                    : new ByteChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else if (type == Character.class || type == char.class) {
             return reaggregated
-                    ? new CharRollupDistinctOperator(name, includeNulls)
-                    : new CharChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new CharRollupDistinctOperator(name, includeNullAndNans)
+                    : new CharChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else if (type == Double.class || type == double.class) {
             return reaggregated
-                    ? new DoubleRollupDistinctOperator(name, includeNulls)
-                    : new DoubleChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new DoubleRollupDistinctOperator(name, includeNullAndNans)
+                    : new DoubleChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else if (type == Float.class || type == float.class) {
             return reaggregated
-                    ? new FloatRollupDistinctOperator(name, includeNulls)
-                    : new FloatChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new FloatRollupDistinctOperator(name, includeNullAndNans)
+                    : new FloatChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else if (type == Integer.class || type == int.class) {
             return reaggregated
-                    ? new IntRollupDistinctOperator(name, includeNulls)
-                    : new IntChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new IntRollupDistinctOperator(name, includeNullAndNans)
+                    : new IntChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else if (type == Long.class || type == long.class || type == Instant.class) {
             return reaggregated
-                    ? new LongRollupDistinctOperator(type, name, includeNulls)
-                    : new LongChunkedDistinctOperator(type, name, includeNulls, exposeInternal);
+                    ? new LongRollupDistinctOperator(type, name, includeNullAndNans)
+                    : new LongChunkedDistinctOperator(type, name, includeNullAndNans, exposeInternal);
         } else if (type == Short.class || type == short.class) {
             return reaggregated
-                    ? new ShortRollupDistinctOperator(name, includeNulls)
-                    : new ShortChunkedDistinctOperator(name, includeNulls, exposeInternal);
+                    ? new ShortRollupDistinctOperator(name, includeNullAndNans)
+                    : new ShortChunkedDistinctOperator(name, includeNullAndNans, exposeInternal);
         } else {
             return reaggregated
-                    ? new ObjectRollupDistinctOperator(type, name, includeNulls)
-                    : new ObjectChunkedDistinctOperator(type, name, includeNulls, exposeInternal);
+                    ? new ObjectRollupDistinctOperator(type, name, includeNullAndNans)
+                    : new ObjectChunkedDistinctOperator(type, name, includeNullAndNans, exposeInternal);
         }
     }
 

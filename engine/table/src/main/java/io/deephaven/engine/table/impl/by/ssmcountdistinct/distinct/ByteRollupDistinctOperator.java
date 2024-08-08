@@ -40,7 +40,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
     private final ByteSsmBackedSource internalResult;
     private final ColumnSource<?> externalResult;
     private final Supplier<SegmentedSortedMultiSet.RemoveContext> removeContextFactory;
-    private final boolean countNull;
+    private final boolean includeNullAndNans;
 
     private UpdateCommitter<ByteRollupDistinctOperator> prevFlusher = null;
     private WritableRowSet touchedStates;
@@ -49,9 +49,9 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
             // region Constructor
             // endregion Constructor
             String name,
-            boolean countNulls) {
+            boolean includeNullAndNans) {
         this.name = name;
-        this.countNull = countNulls;
+        this.includeNullAndNans = includeNullAndNans;
         // region SsmCreation
         this.internalResult = new ByteSsmBackedSource();
         // endregion SsmCreation
@@ -103,7 +103,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
                 bucketedContext.counts.ensureCapacityPreserve(currentPos + newLength);
                 bucketedContext.counts.get().setSize(currentPos + newLength);
                 newLength = ByteCompactKernel.compactAndCount(bucketedContext.valueCopy.get().asWritableByteChunk(),
-                        bucketedContext.counts.get(), currentPos, newLength, countNull);
+                        bucketedContext.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             bucketedContext.lengthCopy.set(ii, newLength);
@@ -182,7 +182,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = ByteCompactKernel.compactAndCount(context.valueCopy.get().asWritableByteChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -264,7 +264,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
                 context.counts.ensureCapacityPreserve(currentPos + newLength);
                 context.counts.get().setSize(currentPos + newLength);
                 newLength = ByteCompactKernel.compactAndCount(context.valueCopy.get().asWritableByteChunk(),
-                        context.counts.get(), currentPos, newLength, countNull);
+                        context.counts.get(), currentPos, newLength, includeNullAndNans);
             }
 
             context.lengthCopy.set(ii, newLength);
@@ -362,7 +362,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             ByteCompactKernel.compactAndCount(context.valueCopy.get().asWritableByteChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
         return context;
     }
@@ -411,7 +411,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             ByteCompactKernel.compactAndCount(context.valueCopy.get().asWritableByteChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
         return context;
     }
@@ -466,7 +466,7 @@ public class ByteRollupDistinctOperator implements IterativeChunkedAggregationOp
             context.counts.ensureCapacityPreserve(currentPos);
             context.counts.get().setSize(currentPos);
             ByteCompactKernel.compactAndCount(context.valueCopy.get().asWritableByteChunk(), context.counts.get(),
-                    countNull);
+                    includeNullAndNans);
         }
     }
 

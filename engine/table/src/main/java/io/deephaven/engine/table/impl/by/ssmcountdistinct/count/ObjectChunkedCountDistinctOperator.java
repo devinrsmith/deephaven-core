@@ -43,7 +43,7 @@ public class ObjectChunkedCountDistinctOperator implements IterativeChunkedAggre
     private final String name;
 
     private final Supplier<SegmentedSortedMultiSet.RemoveContext> removeContextFactory;
-    private final boolean countNull;
+    private final boolean countNullAndNans;
     private final boolean exposeInternal;
     private WritableRowSet touchedStates;
     private UpdateCommitter<ObjectChunkedCountDistinctOperator> prevFlusher = null;
@@ -54,9 +54,9 @@ public class ObjectChunkedCountDistinctOperator implements IterativeChunkedAggre
     public ObjectChunkedCountDistinctOperator(// region Constructor
             Class<?> type,
                                             // endregion Constructor
-            String name, boolean countNulls, boolean exposeInternal) {
+            String name, boolean countNullAndNans, boolean exposeInternal) {
         this.name = name;
-        this.countNull = countNulls;
+        this.countNullAndNans = countNullAndNans;
         this.exposeInternal = exposeInternal;
 
         // region SsmCreation
@@ -80,7 +80,7 @@ public class ObjectChunkedCountDistinctOperator implements IterativeChunkedAggre
         context.lengthCopy.copyFromChunk(length, 0, 0, length.size());
 
         ObjectCompactKernel.compactAndCount((WritableObjectChunk<?, ? extends Values>) context.valueCopy, context.counts,
-                startPositions, context.lengthCopy, countNull);
+                startPositions, context.lengthCopy, countNullAndNans);
         return context;
     }
 
@@ -200,7 +200,7 @@ public class ObjectChunkedCountDistinctOperator implements IterativeChunkedAggre
         context.valueCopy.setSize(values.size());
         context.valueCopy.copyFromChunk(values, 0, 0, values.size());
         ObjectCompactKernel.compactAndCount((WritableObjectChunk<?, ? extends Values>) context.valueCopy, context.counts,
-                countNull);
+                countNullAndNans);
         return context;
     }
 

@@ -1319,30 +1319,24 @@ public final class IntSegmentedSortedMultiset implements SegmentedSortedMultiSet
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(int lhs, int rhs) {
-        return IntComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(int lhs, int rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return IntComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(int lhs, int rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return IntComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(int lhs, int rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return IntComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(int lhs, int rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return IntComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(int lhs, int rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return IntComparisons.eq(lhs, rhs);
     }
     // endregion
 

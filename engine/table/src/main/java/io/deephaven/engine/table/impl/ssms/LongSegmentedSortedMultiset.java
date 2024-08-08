@@ -1324,30 +1324,24 @@ public final class LongSegmentedSortedMultiset implements SegmentedSortedMultiSe
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(long lhs, long rhs) {
-        return LongComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(long lhs, long rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return LongComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(long lhs, long rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return LongComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(long lhs, long rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return LongComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(long lhs, long rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return LongComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(long lhs, long rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return LongComparisons.eq(lhs, rhs);
     }
     // endregion
 

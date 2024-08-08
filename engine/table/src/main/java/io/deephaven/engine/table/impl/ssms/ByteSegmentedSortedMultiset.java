@@ -1319,30 +1319,24 @@ public final class ByteSegmentedSortedMultiset implements SegmentedSortedMultiSe
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(byte lhs, byte rhs) {
-        return ByteComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return ByteComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return ByteComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return ByteComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(byte lhs, byte rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return ByteComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(byte lhs, byte rhs) {
-        // region equality function
-        return lhs == rhs;
-        // endregion equality function
+        return ByteComparisons.eq(lhs, rhs);
     }
     // endregion
 

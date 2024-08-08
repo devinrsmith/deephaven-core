@@ -39,7 +39,7 @@ public class CharChunkedCountDistinctOperator implements IterativeChunkedAggrega
     private final String name;
 
     private final Supplier<SegmentedSortedMultiSet.RemoveContext> removeContextFactory;
-    private final boolean countNull;
+    private final boolean countNullAndNans;
     private final boolean exposeInternal;
     private WritableRowSet touchedStates;
     private UpdateCommitter<CharChunkedCountDistinctOperator> prevFlusher = null;
@@ -49,9 +49,9 @@ public class CharChunkedCountDistinctOperator implements IterativeChunkedAggrega
 
     public CharChunkedCountDistinctOperator(// region Constructor
                                             // endregion Constructor
-            String name, boolean countNulls, boolean exposeInternal) {
+            String name, boolean countNullAndNans, boolean exposeInternal) {
         this.name = name;
-        this.countNull = countNulls;
+        this.countNullAndNans = countNullAndNans;
         this.exposeInternal = exposeInternal;
 
         // region SsmCreation
@@ -75,7 +75,7 @@ public class CharChunkedCountDistinctOperator implements IterativeChunkedAggrega
         context.lengthCopy.copyFromChunk(length, 0, 0, length.size());
 
         CharCompactKernel.compactAndCount((WritableCharChunk<? extends Values>) context.valueCopy, context.counts,
-                startPositions, context.lengthCopy, countNull);
+                startPositions, context.lengthCopy, countNullAndNans);
         return context;
     }
 
@@ -195,7 +195,7 @@ public class CharChunkedCountDistinctOperator implements IterativeChunkedAggrega
         context.valueCopy.setSize(values.size());
         context.valueCopy.copyFromChunk(values, 0, 0, values.size());
         CharCompactKernel.compactAndCount((WritableCharChunk<? extends Values>) context.valueCopy, context.counts,
-                countNull);
+                countNullAndNans);
         return context;
     }
 

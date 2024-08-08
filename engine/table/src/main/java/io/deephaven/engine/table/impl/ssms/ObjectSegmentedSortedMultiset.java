@@ -1331,30 +1331,24 @@ public final class ObjectSegmentedSortedMultiset implements SegmentedSortedMulti
         return (values + leafCount - 1) / leafCount;
     }
 
-    private static int doComparison(Object lhs, Object rhs) {
-        return ObjectComparisons.compare(lhs, rhs);
-    }
-
     private static boolean gt(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) > 0;
+        return ObjectComparisons.gt(lhs, rhs);
     }
 
     private static boolean lt(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) < 0;
+        return ObjectComparisons.lt(lhs, rhs);
     }
 
     private static boolean leq(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) <= 0;
+        return ObjectComparisons.leq(lhs, rhs);
     }
 
     private static boolean geq(Object lhs, Object rhs) {
-        return doComparison(lhs, rhs) >= 0;
+        return ObjectComparisons.geq(lhs, rhs);
     }
 
     private static boolean eq(Object lhs, Object rhs) {
-        // region equality function
-        return Objects.equals(lhs, rhs);
-        // endregion equality function
+        return ObjectComparisons.eq(lhs, rhs);
     }
     // endregion
 

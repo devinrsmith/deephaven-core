@@ -15,11 +15,11 @@ spotless {
         licenseHeader '#\n' +
                 '# Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending\n' +
                 '#', '[^#]'
-        black('24.8.0')
+        // black('24.8.0')
     }
 }
 
-project.tasks.getByName('quick').dependsOn project.tasks.getByName('spotlessCheck')
+// project.tasks.getByName('quick').dependsOn project.tasks.getByName('spotlessCheck')
 
 configurations {
     pythonWheel

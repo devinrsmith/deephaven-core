@@ -35,7 +35,9 @@ class Table(TableInterface, ServerObject):
     def table_op_handler(self, table_op):
         return self.session.table_service.grpc_table_op(self, table_op)
 
-    def __init__(self, session, ticket, schema_header=b'', size=None, is_static=None, schema=None):
+    def __init__(
+        self, session, ticket, schema_header=b"", size=None, is_static=None, schema=None
+    ):
         ServerObject.__init__(self, type_="Table", ticket=ticket)
         if not session or not session.is_alive:
             raise DHError("Must be associated with a active session")
@@ -104,8 +106,8 @@ class Table(TableInterface, ServerObject):
         return self.session.flight_service.do_get_table(self)
 
     def drop_columns(self, cols: Union[str, List[str]]) -> Table:
-        """The drop_column method creates a new table with the same size as this table but omits any of the specified 
-        columns. 
+        """The drop_column method creates a new table with the same size as this table but omits any of the specified
+        columns.
 
         Args:
             cols (Union[str, List[str]]) : the column name(s)
@@ -175,8 +177,8 @@ class Table(TableInterface, ServerObject):
         return super().update_view(formulas)
 
     def select(self, formulas: Union[str, List[str]] = None) -> Table:
-        """The select method creates a new in-memory table that includes one column for each formula. If no formula 
-        is specified, all columns will be included. 
+        """The select method creates a new in-memory table that includes one column for each formula. If no formula
+        is specified, all columns will be included.
 
         Args:
             formulas (Union[str, List[str]], optional): the column formula(s), default is None
@@ -190,9 +192,9 @@ class Table(TableInterface, ServerObject):
         return super().select(formulas)
 
     def select_distinct(self, cols: Union[str, List[str]] = None) -> Table:
-        """The select_distinct method creates a new table containing all the unique values for a set of key columns. 
-        When the selectDistinct method is used on multiple columns, it looks for distinct sets of values in the 
-        selected columns. 
+        """The select_distinct method creates a new table containing all the unique values for a set of key columns.
+        When the selectDistinct method is used on multiple columns, it looks for distinct sets of values in the
+        selected columns.
 
         Args:
             cols (Union[str, List[str]], optional): the column name(s), default is None
@@ -205,9 +207,13 @@ class Table(TableInterface, ServerObject):
         """
         return super().select_distinct(cols)
 
-    def sort(self, order_by: Union[str, List[str]], order: Union[SortDirection, List[SortDirection]] = None) -> Table:
-        """The sort method creates a new table where the rows are ordered based on values in the specified set of 
-        columns. 
+    def sort(
+        self,
+        order_by: Union[str, List[str]],
+        order: Union[SortDirection, List[SortDirection]] = None,
+    ) -> Table:
+        """The sort method creates a new table where the rows are ordered based on values in the specified set of
+        columns.
 
         Args:
             order_by (Union[str, List[str]]): the column(s) to be sorted on
@@ -241,8 +247,8 @@ class Table(TableInterface, ServerObject):
         return super().sort(order_by, order)
 
     def where(self, filters: Union[str, List[str]]) -> Table:
-        """The where method creates a new table with only the rows meeting the filter criteria in the column(s) of 
-        the table. 
+        """The where method creates a new table with only the rows meeting the filter criteria in the column(s) of
+        the table.
 
         Args:
             filters (Union[str, List[str]]): the filter condition expression(s)
@@ -256,7 +262,7 @@ class Table(TableInterface, ServerObject):
         return super().where(filters)
 
     def head(self, num_rows: int) -> Table:
-        """The head method creates a new table with a specific number of rows from the beginning of the table. 
+        """The head method creates a new table with a specific number of rows from the beginning of the table.
 
         Args:
             num_rows (int): the number of rows at the head of table
@@ -270,7 +276,7 @@ class Table(TableInterface, ServerObject):
         return super().head(num_rows)
 
     def tail(self, num_rows: int) -> Table:
-        """The tail method creates a new table with a specific number of rows from the end of the table. 
+        """The tail method creates a new table with a specific number of rows from the end of the table.
 
         Args:
             num_rows (int): the number of rows at the end of table
@@ -283,11 +289,16 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).tail(num_rows)
 
-    def natural_join(self, table: Table, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Table:
-        """The natural_join method creates a new table containing all the rows and columns of this table, 
-        plus additional columns containing data from the right table. For columns appended to the left table (joins), 
-        row values equal the row values from the right table where the key values in the left and right tables are 
-        equal. If there is no matching key in the right table, appended row values are NULL. 
+    def natural_join(
+        self,
+        table: Table,
+        on: Union[str, List[str]],
+        joins: Union[str, List[str]] = None,
+    ) -> Table:
+        """The natural_join method creates a new table containing all the rows and columns of this table,
+        plus additional columns containing data from the right table. For columns appended to the left table (joins),
+        row values equal the row values from the right table where the key values in the left and right tables are
+        equal. If there is no matching key in the right table, appended row values are NULL.
 
         Args:
             table (Table): the right-table of the join
@@ -305,16 +316,21 @@ class Table(TableInterface, ServerObject):
         """
         return super().natural_join(table, on, joins)
 
-    def exact_join(self, table: Table, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Table:
-        """The exact_join method creates a new table containing all the rows and columns of this table plus 
-        additional columns containing data from the right table. For columns appended to the left table (joins), 
-        row values equal the row values from the right table where the key values in the left and right tables are 
-        equal. 
+    def exact_join(
+        self,
+        table: Table,
+        on: Union[str, List[str]],
+        joins: Union[str, List[str]] = None,
+    ) -> Table:
+        """The exact_join method creates a new table containing all the rows and columns of this table plus
+        additional columns containing data from the right table. For columns appended to the left table (joins),
+        row values equal the row values from the right table where the key values in the left and right tables are
+        equal.
 
         Args:
             table (Table): the right-table of the join
             on (Union[str, List[str]]): the column(s) to match, can be a common name or an equal expression,
-                i.e. "col_a = col_b" for different column names              
+                i.e. "col_a = col_b" for different column names
             joins (Union[str, List[str]], optional): the column(s) to be added from the right table to the result
                 table, can be renaming expressions, i.e. "new_col = col"; default is None, which means all the columns
                 from the right table, excluding those specified in 'on'
@@ -327,12 +343,17 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).exact_join(table, on, joins)
 
-    def join(self, table: Table, on: Union[str, List[str]] = None, joins: Union[str, List[str]] = None,
-             reserve_bits: int = 10) -> Table:
-        """The join method creates a new table containing rows that have matching values in both tables. Rows that do 
-        not have matching criteria will not be included in the result. If there are multiple matches between a row 
-        from the left table and rows from the right table, all matching combinations will be included. If no columns 
-        to match (on) are specified, every combination of left and right table rows is included. 
+    def join(
+        self,
+        table: Table,
+        on: Union[str, List[str]] = None,
+        joins: Union[str, List[str]] = None,
+        reserve_bits: int = 10,
+    ) -> Table:
+        """The join method creates a new table containing rows that have matching values in both tables. Rows that do
+        not have matching criteria will not be included in the result. If there are multiple matches between a row
+        from the left table and rows from the right table, all matching combinations will be included. If no columns
+        to match (on) are specified, every combination of left and right table rows is included.
 
         Args:
             table (Table): the right-table of the join
@@ -351,12 +372,17 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).join(table, on, joins)
 
-    def aj(self, table: Table, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Table:
-        """The aj (as-of join) method creates a new table containing all the rows and columns of the left table, 
-        plus additional columns containing data from the right table. For columns appended to the left table (joins), 
-        row values equal the row values from the right table where the keys from the left table most closely match 
-        the keys from the right table without going over. If there is no matching key in the right table, 
-        appended row values are NULL. 
+    def aj(
+        self,
+        table: Table,
+        on: Union[str, List[str]],
+        joins: Union[str, List[str]] = None,
+    ) -> Table:
+        """The aj (as-of join) method creates a new table containing all the rows and columns of the left table,
+        plus additional columns containing data from the right table. For columns appended to the left table (joins),
+        row values equal the row values from the right table where the keys from the left table most closely match
+        the keys from the right table without going over. If there is no matching key in the right table,
+        appended row values are NULL.
 
         Args:
             table (Table): the right-table of the join
@@ -376,12 +402,17 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).aj(table, on, joins)
 
-    def raj(self, table: Table, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Table:
-        """The raj (reverse as-of join) method creates a new table containing all the rows and columns of the left 
+    def raj(
+        self,
+        table: Table,
+        on: Union[str, List[str]],
+        joins: Union[str, List[str]] = None,
+    ) -> Table:
+        """The raj (reverse as-of join) method creates a new table containing all the rows and columns of the left
         table, plus additional columns containing data from the right table. For columns appended to the left table (
-        joins), row values equal the row values from the right table where the keys from the left table most closely 
-        match the keys from the right table without going under. If there is no matching key in the right table, 
-        appended row values are NULL. 
+        joins), row values equal the row values from the right table where the keys from the left table most closely
+        match the keys from the right table without going under. If there is no matching key in the right table,
+        appended row values are NULL.
 
         Args:
             table (Table): the right-table of the join
@@ -432,8 +463,8 @@ class Table(TableInterface, ServerObject):
         return super(Table, self).tail_by(num_rows, by)
 
     def group_by(self, by: Union[str, List[str]] = None) -> Table:
-        """The group_by method creates a new table containing grouping columns and grouped data, column content is 
-        grouped into arrays. 
+        """The group_by method creates a new table containing grouping columns and grouped data, column content is
+        grouped into arrays.
 
         If no group-by column is given, the content of each column is grouped into its own array.
 
@@ -449,9 +480,11 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).group_by(by)
 
-    def ungroup(self, cols: Union[str, List[str]] = None, null_fill: bool = True) -> Table:
-        """The ungroup method creates a new table in which array columns from the source table are unwrapped into 
-        separate rows. The ungroup columns should be of array types. 
+    def ungroup(
+        self, cols: Union[str, List[str]] = None, null_fill: bool = True
+    ) -> Table:
+        """The ungroup method creates a new table in which array columns from the source table are unwrapped into
+        separate rows. The ungroup columns should be of array types.
 
         Args:
             cols (Union[str, List[str]], optional): the array column(s), default is None, meaning all array columns will
@@ -631,7 +664,9 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).count_by(col, by)
 
-    def agg_by(self, aggs: Union[Aggregation, List[Aggregation]], by: Union[str, List[str]]) -> Table:
+    def agg_by(
+        self, aggs: Union[Aggregation, List[Aggregation]], by: Union[str, List[str]]
+    ) -> Table:
         """The agg_by method creates a new table containing grouping columns and grouped data. The resulting grouped
         data is defined by the aggregation(s) specified.
 
@@ -666,7 +701,11 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).agg_all_by(agg, by)
 
-    def update_by(self, ops: Union[UpdateByOperation, List[UpdateByOperation]], by: Union[str, List[str]]) -> Table:
+    def update_by(
+        self,
+        ops: Union[UpdateByOperation, List[UpdateByOperation]],
+        by: Union[str, List[str]],
+    ) -> Table:
         """The update_by method creates a table with additional columns calculated from
         window-based aggregations of columns in this table. The aggregations are defined by the provided operations,
         which support incremental aggregations over the corresponding rows in the table. The aggregations will
@@ -696,8 +735,14 @@ class Table(TableInterface, ServerObject):
         """
         return super(Table, self).snapshot()
 
-    def snapshot_when(self, trigger_table: Table, stamp_cols: Union[str, List[str]] = None, initial: bool = False,
-                      incremental: bool = False, history: bool = False) -> Table:
+    def snapshot_when(
+        self,
+        trigger_table: Table,
+        stamp_cols: Union[str, List[str]] = None,
+        initial: bool = False,
+        incremental: bool = False,
+        history: bool = False,
+    ) -> Table:
         """The snapshot_when creates a table that captures a snapshot of this table whenever trigger_table updates.
 
         When trigger_table updates, a snapshot of this table and the "stamp key" from trigger_table form the resulting
@@ -724,7 +769,9 @@ class Table(TableInterface, ServerObject):
         Raises:
             DHError
         """
-        return super(Table, self).snapshot_when(trigger_table, stamp_cols, initial, incremental, history)
+        return super(Table, self).snapshot_when(
+            trigger_table, stamp_cols, initial, incremental, history
+        )
 
     def where_in(self, filter_table: Table, cols: Union[str, List[str]]) -> Table:
         """The where_in method creates a new table containing rows from the source table, where the rows match values
@@ -769,9 +816,17 @@ class InputTable(Table):
     The keyed input tablet has keys for each row and supports addition/deletion/modification of rows by the keys.
     """
 
-    def __init__(self, session, ticket, schema_header=b'', size=None, is_static=None, schema=None):
-        super().__init__(session=session, ticket=ticket, schema_header=schema_header, size=size,
-                         is_static=is_static, schema=schema)
+    def __init__(
+        self, session, ticket, schema_header=b"", size=None, is_static=None, schema=None
+    ):
+        super().__init__(
+            session=session,
+            ticket=ticket,
+            schema_header=schema_header,
+            size=size,
+            is_static=is_static,
+            schema=schema,
+        )
         self.key_cols: List[str] = None
 
     def add(self, table: Table) -> None:
@@ -800,7 +855,9 @@ class InputTable(Table):
             DHError, PermissionError
         """
         if not self.key_cols:
-            raise PermissionError("deletion on an append-only input table is not allowed.")
+            raise PermissionError(
+                "deletion on an append-only input table is not allowed."
+            )
         try:
             self.session.input_table_service.delete(self, table)
         except Exception as e:

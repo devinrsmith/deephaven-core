@@ -5,7 +5,18 @@
 """ This module provides Java compatibility support including convenience functions to create some widely used Java
 data structures from corresponding Python ones in order to be able to call Java methods. """
 
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Set, TypeVar, Union, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+    Optional,
+)
 
 import jpy
 import numpy as np
@@ -16,8 +27,12 @@ from deephaven._wrapper import unwrap, wrap_j_object, JObjectWrapper
 from deephaven.dtypes import DType, _PRIMITIVE_DTYPE_NULL_MAP
 from deephaven.column import Column
 
-_NULL_BOOLEAN_AS_BYTE = jpy.get_type("io.deephaven.util.BooleanUtils").NULL_BOOLEAN_AS_BYTE
-_JPrimitiveArrayConversionUtility = jpy.get_type("io.deephaven.integrations.common.PrimitiveArrayConversionUtility")
+_NULL_BOOLEAN_AS_BYTE = jpy.get_type(
+    "io.deephaven.util.BooleanUtils"
+).NULL_BOOLEAN_AS_BYTE
+_JPrimitiveArrayConversionUtility = jpy.get_type(
+    "io.deephaven.integrations.common.PrimitiveArrayConversionUtility"
+)
 _JTableDefinition = jpy.get_type("io.deephaven.engine.table.TableDefinition")
 
 _DH_PANDAS_NULLABLE_TYPE_MAP: Dict[DType, pd.api.extensions.ExtensionDtype] = {
@@ -143,9 +158,9 @@ def j_unary_operator(func: Callable[[T], T], dtype: DType) -> jpy.JType:
     Returns:
         io.deephaven.integrations.python.PythonFunction instance
     """
-    return jpy.get_type("io.deephaven.integrations.python.PythonFunction$PythonUnaryOperator")(
-        func, dtype.qst_type.clazz()
-    )
+    return jpy.get_type(
+        "io.deephaven.integrations.python.PythonFunction$PythonUnaryOperator"
+    )(func, dtype.qst_type.clazz())
 
 
 def j_binary_operator(func: Callable[[T, T], T], dtype: DType) -> jpy.JType:
@@ -159,29 +174,32 @@ def j_binary_operator(func: Callable[[T, T], T], dtype: DType) -> jpy.JType:
     Returns:
         io.deephaven.integrations.python.PythonFunction instance
     """
-    return jpy.get_type("io.deephaven.integrations.python.PythonBiFunction$PythonBinaryOperator")(
-        func, dtype.qst_type.clazz()
-    )
+    return jpy.get_type(
+        "io.deephaven.integrations.python.PythonBiFunction$PythonBinaryOperator"
+    )(func, dtype.qst_type.clazz())
 
 
 def j_lambda(func: Callable, lambda_jtype: jpy.JType, return_dtype: DType = None):
-    """Wraps a Python Callable as a Java "lambda" type.  
-    
+    """Wraps a Python Callable as a Java "lambda" type.
+
     Java lambda types must contain a single abstract method.
-    
+
     Args:
-        func (Callable): Any Python Callable or object with an 'apply' method that accepts the same arguments 
+        func (Callable): Any Python Callable or object with an 'apply' method that accepts the same arguments
             (number and type) the target Java lambda type
         lambda_jtype (jpy.JType): The Java lambda interface to wrap the provided callable in
         return_dtype (DType): The expected return type if conversion should be applied.  None (the default) does not
             attempt to convert the return value and returns a Java Object.
     """
     coerce_to_type = return_dtype.qst_type.clazz() if return_dtype is not None else None
-    return jpy.get_type('io.deephaven.integrations.python.JavaLambdaFactory').create(lambda_jtype.jclass, func,
-                                                                                     coerce_to_type)
+    return jpy.get_type("io.deephaven.integrations.python.JavaLambdaFactory").create(
+        lambda_jtype.jclass, func, coerce_to_type
+    )
 
 
-def to_sequence(v: Union[T, Sequence[T]] = None, wrapped: bool = False) -> Sequence[Union[T, jpy.JType]]:
+def to_sequence(
+    v: Union[T, Sequence[T]] = None, wrapped: bool = False
+) -> Sequence[Union[T, jpy.JType]]:
     """A convenience function to create a sequence of wrapped or unwrapped object from either one or a sequence of
     input values to help JPY find the matching Java overloaded method to call.
 
@@ -210,9 +228,10 @@ def to_sequence(v: Union[T, Sequence[T]] = None, wrapped: bool = False) -> Seque
         return tuple((unwrap(o) for o in v))
 
 
-def _j_array_to_numpy_array(dtype: DType, j_array: jpy.JType, conv_null: bool, type_promotion: bool = False) -> \
-        Optional[np.ndarray]:
-    """ Produces a numpy array from the DType and given Java array.
+def _j_array_to_numpy_array(
+    dtype: DType, j_array: jpy.JType, conv_null: bool, type_promotion: bool = False
+) -> Optional[np.ndarray]:
+    """Produces a numpy array from the DType and given Java array.
 
     Args:
         dtype (DType): The dtype of the Java array
@@ -255,6 +274,7 @@ def _j_array_to_numpy_array(dtype: DType, j_array: jpy.JType, conv_null: bool, t
 
     return np_array
 
+
 def dh_null_to_nan(np_array: np.ndarray, type_promotion: bool = False) -> np.ndarray:
     """Converts Deephaven primitive null values in the given numpy array to np.nan. No conversion is performed on
     non-primitive types.
@@ -285,15 +305,20 @@ def dh_null_to_nan(np_array: np.ndarray, type_promotion: bool = False) -> np.nda
             np_array[np_array == dh_null] = np.nan
         else:
             if not type_promotion:
-                raise DHError(message=f"failed to convert DH nulls to np.nan in the numpy array. The array is "
-                                      f"of {np_array.dtype.type} type  but type_promotion is False")
-            if dtype is dtypes.bool_:  # needs to change its type to byte for dh null detection
+                raise DHError(
+                    message=f"failed to convert DH nulls to np.nan in the numpy array. The array is "
+                    f"of {np_array.dtype.type} type  but type_promotion is False"
+                )
+            if (
+                dtype is dtypes.bool_
+            ):  # needs to change its type to byte for dh null detection
                 np_array = np.frombuffer(np_array, np.byte)
 
             np_array = np_array.astype(np.float64)
             np_array[np_array == dh_null] = np.nan
 
     return np_array
+
 
 def _j_array_to_series(dtype: DType, j_array: jpy.JType, conv_null: bool) -> pd.Series:
     """Produce a copy of the specified Java array as a pandas.Series object.
@@ -327,7 +352,10 @@ def _j_array_to_series(dtype: DType, j_array: jpy.JType, conv_null: bool) -> pd.
 
     return s
 
-def j_table_definition(table_definition: Union[Dict[str, DType], List[Column], None]) -> Optional[jpy.JType]:
+
+def j_table_definition(
+    table_definition: Union[Dict[str, DType], List[Column], None]
+) -> Optional[jpy.JType]:
     """Produce a Deephaven TableDefinition from user input.
 
     Args:
@@ -359,7 +387,7 @@ def j_table_definition(table_definition: Union[Dict[str, DType], List[Column], N
 
 class AutoCloseable(JObjectWrapper):
     """A context manager wrapper to allow Java AutoCloseable to be used in with statements.
-    
+
     When constructing a new instance, the Java AutoCloseable must not be closed."""
 
     j_object_type = jpy.get_type("java.lang.AutoCloseable")

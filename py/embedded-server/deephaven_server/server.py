@@ -8,6 +8,7 @@ import sys
 
 from .start_jvm import start_jvm
 
+
 # These classes are explicitly not JObjectWrapper, as that would require importing deephaven and jpy
 # before the JVM was running.
 class ServerConfig:
@@ -32,10 +33,12 @@ class ServerConfig:
         """
         return self.j_server_config.targetUrlOrDefault()
 
+
 class AuthenticationHandler:
     """
     Represents an authentication handler for a Deephaven server.
     """
+
     def __init__(self, j_authentication_handler):
         self.j_authentication_handler = j_authentication_handler
 
@@ -66,7 +69,6 @@ class AuthenticationHandler:
 
         """
         return list(self.j_authentication_handler.urls(target_url).toArray())
-
 
 
 class Server:
@@ -143,19 +145,26 @@ class Server:
         # If the server was already created, emit an error to warn away from trying again
         if Server.instance is not None:
             from deephaven import DHError
+
             raise DHError("Cannot create more than one instance of the server")
 
         if extra_classpath is None:
             extra_classpath = []
 
         # given the jvm args, ensure that the jvm has started
-        start_jvm(jvm_args=jvm_args, default_jvm_args=default_jvm_args, extra_classpath=extra_classpath)
+        start_jvm(
+            jvm_args=jvm_args,
+            default_jvm_args=default_jvm_args,
+            extra_classpath=extra_classpath,
+        )
 
         # it is now safe to import jpy
         import jpy
 
         # Create a python-wrapped java server that we can reference to talk to the platform
-        self.j_server = jpy.get_type("io.deephaven.python.server.EmbeddedServer")(host, port)
+        self.j_server = jpy.get_type("io.deephaven.python.server.EmbeddedServer")(
+            host, port
+        )
 
         # Obtain references to the deephaven logbuffer and redirect stdout/stderr to it. Note that we should not import
         # this until after jpy has started.

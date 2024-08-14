@@ -33,7 +33,7 @@ class DataIndex(JObjectWrapper):
 
     @property
     def keys(self) -> List[str]:
-        """The names of the columns indexed by the DataIndex. """
+        """The names of the columns indexed by the DataIndex."""
         return j_list_to_list(self._j_data_index.keyColumnNames())
 
     @property
@@ -69,7 +69,9 @@ def _get_data_index(table: Table, key_cols: List[str]) -> Optional[DataIndex]:
     return DataIndex(j_di) if j_di else None
 
 
-def data_index(table: Table, key_cols: List[str], create_if_absent: bool = True) -> Optional[DataIndex]:
+def data_index(
+    table: Table, key_cols: List[str], create_if_absent: bool = True
+) -> Optional[DataIndex]:
     """Gets the DataIndex for the given key columns on the provided table. When the DataIndex already exists, returns it.
     When the DataIndex doesn't already exist, if create_if_absent is True, creates the DataIndex first then returns it;
     otherwise returns None.

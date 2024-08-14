@@ -55,14 +55,14 @@ class SessionTestCase(BaseTestCase):
             self.assertFalse(t.is_static)
             session.bind_table("t", t)
 
-            console_script = ("""
+            console_script = """
 from deephaven import empty_table
 try:
     del t1
 except NameError:
     pass
 t1 = empty_table(0) if t.is_blink else None
-""")
+"""
             session.run_script(console_script)
             self.assertNotIn("t1", session.tables)
 
@@ -77,7 +77,9 @@ t1 = empty_table(0) if t.is_blink else None
         table1 = session.import_table(pa_table)
         table2 = table1.group_by(by=["a", "c"]).ungroup(cols=["b", "d", "e"])
         table3 = table1.where(["a % 2 > 0 && b % 3 == 1"])
-        result_table = session.merge_tables(tables=[table1, table2, table3], order_by="a")
+        result_table = session.merge_tables(
+            tables=[table1, table2, table3], order_by="a"
+        )
 
         self.assertTrue(result_table.size > table1.size)
         self.assertTrue(result_table.size > table2.size)
@@ -113,8 +115,8 @@ t1 = empty_table(0) if t.is_blink else None
 
     @unittest.skip("GH ticket filed #941.")
     def test_import_table_time64(self):
-        pa_array = pa.array([1, 2], type=pa.time64('ns'))
-        pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+        pa_array = pa.array([1, 2], type=pa.time64("ns"))
+        pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
         pa_table = pa.Table.from_batches([pa_record_batch])
         new_table = self.session.import_table(pa_table)
         pa_table2 = new_table.to_arrow()
@@ -125,7 +127,7 @@ t1 = empty_table(0) if t.is_blink else None
         exception_list = []
         for t in types:
             pa_array = pa.array([-1, 0, 127], type=t)
-            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
             pa_table = pa.Table.from_batches([pa_record_batch])
             new_table = self.session.import_table(pa_table)
             pa_table2 = new_table.to_arrow()
@@ -142,7 +144,7 @@ t1 = empty_table(0) if t.is_blink else None
         exception_list = []
         for t in types:
             pa_array = pa.array([0, 255, 65535], type=t)
-            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
             pa_table = pa.Table.from_batches([pa_record_batch])
             new_table = self.session.import_table(pa_table)
             pa_table2 = new_table.to_arrow()
@@ -159,7 +161,7 @@ t1 = empty_table(0) if t.is_blink else None
         exception_list = []
         for t in types:
             pa_array = pa.array([1.111, 2.222], type=t)
-            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
             pa_table = pa.Table.from_batches([pa_record_batch])
             new_table = self.session.import_table(pa_table)
             pa_table2 = new_table.to_arrow()
@@ -174,8 +176,8 @@ t1 = empty_table(0) if t.is_blink else None
         types = [pa.string(), pa.utf8()]
         exception_list = []
         for t in types:
-            pa_array = pa.array(['text1', "text2"], type=t)
-            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+            pa_array = pa.array(["text1", "text2"], type=t)
+            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
             pa_table = pa.Table.from_batches([pa_record_batch])
             new_table = self.session.import_table(pa_table)
             pa_table2 = new_table.to_arrow()
@@ -192,7 +194,7 @@ t1 = empty_table(0) if t.is_blink else None
         exception_list = []
         for t in types:
             pa_array = pa.array([1245, 123456], type=t)
-            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=['f1'])
+            pa_record_batch = pa.RecordBatch.from_arrays([pa_array], names=["f1"])
             pa_table = pa.Table.from_batches([pa_record_batch])
             new_table = self.session.import_table(pa_table)
             pa_table2 = new_table.to_arrow()
@@ -210,19 +212,23 @@ t1 = empty_table(0) if t.is_blink else None
             pa.int16(),
             pa.int32(),
             pa.int64(),
-            pa.timestamp('ns', tz='UTC'),
+            pa.timestamp("ns", tz="UTC"),
             pa.float32(),
             pa.float64(),
             pa.string(),
         ]
         pa_data = [
             pa.array([True, False]),
-            pa.array([2 ** 7 - 1, -2 ** 7 + 1]),
-            pa.array([2 ** 15 - 1, -2 ** 15 + 1]),
-            pa.array([2 ** 31 - 1, -2 ** 31 + 1]),
-            pa.array([2 ** 63 - 1, -2 ** 63 + 1]),
-            pa.array([pd.Timestamp('2017-01-01T12:01:01', tz='UTC'),
-                      pd.Timestamp('2017-01-01T11:01:01', tz='Europe/Paris')]),
+            pa.array([2**7 - 1, -(2**7) + 1]),
+            pa.array([2**15 - 1, -(2**15) + 1]),
+            pa.array([2**31 - 1, -(2**31) + 1]),
+            pa.array([2**63 - 1, -(2**63) + 1]),
+            pa.array(
+                [
+                    pd.Timestamp("2017-01-01T12:01:01", tz="UTC"),
+                    pd.Timestamp("2017-01-01T11:01:01", tz="Europe/Paris"),
+                ]
+            ),
             pa.array([1.1, 2.2], pa.float32()),
             pa.array([1.1, 2.2], pa.float64()),
             pa.array(["foo", "bar"]),
@@ -275,19 +281,23 @@ t1 = empty_table(0) if t.is_blink else None
             pa.int16(),
             pa.int32(),
             pa.int64(),
-            pa.timestamp('ns', tz='UTC'),
+            pa.timestamp("ns", tz="UTC"),
             pa.float32(),
             pa.float64(),
             pa.string(),
         ]
         pa_data = [
             pa.array([True, False]),
-            pa.array([2 ** 7 - 1, -2 ** 7 + 1]),
-            pa.array([2 ** 15 - 1, -2 ** 15 + 1]),
-            pa.array([2 ** 31 - 1, -2 ** 31 + 1]),
-            pa.array([2 ** 63 - 1, -2 ** 63 + 1]),
-            pa.array([pd.Timestamp('2017-01-01T12:01:01', tz='UTC'),
-                      pd.Timestamp('2017-01-01T11:01:01', tz='Europe/Paris')]),
+            pa.array([2**7 - 1, -(2**7) + 1]),
+            pa.array([2**15 - 1, -(2**15) + 1]),
+            pa.array([2**31 - 1, -(2**31) + 1]),
+            pa.array([2**63 - 1, -(2**63) + 1]),
+            pa.array(
+                [
+                    pd.Timestamp("2017-01-01T12:01:01", tz="UTC"),
+                    pd.Timestamp("2017-01-01T11:01:01", tz="Europe/Paris"),
+                ]
+            ),
             pa.array([1.1, 2.2], pa.float32()),
             pa.array([1.1, 2.2], pa.float64()),
             pa.array(["foo", "bar"]),
@@ -305,25 +315,27 @@ t1 = empty_table(0) if t.is_blink else None
                 pa_table = blink_input_table.to_arrow()
                 self.assertEqual(schema, pa_table.schema)
                 session.bind_table("t", blink_input_table)
-                console_script = ("""
+                console_script = """
 from deephaven import empty_table
 try:
     del t1
 except NameError:
     pass
 t1 = empty_table(0) if t.is_blink else None
-        """)
+        """
                 session.run_script(console_script)
                 self.assertIn("t1", session.tables)
 
                 with self.assertRaises(ValueError):
-                    session.input_table(schema=schema, init_table=blink_input_table, blink_table=True)
+                    session.input_table(
+                        schema=schema, init_table=blink_input_table, blink_table=True
+                    )
                 with self.assertRaises(ValueError):
                     session.input_table(key_cols="f0", blink_table=True)
 
             with self.subTest("blink InputTable ops"):
                 session.bind_table("dh_table", dh_table)
-                console_script = ("""
+                console_script = """
 from deephaven import empty_table
 try:
     del t1
@@ -332,13 +344,12 @@ except NameError:
 t.add(dh_table)
 t.await_update()
 t1 = empty_table(0) if t.size == 2 else None
-        """)
+        """
                 session.run_script(console_script)
                 self.assertIn("t1", session.tables)
 
                 with self.assertRaises(PermissionError):
                     blink_input_table.delete(dh_table.select(["f1"]))
-
 
     def test_publish_table(self):
         pub_session = Session()
@@ -353,16 +364,20 @@ t1 = empty_table(0) if t.size == 2 else None
         pa_table = t1.to_arrow()
         self.assertEqual(pa_table.num_rows, 1000)
 
-        with self.subTest("the 1st subscriber session is gone, shared ticket is still valid"):
+        with self.subTest(
+            "the 1st subscriber session is gone, shared ticket is still valid"
+        ):
             sub_session1.close()
             sub_session2 = Session()
             t2 = sub_session2.fetch_table(shared_ticket)
             self.assertEqual(t2.size, 1000)
 
-        with self.subTest("the publisher session is gone, shared ticket becomes invalid"):
+        with self.subTest(
+            "the publisher session is gone, shared ticket becomes invalid"
+        ):
             pub_session.close()
             with self.assertRaises(DHError):
-                 sub_session2.fetch_table(shared_ticket)
+                sub_session2.fetch_table(shared_ticket)
 
     # Note no 'test_' prefix; we don't want this to be picked up
     # on every run; you can still ask the test runner to run it by manually asking
@@ -373,19 +388,23 @@ t1 = empty_table(0) if t.size == 2 else None
         # otherwise debugging is hard.
         import datetime
         import threading
+
         session = self.session
         num_threads = 200
-        run_time_seconds = 60*60
+        run_time_seconds = 60 * 60
         deadline = time() + run_time_seconds
+
         def _interact_with_server(ti):
-            print(f'THREAD {ti} START at {datetime.datetime.now()}', flush=True)
+            print(f"THREAD {ti} START at {datetime.datetime.now()}", flush=True)
             while time() < deadline:
-                session.run_script(f'import deephaven; t1_{ti} = deephaven.time_table("PT1S")')
+                session.run_script(
+                    f'import deephaven; t1_{ti} = deephaven.time_table("PT1S")'
+                )
                 sleep(2)
-                table = session.open_table(f't1_{ti}')
+                table = session.open_table(f"t1_{ti}")
                 pa_table = table.to_arrow()
                 sleep(1)
-            print(f'THREAD {ti} END at {datetime.datetime.now()}', flush=True)
+            print(f"THREAD {ti} END at {datetime.datetime.now()}", flush=True)
 
         threads = []
         for ti in range(num_threads):
@@ -399,5 +418,5 @@ t1 = empty_table(0) if t.size == 2 else None
             t.join()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

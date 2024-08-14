@@ -26,6 +26,8 @@ except Exception:
     included in the package. This is an opt-out functionality included by default. If not included, importing this
     module will fail to find the java types.
 """
+
+
 class S3Instructions(JObjectWrapper):
     """
     S3Instructions provides specialized instructions for reading from S3-compatible APIs.
@@ -33,20 +35,23 @@ class S3Instructions(JObjectWrapper):
 
     j_object_type = _JS3Instructions or type(None)
 
-    def __init__(self,
-                 region_name: Optional[str] = None,
-                 max_concurrent_requests: Optional[int] = None,
-                 read_ahead_count: Optional[int] = None,
-                 fragment_size: Optional[int] = None,
-                 connection_timeout: Union[
-                     Duration, int, str, datetime.timedelta, np.timedelta64, pd.Timedelta, None] = None,
-                 read_timeout: Union[
-                     Duration, int, str, datetime.timedelta, np.timedelta64, pd.Timedelta, None] = None,
-                 access_key_id: Optional[str] = None,
-                 secret_access_key: Optional[str] = None,
-                 anonymous_access: bool = False,
-                 endpoint_override: Optional[str] = None):
-
+    def __init__(
+        self,
+        region_name: Optional[str] = None,
+        max_concurrent_requests: Optional[int] = None,
+        read_ahead_count: Optional[int] = None,
+        fragment_size: Optional[int] = None,
+        connection_timeout: Union[
+            Duration, int, str, datetime.timedelta, np.timedelta64, pd.Timedelta, None
+        ] = None,
+        read_timeout: Union[
+            Duration, int, str, datetime.timedelta, np.timedelta64, pd.Timedelta, None
+        ] = None,
+        access_key_id: Optional[str] = None,
+        secret_access_key: Optional[str] = None,
+        anonymous_access: bool = False,
+        endpoint_override: Optional[str] = None,
+    ):
         """
         Initializes the instructions.
 
@@ -82,8 +87,10 @@ class S3Instructions(JObjectWrapper):
         """
 
         if not _JS3Instructions or not _JCredentials:
-            raise DHError(message="S3Instructions requires the S3 specific deephaven extensions to be included in "
-                                  "the package")
+            raise DHError(
+                message="S3Instructions requires the S3 specific deephaven extensions to be included in "
+                "the package"
+            )
 
         try:
             builder = self.j_object_type.builder()
@@ -106,14 +113,21 @@ class S3Instructions(JObjectWrapper):
             if read_timeout is not None:
                 builder.readTimeout(time.to_j_duration(read_timeout))
 
-            if ((access_key_id is not None and secret_access_key is None) or
-                    (access_key_id is None and secret_access_key is not None)):
-                raise DHError("Either both access_key_id and secret_access_key must be provided or neither")
+            if (access_key_id is not None and secret_access_key is None) or (
+                access_key_id is None and secret_access_key is not None
+            ):
+                raise DHError(
+                    "Either both access_key_id and secret_access_key must be provided or neither"
+                )
 
             if access_key_id is not None:
                 if anonymous_access:
-                    raise DHError("Only one set of credentials may be used, requested both key and anonymous")
-                builder.credentials(_JCredentials.basic(access_key_id, secret_access_key))
+                    raise DHError(
+                        "Only one set of credentials may be used, requested both key and anonymous"
+                    )
+                builder.credentials(
+                    _JCredentials.basic(access_key_id, secret_access_key)
+                )
             elif anonymous_access:
                 builder.credentials(_JCredentials.anonymous())
 

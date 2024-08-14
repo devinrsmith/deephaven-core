@@ -40,8 +40,7 @@ _GrpcMathContext = table_pb2.MathContext
 
 class _UpdateByBase(ABC):
     @abstractmethod
-    def make_grpc_message(self) -> Any:
-        ...
+    def make_grpc_message(self) -> Any: ...
 
 
 class MathContext(Enum):
@@ -92,11 +91,14 @@ class DeltaControl(Enum):
 
 class OperationControl(_UpdateByBase):
     """A OperationControl represents control parameters for performing operations with the table
-        UpdateByOperation."""
+    UpdateByOperation."""
 
-    def __init__(self, on_null: BadDataBehavior = BadDataBehavior.SKIP,
-                 on_nan: BadDataBehavior = BadDataBehavior.SKIP,
-                 big_value_context: MathContext = MathContext.DECIMAL128):
+    def __init__(
+        self,
+        on_null: BadDataBehavior = BadDataBehavior.SKIP,
+        on_nan: BadDataBehavior = BadDataBehavior.SKIP,
+        big_value_context: MathContext = MathContext.DECIMAL128,
+    ):
         """Initializes an OperationControl for use with certain UpdateByOperation, such as EMAs.
 
         Args:
@@ -110,9 +112,14 @@ class OperationControl(_UpdateByBase):
         self.big_value_context = big_value_context
 
     def make_grpc_message(self) -> Any:
-        return _GrpcUpdateByEmOptions(on_null_value=self.on_null.value, on_nan_value=self.on_nan.value,
-                                      big_value_context=_GrpcMathContext(precision=self.big_value_context.value[0],
-                                                                         rounding_mode=self.big_value_context.value[1]))
+        return _GrpcUpdateByEmOptions(
+            on_null_value=self.on_null.value,
+            on_nan_value=self.on_nan.value,
+            big_value_context=_GrpcMathContext(
+                precision=self.big_value_context.value[0],
+                rounding_mode=self.big_value_context.value[1],
+            ),
+        )
 
 
 class UpdateByOperation(_UpdateByBase):
@@ -201,7 +208,10 @@ def forward_fill(cols: Union[str, List[str]]) -> UpdateByOperation:
     return UpdateByOperation(ub_column=ub_column)
 
 
-def delta(cols: Union[str, List[str]], delta_control: DeltaControl = DeltaControl.NULL_DOMINATES) -> UpdateByOperation:
+def delta(
+    cols: Union[str, List[str]],
+    delta_control: DeltaControl = DeltaControl.NULL_DOMINATES,
+) -> UpdateByOperation:
     """Creates a delta UpdateByOperation for the supplied column names. The Delta operation produces values by computing
     the difference between the current value and the previous value. When the current value is null, this operation
     will output null. When the current value is valid, the output will depend on the DeltaControl provided.
@@ -230,8 +240,9 @@ def delta(cols: Union[str, List[str]], delta_control: DeltaControl = DeltaContro
     return UpdateByOperation(ub_column=ub_column)
 
 
-def ema_tick(decay_ticks: float, cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ema_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EMA (exponential moving average) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -253,9 +264,13 @@ def ema_tick(decay_ticks: float, cols: Union[str, List[str]],
         DHError
     """
     try:
-        window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks))
-        ub_ema = _GrpcUpdateByEma(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks)
+        )
+        ub_ema = _GrpcUpdateByEma(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(ema=ub_ema)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -263,8 +278,12 @@ def ema_tick(decay_ticks: float, cols: Union[str, List[str]],
         raise DHError("failed to create a tick-decay EMA UpdateByOperation.") from e
 
 
-def ema_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ema_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EMA (exponential moving average) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -289,12 +308,18 @@ def ema_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
     """
     try:
         if isinstance(decay_time, str):
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time)
+            )
         else:
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time)
+            )
 
-        ub_ema = _GrpcUpdateByEma(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        ub_ema = _GrpcUpdateByEma(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(ema=ub_ema)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -302,8 +327,9 @@ def ema_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
         raise DHError("failed to create a time-decay EMA UpdateByOperation.") from e
 
 
-def ems_tick(decay_ticks: float, cols: Union[str, List[str]],
-             op_control: OperationControl = None) -> UpdateByOperation:
+def ems_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EMS (exponential moving sum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -325,9 +351,13 @@ def ems_tick(decay_ticks: float, cols: Union[str, List[str]],
         DHError
     """
     try:
-        window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks))
-        ub_ems = _GrpcUpdateByEms(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks)
+        )
+        ub_ems = _GrpcUpdateByEms(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(ems=ub_ems)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -335,8 +365,12 @@ def ems_tick(decay_ticks: float, cols: Union[str, List[str]],
         raise DHError("failed to create a tick-decay EMS UpdateByOperation.") from e
 
 
-def ems_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-             op_control: OperationControl = None) -> UpdateByOperation:
+def ems_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EMS (exponential moving sum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -358,15 +392,21 @@ def ems_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
 
     Raises:
         DHError
-     """
+    """
     try:
         if isinstance(decay_time, str):
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time)
+            )
         else:
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time)
+            )
 
-        ub_ems = _GrpcUpdateByEms(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        ub_ems = _GrpcUpdateByEms(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(ems=ub_ems)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -374,8 +414,9 @@ def ems_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
         raise DHError("failed to create a time-decay EMS UpdateByOperation.") from e
 
 
-def emmin_tick(decay_ticks: float, cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+def emmin_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Min (exponential moving minimum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -397,9 +438,13 @@ def emmin_tick(decay_ticks: float, cols: Union[str, List[str]],
         DHError
     """
     try:
-        window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks))
-        ub_emmin = _GrpcUpdateByEmMin(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks)
+        )
+        ub_emmin = _GrpcUpdateByEmMin(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_min=ub_emmin)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -407,8 +452,12 @@ def emmin_tick(decay_ticks: float, cols: Union[str, List[str]],
         raise DHError("failed to create a tick-decay EMS UpdateByOperation.") from e
 
 
-def emmin_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+def emmin_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Min (exponential moving minimum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -430,15 +479,21 @@ def emmin_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
         if isinstance(decay_time, str):
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time)
+            )
         else:
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time)
+            )
 
-        ub_emmin = _GrpcUpdateByEmMin(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        ub_emmin = _GrpcUpdateByEmMin(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_min=ub_emmin)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -446,8 +501,9 @@ def emmin_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
         raise DHError("failed to create a time-decay EMA UpdateByOperation.") from e
 
 
-def emmax_tick(decay_ticks: float, cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+def emmax_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Max (exponential moving maximum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -469,9 +525,13 @@ def emmax_tick(decay_ticks: float, cols: Union[str, List[str]],
         DHError
     """
     try:
-        window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks))
-        ub_emmax = _GrpcUpdateByEmMax(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks)
+        )
+        ub_emmax = _GrpcUpdateByEmMax(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_max=ub_emmax)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -479,8 +539,12 @@ def emmax_tick(decay_ticks: float, cols: Union[str, List[str]],
         raise DHError("failed to create a tick-decay EMS UpdateByOperation.") from e
 
 
-def emmax_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+def emmax_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Max (exponential moving maximum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -502,23 +566,31 @@ def emmax_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
         if isinstance(decay_time, str):
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time)
+            )
         else:
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time)
+            )
 
-        ub_emmax = _GrpcUpdateByEmMax(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        ub_emmax = _GrpcUpdateByEmMax(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_max=ub_emmax)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
         raise DHError("failed to create a time-decay EMA UpdateByOperation.") from e
 
-def emstd_tick(decay_ticks: float, cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+
+def emstd_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Std (exponential moving standard deviation) UpdateByOperation for the supplied column names, using
     ticks as the decay unit.
 
@@ -542,9 +614,13 @@ def emstd_tick(decay_ticks: float, cols: Union[str, List[str]],
         DHError
     """
     try:
-        window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks))
-        ub_emstd = _GrpcUpdateByEmStd(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=decay_ticks)
+        )
+        ub_emstd = _GrpcUpdateByEmStd(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_std=ub_emstd)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -552,8 +628,12 @@ def emstd_tick(decay_ticks: float, cols: Union[str, List[str]],
         raise DHError("failed to create a tick-decay EMS UpdateByOperation.") from e
 
 
-def emstd_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-               op_control: OperationControl = None) -> UpdateByOperation:
+def emstd_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Std (exponential moving standard deviation) UpdateByOperation for the supplied column names, using
     time as the decay unit.
 
@@ -577,15 +657,21 @@ def emstd_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
         if isinstance(decay_time, str):
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=decay_time)
+            )
         else:
-            window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time))
+            window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=decay_time)
+            )
 
-        ub_emstd = _GrpcUpdateByEmStd(options=op_control.make_grpc_message() if op_control else None,
-                                  window_scale=window_scale)
+        ub_emstd = _GrpcUpdateByEmStd(
+            options=op_control.make_grpc_message() if op_control else None,
+            window_scale=window_scale,
+        )
         ub_spec = _GrpcUpdateBySpec(em_std=ub_emstd)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -593,7 +679,9 @@ def emstd_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
         raise DHError("failed to create a time-decay EMA UpdateByOperation.") from e
 
 
-def rolling_sum_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_sum_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling sum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -624,10 +712,15 @@ def rolling_sum_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingSum(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingSum(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_sum=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
@@ -635,8 +728,12 @@ def rolling_sum_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         raise DHError("failed to create a rolling sum (tick) UpdateByOperation.") from e
 
 
-def rolling_sum_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_sum_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling sum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -673,25 +770,38 @@ def rolling_sum_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingSum(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingSum(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_sum=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling sum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling sum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_group_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_group_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling group UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -720,21 +830,32 @@ def rolling_group_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: i
 
         Raises:
             DHError
-        """
+    """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingGroup(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingGroup(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_group=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError("failed to create a rolling group (tick) UpdateByOperation.") from e
+        raise DHError(
+            "failed to create a rolling group (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_group_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_group_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling group UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -771,25 +892,38 @@ def rolling_group_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingGroup(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingGroup(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_group=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling group (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling group (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_avg_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_avg_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling average UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -820,19 +954,30 @@ def rolling_avg_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingAvg(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingAvg(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_avg=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling average (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling average (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_avg_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_avg_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling average UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -869,25 +1014,38 @@ def rolling_avg_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingAvg(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingAvg(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_avg=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling average (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling average (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_min_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_min_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling minimum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -918,19 +1076,30 @@ def rolling_min_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingMin(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingMin(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_min=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling minimum (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling minimum (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_min_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_min_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling minimum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -967,25 +1136,38 @@ def rolling_min_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingMin(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingMin(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_min=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling minimum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling minimum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_max_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_max_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling maximum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1016,19 +1198,30 @@ def rolling_max_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingMax(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingMax(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_max=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling maximum (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling maximum (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_max_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_max_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling maximum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1065,25 +1258,38 @@ def rolling_max_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingMax(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingMax(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_max=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling maximum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling maximum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_prod_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_prod_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling product UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1114,19 +1320,30 @@ def rolling_prod_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: in
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingProduct(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingProduct(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_product=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling product (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling product (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_prod_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_prod_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling product UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1163,25 +1380,38 @@ def rolling_prod_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingProduct(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingProduct(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_product=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling product (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling product (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_count_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_count_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling count UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1212,19 +1442,30 @@ def rolling_count_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: i
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingCount(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingCount(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_count=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling count (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling count (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_count_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_count_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling count UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1261,25 +1502,38 @@ def rolling_count_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingCount(reverse_window_scale=rev_window_scale,
-                                               forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingCount(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_count=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling count (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling count (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_std_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_std_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using ticks as the
     windowing unit. Ticks are row counts, and you may specify the reverse and forward window in number of rows to
     include. The current row is considered to belong to the reverse window but not the forward window. Also, negative
@@ -1313,19 +1567,30 @@ def rolling_std_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingStd(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingStd(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_std=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling standard deviation (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling standard deviation (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_std_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_std_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using time as the
     windowing unit. This function accepts nanoseconds or time strings as the reverse and forward window parameters.
     Negative values are allowed and can be used to generate completely forward or completely reverse windows. A row
@@ -1365,25 +1630,38 @@ def rolling_std_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingStd(reverse_window_scale=rev_window_scale,
-                                             forward_window_scale=fwd_window_scale)
+        ub_rolling = _GrpcUpdateByRollingStd(
+            reverse_window_scale=rev_window_scale, forward_window_scale=fwd_window_scale
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_std=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling standard deviation (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling standard deviation (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_wavg_tick(wcol: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_wavg_tick(
+    wcol: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling weighted average UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1415,20 +1693,33 @@ def rolling_wavg_tick(wcol: str, cols: Union[str, List[str]], rev_ticks: int, fw
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_rolling = _GrpcUpdateByRollingWAvg(reverse_window_scale=rev_window_scale,
-                                              forward_window_scale=fwd_window_scale,
-                                              weight_column=wcol)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_rolling = _GrpcUpdateByRollingWAvg(
+            reverse_window_scale=rev_window_scale,
+            forward_window_scale=fwd_window_scale,
+            weight_column=wcol,
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_wavg=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling weighted average (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling weighted average (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_wavg_time(ts_col: str, wcol: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_wavg_time(
+    ts_col: str,
+    wcol: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling weighted average UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1466,26 +1757,44 @@ def rolling_wavg_time(ts_col: str, wcol: str, cols: Union[str, List[str]], rev_t
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_rolling = _GrpcUpdateByRollingWAvg(reverse_window_scale=rev_window_scale,
-                                              forward_window_scale=fwd_window_scale,
-                                              weight_column=wcol)
+        ub_rolling = _GrpcUpdateByRollingWAvg(
+            reverse_window_scale=rev_window_scale,
+            forward_window_scale=fwd_window_scale,
+            weight_column=wcol,
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_wavg=ub_rolling)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling weighted average (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling weighted average (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_formula_tick(formula: str, formula_param: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_formula_tick(
+    formula: str,
+    formula_param: str,
+    cols: Union[str, List[str]],
+    rev_ticks: int,
+    fwd_ticks: int = 0,
+) -> UpdateByOperation:
     """Creates a rolling formula UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1524,21 +1833,35 @@ def rolling_formula_tick(formula: str, formula_param: str, cols: Union[str, List
         DHError
     """
     try:
-        rev_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks))
-        fwd_window_scale = _GrpcUpdateByWindowScale(ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks))
-        ub_formula = _GrpcUpdateByRollingFormula(reverse_window_scale=rev_window_scale,
-                                              forward_window_scale=fwd_window_scale,
-                                              formula=formula,
-                                              param_token=formula_param)
+        rev_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=rev_ticks)
+        )
+        fwd_window_scale = _GrpcUpdateByWindowScale(
+            ticks=_GrpcUpdateByWindowTicks(ticks=fwd_ticks)
+        )
+        ub_formula = _GrpcUpdateByRollingFormula(
+            reverse_window_scale=rev_window_scale,
+            forward_window_scale=fwd_window_scale,
+            formula=formula,
+            param_token=formula_param,
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_formula=ub_formula)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling formula (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling formula (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_formula_time(ts_col: str, formula: str, formula_param: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_formula_time(
+    ts_col: str,
+    formula: str,
+    formula_param: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling formula UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1583,21 +1906,33 @@ def rolling_formula_time(ts_col: str, formula: str, formula_param: str, cols: Un
     """
     try:
         if isinstance(rev_time, str):
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=rev_time)
+            )
         else:
-            rev_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time))
+            rev_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=rev_time)
+            )
 
         if isinstance(fwd_time, str):
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, duration_string=fwd_time)
+            )
         else:
-            fwd_window_scale = _GrpcUpdateByWindowScale(time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time))
+            fwd_window_scale = _GrpcUpdateByWindowScale(
+                time=_GrpcUpdateByWindowTime(column=ts_col, nanos=fwd_time)
+            )
 
-        ub_formula = _GrpcUpdateByRollingFormula(reverse_window_scale=rev_window_scale,
-                                              forward_window_scale=fwd_window_scale,
-                                              formula=formula,
-                                              param_token=formula_param)
+        ub_formula = _GrpcUpdateByRollingFormula(
+            reverse_window_scale=rev_window_scale,
+            forward_window_scale=fwd_window_scale,
+            formula=formula,
+            param_token=formula_param,
+        )
         ub_spec = _GrpcUpdateBySpec(rolling_formula=ub_formula)
         ub_column = _GrpcUpdateByColumn(spec=ub_spec, match_pairs=to_list(cols))
         return UpdateByOperation(ub_column=ub_column)
     except Exception as e:
-        raise DHError(e, "failed to create a rolling formula (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling formula (time) UpdateByOperation."
+        ) from e

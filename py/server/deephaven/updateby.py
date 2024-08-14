@@ -21,6 +21,7 @@ _JDateTimeUtils = jpy.get_type("io.deephaven.time.DateTimeUtils")
 
 class MathContext(Enum):
     """An Enum for predefined precision and rounding settings in numeric calculation."""
+
     UNLIMITED = _JMathContext.UNLIMITED
     """unlimited precision arithmetic, rounding is half-up"""
 
@@ -63,18 +64,23 @@ class DeltaControl(Enum):
     ZERO_DOMINATES = _JDeltaControl.ZERO_DOMINATES
     """A valid value following a null value returns zero"""
 
+
 class OperationControl(JObjectWrapper):
     """A OperationControl represents control parameters for performing operations with the table
-    UpdateByOperation. """
+    UpdateByOperation."""
+
     j_object_type = _JOperationControl
 
     @property
     def j_object(self) -> jpy.JType:
         return self.j_op_control
 
-    def __init__(self, on_null: BadDataBehavior = BadDataBehavior.SKIP,
-                 on_nan: BadDataBehavior = BadDataBehavior.SKIP,
-                 big_value_context: MathContext = MathContext.DECIMAL128):
+    def __init__(
+        self,
+        on_null: BadDataBehavior = BadDataBehavior.SKIP,
+        on_nan: BadDataBehavior = BadDataBehavior.SKIP,
+        big_value_context: MathContext = MathContext.DECIMAL128,
+    ):
         """Initializes an OperationControl for use with certain UpdateByOperation, such as EMAs.
 
         Args:
@@ -88,9 +94,12 @@ class OperationControl(JObjectWrapper):
         """
         try:
             j_builder = _JOperationControl.builder()
-            self.j_op_control = (j_builder.onNullValue(on_null.value)
-                                 .onNanValue(on_nan.value)
-                                 .bigValueContext(big_value_context.value).build())
+            self.j_op_control = (
+                j_builder.onNullValue(on_null.value)
+                .onNanValue(on_nan.value)
+                .bigValueContext(big_value_context.value)
+                .build()
+            )
         except Exception as e:
             raise DHError(e, "failed to build an OperationControl object.") from e
 
@@ -108,8 +117,9 @@ class UpdateByOperation(JObjectWrapper):
         return self.j_updateby_op
 
 
-def ema_tick(decay_ticks: float, cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ema_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EMA (exponential moving average) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -135,16 +145,25 @@ def ema_tick(decay_ticks: float, cols: Union[str, List[str]],
     try:
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.Ema(decay_ticks, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.Ema(decay_ticks, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.Ema(op_control.j_op_control, decay_ticks, *cols))
+                j_updateby_op=_JUpdateByOperation.Ema(
+                    op_control.j_op_control, decay_ticks, *cols
+                )
+            )
     except Exception as e:
         raise DHError(e, "failed to create a tick-decay EMA UpdateByOperation.") from e
 
 
-def ema_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ema_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EMA(exponential moving average) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -169,21 +188,31 @@ def ema_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
 
     Raises:
         DHError
-     """
+    """
     try:
-        decay_time = _JDateTimeUtils.parseDurationNanos(decay_time) if isinstance(decay_time, str) else decay_time
+        decay_time = (
+            _JDateTimeUtils.parseDurationNanos(decay_time)
+            if isinstance(decay_time, str)
+            else decay_time
+        )
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.Ema(ts_col, decay_time, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.Ema(ts_col, decay_time, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.Ema(op_control.j_op_control, ts_col, decay_time, *cols))
+                j_updateby_op=_JUpdateByOperation.Ema(
+                    op_control.j_op_control, ts_col, decay_time, *cols
+                )
+            )
     except Exception as e:
         raise DHError(e, "failed to create a time-decay EMA UpdateByOperation.") from e
 
 
-def ems_tick(decay_ticks: float, cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ems_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EMS (exponential moving sum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -209,16 +238,25 @@ def ems_tick(decay_ticks: float, cols: Union[str, List[str]],
     try:
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.Ems(decay_ticks, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.Ems(decay_ticks, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.Ems(op_control.j_op_control, decay_ticks, *cols))
+                j_updateby_op=_JUpdateByOperation.Ems(
+                    op_control.j_op_control, decay_ticks, *cols
+                )
+            )
     except Exception as e:
         raise DHError(e, "failed to create a tick-decay EMS UpdateByOperation.") from e
 
 
-def ems_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def ems_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EMS (exponential moving sum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -243,21 +281,31 @@ def ems_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str
 
     Raises:
         DHError
-     """
+    """
     try:
-        decay_time = _JDateTimeUtils.parseDurationNanos(decay_time) if isinstance(decay_time, str) else decay_time
+        decay_time = (
+            _JDateTimeUtils.parseDurationNanos(decay_time)
+            if isinstance(decay_time, str)
+            else decay_time
+        )
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.Ems(ts_col, decay_time, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.Ems(ts_col, decay_time, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.Ems(op_control.j_op_control, ts_col, decay_time, *cols))
+                j_updateby_op=_JUpdateByOperation.Ems(
+                    op_control.j_op_control, ts_col, decay_time, *cols
+                )
+            )
     except Exception as e:
         raise DHError(e, "failed to create a time-decay EMS UpdateByOperation.") from e
 
 
-def emmin_tick(decay_ticks: float, cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def emmin_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Min (exponential moving minimum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -283,16 +331,27 @@ def emmin_tick(decay_ticks: float, cols: Union[str, List[str]],
     try:
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmMin(decay_ticks, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmMin(decay_ticks, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.EmMin(op_control.j_op_control, decay_ticks, *cols))
+                j_updateby_op=_JUpdateByOperation.EmMin(
+                    op_control.j_op_control, decay_ticks, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a tick-decay EM Min UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a tick-decay EM Min UpdateByOperation."
+        ) from e
 
 
-def emmin_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-                   op_control: OperationControl = None) -> UpdateByOperation:
+def emmin_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Min (exponential moving minimum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -317,21 +376,33 @@ def emmin_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
-        decay_time = _JDateTimeUtils.parseDurationNanos(decay_time) if isinstance(decay_time, str) else decay_time
+        decay_time = (
+            _JDateTimeUtils.parseDurationNanos(decay_time)
+            if isinstance(decay_time, str)
+            else decay_time
+        )
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmMin(ts_col, decay_time, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmMin(ts_col, decay_time, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.EmMin(op_control.j_op_control, ts_col, decay_time, *cols))
+                j_updateby_op=_JUpdateByOperation.EmMin(
+                    op_control.j_op_control, ts_col, decay_time, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a time-decay EM Min UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a time-decay EM Min UpdateByOperation."
+        ) from e
 
 
-def emmax_tick(decay_ticks: float, cols: Union[str, List[str]],
-                     op_control: OperationControl = None) -> UpdateByOperation:
+def emmax_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Max (exponential moving maximum) UpdateByOperation for the supplied column names, using ticks as
     the decay unit.
 
@@ -357,16 +428,27 @@ def emmax_tick(decay_ticks: float, cols: Union[str, List[str]],
     try:
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmMax(decay_ticks, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmMax(decay_ticks, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.EmMax(op_control.j_op_control, decay_ticks, *cols))
+                j_updateby_op=_JUpdateByOperation.EmMax(
+                    op_control.j_op_control, decay_ticks, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a tick-decay EM Max UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a tick-decay EM Max UpdateByOperation."
+        ) from e
 
 
-def emmax_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-                     op_control: OperationControl = None) -> UpdateByOperation:
+def emmax_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Max (exponential moving maximum) UpdateByOperation for the supplied column names, using time as the
     decay unit.
 
@@ -391,20 +473,33 @@ def emmax_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
-        decay_time = _JDateTimeUtils.parseDurationNanos(decay_time) if isinstance(decay_time, str) else decay_time
+        decay_time = (
+            _JDateTimeUtils.parseDurationNanos(decay_time)
+            if isinstance(decay_time, str)
+            else decay_time
+        )
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmMax(ts_col, decay_time, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmMax(ts_col, decay_time, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.EmMax(op_control.j_op_control, ts_col, decay_time, *cols))
+                j_updateby_op=_JUpdateByOperation.EmMax(
+                    op_control.j_op_control, ts_col, decay_time, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a time-decay EM Max UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a time-decay EM Max UpdateByOperation."
+        ) from e
 
-def emstd_tick(decay_ticks: float, cols: Union[str, List[str]],
-             op_control: OperationControl = None) -> UpdateByOperation:
+
+def emstd_tick(
+    decay_ticks: float, cols: Union[str, List[str]], op_control: OperationControl = None
+) -> UpdateByOperation:
     """Creates an EM Std (exponential moving standard deviation) UpdateByOperation for the supplied column names, using
     ticks as the decay unit.
 
@@ -430,16 +525,27 @@ def emstd_tick(decay_ticks: float, cols: Union[str, List[str]],
     try:
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmStd(decay_ticks, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmStd(decay_ticks, *cols)
+            )
         else:
             return UpdateByOperation(
-                j_updateby_op=_JUpdateByOperation.EmStd(op_control.j_op_control, decay_ticks, *cols))
+                j_updateby_op=_JUpdateByOperation.EmStd(
+                    op_control.j_op_control, decay_ticks, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a tick-decay EM Std UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a tick-decay EM Std UpdateByOperation."
+        ) from e
 
 
-def emstd_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[str]],
-             op_control: OperationControl = None) -> UpdateByOperation:
+def emstd_time(
+    ts_col: str,
+    decay_time: Union[int, str],
+    cols: Union[str, List[str]],
+    op_control: OperationControl = None,
+) -> UpdateByOperation:
     """Creates an EM Std (exponential moving standard deviation) UpdateByOperation for the supplied column names, using
     time as the decay unit.
 
@@ -465,17 +571,28 @@ def emstd_time(ts_col: str, decay_time: Union[int, str], cols: Union[str, List[s
 
     Raises:
         DHError
-     """
+    """
     try:
-        decay_time = _JDateTimeUtils.parseDurationNanos(decay_time) if isinstance(decay_time, str) else decay_time
+        decay_time = (
+            _JDateTimeUtils.parseDurationNanos(decay_time)
+            if isinstance(decay_time, str)
+            else decay_time
+        )
         cols = to_sequence(cols)
         if op_control is None:
-            return UpdateByOperation(j_updateby_op=_JUpdateByOperation.EmStd(ts_col, decay_time, *cols))
+            return UpdateByOperation(
+                j_updateby_op=_JUpdateByOperation.EmStd(ts_col, decay_time, *cols)
+            )
         else:
             return UpdateByOperation(
-                    j_updateby_op=_JUpdateByOperation.EmStd(op_control.j_op_control, ts_col, decay_time, *cols))
+                j_updateby_op=_JUpdateByOperation.EmStd(
+                    op_control.j_op_control, ts_col, decay_time, *cols
+                )
+            )
     except Exception as e:
-        raise DHError(e, "failed to create a time-decay EM Std UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a time-decay EM Std UpdateByOperation."
+        ) from e
 
 
 def cum_sum(cols: Union[str, List[str]]) -> UpdateByOperation:
@@ -518,7 +635,9 @@ def cum_prod(cols: Union[str, List[str]]) -> UpdateByOperation:
         cols = to_sequence(cols)
         return UpdateByOperation(j_updateby_op=_JUpdateByOperation.CumProd(cols))
     except Exception as e:
-        raise DHError(e, "failed to create a cumulative product UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a cumulative product UpdateByOperation."
+        ) from e
 
 
 def cum_min(cols: Union[str, List[str]]) -> UpdateByOperation:
@@ -539,7 +658,9 @@ def cum_min(cols: Union[str, List[str]]) -> UpdateByOperation:
         cols = to_sequence(cols)
         return UpdateByOperation(j_updateby_op=_JUpdateByOperation.CumMin(cols))
     except Exception as e:
-        raise DHError(e, "failed to create a cumulative minimum UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a cumulative minimum UpdateByOperation."
+        ) from e
 
 
 def cum_max(cols: Union[str, List[str]]) -> UpdateByOperation:
@@ -560,7 +681,9 @@ def cum_max(cols: Union[str, List[str]]) -> UpdateByOperation:
         cols = to_sequence(cols)
         return UpdateByOperation(j_updateby_op=_JUpdateByOperation.CumMax(cols))
     except Exception as e:
-        raise DHError(e, "failed to create a cumulative maximum UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a cumulative maximum UpdateByOperation."
+        ) from e
 
 
 def forward_fill(cols: Union[str, List[str]]) -> UpdateByOperation:
@@ -584,7 +707,10 @@ def forward_fill(cols: Union[str, List[str]]) -> UpdateByOperation:
         raise DHError(e, "failed to create a forward fill UpdateByOperation.") from e
 
 
-def delta(cols: Union[str, List[str]], delta_control: DeltaControl = DeltaControl.NULL_DOMINATES) -> UpdateByOperation:
+def delta(
+    cols: Union[str, List[str]],
+    delta_control: DeltaControl = DeltaControl.NULL_DOMINATES,
+) -> UpdateByOperation:
     """Creates a delta UpdateByOperation for the supplied column names. The Delta operation produces values by computing
     the difference between the current value and the previous value. When the current value is null, this operation
     will output null. When the current value is valid, the output will depend on the DeltaControl provided.
@@ -609,16 +735,20 @@ def delta(cols: Union[str, List[str]], delta_control: DeltaControl = DeltaContro
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.Delta(delta_control.value, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.Delta(delta_control.value, *cols)
+        )
 
     except Exception as e:
         raise DHError(e, "failed to create a delta UpdateByOperation.") from e
 
 
-def rolling_sum_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
-    """Creates a rolling sum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks 
+def rolling_sum_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
+    """Creates a rolling sum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
-    is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and 
+    is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
     can be used to generate completely forward or completely reverse windows.
 
     Here are some examples of window values:
@@ -647,19 +777,27 @@ def rolling_sum_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingSum(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingSum(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling sum (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling sum (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_sum_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_sum_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling sum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -672,7 +810,7 @@ def rolling_sum_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -690,18 +828,34 @@ def rolling_sum_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingSum(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingSum(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling sum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling sum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_group_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
-    """Creates a rolling group UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks 
+def rolling_group_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
+    """Creates a rolling group UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
-    is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and 
-    can be used to generate completely forward or completely reverse windows. 
+    is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
+    can be used to generate completely forward or completely reverse windows.
 
     Here are some examples of window values:
         |  `rev_ticks = 1, fwd_ticks = 0` - contains only the current row
@@ -729,19 +883,27 @@ def rolling_group_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: i
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingGroup(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingGroup(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling group (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling group (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_group_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                     fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_group_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling group UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -754,7 +916,7 @@ def rolling_group_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -772,14 +934,30 @@ def rolling_group_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingGroup(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingGroup(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling group (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling group (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_avg_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_avg_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling average UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -811,19 +989,27 @@ def rolling_avg_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingAvg(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingAvg(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling average (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling average (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_avg_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_avg_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling average UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -836,7 +1022,7 @@ def rolling_avg_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -854,14 +1040,30 @@ def rolling_avg_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingAvg(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingAvg(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling average (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling average (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_min_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_min_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling minimum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -893,19 +1095,27 @@ def rolling_min_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingMin(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingMin(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling minimum (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling minimum (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_min_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_min_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling minimum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -918,7 +1128,7 @@ def rolling_min_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -936,14 +1146,30 @@ def rolling_min_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingMin(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingMin(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling minimum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling minimum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_max_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_max_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling maximum UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -975,19 +1201,27 @@ def rolling_max_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingMax(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingMax(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling maximum (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling maximum (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_max_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_max_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling maximum UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -1000,7 +1234,7 @@ def rolling_max_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -1018,14 +1252,30 @@ def rolling_max_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingMax(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingMax(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling maximum (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling maximum (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_prod_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_prod_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling product UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1057,19 +1307,29 @@ def rolling_prod_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: in
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingProduct(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingProduct(
+                rev_ticks, fwd_ticks, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling product (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling product (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_prod_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_prod_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling product UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
     the timestamp column belongs to no window and will not be considered in the windows of other rows; its output will
     be null.
-     
+
     Here are some examples of window values:
         |  `rev_time = 0, fwd_time = 0` - contains rows that exactly match the current row timestamp
         |  `rev_time = "PT00:10:00", fwd_time = "0"` - contains rows from 10m before through the current row timestamp (
@@ -1082,7 +1342,7 @@ def rolling_prod_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[
             current row timestamp (inclusive), this is a purely backwards looking window
         |  `rev_time = "-PT00:05:00", fwd_time = "PT00:10:00"` - contains rows from 5m following through 10m
             following the current row timestamp (inclusive), this is a purely forwards looking window
-    
+
     Args:
         ts_col (str): the timestamp column for determining the window
         cols (Union[str, List[str]]): the column(s) to be operated on, can include expressions to rename the output,
@@ -1100,14 +1360,30 @@ def rolling_prod_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingProduct(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingProduct(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling product (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling product (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_count_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_count_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling count UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1139,13 +1415,21 @@ def rolling_count_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: i
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingCount(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingCount(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling count (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling count (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_count_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_count_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling count UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1182,14 +1466,30 @@ def rolling_count_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingCount(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingCount(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling count (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling count (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_std_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_std_tick(
+    cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using ticks as the
     windowing unit. Ticks are row counts, and you may specify the reverse and forward window in number of rows to
     include. The current row is considered to belong to the reverse window but not the forward window. Also, negative
@@ -1224,13 +1524,21 @@ def rolling_std_tick(cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingStd(rev_ticks, fwd_ticks, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingStd(rev_ticks, fwd_ticks, *cols)
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling standard deviation (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling standard deviation (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_std_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                       fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_std_time(
+    ts_col: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling sample standard deviation UpdateByOperation for the supplied column names, using time as the
     windowing unit. This function accepts nanoseconds or time strings as the reverse and forward window parameters.
     Negative values are allowed and can be used to generate completely forward or completely reverse windows. A row
@@ -1270,14 +1578,30 @@ def rolling_std_time(ts_col: str, cols: Union[str, List[str]], rev_time: Union[i
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingStd(ts_col, rev_time, fwd_time, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingStd(
+                ts_col, rev_time, fwd_time, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling standard deviation (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling standard deviation (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_wavg_tick(wcol: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_wavg_tick(
+    wcol: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0
+) -> UpdateByOperation:
     """Creates a rolling weighted average UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1310,13 +1634,24 @@ def rolling_wavg_tick(wcol: str, cols: Union[str, List[str]], rev_ticks: int, fw
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingWAvg(rev_ticks, fwd_ticks, wcol, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingWAvg(
+                rev_ticks, fwd_ticks, wcol, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling weighted average (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling weighted average (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_wavg_time(ts_col: str, wcol: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_wavg_time(
+    ts_col: str,
+    wcol: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling weighted average UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1354,14 +1689,34 @@ def rolling_wavg_time(ts_col: str, wcol: str, cols: Union[str, List[str]], rev_t
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingWAvg(ts_col, rev_time, fwd_time, wcol, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingWAvg(
+                ts_col, rev_time, fwd_time, wcol, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling weighted average (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling weighted average (time) UpdateByOperation."
+        ) from e
 
 
-def rolling_formula_tick(formula: str, formula_param: str, cols: Union[str, List[str]], rev_ticks: int, fwd_ticks: int = 0) -> UpdateByOperation:
+def rolling_formula_tick(
+    formula: str,
+    formula_param: str,
+    cols: Union[str, List[str]],
+    rev_ticks: int,
+    fwd_ticks: int = 0,
+) -> UpdateByOperation:
     """Creates a rolling formula UpdateByOperation for the supplied column names, using ticks as the windowing unit. Ticks
     are row counts, and you may specify the reverse and forward window in number of rows to include. The current row
     is considered to belong to the reverse window but not the forward window. Also, negative values are allowed and
@@ -1401,13 +1756,25 @@ def rolling_formula_tick(formula: str, formula_param: str, cols: Union[str, List
     """
     try:
         cols = to_sequence(cols)
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingFormula(rev_ticks, fwd_ticks, formula, formula_param, *cols))
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingFormula(
+                rev_ticks, fwd_ticks, formula, formula_param, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling formula (tick) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling formula (tick) UpdateByOperation."
+        ) from e
 
 
-def rolling_formula_time(ts_col: str, formula: str, formula_param: str, cols: Union[str, List[str]], rev_time: Union[int, str],
-                      fwd_time: Union[int, str] = 0) -> UpdateByOperation:
+def rolling_formula_time(
+    ts_col: str,
+    formula: str,
+    formula_param: str,
+    cols: Union[str, List[str]],
+    rev_time: Union[int, str],
+    fwd_time: Union[int, str] = 0,
+) -> UpdateByOperation:
     """Creates a rolling formula UpdateByOperation for the supplied column names, using time as the windowing unit. This
     function accepts nanoseconds or time strings as the reverse and forward window parameters. Negative values are
     allowed and can be used to generate completely forward or completely reverse windows. A row containing a null in
@@ -1452,8 +1819,22 @@ def rolling_formula_time(ts_col: str, formula: str, formula_param: str, cols: Un
     """
     try:
         cols = to_sequence(cols)
-        rev_time = _JDateTimeUtils.parseDurationNanos(rev_time) if isinstance(rev_time, str) else rev_time
-        fwd_time = _JDateTimeUtils.parseDurationNanos(fwd_time) if isinstance(fwd_time, str) else fwd_time
-        return UpdateByOperation(j_updateby_op=_JUpdateByOperation.RollingFormula(ts_col, rev_time, fwd_time, formula, formula_param, *cols))
+        rev_time = (
+            _JDateTimeUtils.parseDurationNanos(rev_time)
+            if isinstance(rev_time, str)
+            else rev_time
+        )
+        fwd_time = (
+            _JDateTimeUtils.parseDurationNanos(fwd_time)
+            if isinstance(fwd_time, str)
+            else fwd_time
+        )
+        return UpdateByOperation(
+            j_updateby_op=_JUpdateByOperation.RollingFormula(
+                ts_col, rev_time, fwd_time, formula, formula_param, *cols
+            )
+        )
     except Exception as e:
-        raise DHError(e, "failed to create a rolling formula (time) UpdateByOperation.") from e
+        raise DHError(
+            e, "failed to create a rolling formula (time) UpdateByOperation."
+        ) from e

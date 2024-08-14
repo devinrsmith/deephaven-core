@@ -144,10 +144,7 @@ class PatternMode(Enum):
 
 
 def pattern(
-    mode: PatternMode,
-    col: str,
-    regex: str,
-    invert_pattern: bool = False
+    mode: PatternMode, col: str, regex: str, invert_pattern: bool = False
 ) -> Filter:
     """Creates a regular-expression pattern filter.
 

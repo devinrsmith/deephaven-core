@@ -19,14 +19,20 @@ from deephaven.table import Table
 from deephaven._table_reader import _table_reader_all_dict, _table_reader_chunk_dict
 from deephaven.update_graph import UpdateGraph
 
-_JPythonReplayListenerAdapter = jpy.get_type("io.deephaven.integrations.python.PythonReplayListenerAdapter")
+_JPythonReplayListenerAdapter = jpy.get_type(
+    "io.deephaven.integrations.python.PythonReplayListenerAdapter"
+)
 _JTableUpdate = jpy.get_type("io.deephaven.engine.table.TableUpdate")
 _JListenerRecorder = jpy.get_type("io.deephaven.engine.table.impl.ListenerRecorder")
-_JPythonMergedListenerAdapter = jpy.get_type("io.deephaven.integrations.python.PythonMergedListenerAdapter")
+_JPythonMergedListenerAdapter = jpy.get_type(
+    "io.deephaven.integrations.python.PythonMergedListenerAdapter"
+)
+
 
 class TableUpdate(JObjectWrapper):
     """A TableUpdate object represents a table update event.  It contains the added, removed, and modified rows in the
-    table. """
+    table."""
+
     j_object_type = _JTableUpdate
 
     def __init__(self, table: Table, j_table_update: jpy.JType):
@@ -52,11 +58,17 @@ class TableUpdate(JObjectWrapper):
         if not (added := self.j_table_update.added()):
             return {}
 
-        return _table_reader_all_dict(table=self.table, cols=cols, row_set= added.asRowSet(),
-                                          prev=False, to_numpy=True)
+        return _table_reader_all_dict(
+            table=self.table,
+            cols=cols,
+            row_set=added.asRowSet(),
+            prev=False,
+            to_numpy=True,
+        )
 
-    def added_chunks(self, chunk_size: int, cols: Union[str, List[str]] = None) -> Generator[
-        Dict[str, numpy.ndarray], None, None]:
+    def added_chunks(
+        self, chunk_size: int, cols: Union[str, List[str]] = None
+    ) -> Generator[Dict[str, numpy.ndarray], None, None]:
         """Returns a generator that on each iteration, only returns a chunk of added rows in the form of a dict with
         each key being a column name and each value being a NumPy array of the rows in the chunk.
 
@@ -70,8 +82,13 @@ class TableUpdate(JObjectWrapper):
         if not (added := self.j_table_update.added()):
             return (_ for _ in ())
 
-        return _table_reader_chunk_dict(table=self.table, cols=cols, row_set=added.asRowSet(),
-                                        chunk_size=chunk_size, prev=False)
+        return _table_reader_chunk_dict(
+            table=self.table,
+            cols=cols,
+            row_set=added.asRowSet(),
+            chunk_size=chunk_size,
+            prev=False,
+        )
 
     def removed(self, cols: Union[str, List[str]] = None) -> Dict[str, numpy.ndarray]:
         """Returns a dict with each key being a column name and each value being a NumPy array of
@@ -86,11 +103,13 @@ class TableUpdate(JObjectWrapper):
         if not (removed := self.j_table_update.removed()):
             return {}
 
-        return _table_reader_all_dict(table=self.table, cols=cols, row_set=removed.asRowSet(),
-                                      prev=True)
+        return _table_reader_all_dict(
+            table=self.table, cols=cols, row_set=removed.asRowSet(), prev=True
+        )
 
-    def removed_chunks(self, chunk_size: int, cols: Union[str, List[str]] = None) -> Generator[
-        Dict[str, numpy.ndarray], None, None]:
+    def removed_chunks(
+        self, chunk_size: int, cols: Union[str, List[str]] = None
+    ) -> Generator[Dict[str, numpy.ndarray], None, None]:
         """Returns a generator that on each iteration, only returns a chunk of removed rows in the form of a dict with
         each key being a column name and each value being a NumPy array of the rows in the chunk.
 
@@ -104,8 +123,13 @@ class TableUpdate(JObjectWrapper):
         if not (removed := self.j_table_update.removed()):
             return (_ for _ in ())
 
-        return _table_reader_chunk_dict(table=self.table, cols=cols, row_set=removed.asRowSet(),
-                                        chunk_size=chunk_size, prev=True)
+        return _table_reader_chunk_dict(
+            table=self.table,
+            cols=cols,
+            row_set=removed.asRowSet(),
+            chunk_size=chunk_size,
+            prev=True,
+        )
 
     def modified(self, cols: Union[str, List[str]] = None) -> Dict[str, numpy.ndarray]:
         """Returns a dict with each key being a column name and each value being a NumPy array of the current values of
@@ -120,11 +144,17 @@ class TableUpdate(JObjectWrapper):
         if not (modified := self.j_table_update.modified()):
             return {}
 
-        return _table_reader_all_dict(table=self.table, cols=cols, row_set=modified.asRowSet(),
-                                          prev=False, to_numpy=True)
+        return _table_reader_all_dict(
+            table=self.table,
+            cols=cols,
+            row_set=modified.asRowSet(),
+            prev=False,
+            to_numpy=True,
+        )
 
-    def modified_chunks(self, chunk_size: int, cols: Union[str, List[str]] = None) -> Generator[
-        Dict[str, numpy.ndarray], None, None]:
+    def modified_chunks(
+        self, chunk_size: int, cols: Union[str, List[str]] = None
+    ) -> Generator[Dict[str, numpy.ndarray], None, None]:
         """Returns a generator that on each iteration, only returns a chunk of modified rows in the form of a dict with
         each key being a column name and each value being a NumPy array of the current values of the rows in the chunk.
 
@@ -138,10 +168,17 @@ class TableUpdate(JObjectWrapper):
         if not (modified := self.j_table_update.modified()):
             return (_ for _ in ())
 
-        return _table_reader_chunk_dict(self.table, cols=cols, row_set=modified.asRowSet(),
-                                        chunk_size=chunk_size, prev=False)
+        return _table_reader_chunk_dict(
+            self.table,
+            cols=cols,
+            row_set=modified.asRowSet(),
+            chunk_size=chunk_size,
+            prev=False,
+        )
 
-    def modified_prev(self, cols: Union[str, List[str]] = None) -> Dict[str, numpy.ndarray]:
+    def modified_prev(
+        self, cols: Union[str, List[str]] = None
+    ) -> Dict[str, numpy.ndarray]:
         """Returns a dict with each key being a column name and each value being a NumPy array of the previous values of
         all the modified rows in the columns.
 
@@ -154,11 +191,17 @@ class TableUpdate(JObjectWrapper):
         if not (modified := self.j_table_update.modified()):
             return {}
 
-        return _table_reader_all_dict(table=self.table, cols=cols, row_set=modified.asRowSet(),
-                                          prev=True, to_numpy=True)
+        return _table_reader_all_dict(
+            table=self.table,
+            cols=cols,
+            row_set=modified.asRowSet(),
+            prev=True,
+            to_numpy=True,
+        )
 
-    def modified_prev_chunks(self, chunk_size: int, cols: Union[str, List[str]] = None) -> Generator[
-        Dict[str, numpy.ndarray], None, None]:
+    def modified_prev_chunks(
+        self, chunk_size: int, cols: Union[str, List[str]] = None
+    ) -> Generator[Dict[str, numpy.ndarray], None, None]:
         """Returns a generator that on each iteration, only returns a chunk of modified rows in the form of a dict with
         each key being a column name and each value being a NumPy array of the previous values of the rows in the chunk.
 
@@ -172,8 +215,13 @@ class TableUpdate(JObjectWrapper):
         if not (modified := self.j_table_update.modified()):
             return (_ for _ in ())
 
-        return _table_reader_chunk_dict(self.table, cols=cols, row_set=modified.asRowSet(),
-                                        chunk_size=chunk_size, prev=True)
+        return _table_reader_chunk_dict(
+            self.table,
+            cols=cols,
+            row_set=modified.asRowSet(),
+            chunk_size=chunk_size,
+            prev=True,
+        )
 
     @property
     def shifted(self):
@@ -217,24 +265,34 @@ def _listener_wrapper(table: Table):
 def _wrap_listener_func(t: Table, listener: Callable[[TableUpdate, bool], None]):
     n_params = len(signature(listener).parameters)
     if n_params != 2:
-        raise ValueError("listener function must have 2 (update, is_replay) parameters.")
+        raise ValueError(
+            "listener function must have 2 (update, is_replay) parameters."
+        )
     return _listener_wrapper(table=t)(listener)
 
 
 def _wrap_listener_obj(t: Table, listener: TableListener):
     n_params = len(signature(listener.on_update).parameters)
     if n_params != 2:
-        raise ValueError(f"The on_update method must have 2 (update, is_replay) parameters.")
+        raise ValueError(
+            f"The on_update method must have 2 (update, is_replay) parameters."
+        )
     listener.on_update = _listener_wrapper(table=t)(listener.on_update)
     return listener
 
 
 class TableListenerHandle(JObjectWrapper):
     """A handle to manage a table listener's lifecycle."""
+
     j_object_type = _JPythonReplayListenerAdapter
 
-    def __init__(self, t: Table, listener: Union[Callable[[TableUpdate, bool], None], TableListener], description: str = None,
-                 dependencies: Union[Table, Sequence[Table]] = None):
+    def __init__(
+        self,
+        t: Table,
+        listener: Union[Callable[[TableUpdate, bool], None], TableListener],
+        description: str = None,
+        dependencies: Union[Table, Sequence[Table]] = None,
+    ):
         """Creates a new table listener handle with dependencies.
 
         Table change events are processed by 'listener', which can be either
@@ -281,10 +339,14 @@ class TableListenerHandle(JObjectWrapper):
         elif callable(listener):
             self.listener_wrapped = _wrap_listener_func(t, listener)
         else:
-            raise DHError(message="listener is neither callable nor TableListener object")
+            raise DHError(
+                message="listener is neither callable nor TableListener object"
+            )
 
         try:
-            self.listener_adapter = _JPythonReplayListenerAdapter.create(description, t.j_table, False, self.listener_wrapped, self.dependencies)
+            self.listener_adapter = _JPythonReplayListenerAdapter.create(
+                description, t.j_table, False, self.listener_wrapped, self.dependencies
+            )
         except Exception as e:
             raise DHError(e, "failed to create a table listener.") from e
         self.started = False
@@ -312,7 +374,7 @@ class TableListenerHandle(JObjectWrapper):
 
                 self.t.j_table.addUpdateListener(self.listener_adapter)
         except Exception as e:
-           raise DHError(e, "failed to listen to the table changes.") from e
+            raise DHError(e, "failed to listen to the table changes.") from e
 
         self.started = True
 
@@ -325,8 +387,13 @@ class TableListenerHandle(JObjectWrapper):
         self.started = False
 
 
-def listen(t: Table, listener: Union[Callable[[TableUpdate, bool], None], TableListener], description: str = None, do_replay: bool = False,
-           dependencies: Union[Table, Sequence[Table]] = None) -> TableListenerHandle:
+def listen(
+    t: Table,
+    listener: Union[Callable[[TableUpdate, bool], None], TableListener],
+    description: str = None,
+    do_replay: bool = False,
+    dependencies: Union[Table, Sequence[Table]] = None,
+) -> TableListenerHandle:
     """This is a convenience function that creates a TableListenerHandle object and immediately starts it to listen
     for table updates.
 
@@ -359,13 +426,14 @@ def listen(t: Table, listener: Union[Callable[[TableUpdate, bool], None], TableL
     Raises:
         DHError
     """
-    table_listener_handle = TableListenerHandle(t=t, dependencies=dependencies, listener=listener,
-                                                                    description=description)
+    table_listener_handle = TableListenerHandle(
+        t=t, dependencies=dependencies, listener=listener, description=description
+    )
     table_listener_handle.start(do_replay=do_replay)
     return table_listener_handle
 
 
-class _ListenerRecorder (JObjectWrapper):
+class _ListenerRecorder(JObjectWrapper):
     """A ListenerRecorder object records the table updates and notifies the associated MergedListener that a change
     has occurred."""
 
@@ -379,7 +447,9 @@ class _ListenerRecorder (JObjectWrapper):
         if not table.is_refreshing:
             raise DHError(message="table must be a refreshing table.")
 
-        self.j_listener_recorder = _JListenerRecorder("Python Wrapped Listener recorder", table.j_table, None)
+        self.j_listener_recorder = _JListenerRecorder(
+            "Python Wrapped Listener recorder", table.j_table, None
+        )
         self.table = table
 
     def table_update(self) -> Optional[TableUpdate]:
@@ -406,14 +476,22 @@ class MergedListener(ABC):
 
 class MergedListenerHandle(JObjectWrapper):
     """A handle to manage a merged listener's lifecycle."""
+
     j_object_type = _JPythonMergedListenerAdapter
 
     @property
     def j_object(self) -> jpy.JType:
         return self.merged_listener_adapter
 
-    def __init__(self, tables: Sequence[Table], listener: Union[Callable[[Dict[Table, TableUpdate], bool], None], MergedListener],
-                 description: str = None, dependencies: Union[Table, Sequence[Table]] = None):
+    def __init__(
+        self,
+        tables: Sequence[Table],
+        listener: Union[
+            Callable[[Dict[Table, TableUpdate], bool], None], MergedListener
+        ],
+        description: str = None,
+        dependencies: Union[Table, Sequence[Table]] = None,
+    ):
         """Creates a new MergedListenerHandle with the provided listener recorders and dependencies.
 
         Table change events are processed by 'listener', which can be either
@@ -449,7 +527,9 @@ class MergedListenerHandle(JObjectWrapper):
             DHError
         """
         if len(tables) < 2:
-            raise DHError(message="A merged listener must listen to at least 2 refreshing tables.")
+            raise DHError(
+                message="A merged listener must listen to at least 2 refreshing tables."
+            )
 
         self.tables = tables
         self.listener_recorders = [_ListenerRecorder(t) for t in tables]
@@ -462,22 +542,26 @@ class MergedListenerHandle(JObjectWrapper):
             self.listener = listener
         n_params = len(signature(self.listener).parameters)
         if n_params != 2:
-            raise ValueError("merged listener function must have 2 parameters (updates, is_replay).")
-
+            raise ValueError(
+                "merged listener function must have 2 parameters (updates, is_replay)."
+            )
 
         try:
             self.merged_listener_adapter = _JPythonMergedListenerAdapter.create(
-                        to_sequence(self.listener_recorders),
-                        to_sequence(self.dependencies),
-                        description,
-                        self)
+                to_sequence(self.listener_recorders),
+                to_sequence(self.dependencies),
+                description,
+                self,
+            )
             self.started = False
         except Exception as e:
             raise DHError(e, "failed to create a merged listener adapter.") from e
 
     def _process(self) -> None:
-        """Process the table updates from the listener recorders. """
-        self.listener({lr.table: lr.table_update() for lr in self.listener_recorders}, False)
+        """Process the table updates from the listener recorders."""
+        self.listener(
+            {lr.table: lr.table_update() for lr in self.listener_recorders}, False
+        )
 
     def start(self, do_replay: bool = False) -> None:
         """Start the listener by registering it with the tables and listening for updates.
@@ -489,7 +573,9 @@ class MergedListenerHandle(JObjectWrapper):
             DHError
         """
         if self.started:
-            raise RuntimeError("Attempting to start an already started merged listener..")
+            raise RuntimeError(
+                "Attempting to start an already started merged listener.."
+            )
 
         try:
             # self.tables[0] is guaranteed to be a refreshing table, the lock is needed to add all the listener recorders
@@ -497,8 +583,13 @@ class MergedListenerHandle(JObjectWrapper):
             # taken on the same update graph cycle as well.
             with update_graph.auto_locking_ctx(self.tables[0]):
                 if do_replay:
-                    j_replay_updates = self.merged_listener_adapter.currentRowsAsUpdates()
-                    replay_updates = {t: TableUpdate(t, tu) for t, tu in zip(self.tables, j_list_to_list(j_replay_updates))}
+                    j_replay_updates = (
+                        self.merged_listener_adapter.currentRowsAsUpdates()
+                    )
+                    replay_updates = {
+                        t: TableUpdate(t, tu)
+                        for t, tu in zip(self.tables, j_list_to_list(j_replay_updates))
+                    }
                     try:
                         self.listener(replay_updates, True)
                     finally:
@@ -511,7 +602,6 @@ class MergedListenerHandle(JObjectWrapper):
             raise DHError(e, "failed to listen to the table changes.") from e
 
         self.started = True
-
 
     def stop(self) -> None:
         """Stop the listener."""
@@ -526,9 +616,13 @@ class MergedListenerHandle(JObjectWrapper):
             self.started = False
 
 
-def merged_listen(tables: Sequence[Table], listener: Union[Callable[[Dict[Table, TableUpdate]], None], MergedListener],
-                do_replay: bool = False, description: str = None, dependencies: Union[Table, Sequence[Table]] = None)\
-        -> MergedListenerHandle:
+def merged_listen(
+    tables: Sequence[Table],
+    listener: Union[Callable[[Dict[Table, TableUpdate]], None], MergedListener],
+    do_replay: bool = False,
+    description: str = None,
+    dependencies: Union[Table, Sequence[Table]] = None,
+) -> MergedListenerHandle:
     """This is a convenience function that creates a MergedListenerHandle object and immediately starts it to
     listen for table updates.
 
@@ -556,7 +650,11 @@ def merged_listen(tables: Sequence[Table], listener: Union[Callable[[Dict[Table,
             operations may not be safe. It is best to perform the operations on the dependent tables beforehand,
             and then add the result tables as dependencies to the listener so that they can be safely read in it.
     """
-    merged_listener_handle = MergedListenerHandle(tables=tables, listener=listener,
-                                                  description=description, dependencies=dependencies)
+    merged_listener_handle = MergedListenerHandle(
+        tables=tables,
+        listener=listener,
+        description=description,
+        dependencies=dependencies,
+    )
     merged_listener_handle.start(do_replay=do_replay)
     return merged_listener_handle

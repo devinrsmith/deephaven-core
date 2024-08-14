@@ -38,7 +38,9 @@ class UpdateGraph(JObjectWrapper):
         self.j_update_graph = j_update_graph
 
 
-def has_exclusive_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> bool:
+def has_exclusive_lock(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> bool:
     """Checks if the current thread is holding the provided Update Graph's (UG) exclusive lock.
 
     Args:
@@ -54,12 +56,14 @@ def has_exclusive_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "Part
     return ug.j_update_graph.exclusiveLock().isHeldByCurrentThread()
 
 
-def has_shared_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> bool:
+def has_shared_lock(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> bool:
     """Checks if the current thread is holding the provided Update Graph's (UG) shared lock.
 
-    Args: 
-        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a 
-            table-like object. 
+    Args:
+        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a
+            table-like object.
 
     Returns:
         True if the current thread is holding the Update Graph (UG) shared lock, False otherwise.
@@ -71,12 +75,14 @@ def has_shared_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "Partiti
 
 
 @contextlib.contextmanager
-def exclusive_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]):
+def exclusive_lock(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+):
     """Context manager for running a block of code under an Update Graph (UG) exclusive lock.
 
-    Args: 
-        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a 
-            table-like object. 
+    Args:
+        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a
+            table-like object.
     """
     if not isinstance(ug, UpdateGraph):
         ug = ug.update_graph
@@ -92,11 +98,13 @@ def exclusive_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "Partitio
 
 
 @contextlib.contextmanager
-def shared_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]):
+def shared_lock(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+):
     """Context manager for running a block of code under an Update Graph (UG) shared lock.
 
     Args:
-        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a 
+        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a
             table-like object.
     """
     if not isinstance(ug, UpdateGraph):
@@ -113,12 +121,14 @@ def shared_lock(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTa
         lock.unlock()
 
 
-def exclusive_locked(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> Callable:
+def exclusive_locked(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> Callable:
     """A decorator that ensures the decorated function be called under the Update Graph (UG) exclusive
     lock. The lock is released after the function returns regardless of what happens inside the function.
 
     Args:
-        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a 
+        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a
             table-like object.
     """
     if not isinstance(ug, UpdateGraph):
@@ -135,12 +145,14 @@ def exclusive_locked(ug: Union[UpdateGraph, "Table", "PartitionedTable", "Partit
     return inner_wrapper
 
 
-def shared_locked(ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> Callable:
+def shared_locked(
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> Callable:
     """A decorator that ensures the decorated function be called under the Update Graph (UG) shared lock.
     The lock is released after the function returns regardless of what happens inside the function.
 
     Args:
-        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a 
+        ug (Union[UpdateGraph, Table, PartitionedTable, PartitionTableProxy]): The Update Graph (UG) or a
             table-like object.
     """
     if not isinstance(ug, UpdateGraph):
@@ -180,7 +192,8 @@ def _first_refreshing_table(*args, **kwargs) -> Optional["Table"]:
 
 
 def _serial_table_operations_safe(
-        ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> bool:
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> bool:
     """Checks if the current thread is marked as being able to safely call serial operations according to the provided
     Update Graph (UG) without locking.
 
@@ -199,7 +212,8 @@ def _serial_table_operations_safe(
 
 
 def _current_thread_processes_updates(
-        ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]) -> bool:
+    ug: Union[UpdateGraph, "Table", "PartitionedTable", "PartitionTableProxy"]
+) -> bool:
     """Checks if the current thread processes updates for the provided Update Graph (UG).
 
     Args:
@@ -218,17 +232,20 @@ def _current_thread_processes_updates(
 def auto_locking_op(f: Callable) -> Callable:
     """A decorator for annotating unsafe Table operations. It ensures that the decorated function runs under the UG
     shared lock if ugp.auto_locking is True, the target table-like object or any table-like arguments are refreshing,
-    the current thread doesn't own any UG lock, and the current thread is not part of the update graph."""
+    the current thread doesn't own any UG lock, and the current thread is not part of the update graph.
+    """
 
     @wraps(f)
     def do_locked(*args, **kwargs):
         arg = _first_refreshing_table(*args, **kwargs)
-        if (not arg
-                or not auto_locking
-                or has_shared_lock(arg)
-                or has_exclusive_lock(arg)
-                or _serial_table_operations_safe(arg)
-                or _current_thread_processes_updates(arg)):
+        if (
+            not arg
+            or not auto_locking
+            or has_shared_lock(arg)
+            or has_exclusive_lock(arg)
+            or _serial_table_operations_safe(arg)
+            or _current_thread_processes_updates(arg)
+        ):
             return f(*args, **kwargs)
 
         with shared_lock(arg.update_graph):
@@ -241,15 +258,18 @@ def auto_locking_op(f: Callable) -> Callable:
 def auto_locking_ctx(*args, **kwargs):
     """An auto-locking aware context manager. It ensures that the enclosed code block runs under the UG shared lock if
     ugp.auto_locking is True, the target table-like object or any table-like arguments are refreshing, the current
-    thread doesn't own any UG lock, and the current thread is not part of the update graph."""
+    thread doesn't own any UG lock, and the current thread is not part of the update graph.
+    """
 
     arg = _first_refreshing_table(*args, **kwargs)
-    if (not arg
-            or not auto_locking
-            or has_shared_lock(arg)
-            or has_exclusive_lock(arg)
-            or _serial_table_operations_safe(arg)
-            or _current_thread_processes_updates(arg)):
+    if (
+        not arg
+        or not auto_locking
+        or has_shared_lock(arg)
+        or has_exclusive_lock(arg)
+        or _serial_table_operations_safe(arg)
+        or _current_thread_processes_updates(arg)
+    ):
         yield
     else:
         with shared_lock(arg.update_graph):

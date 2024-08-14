@@ -27,8 +27,15 @@ class TableReplayer(JObjectWrapper):
 
     j_object_type = _JReplayer
 
-    def __init__(self, start_time: Union[dtypes.Instant, int, str, datetime.datetime, np.datetime64, pd.Timestamp],
-                 end_time: Union[dtypes.Instant, int, str, datetime.datetime, np.datetime64, pd.Timestamp]):
+    def __init__(
+        self,
+        start_time: Union[
+            dtypes.Instant, int, str, datetime.datetime, np.datetime64, pd.Timestamp
+        ],
+        end_time: Union[
+            dtypes.Instant, int, str, datetime.datetime, np.datetime64, pd.Timestamp
+        ],
+    ):
         """Initializes the replayer.
 
         Args:

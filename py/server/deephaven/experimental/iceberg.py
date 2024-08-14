@@ -17,7 +17,9 @@ from deephaven.jcompat import j_table_definition
 from deephaven.table import Table
 
 _JIcebergInstructions = jpy.get_type("io.deephaven.iceberg.util.IcebergInstructions")
-_JIcebergCatalogAdapter = jpy.get_type("io.deephaven.iceberg.util.IcebergCatalogAdapter")
+_JIcebergCatalogAdapter = jpy.get_type(
+    "io.deephaven.iceberg.util.IcebergCatalogAdapter"
+)
 
 # IcebergToolsS3 is an optional library
 try:
@@ -38,10 +40,12 @@ class IcebergInstructions(JObjectWrapper):
 
     j_object_type = _JIcebergInstructions
 
-    def __init__(self,
-                 table_definition: Optional[Union[Dict[str, DType], List[Column]]] = None,
-                 data_instructions: Optional[s3.S3Instructions] = None,
-                 column_renames: Optional[Dict[str, str]] = None):
+    def __init__(
+        self,
+        table_definition: Optional[Union[Dict[str, DType], List[Column]]] = None,
+        data_instructions: Optional[s3.S3Instructions] = None,
+        column_renames: Optional[Dict[str, str]] = None,
+    ):
         """
         Initializes the instructions using the provided parameters.
 
@@ -85,6 +89,7 @@ class IcebergCatalogAdapter(JObjectWrapper):
     This class provides an interface for interacting with Iceberg catalogs. It allows listing namespaces, tables and
     snapshots, as well as reading Iceberg tables into Deephaven tables.
     """
+
     j_object_type = _JIcebergCatalogAdapter or type(None)
 
     def __init__(self, j_object: _JIcebergCatalogAdapter):
@@ -135,7 +140,12 @@ class IcebergCatalogAdapter(JObjectWrapper):
 
         return self.j_object.listSnapshotsAsTable(table_identifier)
 
-    def read_table(self, table_identifier: str, instructions: Optional[IcebergInstructions] = None, snapshot_id: Optional[int] = None) -> Table:
+    def read_table(
+        self,
+        table_identifier: str,
+        instructions: Optional[IcebergInstructions] = None,
+        snapshot_id: Optional[int] = None,
+    ) -> Table:
         """
         Reads the table from the catalog using the provided instructions. Optionally, a snapshot id can be provided to
         read a specific snapshot of the table.
@@ -157,7 +167,11 @@ class IcebergCatalogAdapter(JObjectWrapper):
             instructions_object = _JIcebergInstructions.DEFAULT
 
         if snapshot_id is not None:
-            return Table(self.j_object.readTable(table_identifier, snapshot_id, instructions_object))
+            return Table(
+                self.j_object.readTable(
+                    table_identifier, snapshot_id, instructions_object
+                )
+            )
         return Table(self.j_object.readTable(table_identifier, instructions_object))
 
     @property
@@ -166,13 +180,13 @@ class IcebergCatalogAdapter(JObjectWrapper):
 
 
 def adapter_s3_rest(
-        catalog_uri: str,
-        warehouse_location: str,
-        name: Optional[str] = None,
-        region_name: Optional[str] = None,
-        access_key_id: Optional[str] = None,
-        secret_access_key: Optional[str] = None,
-        end_point_override: Optional[str] = None
+    catalog_uri: str,
+    warehouse_location: str,
+    name: Optional[str] = None,
+    region_name: Optional[str] = None,
+    access_key_id: Optional[str] = None,
+    secret_access_key: Optional[str] = None,
+    end_point_override: Optional[str] = None,
 ) -> IcebergCatalogAdapter:
     """
     Create a catalog adapter using an S3-compatible provider and a REST catalog.
@@ -200,8 +214,10 @@ def adapter_s3_rest(
         DHError: If unable to build the catalog adapter.
     """
     if not _JIcebergToolsS3:
-        raise DHError(message="`adapter_s3_rest` requires the Iceberg specific deephaven S3 extensions to be "
-                              "included in the package")
+        raise DHError(
+            message="`adapter_s3_rest` requires the Iceberg specific deephaven S3 extensions to be "
+            "included in the package"
+        )
 
     try:
         return IcebergCatalogAdapter(
@@ -212,15 +228,15 @@ def adapter_s3_rest(
                 region_name,
                 access_key_id,
                 secret_access_key,
-                end_point_override))
+                end_point_override,
+            )
+        )
     except Exception as e:
         raise DHError(e, "Failed to build Iceberg Catalog Adapter") from e
 
 
 def adapter_aws_glue(
-        catalog_uri: str,
-        warehouse_location: str,
-        name: Optional[str] = None
+    catalog_uri: str, warehouse_location: str, name: Optional[str] = None
 ) -> IcebergCatalogAdapter:
     """
     Create a catalog adapter using an AWS Glue catalog.
@@ -238,15 +254,14 @@ def adapter_aws_glue(
         DHError: If unable to build the catalog adapter.
     """
     if not _JIcebergToolsS3:
-        raise DHError(message="`adapter_aws_glue` requires the Iceberg specific deephaven S3 extensions to "
-                              "be included in the package")
+        raise DHError(
+            message="`adapter_aws_glue` requires the Iceberg specific deephaven S3 extensions to "
+            "be included in the package"
+        )
 
     try:
         return IcebergCatalogAdapter(
-            _JIcebergToolsS3.createGlue(
-                name,
-                catalog_uri,
-                warehouse_location))
+            _JIcebergToolsS3.createGlue(name, catalog_uri, warehouse_location)
+        )
     except Exception as e:
         raise DHError(e, "Failed to build Iceberg Catalog Adapter") from e
-

@@ -18,15 +18,20 @@ from deephaven.table import Table, PartitionedTable
 from deephaven.experimental import s3
 
 _JParquetTools = jpy.get_type("io.deephaven.parquet.table.ParquetTools")
-_JCompressionCodecName = jpy.get_type("org.apache.parquet.hadoop.metadata.CompressionCodecName")
+_JCompressionCodecName = jpy.get_type(
+    "org.apache.parquet.hadoop.metadata.CompressionCodecName"
+)
 _JParquetInstructions = jpy.get_type("io.deephaven.parquet.table.ParquetInstructions")
-_JParquetFileLayout = jpy.get_type("io.deephaven.parquet.table.ParquetInstructions$ParquetFileLayout")
+_JParquetFileLayout = jpy.get_type(
+    "io.deephaven.parquet.table.ParquetInstructions$ParquetFileLayout"
+)
 _JTableDefinition = jpy.get_type("io.deephaven.engine.table.TableDefinition")
 
 
 @dataclass
 class ColumnInstruction:
-    """  This class specifies the instructions for reading/writing a Parquet column. """
+    """This class specifies the instructions for reading/writing a Parquet column."""
+
     column_name: Optional[str] = None
     parquet_column_name: Optional[str] = None
     codec_name: Optional[str] = None
@@ -35,7 +40,7 @@ class ColumnInstruction:
 
 
 class ParquetFileLayout(Enum):
-    """ The parquet file layout. """
+    """The parquet file layout."""
 
     SINGLE_FILE = 1
     """ A single parquet file. """
@@ -88,7 +93,7 @@ def _build_parquet_instructions(
             file_layout is not None,
             table_definition is not None,
             index_columns is not None,
-            special_instructions is not None
+            special_instructions is not None,
         ]
     ):
         return _JParquetInstructions.EMPTY
@@ -169,7 +174,7 @@ def read(
     table_definition: Union[Dict[str, DType], List[Column], None] = None,
     special_instructions: Optional[s3.S3Instructions] = None,
 ) -> Table:
-    """ Reads in a table from a single parquet, metadata file, or directory with recognized layout.
+    """Reads in a table from a single parquet, metadata file, or directory with recognized layout.
 
     Args:
         path (str): the file or directory to examine
@@ -218,7 +223,7 @@ def _j_list_of_list_of_string(str_seq_seq: Sequence[Sequence[str]]):
 
 
 def delete(path: str) -> None:
-    """ Deletes a Parquet table on disk.
+    """Deletes a Parquet table on disk.
 
     Args:
         path (str): path to delete
@@ -242,9 +247,9 @@ def write(
     max_dictionary_size: Optional[int] = None,
     target_page_size: Optional[int] = None,
     generate_metadata_files: Optional[bool] = None,
-    index_columns: Optional[Sequence[Sequence[str]]] = None
+    index_columns: Optional[Sequence[Sequence[str]]] = None,
 ) -> None:
-    """ Write a table to a Parquet file.
+    """Write a table to a Parquet file.
 
     Args:
         table (Table): the source table
@@ -296,19 +301,19 @@ def write(
 
 
 def write_partitioned(
-        table: Union[Table, PartitionedTable],
-        destination_dir: str,
-        table_definition: Optional[Union[Dict[str, DType], List[Column]]] = None,
-        col_instructions: Optional[List[ColumnInstruction]] = None,
-        compression_codec_name: Optional[str] = None,
-        max_dictionary_keys: Optional[int] = None,
-        max_dictionary_size: Optional[int] = None,
-        target_page_size: Optional[int] = None,
-        base_name: Optional[str] = None,
-        generate_metadata_files: Optional[bool] = None,
-        index_columns: Optional[Sequence[Sequence[str]]] = None
+    table: Union[Table, PartitionedTable],
+    destination_dir: str,
+    table_definition: Optional[Union[Dict[str, DType], List[Column]]] = None,
+    col_instructions: Optional[List[ColumnInstruction]] = None,
+    compression_codec_name: Optional[str] = None,
+    max_dictionary_keys: Optional[int] = None,
+    max_dictionary_size: Optional[int] = None,
+    target_page_size: Optional[int] = None,
+    base_name: Optional[str] = None,
+    generate_metadata_files: Optional[bool] = None,
+    index_columns: Optional[Sequence[Sequence[str]]] = None,
 ) -> None:
-    """ Write table to disk in parquet format with the partitioning columns written as "key=value" format in a nested
+    """Write table to disk in parquet format with the partitioning columns written as "key=value" format in a nested
     directory structure. For example, for a partitioned column "date", we will have a directory structure like
     "date=2021-01-01/<base_name>.parquet", "date=2021-01-02/<base_name>.parquet", etc. where "2021-01-01" and
     "2021-01-02" are the partition values and "<base_name>" is passed as an optional parameter. All the necessary
@@ -371,7 +376,9 @@ def write_partitioned(
             table_definition=table_definition,
             index_columns=index_columns,
         )
-        _JParquetTools.writeKeyValuePartitionedTable(table.j_object, destination_dir, write_instructions)
+        _JParquetTools.writeKeyValuePartitionedTable(
+            table.j_object, destination_dir, write_instructions
+        )
     except Exception as e:
         raise DHError(e, "failed to write to parquet data.") from e
 
@@ -386,9 +393,9 @@ def batch_write(
     max_dictionary_size: Optional[int] = None,
     target_page_size: Optional[int] = None,
     generate_metadata_files: Optional[bool] = None,
-    index_columns: Optional[Sequence[Sequence[str]]] = None
+    index_columns: Optional[Sequence[Sequence[str]]] = None,
 ):
-    """ Writes tables to disk in parquet format to a supplied set of paths.
+    """Writes tables to disk in parquet format to a supplied set of paths.
 
     Note that either all the tables are written out successfully or none is.
 
@@ -436,6 +443,8 @@ def batch_write(
             table_definition=table_definition,
             index_columns=index_columns,
         )
-        _JParquetTools.writeTables([t.j_table for t in tables], _j_string_array(paths), write_instructions)
+        _JParquetTools.writeTables(
+            [t.j_table for t in tables], _j_string_array(paths), write_instructions
+        )
     except Exception as e:
         raise DHError(e, "write multiple tables to parquet data failed.") from e

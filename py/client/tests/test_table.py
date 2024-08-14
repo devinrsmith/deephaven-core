@@ -10,7 +10,18 @@ from pyarrow import csv
 
 from pydeephaven import DHError
 from pydeephaven import SortDirection
-from pydeephaven.agg import sum_, avg, pct, weighted_avg, count_, partition, median, unique, count_distinct, distinct
+from pydeephaven.agg import (
+    sum_,
+    avg,
+    pct,
+    weighted_avg,
+    count_,
+    partition,
+    median,
+    unique,
+    count_distinct,
+    distinct,
+)
 from pydeephaven.table import Table
 from tests.testbase import BaseTestCase
 
@@ -52,7 +63,9 @@ class TableTestCase(BaseTestCase):
 
     def test_create_data_table_then_update(self):
         pa_table = csv.read_csv(self.csv_file)
-        new_table = self.session.import_table(pa_table).update(formulas=['Sum = a + b + c + d'])
+        new_table = self.session.import_table(pa_table).update(
+            formulas=["Sum = a + b + c + d"]
+        )
         pa_table2 = new_table.to_arrow()
         df = pa_table2.to_pandas()
         self.assertEquals(df.shape[1], 6)
@@ -73,7 +86,7 @@ class TableTestCase(BaseTestCase):
             Table.lazy_update,
             Table.view,
             Table.update_view,
-            Table.select
+            Table.select,
         ]
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
@@ -100,7 +113,9 @@ class TableTestCase(BaseTestCase):
     def test_sort(self):
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
-        sorted_table = test_table.sort(order_by=["a", "b"], order=[SortDirection.DESCENDING])
+        sorted_table = test_table.sort(
+            order_by=["a", "b"], order=[SortDirection.DESCENDING]
+        )
         df = sorted_table.to_arrow().to_pandas()
 
         self.assertTrue(df.iloc[:, 0].is_monotonic_decreasing)
@@ -114,8 +129,7 @@ class TableTestCase(BaseTestCase):
         self.assertTrue(df.iloc[:, 0].is_monotonic_decreasing)
 
     def test_head_tail(self):
-        ops = [Table.head,
-               Table.tail]
+        ops = [Table.head, Table.tail]
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
         for op in ops:
@@ -128,7 +142,9 @@ class TableTestCase(BaseTestCase):
         left_table = test_table.drop_columns(["d", "e"])
         right_table = test_table.drop_columns(["b", "c"])
         with self.assertRaises(DHError):
-            result_table = left_table.natural_join(right_table, on=["a"], joins=["RD = d", "e"])
+            result_table = left_table.natural_join(
+                right_table, on=["a"], joins=["RD = d", "e"]
+            )
             self.assertEqual(test_table.size, result_table.size)
 
     def test_exact_join(self):
@@ -137,13 +153,17 @@ class TableTestCase(BaseTestCase):
         left_table = test_table.drop_columns(["d", "e"])
         right_table = test_table.drop_columns(["b", "c"])
         with self.assertRaises(DHError):
-            result_table = left_table.exact_join(right_table, on=["a"], joins=["d", "e"])
+            result_table = left_table.exact_join(
+                right_table, on=["a"], joins=["d", "e"]
+            )
             self.assertEqual(test_table.size, result_table.size)
 
     def test_cross_join(self):
         pa_table = csv.read_csv(self.csv_file)
         left_table = self.session.import_table(pa_table)
-        right_table = left_table.where(["a % 2 > 0 && b % 3 == 1"]).drop_columns(cols=["b", "c", "d"])
+        right_table = left_table.where(["a % 2 > 0 && b % 3 == 1"]).drop_columns(
+            cols=["b", "c", "d"]
+        )
         left_table = left_table.drop_columns(cols=["e"])
         result_table = left_table.join(right_table, on=["a"], joins=["e"])
         self.assertTrue(result_table.size < left_table.size)
@@ -164,8 +184,7 @@ class TableTestCase(BaseTestCase):
         self.assertLessEqual(result_table.size, left_table.size)
 
     def test_head_tail_by(self):
-        ops = [Table.head_by,
-               Table.tail_by]
+        ops = [Table.head_by, Table.tail_by]
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
         for op in ops:
@@ -188,8 +207,17 @@ class TableTestCase(BaseTestCase):
         self.assertLessEqual(ungrouped_table.size, test_table.size)
 
     def test_dedicated_agg(self):
-        ops = [Table.first_by, Table.last_by, Table.sum_by, Table.avg_by, Table.std_by, Table.var_by, Table.median_by,
-               Table.min_by, Table.max_by]
+        ops = [
+            Table.first_by,
+            Table.last_by,
+            Table.sum_by,
+            Table.avg_by,
+            Table.std_by,
+            Table.var_by,
+            Table.median_by,
+            Table.min_by,
+            Table.max_by,
+        ]
 
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
@@ -216,47 +244,69 @@ class TableTestCase(BaseTestCase):
         self.assertEqual(test_table.schema, result_table.schema)
         self.assertEqual(test_table.size, result_table.size)
 
-        test_table = self.session.time_table(period=10000000).update(formulas=["Col1 = i", "Col2 = i * 2"])
+        test_table = self.session.time_table(period=10000000).update(
+            formulas=["Col1 = i", "Col2 = i * 2"]
+        )
         result_table = test_table.snapshot()
         self.assertEqual(test_table.schema, result_table.schema)
 
     def test_snapshot_when(self):
-        source_table = (self.session.time_table(period=10_000_000)
-                        .update(formulas=["Col1= i", "Col2 = i * 2"]).drop_columns(["Timestamp"]))
+        source_table = (
+            self.session.time_table(period=10_000_000)
+            .update(formulas=["Col1= i", "Col2 = i * 2"])
+            .drop_columns(["Timestamp"])
+        )
         trigger_table = self.session.time_table(period=1_000_000_000)
-        result_table = source_table.snapshot_when(trigger_table=trigger_table, stamp_cols=["Timestamp"],
-                                                  initial=True, incremental=True, history=False)
+        result_table = source_table.snapshot_when(
+            trigger_table=trigger_table,
+            stamp_cols=["Timestamp"],
+            initial=True,
+            incremental=True,
+            history=False,
+        )
         self.assertEqual(len(source_table.schema) + 1, len(result_table.schema))
 
-        result_table = source_table.snapshot_when(trigger_table=trigger_table, stamp_cols=["Timestamp"],
-                                                  initial=False, incremental=False, history=True)
+        result_table = source_table.snapshot_when(
+            trigger_table=trigger_table,
+            stamp_cols=["Timestamp"],
+            initial=False,
+            incremental=False,
+            history=True,
+        )
         self.assertEqual(len(source_table.schema) + 1, len(result_table.schema))
 
         with self.assertRaises(DHError):
-            result_table = source_table.snapshot_when(trigger_table=trigger_table, stamp_cols=["Timestamp"],
-                                                      initial=True, incremental=False, history=True)
+            result_table = source_table.snapshot_when(
+                trigger_table=trigger_table,
+                stamp_cols=["Timestamp"],
+                initial=True,
+                incremental=False,
+                history=True,
+            )
 
     def test_agg_by(self):
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
         num_distinct_a = test_table.select_distinct(cols=["a"]).size
 
-        aggs = [sum_(cols=["SumC=c"]),
-                avg(cols=["AvgB = b", "AvgD = d"]),
-                pct(percentile=0.5, cols=["PctC = c"]),
-                weighted_avg(wcol="d", cols=["WavGD = d"]),
-                count_(col="ca"),
-                partition(col="aggPartition"),
-                ]
+        aggs = [
+            sum_(cols=["SumC=c"]),
+            avg(cols=["AvgB = b", "AvgD = d"]),
+            pct(percentile=0.5, cols=["PctC = c"]),
+            weighted_avg(wcol="d", cols=["WavGD = d"]),
+            count_(col="ca"),
+            partition(col="aggPartition"),
+        ]
 
         result_table = test_table.agg_by(aggs=aggs, by=["a"])
         self.assertEqual(result_table.size, num_distinct_a)
 
-        aggs = [sum_(),
-                avg(),
-                pct(percentile=0.5),
-                weighted_avg(wcol="d"),
-                ]
+        aggs = [
+            sum_(),
+            avg(),
+            pct(percentile=0.5),
+            weighted_avg(wcol="d"),
+        ]
 
         with self.assertRaises(DHError) as cm:
             test_table.agg_by(aggs=aggs, by=["a"])
@@ -266,22 +316,24 @@ class TableTestCase(BaseTestCase):
         test_table = self.session.import_table(pa_table)
         num_distinct_a = test_table.select_distinct(cols=["a"]).size
 
-        aggs = [sum_(),
-                avg(),
-                pct(percentile=0.5),
-                weighted_avg(wcol="d"),
-                ]
+        aggs = [
+            sum_(),
+            avg(),
+            pct(percentile=0.5),
+            weighted_avg(wcol="d"),
+        ]
         for agg in aggs:
             with self.subTest(agg):
                 result_table = test_table.agg_all_by(agg=agg, by=["a"])
                 self.assertEqual(result_table.size, num_distinct_a)
 
         # cols will be ignored
-        aggs = [sum_(cols=["SumC=c"]),
-                avg(cols=["AvgB = b", "AvgD = d"]),
-                pct(percentile=0.5, cols=["PctC = c"]),
-                weighted_avg(wcol="d", cols=["WavGD = d"]),
-                ]
+        aggs = [
+            sum_(cols=["SumC=c"]),
+            avg(cols=["AvgB = b", "AvgD = d"]),
+            pct(percentile=0.5, cols=["PctC = c"]),
+            weighted_avg(wcol="d", cols=["WavGD = d"]),
+        ]
 
         for agg in aggs:
             with self.subTest(agg):
@@ -298,9 +350,7 @@ class TableTestCase(BaseTestCase):
         pa_table = csv.read_csv(self.csv_file)
         test_table = self.session.import_table(pa_table)
 
-        unique_table = test_table.head(num_rows=50).select_distinct(
-            cols=["a", "c"]
-        )
+        unique_table = test_table.head(num_rows=50).select_distinct(cols=["a", "c"])
 
         with self.subTest("where-in filter"):
             result_table = test_table.where_in(unique_table, cols=["c"])
@@ -317,22 +367,35 @@ class TableTestCase(BaseTestCase):
 
     def test_agg_with_options(self):
         pa_table = csv.read_csv(self.csv_file)
-        test_table = self.session.import_table(pa_table).update(["b = a % 10 > 5 ? null : b", "c = c % 10",
-                                                                 "d = (char)i"])
+        test_table = self.session.import_table(pa_table).update(
+            ["b = a % 10 > 5 ? null : b", "c = c % 10", "d = (char)i"]
+        )
 
         aggs = [
             median(cols=["ma = a", "mb = b"], average_evenly_divided=False),
             pct(0.20, cols=["pa = a", "pb = b"], average_evenly_divided=True),
-            unique(cols=["ua = a", "ub = b"], include_nulls=True, non_unique_sentinel=np.int16(-1)),
-            unique(cols=["ud = d"], include_nulls=True, non_unique_sentinel=np.uint16(128)),
+            unique(
+                cols=["ua = a", "ub = b"],
+                include_nulls=True,
+                non_unique_sentinel=np.int16(-1),
+            ),
+            unique(
+                cols=["ud = d"], include_nulls=True, non_unique_sentinel=np.uint16(128)
+            ),
             count_distinct(cols=["csa = a", "csb = b"], count_nulls=True),
             distinct(cols=["da = a", "db = b"], include_nulls=True),
-            ]
+        ]
         rt = test_table.agg_by(aggs=aggs, by=["c"])
         self.assertEqual(rt.size, test_table.select_distinct(["c"]).size)
 
         with self.assertRaises(TypeError):
-            aggs = [unique(cols=["ua = a", "ub = b"], include_nulls=True, non_unique_sentinel=np.uint32(128))]
+            aggs = [
+                unique(
+                    cols=["ua = a", "ub = b"],
+                    include_nulls=True,
+                    non_unique_sentinel=np.uint32(128),
+                )
+            ]
 
         aggs_default = [
             median(cols=["ma = a", "mb = b"]),
@@ -351,5 +414,5 @@ class TableTestCase(BaseTestCase):
                 self.assertNotEqual(pa_table2, pa_table1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

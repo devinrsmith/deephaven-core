@@ -57,14 +57,25 @@ def fn(col) -> {np_dtype}:
         container_types = ["List", "Tuple", "list", "tuple", "Sequence", "np.ndarray"]
         for component_type, dh_dtype in component_types.items():
             for container_type in container_types:
-                with self.subTest(component_type=component_type, container_type=container_type):
-                    func_decl_str = f"""def fn(col) -> {container_type}[{component_type}]:"""
+                with self.subTest(
+                    component_type=component_type, container_type=container_type
+                ):
+                    func_decl_str = (
+                        f"""def fn(col) -> {container_type}[{component_type}]:"""
+                    )
                     if container_type == "np.ndarray":
                         func_body_str = f"""    return np.array([{component_type}(c) for c in col])"""
                     else:
-                        func_body_str = f"""    return [{component_type}(c) for c in col]"""
+                        func_body_str = (
+                            f"""    return [{component_type}(c) for c in col]"""
+                        )
                     exec("\n".join([func_decl_str, func_body_str]), globals())
-                    t = empty_table(10).update(["X = i % 3", "Y = i"]).group_by("X").update(f"Z= fn(Y + 1)")
+                    t = (
+                        empty_table(10)
+                        .update(["X = i % 3", "Y = i"])
+                        .group_by("X")
+                        .update(f"Z= fn(Y + 1)")
+                    )
                     self.assertEqual(t.columns[2].data_type, dh_dtype)
 
         container_types = ["bytes", "bytearray"]
@@ -73,7 +84,12 @@ def fn(col) -> {np_dtype}:
                 func_decl_str = f"""def fn(col) -> {container_type}:"""
                 func_body_str = f"""    return {container_type}(col)"""
                 exec("\n".join([func_decl_str, func_body_str]), globals())
-                t = empty_table(10).update(["X = i % 3", "Y = i"]).group_by("X").update(f"Z= fn(Y + 1)")
+                t = (
+                    empty_table(10)
+                    .update(["X = i % 3", "Y = i"])
+                    .group_by("X")
+                    .update(f"Z= fn(Y + 1)")
+                )
                 self.assertEqual(t.columns[2].data_type, dtypes.byte_array)
 
     def test_scalar_return_class_method_not_supported(self):
@@ -95,7 +111,7 @@ foo = Foo()
             "np.dtype('datetime64[ns]')",
             "np.dtype('datetime64[ms]')",
             "datetime.datetime",
-            "pd.Timestamp"
+            "pd.Timestamp",
         ]
 
         for np_dtype in dt_dtypes:
@@ -124,12 +140,14 @@ foo = Foo()
         dt_list = [ts, np_dt, dt]
 
         # test if we can convert to numpy datetime64 array
-        np_array = np.array([pd.Timestamp(dt).to_numpy() for dt in dt_list], dtype=np.datetime64)
+        np_array = np.array(
+            [pd.Timestamp(dt).to_numpy() for dt in dt_list], dtype=np.datetime64
+        )
 
         dt_dtypes = [
             "np.ndarray[np.dtype('datetime64[ns]')]",
             "List[datetime.datetime]",
-            "Tuple[pd.Timestamp]"
+            "Tuple[pd.Timestamp]",
         ]
 
         dt_data = [
@@ -145,8 +163,10 @@ foo = Foo()
                 with self.subTest(np_dtype=np_dtype, data=data):
                     func_decl_str = f"""def fn(col) -> {np_dtype}:"""
                     func_body_str = f"""    return {data}"""
-                    exec("\n".join([func_decl_str, func_body_str]), globals().update(
-                        {"dt_list": dt_list, "np_array": np_array}))
+                    exec(
+                        "\n".join([func_decl_str, func_body_str]),
+                        globals().update({"dt_list": dt_list, "np_array": np_array}),
+                    )
 
                     t = empty_table(10).update("X = i").update(f"Y= fn(X + 1)")
                     self.assertEqual(t.columns[1].data_type, dtypes.instant_array)
@@ -181,12 +201,16 @@ foo = Foo()
             self.assertEqual(t.columns[1].data_type, dtypes.JObject)
 
         with self.subTest("wrong typehint bool vs. np.bool_"):
+
             def fn4(col: int) -> bool:
                 return np.bool_(col)
 
             with self.assertRaises(DHError) as cm:
-                 t = empty_table(2).update("X = i").update(f"Y= fn4(X + 1)")
-            self.assertIn("class org.jpy.PyObject cannot be cast to class java.lang.Boolean", str(cm.exception))
+                t = empty_table(2).update("X = i").update(f"Y= fn4(X + 1)")
+            self.assertIn(
+                "class org.jpy.PyObject cannot be cast to class java.lang.Boolean",
+                str(cm.exception),
+            )
 
     def test_vectorization_off_on_return_type(self):
         def f1(x) -> List[str]:
@@ -206,14 +230,13 @@ foo = Foo()
             return np.array(x) + y
 
         # Testing https://github.com/deephaven/deephaven-core/issues/4562
-        @nb.guvectorize([(nb.int32[:], nb.int32, nb.int32[:])], "(m),()->(m)", nopython=True)
+        @nb.guvectorize(
+            [(nb.int32[:], nb.int32, nb.int32[:])], "(m),()->(m)", nopython=True
+        )
         def f4562_1(x, y, res):
             res[:] = x + y
 
-        t2 = t.update([
-            "X = f4557_1(B,3)",
-            "Y = f4562_1(B,3)"
-        ])
+        t2 = t.update(["X = f4557_1(B,3)", "Y = f4562_1(B,3)"])
         self.assertEqual(t2.columns[2].data_type, dtypes.long_array)
         self.assertEqual(t2.columns[3].data_type, dtypes.int32_array)
 
@@ -239,26 +262,31 @@ foo = Foo()
     def test_ndarray_weird_cases(self):
         def f() -> np.ndarray[typing.Any]:
             return np.array([1, 2], dtype=np.int64)
+
         t = empty_table(10).update(["X1 = f()"])
         self.assertEqual(t.columns[0].data_type, dtypes.PyObject)
 
         def f1() -> npt.NDArray[typing.Any]:
             return np.array([1, 2], dtype=np.int64)
+
         t = empty_table(10).update(["X1 = f1()"])
         self.assertEqual(t.columns[0].data_type, dtypes.PyObject)
 
         def f2() -> np.ndarray[typing.Any, np.int64]:
             return np.array([1, 2], dtype=np.int64)
+
         t = empty_table(10).update(["X1 = f2()"])
         self.assertEqual(t.columns[0].data_type, dtypes.PyObject)
 
         def f3() -> Union[None, None]:
             return np.array([1, 2], dtype=np.int64)
+
         t = empty_table(10).update(["X1 = f3()"])
         self.assertEqual(t.columns[0].data_type, dtypes.PyObject)
 
         def f4() -> None:
             return np.array([1, 2], dtype=np.int64)
+
         t = empty_table(10).update(["X1 = f4()"])
         self.assertEqual(t.columns[0].data_type, dtypes.PyObject)
 
@@ -307,6 +335,7 @@ def fn(col) -> Optional[{np_dtype}]:
         @numba.vectorize([numba.float64(numba.int64)], nopython=True)
         def nbsin(x):
             return np.sin(x)
+
         t3 = empty_table(10).update(["X3 = nbsin(i)"])
         self.assertEqual(t3.columns[0].data_type, dtypes.double)
 
@@ -318,9 +347,10 @@ def fn(col) -> Optional[{np_dtype}]:
 
         def udf() -> List[dtypes.Instant]:
             return [to_j_instant("2021-01-01T00:00:00Z")]
+
         t = empty_table(10).update(["X1 = udf()"])
         self.assertEqual(t.columns[0].data_type, dtypes.instant_array)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

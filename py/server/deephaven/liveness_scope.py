@@ -77,18 +77,25 @@ def _pop(scope: _JLivenessScope) -> None:
         raise DHError(e, message="failed to pop the LivenessScope from the stack.")
 
 
-def _unwrap_to_liveness_referent(referent: Union[JObjectWrapper, jpy.JType]) -> jpy.JType:
-    if isinstance(referent, jpy.JType) and _JLivenessReferent.jclass.isInstance(referent):
+def _unwrap_to_liveness_referent(
+    referent: Union[JObjectWrapper, jpy.JType]
+) -> jpy.JType:
+    if isinstance(referent, jpy.JType) and _JLivenessReferent.jclass.isInstance(
+        referent
+    ):
         return referent
     if isinstance(referent, JObjectWrapper):
         return _unwrap_to_liveness_referent(referent.j_object)
-    raise DHError("Provided referent isn't a LivenessReferent or a JObjectWrapper around one")
+    raise DHError(
+        "Provided referent isn't a LivenessReferent or a JObjectWrapper around one"
+    )
 
 
 class _BaseLivenessScope(JObjectWrapper):
     """
     Internal base type for Java LivenessScope types in python.
     """
+
     j_object_type = _JLivenessScope
 
     def __init__(self):
@@ -120,13 +127,18 @@ class _BaseLivenessScope(JObjectWrapper):
             # Ensure we are the current scope, throw DHError if we aren't
             _JLivenessScopeStack.pop(self.j_scope)
         except Exception as e:
-            raise DHError(e, message="failed to pop the current scope - is preserve() being called on the right scope?")
+            raise DHError(
+                e,
+                message="failed to pop the current scope - is preserve() being called on the right scope?",
+            )
 
         try:
             # Manage the object in the next outer scope on this thread.
             _JLivenessScopeStack.peek().manage(_unwrap_to_liveness_referent(referent))
         except Exception as e:
-            raise DHError(e, message="failed to preserve a wrapped object in this LivenessScope.")
+            raise DHError(
+                e, message="failed to preserve a wrapped object in this LivenessScope."
+            )
         finally:
             # Success or failure, restore the scope that was successfully popped
             _JLivenessScopeStack.push(self.j_scope)
@@ -224,7 +236,9 @@ def is_liveness_referent(referent: Union[JObjectWrapper, jpy.JType]) -> bool:
     Returns:
         True if the object is a LivenessReferent, False otherwise.
     """
-    if isinstance(referent, jpy.JType) and _JLivenessReferent.jclass.isInstance(referent):
+    if isinstance(referent, jpy.JType) and _JLivenessReferent.jclass.isInstance(
+        referent
+    ):
         return True
     if isinstance(referent, JObjectWrapper):
         return is_liveness_referent(referent.j_object)

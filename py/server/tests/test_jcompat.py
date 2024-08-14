@@ -12,6 +12,7 @@ import jpy
 
 _JSharedContext = jpy.get_type("io.deephaven.engine.table.SharedContext")
 
+
 class JCompatTestCase(BaseTestCase):
     def test_j_function(self):
         def int_to_str(v: int) -> str:
@@ -25,7 +26,10 @@ class JCompatTestCase(BaseTestCase):
     def test_j_lambda(self):
         def int_to_str(v: int) -> str:
             return str(v)
-        j_func = j_lambda(int_to_str, jpy.get_type('java.util.function.Function'), dtypes.string)
+
+        j_func = j_lambda(
+            int_to_str, jpy.get_type("java.util.function.Function"), dtypes.string
+        )
 
         r = j_func.apply(10)
         self.assertEqual(r, "10")

@@ -16,7 +16,7 @@ _JCalendars = jpy.get_type("io.deephaven.time.calendar.Calendars")
 
 
 def remove_calendar(name: str) -> None:
-    """ Removes the calendar with the given name from the set of available options.
+    """Removes the calendar with the given name from the set of available options.
 
     Args:
         name (str): the name of the calendar to remove
@@ -31,7 +31,7 @@ def remove_calendar(name: str) -> None:
 
 
 def add_calendar(cal: Union[BusinessCalendar, str]) -> None:
-    """ Adds a new business calendar to the set of available options.
+    """Adds a new business calendar to the set of available options.
 
     Args:
         cal (Union[BusinessCalendar, str]): business calendar or a path to a business calendar file
@@ -55,7 +55,7 @@ def add_calendar(cal: Union[BusinessCalendar, str]) -> None:
 
 
 def set_calendar(name: str) -> None:
-    """ Sets the default calendar.
+    """Sets the default calendar.
 
     Args:
         name (str): the name of the calendar
@@ -70,7 +70,7 @@ def set_calendar(name: str) -> None:
 
 
 def calendar_names() -> List[str]:
-    """ Returns the names of all available calendar names.
+    """Returns the names of all available calendar names.
 
     Returns:
         a list of all available calendar names
@@ -85,7 +85,7 @@ def calendar_names() -> List[str]:
 
 
 def calendar_name() -> str:
-    """ Returns the default business calendar name.
+    """Returns the default business calendar name.
 
     The default business calendar is set by the 'Calendar.default' property or by calling 'set_calendar'.
 
@@ -102,7 +102,7 @@ def calendar_name() -> str:
 
 
 def calendar(name: Optional[str] = None) -> BusinessCalendar:
-    """ Returns the calendar with the given name.
+    """Returns the calendar with the given name.
 
     The returned calendar is an 'io.deephaven.time.calendar.BusinessCalendar' Java object that can be used in Python.
     For details on the available methods, see https://deephaven.io/core/javadoc/io/deephaven/time/calendar/BusinessCalendar.html.
@@ -125,5 +125,3 @@ def calendar(name: Optional[str] = None) -> BusinessCalendar:
             return _JCalendars.calendar(name)
     except Exception as e:
         raise DHError(e, "failed to get the default calendar.") from e
-
-

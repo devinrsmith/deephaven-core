@@ -23,6 +23,7 @@ class Query(TableInterface):
     Note, an application should always use the factory method on the Session object to create a Query instance as the
     constructor is subject to future changes to support more advanced features already planned.
     """
+
     _ops: List[TableOp]
 
     def table_op_handler(self, table_op: TableOp) -> Query:
@@ -123,13 +124,17 @@ class Query(TableInterface):
         """
         return super().select_distinct(cols)
 
-    def sort(self, order_by: Union[str, List[str]], order: Union[SortDirection, List[SortDirection]] = None) -> Query:
+    def sort(
+        self,
+        order_by: Union[str, List[str]],
+        order: Union[SortDirection, List[SortDirection]] = None,
+    ) -> Query:
         """Adds sort operation to the query.
 
         Args:
             order_by (Union[str, List[str]]): the names of the columns to be sorted on
             order (Union[SortDirection, List[SortDirection]], optional): the corresponding sort direction(s) for each
-                sort column, default is None. In the absence of explicit sort directions, data will be sorted in 
+                sort column, default is None. In the absence of explicit sort directions, data will be sorted in
                 the ascending order.
 
         Returns:
@@ -170,7 +175,9 @@ class Query(TableInterface):
         """
         return super().tail(num_rows)
 
-    def natural_join(self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Query:
+    def natural_join(
+        self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None
+    ) -> Query:
         """Adds a natural-join operation to the query.
 
         Args:
@@ -185,7 +192,9 @@ class Query(TableInterface):
         """
         return super().natural_join(table, on, joins)
 
-    def exact_join(self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Query:
+    def exact_join(
+        self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None
+    ) -> Query:
         """Adds an exact-join operation to the query.
 
         Args:
@@ -200,8 +209,13 @@ class Query(TableInterface):
         """
         return super().exact_join(table, on, joins)
 
-    def join(self, table: Any, on: Union[str, List[str]] = None, joins: Union[str, List[str]] = None,
-             reserve_bits: int = 10) -> Query:
+    def join(
+        self,
+        table: Any,
+        on: Union[str, List[str]] = None,
+        joins: Union[str, List[str]] = None,
+        reserve_bits: int = 10,
+    ) -> Query:
         """Adds a cross-join operation to the query.
 
         Args:
@@ -217,7 +231,9 @@ class Query(TableInterface):
         """
         return super().join(table, on, joins)
 
-    def aj(self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Query:
+    def aj(
+        self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None
+    ) -> Query:
         """Adds a as-of join operation to the query.
 
         Args:
@@ -234,7 +250,9 @@ class Query(TableInterface):
         """
         return super().aj(table, on, joins)
 
-    def raj(self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None) -> Query:
+    def raj(
+        self, table: Any, on: Union[str, List[str]], joins: Union[str, List[str]] = None
+    ) -> Query:
         """Adds a reverse as-of join operation to the query.
 
         Args:
@@ -286,7 +304,9 @@ class Query(TableInterface):
         """
         return super().group_by(by)
 
-    def ungroup(self, cols: Union[str, List[str]] = None, null_fill: bool = True) -> Query:
+    def ungroup(
+        self, cols: Union[str, List[str]] = None, null_fill: bool = True
+    ) -> Query:
         """Adds an ungroup operation to the query.
 
         Args:
@@ -410,7 +430,9 @@ class Query(TableInterface):
         """
         return super().count_by(col, by)
 
-    def agg_by(self, aggs: Union[Aggregation, List[Aggregation]], by: Union[str, List[str]]) -> Query:
+    def agg_by(
+        self, aggs: Union[Aggregation, List[Aggregation]], by: Union[str, List[str]]
+    ) -> Query:
         """Adds an Aggregate operation to the query.
 
         Args:
@@ -434,7 +456,11 @@ class Query(TableInterface):
         """
         return super().agg_all_by(agg=agg, by=by)
 
-    def update_by(self, ops: Union[UpdateByOperation, List[UpdateByOperation]], by: Union[str, List[str]]) -> Query:
+    def update_by(
+        self,
+        ops: Union[UpdateByOperation, List[UpdateByOperation]],
+        by: Union[str, List[str]],
+    ) -> Query:
         """Adds an update-by operation to the query.
 
         Args:
@@ -454,8 +480,14 @@ class Query(TableInterface):
         """
         return super().snapshot()
 
-    def snapshot_when(self, trigger_table: Any, stamp_cols: Union[str, List[str]] = None, initial: bool = False,
-                      incremental: bool = False, history: bool = False) -> Query:
+    def snapshot_when(
+        self,
+        trigger_table: Any,
+        stamp_cols: Union[str, List[str]] = None,
+        initial: bool = False,
+        incremental: bool = False,
+        history: bool = False,
+    ) -> Query:
         """Adds a snapshot_when operation to the query.
 
         Args:
@@ -475,7 +507,9 @@ class Query(TableInterface):
         Returns:
             self
         """
-        return super().snapshot_when(trigger_table, stamp_cols, initial, incremental, history)
+        return super().snapshot_when(
+            trigger_table, stamp_cols, initial, incremental, history
+        )
 
     def where_in(self, filter_table: Any, cols: Union[str, List[str]]) -> Query:
         """Adds a where_in operation to the query.

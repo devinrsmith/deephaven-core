@@ -15,8 +15,9 @@ _JNanosAxisFormat = jpy.get_type("io.deephaven.plot.axisformatters.NanosAxisForm
 
 
 class AxisFormat(JObjectWrapper):
-    """ The AxisFormat class defines the format for axis tick labels. For time values, this would be how the dates are
-    formatted. For numerical values, this would be the number of significant digits, etc. """
+    """The AxisFormat class defines the format for axis tick labels. For time values, this would be how the dates are
+    formatted. For numerical values, this would be the number of significant digits, etc.
+    """
 
     j_object_type = _JAxisFormat
 
@@ -28,9 +29,9 @@ class AxisFormat(JObjectWrapper):
         self.j_axis_format = j_axis_format
 
     def set_pattern(self, pattern: str) -> None:
-        """ Set the pattern used for formatting values.
+        """Set the pattern used for formatting values.
 
-        For details on the supported patterns see the javadoc for 
+        For details on the supported patterns see the javadoc for
         `DateTimeFormatter <https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html>`_.
 
         Args:
@@ -40,9 +41,9 @@ class AxisFormat(JObjectWrapper):
 
 
 class DecimalAxisFormat(AxisFormat):
-    """ A formatter for converting decimals into formatted strings.
+    """A formatter for converting decimals into formatted strings.
 
-    For details on the supported patterns see the javadoc for 
+    For details on the supported patterns see the javadoc for
     `DecimalFormat <https://docs.oracle.com/javase/7/docs/api/java/text/DecimalFormat.html>`_.
     """
 
@@ -51,10 +52,10 @@ class DecimalAxisFormat(AxisFormat):
 
 
 class NanosAxisFormat(AxisFormat):
-    """ A formatter for converting nanoseconds into formatted strings. """
+    """A formatter for converting nanoseconds into formatted strings."""
 
     def __init__(self, tz: TimeZone = None):
-        """ Creates a new NanosAxisFormat with the specified timezone.
+        """Creates a new NanosAxisFormat with the specified timezone.
 
         Args:
              tz (TimeZone): the timezone to use for formatting, default is None meaning to use the default time zone.

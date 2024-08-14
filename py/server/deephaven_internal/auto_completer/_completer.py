@@ -37,7 +37,7 @@ _JEDI_COMPLETION_TYPE_MAP = {
 
 
 def wrap_python(txt: str) -> str:
-    """ Wraps a string in a Python fenced codeblock for markdown
+    """Wraps a string in a Python fenced codeblock for markdown
 
     Args:
         txt (str): the string to wrap
@@ -47,21 +47,21 @@ def wrap_python(txt: str) -> str:
     """
     if txt:
         return f"```python\n{txt}\n```"
-    return ''
+    return ""
 
 
 def wrap_plaintext(txt: str) -> str:
-    """ Wraps a string in a Python fenced codeblock for markdown
+    """Wraps a string in a Python fenced codeblock for markdown
 
-        Args:
-            txt (str): the string to wrap
+    Args:
+        txt (str): the string to wrap
 
-        Returns:
-            A markdown string wrapping the input in a Python codeblock
-        """
+    Returns:
+        A markdown string wrapping the input in a Python codeblock
+    """
     if txt:
         return f"```plaintext\n{txt}\n```"
-    return ''
+    return ""
 
 
 class Completer:
@@ -130,7 +130,7 @@ class Completer:
     def do_completion(
         self, uri: str, version: int, line: int, col: int
     ) -> List[List[Any]]:
-        """ Gets completion items at the position
+        """Gets completion items at the position
 
         Modeled after Jedi language server
         https://github.com/pappasam/jedi-language-server/blob/main/jedi_language_server/server.py#L189
@@ -171,20 +171,24 @@ class Completer:
         prefix_length: int = completion.get_completion_prefix_length()
         start: int = col - prefix_length
         signatures: List[Signature] = completion.get_signatures()
-        detail: str = signatures[0].to_string() if len(signatures) > 0 else completion.description
+        detail: str = (
+            signatures[0].to_string() if len(signatures) > 0 else completion.description
+        )
 
         return [
             name,
             start,
             detail,
             completion.docstring(raw=True),
-            _JEDI_COMPLETION_TYPE_MAP.get(completion.type, _JEDI_COMPLETION_TYPE_MAP.get('text', 1))
+            _JEDI_COMPLETION_TYPE_MAP.get(
+                completion.type, _JEDI_COMPLETION_TYPE_MAP.get("text", 1)
+            ),
         ]
 
     def do_signature_help(
-            self, uri: str, version: int, line: int, col: int
+        self, uri: str, version: int, line: int, col: int
     ) -> List[List[Any]]:
-        """ Gets signature help at the position
+        """Gets signature help at the position
 
         Modeled after Jedi language server
         https://github.com/pappasam/jedi-language-server/blob/main/jedi_language_server/server.py#L255
@@ -205,29 +209,30 @@ class Completer:
             result: list = [
                 signature.to_string(),
                 signature.docstring(raw=True),
-                [[param.to_string().strip(), param.docstring(raw=True).strip()] for param in signature.params],
-                signature.index if signature.index is not None else -1
+                [
+                    [param.to_string().strip(), param.docstring(raw=True).strip()]
+                    for param in signature.params
+                ],
+                signature.index if signature.index is not None else -1,
             ]
             results.append(result)
 
         return results
 
-    def do_hover(
-        self, uri: str, version: int, line: int, col: int
-    ) -> str:
-        """ Gets hover help at the position
+    def do_hover(self, uri: str, version: int, line: int, col: int) -> str:
+        """Gets hover help at the position
 
         Modeled after Jedi language server
         https://github.com/pappasam/jedi-language-server/blob/main/jedi_language_server/server.py#L366
         """
         if not self._versions[uri] == version:
             # if you aren't the newest, you get nothing, quickly
-            return ''
+            return ""
 
         completer = self.get_completer(uri)
         hovers = completer.help(line, col)
         if not hovers or hovers[0].type == "keyword":
-            return ''
+            return ""
 
         # LSP doesn't support multiple hovers really. Not sure if/when Jedi would return multiple either
         hover = hovers[0]
@@ -236,7 +241,9 @@ class Completer:
 
         header = ""
         if signatures:
-            header = f"{'def' if kind == 'function' else kind} {signatures[0].to_string()}"
+            header = (
+                f"{'def' if kind == 'function' else kind} {signatures[0].to_string()}"
+            )
         else:
             if kind == "class":
                 header = f"class {hover.name}()"
@@ -250,6 +257,6 @@ class Completer:
         hoverstring = wrap_python(header)
         raw_docstring = hover.docstring(raw=True)
         if raw_docstring:
-            hoverstring += '\n---\n' + wrap_plaintext(raw_docstring)
+            hoverstring += "\n---\n" + wrap_plaintext(raw_docstring)
 
         return hoverstring.strip()

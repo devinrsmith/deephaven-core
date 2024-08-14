@@ -23,7 +23,9 @@ class PluginClient(ServerObject):
     supported.
     """
 
-    def __init__(self, session: 'pydeephaven.session.Session', exportable_obj: ticket_pb2.Ticket):
+    def __init__(
+        self, session: "pydeephaven.session.Session", exportable_obj: ticket_pb2.Ticket
+    ):
         super().__init__(type_=exportable_obj.type, ticket=exportable_obj.ticket)
         self.session = session
         self.exportable_obj = exportable_obj
@@ -57,9 +59,11 @@ class Fetchable(ServerObject):
         the server.
         """
         if self.typed_ticket.type is None:
-            raise DHError("Cannot fetch an object with no type, the server has no ObjectType plugin registered to "
-                          "support it.")
-        if self.typed_ticket.type == 'Table':
+            raise DHError(
+                "Cannot fetch an object with no type, the server has no ObjectType plugin registered to "
+                "support it."
+            )
+        if self.typed_ticket.type == "Table":
             return self.session.table_service.fetch_etcr(self.typed_ticket.ticket)
         return PluginClient(self.session, self.typed_ticket)
 
@@ -84,7 +88,9 @@ class PluginRequestStream:
         """
         Sends a message to the server, consisting of a payload of bytes and a list of objects that exist on the server.
         """
-        data_message = object_pb2.ClientData(payload=payload, references=[obj.typed_ticket() for obj in references])
+        data_message = object_pb2.ClientData(
+            payload=payload, references=[obj.typed_ticket() for obj in references]
+        )
         stream_req = object_pb2.StreamRequest(data=data_message)
         self.req_queue.put(stream_req)
 
@@ -107,7 +113,7 @@ class PluginResponseStream:
     to, depending on the server implementation.
     """
 
-    def __init__(self, stream_resp, session: 'pydeephaven.session.Session'):
+    def __init__(self, stream_resp, session: "pydeephaven.session.Session"):
         self.stream_resp = stream_resp
         self.session = session
         self._rlock = threading.RLock()
@@ -121,7 +127,10 @@ class PluginResponseStream:
             except StopIteration as e:
                 raise
             else:
-                return resp.data.payload, [Fetchable(self.session, ticket) for ticket in resp.data.exported_references]
+                return resp.data.payload, [
+                    Fetchable(self.session, ticket)
+                    for ticket in resp.data.exported_references
+                ]
 
     def __iter__(self):
         return self

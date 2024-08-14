@@ -14,13 +14,15 @@ from deephaven.jcompat import j_map_to_dict
 from deephaven.table import Table, TreeTable
 from deephaven.update_graph import auto_locking_ctx
 
-_JPerformanceQueries = jpy.get_type("io.deephaven.engine.table.impl.util.PerformanceQueries")
+_JPerformanceQueries = jpy.get_type(
+    "io.deephaven.engine.table.impl.util.PerformanceQueries"
+)
 _JMetricsManager = jpy.get_type("io.deephaven.util.metrics.MetricsManager")
 _JTableLoggers = jpy.get_type("io.deephaven.engine.table.impl.util.TableLoggers")
 
 
 def process_info_log() -> Table:
-    """ Returns a static table with process information for the current Deephaven engine process.
+    """Returns a static table with process information for the current Deephaven engine process.
 
     Returns:
         a Table
@@ -35,7 +37,7 @@ def process_info_log() -> Table:
 
 
 def server_state_log() -> Table:
-    """ Returns a table with memory utilization, update graph processor and garbage collection stats
+    """Returns a table with memory utilization, update graph processor and garbage collection stats
     sampled on a periodic basis.
 
     Returns:
@@ -51,7 +53,7 @@ def server_state_log() -> Table:
 
 
 def process_metrics_log() -> Table:
-    """ Returns a table with metrics collected for the current Deephaven engine process.
+    """Returns a table with metrics collected for the current Deephaven engine process.
 
     Returns:
         a Table
@@ -66,7 +68,7 @@ def process_metrics_log() -> Table:
 
 
 def query_operation_performance_log() -> Table:
-    """ Returns a table with Deephaven performance data for individual subqueries. Performance data for the entire query
+    """Returns a table with Deephaven performance data for individual subqueries. Performance data for the entire query
     is available from calling 'query_performance_log'.
 
     Returns:
@@ -78,11 +80,13 @@ def query_operation_performance_log() -> Table:
     try:
         return Table(j_table=_JTableLoggers.queryOperationPerformanceLog())
     except Exception as e:
-        raise DHError(e, "failed to obtain the query operation performance log table.") from e
+        raise DHError(
+            e, "failed to obtain the query operation performance log table."
+        ) from e
 
 
 def query_performance_log() -> Table:
-    """ Returns a table with Deephaven query performance data. Performance data for individual sub-operations is
+    """Returns a table with Deephaven query performance data. Performance data for individual sub-operations is
     available from calling `query_operation_performance_log`.
 
     Returns:
@@ -96,8 +100,9 @@ def query_performance_log() -> Table:
     except Exception as e:
         raise DHError(e, "failed to obtain the query performance log table.") from e
 
+
 def query_operation_performance_tree_table() -> TreeTable:
-    """ Returns a tree table with Deephaven performance data for individual subqueries.
+    """Returns a tree table with Deephaven performance data for individual subqueries.
 
     Returns:
         a TreeTable
@@ -107,14 +112,19 @@ def query_operation_performance_tree_table() -> TreeTable:
     """
     try:
         with auto_locking_ctx(query_performance_log()):
-            return TreeTable(j_tree_table=_JPerformanceQueries.queryOperationPerformanceAsTreeTable(),
-                             id_col = "EvalKey", parent_col = "ParentEvalKey")
+            return TreeTable(
+                j_tree_table=_JPerformanceQueries.queryOperationPerformanceAsTreeTable(),
+                id_col="EvalKey",
+                parent_col="ParentEvalKey",
+            )
     except Exception as e:
-        raise DHError(e, "failed to obtain the query operation performance log as tree table.") from e
+        raise DHError(
+            e, "failed to obtain the query operation performance log as tree table."
+        ) from e
 
 
 def query_performance_tree_table() -> TreeTable:
-    """ Returns a tree table with Deephaven query performance data. Performance data for individual sub-operations as
+    """Returns a tree table with Deephaven query performance data. Performance data for individual sub-operations as
     a tree table is available from calling `query_operation_performance_tree_table`.
 
     Returns:
@@ -125,14 +135,19 @@ def query_performance_tree_table() -> TreeTable:
     """
     try:
         with auto_locking_ctx(query_performance_log()):
-            return TreeTable(j_tree_table=_JPerformanceQueries.queryPerformanceAsTreeTable(),
-                             id_col = "EvaluationNumber", parent_col = "ParentEvaluationNumber")
+            return TreeTable(
+                j_tree_table=_JPerformanceQueries.queryPerformanceAsTreeTable(),
+                id_col="EvaluationNumber",
+                parent_col="ParentEvaluationNumber",
+            )
     except Exception as e:
-        raise DHError(e, "failed to obtain the query performance log as tree table.") from e
+        raise DHError(
+            e, "failed to obtain the query performance log as tree table."
+        ) from e
 
 
 def update_performance_log() -> Table:
-    """ Returns a table with Deephaven update performance data.
+    """Returns a table with Deephaven update performance data.
 
     Returns
         a Table
@@ -147,12 +162,12 @@ def update_performance_log() -> Table:
 
 
 def metrics_reset_counters() -> None:
-    """ Resets Deephaven performance counter metrics. """
+    """Resets Deephaven performance counter metrics."""
     _JMetricsManager.resetCounters()
 
 
 def metrics_get_counters() -> str:
-    """ Gets Deephaven performance counter metrics.
+    """Gets Deephaven performance counter metrics.
 
     Returns:
         a string of the Deephaven performance counter metrics.
@@ -161,7 +176,7 @@ def metrics_get_counters() -> str:
 
 
 def process_info(proc_id: str, proc_type: str, key: str) -> str:
-    """ Gets the information for a process.
+    """Gets the information for a process.
 
     Args:
         proc_id (str): the process id
@@ -181,7 +196,7 @@ def process_info(proc_id: str, proc_type: str, key: str) -> str:
 
 
 def server_state() -> Table:
-    """ Returns a table of basic memory, update graph processor, and GC stats for the current engine process,
+    """Returns a table of basic memory, update graph processor, and GC stats for the current engine process,
     sampled on a periodic basis.
 
     Returns:
@@ -194,7 +209,7 @@ def server_state() -> Table:
 
 
 def query_operation_performance(eval_number: int) -> Table:
-    """ Takes in a query evaluation number and returns a view for that query's individual operation's performance data.
+    """Takes in a query evaluation number and returns a view for that query's individual operation's performance data.
 
     You can obtain query evaluation numbers, which uniquely identify a query and its subqueries, via the performance
     data tables obtained from calling query_performance_log() or query_operation_performance_log()
@@ -213,13 +228,17 @@ def query_operation_performance(eval_number: int) -> Table:
         DHError
     """
     try:
-        return Table(j_table=_JPerformanceQueries.queryOperationPerformance(eval_number))
+        return Table(
+            j_table=_JPerformanceQueries.queryOperationPerformance(eval_number)
+        )
     except Exception as e:
-        raise DHError(e, "failed to obtain the query operation performance data.") from e
+        raise DHError(
+            e, "failed to obtain the query operation performance data."
+        ) from e
 
 
 def query_performance(eval_number: int) -> Table:
-    """ Takes in a query evaluation number and returns a view for that query's performance data.
+    """Takes in a query evaluation number and returns a view for that query's performance data.
 
     You can obtain query evaluation numbers, which uniquely identify a query and its subqueries, via the performance
     data tables obtained from calling query_performance_log() or query_operation_performance_log()
@@ -247,7 +266,7 @@ def query_performance(eval_number: int) -> Table:
 
 
 def query_update_performance(eval_number: int) -> Table:
-    """  Takes in a query evaluation number and returns a view for that query's update performance data.
+    """Takes in a query evaluation number and returns a view for that query's update performance data.
 
     You can obtain query evaluation numbers, which uniquely identify a query and its subqueries, via the performance
     data tables obtained from calling query_performance_log() or query_operation_performance_log()
@@ -268,7 +287,7 @@ def query_update_performance(eval_number: int) -> Table:
 
 
 def query_update_performance_map(eval_number: int) -> Dict[str, Table]:
-    """ Creates multiple tables with performance data for a given query identified by an evaluation number. The tables
+    """Creates multiple tables with performance data for a given query identified by an evaluation number. The tables
     are returned in a map with the following String keys: 'QueryUpdatePerformance', 'UpdateWorst', 'WorstInterval',
     'UpdateMostRecent', 'UpdateAggregate', 'UpdateSummaryStats'.
 

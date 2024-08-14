@@ -26,7 +26,13 @@ from pydeephaven._console_service import ConsoleService
 from pydeephaven._input_table_service import InputTableService
 from pydeephaven._plugin_obj_service import PluginObjService
 from pydeephaven._session_service import SessionService
-from pydeephaven._table_ops import TimeTableOp, EmptyTableOp, MergeTablesOp, FetchTableOp, CreateInputTableOp
+from pydeephaven._table_ops import (
+    TimeTableOp,
+    EmptyTableOp,
+    MergeTablesOp,
+    FetchTableOp,
+    CreateInputTableOp,
+)
 from pydeephaven._table_service import TableService
 from pydeephaven._utils import to_list
 from pydeephaven.dherror import DHError
@@ -62,11 +68,13 @@ class _DhClientAuthMiddleware(ClientMiddleware):
         try:
             if headers and header_key in headers:
                 header_value = headers.get(header_key)
-                auth_header_value = bytes(header_value[0], encoding='ascii')
+                auth_header_value = bytes(header_value[0], encoding="ascii")
                 if auth_header_value:
                     self._session._auth_header_value = auth_header_value
         except Exception as e:
-            logger.exception(f'_DhClientAuthMiddleware.received_headers got headers={headers}')
+            logger.exception(
+                f"_DhClientAuthMiddleware.received_headers got headers={headers}"
+            )
             return
 
     def sending_headers(self):
@@ -74,11 +82,11 @@ class _DhClientAuthMiddleware(ClientMiddleware):
 
 
 def _trace(who: str) -> None:
-    logger.debug(f'TRACE: {who}')
+    logger.debug(f"TRACE: {who}")
 
 
 class SharedTicket:
-    """ A SharedTicket object represents a ticket that can be shared with other sessions. """
+    """A SharedTicket object represents a ticket that can be shared with other sessions."""
 
     def __init__(self, ticket_bytes: bytes):
         """Initializes a SharedTicket object
@@ -91,7 +99,7 @@ class SharedTicket:
 
     @property
     def bytes(self) -> bytes:
-        """ The raw bytes for the ticket."""
+        """The raw bytes for the ticket."""
         return self._ticket_bytes
 
     @classmethod
@@ -102,8 +110,9 @@ class SharedTicket:
         Returns:
             a SharedTicket object
         """
-        bytes_ = uuid4().int.to_bytes(16, byteorder='little', signed=False)
-        return cls(ticket_bytes=b'h' + bytes_)
+        bytes_ = uuid4().int.to_bytes(16, byteorder="little", signed=False)
+        return cls(ticket_bytes=b"h" + bytes_)
+
 
 _BidiRpc = NewType("_BidiRpc", grpc.StreamStreamMultiCallable)
 
@@ -112,7 +121,10 @@ _NotBidiRpc = NewType(
     Union[
         grpc.UnaryUnaryMultiCallable,
         grpc.UnaryStreamMultiCallable,
-        grpc.StreamUnaryMultiCallable])
+        grpc.StreamUnaryMultiCallable,
+    ],
+)
+
 
 class Session:
     """A Session object represents a connection to the Deephaven data server. It contains a number of convenience
@@ -127,18 +139,21 @@ class Session:
         is_alive (bool): check if the session is still alive (may refresh the session)
     """
 
-    def __init__(self, host: str = None,
-                 port: int = None,
-                 auth_type: str = "Anonymous",
-                 auth_token: str = "",
-                 never_timeout: bool = True,
-                 session_type: str = 'python',
-                 use_tls: bool = False,
-                 tls_root_certs: bytes = None,
-                 client_cert_chain: bytes = None,
-                 client_private_key: bytes = None,
-                 client_opts: List[Tuple[str, Union[int, str]]] = None,
-                 extra_headers: Dict[bytes, bytes] = None):
+    def __init__(
+        self,
+        host: str = None,
+        port: int = None,
+        auth_type: str = "Anonymous",
+        auth_token: str = "",
+        never_timeout: bool = True,
+        session_type: str = "python",
+        use_tls: bool = False,
+        tls_root_certs: bytes = None,
+        client_cert_chain: bytes = None,
+        client_private_key: bytes = None,
+        client_opts: List[Tuple[str, Union[int, str]]] = None,
+        extra_headers: Dict[bytes, bytes] = None,
+    ):
         """Initializes a Session object that connects to the Deephaven server
 
         Args:
@@ -173,8 +188,10 @@ class Session:
         Raises:
             DHError
         """
-        _trace('Session.__init__')
-        self._r_lock = threading.RLock()  # for thread-safety when accessing/changing session global state
+        _trace("Session.__init__")
+        self._r_lock = (
+            threading.RLock()
+        )  # for thread-safety when accessing/changing session global state
         self._services_lock = threading.Lock()  # for lazy initialization of services
         self._last_ticket = 0
         self._ticket_bitarray = BitArray(1024)
@@ -187,7 +204,7 @@ class Session:
         if not port:
             self.port = int(os.environ.get("DH_PORT", 10000))
 
-        self._logpfx = f'pydh.Session {id(self)} {host}:port: '
+        self._logpfx = f"pydh.Session {id(self)} {host}:port: "
         self._use_tls = use_tls
         self._tls_root_certs = tls_root_certs
         self._client_cert_chain = client_cert_chain
@@ -206,12 +223,14 @@ class Session:
         if auth_type == "Anonymous":
             self._auth_header_value = auth_type
         elif auth_type == "Basic":
-            auth_token_base64 = base64.b64encode(auth_token.encode("ascii")).decode("ascii")
+            auth_token_base64 = base64.b64encode(auth_token.encode("ascii")).decode(
+                "ascii"
+            )
             self._auth_header_value = "Basic " + auth_token_base64
         else:
             self._auth_header_value = str(auth_type) + " " + auth_token
 
-        self._auth_header_value = bytes(self._auth_header_value, 'ascii')
+        self._auth_header_value = bytes(self._auth_header_value, "ascii")
         # Counter for consecutive failures to refresh auth token, used to calculate retry backoff
         self._refresh_failures = 0
         self.grpc_channel = None
@@ -245,16 +264,22 @@ class Session:
     def __del__(self):
         self.close()
 
-    def update_metadata(self, metadata: Iterable[Tuple[str, Union[str, bytes]]]) -> None:
+    def update_metadata(
+        self, metadata: Iterable[Tuple[str, Union[str, bytes]]]
+    ) -> None:
         for header_tuple in metadata:
             if header_tuple[0] == "authorization":
                 v = header_tuple[1]
-                self._auth_header_value = v if isinstance(v, bytes) else v.encode('ascii')
+                self._auth_header_value = (
+                    v if isinstance(v, bytes) else v.encode("ascii")
+                )
                 break
 
     def wrap_rpc(self, stub_call: _NotBidiRpc, *args, **kwargs) -> Any:
-        if 'metadata' in kwargs:
-            raise DHError('Internal error: "metadata" in kwargs not supported in wrap_rpc.')
+        if "metadata" in kwargs:
+            raise DHError(
+                'Internal error: "metadata" in kwargs not supported in wrap_rpc.'
+            )
         kwargs["metadata"] = self.grpc_metadata
         # We use a future to get a chance to process initial metadata before the call
         # is completed
@@ -264,8 +289,10 @@ class Session:
         return future.result()
 
     def wrap_bidi_rpc(self, stub_call: _BidiRpc, *args, **kwargs) -> Any:
-        if 'metadata' in kwargs:
-            raise DHError('Internal error: "metadata" in kwargs not supported in wrap_bidi_rpc.')
+        if "metadata" in kwargs:
+            raise DHError(
+                'Internal error: "metadata" in kwargs not supported in wrap_bidi_rpc.'
+            )
         kwargs["metadata"] = self.grpc_metadata
         response = stub_call(*args, **kwargs)
         self.update_metadata(response.initial_metadata())
@@ -275,23 +302,35 @@ class Session:
     def tables(self):
         with self._r_lock:
             fields = self._fetch_fields()
-            return [field.field_name for field in fields if
-                    field.application_id == 'scope' and field.typed_ticket.type == 'Table']
+            return [
+                field.field_name
+                for field in fields
+                if field.application_id == "scope"
+                and field.typed_ticket.type == "Table"
+            ]
 
     @property
     def exportable_objects(self) -> Dict[str, ticket_pb2.TypedTicket]:
         with self._r_lock:
             fields = self._fetch_fields()
-            return {field.field_name: field.typed_ticket for field in fields if field.application_id == 'scope'}
+            return {
+                field.field_name: field.typed_ticket
+                for field in fields
+                if field.application_id == "scope"
+            }
 
     @property
     def grpc_metadata(self):
-        header_value_snap = self._auth_header_value  # ensure it doesn't change while doing multiple reads
+        header_value_snap = (
+            self._auth_header_value
+        )  # ensure it doesn't change while doing multiple reads
         if not header_value_snap or not isinstance(header_value_snap, bytes):
-            logger.warning(f'{self._logpfx} internal invariant violated, _auth_header_value={header_value_snap}')
+            logger.warning(
+                f"{self._logpfx} internal invariant violated, _auth_header_value={header_value_snap}"
+            )
             l = []
         else:
-            l = [(b'authorization', header_value_snap)]
+            l = [(b"authorization", header_value_snap)]
         if self._extra_headers:
             l.extend(list(self._extra_headers.items()))
         return l
@@ -363,13 +402,13 @@ class Session:
     def make_ticket(self, ticket_no=None):
         if not ticket_no:
             ticket_no = self.get_ticket()
-        ticket_bytes = ticket_no.to_bytes(4, byteorder='little', signed=True)
-        return ticket_pb2.Ticket(ticket=b'e' + ticket_bytes)
+        ticket_bytes = ticket_no.to_bytes(4, byteorder="little", signed=True)
+        return ticket_pb2.Ticket(ticket=b"e" + ticket_bytes)
 
     def get_ticket(self):
         with self._r_lock:
             self._last_ticket += 1
-            if self._last_ticket == 2 ** 31 - 1:
+            if self._last_ticket == 2**31 - 1:
                 raise DHError("fatal error: out of free internal ticket")
 
             return self._last_ticket
@@ -388,11 +427,11 @@ class Session:
             return resp.created if resp.created else []
 
     def _connect(self):
-        _trace(f'_connect id={id(self)}')
+        _trace(f"_connect id={id(self)}")
         with self._r_lock:
             if self.is_connected:
                 return
-            _trace(f'_connect id={id(self)} connecting.')
+            _trace(f"_connect id={id(self)} connecting.")
             try:
                 scheme = "grpc+tls" if self._use_tls else "grpc"
                 self._flight_client = paflight.FlightClient(
@@ -401,7 +440,7 @@ class Session:
                     tls_root_certs=self._tls_root_certs,
                     cert_chain=self._client_cert_chain,
                     private_key=self._client_private_key,
-                    generic_options=self._client_opts
+                    generic_options=self._client_opts,
                 )
             except Exception as e:
                 raise DHError("failed to connect to the server.") from e
@@ -421,20 +460,25 @@ class Session:
             if not session_duration:
                 raise DHError("server configuration is missing http.session.durationMs")
 
-            self._timeout_seconds = int(session_duration.string_value)/1000.0
+            self._timeout_seconds = int(session_duration.string_value) / 1000.0
             # Random skew to ensure multiple processes that may have
             # started together don't align retries.
             skew = random()
             # Backoff schedule for retries after consecutive failures to refresh auth token
-            self._refresh_backoff = [ skew + 0.1, skew + 1, skew + 10 ]
+            self._refresh_backoff = [skew + 0.1, skew + 1, skew + 10]
 
             if self._refresh_backoff[0] > self._timeout_seconds:
-                raise DHError(f'server configuration http.session.durationMs={session_duration} is too small.')
-            if 0.25*self._timeout_seconds < self._refresh_backoff[-1]:
+                raise DHError(
+                    f"server configuration http.session.durationMs={session_duration} is too small."
+                )
+            if 0.25 * self._timeout_seconds < self._refresh_backoff[-1]:
                 self._refresh_backoff.extend(
-                    [skew + 0.25 * self._timeout_seconds,
-                     skew + 0.35 * self._timeout_seconds,
-                     skew + 0.45 * self._timeout_seconds])
+                    [
+                        skew + 0.25 * self._timeout_seconds,
+                        skew + 0.35 * self._timeout_seconds,
+                        skew + 0.45 * self._timeout_seconds,
+                    ]
+                )
             for i in range(1, len(self._refresh_backoff)):
                 if self._refresh_backoff[i] > self._timeout_seconds:
                     self._refresh_backoff = self._refresh_backoff[0:i]
@@ -446,7 +490,7 @@ class Session:
                 self._keep_alive()
 
     def _keep_alive(self):
-        _trace(f'_keep_alive')
+        _trace(f"_keep_alive")
         if not self.is_connected:
             return
         ok = True
@@ -457,29 +501,32 @@ class Session:
             else:
                 self._refresh_failures += 1
         if self._refresh_failures == 0:
-            timer_wakeup = 0.5*self._timeout_seconds
+            timer_wakeup = 0.5 * self._timeout_seconds
         elif self._refresh_failures >= len(self._refresh_backoff):
-            msg = f'Failed to refresh token {self._refresh_failures} times, will stop retrying.'
+            msg = f"Failed to refresh token {self._refresh_failures} times, will stop retrying."
             logger.critical(msg)
             raise DHError(msg)
         else:
             timer_wakeup = self._refresh_backoff[self._refresh_failures]
-        _trace(f'_keep_alive timer_wakeup={timer_wakeup}')
+        _trace(f"_keep_alive timer_wakeup={timer_wakeup}")
         self._keep_alive_timer = threading.Timer(timer_wakeup, self._keep_alive)
         self._keep_alive_timer.daemon = True
         self._keep_alive_timer.start()
         if not ok:
             logger.warning(
-                f'{self._logpfx}: failed to refresh auth token (retry #{self._refresh_failures-1}).' +
-                f' Will retry in {timer_wakeup} seconds.')
+                f"{self._logpfx}: failed to refresh auth token (retry #{self._refresh_failures-1})."
+                + f" Will retry in {timer_wakeup} seconds."
+            )
 
     def _refresh_token(self) -> bool:
-        _trace('_refresh_token')
+        _trace("_refresh_token")
         try:
             self.config_service.get_configuration_constants()
             return True
         except Exception as ex:
-            logger.warning(f'{self._logpfx} Caught exception while refreshing auth token: {ex}.')
+            logger.warning(
+                f"{self._logpfx} Caught exception while refreshing auth token: {ex}."
+            )
             return False
 
     @property
@@ -528,7 +575,7 @@ class Session:
             DHError
         """
         response = self.console_service.run_script(script)
-        if response.error_message != '':
+        if response.error_message != "":
             raise DHError("could not run script: " + response.error_message)
 
     def open_table(self, name: str) -> Table:
@@ -543,7 +590,7 @@ class Session:
         Raises:
             DHError
         """
-        ticket = ticket_pb2.Ticket(ticket=f's/{name}'.encode(encoding='ascii'))
+        ticket = ticket_pb2.Ticket(ticket=f"s/{name}".encode(encoding="ascii"))
 
         faketable = Table(session=self, ticket=ticket)
 
@@ -613,8 +660,12 @@ class Session:
             table.ticket = None
             table.schema = None
 
-    def time_table(self, period: Union[int, str], start_time: Union[int, str] = None,
-                   blink_table: bool = False) -> Table:
+    def time_table(
+        self,
+        period: Union[int, str],
+        start_time: Union[int, str] = None,
+        blink_table: bool = False,
+    ) -> Table:
         """Creates a time table on the server.
 
         Args:
@@ -630,7 +681,9 @@ class Session:
         Raises:
             DHError
         """
-        table_op = TimeTableOp(start_time=start_time, period=period, blink_table=blink_table)
+        table_op = TimeTableOp(
+            start_time=start_time, period=period, blink_table=blink_table
+        )
         return self.table_service.grpc_table_op(None, table_op)
 
     def empty_table(self, size: int) -> Table:
@@ -695,8 +748,13 @@ class Session:
         """
         return Query(self, table)
 
-    def input_table(self, schema: pa.Schema = None, init_table: Table = None,
-                    key_cols: Union[str, List[str]] = None, blink_table: bool = False) -> InputTable:
+    def input_table(
+        self,
+        schema: pa.Schema = None,
+        init_table: Table = None,
+        key_cols: Union[str, List[str]] = None,
+        blink_table: bool = False,
+    ) -> InputTable:
         """Creates an InputTable from either Arrow schema or initial table.  When blink_table is True, the InputTable
         will be a blink table. When blink_table is False (default), the InputTable will be
         keyed if key columns are provided, otherwise it will be append-only.
@@ -721,8 +779,15 @@ class Session:
         if blink_table and key_cols:
             raise ValueError("key columns are not supported for blink input tables.")
 
-        table_op = CreateInputTableOp(schema=schema, init_table=init_table, key_cols=to_list(key_cols), blink=blink_table)
-        input_table = self.table_service.grpc_table_op(None, table_op, table_class=InputTable)
+        table_op = CreateInputTableOp(
+            schema=schema,
+            init_table=init_table,
+            key_cols=to_list(key_cols),
+            blink=blink_table,
+        )
+        input_table = self.table_service.grpc_table_op(
+            None, table_op, table_class=InputTable
+        )
         input_table.key_cols = key_cols
         return input_table
 

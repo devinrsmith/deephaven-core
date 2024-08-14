@@ -14,5 +14,3 @@ check_py_env()
 # distribution name from the package name.
 # https://docs.python.org/3/library/importlib.metadata.html#package-distributions
 __version__ = importlib.metadata.version("deephaven-server")
-
-

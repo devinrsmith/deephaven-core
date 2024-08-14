@@ -17,10 +17,18 @@ from deephaven.table import Table, PartitionedTable
 
 _JKafkaTools = jpy.get_type("io.deephaven.kafka.KafkaTools")
 _JKafkaTools_Consume = jpy.get_type("io.deephaven.kafka.KafkaTools$Consume")
-_JProtobufConsumeOptions = jpy.get_type("io.deephaven.kafka.protobuf.ProtobufConsumeOptions")
-_JProtobufDescriptorParserOptions = jpy.get_type("io.deephaven.protobuf.ProtobufDescriptorParserOptions")
-_JDescriptorSchemaRegistry = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorSchemaRegistry")
-_JDescriptorMessageClass = jpy.get_type("io.deephaven.kafka.protobuf.DescriptorMessageClass")
+_JProtobufConsumeOptions = jpy.get_type(
+    "io.deephaven.kafka.protobuf.ProtobufConsumeOptions"
+)
+_JProtobufDescriptorParserOptions = jpy.get_type(
+    "io.deephaven.protobuf.ProtobufDescriptorParserOptions"
+)
+_JDescriptorSchemaRegistry = jpy.get_type(
+    "io.deephaven.kafka.protobuf.DescriptorSchemaRegistry"
+)
+_JDescriptorMessageClass = jpy.get_type(
+    "io.deephaven.kafka.protobuf.DescriptorMessageClass"
+)
 _JProtocol = jpy.get_type("io.deephaven.kafka.protobuf.Protocol")
 _JFieldOptions = jpy.get_type("io.deephaven.protobuf.FieldOptions")
 _JFieldPath = jpy.get_type("io.deephaven.protobuf.FieldPath")
@@ -73,25 +81,29 @@ class TableType(JObjectWrapper):
 
     @staticmethod
     def blink():
-        """ Consume all partitions into a single interleaved blink table, which will present only newly-available rows
-         to downstream operations and visualizations."""
+        """Consume all partitions into a single interleaved blink table, which will present only newly-available rows
+        to downstream operations and visualizations."""
         return TableType(TableType.j_object_type.blink())
 
     # TODO (https://github.com/deephaven/deephaven-core/issues/3853): Delete this method
     @staticmethod
     def stream():
-        """ Deprecated synonym for "blink"."""
-        warn('This function is deprecated, prefer blink', DeprecationWarning, stacklevel=2)
+        """Deprecated synonym for "blink"."""
+        warn(
+            "This function is deprecated, prefer blink",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return TableType.blink()
 
     @staticmethod
     def append():
-        """ Consume all partitions into a single interleaved in-memory append-only table."""
+        """Consume all partitions into a single interleaved in-memory append-only table."""
         return TableType(TableType.j_object_type.append())
 
     @staticmethod
     def ring(capacity: int):
-        """ Consume all partitions into a single in-memory ring table."""
+        """Consume all partitions into a single in-memory ring table."""
         return TableType(TableType.j_object_type.ring(capacity))
 
     def __init__(self, j_table_type: jpy.JType):
@@ -100,6 +112,7 @@ class TableType(JObjectWrapper):
     @property
     def j_object(self) -> jpy.JType:
         return self._j_table_type
+
 
 # TODO (https://github.com/deephaven/deephaven-core/issues/3853): Delete this attribute
 TableType.Stream = TableType.blink()
@@ -128,13 +141,13 @@ def _dict_to_j_func(dict_mapping: Dict, mapped_only: bool) -> Callable[[str], st
 
 
 def consume(
-        kafka_config: Dict,
-        topic: str,
-        partitions: List[int] = None,
-        offsets: Dict[int, int] = None,
-        key_spec: KeyValueSpec = None,
-        value_spec: KeyValueSpec = None,
-        table_type: TableType = TableType.blink(),
+    kafka_config: Dict,
+    topic: str,
+    partitions: List[int] = None,
+    offsets: Dict[int, int] = None,
+    key_spec: KeyValueSpec = None,
+    value_spec: KeyValueSpec = None,
+    table_type: TableType = TableType.blink(),
 ) -> Table:
     """Consume from Kafka to a Deephaven table.
 
@@ -169,17 +182,26 @@ def consume(
         DHError
     """
 
-    return _consume(kafka_config, topic, partitions, offsets, key_spec, value_spec, table_type, to_partitioned=False)
+    return _consume(
+        kafka_config,
+        topic,
+        partitions,
+        offsets,
+        key_spec,
+        value_spec,
+        table_type,
+        to_partitioned=False,
+    )
 
 
 def consume_to_partitioned_table(
-        kafka_config: Dict,
-        topic: str,
-        partitions: List[int] = None,
-        offsets: Dict[int, int] = None,
-        key_spec: KeyValueSpec = None,
-        value_spec: KeyValueSpec = None,
-        table_type: TableType = TableType.blink(),
+    kafka_config: Dict,
+    topic: str,
+    partitions: List[int] = None,
+    offsets: Dict[int, int] = None,
+    key_spec: KeyValueSpec = None,
+    value_spec: KeyValueSpec = None,
+    table_type: TableType = TableType.blink(),
 ) -> PartitionedTable:
     """Consume from Kafka to a Deephaven partitioned table.
 
@@ -217,18 +239,27 @@ def consume_to_partitioned_table(
         DHError
     """
 
-    return _consume(kafka_config, topic, partitions, offsets, key_spec, value_spec, table_type, to_partitioned=True)
+    return _consume(
+        kafka_config,
+        topic,
+        partitions,
+        offsets,
+        key_spec,
+        value_spec,
+        table_type,
+        to_partitioned=True,
+    )
 
 
 def _consume(
-        kafka_config: Dict,
-        topic: str,
-        partitions: List[int] = None,
-        offsets: Dict[int, int] = None,
-        key_spec: KeyValueSpec = None,
-        value_spec: KeyValueSpec = None,
-        table_type: TableType = TableType.blink(),
-        to_partitioned: bool = False,
+    kafka_config: Dict,
+    topic: str,
+    partitions: List[int] = None,
+    offsets: Dict[int, int] = None,
+    key_spec: KeyValueSpec = None,
+    value_spec: KeyValueSpec = None,
+    table_type: TableType = TableType.blink(),
+    to_partitioned: bool = False,
 ) -> Union[Table, PartitionedTable]:
     try:
         partitions = j_partitions(partitions)
@@ -250,7 +281,9 @@ def _consume(
         value_spec = KeyValueSpec.FROM_PROPERTIES if value_spec is None else value_spec
 
         if key_spec is KeyValueSpec.IGNORE and value_spec is KeyValueSpec.IGNORE:
-            raise ValueError("at least one argument for 'key' or 'value' must be different from KeyValueSpec.IGNORE")
+            raise ValueError(
+                "at least one argument for 'key' or 'value' must be different from KeyValueSpec.IGNORE"
+            )
 
         kafka_config = j_properties(kafka_config)
         if not to_partitioned:
@@ -266,17 +299,20 @@ def _consume(
                 )
             )
         else:
-            return PartitionedTable(j_partitioned_table=_JKafkaTools.consumeToPartitionedTable(
-                kafka_config,
-                topic,
-                partitions,
-                offsets,
-                key_spec.j_object,
-                value_spec.j_object,
-                table_type.j_object,
-            ))
+            return PartitionedTable(
+                j_partitioned_table=_JKafkaTools.consumeToPartitionedTable(
+                    kafka_config,
+                    topic,
+                    partitions,
+                    offsets,
+                    key_spec.j_object,
+                    value_spec.j_object,
+                    table_type.j_object,
+                )
+            )
     except Exception as e:
         raise DHError(e, "failed to consume a Kafka stream.") from e
+
 
 class ProtobufProtocol(JObjectWrapper):
     """The protobuf serialization / deserialization protocol."""
@@ -284,14 +320,14 @@ class ProtobufProtocol(JObjectWrapper):
     j_object_type = jpy.get_type("io.deephaven.kafka.protobuf.Protocol")
 
     @staticmethod
-    def serdes() -> 'ProtobufProtocol':
+    def serdes() -> "ProtobufProtocol":
         """The Kafka Protobuf serdes protocol. The payload's first byte is the serdes magic byte, the next 4-bytes are
         the schema ID, the next variable-sized bytes are the message indexes, followed by the normal binary encoding of
         the Protobuf data."""
         return ProtobufProtocol(ProtobufProtocol.j_object_type.serdes())
 
     @staticmethod
-    def raw() -> 'ProtobufProtocol':
+    def raw() -> "ProtobufProtocol":
         """The raw Protobuf protocol. The full payload is the normal binary encoding of the Protobuf data."""
         return ProtobufProtocol(ProtobufProtocol.j_object_type.raw())
 
@@ -304,12 +340,12 @@ class ProtobufProtocol(JObjectWrapper):
 
 
 def protobuf_spec(
-        schema: Optional[str] = None,
-        schema_version: Optional[int] = None,
-        schema_message_name: Optional[str] = None,
-        message_class: Optional[str] = None,
-        include: Optional[List[str]] = None,
-        protocol: Optional[ProtobufProtocol] = None,
+    schema: Optional[str] = None,
+    schema_version: Optional[int] = None,
+    schema_message_name: Optional[str] = None,
+    message_class: Optional[str] = None,
+    include: Optional[List[str]] = None,
+    protocol: Optional[ProtobufProtocol] = None,
 ) -> KeyValueSpec:
     """Creates a spec for parsing a Kafka protobuf stream into a Deephaven table. Uses the schema, schema_version, and
     schema_message_name to fetch the schema from the schema registry; or uses message_class to to get the schema from
@@ -344,18 +380,19 @@ def protobuf_spec(
     parser_options_builder = _JProtobufDescriptorParserOptions.builder()
     if include is not None:
         parser_options_builder.fieldOptions(
-            _JFieldOptions.includeIf(
-                _JFieldPath.anyMatches(j_array_list(include))
-            )
+            _JFieldOptions.includeIf(_JFieldPath.anyMatches(j_array_list(include)))
         )
-    pb_consume_builder = (
-        _JProtobufConsumeOptions.builder()
-        .parserOptions(parser_options_builder.build())
+    pb_consume_builder = _JProtobufConsumeOptions.builder().parserOptions(
+        parser_options_builder.build()
     )
     if message_class:
         if schema or schema_version or schema_message_name:
-            raise DHError("Must only set schema information, or message_class, but not both.")
-        pb_consume_builder.descriptorProvider(_JDescriptorMessageClass.of(jpy.get_type(message_class).jclass))
+            raise DHError(
+                "Must only set schema information, or message_class, but not both."
+            )
+        pb_consume_builder.descriptorProvider(
+            _JDescriptorMessageClass.of(jpy.get_type(message_class).jclass)
+        )
     elif schema:
         dsr = _JDescriptorSchemaRegistry.builder().subject(schema)
         if schema_version:
@@ -373,10 +410,10 @@ def protobuf_spec(
 
 
 def avro_spec(
-        schema: str,
-        schema_version: str = "latest",
-        mapping: Dict[str, str] = None,
-        mapped_only: bool = False,
+    schema: str,
+    schema_version: str = "latest",
+    mapping: Dict[str, str] = None,
+    mapped_only: bool = False,
 ) -> KeyValueSpec:
     """Creates a spec for how to use an Avro schema when consuming a Kafka stream to a Deephaven table.
 
@@ -404,20 +441,20 @@ def avro_spec(
             mapping = _dict_to_j_func(mapping, mapped_only)
 
         if schema.strip().startswith("{"):
-            jschema = _JKafkaTools.getAvroSchema(schema);
+            jschema = _JKafkaTools.getAvroSchema(schema)
             if mapping:
                 return KeyValueSpec(
                     j_spec=_JKafkaTools_Consume.avroSpec(jschema, mapping)
                 )
             else:
-                return KeyValueSpec(
-                    j_spec=_JKafkaTools_Consume.avroSpec(jschema)
-                )
+                return KeyValueSpec(j_spec=_JKafkaTools_Consume.avroSpec(jschema))
 
         else:
             if mapping:
                 return KeyValueSpec(
-                    j_spec=_JKafkaTools_Consume.avroSpec(schema, schema_version, mapping)
+                    j_spec=_JKafkaTools_Consume.avroSpec(
+                        schema, schema_version, mapping
+                    )
                 )
             else:
                 return KeyValueSpec(
@@ -427,7 +464,9 @@ def avro_spec(
         raise DHError(e, "failed to create a Kafka key/value spec") from e
 
 
-def json_spec(col_defs: Union[Dict[str, DType], List[Tuple[str, DType]]], mapping: Dict = None) -> KeyValueSpec:
+def json_spec(
+    col_defs: Union[Dict[str, DType], List[Tuple[str, DType]]], mapping: Dict = None
+) -> KeyValueSpec:
     """Creates a spec for how to use JSON data when consuming a Kafka stream to a Deephaven table.
 
     Args:

@@ -11,6 +11,7 @@ dependencies {
     // todo: remove these deps, move impls
     implementation project(':engine-time')
     implementation project(':engine-table')
+    implementation project(':log-factory')
 
     compileOnly project(':util-immutables')
     annotationProcessor libs.immutables.value
@@ -20,6 +21,14 @@ dependencies {
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.jupiter.engine
     testRuntimeOnly libs.junit.platform.launcher
+
+    testImplementation platform(libs.jackson.bom)
+    testImplementation libs.jackson.core
+
+    testRuntimeOnly project(':log-to-slf4j')
+    testRuntimeOnly project(':configs')
+    testRuntimeOnly project(':test-configs')
+    testRuntimeOnly libs.slf4j.simple
 }
 
 test {

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2024-09-04T19:56:07.460383737Z",
+  "id": 12345,
+  "table1": {
+    "colA": "Hi",
+    "colB": 42
+  },
+  "table2": {
+    "colC": [
+      "Hi",
+      "Bye"
+    ],
+    "colD": [
+      12,
+      99
+    ]
+  },
+  "table3": [
+    {
+      "colE": "Foo",
+      "colF": 100
+    },
+    {
+      "colE": "Bar",
+      "colF": 101
+    },
+    {
+      "colE": "Baz",
+      "colF": 102
+    }
+  ]
+}

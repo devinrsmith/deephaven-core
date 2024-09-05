@@ -17,4 +17,6 @@ public interface Coordinator {
 
     // todo: should we be able to "sync" single streams at a time? probably not? alternatively, we can call this
     // "syncAll", and add Stream#sync?
+
+    // void error(Throwable t);
 }

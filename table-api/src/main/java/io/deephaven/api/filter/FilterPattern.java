@@ -4,6 +4,7 @@
 package io.deephaven.api.filter;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.api.ColumnName;
 import io.deephaven.api.expression.Expression;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -43,12 +44,71 @@ public abstract class FilterPattern extends FilterBase {
                 .build();
     }
 
+    /**
+     * A specialization of {@link FilterPattern} that searches for the literal {@code searchLiteral} in {@code column}.
+     *
+     * <p>
+     * Equivalent to
+     * {@code of(ColumnName.of(column), Pattern.compile(Pattern.quote(searchLiteral), caseSensitive ? 0 : Pattern.CASE_INSENSITIVE), Mode.FIND, invertPattern)}.
+     *
+     * @param column the column
+     * @param searchLiteral the search literal
+     * @param caseSensitive if the search should be case-sensitive
+     * @param invertPattern if the results of the find should be inverted
+     * @return the filter pattern
+     * @see Pattern#compile(String, int)
+     * @see Pattern#quote(String)
+     */
+    public static FilterPattern contains(String column, String searchLiteral, boolean caseSensitive,
+            boolean invertPattern) {
+        return of(
+                ColumnName.of(column),
+                Pattern.compile(Pattern.quote(searchLiteral), caseSensitive ? 0 : Pattern.CASE_INSENSITIVE),
+                Mode.FIND,
+                invertPattern);
+    }
+
+    /**
+     * A specialization of {@link FilterPattern} that matches {@code column} against {@code regex}. The pattern has
+     * {@link Pattern#DOTALL dotall mode} enabled.
+     *
+     * <p>
+     * Equivalent to
+     * {@code of(ColumnName.of(column), Pattern.compile(regex, (caseSensitive ? 0 : Pattern.CASE_INSENSITIVE) | Pattern.DOTALL), Mode.MATCHES, invertPattern)}.
+     *
+     * @param column the column
+     * @param regex the regex pattern
+     * @param caseSensitive if the match should be case-sensitive
+     * @param invertPattern if the results of the find should be inverted
+     * @return the filter pattern
+     * @see Pattern#compile(String, int)
+     */
+    public static FilterPattern matches(String column, String regex, boolean caseSensitive, boolean invertPattern) {
+        return of(
+                ColumnName.of(column),
+                Pattern.compile(regex, (caseSensitive ? 0 : Pattern.CASE_INSENSITIVE) | Pattern.DOTALL),
+                Mode.MATCHES,
+                invertPattern);
+    }
+
+    /**
+     * The expression.
+     */
     public abstract Expression expression();
 
+    /**
+     * The pattern.
+     */
     public abstract Pattern pattern();
 
+    /**
+     * The mode.
+     */
     public abstract Mode mode();
 
+    /**
+     * If the find or match should be inverted. By default is {@code false}.
+     */
     @Default
     public boolean invertPattern() {
         return false;

@@ -6,7 +6,7 @@ import unittest
 
 from deephaven import new_table, read_csv, DHError
 from deephaven.column import string_col
-from deephaven.filters import Filter, PatternMode, and_, is_not_null, is_null, or_, not_, pattern
+from deephaven.filters import Filter, PatternMode, and_, is_not_null, is_null, or_, not_, pattern, matches, contains
 from tests.testbase import BaseTestCase
 
 
@@ -23,7 +23,7 @@ class FilterTestCase(BaseTestCase):
         new_test_table = self.test_table.update("X = String.valueOf(d)")
         regex_filter = pattern(PatternMode.MATCHES, "X", "(?s)...")
         with self.assertRaises(DHError):
-            filtered_table = self.test_table.where(filters=regex_filter)
+            self.test_table.where(filters=regex_filter)
 
         filtered_table = new_test_table.where(filters=regex_filter)
         self.assertLessEqual(filtered_table.size, new_test_table.size)
@@ -31,6 +31,20 @@ class FilterTestCase(BaseTestCase):
         new_test_table = new_test_table.update("Y = String.valueOf(e)")
         regex_filter1 = pattern(PatternMode.MATCHES, "Y", "(?s).0.")
         filtered_table = new_test_table.where(filters=[regex_filter, regex_filter1])
+        self.assertLessEqual(filtered_table.size, new_test_table.size)
+
+    def test_matches_pattern_filter(self):
+        new_test_table = self.test_table.update("X = String.valueOf(d)")
+        matches_filter = matches("X", "...")
+        with self.assertRaises(DHError):
+            self.test_table.where(filters=matches_filter)
+
+        filtered_table = new_test_table.where(filters=matches_filter)
+        self.assertLessEqual(filtered_table.size, new_test_table.size)
+
+        new_test_table = new_test_table.update("Y = String.valueOf(e)")
+        matches_filter1 = matches("Y", ".0.")
+        filtered_table = new_test_table.where(filters=[matches_filter, matches_filter1])
         self.assertLessEqual(filtered_table.size, new_test_table.size)
 
     def test_filter(self):

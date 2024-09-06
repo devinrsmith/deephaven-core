@@ -235,23 +235,20 @@ public class FilterFactory implements FilterVisitor<WhereFilter> {
     @Override
     public WhereFilter onContains(Reference reference, String searchString, CaseSensitivity caseSensitivity,
             MatchType matchType) {
-        final int flags = caseSensitivity == CaseSensitivity.IGNORE_CASE ? Pattern.CASE_INSENSITIVE : 0;
-        return WhereFilter.of(FilterPattern.of(
-                ColumnName.of(reference.getColumnName()),
-                Pattern.compile(Pattern.quote(searchString), flags),
-                Mode.FIND,
+        return WhereFilter.of(FilterPattern.contains(
+                reference.getColumnName(),
+                searchString,
+                caseSensitivity == CaseSensitivity.MATCH_CASE,
                 matchType == MatchType.INVERTED));
     }
 
     @Override
     public WhereFilter onMatches(Reference reference, String regex, CaseSensitivity caseSensitivity,
             MatchType matchType) {
-        final int flags =
-                (caseSensitivity == CaseSensitivity.IGNORE_CASE ? Pattern.CASE_INSENSITIVE : 0) | Pattern.DOTALL;
-        return WhereFilter.of(FilterPattern.of(
-                ColumnName.of(reference.getColumnName()),
-                Pattern.compile(regex, flags),
-                Mode.MATCHES,
+        return WhereFilter.of(FilterPattern.matches(
+                reference.getColumnName(),
+                regex,
+                caseSensitivity == CaseSensitivity.MATCH_CASE,
                 matchType == MatchType.INVERTED));
     }
 

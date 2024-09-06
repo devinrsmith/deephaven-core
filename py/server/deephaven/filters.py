@@ -160,7 +160,7 @@ def pattern(
         mode (PatternMode): the mode
         col (str): the column name
         regex (str): the regex pattern
-        invert_pattern (bool): if the pattern matching logic should be inverted
+        invert_pattern (bool): if the pattern matching logic should be inverted, False by default
 
     Returns:
         a new pattern filter
@@ -179,3 +179,67 @@ def pattern(
         )
     except Exception as e:
         raise DHError(e, "failed to create a pattern filter.") from e
+
+
+def contains(
+    col: str,
+    search_literal: str,
+    case_sensitive: bool = True,
+    invert_pattern: bool = False,
+) -> Filter:
+    """Creates a specialization of the pattern filter that searches for the literal search_literal in col.
+    :obj:`~PatternMode.FIND` mode will be used.
+
+    This filter will never match ``null`` values.
+
+    Args:
+        col (str): the column name
+        search_literal (str): the search literal
+        case_sensitive (str): if the pattern should be case sensitive, True by default
+        invert_pattern (bool): if the pattern matching logic should be inverted, False by default
+
+    Returns:
+        a new contains pattern filter
+
+    Raises:
+        DHError
+    """
+    try:
+        return Filter(
+            j_filter=_JFilterPattern.contains(
+                col, search_literal, case_sensitive, invert_pattern
+            )
+        )
+    except Exception as e:
+        raise DHError(e, "failed to create a contains pattern filter.") from e
+
+
+def matches(
+    col: str,
+    regex: str,
+    case_sensitive: bool = True,
+    invert_pattern: bool = False,
+) -> Filter:
+    """Creates a specialization of the pattern filter that matches col against regex. :obj:`~PatternMode.MATCHES` mode
+    will be used. The pattern has dotall mode enabled.
+
+    This filter will never match ``null`` values.
+
+    Args:
+        col (str): the column name
+        regex (str): the regex
+        case_sensitive (str): if the pattern should be case sensitive, True by default
+        invert_pattern (bool): if the pattern matching logic should be inverted, False by default
+
+    Returns:
+        a new matches pattern filter
+
+    Raises:
+        DHError
+    """
+    try:
+        return Filter(
+            j_filter=_JFilterPattern.matches(col, regex, case_sensitive, invert_pattern)
+        )
+    except Exception as e:
+        raise DHError(e, "failed to create a matches pattern filter.") from e

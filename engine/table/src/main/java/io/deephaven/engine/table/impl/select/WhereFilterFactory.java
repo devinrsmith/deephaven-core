@@ -249,11 +249,8 @@ public class WhereFilterFactory {
                         final String colName = cd.getName();
                         if (filterMode == QuickFilterMode.REGEX) {
                             if (colClass.isAssignableFrom(String.class)) {
-                                return WhereFilterAdapter.of(FilterPattern.of(
-                                        ColumnName.of(colName),
-                                        Pattern.compile(quickFilter, Pattern.CASE_INSENSITIVE | Pattern.DOTALL),
-                                        Mode.MATCHES,
-                                        false), false);
+                                return WhereFilterAdapter.of(FilterPattern.matches(colName, quickFilter, false, false),
+                                        false);
                             }
                             return null;
                         } else if (filterMode == QuickFilterMode.AND) {
@@ -337,11 +334,7 @@ public class WhereFilterFactory {
             return ComparableRangeFilter.makeBigDecimalRange(colName, quickFilter);
         } else if (filterMode != QuickFilterMode.NUMERIC) {
             if (colClass == String.class) {
-                return WhereFilterAdapter.of(FilterPattern.of(
-                        ColumnName.of(colName),
-                        Pattern.compile(Pattern.quote(quickFilter), Pattern.CASE_INSENSITIVE),
-                        Mode.FIND,
-                        false), false);
+                return WhereFilterAdapter.of(FilterPattern.contains(colName, quickFilter, false, false), false);
             } else if ((colClass == boolean.class || colClass == Boolean.class) && typeData.isBool) {
                 return new MatchFilter(MatchType.Regular, colName, Boolean.parseBoolean(quickFilter));
             } else if (colClass == Instant.class && typeData.dateLower != null && typeData.dateUpper != null) {
@@ -356,11 +349,7 @@ public class WhereFilterFactory {
     private static WhereFilter getSelectFilterForAnd(String colName, String quickFilter, Class<?> colClass) {
         // AND mode only supports String types
         if (colClass.isAssignableFrom(String.class)) {
-            return WhereFilterAdapter.of(FilterPattern.of(
-                    ColumnName.of(colName),
-                    Pattern.compile(Pattern.quote(quickFilter), Pattern.CASE_INSENSITIVE),
-                    Mode.FIND,
-                    false), false);
+            return WhereFilterAdapter.of(FilterPattern.contains(colName, quickFilter, false, false), false);
         }
         return null;
     }
@@ -391,6 +380,8 @@ public class WhereFilterFactory {
             boolean internalDisjunctive,
             boolean removeQuotes,
             String... values) {
+        // This usage of FilterPattern case can't be reduced to FilterPattern.contains since it is dealing with
+        // multiple values
         final String value =
                 constructStringContainsRegex(values, matchType, internalDisjunctive, removeQuotes);
         return WhereFilterAdapter.of(FilterPattern.of(

@@ -47,6 +47,20 @@ class FilterTestCase(BaseTestCase):
         filtered_table = new_test_table.where(filters=[matches_filter, matches_filter1])
         self.assertLessEqual(filtered_table.size, new_test_table.size)
 
+    def test_contains_pattern_filter(self):
+        new_test_table = self.test_table.update("X = String.valueOf(d)")
+        contains_filter = contains("X", "42")
+        with self.assertRaises(DHError):
+            self.test_table.where(filters=contains_filter)
+
+        filtered_table = new_test_table.where(filters=contains_filter)
+        self.assertLessEqual(filtered_table.size, new_test_table.size)
+
+        new_test_table = new_test_table.update("Y = String.valueOf(e)")
+        contains_filter1 = contains("Y", "123")
+        filtered_table = new_test_table.where(filters=[contains_filter, contains_filter1])
+        self.assertLessEqual(filtered_table.size, new_test_table.size)
+
     def test_filter(self):
         conditions = ["a > 100", "b < 1000", "c < 0"]
         filters = Filter.from_(conditions)

@@ -10,11 +10,13 @@ import io.deephaven.api.expression.Method;
 import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterAnd;
 import io.deephaven.api.filter.FilterComparison;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterIn;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
+import io.deephaven.api.filter.FilterStartsWith;
 import io.deephaven.api.filter.FilterTest;
 import io.deephaven.api.literal.Literal;
 import io.deephaven.api.literal.LiteralTest;
@@ -103,6 +105,18 @@ public class StringsTest {
         @Override
         public Void visit(FilterPattern pattern) {
             ensureExplicitStringOf(FilterPattern.class);
+            return null;
+        }
+
+        @Override
+        public Void visit(FilterContains contains) {
+            ensureExplicitStringOf(FilterContains.class);
+            return null;
+        }
+
+        @Override
+        public Void visit(FilterStartsWith startsWith) {
+            ensureExplicitStringOf(FilterStartsWith.class);
             return null;
         }
 

@@ -11,11 +11,13 @@ import io.deephaven.api.expression.Method;
 import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterAnd;
 import io.deephaven.api.filter.FilterComparison;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterIn;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
+import io.deephaven.api.filter.FilterStartsWith;
 import io.deephaven.api.literal.Literal;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -113,6 +115,24 @@ public class Strings {
 
     public static String of(FilterPattern pattern, boolean invert) {
         final String inner = of(pattern);
+        return (invert ? "!" : "") + inner;
+    }
+
+    public static String of(FilterContains contains) {
+        return contains.toString();
+    }
+
+    public static String of(FilterContains contains, boolean invert) {
+        final String inner = of(contains);
+        return (invert ? "!" : "") + inner;
+    }
+
+    public static String of(FilterStartsWith startsWith) {
+        return startsWith.toString();
+    }
+
+    public static String of(FilterStartsWith startsWith, boolean invert) {
+        final String inner = of(startsWith);
         return (invert ? "!" : "") + inner;
     }
 
@@ -371,6 +391,16 @@ public class Strings {
         @Override
         public String visit(FilterPattern pattern) {
             return of(pattern, invert);
+        }
+
+        @Override
+        public String visit(FilterContains contains) {
+            return of(contains, invert);
+        }
+
+        @Override
+        public String visit(FilterStartsWith startsWith) {
+            return of(startsWith, invert);
         }
 
         @Override

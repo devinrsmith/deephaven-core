@@ -20,11 +20,13 @@ import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterAnd;
 import io.deephaven.api.filter.FilterComparison;
 import io.deephaven.api.filter.FilterComparison.Operator;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterIn;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
+import io.deephaven.api.filter.FilterStartsWith;
 import io.deephaven.api.literal.Literal;
 import io.deephaven.api.snapshot.SnapshotWhenOptions;
 import io.deephaven.api.snapshot.SnapshotWhenOptions.Flag;
@@ -51,6 +53,7 @@ import io.deephaven.proto.backplane.grpc.FetchTableRequest;
 import io.deephaven.proto.backplane.grpc.FilterTableRequest;
 import io.deephaven.proto.backplane.grpc.HeadOrTailRequest;
 import io.deephaven.proto.backplane.grpc.InCondition;
+import io.deephaven.proto.backplane.grpc.InvokeCondition;
 import io.deephaven.proto.backplane.grpc.IsNullCondition;
 import io.deephaven.proto.backplane.grpc.MergeTablesRequest;
 import io.deephaven.proto.backplane.grpc.MultiJoinTablesRequest;
@@ -907,15 +910,36 @@ class BatchTableRequestBuilder {
         }
 
         @Override
-        public Condition visit(Function function) {
+        public Condition visit(FilterContains contains) {
             // TODO(deephaven-core#3609): Update gRPC expression / filter / literal structures
-            throw new UnsupportedOperationException("Can't build Condition with Function");
+            throw new UnsupportedOperationException("Can't build Condition with FilterContains");
+        }
+
+        @Override
+        public Condition visit(FilterStartsWith startsWith) {
+            // TODO(deephaven-core#3609): Update gRPC expression / filter / literal structures
+            throw new UnsupportedOperationException("Can't build Condition with FilterStartsWith");
+        }
+
+        @Override
+        public Condition visit(Function function) {
+            final InvokeCondition.Builder builder = InvokeCondition.newBuilder()
+                    .setMethod(function.name());
+            for (Expression argument : function.arguments()) {
+                builder.addArguments(ExpressionAdapter.adapt(argument));
+            }
+            return Condition.newBuilder().setInvoke(builder.build()).build();
         }
 
         @Override
         public Condition visit(Method method) {
-            // TODO(deephaven-core#3609): Update gRPC expression / filter / literal structures
-            throw new UnsupportedOperationException("Can't build Condition with Method");
+            final InvokeCondition.Builder builder = InvokeCondition.newBuilder()
+                    .setTarget(ExpressionAdapter.adapt(method.object()))
+                    .setMethod(method.name());
+            for (Expression argument : method.arguments()) {
+                builder.addArguments(ExpressionAdapter.adapt(argument));
+            }
+            return Condition.newBuilder().setInvoke(builder.build()).build();
         }
 
         @Override

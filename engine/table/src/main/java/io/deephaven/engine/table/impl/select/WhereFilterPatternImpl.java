@@ -4,6 +4,7 @@
 package io.deephaven.engine.table.impl.select;
 
 import io.deephaven.api.ColumnName;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterPattern;
 import io.deephaven.chunk.LongChunk;
 import io.deephaven.chunk.ObjectChunk;
@@ -32,6 +33,14 @@ final class WhereFilterPatternImpl extends WhereFilterImpl {
             throw new IllegalArgumentException("WhereFilterPatternImpl only supports filtering against a column name");
         }
         return new WhereFilterPatternImpl(pattern);
+    }
+
+    static WhereFilter of(FilterContains contains) {
+        if (!(contains.expression() instanceof ColumnName)) {
+            throw new IllegalArgumentException("WhereFilterPatternImpl only supports filtering against a column name");
+        }
+        return of(FilterPattern.contains(((ColumnName) contains.expression()).name(), contains.sequence(),
+                contains.caseSensitive(), contains.invertPattern()));
     }
 
     private final FilterPattern filterPattern;

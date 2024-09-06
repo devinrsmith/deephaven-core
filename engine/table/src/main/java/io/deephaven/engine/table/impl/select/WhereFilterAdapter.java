@@ -12,11 +12,13 @@ import io.deephaven.api.expression.Method;
 import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterAnd;
 import io.deephaven.api.filter.FilterComparison;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterIn;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
+import io.deephaven.api.filter.FilterStartsWith;
 import io.deephaven.api.literal.Literal;
 import io.deephaven.engine.table.impl.select.MatchFilter.MatchType;
 import io.deephaven.gui.table.filters.Condition;
@@ -58,6 +60,14 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
 
     public static WhereFilter of(FilterPattern pattern) {
         return WhereFilterPatternImpl.of(pattern);
+    }
+
+    public static WhereFilter of(FilterContains contains) {
+        return WhereFilterStringImpls.contains(contains);
+    }
+
+    public static WhereFilter of(FilterStartsWith contains) {
+        return WhereFilterStringImpls.startsWith(contains);
     }
 
     public static WhereFilter of(Function function) {
@@ -132,6 +142,16 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
         return inverted ? WhereFilterInvertedImpl.of(filter) : filter;
     }
 
+    public static WhereFilter of(FilterContains contains, boolean inverted) {
+        final WhereFilter filter = of(contains);
+        return inverted ? WhereFilterInvertedImpl.of(filter) : filter;
+    }
+
+    public static WhereFilter of(FilterStartsWith startsWith, boolean inverted) {
+        final WhereFilter filter = of(startsWith);
+        return inverted ? WhereFilterInvertedImpl.of(filter) : filter;
+    }
+
     public static WhereFilter of(Function function, boolean inverted) {
         // TODO(deephaven-core#3740): Remove engine crutch on io.deephaven.api.Strings
         return WhereFilterFactory.getExpression(Strings.of(function, inverted));
@@ -186,6 +206,16 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
     @Override
     public WhereFilter visit(FilterPattern pattern) {
         return of(pattern, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterContains contains) {
+        return of(contains, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterStartsWith startsWith) {
+        return of(startsWith, inverted);
     }
 
     @Override

@@ -9,11 +9,13 @@ import io.deephaven.api.expression.Method;
 import io.deephaven.api.filter.Filter;
 import io.deephaven.api.filter.FilterAnd;
 import io.deephaven.api.filter.FilterComparison;
+import io.deephaven.api.filter.FilterContains;
 import io.deephaven.api.filter.FilterIn;
 import io.deephaven.api.filter.FilterIsNull;
 import io.deephaven.api.filter.FilterNot;
 import io.deephaven.api.filter.FilterOr;
 import io.deephaven.api.filter.FilterPattern;
+import io.deephaven.api.filter.FilterStartsWith;
 
 import java.util.List;
 
@@ -66,6 +68,16 @@ enum FilterToListImpl implements Filter.Visitor<List<Filter>> {
     @Override
     public List<Filter> visit(FilterPattern pattern) {
         return List.of(pattern);
+    }
+
+    @Override
+    public List<Filter> visit(FilterContains contains) {
+        return List.of(contains);
+    }
+
+    @Override
+    public List<Filter> visit(FilterStartsWith startsWith) {
+        return List.of(startsWith);
     }
 
     @Override

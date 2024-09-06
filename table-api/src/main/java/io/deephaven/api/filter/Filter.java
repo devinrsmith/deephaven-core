@@ -226,6 +226,12 @@ public interface Filter extends Expression {
 
         T visit(FilterPattern pattern);
 
+        T visit(FilterContains contains);
+
+        T visit(FilterStartsWith startsWith);
+
+//        T visit(FilterEndsWith endsWith);
+
         T visit(Function function);
 
         T visit(Method method);

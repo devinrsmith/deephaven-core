@@ -2,7 +2,8 @@
 # Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 #
 
-""" This module implement various filters that can be used in deephaven table's filter operations."""
+"""This module implement various filters that can be used in deephaven table's filter operations."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -17,6 +18,8 @@ from deephaven.jcompat import to_sequence
 _JFilter = jpy.get_type("io.deephaven.api.filter.Filter")
 _JColumnName = jpy.get_type("io.deephaven.api.ColumnName")
 _JFilterPattern = jpy.get_type("io.deephaven.api.filter.FilterPattern")
+_JFilterContains = jpy.get_type("io.deephaven.api.filter.FilterContains")
+_JFilterStartsWith = jpy.get_type("io.deephaven.api.filter.FilterStartsWith")
 _JPatternMode = jpy.get_type("io.deephaven.api.filter.FilterPattern$Mode")
 _JPattern = jpy.get_type("java.util.regex.Pattern")
 
@@ -144,10 +147,7 @@ class PatternMode(Enum):
 
 
 def pattern(
-    mode: PatternMode,
-    col: str,
-    regex: str,
-    invert_pattern: bool = False
+    mode: PatternMode, col: str, regex: str, invert_pattern: bool = False
 ) -> Filter:
     """Creates a regular-expression pattern filter.
 
@@ -206,12 +206,15 @@ def contains(
     """
     try:
         return Filter(
-            j_filter=_JFilterPattern.contains(
-                col, search_literal, case_sensitive, invert_pattern
-            )
+            j_filter=_JFilterContains.builder()
+            .expression(_JColumnName.of(col))
+            .sequence(search_literal)
+            .caseSensitive(case_sensitive)
+            .invertPattern(invert_pattern)
+            .build()
         )
     except Exception as e:
-        raise DHError(e, "failed to create a contains pattern filter.") from e
+        raise DHError(e, "failed to create a contains filter.") from e
 
 
 def matches(
@@ -243,3 +246,38 @@ def matches(
         )
     except Exception as e:
         raise DHError(e, "failed to create a matches pattern filter.") from e
+
+def starts_with(
+        col: str,
+        prefix: str,
+        case_sensitive: bool = True,
+        invert_pattern: bool = False,
+) -> Filter:
+    """Creates a specialization of the pattern filter that searches for the literal search_literal in col.
+    :obj:`~PatternMode.FIND` mode will be used.
+
+    This filter will never match ``null`` values.
+
+    Args:
+        col (str): the column name
+        prefix (str): the literal prefix
+        case_sensitive (str): if the pattern should be case sensitive, True by default
+        invert_pattern (bool): if the pattern matching logic should be inverted, False by default
+
+    Returns:
+        a new contains pattern filter
+
+    Raises:
+        DHError
+    """
+    try:
+        return Filter(
+            j_filter=_JFilterStartsWith.builder()
+            .expression(_JColumnName.of(col))
+            .prefix(prefix)
+            .caseSensitive(case_sensitive)
+            .invertPattern(invert_pattern)
+            .build()
+        )
+    except Exception as e:
+        raise DHError(e, "failed to create a starts_with filter.") from e

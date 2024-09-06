@@ -206,6 +206,7 @@ public class FilterTest {
         visitor.visit((FilterOr) null);
         visitor.visit((FilterAnd) null);
         visitor.visit((FilterPattern) null);
+        visitor.visit((FilterContains) null);
         visitor.visit((Function) null);
         visitor.visit((Method) null);
         visitor.visit(false);
@@ -249,6 +250,16 @@ public class FilterTest {
         @Override
         public String visit(FilterPattern pattern) {
             return of(pattern);
+        }
+
+        @Override
+        public String visit(FilterContains contains) {
+            return of(contains);
+        }
+
+        @Override
+        public String visit(FilterStartsWith startsWith) {
+            return of(startsWith);
         }
 
         @Override
@@ -313,6 +324,18 @@ public class FilterTest {
 
         @Override
         public CountingVisitor visit(FilterPattern pattern) {
+            ++count;
+            return this;
+        }
+
+        @Override
+        public CountingVisitor visit(FilterContains contains) {
+            ++count;
+            return this;
+        }
+
+        @Override
+        public CountingVisitor visit(FilterStartsWith startsWith) {
             ++count;
             return this;
         }
@@ -402,6 +425,18 @@ public class FilterTest {
         public Void visit(FilterPattern pattern) {
             out.add(FilterPattern.of(FOO, Pattern.compile("somepattern"), Mode.FIND, false));
             out.add(FilterPattern.of(FOO, Pattern.compile("somepattern"), Mode.FIND, true));
+            return null;
+        }
+
+        @Override
+        public Void visit(FilterContains contains) {
+            out.add(FilterContains.of(FOO.name(), "somepattern"));
+            return null;
+        }
+
+        @Override
+        public Void visit(FilterStartsWith startsWith) {
+            out.add(FilterStartsWith.of(FOO.name(), "somepattern"));
             return null;
         }
 

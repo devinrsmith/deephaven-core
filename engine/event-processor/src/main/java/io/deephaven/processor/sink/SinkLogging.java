@@ -14,6 +14,7 @@ import io.deephaven.processor.sink.appender.InstantAppender;
 import io.deephaven.processor.sink.appender.IntAppender;
 import io.deephaven.processor.sink.appender.LongAppender;
 import io.deephaven.processor.sink.appender.ObjectAppender;
+import io.deephaven.processor.sink.appender.ShortAppender;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;
@@ -149,17 +150,17 @@ final class SinkLogging implements Coordinator {
 
             @Override
             public App visit(ShortType shortType) {
-                return null;
+                return new ShortLogger(ix);
             }
 
             @Override
             public App visit(IntType intType) {
-                return new IntApp(ix);
+                return new IntLogger(ix);
             }
 
             @Override
             public App visit(LongType longType) {
-                return new LongApp(ix);
+                return new LongLogger(ix);
             }
 
             @Override
@@ -215,8 +216,29 @@ final class SinkLogging implements Coordinator {
             }
         }
 
-        private final class IntApp extends App implements IntAppender {
-            IntApp(int appenderIx) {
+        private final class ShortLogger extends App implements ShortAppender {
+            ShortLogger(int appenderIx) {
+                super(appenderIx);
+            }
+
+            @Override
+            public void setNull() {
+                entry().append(", setNull").endl();
+            }
+
+            @Override
+            public void set(short value) {
+                entry().append(", set, value=").append(value).endl();
+            }
+
+            @Override
+            public void advance() {
+                entry().append(", advance").endl();
+            }
+        }
+
+        private final class IntLogger extends App implements IntAppender {
+            IntLogger(int appenderIx) {
                 super(appenderIx);
             }
 
@@ -236,8 +258,8 @@ final class SinkLogging implements Coordinator {
             }
         }
 
-        private final class LongApp extends App implements LongAppender {
-            LongApp(int appenderIx) {
+        private final class LongLogger extends App implements LongAppender {
+            LongLogger(int appenderIx) {
                 super(appenderIx);
             }
 

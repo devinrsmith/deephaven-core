@@ -9,6 +9,7 @@ import io.deephaven.processor.sink.appender.InstantAppender;
 import io.deephaven.processor.sink.appender.IntAppender;
 import io.deephaven.processor.sink.appender.LongAppender;
 import io.deephaven.processor.sink.appender.ObjectAppender;
+import io.deephaven.processor.sink.appender.ShortAppender;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;
 import io.deephaven.qst.type.BoxedType;
@@ -189,17 +190,17 @@ final class SinkStrict implements Coordinator {
 
             @Override
             public AppenderDelegate visit(ShortType shortType) {
-                return null;
+                return new ShortStrict(ix);
             }
 
             @Override
             public AppenderDelegate visit(IntType intType) {
-                return new IntImpl(ix);
+                return new IntStrict(ix);
             }
 
             @Override
             public AppenderDelegate visit(LongType longType) {
-                return new LongImpl(ix);
+                return new LongStrict(ix);
             }
 
             @Override
@@ -276,10 +277,37 @@ final class SinkStrict implements Coordinator {
             }
         }
 
-        private final class IntImpl extends AppenderDelegate implements IntAppender {
+        private final class ShortStrict extends AppenderDelegate implements ShortAppender {
+            private final ShortAppender delegate;
+
+            ShortStrict(int ix) {
+                super(ix);
+                this.delegate = ShortAppender.get(inner(ix));
+            }
+
+            @Override
+            public void setNull() {
+                doSet();
+                delegate.setNull();
+            }
+
+            @Override
+            public void set(short value) {
+                doSet();
+                delegate.set(value);
+            }
+
+            @Override
+            public void advance() {
+                doAdvance();
+                delegate.advance();
+            }
+        }
+
+        private final class IntStrict extends AppenderDelegate implements IntAppender {
             private final IntAppender delegate;
 
-            IntImpl(int ix) {
+            IntStrict(int ix) {
                 super(ix);
                 this.delegate = IntAppender.get(inner(ix));
             }
@@ -303,10 +331,10 @@ final class SinkStrict implements Coordinator {
             }
         }
 
-        private final class LongImpl extends AppenderDelegate implements LongAppender {
+        private final class LongStrict extends AppenderDelegate implements LongAppender {
             private final LongAppender delegate;
 
-            LongImpl(int ix) {
+            LongStrict(int ix) {
                 super(ix);
                 this.delegate = LongAppender.get(inner(ix));
             }

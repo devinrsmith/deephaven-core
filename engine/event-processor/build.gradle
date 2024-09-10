@@ -8,6 +8,8 @@ dependencies {
     api project(':qst-type')
     api project(':engine-primitive')
 
+    implementation project(':util-function')
+
     // todo: remove these deps, move impls
     implementation project(':engine-time')
     implementation project(':engine-table')

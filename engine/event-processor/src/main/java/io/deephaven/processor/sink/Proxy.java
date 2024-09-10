@@ -1,5 +1,9 @@
 package io.deephaven.processor.sink;
 
+import io.deephaven.function.ToIntFunction;
+import io.deephaven.function.ToLongFunction;
+import io.deephaven.function.ToObjectFunction;
+import io.deephaven.function.reflect.MethodGetter;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.BooleanAppender;
 import io.deephaven.processor.sink.appender.ByteAppender;
@@ -468,7 +472,13 @@ public class Proxy {
         private <T> Consumer<Object> generic(GenericType<T> type) {
             final ObjectAppender<T> app = ObjectAppender.get(appender, type);
             final Class<T> clazz = type.clazz();
-            return arg -> app.set(clazz.cast(arg));
+            return arg -> {
+                if (arg == null) {
+                    app.setNull();
+                } else {
+                    app.set(clazz.cast(arg));
+                }
+            };
         }
     }
 
@@ -668,149 +678,153 @@ public class Proxy {
             final Class<T> clazz = type.clazz();
             return arg -> {
                 if (arg == null) {
-                    app.setNull();
+                    ObjectAppender.appendNull(app);
                 } else {
-                    app.set(clazz.cast(arg));
+                    ObjectAppender.append(app, clazz.cast(arg));
                 }
             };
         }
     }
 
-    private static class SetVisitor2<T> implements Type.Visitor<Consumer<T>>, PrimitiveType.Visitor<Consumer<T>>, GenericType.Visitor<Consumer<T>>, BoxedType.Visitor<Consumer<T>> {
-        public static <T> Consumer<T> of(Appender appender, Method method) {
+    private static class SetVisitor2<X> implements Type.Visitor<Consumer<X>>, PrimitiveType.Visitor<Consumer<X>>, GenericType.Visitor<Consumer<X>>, BoxedType.Visitor<Consumer<X>> {
+        public static <X> Consumer<X> of(Appender appender, Method method) {
             return Objects.requireNonNull(appender.type().walk(new SetVisitor2<>(appender, method)));
         }
 
         private final Appender appender;
         private final Method method;
+//        private final MethodGetter<T> getter;
 
         private SetVisitor2(Appender appender, Method method) {
             this.appender = Objects.requireNonNull(appender);
             this.method = Objects.requireNonNull(method);
         }
 
-        private Object invoke(T obj) {
-            try {
-                return method.invoke(obj);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
+        @Override
+        public Consumer<X> visit(PrimitiveType<?> primitiveType) {
+            return primitiveType.walk((PrimitiveType.Visitor<Consumer<X>>) this);
         }
 
         @Override
-        public Consumer<T> visit(PrimitiveType<?> primitiveType) {
-            return primitiveType.walk((PrimitiveType.Visitor<Consumer<T>>) this);
+        public Consumer<X> visit(GenericType<?> genericType) {
+            return genericType.walk((GenericType.Visitor<Consumer<X>>) this);
         }
 
         @Override
-        public Consumer<T> visit(GenericType<?> genericType) {
-            return genericType.walk((GenericType.Visitor<Consumer<T>>) this);
+        public Consumer<X> visit(BoxedType<?> boxedType) {
+            return boxedType.walk((BoxedType.Visitor<Consumer<X>>) this);
         }
 
         @Override
-        public Consumer<T> visit(BoxedType<?> boxedType) {
-            return boxedType.walk((BoxedType.Visitor<Consumer<T>>) this);
-        }
-
-        @Override
-        public Consumer<T> visit(BooleanType booleanType) {
+        public Consumer<X> visit(BooleanType booleanType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(ByteType byteType) {
+        public Consumer<X> visit(ByteType byteType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(CharType charType) {
+        public Consumer<X> visit(CharType charType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(ShortType shortType) {
+        public Consumer<X> visit(ShortType shortType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(IntType intType) {
+        public Consumer<X> visit(IntType intType) {
             final IntAppender app = IntAppender.get(appender);
-            return obj -> app.set((int) invoke(obj));
+            final ToIntFunction<X> getter = MethodGetter.ofInt(method);
+            return x -> app.set(getter.applyAsInt(x));
         }
 
         @Override
-        public Consumer<T> visit(LongType longType) {
+        public Consumer<X> visit(LongType longType) {
             final LongAppender app = LongAppender.get(appender);
-            return obj -> app.set((long) invoke(obj));
+            final ToLongFunction<X> getter = MethodGetter.ofLong(method);
+            return x -> app.set(getter.applyAsLong(x));
         }
 
         @Override
-        public Consumer<T> visit(FloatType floatType) {
+        public Consumer<X> visit(FloatType floatType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(DoubleType doubleType) {
+        public Consumer<X> visit(DoubleType doubleType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedBooleanType booleanType) {
+        public Consumer<X> visit(BoxedBooleanType booleanType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedByteType byteType) {
+        public Consumer<X> visit(BoxedByteType byteType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedCharType charType) {
+        public Consumer<X> visit(BoxedCharType charType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedShortType shortType) {
+        public Consumer<X> visit(BoxedShortType shortType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedIntType intType) {
+        public Consumer<X> visit(BoxedIntType intType) {
+            final IntAppender app = IntAppender.get(appender);
+            final ToObjectFunction<X, Integer> getter = MethodGetter.ofGeneric(method, intType);
+            return x -> {
+                final Integer out = getter.apply(x);
+                if (out == null) {
+                    app.setNull();
+                } else {
+                    app.set(out);
+                }
+            };
+        }
+
+        @Override
+        public Consumer<X> visit(BoxedLongType longType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedLongType longType) {
+        public Consumer<X> visit(BoxedFloatType floatType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedFloatType floatType) {
+        public Consumer<X> visit(BoxedDoubleType doubleType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(BoxedDoubleType doubleType) {
+        public Consumer<X> visit(StringType stringType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(StringType stringType) {
+        public Consumer<X> visit(InstantType instantType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(InstantType instantType) {
+        public Consumer<X> visit(ArrayType<?, ?> arrayType) {
             return null;
         }
 
         @Override
-        public Consumer<T> visit(ArrayType<?, ?> arrayType) {
-            return null;
-        }
-
-        @Override
-        public Consumer<T> visit(CustomType<?> customType) {
+        public Consumer<X> visit(CustomType<?> customType) {
             return null;
         }
     }

@@ -357,6 +357,7 @@ public class JettyBackedGrpcServer implements GrpcServer {
         // Give connections extra time to shutdown, since we have an explicit server shutdown
         serverConnector.setShutdownIdleTimeout(serverConnector.getIdleTimeout());
 
+
         // Override the h2 stream timeout with a specified value
         serverConnector.addEventListener(new Connection.Listener() {
             @Override

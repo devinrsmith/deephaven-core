@@ -27,9 +27,10 @@ public class ComplexTest {
         final Sink sink =
                 Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));
         try (final EventProcessor<byte[]> processor = factory.create(sink)) {
+            sink.coordinator().writing();
             processor.writeToSink(data);
+            sink.coordinator().sync();
         }
-        sink.coordinator().sync();
     }
 
     @Test
@@ -42,8 +43,9 @@ public class ComplexTest {
         final Sink sink =
                 Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));
         try (final EventProcessor<File> processor = factory.create(sink)) {
+            sink.coordinator().writing();
             processor.writeToSink(data);
+            sink.coordinator().sync();
         }
-        sink.coordinator().sync();
     }
 }

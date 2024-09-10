@@ -12,7 +12,7 @@ dependencies {
 
     // todo: remove these deps, move impls
     implementation project(':engine-time')
-    implementation project(':engine-table')
+//    implementation project(':engine-table')
     implementation project(':log-factory')
 
     compileOnly project(':util-immutables')

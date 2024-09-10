@@ -32,6 +32,8 @@ dependencies {
     implementation project(':codec-builtin')
     implementation project(':codec-cache')
 
+    implementation project(':engine-event-processor')
+
     implementation libs.f4b6a3.uuid.creator
     // TODO(deephaven-core#3204): t-digest 3.3 appears to have higher errors than 3.2
     implementation libs.tdunning.t.digest

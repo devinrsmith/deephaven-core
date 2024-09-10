@@ -12,6 +12,12 @@ public final class Coordinators {
     enum Noop implements Coordinator {
         NOOP;
 
+
+        @Override
+        public void writing() {
+
+        }
+
         @Override
         public void sync() {
 

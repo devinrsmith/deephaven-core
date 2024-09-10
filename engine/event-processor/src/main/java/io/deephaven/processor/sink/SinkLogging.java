@@ -73,6 +73,11 @@ final class SinkLogging implements Coordinator {
     }
 
     @Override
+    public void writing() {
+        entry().append(", ").append("writing").endl();
+    }
+
+    @Override
     public void sync() {
         entry().append(", ").append("sync").endl();
     }

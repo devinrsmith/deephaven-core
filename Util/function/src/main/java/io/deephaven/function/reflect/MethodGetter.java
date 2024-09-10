@@ -65,7 +65,7 @@ public final class MethodGetter<T> implements Type.Visitor<TypedFunction<T>>, Pr
         protected final Method method;
 
         public MethodBase(Method method) {
-            if (method.getParameterCount() != 1) {
+            if (method.getParameterCount() != 0) {
                 throw new IllegalArgumentException();
             }
             this.method = Objects.requireNonNull(method);

@@ -140,7 +140,7 @@ final class ComplexExample {
             try (final JsonParser parser = new JsonFactory().createParser(file)) {
                 while (parser.nextToken() != null) {
                     // semantics match up better; should be OK to deliver empty at first
-                    coordinator.sync();
+                    coordinator.intermediate();
                     table123.process(parser);
                 }
             }

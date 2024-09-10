@@ -25,7 +25,7 @@ public interface EventProcessorFactory<T> {
     interface EventProcessor<T> extends AutoCloseable {
 
         /**
-         * Write {@code event} to the sink. The successful return of this method implicitly marks a
+         * Write {@code event} to the sink. The entrance of this method implicitly marks a {@link Coordinator#writing()}; the successful return of this method implicitly marks a
          * {@link Coordinator#sync() synchronization point}.
          * 
          * @param event the event

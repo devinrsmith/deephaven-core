@@ -39,10 +39,14 @@ import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,18 +65,30 @@ public class Proxy {
     static {
         try {
             HASHCODE_METHOD = Object.class.getMethod("hashCode");
-            EQUALS_METHOD = Object.class.getMethod("equals", new Class[]{Object.class});
+            EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
             TOSTRING_METHOD = Object.class.getMethod("toString");
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
     }
 
+    @Target({ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Info {
+        int index();
+    }
+
     public static <T> StreamingTarget<T> streamingTarget(Class<T> clazz) {
+
         List<Method> methods = new ArrayList<>();
         List<Type<?>> types = new ArrayList<>();
+
+
         Method advanceAllMethod = null;
         Method ensureRemainingCapacityMethod = null;
+
+
+
         for (Method method : clazz.getMethods()) {
             if (Objects.equals(method, EQUALS_METHOD) || Objects.equals(method, HASHCODE_METHOD) || Objects.equals(method, TOSTRING_METHOD)) {
                 continue;
@@ -95,6 +111,8 @@ public class Proxy {
                 //final Annotation[] annotations = method.getAnnotations();
 //                final java.lang.reflect.Type type = method.getGenericParameterTypes()[0];
                 final Type<?> type = Type.find(method.getParameterTypes()[0]);
+                // todo: handle annotations
+                // method.getAnnotatedParameterTypes()[0]
                 methods.add(method);
                 types.add(type);
                 continue;

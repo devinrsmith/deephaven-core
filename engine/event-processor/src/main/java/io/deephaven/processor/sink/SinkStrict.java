@@ -39,12 +39,7 @@ import java.util.concurrent.TimeUnit;
 final class SinkStrict implements Coordinator {
 
     static Sink of(Sink sink) {
-        final int L = sink.streams().size();
-        final List<StreamStrict> streams = new ArrayList<>(L);
-        for (int i = 0; i < L; i++) {
-            streams.add(new StreamStrict(i, sink.streams().get(i)));
-        }
-        return new SinkStrict(sink.coordinator(), streams).sink();
+        return new SinkStrict(sink).sink();
     }
 
     static OptionalLong pos(Stream stream) {
@@ -61,21 +56,41 @@ final class SinkStrict implements Coordinator {
 
     private final Coordinator delegate;
     private final List<StreamStrict> streams;
+    private boolean writing;
+
     // Note: we _could_ maintain a dirty set to only check the streams that we know have changed... given this is
     // mainly for testing and debugging, added complexity is not worth it.
     // private Set<StreamStrict> dirty;
 
-    SinkStrict(Coordinator delegate, List<StreamStrict> streams) {
-        this.delegate = Objects.requireNonNull(delegate);
-        this.streams = Objects.requireNonNull(streams);
+    SinkStrict(Sink delegate) {
+        this.delegate = delegate.coordinator();
+        final int L = delegate.streams().size();
+        this.streams = new ArrayList<>(L);
+        for (int i = 0; i < L; i++) {
+            streams.add(new StreamStrict(i, delegate.streams().get(i)));
+        }
+    }
+
+    @Override
+    public void writing() {
+        if (writing) {
+            throw new IllegalStateException("Already in writing");
+        }
+        writing = true;
+        delegate.writing();
     }
 
     @Override
     public void sync() {
+        if (!writing) {
+            throw new IllegalStateException("Can only sync if writing");
+        }
         for (StreamStrict stream : streams) {
+            stream.checkNoneSet();
             stream.checkInSync();
         }
         delegate.sync();
+        writing = false;
     }
 
     Sink sink() {
@@ -85,7 +100,7 @@ final class SinkStrict implements Coordinator {
                 .build();
     }
 
-    private static final class StreamStrict implements Stream {
+    private final class StreamStrict implements Stream {
         private final int streamIx;
         private final Stream delegate;
         private final List<AppenderDelegate> delegates;
@@ -99,6 +114,15 @@ final class SinkStrict implements Coordinator {
                 delegates.add(appenderDelegate(delegate.appenders().get(i).type(), i));
             }
             this.delegates = List.copyOf(delegates);
+        }
+
+        void checkNoneSet() {
+            final int L = delegates.size();
+            for (int i = 0; i < L; i++) {
+                if (delegates.get(i).isSet) {
+                    throw new IllegalStateException(String.format("Appender streamIx=%d, stream.appenders().get(%d) isSet, but not advanced", streamIx, 0));
+                }
+            }
         }
 
         // todo: should we let external callers access this, for testing / logging purposes?
@@ -125,6 +149,9 @@ final class SinkStrict implements Coordinator {
 
         @Override
         public void ensureRemainingCapacity(long size) {
+            if (!writing) {
+                throw new IllegalStateException("Must be in writing mode to call this");
+            }
             // todo: should we allow 0?
             if (size < 0) {
                 throw new IllegalArgumentException();
@@ -134,6 +161,9 @@ final class SinkStrict implements Coordinator {
 
         @Override
         public void advanceAll() {
+            if (!writing) {
+                throw new IllegalStateException("Must be in writing mode to call this");
+            }
             for (AppenderDelegate appender : delegates) {
                 if (!appender.isSet) {
                     throw new IllegalStateException("Must ensure all appenders have been set before advanceAll");
@@ -255,12 +285,18 @@ final class SinkStrict implements Coordinator {
             }
 
             void doSet() {
+                if (!writing) {
+                    throw new IllegalStateException("Must not set if not writing");
+                }
                 isSet = true;
                 // setting multiple times is "ok".
                 // todo: should we have a setting that disallows this?
             }
 
             void doAdvance() {
+                if (!writing) {
+                    throw new IllegalStateException("Must not advance if not writing");
+                }
                 // if (spec.isRowOriented()) {
                 // // todo: should this be a limitation
                 // throw new IllegalStateException("Can't advance if row-oriented, use advanceAll");

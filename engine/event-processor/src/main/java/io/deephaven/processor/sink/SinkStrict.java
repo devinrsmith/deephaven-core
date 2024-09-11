@@ -120,7 +120,8 @@ final class SinkStrict implements Coordinator {
             final int L = delegates.size();
             for (int i = 0; i < L; i++) {
                 if (delegates.get(i).isSet) {
-                    throw new IllegalStateException(String.format("Appender streamIx=%d, stream.appenders().get(%d) isSet, but not advanced", streamIx, 0));
+                    throw new IllegalStateException(String.format(
+                            "Appender streamIx=%d, stream.appenders().get(%d) isSet, but not advanced", streamIx, 0));
                 }
             }
         }

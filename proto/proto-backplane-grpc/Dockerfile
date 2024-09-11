@@ -1,4 +1,4 @@
-FROM deephaven/protoc-base:local-build
+FROM --platform=linux/amd64 deephaven/protoc-base:local-build
 
 COPY src/main/proto /includes
 

@@ -6,6 +6,10 @@ package io.deephaven.processor.sink;
 import io.deephaven.processor.sink.appender.Appender;
 
 public interface Coordinator {
+
+    // todo: more explicit lock? Txn w/ commit / abort?
+
+
     void writing();
 
     /**

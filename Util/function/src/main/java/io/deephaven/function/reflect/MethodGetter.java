@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.function.reflect;
 
 import io.deephaven.function.ToBooleanFunction;
@@ -124,7 +127,7 @@ public final class MethodGetter<T> implements Type.Visitor<TypedFunction<T>>, Pr
         @Override
         public R apply(T value) {
             try {
-                //noinspection unchecked
+                // noinspection unchecked
                 return (R) method.invoke(value);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
@@ -194,7 +197,7 @@ public final class MethodGetter<T> implements Type.Visitor<TypedFunction<T>>, Pr
 
     private <R> R invokeUnsafe(T obj) {
         try {
-            //noinspection unchecked
+            // noinspection unchecked
             return (R) method.invoke(obj);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);

@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.processor;
 
 import io.deephaven.processor.factory.EventProcessorFactory;
@@ -34,7 +37,7 @@ final class KafkaHeaders implements EventProcessorFactory<ConsumerRecord<?, ?>> 
 
     private static final class What implements EventProcessor<ConsumerRecord<?, ?>> {
 
-//        private final Sink sink;
+        // private final Sink sink;
 
         @Override
         public void writeToSink(ConsumerRecord<?, ?> event) {
@@ -82,18 +85,18 @@ final class KafkaHeaders implements EventProcessorFactory<ConsumerRecord<?, ?>> 
 
     private static final class Headers {
         private final Stream stream;
-//        private final ObjectAppender<String> key;
-//        private final ObjectAppender<byte[]> value;
+        // private final ObjectAppender<String> key;
+        // private final ObjectAppender<byte[]> value;
 
         public Headers(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            //key = stream.appenders().get(0);
+            // key = stream.appenders().get(0);
         }
 
         public void writeToAppenders(org.apache.kafka.common.header.Headers headers) {
             for (Header header : headers) {
-//                key.set(header.key());
-//                value.set(header.value());
+                // key.set(header.key());
+                // value.set(header.value());
                 stream.advanceAll();
             }
         }

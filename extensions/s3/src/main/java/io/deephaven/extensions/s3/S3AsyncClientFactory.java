@@ -60,7 +60,6 @@ class S3AsyncClientFactory {
                 .credentialsProvider(instructions.awsV2CredentialsProvider());
         instructions.regionName().map(Region::of).ifPresent(builder::region);
         instructions.endpointOverride().ifPresent(builder::endpointOverride);
-        builder.region()
         final S3AsyncClient s3AsyncClient = builder.build();
         if (log.isDebugEnabled()) {
             log.debug().append("Building S3AsyncClient with instructions: ").append(instructions).endl();

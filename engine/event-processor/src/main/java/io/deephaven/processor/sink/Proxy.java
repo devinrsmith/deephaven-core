@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.processor.sink;
 
 import io.deephaven.function.ToIntFunction;
@@ -90,17 +93,21 @@ public class Proxy {
 
 
         for (Method method : clazz.getMethods()) {
-            if (Objects.equals(method, EQUALS_METHOD) || Objects.equals(method, HASHCODE_METHOD) || Objects.equals(method, TOSTRING_METHOD)) {
+            if (Objects.equals(method, EQUALS_METHOD) || Objects.equals(method, HASHCODE_METHOD)
+                    || Objects.equals(method, TOSTRING_METHOD)) {
                 continue;
             }
-            if (void.class.equals(method.getReturnType()) && method.getParameterCount() == 1 && long.class.equals(method.getParameterTypes()[0]) && "ensureRemainingCapacity".equals(method.getName())) {
+            if (void.class.equals(method.getReturnType()) && method.getParameterCount() == 1
+                    && long.class.equals(method.getParameterTypes()[0])
+                    && "ensureRemainingCapacity".equals(method.getName())) {
                 if (ensureRemainingCapacityMethod != null) {
                     throw new IllegalArgumentException();
                 }
                 ensureRemainingCapacityMethod = method;
                 continue;
             }
-            if (void.class.equals(method.getReturnType()) && method.getParameterCount() == 0 && ("advance".equals(method.getName()) || "advanceAll".equals(method.getName()))) {
+            if (void.class.equals(method.getReturnType()) && method.getParameterCount() == 0
+                    && ("advance".equals(method.getName()) || "advanceAll".equals(method.getName()))) {
                 if (advanceAllMethod != null) {
                     throw new IllegalArgumentException();
                 }
@@ -108,8 +115,8 @@ public class Proxy {
                 continue;
             }
             if (void.class.equals(method.getReturnType()) && method.getParameterCount() == 1) {
-                //final Annotation[] annotations = method.getAnnotations();
-//                final java.lang.reflect.Type type = method.getGenericParameterTypes()[0];
+                // final Annotation[] annotations = method.getAnnotations();
+                // final java.lang.reflect.Type type = method.getGenericParameterTypes()[0];
                 final Type<?> type = Type.find(method.getParameterTypes()[0]);
                 // todo: handle annotations
                 // method.getAnnotatedParameterTypes()[0]
@@ -127,7 +134,8 @@ public class Proxy {
         List<Type<?>> types = new ArrayList<>();
         for (Method method : clazz.getMethods()) {
             // todo: this is getting hashcode
-            if (method.getParameterCount() == 0 && method.getReturnType().isPrimitive() && method.getReturnType() != void.class) {
+            if (method.getParameterCount() == 0 && method.getReturnType().isPrimitive()
+                    && method.getReturnType() != void.class) {
                 methods.add(method);
                 types.add(Type.find(method.getReturnType()));
             }
@@ -202,7 +210,8 @@ public class Proxy {
         private final Method advanceAllMethod;
         private final Method ensureRemainingCapacityMethod;
 
-        private StreamingTarget(Class<T> clazz, List<Method> methods, List<Type<?>> types, Method advanceAllMethod, Method ensureRemainingCapacityMethod) {
+        private StreamingTarget(Class<T> clazz, List<Method> methods, List<Type<?>> types, Method advanceAllMethod,
+                Method ensureRemainingCapacityMethod) {
             this.clazz = Objects.requireNonNull(clazz);
             this.methods = List.copyOf(methods);
             this.types = List.copyOf(types);
@@ -211,8 +220,9 @@ public class Proxy {
         }
 
         public T bind(Stream stream) {
-            //noinspection unchecked
-            return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, new SetHandler(stream));
+            // noinspection unchecked
+            return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] {clazz},
+                    new SetHandler(stream));
         }
 
         public List<Method> methods() {
@@ -283,8 +293,10 @@ public class Proxy {
 
             @Override
             public boolean equals(Object o) {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
+                if (this == o)
+                    return true;
+                if (o == null || getClass() != o.getClass())
+                    return false;
                 SetHandler that = (SetHandler) o;
                 return stream.equals(that.stream);
             }
@@ -296,7 +308,8 @@ public class Proxy {
         }
     }
 
-    private static class SetVisitor implements Type.Visitor<Consumer<Object>>, PrimitiveType.Visitor<Consumer<Object>>, GenericType.Visitor<Consumer<Object>>, BoxedType.Visitor<Consumer<Object>> {
+    private static class SetVisitor implements Type.Visitor<Consumer<Object>>, PrimitiveType.Visitor<Consumer<Object>>,
+            GenericType.Visitor<Consumer<Object>>, BoxedType.Visitor<Consumer<Object>> {
         public static Consumer<Object> of(Appender appender) {
             return appender.type().walk(new SetVisitor(appender));
         }
@@ -500,7 +513,9 @@ public class Proxy {
         }
     }
 
-    private static class AppendVisitor implements Type.Visitor<Consumer<Object>>, PrimitiveType.Visitor<Consumer<Object>>, GenericType.Visitor<Consumer<Object>>, BoxedType.Visitor<Consumer<Object>> {
+    private static class AppendVisitor
+            implements Type.Visitor<Consumer<Object>>, PrimitiveType.Visitor<Consumer<Object>>,
+            GenericType.Visitor<Consumer<Object>>, BoxedType.Visitor<Consumer<Object>> {
         public static Consumer<Object> of(Appender appender) {
             return appender.type().walk(new SetVisitor(appender));
         }
@@ -704,14 +719,15 @@ public class Proxy {
         }
     }
 
-    private static class SetVisitor2<X> implements Type.Visitor<Consumer<X>>, PrimitiveType.Visitor<Consumer<X>>, GenericType.Visitor<Consumer<X>>, BoxedType.Visitor<Consumer<X>> {
+    private static class SetVisitor2<X> implements Type.Visitor<Consumer<X>>, PrimitiveType.Visitor<Consumer<X>>,
+            GenericType.Visitor<Consumer<X>>, BoxedType.Visitor<Consumer<X>> {
         public static <X> Consumer<X> of(Appender appender, Method method) {
             return Objects.requireNonNull(appender.type().walk(new SetVisitor2<>(appender, method)));
         }
 
         private final Appender appender;
         private final Method method;
-//        private final MethodGetter<T> getter;
+        // private final MethodGetter<T> getter;
 
         private SetVisitor2(Appender appender, Method method) {
             this.appender = Objects.requireNonNull(appender);

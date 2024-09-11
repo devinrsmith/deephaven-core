@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 public final class Sinks {
 
+    // note: single threaded only
     public static Sink strict(Sink sink) {
         return SinkStrict.of(sink);
     }

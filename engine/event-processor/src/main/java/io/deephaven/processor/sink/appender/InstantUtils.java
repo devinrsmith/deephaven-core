@@ -10,9 +10,9 @@ import java.math.RoundingMode;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-final class InstantUtils {
+public final class InstantUtils {
 
-    static LongAppender asEpochLong(LongAppender epochNanosAppender, TimeUnit asTimeUnit) {
+    public static LongAppender asEpochLong(LongAppender epochNanosAppender, TimeUnit asTimeUnit) {
         switch (asTimeUnit) {
             case NANOSECONDS:
                 return epochNanosAppender;
@@ -27,7 +27,7 @@ final class InstantUtils {
         }
     }
 
-    static DoubleAppender asEpochDouble(LongAppender epochNanosAppender, TimeUnit asTimeUnit,
+    public static DoubleAppender asEpochDouble(LongAppender epochNanosAppender, TimeUnit asTimeUnit,
             RoundingMode roundingMode) {
         switch (asTimeUnit) {
             case NANOSECONDS:
@@ -43,7 +43,7 @@ final class InstantUtils {
         }
     }
 
-    static ObjectAppender<String> asEpochString(LongAppender epochNanosAppender, TimeUnit asTimeUnit,
+    public static ObjectAppender<String> asEpochString(LongAppender epochNanosAppender, TimeUnit asTimeUnit,
             RoundingMode roundingMode) {
         switch (asTimeUnit) {
             case NANOSECONDS:

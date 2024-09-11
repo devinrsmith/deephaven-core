@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.processor;
 
 import io.deephaven.io.log.LogLevel;
@@ -25,7 +28,8 @@ public class SinkStrictTest {
 
     @BeforeEach
     void setUp() {
-        sink = Sinks.strict(Sinks.logging(SinkStrictTest.class.getSimpleName(), LogLevel.INFO, List.of(List.of(Type.intType(), Type.intType()))));
+        sink = Sinks.strict(Sinks.logging(SinkStrictTest.class.getSimpleName(), LogLevel.INFO,
+                List.of(List.of(Type.intType(), Type.intType()))));
         coordinator = sink.coordinator();
         stream = sink.streams().get(0);
         a0 = IntAppender.get(stream.appenders().get(0));
@@ -75,7 +79,7 @@ public class SinkStrictTest {
     @Test
     void doubleWriting() {
         coordinator.writing();
-        try{
+        try {
             coordinator.writing();
             failBecauseExceptionWasNotThrown(IllegalStateException.class);
         } catch (IllegalStateException e) {

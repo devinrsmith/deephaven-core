@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.processor;
 
 import io.deephaven.io.log.LogLevel;
@@ -44,7 +47,8 @@ public class ProxyTest {
     }
 
     private static class MyWritingInterfaceManualImpl implements MyWritingInterface {
-        private static final List<Type<?>> ORDER = List.of(Type.instantType(), Type.shortType(), Type.intType(), Type.longType(), Type.stringType());
+        private static final List<Type<?>> ORDER =
+                List.of(Type.instantType(), Type.shortType(), Type.intType(), Type.longType(), Type.stringType());
 
         private final Stream stream;
         private final ObjectAppender<Instant> myInstant;
@@ -130,7 +134,8 @@ public class ProxyTest {
 
     @Test
     void streamingTargetViaManual() {
-        final Sink sink = Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, List.of(MyWritingInterfaceManualImpl.ORDER)));
+        final Sink sink =
+                Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, List.of(MyWritingInterfaceManualImpl.ORDER)));
         final MyWritingInterface p = new MyWritingInterfaceManualImpl(sink.streams().get(0));
         writeTo(p);
         sink.coordinator().sync();

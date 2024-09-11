@@ -22,6 +22,8 @@ public interface IntAppender extends Appender {
         appender.advance();
     }
 
+    // THEY Want this to be chunk oriented
+
     @Override
     default IntType type() {
         return Type.intType();

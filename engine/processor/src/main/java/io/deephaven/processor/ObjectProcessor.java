@@ -21,6 +21,8 @@ import io.deephaven.qst.type.Type;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * An interface for processing data from one or more input objects into output chunks on a 1-to-1 input record to output
@@ -177,6 +179,10 @@ public interface ObjectProcessor<T> {
      *        at least {@code in.size()}
      */
     void processAll(ObjectChunk<? extends T, ?> in, List<WritableChunk<?>> out);
+
+    default void processStuff(T in, Supplier<List<WritableChunk<?>>> out, Consumer<List<WritableChunk<?>>> consumer) {
+
+    }
 
     /**
      * An abstraction over {@link ObjectProcessor} that provides the same logical object processor for different input

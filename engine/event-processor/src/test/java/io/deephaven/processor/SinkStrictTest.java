@@ -22,18 +22,23 @@ public class SinkStrictTest {
 
     private Sink sink;
     private Coordinator coordinator;
-    private Stream stream;
+    private Stream s1;
     private IntAppender a0;
     private IntAppender a1;
+
+    private Stream s2;
+    private IntAppender b0;
+    private IntAppender b1;
+
 
     @BeforeEach
     void setUp() {
         sink = Sinks.strict(Sinks.logging(SinkStrictTest.class.getSimpleName(), LogLevel.INFO,
                 List.of(List.of(Type.intType(), Type.intType()))));
         coordinator = sink.coordinator();
-        stream = sink.streams().get(0);
-        a0 = IntAppender.get(stream.appenders().get(0));
-        a1 = IntAppender.get(stream.appenders().get(1));
+        s1 = sink.streams().get(0);
+        a0 = IntAppender.get(s1.appenders().get(0));
+        a1 = IntAppender.get(s1.appenders().get(1));
     }
 
     @Test
@@ -90,7 +95,7 @@ public class SinkStrictTest {
     @Test
     void notWritingEnsureRemainingCapacity() {
         try {
-            stream.ensureRemainingCapacity(1L);
+            s1.ensureRemainingCapacity(1L);
             failBecauseExceptionWasNotThrown(IllegalStateException.class);
         } catch (IllegalStateException e) {
             assertThat(e).hasMessageContaining("writing");
@@ -100,7 +105,7 @@ public class SinkStrictTest {
     @Test
     void notWritingAdvanceAll() {
         try {
-            stream.advanceAll();
+            s1.advanceAll();
             failBecauseExceptionWasNotThrown(IllegalStateException.class);
         } catch (IllegalStateException e) {
             assertThat(e).hasMessageContaining("writing");
@@ -110,7 +115,7 @@ public class SinkStrictTest {
     @Test
     void setWithoutAdvance() {
         coordinator.writing();
-        stream.ensureRemainingCapacity(1);
+        s1.ensureRemainingCapacity(1);
         a0.set(42);
         a1.set(43);
         try {
@@ -124,11 +129,11 @@ public class SinkStrictTest {
     @Test
     void missingSet() {
         coordinator.writing();
-        stream.ensureRemainingCapacity(1);
+        s1.ensureRemainingCapacity(1);
         a0.set(42);
         // todo: should we allow the absence of setting meaning an implicit null?
         try {
-            stream.advanceAll();
+            s1.advanceAll();
             failBecauseExceptionWasNotThrown(IllegalStateException.class);
         } catch (IllegalStateException e) {
             assertThat(e).hasMessageContaining("Must ensure all appenders have been set before advanceAll");
@@ -138,10 +143,10 @@ public class SinkStrictTest {
     @Test
     void noSet() {
         coordinator.writing();
-        stream.ensureRemainingCapacity(1);
+        s1.ensureRemainingCapacity(1);
         // todo: should we allow the absence of setting meaning an implicit null?
         try {
-            stream.advanceAll();
+            s1.advanceAll();
             failBecauseExceptionWasNotThrown(IllegalStateException.class);
         } catch (IllegalStateException e) {
             assertThat(e).hasMessageContaining("Must ensure all appenders have been set before advanceAll");
@@ -151,13 +156,28 @@ public class SinkStrictTest {
     @Test
     void correctUsage() {
         coordinator.writing();
-        stream.ensureRemainingCapacity(2);
+        // stream.ensureRemainingCapacity(2);
+
         a0.set(1);
         a1.set(2);
-        stream.advanceAll();
+        s1.advanceAll();
+
         a0.set(3);
         a1.set(4);
-        stream.advanceAll();
+        s1.advanceAll();
+
+        for (int i = 0; i < 4096; ++i) {
+            b0.set(42);
+            b1.set(43);
+            s2.advanceAll();
+        }
+
+        // IntAppender.append(a0, 1);
+        // IntAppender.append(a0, 3);
+        //
+        // IntAppender.append(a1, 2);
+        // IntAppender.append(a1, 4);
+
         coordinator.sync();
     }
 }

@@ -1,23 +1,28 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.processor;
+package io.deephaven.stream;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import io.deephaven.chunk.WritableChunk;
+import io.deephaven.chunk.WritableDoubleChunk;
+import io.deephaven.chunk.WritableIntChunk;
+import io.deephaven.chunk.WritableLongChunk;
+import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.processor.factory.EventProcessorFactory;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
-import io.deephaven.processor.sink.appender.DoubleAppender;
-import io.deephaven.processor.sink.appender.InstantAppender;
-import io.deephaven.processor.sink.appender.IntAppender;
-import io.deephaven.processor.sink.appender.LongAppender;
-import io.deephaven.processor.sink.appender.ObjectAppender;
 import io.deephaven.processor.factory.EventProcessorSpec;
 import io.deephaven.processor.factory.EventProcessorStreamSpec;
 import io.deephaven.processor.sink.Coordinator;
 import io.deephaven.processor.sink.Sink;
 import io.deephaven.processor.sink.Stream;
+import io.deephaven.processor.sink.appender.DoubleAppender;
+import io.deephaven.processor.sink.appender.InstantAppender;
+import io.deephaven.processor.sink.appender.IntAppender;
+import io.deephaven.processor.sink.appender.LongAppender;
+import io.deephaven.processor.sink.appender.ObjectAppender;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
 
@@ -26,6 +31,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * { "timestamp": "...", "id": "...", "table1": { "colA": "Hi", "colB": 42 }, "table2": { "colC": [ "Hi", ... ], "colD":
  * [ 42, ... ] }, "table3": [ { "colE": "Hi", "colF": 42 }, ... ] }
  */
-final class ComplexExample {
+final class ComplexExample2 {
     private static EventProcessorSpec eventSpec(boolean usesCoordinator) {
         return EventProcessorSpec.builder()
                 .usesCoordinator(usesCoordinator)
@@ -334,12 +340,23 @@ final class ComplexExample {
         }
     }
 
+    interface SomeSupplier {
+        List<WritableChunk<?>> swap(List<WritableChunk<?>> done, int pos);
+    }
+
     private static final class Table3 {
         private final Stream stream;
         private final DoubleAppender timestamp;
         private final LongAppender id;
         private final ObjectAppender<String> colE;
         private final IntAppender colF;
+
+        private final SomeSupplier someSupplier;
+        private int pos;
+        private WritableDoubleChunk<?> timestampChunk;
+        private WritableLongChunk<?> idChunk;
+        private WritableObjectChunk<String, ?> colEChunk;
+        private WritableIntChunk<?> colFChunk;
 
         private Table3(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
@@ -351,6 +368,50 @@ final class ComplexExample {
             id = LongAppender.get(stream.appenders().get(1));
             colE = ObjectAppender.get(stream.appenders().get(2), Type.stringType());
             colF = IntAppender.get(stream.appenders().get(3));
+            someSupplier = null; // todo
+        }
+
+        public void flush() {
+            timestampChunk.setSize(pos);
+            final List<WritableChunk<?>> newChunks =
+                    someSupplier.swap(List.of(timestampChunk, idChunk, colEChunk, colFChunk), pos);
+            pos = 0;
+            timestampChunk = (WritableDoubleChunk<?>) newChunks.get(0);
+            //
+        }
+
+        public void processMany2(Instant timestamp, long id, JsonParser parser) throws IOException {
+            stream.ensureRemainingCapacity(3);
+            startArray(parser);
+            while (parser.nextToken() != JsonToken.END_ARRAY) {
+                {
+                    startObject(parser);
+                    parser.nextToken();
+                }
+                {
+                    fieldName(parser, "colE");
+                    parser.nextToken();
+                    colEChunk.set(pos, stringValue(parser));
+                    parser.nextToken();
+                }
+                {
+                    fieldName(parser, "colF");
+                    parser.nextToken();
+                    colFChunk.set(pos, intValue(parser));
+                    parser.nextToken();
+                }
+                {
+                    endObject(parser);
+                }
+                this.timestampChunk.set(pos, DateTimeUtils.epochNanos(timestamp) / 1_000_000_000.0);
+                this.idChunk.set(pos, id);
+                ++pos;
+
+                if (pos == 1024) {
+                    flush();
+                }
+            }
+            // not advancing past end, callers job
         }
 
         public void processMany(Instant timestamp, long id, JsonParser parser) throws IOException {

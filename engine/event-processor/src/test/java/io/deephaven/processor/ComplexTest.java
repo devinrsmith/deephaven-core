@@ -20,9 +20,6 @@ public class ComplexTest {
     @Test
     void single() throws URISyntaxException, IOException {
         final byte[] data = Files.readAllBytes(Path.of(ComplexTest.class.getResource("/complex-1.json").toURI()));
-        // * { "timestamp": "...", "id": "...", "table1": { "colA": "Hi", "colB": 42 }, "table2": { "colC": [ "Hi", ...
-        // ], "colD":
-        // * [ 42, ... ] }, "table3": [ { "colE": "Hi", "colF": 42 }, ... ] }
         final EventProcessorFactory<byte[]> factory = ComplexExample.single();
         final Sink sink =
                 Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));
@@ -36,9 +33,6 @@ public class ComplexTest {
     @Test
     void lines() throws URISyntaxException, IOException {
         final File data = Path.of(ComplexTest.class.getResource("/complex-1.lines.json").toURI()).toFile();
-        // * { "timestamp": "...", "id": "...", "table1": { "colA": "Hi", "colB": 42 }, "table2": { "colC": [ "Hi", ...
-        // ], "colD":
-        // * [ 42, ... ] }, "table3": [ { "colE": "Hi", "colF": 42 }, ... ] }
         final EventProcessorFactory<File> factory = ComplexExample.jsonLines();
         final Sink sink =
                 Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));

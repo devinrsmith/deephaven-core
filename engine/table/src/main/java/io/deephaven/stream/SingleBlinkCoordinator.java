@@ -55,7 +55,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
 
-final class Chunks implements Stream, Coordinator, StreamPublisher {
+final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublisher {
 
     // private final WritableChunk<?> chunk;
 
@@ -72,7 +72,7 @@ final class Chunks implements Stream, Coordinator, StreamPublisher {
 
     private int pos;
 
-    Chunks(List<Type<?>> types) {
+    SingleBlinkCoordinator(List<Type<?>> types) {
         chunkSize = 1024;
         appenders = types.stream().map(this::appender).collect(Collectors.toList());
     }

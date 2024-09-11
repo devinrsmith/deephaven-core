@@ -8,7 +8,7 @@ import io.deephaven.processor.sink.appender.Appender;
 public interface Coordinator {
 
     // todo: more explicit lock? Txn w/ commit / abort?
-
+    // todo: read / write lock?
 
     void writing();
 
@@ -21,7 +21,8 @@ public interface Coordinator {
      */
     void sync();
 
-    default void intermediate() {
+    default void yield() {
+        // commit()
         sync();
         writing();
     }

@@ -86,6 +86,10 @@ dependencies {
     testRuntimeOnly project(':configs')
     testRuntimeOnly project(':test-configs')
     testRuntimeOnly libs.slf4j.simple
+
+
+    implementation platform(libs.jackson.bom)
+    implementation libs.jackson.core
 }
 
 spotless {

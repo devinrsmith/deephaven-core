@@ -48,19 +48,23 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Collectors;
 
-final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublisher {
+public final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublisher {
 
     // private final WritableChunk<?> chunk;
 
     private final int chunkSize;
     private final List<Base> appenders;
+    private final WritableChunk[] space;
+    private final List<WritableChunk<Values>[]> space2;
 
     // don't care about re-entrancy; but maybe fairness?
     // private final Lock lock = new ReentrantLock(true);
@@ -72,13 +76,20 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private int pos;
 
-    SingleBlinkCoordinator(List<Type<?>> types) {
+    public SingleBlinkCoordinator(List<Type<?>> types) {
         chunkSize = 1024;
-        appenders = types.stream().map(this::appender).collect(Collectors.toList());
+        appenders = new ArrayList<>();
+        final int L = types.size();
+        for (int i = 0; i < L; ++i) {
+            appenders.add(appender(types.get(i), i));
+        }
+        space = new WritableChunk[appenders.size()];
+        //noinspection unchecked
+        space2 = List.<WritableChunk<Values>[]>of(space);
     }
 
-    private Base appender(Type<?> type) {
-        return Objects.requireNonNull(type.walk(new BaseV()));
+    private Base appender(Type<?> type, int index) {
+        return Objects.requireNonNull(type.walk(new BaseV(index)));
     }
 
     @Override
@@ -156,18 +167,27 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
         if (size == 0) {
             return;
         }
-        // noinspection unchecked
-        final WritableChunk<Values>[] chunks = appenders.stream()
-                .map(Base::take)
-                .toArray(WritableChunk[]::new);
-        for (WritableChunk<Values> chunk : chunks) {
-            chunk.setSize(size);
+        for (Base appender : appenders) {
+            appender.swap();
         }
+        // noinspection unchecked
+//        final WritableChunk<Values>[] chunks = appenders.stream()
+//                .map(Base::take)
+//                .toArray(WritableChunk[]::new);
+//        for (WritableChunk<Values> chunk : chunks) {
+//            chunk.setSize(size);
+//        }
         pos = 0;
-        consumer.accept(chunks);
+        consumer.accept(space2);
     }
 
     private class BaseV implements Type.Visitor<Base>, PrimitiveType.Visitor<Base>, GenericType.Visitor<Base> {
+        private final int index;
+
+        public BaseV(int index) {
+            this.index = index;
+        }
+
         @Override
         public Base visit(PrimitiveType<?> primitiveType) {
             return primitiveType.walk((PrimitiveType.Visitor<Base>) this);
@@ -186,37 +206,37 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
         @Override
         public Base visit(ByteType byteType) {
-            return new Byte();
+            return new Byte(index);
         }
 
         @Override
         public Base visit(CharType charType) {
-            return new Char();
+            return new Char(index);
         }
 
         @Override
         public Base visit(ShortType shortType) {
-            return new Short();
+            return new Short(index);
         }
 
         @Override
         public Base visit(IntType intType) {
-            return new Int();
+            return new Int(index);
         }
 
         @Override
         public Base visit(LongType longType) {
-            return new Long();
+            return new Long(index);
         }
 
         @Override
         public Base visit(FloatType floatType) {
-            return new Float();
+            return new Float(index);
         }
 
         @Override
         public Base visit(DoubleType doubleType) {
-            return new Double();
+            return new Double(index);
         }
 
         @Override
@@ -226,32 +246,41 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
         @Override
         public Base visit(StringType stringType) {
-            return new Obj<>(stringType);
+            return new Obj<>(stringType, index);
         }
 
         @Override
         public Base visit(InstantType instantType) {
-            return new Inst();
+            return new Inst(index);
         }
 
         @Override
         public Base visit(ArrayType<?, ?> arrayType) {
-            return new Obj<>(arrayType);
+            return new Obj<>(arrayType, index);
         }
 
         @Override
         public Base visit(CustomType<?> customType) {
-            return new Obj<>(customType);
+            return new Obj<>(customType, index);
         }
     }
 
-    private static abstract class Base implements Appender {
+    private abstract class Base implements Appender {
 
-        Base() {
+        final int index;
+
+        Base(int index) {
+            this.index = index;
             take();
         }
 
         abstract WritableChunk<Values> take();
+
+        void swap() {
+            final WritableChunk<Values> chunk = take();
+            chunk.setSize(pos);
+            space[index] = chunk;
+        }
 
         public final void advance() {
             throw new UnsupportedOperationException();
@@ -260,6 +289,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private final class Char extends Base implements CharAppender {
         private WritableCharChunk<Values> chunk;
+
+        public Char(int index) {
+            super(index);
+        }
 
         @Override
         WritableCharChunk<Values> take() {
@@ -284,6 +317,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
     private final class Byte extends Base implements ByteAppender {
         private WritableByteChunk<Values> chunk;
 
+        public Byte(int index) {
+            super(index);
+        }
+
         @Override
         WritableByteChunk<Values> take() {
             try {
@@ -306,6 +343,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private final class Short extends Base implements ShortAppender {
         private WritableShortChunk<Values> chunk;
+
+        public Short(int index) {
+            super(index);
+        }
 
         @Override
         WritableShortChunk<Values> take() {
@@ -330,6 +371,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
     private final class Int extends Base implements IntAppender {
         private WritableIntChunk<Values> chunk;
 
+        public Int(int index) {
+            super(index);
+        }
+
         @Override
         WritableIntChunk<Values> take() {
             try {
@@ -352,6 +397,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private final class Long extends Base implements LongAppender {
         private WritableLongChunk<Values> chunk;
+
+        public Long(int index) {
+            super(index);
+        }
 
         @Override
         WritableLongChunk<Values> take() {
@@ -376,6 +425,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
     private final class Float extends Base implements FloatAppender {
         private WritableFloatChunk<Values> chunk;
 
+        public Float(int index) {
+            super(index);
+        }
+
         @Override
         WritableFloatChunk<Values> take() {
             try {
@@ -398,6 +451,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private final class Double extends Base implements DoubleAppender {
         private WritableDoubleChunk<Values> chunk;
+
+        public Double(int index) {
+            super(index);
+        }
 
         @Override
         WritableDoubleChunk<Values> take() {
@@ -423,8 +480,8 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
         private final GenericType<T> type;
         private WritableObjectChunk<T, Values> chunk;
 
-        Obj(GenericType<T> type) {
-            super();
+        Obj(GenericType<T> type, int index) {
+            super(index);
             this.type = Objects.requireNonNull(type);
         }
 
@@ -455,6 +512,10 @@ final class SingleBlinkCoordinator implements Stream, Coordinator, StreamPublish
 
     private final class Inst extends Base implements InstantAppender {
         private WritableLongChunk<Values> chunk;
+
+        public Inst(int index) {
+            super(index);
+        }
 
         @Override
         WritableLongChunk<Values> take() {

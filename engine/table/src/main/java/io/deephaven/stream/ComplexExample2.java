@@ -377,6 +377,7 @@ final class ComplexExample2 {
                     someSupplier.swap(List.of(timestampChunk, idChunk, colEChunk, colFChunk), pos);
             pos = 0;
             timestampChunk = (WritableDoubleChunk<?>) newChunks.get(0);
+
             //
         }
 

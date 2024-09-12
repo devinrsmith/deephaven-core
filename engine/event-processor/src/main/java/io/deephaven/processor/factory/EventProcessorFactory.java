@@ -5,6 +5,7 @@ package io.deephaven.processor.factory;
 
 import io.deephaven.processor.sink.Coordinator;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Stream;
 
 public interface EventProcessorFactory<T> {
 
@@ -39,5 +40,17 @@ public interface EventProcessorFactory<T> {
         // todo: allow exceptions?
         @Override
         void close();
+    }
+
+    interface EventProcessorSingle<T> extends EventProcessor<T> {
+        Stream stream();
+
+        void setToSink(T event);
+
+        @Override
+        default void writeToSink(T event) {
+            setToSink(event);
+            stream().advanceAll();
+        }
     }
 }

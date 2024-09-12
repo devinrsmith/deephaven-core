@@ -65,7 +65,6 @@ public class NestedChunkImpl implements EventProcessor<JsonParser>, StreamPublis
             }
         };
         final NestedChunkImpl nested = new NestedChunkImpl(coord);
-
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, nested,
                 ExecutionContext.getContext().getUpdateGraph(), "test");
         final Thread thread = new Thread(() -> {

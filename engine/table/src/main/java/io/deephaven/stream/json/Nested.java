@@ -14,6 +14,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.sink.Coordinator;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sinks;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.IntAppender;
 import io.deephaven.processor.sink.appender.LongAppender;
@@ -31,7 +32,7 @@ import static io.deephaven.stream.json.JsonEventStuff.startArray;
 
 public class Nested implements EventProcessor<JsonParser> {
 
-    public static Table read() {
+    public static Table read(boolean strict) {
         final SingleBlinkCoordinator coord =
                 new SingleBlinkCoordinator(List.of(Type.longType(), Type.longType(), Type.intType()));
         final TableDefinition tableDefinition = TableDefinition.of(
@@ -40,13 +41,19 @@ public class Nested implements EventProcessor<JsonParser> {
                 ColumnDefinition.ofInt("Value"));
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, coord,
                 ExecutionContext.getContext().getUpdateGraph(), "test");
+
+        Sink s = Sink.builder().coordinator(coord).addStreams(coord).build();
+        if (strict) {
+            s = Sinks.strict(s);
+        }
+        final Sink sink = s;
+        final Nested nested = new Nested(sink);
         final Thread thread = new Thread(() -> {
-            final Nested nested = new Nested(Sink.builder().coordinator(coord).addStreams(coord).build());
             try (final JsonParser parser = new JsonFactory().createParser(new File("/tmp/test.json"))) {
                 parser.nextToken();
-                coord.writing();
+                sink.coordinator().writing();
                 nested.writeToSink(parser);
-                coord.sync();
+                sink.coordinator().sync();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

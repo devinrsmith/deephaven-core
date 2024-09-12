@@ -3,6 +3,9 @@
 //
 package io.deephaven.processor.factory;
 
+import io.deephaven.processor.sink.Sink;
+
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class EventProcessorFactories {
@@ -21,5 +24,4 @@ public final class EventProcessorFactories {
             boolean useCoordinator) {
         return Concat.of(factory1, factory2, useCoordinator);
     }
-
 }

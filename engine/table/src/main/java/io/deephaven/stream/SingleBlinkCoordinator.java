@@ -74,6 +74,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
     // todo: do we need fairness? want to make sure flush() gets priority
     private StreamConsumer consumer;
 
+    private int offset;
     private int pos;
 
     public SingleBlinkCoordinator(List<Type<?>> types) {
@@ -159,7 +160,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
     }
 
     private int size() {
-        return pos; // todo wrt offset?
+        return pos - offset;
     }
 
     private void flushImpl() {
@@ -177,6 +178,8 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
 //        for (WritableChunk<Values> chunk : chunks) {
 //            chunk.setSize(size);
 //        }
+
+        offset = 0; // todo verify
         pos = 0;
         consumer.accept(space2);
     }
@@ -278,7 +281,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
 
         void swap() {
             final WritableChunk<Values> chunk = take();
-            chunk.setSize(pos);
+            chunk.setSize(size());
             space[index] = chunk;
         }
 
@@ -370,6 +373,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
 
     private final class Int extends Base implements IntAppender {
         private WritableIntChunk<Values> chunk;
+        private int[] array;
 
         public Int(int index) {
             super(index);
@@ -381,22 +385,26 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
                 return chunk;
             } finally {
                 chunk = WritableIntChunk.makeWritableChunk(chunkSize);
+                array = chunk.array();
             }
         }
 
         @Override
         public void setNull() {
-            chunk.set(pos, QueryConstants.NULL_INT);
+            // chunk.set(pos, QueryConstants.NULL_INT);
+            array[pos] = QueryConstants.NULL_INT;
         }
 
         @Override
         public void set(int value) {
-            chunk.set(pos, value);
+            // chunk.set(pos, value);
+            array[pos] = value;
         }
     }
 
     private final class Long extends Base implements LongAppender {
         private WritableLongChunk<Values> chunk;
+        private long[] array;
 
         public Long(int index) {
             super(index);
@@ -408,17 +416,20 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
                 return chunk;
             } finally {
                 chunk = WritableLongChunk.makeWritableChunk(chunkSize);
+                array = chunk.array();
             }
         }
 
         @Override
         public void setNull() {
-            chunk.set(pos, QueryConstants.NULL_LONG);
+            // chunk.set(pos, QueryConstants.NULL_LONG);
+            array[pos] = QueryConstants.NULL_LONG;
         }
 
         @Override
         public void set(long value) {
-            chunk.set(pos, value);
+            // chunk.set(pos, value);
+            array[pos] = value;
         }
     }
 

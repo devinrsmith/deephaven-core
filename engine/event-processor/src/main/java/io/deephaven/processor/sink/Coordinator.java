@@ -5,6 +5,8 @@ package io.deephaven.processor.sink;
 
 import io.deephaven.processor.sink.appender.Appender;
 
+import java.util.concurrent.locks.Lock;
+
 public interface Coordinator {
 
     // todo: more explicit lock? Txn w/ commit / abort?
@@ -31,4 +33,22 @@ public interface Coordinator {
     // "syncAll", and add Stream#sync?
 
     // void error(Throwable t);
+
+    static void test(Lock lock) {
+        lock.lock();
+        try {
+            doStuff(lock);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    static void doStuff(Lock lock) {
+
+    }
+
+    static void yield(Lock lock) {
+        lock.unlock();
+        lock.lock();
+    }
 }

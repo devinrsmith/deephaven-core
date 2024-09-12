@@ -15,9 +15,13 @@ import java.util.OptionalLong;
 @Immutable
 @BuildableStyle
 public abstract class EventProcessorStreamSpec {
+
     public static Builder builder() {
         return ImmutableEventProcessorStreamSpec.builder();
     }
+
+
+    // todo: give ability to mark as 1 to 1
 
     public abstract List<Type<?>> outputTypes();
 

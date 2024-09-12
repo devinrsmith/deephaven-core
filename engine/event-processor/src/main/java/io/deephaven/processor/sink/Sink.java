@@ -27,6 +27,13 @@ public abstract class Sink {
      */
     public abstract List<Stream> streams();
 
+    public final Stream singleStream() {
+        if (streams().size() != 1) {
+            throw new IllegalStateException();
+        }
+        return streams().get(0);
+    }
+
     // todo: can this sink be used _outside_ of an EventProcessor / io.deephaven.processor.EventProcessorFactory.create;
     // I think the idea is _yes_, in which case coordinator is mandatory?
 

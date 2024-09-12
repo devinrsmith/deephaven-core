@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface Stream {
 
+    // the chunk equivalent to this is sort of StreamConsumer
+
     void ensureRemainingCapacity(long size);
 
     void advanceAll(); // can only use if row-oriented?

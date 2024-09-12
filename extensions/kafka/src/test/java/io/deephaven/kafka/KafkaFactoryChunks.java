@@ -212,14 +212,14 @@ final class KafkaFactoryChunks {
 
         public Headers(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            key = new Key(stream);
+            key = null;// new Key(stream);
             headerKey = ObjectAppender.get(stream.appenders().get(3), Type.stringType());
             headerValue = ObjectAppender.get(stream.appenders().get(4), Type.byteType().arrayType());
         }
 
         public void write(ConsumerRecord<?, ?> record) {
             for (Header header : record.headers()) {
-                key.set(record);
+                // key.set(record);
                 headerKey.set(header.key());
                 headerValue.set(header.value());
                 stream.advanceAll();

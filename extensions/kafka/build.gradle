@@ -47,4 +47,6 @@ dependencies {
     testRuntimeOnly libs.slf4j.simple
 
     testImplementation libs.assertj
+
+    testImplementation project(':engine-event-processor')
 }

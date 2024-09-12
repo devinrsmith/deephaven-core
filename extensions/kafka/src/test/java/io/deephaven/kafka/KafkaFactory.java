@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.processor;
+package io.deephaven.kafka;
 
 import io.deephaven.processor.factory.EventProcessorFactories;
 import io.deephaven.processor.factory.EventProcessorFactory;
@@ -14,6 +14,8 @@ import io.deephaven.processor.sink.appender.InstantAppender;
 import io.deephaven.processor.sink.appender.IntAppender;
 import io.deephaven.processor.sink.appender.LongAppender;
 import io.deephaven.processor.sink.appender.ObjectAppender;
+import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.PrimitiveType;
 import io.deephaven.qst.type.Type;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
@@ -35,9 +37,36 @@ final class KafkaFactory {
         return HeadersFactory.HEADERS;
     }
 
+    public static <K> EventProcessorFactory<ConsumerRecord<K, ?>> key(GenericType<K> keyType) {
+        final EventProcessorSpec spec = EventProcessorSpec.builder()
+                .usesCoordinator(false)
+                .addStreams(singletonSpec(keyType))
+                .build();
+        return EventProcessorFactories.map(ConsumerRecord::key, EventProcessorFactories.singleton(keyType, spec));
+    }
+
+    public static <V> EventProcessorFactory<ConsumerRecord<?, V>> value(GenericType<V> valueType) {
+        final EventProcessorSpec spec = EventProcessorSpec.builder()
+                .usesCoordinator(false)
+                .addStreams(singletonSpec(valueType))
+                .build();
+        return EventProcessorFactories.map(ConsumerRecord::value, EventProcessorFactories.singleton(valueType, spec));
+    }
+
+    private static <T> EventProcessorStreamSpec singletonSpec(GenericType<T> keyType) {
+        return EventProcessorStreamSpec.builder()
+                .isRowOriented(false)
+                .expectedSize(1)
+                .addOutputTypes(keyType)
+                .build();
+    }
+
+
+
     public static EventProcessorFactory<ConsumerRecord<?, ?>> all() {
         return EventProcessorFactories.concat(basics(), headers(), false);
     }
+
 
 
     private enum BasicsFactory implements EventProcessorFactory<ConsumerRecord<?, ?>> {
@@ -107,12 +136,14 @@ final class KafkaFactory {
     }
 
     private static final class Basics {
-        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(), java.util.stream.Stream.of(
-                Type.instantType(),
-                Type.ofCustom(TimestampType.class),
-                Type.intType(),
-                Type.intType(),
-                Type.intType())).collect(Collectors.toUnmodifiableList());
+        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(),
+                java.util.stream.Stream.of(
+                        Type.instantType(),
+                        Type.ofCustom(TimestampType.class),
+                        Type.intType(),
+                        Type.intType(),
+                        Type.intType()))
+                .collect(Collectors.toUnmodifiableList());
 
         private final Stream stream;
         private final Key key;
@@ -121,7 +152,6 @@ final class KafkaFactory {
         private final IntAppender serializedKeySize;
         private final IntAppender serializedValueSize;
         private final IntAppender leaderEpoch;
-        // todo: raw key, raw value?
 
         public Basics(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
@@ -149,9 +179,11 @@ final class KafkaFactory {
     }
 
     private static final class Headers {
-        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(), java.util.stream.Stream.of(
-                Type.stringType(),
-                Type.byteType().arrayType())).collect(Collectors.toUnmodifiableList());
+        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(),
+                java.util.stream.Stream.of(
+                        Type.stringType(),
+                        Type.byteType().arrayType()))
+                .collect(Collectors.toUnmodifiableList());
 
         private final Stream stream;
         private final Key key;
@@ -172,6 +204,39 @@ final class KafkaFactory {
                 headerValue.set(header.value());
                 stream.advanceAll();
             }
+        }
+    }
+
+    private static final class Keyz<K> implements Type.Visitor<EventProcessorFactory<K>> {
+        public static <T> EventProcessorFactory<T> of(Type<T> keyType) {
+            return null;
+        }
+
+        public static EventProcessorSpec spec(Type<?> keyType) {
+            return EventProcessorSpec.builder()
+                    .usesCoordinator(false)
+                    .addStreams(EventProcessorStreamSpec.builder()
+                            .isRowOriented(true)
+                            .expectedSize(1)
+                            .addOutputTypes(keyType)
+                            .build())
+                    .build();
+        }
+
+        @Override
+        public EventProcessorFactory<K> visit(PrimitiveType<?> primitiveType) {
+            return null;
+        }
+
+        @Override
+        public EventProcessorFactory<K> visit(GenericType<?> genericType) {
+            // noinspection unchecked
+            final GenericType<K> t = (GenericType<K>) genericType;
+            return EventProcessorFactories.of(spec(genericType), sink -> {
+                final Stream stream = sink.singleStream();
+                final ObjectAppender<K> appender = ObjectAppender.get(stream.appenders().get(0), t);
+                return EventProcessors.singleton(appender);
+            });
         }
     }
 

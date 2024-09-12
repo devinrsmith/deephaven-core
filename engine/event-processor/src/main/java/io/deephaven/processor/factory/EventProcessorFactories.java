@@ -3,9 +3,13 @@
 //
 package io.deephaven.processor.factory;
 
+import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Stream;
+import io.deephaven.processor.sink.appender.ObjectAppender;
+import io.deephaven.qst.type.BoxedType;
+import io.deephaven.qst.type.GenericType;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class EventProcessorFactories {
@@ -23,5 +27,40 @@ public final class EventProcessorFactories {
             EventProcessorFactory<? super T> factory2,
             boolean useCoordinator) {
         return Concat.of(factory1, factory2, useCoordinator);
+    }
+
+
+
+    public static <T> EventProcessorFactory<T> of(EventProcessorSpec spec, Function<Sink, EventProcessor<T>> f) {
+        return new EventProcessorFactory<T>() {
+            @Override
+            public EventProcessorSpec spec() {
+                return spec;
+            }
+
+            @Override
+            public EventProcessor<T> create(Sink sink) {
+                return f.apply(sink);
+            }
+        };
+    }
+
+    public static <T> EventProcessorFactory<T> singleton(GenericType<T> type, EventProcessorSpec spec) {
+        if (type instanceof BoxedType) {
+            throw new UnsupportedOperationException(); // todo
+        }
+        return of(spec, sink -> singleton(type, sink));
+    }
+
+    private static <X> EventProcessor<X> singleton(GenericType<X> type, Sink sink) {
+        if (type instanceof BoxedType) {
+            throw new UnsupportedOperationException(); // todo
+        }
+        final Stream stream = sink.singleStream();
+        if (stream.appenders().size() != 1) {
+            throw new IllegalStateException();
+        }
+        final ObjectAppender<X> appender = ObjectAppender.get(stream.appenders().get(0), type);
+        return EventProcessors.singleton(appender);
     }
 }

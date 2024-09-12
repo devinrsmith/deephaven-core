@@ -85,7 +85,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
             appenders.add(appender(types.get(i), i));
         }
         space = new WritableChunk[appenders.size()];
-        //noinspection unchecked
+        // noinspection unchecked
         space2 = List.<WritableChunk<Values>[]>of(space);
     }
 
@@ -172,12 +172,12 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
             appender.swap();
         }
         // noinspection unchecked
-//        final WritableChunk<Values>[] chunks = appenders.stream()
-//                .map(Base::take)
-//                .toArray(WritableChunk[]::new);
-//        for (WritableChunk<Values> chunk : chunks) {
-//            chunk.setSize(size);
-//        }
+        // final WritableChunk<Values>[] chunks = appenders.stream()
+        // .map(Base::take)
+        // .toArray(WritableChunk[]::new);
+        // for (WritableChunk<Values> chunk : chunks) {
+        // chunk.setSize(size);
+        // }
 
         offset = 0; // todo verify
         pos = 0;

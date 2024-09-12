@@ -16,6 +16,7 @@ import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.factory.EventProcessorSpec;
 import io.deephaven.processor.factory.EventProcessorStreamSpec;
 import io.deephaven.processor.sink.Coordinator;
+import io.deephaven.processor.sink.Key;
 import io.deephaven.processor.sink.Sink;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.DoubleAppender;
@@ -41,6 +42,9 @@ import java.util.concurrent.TimeUnit;
  * [ 42, ... ] }, "table3": [ { "colE": "Hi", "colF": 42 }, ... ] }
  */
 final class ComplexExample2 {
+
+    private static final Key<Instant> 
+
     private static EventProcessorSpec eventSpec(boolean usesCoordinator) {
         return EventProcessorSpec.builder()
                 .usesCoordinator(usesCoordinator)

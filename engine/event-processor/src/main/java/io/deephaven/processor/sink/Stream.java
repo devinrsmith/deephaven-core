@@ -3,7 +3,6 @@
 //
 package io.deephaven.processor.sink;
 
-import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
 import io.deephaven.processor.sink.appender.Appender;
 
 import java.util.List;

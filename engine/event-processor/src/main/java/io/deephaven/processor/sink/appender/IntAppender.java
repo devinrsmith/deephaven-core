@@ -3,7 +3,7 @@
 //
 package io.deephaven.processor.sink.appender;
 
-import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
+import io.deephaven.processor.sink.Key;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;

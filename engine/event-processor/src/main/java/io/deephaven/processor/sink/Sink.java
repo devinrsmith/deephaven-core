@@ -4,8 +4,6 @@
 package io.deephaven.processor.sink;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
-import io.deephaven.processor.sink.appender.Appender;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;

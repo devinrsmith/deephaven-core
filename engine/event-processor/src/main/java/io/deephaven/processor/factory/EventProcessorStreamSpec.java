@@ -4,11 +4,11 @@
 package io.deephaven.processor.factory;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.processor.sink.Key;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
@@ -19,25 +19,6 @@ public abstract class EventProcessorStreamSpec {
 
     public static Builder builder() {
         return ImmutableEventProcessorStreamSpec.builder();
-    }
-
-    public static final class Key<T> {
-        private final Type<T> type;
-        private final String name;
-
-        public Key(String debugName, Type<T> type) {
-            this.type = Objects.requireNonNull(type);
-            this.name = Objects.requireNonNull(debugName);
-        }
-
-        public Type<T> type() {
-            return type;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 
 

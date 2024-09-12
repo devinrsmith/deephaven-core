@@ -8,7 +8,7 @@ import io.deephaven.processor.factory.EventProcessorFactory;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.factory.EventProcessorSpec;
 import io.deephaven.processor.factory.EventProcessorStreamSpec;
-import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
+import io.deephaven.processor.sink.Key;
 import io.deephaven.processor.factory.EventProcessors;
 import io.deephaven.processor.sink.Sink;
 import io.deephaven.processor.sink.Stream;
@@ -34,29 +34,29 @@ final class KafkaFactory {
 
     // -------------
 
-    public static final Key<String> TOPIC = new Key<>("Topic", Type.stringType());
+    public static final Key<String> TOPIC = Key.of("Topic", Type.stringType());
 
-    public static final Key<Integer> PARTITION = new Key<>("Partition", Type.intType());
+    public static final Key<Integer> PARTITION = Key.of("Partition", Type.intType());
 
-    public static final Key<Long> OFFSET = new Key<>("Offset", Type.longType());
-
-    // -------------
-
-    public static final Key<Instant> TIMESTAMP = new Key<>("Timestamp", Type.instantType());
-
-    public static final Key<TimestampType> TIMESTAMP_TYPE = new Key<>("TimestampType", Type.ofCustom(TimestampType.class));
-
-    public static final Key<Integer> SERIALIZED_KEY_SIZE = new Key<>("SerializedKeySize", Type.intType());
-
-    public static final Key<Integer> SERIALIZED_VALUE_SIZE = new Key<>("SerializedValueSize", Type.intType());
-
-    public static final Key<Integer> LEADER_EPOCH = new Key<>("LeaderEpoch", Type.intType());
+    public static final Key<Long> OFFSET = Key.of("Offset", Type.longType());
 
     // -------------
 
-    public static final Key<String> HEADER_KEY = new Key<>("HeaderKey", Type.stringType());
+    public static final Key<Instant> TIMESTAMP = Key.of("Timestamp", Type.instantType());
 
-    public static final Key<byte[]> HEADER_VALUE = new Key<>("HeaderValue", Type.byteType().arrayType());
+    public static final Key<TimestampType> TIMESTAMP_TYPE = Key.of("TimestampType", Type.ofCustom(TimestampType.class));
+
+    public static final Key<Integer> SERIALIZED_KEY_SIZE = Key.of("SerializedKeySize", Type.intType());
+
+    public static final Key<Integer> SERIALIZED_VALUE_SIZE = Key.of("SerializedValueSize", Type.intType());
+
+    public static final Key<Integer> LEADER_EPOCH = Key.of("LeaderEpoch", Type.intType());
+
+    // -------------
+
+    public static final Key<String> HEADER_KEY = Key.of("HeaderKey", Type.stringType());
+
+    public static final Key<byte[]> HEADER_VALUE = Key.of("HeaderValue", Type.byteType().arrayType());
 
     // -------------
 

@@ -3,6 +3,8 @@
 //
 package io.deephaven.processor.sink.appender;
 
+import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
+import io.deephaven.processor.sink.Stream;
 import io.deephaven.qst.type.GenericType;
 
 public interface ObjectAppender<T> extends Appender {
@@ -16,6 +18,14 @@ public interface ObjectAppender<T> extends Appender {
         }
         // noinspection unchecked
         return (ObjectAppender<X>) objAppender;
+    }
+
+    static <X> ObjectAppender<X> get(Stream stream, Key<X> key) {
+        return get(Stream.get(stream, key), (GenericType<X>) key.type());
+    }
+
+    static <X> ObjectAppender<X> getIfPresent(Stream stream, Key<X> key) {
+        return get(Stream.getIfPresent(stream, key), (GenericType<X>) key.type());
     }
 
     static <X> void append(ObjectAppender<? super X> appender, X value) {

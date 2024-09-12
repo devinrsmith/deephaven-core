@@ -4,9 +4,12 @@
 package io.deephaven.processor.sink;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
+import io.deephaven.processor.sink.appender.Appender;
 import org.immutables.value.Value.Immutable;
 
 import java.util.List;
+import java.util.Map;
 
 @Immutable
 @BuildableStyle
@@ -16,6 +19,11 @@ public abstract class Sink {
     }
 
     // todo: should this "echo" EventSpec; I think _no_ b/c it doesn't _have_ to be tied to a EventProcessorFactory
+
+    public abstract class StreamKey {
+
+        public abstract List<Key<?>> keys();
+    }
 
     /**
      * The coordinator.
@@ -33,6 +41,8 @@ public abstract class Sink {
         }
         return streams().get(0);
     }
+
+    public abstract Map<StreamKey, ? extends Stream> streamMap(); // todo: different key type
 
     // todo: can this sink be used _outside_ of an EventProcessor / io.deephaven.processor.EventProcessorFactory.create;
     // I think the idea is _yes_, in which case coordinator is mandatory?

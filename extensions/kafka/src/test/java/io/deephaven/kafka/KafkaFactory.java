@@ -5,8 +5,10 @@ package io.deephaven.kafka;
 
 import io.deephaven.processor.factory.EventProcessorFactories;
 import io.deephaven.processor.factory.EventProcessorFactory;
+import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.factory.EventProcessorSpec;
 import io.deephaven.processor.factory.EventProcessorStreamSpec;
+import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
 import io.deephaven.processor.factory.EventProcessors;
 import io.deephaven.processor.sink.Sink;
 import io.deephaven.processor.sink.Stream;
@@ -21,12 +23,65 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.record.TimestampType;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final class KafkaFactory {
+
+    // -------------
+
+    public static final Key<String> TOPIC = new Key<>("Topic", Type.stringType());
+
+    public static final Key<Integer> PARTITION = new Key<>("Partition", Type.intType());
+
+    public static final Key<Long> OFFSET = new Key<>("Offset", Type.longType());
+
+    // -------------
+
+    public static final Key<Instant> TIMESTAMP = new Key<>("Timestamp", Type.instantType());
+
+    public static final Key<TimestampType> TIMESTAMP_TYPE = new Key<>("TimestampType", Type.ofCustom(TimestampType.class));
+
+    public static final Key<Integer> SERIALIZED_KEY_SIZE = new Key<>("SerializedKeySize", Type.intType());
+
+    public static final Key<Integer> SERIALIZED_VALUE_SIZE = new Key<>("SerializedValueSize", Type.intType());
+
+    public static final Key<Integer> LEADER_EPOCH = new Key<>("LeaderEpoch", Type.intType());
+
+    // -------------
+
+    public static final Key<String> HEADER_KEY = new Key<>("HeaderKey", Type.stringType());
+
+    public static final Key<byte[]> HEADER_VALUE = new Key<>("HeaderValue", Type.byteType().arrayType());
+
+    // -------------
+
+
+    public static EventProcessorStreamSpec basics(Key<?>... keys) {
+        return EventProcessorStreamSpec.builder()
+                .addKeys(keys)
+                .isRowOriented(true)
+                .expectedSize(1)
+                .build();
+    }
+
+    public static EventProcessorSpec spec(Key<?>... keys) {
+        return null;
+    }
+
+    public static EventProcessorFactory<ConsumerRecord<?, ?>> factory(Key<?>... keys) {
+        return EventProcessorFactories.of(spec(keys), new Function<Sink, EventProcessor<ConsumerRecord<?, ?>>>() {
+            @Override
+            public EventProcessor<ConsumerRecord<?, ?>> apply(Sink sink) {
+                return null;
+            }
+        });
+    }
+
 
     public static EventProcessorFactory<ConsumerRecord<?, ?>> basics() {
         // todo: give the ability to append onto a singleStream(), must specify it is exactly 1 output
@@ -57,7 +112,7 @@ final class KafkaFactory {
         return EventProcessorStreamSpec.builder()
                 .isRowOriented(false)
                 .expectedSize(1)
-                .addOutputTypes(keyType)
+                .key(keyType)
                 .build();
     }
 
@@ -87,7 +142,7 @@ final class KafkaFactory {
         @Override
         public EventProcessor<ConsumerRecord<?, ?>> create(Sink sink) {
             final Basics basics = new Basics(sink.singleStream());
-            return EventProcessors.noClose(basics::write);
+            return EventProcessors.noClose(basics::set);
         }
     }
 
@@ -112,31 +167,42 @@ final class KafkaFactory {
         }
     }
 
-    private static final class Key {
+    private static final class Keyk {
         private static final List<Type<?>> TYPES = List.of(
                 Type.stringType(),
                 Type.intType(),
                 Type.longType());
 
+        public static Keyk from(Stream stream) {
+            return new Keyk(
+                    ObjectAppender.getIfPresent(stream, TOPIC),
+                    IntAppender.getIfPresent(stream, PARTITION),
+                    LongAppender.get(stream, OFFSET));
+        }
+
         private final ObjectAppender<String> topic;
         private final IntAppender partition;
         private final LongAppender offset;
 
-        Key(Stream stream) {
-            topic = ObjectAppender.get(stream.appenders().get(0), Type.stringType());
-            partition = IntAppender.get(stream.appenders().get(1));
-            offset = LongAppender.get(stream.appenders().get(2));
+        private Keyk(ObjectAppender<String> topic, IntAppender partition, LongAppender offset) {
+            this.topic = topic;
+            this.partition = partition;
+            this.offset = Objects.requireNonNull(offset);
         }
 
         public void set(ConsumerRecord<?, ?> record) {
-            topic.set(record.topic());
-            partition.set(record.partition());
+            if (topic != null) {
+                topic.set(record.topic());
+            }
+            if (partition != null) {
+                partition.set(record.partition());
+            }
             offset.set(record.offset());
         }
     }
 
     private static final class Basics {
-        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(),
+        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Keyk.TYPES.stream(),
                 java.util.stream.Stream.of(
                         Type.instantType(),
                         Type.ofCustom(TimestampType.class),
@@ -145,65 +211,95 @@ final class KafkaFactory {
                         Type.intType()))
                 .collect(Collectors.toUnmodifiableList());
 
-        private final Stream stream;
-        private final Key key;
+
+        public static Basics from(Stream stream) {
+            return new Basics(
+                    Keyk.from(stream),
+                    InstantAppender.getIfPresent(stream, TIMESTAMP),
+                    ObjectAppender.getIfPresent(stream, TIMESTAMP_TYPE),
+                    IntAppender.getIfPresent(stream, SERIALIZED_KEY_SIZE),
+                    IntAppender.getIfPresent(stream, SERIALIZED_VALUE_SIZE),
+                    IntAppender.getIfPresent(stream, LEADER_EPOCH));
+        }
+
+        private final Keyk key;
         private final LongAppender timestampMillis;
         private final ObjectAppender<TimestampType> timestampType;
         private final IntAppender serializedKeySize;
         private final IntAppender serializedValueSize;
         private final IntAppender leaderEpoch;
 
-        public Basics(Stream stream) {
-            this.stream = Objects.requireNonNull(stream);
-            key = new Key(stream);
-            timestampMillis = InstantAppender.get(stream.appenders().get(3)).asLongEpochAppender(TimeUnit.MILLISECONDS);
-            timestampType = ObjectAppender.get(stream.appenders().get(4), Type.ofCustom(TimestampType.class));
-            leaderEpoch = IntAppender.get(stream.appenders().get(5));
-            serializedKeySize = IntAppender.get(stream.appenders().get(6));
-            serializedValueSize = IntAppender.get(stream.appenders().get(7));
+        private Basics(Keyk key, InstantAppender timestamp, ObjectAppender<TimestampType> timestampType, IntAppender serializedKeySize, IntAppender serializedValueSize, IntAppender leaderEpoch) {
+            this.key = key;
+            this.timestampMillis = timestamp == null ? null : timestamp.asLongEpochAppender(TimeUnit.MILLISECONDS);
+            this.timestampType = timestampType;
+            this.serializedKeySize = serializedKeySize;
+            this.serializedValueSize = serializedValueSize;
+            this.leaderEpoch = leaderEpoch;
         }
 
-        public void write(ConsumerRecord<?, ?> record) {
+        public void set(ConsumerRecord<?, ?> record) {
             key.set(record);
-            timestampMillis.set(record.timestamp());
-            timestampType.set(record.timestampType());
-            if (record.leaderEpoch().isPresent()) {
-                leaderEpoch.set(record.leaderEpoch().get());
-            } else {
-                leaderEpoch.setNull();
+            if (timestampMillis != null) {
+                timestampMillis.set(record.timestamp());
             }
-            serializedKeySize.set(record.serializedKeySize());
-            serializedValueSize.set(record.serializedValueSize());
-            stream.advanceAll();
+            if (timestampType != null) {
+                timestampType.set(record.timestampType());
+            }
+            if (serializedKeySize != null) {
+                final int size = record.serializedKeySize();
+                if (size == -1) {
+                    serializedKeySize.setNull();
+                } else {
+                    serializedKeySize.set(size);
+                }
+            }
+            if (serializedValueSize != null) {
+                final int size = record.serializedValueSize();
+                if (size == -1) {
+                    serializedValueSize.setNull();
+                } else {
+                    serializedValueSize.set(size);
+                }
+            }
+            if (leaderEpoch != null) {
+                if (record.leaderEpoch().isPresent()) {
+                    leaderEpoch.set(record.leaderEpoch().get());
+                } else {
+                    leaderEpoch.setNull();
+                }
+            }
         }
     }
 
     private static final class Headers {
-        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Key.TYPES.stream(),
+        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Keyk.TYPES.stream(),
                 java.util.stream.Stream.of(
                         Type.stringType(),
                         Type.byteType().arrayType()))
                 .collect(Collectors.toUnmodifiableList());
 
-        private final Stream stream;
-        private final Key key;
+        public static Headers from(Stream stream) {
+            return new Headers(
+                    Keyk.from(stream),
+                    ObjectAppender.get(stream, HEADER_KEY),
+                    ObjectAppender.get(stream, HEADER_VALUE));
+        }
+
+        private final Keyk key;
         private final ObjectAppender<String> headerKey;
         private final ObjectAppender<byte[]> headerValue;
 
-        public Headers(Stream stream) {
-            this.stream = Objects.requireNonNull(stream);
-            key = new Key(stream);
-            headerKey = ObjectAppender.get(stream.appenders().get(3), Type.stringType());
-            headerValue = ObjectAppender.get(stream.appenders().get(4), Type.byteType().arrayType());
+        private Headers(Keyk key, ObjectAppender<String> headerKey, ObjectAppender<byte[]> headerValue) {
+            this.key = Objects.requireNonNull(key);
+            this.headerKey = Objects.requireNonNull(headerKey);
+            this.headerValue = Objects.requireNonNull(headerValue);
         }
 
-        public void write(ConsumerRecord<?, ?> record) {
-            for (Header header : record.headers()) {
-                key.set(record);
-                headerKey.set(header.key());
-                headerValue.set(header.value());
-                stream.advanceAll();
-            }
+        public void write(ConsumerRecord<?, ?> record, Header header) {
+            key.set(record);
+            headerKey.set(header.key());
+            headerValue.set(header.value());
         }
     }
 

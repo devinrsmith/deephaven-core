@@ -3,6 +3,8 @@
 //
 package io.deephaven.processor.sink.appender;
 
+import io.deephaven.processor.factory.EventProcessorStreamSpec.Key;
+import io.deephaven.processor.sink.Stream;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.Type;
 
@@ -10,6 +12,14 @@ public interface IntAppender extends Appender {
 
     static IntAppender get(Appender appender) {
         return (IntAppender) appender;
+    }
+
+    static IntAppender get(Stream stream, Key<Integer> key) {
+        return get(Stream.get(stream, key));
+    }
+
+    static IntAppender getIfPresent(Stream stream, Key<Integer> key) {
+        return get(Stream.getIfPresent(stream, key));
     }
 
     static void append(IntAppender appender, int value) {

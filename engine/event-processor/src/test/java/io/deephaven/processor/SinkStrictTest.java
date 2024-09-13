@@ -5,7 +5,10 @@ package io.deephaven.processor;
 
 import io.deephaven.io.log.LogLevel;
 import io.deephaven.processor.sink.Coordinator;
+import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.Sinks;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.IntAppender;
@@ -13,12 +16,17 @@ import io.deephaven.qst.type.Type;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 public class SinkStrictTest {
+
+    private static final StreamKey KEY = new StreamKey();
+    private static final Key<Integer> A0 = Key.of("A0", Type.intType());
+    private static final Key<Integer> A1 = Key.of("A1", Type.intType());
+
 
     private Sink sink;
     private Coordinator coordinator;
@@ -26,19 +34,15 @@ public class SinkStrictTest {
     private IntAppender a0;
     private IntAppender a1;
 
-    private Stream s2;
-    private IntAppender b0;
-    private IntAppender b1;
-
 
     @BeforeEach
     void setUp() {
         sink = Sinks.strict(Sinks.logging(SinkStrictTest.class.getSimpleName(), LogLevel.INFO,
-                List.of(List.of(Type.intType(), Type.intType()))));
+                Map.of(KEY, Keys.builder().addKeys(A0, A1).build())));
         coordinator = sink.coordinator();
-        s1 = sink.streams().get(0);
-        a0 = IntAppender.get(s1.appenders().get(0));
-        a1 = IntAppender.get(s1.appenders().get(1));
+        s1 = Sink.get(sink, KEY);
+        a0 = IntAppender.get(s1, A0);
+        a1 = IntAppender.get(s1, A1);
     }
 
     @Test
@@ -156,8 +160,7 @@ public class SinkStrictTest {
     @Test
     void correctUsage() {
         coordinator.writing();
-        // stream.ensureRemainingCapacity(2);
-
+        s1.ensureRemainingCapacity(2);
         a0.set(1);
         a1.set(2);
         s1.advanceAll();
@@ -165,19 +168,6 @@ public class SinkStrictTest {
         a0.set(3);
         a1.set(4);
         s1.advanceAll();
-
-        for (int i = 0; i < 4096; ++i) {
-            b0.set(42);
-            b1.set(43);
-            s2.advanceAll();
-        }
-
-        // IntAppender.append(a0, 1);
-        // IntAppender.append(a0, 3);
-        //
-        // IntAppender.append(a1, 2);
-        // IntAppender.append(a1, 4);
-
         coordinator.sync();
     }
 }

@@ -7,6 +7,8 @@ import io.deephaven.function.ToIntFunction;
 import io.deephaven.function.ToLongFunction;
 import io.deephaven.function.ToObjectFunction;
 import io.deephaven.function.reflect.MethodGetter;
+import io.deephaven.processor.sink.Keys.Builder;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.BooleanAppender;
 import io.deephaven.processor.sink.appender.ByteAppender;
@@ -163,6 +165,14 @@ public class Proxy {
             return types;
         }
 
+        public StreamKey key() {
+            return null;
+        }
+
+        public Keys keys() {
+            return null;
+        }
+
         public Consumer<T> bind(Stream stream) {
             return new Impl(stream);
         }
@@ -174,12 +184,12 @@ public class Proxy {
             public Impl(Stream stream) {
                 this.stream = Objects.requireNonNull(stream);
                 final int L = methods.size();
-                if (stream.appenders().size() != L) {
+                if (stream.appendersMap().values().size() != L) {
                     throw new IllegalArgumentException();
                 }
                 appenders = new ArrayList<>(L);
                 for (int i = 0; i < L; i++) {
-                    final Appender appender = stream.appenders().get(i);
+                    final Appender appender = stream.appendersMap().get(i); // todo this iswrong
                     if (appender.type() != types.get(i)) {
                         throw new IllegalArgumentException();
                     }
@@ -233,6 +243,14 @@ public class Proxy {
             return types;
         }
 
+        public StreamKey key() {
+            return null;
+        }
+
+        public Keys keys() {
+            return null;
+        }
+
         private class SetHandler implements InvocationHandler {
 
             private final Stream stream;
@@ -241,12 +259,12 @@ public class Proxy {
             public SetHandler(Stream stream) {
                 this.stream = Objects.requireNonNull(stream);
                 this.appenders = new HashMap<>();
-                if (stream.appenders().size() != types().size()) {
-                    throw new IllegalArgumentException();
-                }
-                final int L = stream.appenders().size();
+                // if (stream.appenders().size() != types().size()) {
+                // throw new IllegalArgumentException();
+                // }
+                final int L = stream.appendersMap().size();
                 for (int i = 0; i < L; i++) {
-                    final Appender appender = stream.appenders().get(i);
+                    final Appender appender = stream.appendersMap().get(i); // todo this is wrong
                     final Type<?> expectedType = types().get(i);
                     if (!expectedType.equals(appender.type())) {
                         throw new IllegalArgumentException();

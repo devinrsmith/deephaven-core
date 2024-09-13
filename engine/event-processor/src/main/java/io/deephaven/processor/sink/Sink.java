@@ -6,7 +6,6 @@ package io.deephaven.processor.sink;
 import io.deephaven.annotations.BuildableStyle;
 import org.immutables.value.Value.Immutable;
 
-import java.util.List;
 import java.util.Map;
 
 @Immutable
@@ -16,11 +15,22 @@ public abstract class Sink {
         return ImmutableSink.builder();
     }
 
+    public static Stream get(Sink sink, StreamKey key) {
+        final Stream stream = getIfPresent(sink, key);
+        if (stream == null) {
+            throw new IllegalStateException();
+        }
+        return stream;
+    }
+
+    public static Stream getIfPresent(Sink sink, StreamKey key) {
+        return sink.streams().get(key);
+    }
+
     // todo: should this "echo" EventSpec; I think _no_ b/c it doesn't _have_ to be tied to a EventProcessorFactory
 
-    public abstract class StreamKey {
+    public static class StreamKey {
 
-        public abstract List<Key<?>> keys();
     }
 
     /**
@@ -31,16 +41,19 @@ public abstract class Sink {
     /**
      * The streams.
      */
-    public abstract List<Stream> streams();
 
-    public final Stream singleStream() {
-        if (streams().size() != 1) {
-            throw new IllegalStateException();
-        }
-        return streams().get(0);
-    }
+    public abstract Map<StreamKey, Stream> streams();
 
-    public abstract Map<StreamKey, ? extends Stream> streamMap(); // todo: different key type
+    // public abstract List<Stream> streams();
+
+    // public final Stream singleStream() {
+    // if (streams().size() != 1) {
+    // throw new IllegalStateException();
+    // }
+    // return streams().get(0);
+    // }
+
+    // public abstract Map<StreamKey, ? extends Stream> streamMap(); // todo: different key type
 
     // todo: can this sink be used _outside_ of an EventProcessor / io.deephaven.processor.EventProcessorFactory.create;
     // I think the idea is _yes_, in which case coordinator is mandatory?
@@ -52,11 +65,9 @@ public abstract class Sink {
     public interface Builder {
         Builder coordinator(Coordinator coordinator);
 
-        Builder addStreams(Stream element);
+        Builder putStreams(StreamKey key, Stream value);
 
-        Builder addStreams(Stream... elements);
-
-        Builder addAllStreams(Iterable<? extends Stream> elements);
+        Builder putAllStreams(Map<? extends StreamKey, ? extends Stream> entries);
 
         Sink build();
     }

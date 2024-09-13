@@ -14,6 +14,8 @@ import io.deephaven.chunk.WritableObjectChunk;
 import io.deephaven.chunk.WritableShortChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.processor.sink.Coordinator;
+import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.ByteAppender;
@@ -49,7 +51,9 @@ import org.jetbrains.annotations.NotNull;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -62,7 +66,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
     // private final WritableChunk<?> chunk;
 
     private final int chunkSize;
-    private final List<Base> appenders;
+    private final Map<Key<?>, Base> appenders;
     private final WritableChunk[] space;
     private final List<WritableChunk<Values>[]> space2;
 
@@ -77,12 +81,13 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
     private int offset;
     private int pos;
 
-    public SingleBlinkCoordinator(List<Type<?>> types) {
+    public SingleBlinkCoordinator(Keys keys) {
         chunkSize = 1024;
-        appenders = new ArrayList<>();
-        final int L = types.size();
+        final List<Key<?>> kz = keys.keys();
+        appenders = new LinkedHashMap<>(kz.size());
+        final int L = kz.size();
         for (int i = 0; i < L; ++i) {
-            appenders.add(appender(types.get(i), i));
+            appenders.put(kz.get(i), appender(kz.get(i).type(), i));
         }
         space = new WritableChunk[appenders.size()];
         // noinspection unchecked
@@ -114,9 +119,15 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
         // }
     }
 
+    // @Override
+    // public List<? extends Appender> appenders() {
+    // return List.copyOf(appenders);
+    // }
+
     @Override
-    public List<? extends Appender> appenders() {
-        return List.copyOf(appenders);
+    public Map<Key<?>, ? extends Appender> appendersMap() {
+        // todo: preserve order?
+        return Map.copyOf(appenders);
     }
 
     @Override
@@ -168,7 +179,7 @@ public final class SingleBlinkCoordinator implements Stream, Coordinator, Stream
         if (size == 0) {
             return;
         }
-        for (Base appender : appenders) {
+        for (Base appender : appenders.values()) {
             appender.swap();
         }
         // noinspection unchecked

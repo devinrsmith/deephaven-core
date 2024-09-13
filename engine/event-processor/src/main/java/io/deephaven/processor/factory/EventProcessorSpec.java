@@ -22,6 +22,9 @@ public abstract class EventProcessorSpec {
 
     public abstract List<EventProcessorStreamSpec> streams();
 
+    // TODO KEY
+
+
     // this is really tied to if the EventProcessor will use the coordinator; not whether there should or should not be
     // a coordinator
     public abstract boolean usesCoordinator(); // todo

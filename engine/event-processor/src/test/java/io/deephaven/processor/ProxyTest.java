@@ -4,11 +4,14 @@
 package io.deephaven.processor;
 
 import io.deephaven.io.log.LogLevel;
+import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Proxy;
 import io.deephaven.processor.sink.Proxy.Info;
 import io.deephaven.processor.sink.Proxy.ObjectTarget;
 import io.deephaven.processor.sink.Proxy.StreamingTarget;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.Sinks;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.InstantAppender;
@@ -21,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -50,6 +54,16 @@ public class ProxyTest {
         private static final List<Type<?>> ORDER =
                 List.of(Type.instantType(), Type.shortType(), Type.intType(), Type.longType(), Type.stringType());
 
+        private static final Key<Instant> INSTANT = Key.of("myInstant", Type.instantType());
+        private static final Key<Short> SHORT = Key.of("myShort", Type.shortType());
+        private static final Key<Integer> INT = Key.of("myInt", Type.intType());
+        private static final Key<Long> LONG = Key.of("myLong", Type.longType());
+        private static final Key<String> STRING = Key.of("myString", Type.stringType());
+
+        private static final Map<StreamKey, Keys> MAP = Map.of(new StreamKey(), Keys.builder()
+                .addKeys(INSTANT)
+                .build());
+
         private final Stream stream;
         private final ObjectAppender<Instant> myInstant;
         private final ShortAppender myShort;
@@ -59,11 +73,11 @@ public class ProxyTest {
 
         public MyWritingInterfaceManualImpl(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            myInstant = InstantAppender.get(stream.appenders().get(0));
-            myShort = ShortAppender.get(stream.appenders().get(1));
-            myInt = IntAppender.get(stream.appenders().get(2));
-            myLong = LongAppender.get(stream.appenders().get(3));
-            myString = ObjectAppender.get(stream.appenders().get(4), Type.stringType());
+            myInstant = InstantAppender.get(stream, INSTANT);
+            myShort = ShortAppender.get(stream, SHORT);
+            myInt = IntAppender.get(stream, INT);
+            myLong = LongAppender.get(stream, LONG);
+            myString = ObjectAppender.get(stream, STRING);
         }
 
         @Override
@@ -126,8 +140,8 @@ public class ProxyTest {
     @Test
     void streamingTargetViaProxy() {
         final StreamingTarget<MyWritingInterface> target = Proxy.streamingTarget(MyWritingInterface.class);
-        final Sink sink = Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, List.of(target.types())));
-        final MyWritingInterface p = target.bind(sink.streams().get(0));
+        final Sink sink = Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, Map.of(target.key(), target.keys())));
+        final MyWritingInterface p = target.bind(Sink.get(sink, target.key()));
         writeTo(p);
         sink.coordinator().sync();
     }
@@ -135,7 +149,7 @@ public class ProxyTest {
     @Test
     void streamingTargetViaManual() {
         final Sink sink =
-                Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, List.of(MyWritingInterfaceManualImpl.ORDER)));
+                Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, MyWritingInterfaceManualImpl.MAP));
         final MyWritingInterface p = new MyWritingInterfaceManualImpl(sink.streams().get(0));
         writeTo(p);
         sink.coordinator().sync();
@@ -153,8 +167,8 @@ public class ProxyTest {
     @Test
     void objectTarget() {
         final ObjectTarget<Pair> target = Proxy.objectTarget(Pair.class);
-        final Sink sink = Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, List.of(target.types())));
-        final Consumer<Pair> consumer = target.bind(sink.streams().get(0));
+        final Sink sink = Sinks.strict(Sinks.logging("ProxyTest", LogLevel.INFO, Map.of(target.key(), target.keys())));
+        final Consumer<Pair> consumer = target.bind(Sink.get(sink, target.key()));
         consumer.accept(new Pair(1, 2));
         sink.coordinator().sync();
     }

@@ -4,7 +4,11 @@
 package io.deephaven.processor.factory;
 
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.processor.factory.ImmutableEventProcessorStreamSpec.Builder;
 import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
+import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.qst.type.Type;
 import org.immutables.value.Value.Immutable;
 
@@ -21,15 +25,18 @@ public abstract class EventProcessorStreamSpec {
         return ImmutableEventProcessorStreamSpec.builder();
     }
 
+    public abstract StreamKey key();
+
+    public abstract boolean usesCoordinator();
 
     // todo: give ability to mark as 1 to 1
 
-    @Deprecated // todo
-    public final List<Type<?>> outputTypes() {
-        return keys().stream().map(Key::type).collect(Collectors.toList());
-    }
+    // @Deprecated // todo
+    // public final List<Type<?>> outputTypes() {
+    // return keys().stream().map(Key::type).collect(Collectors.toList());
+    // }
 
-    public abstract List<Key<?>> keys(); // todo
+    public abstract Keys keys(); // todo
 
     // yeah, this is more of a event factory propertie?
     public abstract OptionalLong expectedSize();
@@ -40,18 +47,24 @@ public abstract class EventProcessorStreamSpec {
     public abstract boolean isRowOriented();
 
     public interface Builder {
+        Builder key(StreamKey key);
 
-        Builder addKeys(Key<?> element);
+        Builder keys(Keys keys);
 
-        Builder addKeys(Key<?>... elements);
+        Builder usesCoordinator(boolean usesCoordinator);
 
-        Builder addAllKeys(Iterable<? extends Key<?>> elements);
 
-//        Builder addOutputTypes(Type<?> element);
-//
-//        Builder addOutputTypes(Type<?>... elements);
-//
-//        Builder addAllOutputTypes(Iterable<? extends Type<?>> elements);
+        // Builder addKeys(Key<?> element);
+        //
+        // Builder addKeys(Key<?>... elements);
+        //
+        // Builder addAllKeys(Iterable<? extends Key<?>> elements);
+
+        // Builder addOutputTypes(Type<?> element);
+        //
+        // Builder addOutputTypes(Type<?>... elements);
+        //
+        // Builder addAllOutputTypes(Iterable<? extends Type<?>> elements);
 
         Builder expectedSize(long expectedSize);
 

@@ -7,7 +7,10 @@ import io.deephaven.processor.sink.Coordinator;
 import io.deephaven.processor.sink.Coordinators;
 import io.deephaven.processor.sink.Sink;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class Concat<T> implements EventProcessorFactory<T> {
 
@@ -16,7 +19,7 @@ final class Concat<T> implements EventProcessorFactory<T> {
             EventProcessorFactory<? super T> factory2,
             boolean useCoordinator) {
         return new Concat<>(factory1, factory2,
-                useCoordinator && (factory1.spec().usesCoordinator() || factory2.spec().usesCoordinator()));
+                false); // useCoordinator && (factory1.spec().usesCoordinator() || factory2.spec().usesCoordinator()));
     }
 
     private final EventProcessorFactory<? super T> factory1;
@@ -32,13 +35,18 @@ final class Concat<T> implements EventProcessorFactory<T> {
         this.useCoordinator = useCoordinator;
     }
 
+    // @Override
+    // public EventProcessorSpec spec() {
+    // return EventProcessorSpec.builder()
+    // .usesCoordinator(useCoordinator)
+    // .addAllStreams(factory1.specs())
+    // .addAllStreams(factory2.specs())
+    // .build();
+    // }
+
     @Override
-    public EventProcessorSpec spec() {
-        return EventProcessorSpec.builder()
-                .usesCoordinator(useCoordinator)
-                .addAllStreams(factory1.spec().streams())
-                .addAllStreams(factory2.spec().streams())
-                .build();
+    public List<EventProcessorStreamSpec> specs() {
+        return Stream.concat(factory1.specs().stream(), factory2.specs().stream()).collect(Collectors.toList());
     }
 
     @Override
@@ -46,21 +54,27 @@ final class Concat<T> implements EventProcessorFactory<T> {
         final Coordinator coordinator = useCoordinator
                 ? sink.coordinator()
                 : Coordinators.noop();
-        final int f1 = factory1.spec().numStreams();
-        final int f2 = factory2.spec().numStreams();
-        final Sink sink1 = Sink.builder()
-                .coordinator(coordinator)
-                .addAllStreams(sink.streams().subList(0, f1))
-                .build();
-        final Sink sink2 = Sink.builder()
-                .coordinator(coordinator)
-                .addAllStreams(sink.streams().subList(f1, f1 + f2))
-                .build();
+        final Sink sink1;
+        {
+            final Sink.Builder s1 = Sink.builder().coordinator(coordinator);
+            for (EventProcessorStreamSpec e : factory1.specs()) {
+                s1.putStreams(e.key(), Sink.get(sink, e.key()));
+            }
+            sink1 = s1.build();
+        }
+        final Sink sink2;
+        {
+            final Sink.Builder s2 = Sink.builder().coordinator(coordinator);
+            for (EventProcessorStreamSpec e : factory2.specs()) {
+                s2.putStreams(e.key(), Sink.get(sink, e.key()));
+            }
+            sink2 = s2.build();
+        }
         final EventProcessor<? super T> p1 = factory1.create(sink1);
         try {
             final EventProcessor<? super T> p2 = factory2.create(sink2);
             try {
-                return new CombinedEventProcessor<>(p1, p2);
+                return EventProcessors.concat(p1, p2);
             } catch (Throwable e) {
                 p2.close();
                 throw e;
@@ -68,32 +82,6 @@ final class Concat<T> implements EventProcessorFactory<T> {
         } catch (Throwable e) {
             p1.close();
             throw e;
-        }
-    }
-
-    private static class CombinedEventProcessor<T> implements EventProcessor<T> {
-        private final EventProcessor<? super T> p1;
-        private final EventProcessor<? super T> p2;
-
-        public CombinedEventProcessor(EventProcessor<? super T> p1, EventProcessor<? super T> p2) {
-            this.p1 = Objects.requireNonNull(p1);
-            this.p2 = Objects.requireNonNull(p2);
-        }
-
-        @Override
-        public void writeToSink(T event) {
-            p1.writeToSink(event);
-            p2.writeToSink(event);
-        }
-
-        @Override
-        public void close() {
-            // noinspection unused,EmptyTryBlock
-            try (
-                    final EventProcessor<?> _p1 = p1;
-                    final EventProcessor<?> _p2 = p2) {
-                // ignore
-            }
         }
     }
 }

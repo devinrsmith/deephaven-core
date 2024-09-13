@@ -3,6 +3,7 @@
 //
 package io.deephaven.processor.factory;
 
+import io.deephaven.processor.sink.Key;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.BooleanAppender;
 import io.deephaven.processor.sink.appender.ByteAppender;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class NullEventProcessor<T> implements EventProcessorFactory<T> {
 
@@ -63,19 +65,27 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
         this.consumers = Objects.requireNonNull(consumers);
     }
 
-    @Override
-    public EventProcessorSpec spec() {
-        return new EventProcessorSpec() {
-            @Override
-            public List<EventProcessorStreamSpec> streams() {
-                return specs;
-            }
+    // @Override
+    // public EventProcessorSpec spec() {
+    // return new EventProcessorSpec() {
+    // @Override
+    // public List<EventProcessorStreamSpec> streams() {
+    // return specs;
+    // }
+    //
+    //
+    //
+    // @Override
+    // public boolean usesCoordinator() {
+    // return true;
+    // }
+    // };
+    // }
 
-            @Override
-            public boolean usesCoordinator() {
-                return true;
-            }
-        };
+
+    @Override
+    public List<EventProcessorStreamSpec> specs() {
+        return List.of();
     }
 
     @Override
@@ -95,7 +105,7 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
 
     public void writeNullsInto(Sink sink) {
         final Iterator<BiConsumer<Stream, Coordinator>> consumerIt = consumers.iterator();
-        final Iterator<Stream> streamIt = sink.streams().iterator();
+        final Iterator<Stream> streamIt = sink.streams().values().iterator();
         while (consumerIt.hasNext()) {
             if (!streamIt.hasNext()) {
                 throw new IllegalStateException();
@@ -116,7 +126,7 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
             if (spec.isRowOriented()) {
                 throw new IllegalArgumentException();
             }
-            final List<Type<?>> types = spec.outputTypes();
+            final List<Type<?>> types = spec.keys().keys().stream().map(Key::type).collect(Collectors.toList());
             final List<Consumer<Appender>> consumers = new ArrayList<>(types.size());
             final ColumnOrientedNullAppender columnOrientedNullAppender = new ColumnOrientedNullAppender();
             for (Type<?> type : types) {
@@ -148,7 +158,7 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
             columnOrientedNullAppender.setTimes(actualSize);
             stream.ensureRemainingCapacity(actualSize);
             final Iterator<Consumer<Appender>> consumerIt = columnOrientedConsumers.iterator();
-            final Iterator<? extends Appender> appenderIt = stream.appenders().iterator();
+            final Iterator<? extends Appender> appenderIt = stream.appendersMap().values().iterator();
             while (consumerIt.hasNext()) {
                 if (!appenderIt.hasNext()) {
                     throw new IllegalStateException();
@@ -168,7 +178,7 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
             if (!spec.isRowOriented()) {
                 throw new IllegalArgumentException();
             }
-            final List<Type<?>> types = spec.outputTypes();
+            final List<Type<?>> types = spec.keys().keys().stream().map(Key::type).collect(Collectors.toList());
             final List<Consumer<Appender>> setters = new ArrayList<>(types.size());
             for (Type<?> type : types) {
                 setters.add(RowOrientedNullSetter.of(type));
@@ -196,7 +206,7 @@ public class NullEventProcessor<T> implements EventProcessorFactory<T> {
             stream.ensureRemainingCapacity(actualSize);
             for (int i = 0; i < actualSize; i++) {
                 final Iterator<Consumer<Appender>> consumerIt = rowOrientedConsumers.iterator();
-                final Iterator<? extends Appender> appenderIt = stream.appenders().iterator();
+                final Iterator<? extends Appender> appenderIt = stream.appendersMap().values().iterator();
                 while (consumerIt.hasNext()) {
                     if (!appenderIt.hasNext()) {
                         throw new IllegalStateException();

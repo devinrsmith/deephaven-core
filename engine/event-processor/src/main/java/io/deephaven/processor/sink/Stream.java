@@ -30,7 +30,7 @@ public interface Stream {
 
     void advanceAll(); // can only use if row-oriented?
 
-    List<? extends Appender> appenders();
+    // List<? extends Appender> appenders();
 
     // this is somewhat analogous
 
@@ -38,7 +38,7 @@ public interface Stream {
 
     // if using chunks:
 
-//    List<Key<?>> keys();
-//
-//    StreamConsumer consumer();
+    // List<Key<?>> keys();
+    //
+    // StreamConsumer consumer();
 }

@@ -26,6 +26,7 @@ public interface Coordinator {
     default void yield() {
         // commit()
         sync();
+        // todo, await some condition instead?
         writing();
     }
 

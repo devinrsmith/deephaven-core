@@ -5,6 +5,7 @@ package io.deephaven.processor.factory;
 
 import io.deephaven.processor.sink.Sink;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -19,9 +20,14 @@ final class Apply<T, R> implements EventProcessorFactory<T> {
         this.factory = Objects.requireNonNull(factory);
     }
 
+    // @Override
+    // public EventProcessorSpec spec() {
+    // return factory.spec();
+    // }
+
     @Override
-    public EventProcessorSpec spec() {
-        return factory.spec();
+    public List<EventProcessorStreamSpec> specs() {
+        return factory.specs();
     }
 
     @Override

@@ -13,7 +13,10 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.sink.Coordinator;
+import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.Sinks;
 import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.IntAppender;
@@ -25,16 +28,21 @@ import io.deephaven.stream.StreamToBlinkTableAdapter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
 
 import static io.deephaven.stream.json.JsonEventStuff.intValue;
 import static io.deephaven.stream.json.JsonEventStuff.startArray;
 
 public class Nested implements EventProcessor<JsonParser> {
 
+    private static final StreamKey KEY = new StreamKey();
+    private static final Key<Long> OUTER_IX = Key.of("OuterIx", Type.longType());
+    private static final Key<Long> INNER_IX = Key.of("InnerIx", Type.longType());
+    private static final Key<Integer> VALUE = Key.of("Value", Type.intType());
+
+
     public static Table read(boolean strict) {
         final SingleBlinkCoordinator coord =
-                new SingleBlinkCoordinator(List.of(Type.longType(), Type.longType(), Type.intType()));
+                new SingleBlinkCoordinator(Keys.builder().addKeys(OUTER_IX, INNER_IX, VALUE).build());
         final TableDefinition tableDefinition = TableDefinition.of(
                 ColumnDefinition.ofLong("OuterIx"),
                 ColumnDefinition.ofLong("InnerIx"),
@@ -42,7 +50,7 @@ public class Nested implements EventProcessor<JsonParser> {
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(tableDefinition, coord,
                 ExecutionContext.getContext().getUpdateGraph(), "test");
 
-        Sink s = Sink.builder().coordinator(coord).addStreams(coord).build();
+        Sink s = Sink.builder().coordinator(coord).putStreams(KEY, coord).build();
         if (strict) {
             s = Sinks.strict(s);
         }
@@ -73,13 +81,10 @@ public class Nested implements EventProcessor<JsonParser> {
             throw new IllegalArgumentException();
         }
         this.coordinator = sink.coordinator();
-        this.stream = sink.streams().get(0);
-        if (stream.appenders().size() != 3) {
-            throw new IllegalArgumentException();
-        }
-        this.outerIndex = LongAppender.get(stream.appenders().get(0));
-        this.innerIndex = LongAppender.get(stream.appenders().get(1));
-        this.value = IntAppender.get(stream.appenders().get(2));
+        this.stream = Sink.get(sink, KEY);
+        this.outerIndex = LongAppender.get(stream, OUTER_IX);
+        this.innerIndex = LongAppender.get(stream, INNER_IX);
+        this.value = IntAppender.get(stream, VALUE);
     }
 
     @Override

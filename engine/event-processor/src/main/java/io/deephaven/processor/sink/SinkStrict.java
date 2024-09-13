@@ -3,6 +3,7 @@
 //
 package io.deephaven.processor.sink;
 
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.DoubleAppender;
 import io.deephaven.processor.sink.appender.InstantAppender;
@@ -25,15 +26,19 @@ import io.deephaven.qst.type.LongType;
 import io.deephaven.qst.type.PrimitiveType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
-import io.deephaven.qst.type.Type;
 import io.deephaven.qst.type.Type.Visitor;
 
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 final class SinkStrict implements Coordinator {
@@ -55,7 +60,8 @@ final class SinkStrict implements Coordinator {
     }
 
     private final Coordinator delegate;
-    private final List<StreamStrict> streams;
+    // private final List<StreamStrict> streams;
+    private final Map<StreamKey, StreamStrict> streams;
     private boolean writing;
 
     // Note: we _could_ maintain a dirty set to only check the streams that we know have changed... given this is
@@ -65,9 +71,9 @@ final class SinkStrict implements Coordinator {
     SinkStrict(Sink delegate) {
         this.delegate = delegate.coordinator();
         final int L = delegate.streams().size();
-        this.streams = new ArrayList<>(L);
-        for (int i = 0; i < L; i++) {
-            streams.add(new StreamStrict(i, delegate.streams().get(i)));
+        this.streams = new LinkedHashMap<>(L);
+        for (Entry<StreamKey, Stream> e : delegate.streams().entrySet()) {
+            streams.put(e.getKey(), new StreamStrict(e.getKey(), e.getValue()));
         }
     }
 
@@ -85,7 +91,7 @@ final class SinkStrict implements Coordinator {
         if (!writing) {
             throw new IllegalStateException("Can only sync if writing");
         }
-        for (StreamStrict stream : streams) {
+        for (StreamStrict stream : streams.values()) {
             stream.checkNoneSet();
             stream.checkInSync();
         }
@@ -96,56 +102,56 @@ final class SinkStrict implements Coordinator {
     Sink sink() {
         return Sink.builder()
                 .coordinator(this)
-                .addAllStreams(streams)
+                .putAllStreams(streams)
                 .build();
     }
 
     private final class StreamStrict implements Stream {
-        private final int streamIx;
+        private final StreamKey streamKey;
         private final Stream delegate;
-        private final List<AppenderDelegate> delegates;
+        private final Map<Key<?>, AppenderDelegate> delegates;
 
-        public StreamStrict(int streamIx, Stream delegate) {
-            this.streamIx = streamIx;
+        public StreamStrict(StreamKey streamKey, Stream delegate) {
+            this.streamKey = streamKey;
             this.delegate = Objects.requireNonNull(delegate);
-            final int L = delegate.appenders().size();
-            final List<AppenderDelegate> delegates = new ArrayList<>(L);
-            for (int i = 0; i < L; i++) {
-                delegates.add(appenderDelegate(delegate.appenders().get(i).type(), i));
+            final int L = delegate.appendersMap().size();
+            final Map<Key<?>, AppenderDelegate> delegates = new LinkedHashMap<>(L);
+            for (Map.Entry<Key<?>, ? extends Appender> e : delegate.appendersMap().entrySet()) {
+                if (!e.getKey().type().equals(e.getValue().type())) {
+                    throw new IllegalArgumentException();
+                }
+                delegates.put(e.getKey(), appenderDelegate(e.getValue()));
             }
-            this.delegates = List.copyOf(delegates);
+            this.delegates = Map.copyOf(delegates);
         }
 
         void checkNoneSet() {
-            final int L = delegates.size();
-            for (int i = 0; i < L; i++) {
-                if (delegates.get(i).isSet) {
+            for (Entry<Key<?>, AppenderDelegate> e : delegates.entrySet()) {
+                if (e.getValue().isSet) {
                     throw new IllegalStateException(String.format(
-                            "Appender streamIx=%d, stream.appenders().get(%d) isSet, but not advanced", streamIx, 0));
+                            "Appender streamKey=%s, key=%s isSet, but not advanced", streamKey, e.getKey()));
                 }
             }
         }
 
         // todo: should we let external callers access this, for testing / logging purposes?
         long checkInSync() {
-            final int L = delegates.size();
-            if (L == 0) {
+            if (delegates.isEmpty()) {
                 return 0;
             }
-            final long pos0 = delegates.get(0).pos();
-            for (int i = 1; i < L; ++i) {
-                final long pos = delegates.get(i).pos();
+            final Iterator<Entry<Key<?>, AppenderDelegate>> it = delegates.entrySet().iterator();
+            final Entry<Key<?>, AppenderDelegate> first = it.next();
+            final long pos0 = first.getValue().pos();
+            while (it.hasNext()) {
+                final Entry<Key<?>, AppenderDelegate> current = it.next();
+                final long pos = current.getValue().pos();
                 if (pos0 != pos) {
                     throw new IllegalStateException(String.format(
-                            "Appenders are not in-sync for streamIx=%d, stream.appenders().get(0)._pos = %d, stream.appenders().get(%d)._pos = %d",
-                            streamIx, pos0, i, pos));
+                            "Appenders are not in-sync for streamKey=%s, stream[%s]._pos = %d, stream[%s]._pos = %d",
+                            streamKey, first.getKey(), pos0, current.getKey(), pos));
                 }
             }
             return pos0;
-        }
-
-        Appender inner(int ix) {
-            return delegate.appenders().get(ix);
         }
 
         @Override
@@ -165,33 +171,33 @@ final class SinkStrict implements Coordinator {
             if (!writing) {
                 throw new IllegalStateException("Must be in writing mode to call this");
             }
-            for (AppenderDelegate appender : delegates) {
+            for (AppenderDelegate appender : delegates.values()) {
                 if (!appender.isSet) {
                     throw new IllegalStateException("Must ensure all appenders have been set before advanceAll");
                 }
             }
             checkInSync();
-            for (AppenderDelegate appender : delegates) {
+            for (AppenderDelegate appender : delegates.values()) {
                 appender.doAdvanceInternal();
             }
             delegate.advanceAll();
         }
 
         @Override
-        public List<? extends Appender> appenders() {
+        public Map<Key<?>, ? extends Appender> appendersMap() {
             return delegates;
         }
 
-        private AppenderDelegate appenderDelegate(Type<?> type, int ix) {
-            return Objects.requireNonNull(type.walk(new AppenderByType(ix)));
+        private AppenderDelegate appenderDelegate(Appender delegate) {
+            return Objects.requireNonNull(delegate.type().walk(new AppenderByType(delegate)));
         }
 
         private class AppenderByType implements Visitor<AppenderDelegate>, PrimitiveType.Visitor<AppenderDelegate>,
                 GenericType.Visitor<AppenderDelegate> {
-            private final int ix;
+            private final Appender delegate;
 
-            public AppenderByType(int ix) {
-                this.ix = ix;
+            public AppenderByType(Appender delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override
@@ -221,17 +227,17 @@ final class SinkStrict implements Coordinator {
 
             @Override
             public AppenderDelegate visit(ShortType shortType) {
-                return new ShortStrict(ix);
+                return new ShortStrict(ShortAppender.get(delegate));
             }
 
             @Override
             public AppenderDelegate visit(IntType intType) {
-                return new IntStrict(ix);
+                return new IntStrict(IntAppender.get(delegate));
             }
 
             @Override
             public AppenderDelegate visit(LongType longType) {
-                return new LongStrict(ix);
+                return new LongStrict(LongAppender.get(delegate));
             }
 
             @Override
@@ -246,40 +252,40 @@ final class SinkStrict implements Coordinator {
 
             @Override
             public AppenderDelegate visit(BoxedType<?> boxedType) {
-                return new ObjectImpl<>(boxedType, ix);
+                return new ObjectImpl<>(ObjectAppender.get(delegate, boxedType));
             }
 
             @Override
             public AppenderDelegate visit(StringType stringType) {
-                return new ObjectImpl<>(stringType, ix);
+                return new ObjectImpl<>(ObjectAppender.get(delegate, stringType));
             }
 
             @Override
             public AppenderDelegate visit(InstantType instantType) {
-                return new InstantImpl(ix);
+                return new InstantImpl(InstantAppender.get(delegate));
             }
 
             @Override
             public AppenderDelegate visit(ArrayType<?, ?> arrayType) {
-                return new ObjectImpl<>(arrayType, ix);
+                return new ObjectImpl<>(ObjectAppender.get(delegate, arrayType));
             }
 
             @Override
             public AppenderDelegate visit(CustomType<?> customType) {
-                return new ObjectImpl<>(customType, ix);
+                return new ObjectImpl<>(ObjectAppender.get(delegate, customType));
             }
         }
 
         private abstract class AppenderDelegate implements Appender {
 
-            final int ix;
+            // final Key<?> key;
             long pos;
 
             boolean isSet;
 
-            public AppenderDelegate(int ix) {
-                this.ix = ix;
-            }
+            // public AppenderDelegate(Key<?> key) {
+            // this.key = key;
+            // }
 
             long pos() {
                 return pos;
@@ -317,9 +323,8 @@ final class SinkStrict implements Coordinator {
         private final class ShortStrict extends AppenderDelegate implements ShortAppender {
             private final ShortAppender delegate;
 
-            ShortStrict(int ix) {
-                super(ix);
-                this.delegate = ShortAppender.get(inner(ix));
+            ShortStrict(ShortAppender delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override
@@ -344,9 +349,8 @@ final class SinkStrict implements Coordinator {
         private final class IntStrict extends AppenderDelegate implements IntAppender {
             private final IntAppender delegate;
 
-            IntStrict(int ix) {
-                super(ix);
-                this.delegate = IntAppender.get(inner(ix));
+            IntStrict(IntAppender delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override
@@ -371,9 +375,8 @@ final class SinkStrict implements Coordinator {
         private final class LongStrict extends AppenderDelegate implements LongAppender {
             private final LongAppender delegate;
 
-            LongStrict(int ix) {
-                super(ix);
-                this.delegate = LongAppender.get(inner(ix));
+            LongStrict(LongAppender delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override
@@ -398,9 +401,8 @@ final class SinkStrict implements Coordinator {
         private final class ObjectImpl<T> extends AppenderDelegate implements ObjectAppender<T> {
             private final ObjectAppender<T> delegate;
 
-            ObjectImpl(GenericType<T> genericType, int ix) {
-                super(ix);
-                this.delegate = ObjectAppender.get(inner(ix), genericType);
+            ObjectImpl(ObjectAppender<T> delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override
@@ -430,9 +432,8 @@ final class SinkStrict implements Coordinator {
         private final class InstantImpl extends AppenderDelegate implements InstantAppender {
             private final InstantAppender delegate;
 
-            InstantImpl(int ix) {
-                super(ix);
-                this.delegate = InstantAppender.get(inner(ix));
+            InstantImpl(InstantAppender delegate) {
+                this.delegate = Objects.requireNonNull(delegate);
             }
 
             @Override

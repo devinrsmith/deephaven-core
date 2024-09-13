@@ -8,16 +8,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.processor.factory.EventProcessorFactory;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
+import io.deephaven.processor.factory.EventProcessorSpec;
+import io.deephaven.processor.factory.EventProcessorStreamSpec;
+import io.deephaven.processor.sink.Coordinator;
+import io.deephaven.processor.sink.Key;
+import io.deephaven.processor.sink.Keys;
+import io.deephaven.processor.sink.Sink;
+import io.deephaven.processor.sink.Sink.StreamKey;
+import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.DoubleAppender;
 import io.deephaven.processor.sink.appender.InstantAppender;
 import io.deephaven.processor.sink.appender.IntAppender;
 import io.deephaven.processor.sink.appender.LongAppender;
 import io.deephaven.processor.sink.appender.ObjectAppender;
-import io.deephaven.processor.factory.EventProcessorSpec;
-import io.deephaven.processor.factory.EventProcessorStreamSpec;
-import io.deephaven.processor.sink.Coordinator;
-import io.deephaven.processor.sink.Sink;
-import io.deephaven.processor.sink.Stream;
 import io.deephaven.qst.type.Type;
 import io.deephaven.time.DateTimeUtils;
 
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -35,34 +39,63 @@ import java.util.concurrent.TimeUnit;
  * [ 42, ... ] }, "table3": [ { "colE": "Hi", "colF": 42 }, ... ] }
  */
 final class ComplexExample {
+
+    private static final Key<Instant> TIMESTAMP = Key.of("timestamp", Type.instantType());
+    private static final Key<Long> ID = Key.of("id", Type.longType());
+
+    private static final Key<String> COL_A = Key.of("col_a", Type.stringType());
+    private static final Key<Integer> COL_B = Key.of("col_b", Type.intType());
+
+    private static final Key<String> COL_C = Key.of("col_c", Type.stringType());
+    private static final Key<Integer> COL_D = Key.of("col_d", Type.intType());
+
+    private static final Key<String> COL_E = Key.of("col_e", Type.stringType());
+    private static final Key<Integer> COL_F = Key.of("col_f", Type.intType());
+
+    private static final StreamKey TABLE_1 = new StreamKey();
+
+    private static final StreamKey TABLE_2 = new StreamKey();
+
+    private static final StreamKey TABLE_3 = new StreamKey();
+
+
     private static EventProcessorSpec eventSpec(boolean usesCoordinator) {
         return EventProcessorSpec.builder()
                 .usesCoordinator(usesCoordinator)
                 // table1
-                .addStreams(EventProcessorStreamSpec.builder()
-                        .expectedSize(1)
-                        .isRowOriented(true)
-                        .addOutputTypes(Type.instantType())
-                        .addOutputTypes(Type.longType())
-                        .addOutputTypes(Type.stringType())
-                        .addOutputTypes(Type.intType())
-                        .build())
+                .addStreams(table1Spec())
                 // table2
-                .addStreams(EventProcessorStreamSpec.builder()
-                        .isRowOriented(false)
-                        .addOutputTypes(Type.instantType())
-                        .addOutputTypes(Type.longType())
-                        .addOutputTypes(Type.stringType())
-                        .addOutputTypes(Type.intType())
-                        .build())
+                .addStreams(table2Spec())
                 // table3
-                .addStreams(EventProcessorStreamSpec.builder()
-                        .isRowOriented(true)
-                        .addOutputTypes(Type.instantType())
-                        .addOutputTypes(Type.longType())
-                        .addOutputTypes(Type.stringType())
-                        .addOutputTypes(Type.intType())
-                        .build())
+                .addStreams(table3Spec())
+                .build();
+    }
+
+    private static EventProcessorStreamSpec table3Spec() {
+        return EventProcessorStreamSpec.builder()
+                .isRowOriented(true)
+                .key(TABLE_1)
+                .keys(Keys.builder().addKeys(TIMESTAMP, ID, COL_A, COL_B).build())
+                .usesCoordinator(false)
+                .build();
+    }
+
+    private static EventProcessorStreamSpec table2Spec() {
+        return EventProcessorStreamSpec.builder()
+                .isRowOriented(false)
+                .key(TABLE_2)
+                .keys(Keys.builder().addKeys(TIMESTAMP, ID, COL_C, COL_D).build())
+                .usesCoordinator(false)
+                .build();
+    }
+
+    private static EventProcessorStreamSpec table1Spec() {
+        return EventProcessorStreamSpec.builder()
+                .expectedSize(1)
+                .isRowOriented(true)
+                .key(TABLE_3)
+                .keys(Keys.builder().addKeys(TIMESTAMP, ID, COL_E, COL_F).build())
+                .usesCoordinator(false)
                 .build();
     }
 
@@ -70,8 +103,8 @@ final class ComplexExample {
         EVENT_BASED;
 
         @Override
-        public EventProcessorSpec spec() {
-            return eventSpec(false);
+        public List<EventProcessorStreamSpec> specs() {
+            return List.of(table1Spec(), table2Spec(), table3Spec());
         }
 
         @Override
@@ -84,8 +117,8 @@ final class ComplexExample {
         JSON_LINES;
 
         @Override
-        public EventProcessorSpec spec() {
-            return eventSpec(true);
+        public List<EventProcessorStreamSpec> specs() {
+            return List.of(table1Spec(), table2Spec(), table3Spec());
         }
 
         @Override
@@ -175,9 +208,9 @@ final class ComplexExample {
             if (sink.streams().size() != 3) {
                 throw new IllegalArgumentException();
             }
-            this.table1 = new Table1(sink.streams().get(0));
-            this.table2 = new Table2(sink.streams().get(1));
-            this.table3 = new Table3(sink.streams().get(2));
+            this.table1 = new Table1(Sink.get(sink, TABLE_1));
+            this.table2 = new Table2(Sink.get(sink, TABLE_2));
+            this.table3 = new Table3(Sink.get(sink, TABLE_3));
         }
 
         public void process(JsonParser parser) throws IOException {
@@ -234,13 +267,10 @@ final class ComplexExample {
 
         private Table1(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            if (stream.appenders().size() != 4) {
-                throw new IllegalArgumentException();
-            }
-            timestamp = InstantAppender.get(stream.appenders().get(0));
-            id = LongAppender.get(stream.appenders().get(1));
-            colA = ObjectAppender.get(stream.appenders().get(2), Type.stringType());
-            colB = IntAppender.get(stream.appenders().get(3));
+            timestamp = InstantAppender.get(stream, TIMESTAMP);
+            id = LongAppender.get(stream, ID);
+            colA = ObjectAppender.get(stream, COL_A);
+            colB = IntAppender.get(stream, COL_B);
         }
 
         public void processOne(Instant timestamp, long id, JsonParser parser) throws IOException {
@@ -280,13 +310,10 @@ final class ComplexExample {
 
         private Table2(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            if (stream.appenders().size() != 4) {
-                throw new IllegalArgumentException();
-            }
-            timestamp = InstantAppender.get(stream.appenders().get(0)).asLongEpochAppender(TimeUnit.NANOSECONDS);
-            id = LongAppender.get(stream.appenders().get(1));
-            colC = ObjectAppender.get(stream.appenders().get(2), Type.stringType());
-            colD = IntAppender.get(stream.appenders().get(3));
+            timestamp = InstantAppender.get(stream, TIMESTAMP).asLongEpochAppender(TimeUnit.NANOSECONDS);
+            id = LongAppender.get(stream, ID);
+            colC = ObjectAppender.get(stream, COL_C);
+            colD = IntAppender.get(stream, COL_D);
         }
 
         public void processMany(Instant timestamp, long id, JsonParser parser) throws IOException {
@@ -343,14 +370,11 @@ final class ComplexExample {
 
         private Table3(Stream stream) {
             this.stream = Objects.requireNonNull(stream);
-            if (stream.appenders().size() != 4) {
-                throw new IllegalArgumentException();
-            }
-            timestamp = InstantAppender.get(stream.appenders().get(0)).asDoubleEpochAppender(TimeUnit.SECONDS,
+            timestamp = InstantAppender.get(stream, TIMESTAMP).asDoubleEpochAppender(TimeUnit.SECONDS,
                     RoundingMode.HALF_EVEN);
-            id = LongAppender.get(stream.appenders().get(1));
-            colE = ObjectAppender.get(stream.appenders().get(2), Type.stringType());
-            colF = IntAppender.get(stream.appenders().get(3));
+            id = LongAppender.get(stream, ID);
+            colE = ObjectAppender.get(stream, COL_E);
+            colF = IntAppender.get(stream, COL_F);
         }
 
         public void processMany(Instant timestamp, long id, JsonParser parser) throws IOException {

@@ -5,6 +5,7 @@ package io.deephaven.processor.factory;
 
 import io.deephaven.processor.sink.Sink;
 
+import java.util.List;
 import java.util.Objects;
 
 public final class NoopEventProcessor<T> implements EventProcessorFactory<T> {
@@ -19,9 +20,14 @@ public final class NoopEventProcessor<T> implements EventProcessorFactory<T> {
         this.spec = Objects.requireNonNull(spec);
     }
 
+    // @Override
+    // public EventProcessorSpec spec() {
+    // return spec;
+    // }
+
     @Override
-    public EventProcessorSpec spec() {
-        return spec;
+    public List<EventProcessorStreamSpec> specs() {
+        return List.of();
     }
 
     @Override

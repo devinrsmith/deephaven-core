@@ -5,15 +5,20 @@ package io.deephaven.processor.factory;
 
 import io.deephaven.processor.sink.Coordinator;
 import io.deephaven.processor.sink.Sink;
-import io.deephaven.processor.sink.Stream;
+
+import java.util.List;
 
 public interface EventProcessorFactory<T> {
 
     // the user-defined output types(s)
-    EventProcessorSpec spec();
+    // EventProcessorSpec spec();
+
+    // Map<StreamKey, EventProcessorStreamSpec> specs();
+    List<EventProcessorStreamSpec> specs();
 
     // creates an event processor, with sink types aligning with spec.
     // should be thread safe. caller must close when done.
+    // todo: map<StreamKey, EventProcessorStreamSpec>?
 
     /**
      * Creates an event processor.
@@ -26,9 +31,16 @@ public interface EventProcessorFactory<T> {
     interface EventProcessor<T> extends AutoCloseable {
 
         /**
-         * Write {@code event} to the sink. The entrance of this method implicitly marks a
-         * {@link Coordinator#writing()}; the successful return of this method implicitly marks a
-         * {@link Coordinator#sync() synchronization point}.
+         * Write {@code event} to the sink.
+         *
+         * <p>
+         * The implementation of this method is meant to be "cheap" since the execution of this method may block
+         * downstream consumers from proceeding.
+         *
+         * <p>
+         * In the case where this method in aggregate is "expensive" (for example, it may be parsing a JSON array of
+         * indeterminate length) implementations are advised to {@link Coordinator#yield() yield} at appropriate
+         * boundaries.
          * 
          * @param event the event
          */
@@ -40,17 +52,5 @@ public interface EventProcessorFactory<T> {
         // todo: allow exceptions?
         @Override
         void close();
-    }
-
-    interface EventProcessorSingle<T> extends EventProcessor<T> {
-        Stream stream();
-
-        void setToSink(T event);
-
-        @Override
-        default void writeToSink(T event) {
-            setToSink(event);
-            stream().advanceAll();
-        }
     }
 }

@@ -4,10 +4,9 @@
 package io.deephaven.processor.factory;
 
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
-import io.deephaven.processor.factory.EventProcessorFactory.EventProcessorSingle;
-import io.deephaven.processor.sink.Stream;
 import io.deephaven.processor.sink.appender.ObjectAppender;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class EventProcessors {
@@ -26,8 +25,8 @@ public final class EventProcessors {
         };
     }
 
-    public static <T> EventProcessorSingle<T> concat(EventProcessorSingle<T> x, EventProcessorSingle<T> y) {
-        return new EventProcessorSingleConcat<>(x, y);
+    public static <T> EventProcessor<T> concat(EventProcessor<? super T> x, EventProcessor<? super T> y) {
+        return new EventProcessorConcat<>(x, y);
     }
 
     // todo: primitive versions
@@ -42,36 +41,28 @@ public final class EventProcessors {
         });
     }
 
-    private static class EventProcessorSingleConcat<T> implements EventProcessorSingle<T> {
+    private static class EventProcessorConcat<T> implements EventProcessor<T> {
 
-        private final EventProcessorSingle<? super T> x;
-        private final EventProcessorSingle<? super T> y;
+        private final EventProcessor<? super T> x;
+        private final EventProcessor<? super T> y;
 
-        EventProcessorSingleConcat(EventProcessorSingle<? super T> x, EventProcessorSingle<? super T> y) {
-            if (x.stream() != y.stream()) {
-                throw new IllegalArgumentException();
-            }
-            this.x = x;
-            this.y = y;
+        EventProcessorConcat(EventProcessor<? super T> x, EventProcessor<? super T> y) {
+            this.x = Objects.requireNonNull(x);
+            this.y = Objects.requireNonNull(y);
         }
 
         @Override
-        public Stream stream() {
-            return x.stream();
-        }
-
-        @Override
-        public void setToSink(T event) {
-            x.setToSink(event);
-            y.setToSink(event);
+        public void writeToSink(T event) {
+            x.writeToSink(event);
+            y.writeToSink(event);
         }
 
         @Override
         public void close() {
             // noinspection unused
             try (
-                    final EventProcessorSingle<?> _x = x;
-                    final EventProcessorSingle<?> _y = y) {
+                    final EventProcessor<?> _x = x;
+                    final EventProcessor<?> _y = y) {
                 // ignore
             }
         }

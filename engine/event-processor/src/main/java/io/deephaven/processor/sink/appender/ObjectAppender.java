@@ -12,7 +12,7 @@ public interface ObjectAppender<T> extends Appender {
     static <X> ObjectAppender<X> get(Appender appender, GenericType<X> type) {
         final ObjectAppender<?> objAppender = (ObjectAppender<?>) appender;
         // todo: check not boxed type?
-        if (!objAppender.type().equals(type)) {
+        if (objAppender != null && !objAppender.type().equals(type)) {
             throw new ClassCastException(
                     String.format("Types not equal, type=%s, actual=%s", type, objAppender.type()));
         }

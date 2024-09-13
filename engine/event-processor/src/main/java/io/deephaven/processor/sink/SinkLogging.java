@@ -8,6 +8,7 @@ import io.deephaven.io.log.LogEntry;
 import io.deephaven.io.log.LogLevel;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.processor.sink.Sink.Builder;
+import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.appender.Appender;
 import io.deephaven.processor.sink.appender.DoubleAppender;
 import io.deephaven.processor.sink.appender.InstantAppender;
@@ -34,16 +35,17 @@ import io.deephaven.qst.type.Type;
 
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 final class SinkLogging implements Coordinator {
     private static final Logger log = LoggerFactory.getLogger(SinkLogging.class);
 
-    static Sink of(String prefix, LogLevel level, List<List<Type<?>>> types) {
-        return new SinkLogging(prefix, level).sink(types);
+    static Sink of(String prefix, LogLevel level, Map<StreamKey, Keys> streamTypes) {
+        return new SinkLogging(prefix, level).sink(streamTypes);
     }
 
     private final String prefix;
@@ -54,12 +56,10 @@ final class SinkLogging implements Coordinator {
         this.level = Objects.requireNonNull(level);
     }
 
-    Sink sink(List<List<Type<?>>> streamTypes) {
+    Sink sink(Map<StreamKey, Keys> streamTypes) {
         final Builder builder = Sink.builder().coordinator(this);
-        int i = 0;
-        for (List<Type<?>> appenderTypes : streamTypes) {
-            builder.addStreams(streamImpl(i, appenderTypes));
-            ++i;
+        for (Entry<StreamKey, Keys> e : streamTypes.entrySet()) {
+            builder.putStreams(e.getKey(), streamImpl(e.getKey(), e.getValue()));
         }
         return builder.build();
     }
@@ -68,8 +68,8 @@ final class SinkLogging implements Coordinator {
         return log.getEntry(level).append(prefix);
     }
 
-    private StreamImpl streamImpl(int ix, List<Type<?>> types) {
-        return new StreamImpl(ix, types);
+    private StreamImpl streamImpl(StreamKey streamKey, Keys keys) {
+        return new StreamImpl(streamKey, keys);
     }
 
     @Override
@@ -83,27 +83,26 @@ final class SinkLogging implements Coordinator {
     }
 
     private final class StreamImpl implements Stream {
-        private final int streamIx;
-        private final List<App> appenders;
+        private final StreamKey streamKey;
+        private final Map<Key<?>, App> appenders;
 
-        public StreamImpl(int streamIx, List<Type<?>> types) {
-            this.streamIx = streamIx;
-            final int L = types.size();
-            final List<App> app = new ArrayList<>(L);
-            int i = 0;
-            for (Type<?> type : types) {
-                app.add(appender(i, type));
-                ++i;
+        public StreamImpl(StreamKey streamKey, Keys keys) {
+            this.streamKey = Objects.requireNonNull(streamKey);
+            final int L = keys.keys().size();
+            final Map<Key<?>, App> app = new LinkedHashMap<>(L);
+            for (Key<?> key : keys.keys()) {
+                app.put(key, appender(key));
             }
-            appenders = List.copyOf(app);
+            // todo: this does not preserve order
+            appenders = Map.copyOf(app);
         }
 
         private LogEntry entry() {
-            return SinkLogging.this.entry().append(", stream=").append(streamIx);
+            return SinkLogging.this.entry().append(", streamKey=").append(streamKey.toString());
         }
 
-        private App appender(int appenderIx, Type<?> type) {
-            return Objects.requireNonNull(type.walk(new AppCreator(appenderIx)));
+        private App appender(Key<?> key) {
+            return Objects.requireNonNull(key.type().walk(new AppCreator(key)));
         }
 
         @Override
@@ -116,16 +115,21 @@ final class SinkLogging implements Coordinator {
             entry().append(", advanceAll").endl();
         }
 
+        // @Override
+        // public List<? extends Appender> appenders() {
+        // return appenders;
+        // }
+
         @Override
-        public List<? extends Appender> appenders() {
+        public Map<Key<?>, ? extends Appender> appendersMap() {
             return appenders;
         }
 
         private class AppCreator implements Type.Visitor<App>, PrimitiveType.Visitor<App>, GenericType.Visitor<App> {
-            private final int ix;
+            private final Key<?> key;
 
-            public AppCreator(int ix) {
-                this.ix = ix;
+            public AppCreator(Key<?> key) {
+                this.key = Objects.requireNonNull(key);
             }
 
             @Override
@@ -155,17 +159,17 @@ final class SinkLogging implements Coordinator {
 
             @Override
             public App visit(ShortType shortType) {
-                return new ShortLogger(ix);
+                return new ShortLogger(key);
             }
 
             @Override
             public App visit(IntType intType) {
-                return new IntLogger(ix);
+                return new IntLogger(key);
             }
 
             @Override
             public App visit(LongType longType) {
-                return new LongLogger(ix);
+                return new LongLogger(key);
             }
 
             @Override
@@ -180,50 +184,50 @@ final class SinkLogging implements Coordinator {
 
             @Override
             public App visit(BoxedType<?> boxedType) {
-                return new ObjectApp<>(ix, boxedType);
+                return new ObjectApp<>(key, boxedType);
             }
 
             @Override
             public App visit(StringType stringType) {
-                return new ObjectApp<>(ix, stringType);
+                return new ObjectApp<>(key, stringType);
             }
 
             @Override
             public App visit(InstantType instantType) {
-                return new InstantApp(ix);
+                return new InstantApp(key);
             }
 
             @Override
             public App visit(ArrayType<?, ?> arrayType) {
-                return new ObjectApp<>(ix, arrayType);
+                return new ObjectApp<>(key, arrayType);
             }
 
             @Override
             public App visit(CustomType<?> customType) {
-                return new ObjectApp<>(ix, customType);
+                return new ObjectApp<>(key, customType);
             }
         }
 
         private abstract class App implements Appender {
 
-            private final int appenderIx;
+            private final Key<?> key;
 
-            App(int appenderIx) {
-                this.appenderIx = appenderIx;
+            App(Key<?> key) {
+                this.key = Objects.requireNonNull(key);
             }
 
             LogEntry entry() {
                 return StreamImpl.this.entry()
                         .append(", appender=")
-                        .append(appenderIx)
+                        .append(key.toString())
                         .append(", type=")
                         .append(type().clazz().getSimpleName());
             }
         }
 
         private final class ShortLogger extends App implements ShortAppender {
-            ShortLogger(int appenderIx) {
-                super(appenderIx);
+            ShortLogger(Key<?> key) {
+                super(key);
             }
 
             @Override
@@ -243,8 +247,8 @@ final class SinkLogging implements Coordinator {
         }
 
         private final class IntLogger extends App implements IntAppender {
-            IntLogger(int appenderIx) {
-                super(appenderIx);
+            IntLogger(Key<?> key) {
+                super(key);
             }
 
             @Override
@@ -264,8 +268,8 @@ final class SinkLogging implements Coordinator {
         }
 
         private final class LongLogger extends App implements LongAppender {
-            LongLogger(int appenderIx) {
-                super(appenderIx);
+            LongLogger(Key<?> key) {
+                super(key);
             }
 
             @Override
@@ -287,8 +291,8 @@ final class SinkLogging implements Coordinator {
         private final class ObjectApp<T> extends App implements ObjectAppender<T> {
             private final GenericType<T> type;
 
-            ObjectApp(int appenderIx, GenericType<T> type) {
-                super(appenderIx);
+            ObjectApp(Key<?> key, GenericType<T> type) {
+                super(key);
                 this.type = Objects.requireNonNull(type);
             }
 
@@ -315,8 +319,8 @@ final class SinkLogging implements Coordinator {
 
         private final class InstantApp extends App implements InstantAppender {
 
-            InstantApp(int appenderIx) {
-                super(appenderIx);
+            InstantApp(Key<?> key) {
+                super(key);
             }
 
             @Override

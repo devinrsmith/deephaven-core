@@ -22,7 +22,7 @@ public class ComplexTest {
         final byte[] data = Files.readAllBytes(Path.of(ComplexTest.class.getResource("/complex-1.json").toURI()));
         final EventProcessorFactory<byte[]> factory = ComplexExample.single();
         final Sink sink =
-                Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));
+                Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.specs()));
         try (final EventProcessor<byte[]> processor = factory.create(sink)) {
             sink.coordinator().writing();
             processor.writeToSink(data);
@@ -35,7 +35,7 @@ public class ComplexTest {
         final File data = Path.of(ComplexTest.class.getResource("/complex-1.lines.json").toURI()).toFile();
         final EventProcessorFactory<File> factory = ComplexExample.jsonLines();
         final Sink sink =
-                Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.spec()));
+                Sinks.strict(Sinks.logging(ComplexTest.class.getSimpleName(), LogLevel.INFO, factory.specs()));
         try (final EventProcessor<File> processor = factory.create(sink)) {
             sink.coordinator().writing();
             processor.writeToSink(data);

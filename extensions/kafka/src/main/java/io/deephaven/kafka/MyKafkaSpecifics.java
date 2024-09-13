@@ -3,14 +3,24 @@
 //
 package io.deephaven.kafka;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.deephaven.api.util.NameValidator;
+import io.deephaven.configuration.ConfigDir;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.internal.log.LoggerFactory;
+import io.deephaven.io.logger.Logger;
+import io.deephaven.kafka.github.StarHandler;
+import io.deephaven.kafka.github.WebhookHandler;
 import io.deephaven.processor.factory.EventProcessorFactories;
 import io.deephaven.processor.factory.EventProcessorFactory;
 import io.deephaven.processor.factory.EventProcessorFactory.EventProcessor;
 import io.deephaven.processor.factory.EventProcessorStreamSpec;
+import io.deephaven.processor.factory.EventProcessors;
 import io.deephaven.processor.sink.Key;
 import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Sink;
@@ -25,10 +35,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.VoidDeserializer;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -42,10 +56,12 @@ public class MyKafkaSpecifics {
     private static final Key<String> GITHUB_EVENT_KEY = Key.of(GITHUB_EVENT, Type.stringType());
     private static final Key<String> GITHUB_DELIVERY_KEY = Key.of(GITHUB_DELIVERY, Type.stringType());
 
+    private static final Logger log = LoggerFactory.getLogger(MyKafkaSpecifics.class);
+
     private static final StreamKey BASIC = new StreamKey();
     private static final StreamKey HEADERS = new StreamKey();
 
-    public static Table consume1(EventProcessorFactory<ConsumerRecord<?, ?>> factory) {
+    public static Table consume1(EventProcessorFactory<ConsumerRecord<?, ?>> factory) throws IOException {
         if (factory.specs().size() != 1) {
             throw new IllegalArgumentException();
         }
@@ -53,27 +69,29 @@ public class MyKafkaSpecifics {
         final Keys keys = spec.keys();
         final SingleBlinkCoordinator coordinator = new SingleBlinkCoordinator(keys);
         final TableDefinition td = TableDefinition.of(keys.keys().stream()
-                .map(k -> ColumnDefinition.of(k.toString(), k.type())).collect(Collectors.toList()));
+                .map(k -> ColumnDefinition.of(NameValidator.legalizeColumnName(k.toString()), k.type()))
+                .collect(Collectors.toList()));
         final StreamToBlinkTableAdapter adapter =
                 new StreamToBlinkTableAdapter(td, coordinator, ExecutionContext.getContext().getUpdateGraph(), "test");
         final Sink sink = Sink.builder()
                 .coordinator(coordinator)
                 .putStreams(spec.key(), coordinator)
                 .build();
+        final Properties properties = props();
         final Thread thread = new Thread(() -> {
             try (
-                    final KafkaConsumer<Void, byte[]> consumer =
-                            new KafkaConsumer<>(props(), new VoidDeserializer(), new ByteArrayDeserializer());
+                    final KafkaConsumer<?, ?> consumer =
+                            new KafkaConsumer<>(properties, new VoidDeserializer(), new StringDeserializer());
                     final EventProcessor<ConsumerRecord<?, ?>> processor = factory.create(sink)) {
                 consumer.assign(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
-                consumer.seekToBeginning(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
+                consumer.seekToEnd(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
                 while (true) {
-                    final ConsumerRecords<Void, byte[]> records = consumer.poll(Duration.ofMillis(100));
+                    final ConsumerRecords<?, ?> records = consumer.poll(Duration.ofMillis(100));
                     if (records.isEmpty()) {
                         continue;
                     }
                     coordinator.writing();
-                    for (ConsumerRecord<Void, byte[]> record : records) {
+                    for (ConsumerRecord<?, ?> record : records) {
                         coordinator.yield();
                         processor.writeToSink(record);
                     }
@@ -85,14 +103,54 @@ public class MyKafkaSpecifics {
         return adapter.table();
     }
 
-    private static Properties props() {
+    private static Properties props() throws IOException {
         final Properties props = new Properties();
-        props.put("bootstrap.servers", "https://driving-wombat-12446-us1-kafka.upstash.io:9092");
-        props.put("sasl.mechanism", "SCRAM-SHA-256");
-        props.put("security.protocol", "SASL_SSL");
-        props.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"ZHJpdmluZy13b21iYXQtMTI0NDYk0lCNNur3U0ntg-mv3yhYxBV-2x07JMyrjqw\" password=\"NGY1ZWE1ZmUtNTkwOC00OWVlLWEzNDMtYTM5YjQ1NjYxMzNk\";");
+        try (final InputStream is = Files.newInputStream(path("kafka.properties"))) {
+            // load buffers internally
+            props.load(is);
+        }
         return props;
+    }
+
+    private static Path path(String name) {
+        return ConfigDir.get().map(p -> p.resolve("creds")).map(p -> p.resolve(name)).orElseThrow();
+    }
+
+    public static EventProcessorFactory<ConsumerRecord<?, ?>> stars() {
+        return EventProcessorFactories.of(EventProcessorStreamSpec.builder()
+                .key(StarHandler.KEY)
+                .usesCoordinator(false)
+                .expectedSize(0)
+                .isRowOriented(true)
+                .keys(Keys.builder().addKeys(
+                        KafkaFactory.TIMESTAMP,
+                        StarHandler.ACTION,
+                        StarHandler.STARRED_AT,
+                        StarHandler.ORGANIZATION,
+                        StarHandler.REPOSITORY,
+                        StarHandler.SENDER,
+                        StarHandler.SENDER_AVATAR).build())
+                .build(),
+                stream -> {
+                    final ObjectMapper objectMapper = JsonMapper.builder()
+                            .addModule(new JavaTimeModule())
+                            .build();
+                    final WebhookHandler webhookHandler = WebhookHandler.from(stream, objectMapper);
+                    final RecordConsumer basicsHandler = KafkaFactory.basics(stream);
+                    return EventProcessors.noClose(record -> {
+                        try {
+                            if (!webhookHandler.handle(record)) {
+                                // skip
+                                return;
+                            }
+                        } catch (IOException e) {
+                            log.error(e).append("Error processing record").endl();
+                            return;
+                        }
+                        basicsHandler.accept(record);
+                        stream.advanceAll();
+                    });
+                });
     }
 
     public static EventProcessorFactory<ConsumerRecord<?, ?>> basics() {
@@ -106,6 +164,7 @@ public class MyKafkaSpecifics {
                         KafkaFactory.PARTITION,
                         KafkaFactory.OFFSET,
                         KafkaFactory.TIMESTAMP,
+                        KafkaFactory.VALUE,
                         GITHUB_EVENT_KEY,
                         GITHUB_DELIVERY_KEY).build())
                 .build(),
@@ -127,7 +186,7 @@ public class MyKafkaSpecifics {
                         KafkaFactory.OFFSET,
                         KafkaFactory.HEADER_INDEX,
                         KafkaFactory.HEADER_KEY,
-                        KafkaFactory.HEADER_VALUE).build())
+                        KafkaFactory.HEADER_VALUE_STR).build())
                 .build(),
                 stream -> KafkaFactory.headers(stream,
                         HeaderConsumer.wrap(KafkaFactory.key(stream)).andThen(KafkaFactory.header(stream))));

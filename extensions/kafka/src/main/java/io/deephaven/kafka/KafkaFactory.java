@@ -17,13 +17,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.record.TimestampType;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 final class KafkaFactory {
 
@@ -76,6 +76,9 @@ final class KafkaFactory {
      */
     public static final Key<Integer> NUM_HEADERS = Key.of("NumHeaders", Type.intType());
 
+    // TODO: this is not general right now
+    public static final Key<String> VALUE = Key.of("Value", Type.stringType());
+
     // -------------
 
     /**
@@ -92,6 +95,11 @@ final class KafkaFactory {
      * The {@link Header#value() header value} key.
      */
     public static final Key<byte[]> HEADER_VALUE = Key.of("HeaderValue", Type.byteType().arrayType());
+
+    /**
+     * The {@link Header#value() header value} as String key.
+     */
+    public static final Key<String> HEADER_VALUE_STR = Key.of("HeaderValue", Type.stringType());
 
     // -------------
 
@@ -269,10 +277,7 @@ final class KafkaFactory {
      * A setter that can handle {@link #TOPIC}, {@link #PARTITION}, {@link #OFFSET}. {@link #OFFSET} is required.
      */
     private static final class Keyk implements RecordConsumer {
-        private static final List<Type<?>> TYPES = List.of(
-                Type.stringType(),
-                Type.intType(),
-                Type.longType());
+
 
         public static Keyk from(Stream stream) {
             return new Keyk(
@@ -316,7 +321,8 @@ final class KafkaFactory {
                     IntAppender.getIfPresent(stream, SERIALIZED_KEY_SIZE),
                     IntAppender.getIfPresent(stream, SERIALIZED_VALUE_SIZE),
                     IntAppender.getIfPresent(stream, LEADER_EPOCH),
-                    IntAppender.getIfPresent(stream, NUM_HEADERS));
+                    IntAppender.getIfPresent(stream, NUM_HEADERS),
+                    ObjectAppender.getIfPresent(stream, VALUE));
         }
 
         private final LongAppender timestampMillis;
@@ -325,16 +331,18 @@ final class KafkaFactory {
         private final IntAppender serializedValueSize;
         private final IntAppender leaderEpoch;
         private final IntAppender numHeaders;
+        private final ObjectAppender<String> value;
 
         private Basics(InstantAppender timestamp, ObjectAppender<TimestampType> timestampType,
                 IntAppender serializedKeySize, IntAppender serializedValueSize, IntAppender leaderEpoch,
-                IntAppender numHeaders) {
+                IntAppender numHeaders, ObjectAppender<String> value) {
             this.timestampMillis = timestamp == null ? null : timestamp.asLongEpochAppender(TimeUnit.MILLISECONDS);
             this.timestampType = timestampType;
             this.serializedKeySize = serializedKeySize;
             this.serializedValueSize = serializedValueSize;
             this.leaderEpoch = leaderEpoch;
             this.numHeaders = numHeaders;
+            this.value = value;
         }
 
         @Override
@@ -377,35 +385,45 @@ final class KafkaFactory {
                 }
                 numHeaders.set(count);
             }
+            if (value != null) {
+                final Object recordValue = record.value();
+                if (recordValue == null) {
+                    value.setNull();
+                } else {
+                    value.set(recordValue.toString());
+                }
+            }
         }
     }
 
     /**
-     * A setter that can handle {@link #HEADER_INDEX}, {@link #HEADER_KEY}, and {@link #HEADER_VALUE}.
-     * {@link #HEADER_KEY} and {@link #HEADER_VALUE} are required.
+     * A setter that can handle {@link #HEADER_INDEX}, {@link #HEADER_KEY}, {@link #HEADER_VALUE}, and
+     * {@link #HEADER_VALUE_STR}. {@link #HEADER_KEY} is required.
      */
     private static final class Headers implements HeaderConsumer {
-        private static final List<Type<?>> TYPES = java.util.stream.Stream.concat(Keyk.TYPES.stream(),
-                java.util.stream.Stream.of(
-                        Type.stringType(),
-                        Type.byteType().arrayType()))
-                .collect(Collectors.toUnmodifiableList());
 
         public static Headers from(Stream stream) {
             return new Headers(
                     IntAppender.getIfPresent(stream, HEADER_INDEX),
                     ObjectAppender.get(stream, HEADER_KEY),
-                    ObjectAppender.get(stream, HEADER_VALUE));
+                    ObjectAppender.getIfPresent(stream, HEADER_VALUE),
+                    ObjectAppender.getIfPresent(stream, HEADER_VALUE_STR));
         }
 
         private final IntAppender headerIndex;
         private final ObjectAppender<String> headerKey;
         private final ObjectAppender<byte[]> headerValue;
+        private final ObjectAppender<String> headerValueStr;
 
-        private Headers(IntAppender headerIndex, ObjectAppender<String> headerKey, ObjectAppender<byte[]> headerValue) {
+        private Headers(
+                IntAppender headerIndex,
+                ObjectAppender<String> headerKey,
+                ObjectAppender<byte[]> headerValue,
+                ObjectAppender<String> headerValueStr) {
             this.headerIndex = headerIndex;
             this.headerKey = Objects.requireNonNull(headerKey);
-            this.headerValue = Objects.requireNonNull(headerValue);
+            this.headerValue = headerValue;
+            this.headerValueStr = headerValueStr;
         }
 
         @Override
@@ -414,7 +432,21 @@ final class KafkaFactory {
                 this.headerIndex.set(headerIndex);
             }
             headerKey.set(header.key());
-            headerValue.set(header.value());
+            final byte[] value = header.value();
+            if (headerValue != null) {
+                if (value == null) {
+                    headerValue.setNull();
+                } else {
+                    headerValue.set(value);
+                }
+            }
+            if (headerValueStr != null) {
+                if (value == null) {
+                    headerValueStr.setNull();
+                } else {
+                    headerValueStr.set(new String(value, StandardCharsets.UTF_8));
+                }
+            }
         }
     }
 

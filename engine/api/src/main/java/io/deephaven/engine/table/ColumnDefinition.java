@@ -3,6 +3,7 @@
 //
 package io.deephaven.engine.table;
 
+import io.deephaven.api.util.NameValidator;
 import io.deephaven.base.log.LogOutput;
 import io.deephaven.base.log.LogOutputAppendable;
 import io.deephaven.io.log.impl.LogOutputStringImpl;
@@ -361,6 +362,7 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         this.dataType = Objects.requireNonNull(dataType);
         this.componentType = componentType;
         this.columnType = Objects.requireNonNull(columnType);
+        NameValidator.validateColumnName(name);
     }
 
     @NotNull

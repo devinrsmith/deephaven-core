@@ -49,4 +49,6 @@ dependencies {
     testImplementation libs.assertj
 
     implementation project(':engine-event-processor')
+
+    implementation libs.jackson.datatype.time
 }

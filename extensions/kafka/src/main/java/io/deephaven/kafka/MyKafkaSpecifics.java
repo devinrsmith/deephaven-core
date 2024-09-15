@@ -26,6 +26,7 @@ import io.deephaven.processor.sink.Keys;
 import io.deephaven.processor.sink.Sink;
 import io.deephaven.processor.sink.Sink.StreamKey;
 import io.deephaven.processor.sink.Stream;
+import io.deephaven.processor.sink.appender.LongAppender;
 import io.deephaven.processor.sink.appender.ObjectAppender;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.SingleBlinkCoordinator;
@@ -50,18 +51,29 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class MyKafkaSpecifics {
-
-    private static final String GITHUB_EVENT = "X-GitHub-Event";
     private static final String GITHUB_DELIVERY = "X-GitHub-Delivery";
-    private static final Key<String> GITHUB_EVENT_KEY = Key.of(GITHUB_EVENT, Type.stringType());
+    private static final String GITHUB_EVENT = "X-GitHub-Event";
+    private static final String GITHUB_HOOK_ID = "X-GitHub-Hook-ID";
+    private static final String GITHUB_HOOK_INSTALLATION_TARGET_TYPE = "X-GitHub-Hook-Installation-Target-Type";
+    private static final String GITHUB_HOOK_INSTALLATION_TARGET_ID = "X-GitHub-Hook-Installation-Target-ID";
+
     private static final Key<String> GITHUB_DELIVERY_KEY = Key.of(GITHUB_DELIVERY, Type.stringType());
+    private static final Key<String> GITHUB_EVENT_KEY = Key.of(GITHUB_EVENT, Type.stringType());
+    private static final Key<Long> GITHUB_HOOK_ID_KEY = Key.of(GITHUB_HOOK_ID, Type.longType());
+    private static final Key<String> GITHUB_HOOK_INSTALLATION_TARGET_TYPE_KEY =
+            Key.of(GITHUB_HOOK_INSTALLATION_TARGET_TYPE, Type.stringType());
+    private static final Key<Long> GITHUB_HOOK_INSTALLATION_TARGET_ID_KEY =
+            Key.of(GITHUB_HOOK_INSTALLATION_TARGET_ID, Type.longType());
 
     private static final Logger log = LoggerFactory.getLogger(MyKafkaSpecifics.class);
 
     private static final StreamKey BASIC = new StreamKey();
+
+    private static final StreamKey GITHUB_WEBHOOKS_COMPLETE = new StreamKey();
+
     private static final StreamKey HEADERS = new StreamKey();
 
-    public static Table consume1(EventProcessorFactory<ConsumerRecord<?, ?>> factory) throws IOException {
+    public static Table consume1(EventProcessorFactory<ConsumerRecord<?, ?>> factory, int offset) throws IOException {
         if (factory.specs().size() != 1) {
             throw new IllegalArgumentException();
         }
@@ -84,7 +96,8 @@ public class MyKafkaSpecifics {
                             new KafkaConsumer<>(properties, new VoidDeserializer(), new StringDeserializer());
                     final EventProcessor<ConsumerRecord<?, ?>> processor = factory.create(sink)) {
                 consumer.assign(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
-                consumer.seekToEnd(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
+                consumer.seek(new TopicPartition("gh-org-webhook-deephaven", 0), offset);
+                // consumer.seekToEnd(List.of(new TopicPartition("gh-org-webhook-deephaven", 0)));
                 while (true) {
                     final ConsumerRecords<?, ?> records = consumer.poll(Duration.ofMillis(100));
                     if (records.isEmpty()) {
@@ -153,9 +166,9 @@ public class MyKafkaSpecifics {
                 });
     }
 
-    public static EventProcessorFactory<ConsumerRecord<?, ?>> basics() {
+    public static EventProcessorFactory<ConsumerRecord<?, ?>> githubWebhooksComplete() {
         return EventProcessorFactories.of(EventProcessorStreamSpec.builder()
-                .key(BASIC)
+                .key(GITHUB_WEBHOOKS_COMPLETE)
                 .usesCoordinator(false)
                 .expectedSize(1)
                 .isRowOriented(true)
@@ -164,14 +177,20 @@ public class MyKafkaSpecifics {
                         KafkaFactory.PARTITION,
                         KafkaFactory.OFFSET,
                         KafkaFactory.TIMESTAMP,
+                        KafkaFactory.TIMESTAMP_TYPE,
+                        KafkaFactory.SERIALIZED_VALUE_SIZE,
+                        KafkaFactory.LEADER_EPOCH,
                         KafkaFactory.VALUE,
                         GITHUB_EVENT_KEY,
-                        GITHUB_DELIVERY_KEY).build())
+                        GITHUB_DELIVERY_KEY,
+                        GITHUB_HOOK_ID_KEY,
+                        GITHUB_HOOK_INSTALLATION_TARGET_TYPE_KEY,
+                        GITHUB_HOOK_INSTALLATION_TARGET_ID_KEY).build())
                 .build(),
                 stream -> KafkaFactory.records(stream, KafkaFactory
                         .key(stream)
                         .andThen(KafkaFactory.basics(stream))
-                        .andThen(special(stream))));
+                        .andThen(ghWebhookHeaders(stream))));
     }
 
     public static EventProcessorFactory<ConsumerRecord<?, ?>> headers() {
@@ -192,44 +211,86 @@ public class MyKafkaSpecifics {
                         HeaderConsumer.wrap(KafkaFactory.key(stream)).andThen(KafkaFactory.header(stream))));
     }
 
-    public static RecordConsumer special(Stream stream) {
-        final ObjectAppender<String> event = ObjectAppender.get(stream, GITHUB_EVENT_KEY);
-        final ObjectAppender<String> delivery = ObjectAppender.get(stream, GITHUB_DELIVERY_KEY);
-        return new Special(event, delivery);
+    public static RecordConsumer ghWebhookHeaders(Stream stream) {
+        return new GitHubWebhookHeaders(
+                ObjectAppender.get(stream, GITHUB_EVENT_KEY),
+                ObjectAppender.get(stream, GITHUB_DELIVERY_KEY),
+                LongAppender.get(stream, GITHUB_HOOK_ID_KEY),
+                ObjectAppender.get(stream, GITHUB_HOOK_INSTALLATION_TARGET_TYPE_KEY),
+                LongAppender.get(stream, GITHUB_HOOK_INSTALLATION_TARGET_ID_KEY));
     }
 
-    private static class Special implements RecordConsumer {
+    private static class GitHubWebhookHeaders implements RecordConsumer {
 
         private final ObjectAppender<String> event;
         private final ObjectAppender<String> delivery;
+        private final LongAppender hookId;
+        private final ObjectAppender<String> hookInstallationTargetType;
+        private final LongAppender hookInstallationTargetId;
 
-        private Special(ObjectAppender<String> event, ObjectAppender<String> delivery) {
+        private GitHubWebhookHeaders(
+                ObjectAppender<String> event,
+                ObjectAppender<String> delivery,
+                LongAppender hookId,
+                ObjectAppender<String> hookInstallationTargetType,
+                LongAppender hookInstallationTargetId) {
             this.event = Objects.requireNonNull(event);
             this.delivery = Objects.requireNonNull(delivery);
+            this.hookId = Objects.requireNonNull(hookId);
+            this.hookInstallationTargetType = Objects.requireNonNull(hookInstallationTargetType);
+            this.hookInstallationTargetId = Objects.requireNonNull(hookInstallationTargetId);
         }
 
         @Override
         public void accept(ConsumerRecord<?, ?> record) {
-            boolean s1 = false;
-            boolean s2 = false;
+            boolean foundEvent = false;
+            boolean foundDeliver = false;
+            boolean foundHookId = false;
+            boolean foundHookInstallationTargetType = false;
+            boolean foundHookInstallationTargetId = false;
             for (Header header : record.headers()) {
                 switch (header.key()) {
                     case GITHUB_EVENT:
-                        s1 = true;
-                        event.set(new String(header.value(), StandardCharsets.UTF_8));
+                        foundEvent = true;
+                        event.set(valueStr(header));
                         break;
                     case GITHUB_DELIVERY:
-                        s2 = true;
-                        delivery.set(new String(header.value(), StandardCharsets.UTF_8));
+                        foundDeliver = true;
+                        delivery.set(valueStr(header));
+                        break;
+                    case GITHUB_HOOK_ID:
+                        foundHookId = true;
+                        hookId.set(Long.parseLong(valueStr(header)));
+                        break;
+                    case GITHUB_HOOK_INSTALLATION_TARGET_TYPE:
+                        foundHookInstallationTargetType = true;
+                        hookInstallationTargetType.set(valueStr(header));
+                        break;
+                    case GITHUB_HOOK_INSTALLATION_TARGET_ID:
+                        foundHookInstallationTargetId = true;
+                        hookInstallationTargetId.set(Long.parseLong(valueStr(header)));
                         break;
                 }
             }
-            if (!s1) {
+            if (!foundEvent) {
                 event.setNull();
             }
-            if (!s2) {
+            if (!foundDeliver) {
                 delivery.setNull();
             }
+            if (!foundHookId) {
+                hookId.setNull();
+            }
+            if (!foundHookInstallationTargetType) {
+                hookInstallationTargetType.setNull();
+            }
+            if (!foundHookInstallationTargetId) {
+                hookInstallationTargetId.setNull();
+            }
+        }
+
+        private static String valueStr(Header header) {
+            return new String(header.value(), StandardCharsets.UTF_8);
         }
     }
 }

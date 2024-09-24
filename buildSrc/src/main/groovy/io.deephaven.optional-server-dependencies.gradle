@@ -23,4 +23,6 @@ dependencies {
     if (!hasProperty('excludeJson')) {
         runtimeOnly project(':extensions-json-jackson')
     }
+
+    runtimeOnly libs.xerial.sqlite.jdbc
 }

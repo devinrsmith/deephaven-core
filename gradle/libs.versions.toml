@@ -293,6 +293,8 @@ vertispan-flatbuffers-gwt = { module = "com.vertispan.flatbuffers:flatbuffers-gw
 vertispan-ts-defs-annotations = { module = "com.vertispan.tsdefs:jsinterop-ts-defs-annotations", version.ref = "vertispan-ts-defs" }
 vertispan-ts-defs-doclet = { module = "com.vertispan.tsdefs:jsinterop-ts-defs-doclet", version.ref = "vertispan-ts-defs" }
 
+xerial-sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version = "3.46.1.0" }
+
 # test libraries
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 

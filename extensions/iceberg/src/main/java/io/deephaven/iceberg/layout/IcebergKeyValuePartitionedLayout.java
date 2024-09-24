@@ -51,11 +51,12 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
             @NotNull final TableDefinition tableDef,
             @NotNull final org.apache.iceberg.Table table,
             @NotNull final org.apache.iceberg.Snapshot tableSnapshot,
+            @NotNull final org.apache.iceberg.Schema schema,
             @NotNull final FileIO fileIO,
             @NotNull final PartitionSpec partitionSpec,
             @NotNull final IcebergInstructions instructions,
             @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
-        super(tableDef, table, tableSnapshot, fileIO, instructions, dataInstructionsProvider);
+        super(tableDef, table, tableSnapshot, schema, fileIO, instructions, dataInstructionsProvider);
 
         // We can assume due to upstream validation that there are no duplicate names (after renaming) that are included
         // in the output definition, so we can ignore duplicates.

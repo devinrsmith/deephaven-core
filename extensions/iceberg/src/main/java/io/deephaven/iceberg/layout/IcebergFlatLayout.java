@@ -30,10 +30,11 @@ public final class IcebergFlatLayout extends IcebergBaseLayout {
             @NotNull final TableDefinition tableDef,
             @NotNull final Table table,
             @NotNull final Snapshot tableSnapshot,
+            @NotNull final Schema schema,
             @NotNull final FileIO fileIO,
             @NotNull final IcebergInstructions instructions,
             @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
-        super(tableDef, table, tableSnapshot, fileIO, instructions, dataInstructionsProvider);
+        super(tableDef, table, tableSnapshot, schema, fileIO, instructions, dataInstructionsProvider);
     }
 
     @Override

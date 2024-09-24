@@ -23,6 +23,9 @@ public interface RowGroupReader {
     @Nullable
     ColumnChunkReader getColumnChunk(@NotNull String columnName, @NotNull List<String> path);
 
+    @Nullable
+    ColumnChunkReader getColumnChunk(@NotNull String columnName, int fieldId);
+
     long numRows();
 
     RowGroup getRowGroup();

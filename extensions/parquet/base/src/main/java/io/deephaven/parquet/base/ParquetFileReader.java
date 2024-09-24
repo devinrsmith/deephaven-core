@@ -6,10 +6,30 @@ package io.deephaven.parquet.base;
 import io.deephaven.util.channel.CachedChannelProvider;
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
-import org.apache.parquet.format.*;
+import org.apache.parquet.format.ColumnChunk;
+import org.apache.parquet.format.ColumnMetaData;
 import org.apache.parquet.format.ColumnOrder;
+import org.apache.parquet.format.ConvertedType;
+import org.apache.parquet.format.DecimalType;
+import org.apache.parquet.format.Encoding;
+import org.apache.parquet.format.FieldRepetitionType;
+import org.apache.parquet.format.FileMetaData;
+import org.apache.parquet.format.IntType;
+import org.apache.parquet.format.LogicalType;
+import org.apache.parquet.format.PageEncodingStats;
+import org.apache.parquet.format.PageType;
+import org.apache.parquet.format.RowGroup;
+import org.apache.parquet.format.SchemaElement;
+import org.apache.parquet.format.TimeType;
+import org.apache.parquet.format.TimeUnit;
+import org.apache.parquet.format.TimestampType;
 import org.apache.parquet.format.Type;
-import org.apache.parquet.schema.*;
+import org.apache.parquet.format.Util;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type.ID;
+import org.apache.parquet.schema.Types;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,10 +39,15 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import static io.deephaven.parquet.base.ParquetUtils.MAGIC;
 import static io.deephaven.base.FileUtils.convertToURI;
+import static io.deephaven.parquet.base.ParquetUtils.MAGIC;
 
 /**
  * Top level accessor for a parquet file which can read both from a file path string or a CLI style file URI,
@@ -40,6 +65,7 @@ public class ParquetFileReader {
      */
     private final URI rootURI;
     private final MessageType type;
+    private final ParquetFieldMap fieldMap;
 
     /**
      * Make a {@link ParquetFileReader} for the supplied {@link File}. Wraps {@link IOException} as
@@ -103,6 +129,7 @@ public class ParquetFileReader {
             }
         }
         type = fromParquetSchema(fileMetaData.schema, fileMetaData.column_orders);
+        fieldMap = ParquetFieldMap.of(type);
     }
 
     /**
@@ -239,7 +266,6 @@ public class ParquetFileReader {
                 fileMetaData.getRow_groups().get(groupNumber),
                 channelsProvider,
                 rootURI,
-                type,
                 getSchema(),
                 version);
     }
@@ -478,6 +504,14 @@ public class ParquetFileReader {
 
     public MessageType getSchema() {
         return type;
+    }
+
+    public Optional<org.apache.parquet.schema.Type> lookupFieldName(String fieldName) {
+        return fieldMap.lookupFieldName(fieldName);
+    }
+
+    public Optional<org.apache.parquet.schema.Type> lookupFieldId(ID fieldId) {
+        return fieldMap.lookupFieldId(fieldId);
     }
 
     public int rowGroupCount() {

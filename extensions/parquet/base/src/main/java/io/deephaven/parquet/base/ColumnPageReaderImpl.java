@@ -51,7 +51,7 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
     private static final String PAGE_BUFFER_KEY = "PARQUET_PAGE_BUFFER";
     private static final String DECOMPRESSOR_HOLDER_KEY = "DECOMPRESSOR_HOLDER";
 
-    private final String columnName;
+    private final Type fieldType;
     private final SeekableChannelsProvider channelsProvider;
     private final CompressorAdapter compressorAdapter;
     private final Function<SeekableChannelContext, Dictionary> dictionarySupplier;
@@ -72,7 +72,7 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
     /**
      * Returns a {@link ColumnPageReader} object for reading the column page data from the file.
      *
-     * @param columnName The name of the column.
+     * @param fieldType The field type.
      * @param channelsProvider The provider for {@link SeekableByteChannel} for reading the file.
      * @param compressorAdapter The adapter for decompressing the data.
      * @param dictionarySupplier The supplier for dictionary data, set as {@link ColumnChunkReader#NULL_DICTIONARY} if
@@ -86,7 +86,7 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
      * @param numValues The number of values in the page.
      */
     ColumnPageReaderImpl(
-            final String columnName,
+            final Type fieldType,
             final SeekableChannelsProvider channelsProvider,
             final CompressorAdapter compressorAdapter,
             final Function<SeekableChannelContext, Dictionary> dictionarySupplier,
@@ -97,7 +97,7 @@ final class ColumnPageReaderImpl implements ColumnPageReader {
             final long dataOffset,
             final PageHeader pageHeader,
             final int numValues) {
-        this.columnName = columnName;
+        this.fieldType = fieldType;
         this.channelsProvider = channelsProvider;
         this.compressorAdapter = compressorAdapter;
         this.dictionarySupplier = dictionarySupplier;

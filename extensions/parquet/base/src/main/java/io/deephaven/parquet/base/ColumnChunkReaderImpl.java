@@ -29,6 +29,7 @@ import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static io.deephaven.parquet.base.ParquetUtils.resolve;
@@ -38,7 +39,7 @@ import static org.apache.parquet.format.Encoding.RLE_DICTIONARY;
 
 final class ColumnChunkReaderImpl implements ColumnChunkReader {
 
-    private final String columnName;
+    private final Type fieldType;
     private final ColumnChunk columnChunk;
     private final SeekableChannelsProvider channelsProvider;
     private final CompressorAdapter decompressor;
@@ -57,7 +58,7 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
     private final String version;
 
     ColumnChunkReaderImpl(
-            final String columnName,
+            final Type fieldType,
             final ColumnChunk columnChunk,
             final SeekableChannelsProvider channelsProvider,
             final URI rootURI,
@@ -65,9 +66,9 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
             final List<Type> fieldTypes,
             final long numRows,
             final String version) {
-        this.columnName = columnName;
+        this.fieldType = Objects.requireNonNull(fieldType);
+        this.columnChunk = Objects.requireNonNull(columnChunk);
         this.channelsProvider = channelsProvider;
-        this.columnChunk = columnChunk;
         this.path = type
                 .getColumnDescription(columnChunk.meta_data.getPath_in_schema().toArray(new String[0]));
         if (columnChunk.getMeta_data().isSetCodec()) {
@@ -92,8 +93,13 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
     }
 
     @Override
+    public Type fieldType() {
+        return fieldType;
+    }
+
+    @Override
     public String columnName() {
-        return columnName;
+        return fieldType.getName();
     }
 
     @Override
@@ -254,7 +260,7 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
         @Override
         public ColumnPageReader next(@NotNull final SeekableChannelContext channelContext) {
             if (!hasNext()) {
-                throw new NoSuchElementException("No next element in column: " + columnName + ", uri:  " + getURI());
+                throw new NoSuchElementException("No next element in column: " + fieldType + ", uri:  " + getURI());
             }
             // NB: The channels provider typically caches channels; this avoids maintaining a handle per column chunk
             final long headerOffset = nextHeaderOffset;
@@ -279,11 +285,11 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
                 remainingValues -= numValuesInPage;
                 final Function<SeekableChannelContext, Dictionary> pageDictionarySupplier =
                         getPageDictionarySupplier(pageHeader);
-                return new ColumnPageReaderImpl(columnName, channelsProvider, decompressor, pageDictionarySupplier,
+                return new ColumnPageReaderImpl(fieldType, channelsProvider, decompressor, pageDictionarySupplier,
                         pageMaterializerFactory, path, getURI(), fieldTypes, dataOffset, pageHeader, numValuesInPage);
             } catch (IOException e) {
                 throw new UncheckedDeephavenException("Error reading page header at offset " + headerOffset + " for " +
-                        "column: " + columnName + ", uri: " + getURI(), e);
+                        "column: " + fieldType + ", uri: " + getURI(), e);
             }
         }
     }
@@ -303,7 +309,7 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
                 return pageHeader.getData_page_header_v2().getEncoding();
             default:
                 throw new UncheckedDeephavenException("Unknown parquet data page header type " + pageHeader.type +
-                        " for column: " + columnName + ", uri: " + getURI());
+                        " for column: " + fieldType + ", uri: " + getURI());
         }
     }
 
@@ -339,7 +345,7 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
             if (pageNum < 0 || pageNum >= offsetIndex.getPageCount()) {
                 throw new IndexOutOfBoundsException(
                         "pageNum=" + pageNum + ", offsetIndex.getPageCount()=" + offsetIndex.getPageCount() +
-                                " for column: " + columnName + ", uri: " + getURI());
+                                " for column: " + fieldType + ", uri: " + getURI());
             }
 
             // Read the page header to determine whether we need to use dictionary for this page
@@ -357,12 +363,12 @@ final class ColumnChunkReaderImpl implements ColumnChunkReader {
                 }
                 final Function<SeekableChannelContext, Dictionary> pageDictionarySupplier =
                         getPageDictionarySupplier(pageHeader);
-                return new ColumnPageReaderImpl(columnName, channelsProvider, decompressor, pageDictionarySupplier,
+                return new ColumnPageReaderImpl(fieldType, channelsProvider, decompressor, pageDictionarySupplier,
                         pageMaterializerFactory, path, getURI(), fieldTypes, dataOffset, pageHeader,
                         getNumValues(pageHeader));
             } catch (final IOException e) {
                 throw new UncheckedDeephavenException("Error reading page header for page number " + pageNum +
-                        " at offset " + headerOffset + " for column: " + columnName + ", uri: " + getURI(), e);
+                        " at offset " + headerOffset + " for column: " + fieldType + ", uri: " + getURI(), e);
             }
         }
     }

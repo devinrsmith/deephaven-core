@@ -150,7 +150,7 @@ final class VariablePageSizeColumnChunkPageStore<ATTR extends Any> extends Colum
             return getPageContainingImpl(fillContext, rowKey);
         } catch (final RuntimeException e) {
             throw new UncheckedDeephavenException("Failed to read parquet page data for row: " + rowKey + ", column: " +
-                    columnChunkReader.columnName() + ", uri: " + columnChunkReader.getURI(), e);
+                    columnChunkReader.fieldType() + ", uri: " + columnChunkReader.getURI(), e);
         }
     }
 

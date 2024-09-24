@@ -31,6 +31,7 @@ import io.deephaven.util.codec.SimpleByteArrayCodec;
 import io.deephaven.vector.Vector;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,6 +40,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.LongFunction;
@@ -58,7 +60,9 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
     private static final int MAX_PAGE_CACHE_SIZE = Configuration.getInstance()
             .getIntegerForClassWithDefault(ParquetColumnLocation.class, "maxPageCacheSize", 8192);
 
+    private final Type field;
     private final String parquetColumnName;
+
     /**
      * Factory object needed for deferred initialization of the remaining fields. Reference serves as a barrier to
      * ensure visibility of the derived fields.
@@ -81,11 +85,13 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
      */
     ParquetColumnLocation(
             @NotNull final ParquetTableLocation tableLocation,
+            @Nullable final Type field,
             @NotNull final String columnName,
             @NotNull final String parquetColumnName,
             @Nullable final ColumnChunkReader[] columnChunkReaders) {
         super(tableLocation, columnName);
-        this.parquetColumnName = parquetColumnName;
+        this.field = field;
+        this.parquetColumnName = Objects.requireNonNull(parquetColumnName);
         this.columnChunkReaders = columnChunkReaders;
     }
 

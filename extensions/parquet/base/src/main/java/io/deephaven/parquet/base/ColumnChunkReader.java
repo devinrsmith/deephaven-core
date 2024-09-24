@@ -8,6 +8,7 @@ import io.deephaven.util.channel.SeekableChannelsProvider;
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -15,6 +16,8 @@ import java.net.URI;
 import java.util.function.Function;
 
 public interface ColumnChunkReader {
+    Type fieldType();
+
     /**
      * @return The name of the column this ColumnChunk represents.
      */

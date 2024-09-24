@@ -37,6 +37,7 @@ import io.deephaven.util.channel.SeekableChannelsProvider;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.format.RowGroup;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,12 +46,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 import static io.deephaven.parquet.base.ParquetFileReader.FILE_URI_SCHEME;
-import static io.deephaven.parquet.table.ParquetTableWriter.*;
+import static io.deephaven.parquet.table.ParquetTableWriter.GROUPING_BEGIN_POS_COLUMN_NAME;
 import static io.deephaven.parquet.table.ParquetTableWriter.GROUPING_END_POS_COLUMN_NAME;
+import static io.deephaven.parquet.table.ParquetTableWriter.GROUPING_KEY_COLUMN_NAME;
+import static io.deephaven.parquet.table.ParquetTableWriter.INDEX_ROW_SET_COLUMN_NAME;
 
 public class ParquetTableLocation extends AbstractTableLocation {
 
@@ -182,13 +190,17 @@ public class ParquetTableLocation extends AbstractTableLocation {
     @NotNull
     protected ColumnLocation makeColumnLocation(@NotNull final String columnName) {
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
-        final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
-        final List<String> nameList =
-                columnPath == null ? Collections.singletonList(parquetColumnName) : Arrays.asList(columnPath);
+        // TODO: we want to use the _parquet_ column name, right?
+        final Type field = parquetFileReader.lookupFieldName(parquetColumnName).orElse(null);
+        if (field == null) {
+            // no field by this name at all; none of the row groups will match it
+            return new ParquetColumnLocation<>(this, field, columnName, parquetColumnName, null);
+        }
         final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
-                .map(rgr -> rgr.getColumnChunk(columnName, nameList)).toArray(ColumnChunkReader[]::new);
-        final boolean exists = Arrays.stream(columnChunkReaders).anyMatch(ccr -> ccr != null && ccr.numRows() > 0);
-        return new ParquetColumnLocation<>(this, columnName, parquetColumnName,
+                .map(rgr -> rgr.getColumnChunk(field))
+                .toArray(ColumnChunkReader[]::new);
+        final boolean exists = Arrays.stream(columnChunkReaders).anyMatch(ccr -> ccr.numRows() > 0);
+        return new ParquetColumnLocation<>(this, field, columnName, parquetColumnName,
                 exists ? columnChunkReaders : null);
     }
 

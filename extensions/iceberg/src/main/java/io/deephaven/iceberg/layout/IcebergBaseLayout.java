@@ -13,6 +13,7 @@ import io.deephaven.iceberg.util.IcebergInstructions;
 import io.deephaven.parquet.table.ParquetInstructions;
 import org.apache.iceberg.*;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.types.Types.NestedField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +21,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public abstract class IcebergBaseLayout implements TableLocationKeyFinder<IcebergTableLocationKey> {
@@ -37,6 +39,11 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
      * The {@link Snapshot} to discover locations for.
      */
     final Snapshot snapshot;
+
+    /**
+     * The {@link Schema}.
+     */
+    final Schema schema;
 
     /**
      * The {@link FileIO} to use for passing to the catalog reading manifest data files.
@@ -79,6 +86,15 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
                     }
                 }
 
+                // This is making the assumption that our tableDef column names are consistent with schema.columns()
+                for (NestedField field : schema.columns()) {
+                    if (tableDef.getColumn(field.name()) == null) {
+                        continue;
+                    }
+                    final String columnName = field.name();
+                    builder.addFieldIdMapping(field.fieldId(), columnName);
+                }
+
                 // Add the data instructions.
                 instructions.dataInstructions().ifPresent(builder::setSpecialInstructions);
 
@@ -101,14 +117,15 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
             @NotNull final TableDefinition tableDef,
             @NotNull final Table table,
             @NotNull final Snapshot tableSnapshot,
+            @NotNull final Schema schema,
             @NotNull final FileIO fileIO,
             @NotNull final IcebergInstructions instructions) {
-        this.tableDef = tableDef;
-        this.table = table;
-        this.snapshot = tableSnapshot;
-        this.fileIO = fileIO;
-        this.instructions = instructions;
-
+        this.tableDef = Objects.requireNonNull(tableDef);
+        this.table = Objects.requireNonNull(table);
+        this.snapshot = Objects.requireNonNull(tableSnapshot);
+        this.schema = Objects.requireNonNull(schema);
+        this.fileIO = Objects.requireNonNull(fileIO);
+        this.instructions = Objects.requireNonNull(instructions);
         this.cache = new HashMap<>();
     }
 

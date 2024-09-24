@@ -608,12 +608,10 @@ public class IcebergCatalogAdapter {
         if (table == null) {
             throw new IllegalArgumentException("Table not found: " + tableIdentifier);
         }
-
-        final Snapshot snapshot = tableSnapshot != null ? tableSnapshot : table.currentSnapshot();
-        final Schema schema = snapshot != null ? table.schemas().get(snapshot.schemaId()) : table.schema();
-
+        final Schema schema = tableSnapshot != null
+                ? table.schemas().get(tableSnapshot.schemaId())
+                : table.schema();
         final IcebergInstructions userInstructions = instructions == null ? IcebergInstructions.DEFAULT : instructions;
-
         return fromSchema(schema,
                 table.spec(),
                 userInstructions.tableDefinition().orElse(null),
@@ -713,7 +711,9 @@ public class IcebergCatalogAdapter {
 
         // Do we want the latest or a specific snapshot?
         final Snapshot snapshot = tableSnapshot != null ? tableSnapshot : table.currentSnapshot();
-        final Schema schema = table.schemas().get(snapshot.schemaId());
+
+        // If a specific snapshot is provided, we will use that schema; otherwise, we'll use the latest table schema.
+        final Schema schema = tableSnapshot != null ? table.schemas().get(tableSnapshot.schemaId()) : table.schema();
 
         // Load the partitioning schema.
         final org.apache.iceberg.PartitionSpec partitionSpec = table.spec();
@@ -738,10 +738,10 @@ public class IcebergCatalogAdapter {
 
         if (partitionSpec.isUnpartitioned()) {
             // Create the flat layout location key finder
-            keyFinder = new IcebergFlatLayout(tableDef, table, snapshot, fileIO, userInstructions);
+            keyFinder = new IcebergFlatLayout(tableDef, table, snapshot, schema, fileIO, userInstructions);
         } else {
             // Create the partitioning column location key finder
-            keyFinder = new IcebergKeyValuePartitionedLayout(tableDef, table, snapshot, fileIO, partitionSpec,
+            keyFinder = new IcebergKeyValuePartitionedLayout(tableDef, table, snapshot, schema, fileIO, partitionSpec,
                     userInstructions);
         }
 
@@ -764,6 +764,7 @@ public class IcebergCatalogAdapter {
 
         return result;
     }
+
 
     /**
      * Returns the underlying Iceberg {@link Catalog catalog} used by this adapter.

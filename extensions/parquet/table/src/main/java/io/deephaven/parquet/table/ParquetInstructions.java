@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -168,6 +169,8 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
 
     public abstract String getColumnNameFromParquetColumnName(final String parquetColumnName);
 
+    public abstract OptionalInt getFieldIdForColumnName(final String columnName);
+
     @Override
     public abstract String getCodecName(final String columnName);
 
@@ -269,6 +272,11 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         @Override
         public String getParquetColumnNameFromColumnNameOrDefault(final String columnName) {
             return columnName;
+        }
+
+        @Override
+        public OptionalInt getFieldIdForColumnName(String columnName) {
+            return OptionalInt.empty();
         }
 
         @Override
@@ -387,6 +395,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
     private static class ColumnInstructions {
         private final String columnName;
         private String parquetColumnName;
+        private int fieldId = Integer.MIN_VALUE;
         private String codecName;
         private String codecArgs;
         private boolean useDictionary;
@@ -405,6 +414,15 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
 
         public ColumnInstructions setParquetColumnName(final String parquetColumnName) {
             this.parquetColumnName = parquetColumnName;
+            return this;
+        }
+
+        public OptionalInt getFieldId() {
+            return fieldId == Integer.MIN_VALUE ? OptionalInt.empty() : OptionalInt.of(fieldId);
+        }
+
+        public ColumnInstructions setFieldId(int fieldId) {
+            this.fieldId = fieldId;
             return this;
         }
 
@@ -529,6 +547,15 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
                 return null;
             }
             return ci.getColumnName();
+        }
+
+        @Override
+        public OptionalInt getFieldIdForColumnName(String columnName) {
+            if (columnNameToInstructions == null) {
+                return OptionalInt.empty();
+            }
+            final ColumnInstructions ci = columnNameToInstructions.get(columnName);
+            return ci == null ? OptionalInt.empty() : ci.getFieldId();
         }
 
         @Override
@@ -791,6 +818,12 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             }
             ci.setParquetColumnName(parquetColumnName);
             parquetColumnNameToInstructions.put(parquetColumnName, ci);
+            return this;
+        }
+
+        public Builder addFieldIdMapping(final int fieldId, final String columnName) {
+            final ColumnInstructions ci = getColumnInstructions(columnName);
+            ci.setFieldId(fieldId);
             return this;
         }
 

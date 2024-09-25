@@ -6,12 +6,36 @@ package io.deephaven.parquet.base;
 import io.deephaven.util.channel.CachedChannelProvider;
 import io.deephaven.util.channel.SeekableChannelContext;
 import io.deephaven.util.channel.SeekableChannelsProvider;
-import org.apache.parquet.format.*;
+import org.apache.parquet.format.ColumnChunk;
+import org.apache.parquet.format.ColumnMetaData;
 import org.apache.parquet.format.ColumnOrder;
+import org.apache.parquet.format.ConvertedType;
+import org.apache.parquet.format.DecimalType;
+import org.apache.parquet.format.Encoding;
+import org.apache.parquet.format.FieldRepetitionType;
+import org.apache.parquet.format.FileMetaData;
+import org.apache.parquet.format.IntType;
+import org.apache.parquet.format.LogicalType;
+import org.apache.parquet.format.PageEncodingStats;
+import org.apache.parquet.format.PageType;
+import org.apache.parquet.format.RowGroup;
+import org.apache.parquet.format.SchemaElement;
+import org.apache.parquet.format.TimeType;
+import org.apache.parquet.format.TimeUnit;
+import org.apache.parquet.format.TimestampType;
 import org.apache.parquet.format.Type;
-import org.apache.parquet.schema.*;
+import org.apache.parquet.format.Util;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Types;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import shaded.parquet.org.apache.thrift.TException;
+import shaded.parquet.org.apache.thrift.protocol.TJSONProtocol;
+import shaded.parquet.org.apache.thrift.protocol.TSimpleJSONProtocol;
+import shaded.parquet.org.apache.thrift.transport.TMemoryBuffer;
+import shaded.parquet.org.apache.thrift.transport.TTransportException;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,10 +43,19 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import static io.deephaven.parquet.base.ParquetUtils.MAGIC;
 import static io.deephaven.base.FileUtils.convertToURI;
+import static io.deephaven.parquet.base.ParquetUtils.MAGIC;
+import static io.deephaven.parquet.base.ParquetUtils.resolve;
 
 /**
  * Top level accessor for a parquet file which can read both from a file path string or a CLI style file URI,
@@ -102,6 +135,23 @@ public class ParquetFileReader {
                 fileMetaData = Util.readFileMetaData(in);
             }
         }
+
+        System.out.println(fileMetaData);
+        try (final TMemoryBuffer buffer = new TMemoryBuffer(128)) {
+            fileMetaData.write(new TJSONProtocol(buffer, true));
+            buffer.flush();
+            System.out.println(buffer.toString(StandardCharsets.UTF_8));
+        } catch (TException e) {
+            // ignore
+        }
+        try (final TMemoryBuffer buffer = new TMemoryBuffer(128)) {
+            fileMetaData.write(new TSimpleJSONProtocol(buffer));
+            buffer.flush();
+            System.out.println(buffer.toString(StandardCharsets.UTF_8));
+        } catch (TException e) {
+            // ignore
+        }
+
         type = fromParquetSchema(fileMetaData.schema, fileMetaData.column_orders);
     }
 
@@ -479,7 +529,126 @@ public class ParquetFileReader {
         return type;
     }
 
-    public int rowGroupCount() {
-        return fileMetaData.getRow_groups().size();
+    public Stream<FieldContext> fields() {
+        return IntStream.range(0, type.getFieldCount()).mapToObj(this::field);
+    }
+
+    public FieldContext field(int fieldIndex) {
+        return new FieldContext(fieldIndex);
+    }
+
+    public class FieldContext {
+        private final int fieldIndex;
+
+        private FieldContext(int fieldIndex) {
+            this.fieldIndex = fieldIndex;
+        }
+
+        public org.apache.parquet.schema.Type fieldType() {
+            return getFieldType(fieldIndex);
+        }
+
+        public FieldRowGroupContext rowGroup(int rowGroupIndex) {
+            return new FieldRowGroupContext(fieldIndex, rowGroupIndex);
+        }
+
+        public Stream<FieldRowGroupContext> rowGroups() {
+            return IntStream.range(0, fileMetaData.getRow_groupsSize()).mapToObj(this::rowGroup);
+        }
+    }
+
+    class RowGroupContext {
+        private final int rowGroupIndex;
+
+        private RowGroupContext(int rowGroupIndex) {
+            this.rowGroupIndex = rowGroupIndex;
+        }
+
+        public RowGroup rowGroup() {
+            return getRowGroup(rowGroupIndex);
+        }
+
+        public long numRows() {
+            return rowGroup().getNum_rows();
+        }
+
+        public FieldRowGroupContext field(int fieldIndex) {
+            return new FieldRowGroupContext(fieldIndex, rowGroupIndex);
+        }
+    }
+
+    public class FieldRowGroupContext {
+        private final int fieldIndex;
+        private final int rowGroupIndex;
+
+        private FieldRowGroupContext(int fieldIndex, int rowGroupIndex) {
+            this.fieldIndex = fieldIndex;
+            this.rowGroupIndex = rowGroupIndex;
+        }
+
+        org.apache.parquet.schema.Type fieldType() {
+            return getFieldType(fieldIndex);
+        }
+
+        RowGroup rowGroup() {
+            return getRowGroup(rowGroupIndex);
+        }
+
+        ColumnChunk columnChunk() {
+            return rowGroup().getColumns().get(fieldIndex);
+        }
+
+        URI columnChunkURI() {
+            return columnChunk().isSetFile_path()
+                    ? resolve(rootURI, columnChunk().getFile_path())
+                    : rootURI;
+        }
+
+        long numRows() {
+            return rowGroup().getNum_rows();
+        }
+
+        URI rootURI() {
+            return rootURI;
+        }
+
+        SeekableChannelsProvider channelsProvider() {
+            return channelsProvider;
+        }
+
+        // note: this can be any name
+        public ColumnChunkReader reader(String name, String version) {
+            // todo: fix version dependency cycle
+            // todo: cache? caller caches?
+            // todo: pass through rowGroupIx
+            return new ColumnChunkReaderImpl(name, columnChunk(), channelsProvider, rootURI, getSchema(),
+                    nonRequiredFields(), numRows(), version);
+        }
+
+        private List<org.apache.parquet.schema.Type> nonRequiredFields() {
+            return ParquetFileReader.nonRequiredFields(type, columnChunk());
+        }
+    }
+
+    private org.apache.parquet.schema.Type getFieldType(int fieldIndex) {
+        return type.getFields().get(fieldIndex);
+    }
+
+    private RowGroup getRowGroup(int rowGroupIndex) {
+        return fileMetaData.getRow_groups().get(rowGroupIndex);
+    }
+
+    static List<org.apache.parquet.schema.Type> nonRequiredFields(MessageType schema, ColumnChunk columnChunk) {
+        // This seems like a hack, not sure why we actually need it...
+        final List<String> pathInSchema = columnChunk.getMeta_data().getPath_in_schema();
+        final List<org.apache.parquet.schema.Type> nonRequiredFields = new ArrayList<>();
+        for (int indexInPath = 0; indexInPath < pathInSchema.size(); indexInPath++) {
+            org.apache.parquet.schema.Type fieldType = schema
+                    .getType(pathInSchema.subList(0, indexInPath + 1).toArray(new String[0]));
+            if (fieldType.getRepetition() != org.apache.parquet.schema.Type.Repetition.REQUIRED) {
+                nonRequiredFields.add(fieldType);
+            }
+        }
+        return nonRequiredFields;
     }
 }

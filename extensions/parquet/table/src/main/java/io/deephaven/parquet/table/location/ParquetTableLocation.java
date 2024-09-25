@@ -193,20 +193,33 @@ public class ParquetTableLocation extends AbstractTableLocation {
         final int fieldId = readInstructions.getFieldIdForColumnName(columnName).orElse(Integer.MIN_VALUE);
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
         final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
+
         final List<String> nameList =
                 columnPath == null ? Collections.singletonList(parquetColumnName) : Arrays.asList(columnPath);
         final Function<RowGroupReader, ColumnChunkReader> f = fieldId == Integer.MIN_VALUE
                 ? rgr -> rgr.getColumnChunk(columnName, nameList)
                 : rgr -> tryFieldIdFirst(rgr, columnName, fieldId, nameList);
-        final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
-                .map(f)
+
+        final int fieldIndex = 0; // todo
+
+        // todo: cache this, since getRowGroupReaders() was cached?
+        final ColumnChunkReader[] columnChunkReaders = parquetFileReader
+                .field(fieldIndex)
+                .rowGroups()
+                .map(rg -> rg.reader(columnName, version))
                 .toArray(ColumnChunkReader[]::new);
+
+
+        // final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
+        // .map(f)
+        // .toArray(ColumnChunkReader[]::new);
         final boolean exists = Arrays.stream(columnChunkReaders).anyMatch(ccr -> ccr != null && ccr.numRows() > 0);
         return new ParquetColumnLocation<>(this, columnName, parquetColumnName,
                 exists ? columnChunkReaders : null);
     }
 
-    private static ColumnChunkReader tryFieldIdFirst(RowGroupReader reader, String columnName, int fieldId, List<String> nameList) {
+    private static ColumnChunkReader tryFieldIdFirst(RowGroupReader reader, String columnName, int fieldId,
+            List<String> nameList) {
         // this is very imprecise; the caller should know whether this field ID is actually valid or not.
         final ColumnChunkReader columnChunkReader = reader.getColumnChunk(columnName, fieldId);
         if (columnChunkReader != null) {

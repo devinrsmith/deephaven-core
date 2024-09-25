@@ -799,8 +799,9 @@ public class IcebergCatalogAdapter {
                     dataInstructionsProvider);
         } else {
             // Create the partitioning column location key finder
-            keyFinder = new IcebergKeyValuePartitionedLayout(tableDef, table, snapshot, schema, table.io(), partitionSpec,
-                    userInstructions, dataInstructionsProvider);
+            keyFinder =
+                    new IcebergKeyValuePartitionedLayout(tableDef, table, snapshot, schema, table.io(), partitionSpec,
+                            userInstructions, dataInstructionsProvider);
         }
 
         refreshService = null;

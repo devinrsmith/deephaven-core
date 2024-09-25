@@ -58,15 +58,7 @@ final class RowGroupReaderImpl implements RowGroupReader {
             if (field.getId() != null) {
                 chunkMapByFieldId.put(field.getId(), column);
             }
-            List<Type> nonRequiredFields = new ArrayList<>();
-            for (int indexInPath = 0; indexInPath < path_in_schema.size(); indexInPath++) {
-                Type fieldType = schema
-                        .getType(path_in_schema.subList(0, indexInPath + 1).toArray(new String[0]));
-                if (fieldType.getRepetition() != Type.Repetition.REQUIRED) {
-                    nonRequiredFields.add(fieldType);
-                }
-            }
-            schemaMap.put(key, nonRequiredFields);
+            schemaMap.put(key, ParquetFileReader.nonRequiredFields(type, column));
         }
         if (fieldsIt.hasNext() || columnsIt.hasNext()) {
             throw new IllegalStateException();

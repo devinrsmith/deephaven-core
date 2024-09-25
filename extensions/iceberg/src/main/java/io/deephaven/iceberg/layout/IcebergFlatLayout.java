@@ -18,6 +18,16 @@ import java.net.URI;
  * from a {@link Snapshot}
  */
 public final class IcebergFlatLayout extends IcebergBaseLayout {
+    public IcebergFlatLayout(
+            @NotNull final TableDefinition tableDef,
+            @NotNull final Table table,
+            @NotNull final Snapshot tableSnapshot,
+            @NotNull final FileIO fileIO,
+            @NotNull final IcebergInstructions instructions) {
+        // Note: this schema may not be the one the user actually wants...
+        this(tableDef, table, tableSnapshot, table.schemas().get(tableSnapshot.schemaId()), fileIO, instructions);
+    }
+
     /**
      * @param tableDef The {@link TableDefinition} that will be used for the table.
      * @param table The {@link Table} to discover locations for.

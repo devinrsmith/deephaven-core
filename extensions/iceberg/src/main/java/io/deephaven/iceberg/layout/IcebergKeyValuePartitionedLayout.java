@@ -38,6 +38,18 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
 
     private final List<ColumnData> outputPartitioningColumns;
 
+    public IcebergKeyValuePartitionedLayout(
+            @NotNull final TableDefinition tableDef,
+            @NotNull final org.apache.iceberg.Table table,
+            @NotNull final org.apache.iceberg.Snapshot tableSnapshot,
+            @NotNull final FileIO fileIO,
+            @NotNull final PartitionSpec partitionSpec,
+            @NotNull final IcebergInstructions instructions) {
+        // Note: this schema may not be the one the user actually wants...
+        this(tableDef, table, tableSnapshot, table.schemas().get(tableSnapshot.schemaId()), fileIO, partitionSpec,
+                instructions);
+    }
+
     /**
      * @param tableDef The {@link TableDefinition} that will be used for the table.
      * @param table The {@link Table} to discover locations for.

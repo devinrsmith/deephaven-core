@@ -31,11 +31,6 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Types;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import shaded.parquet.org.apache.thrift.TException;
-import shaded.parquet.org.apache.thrift.protocol.TJSONProtocol;
-import shaded.parquet.org.apache.thrift.protocol.TSimpleJSONProtocol;
-import shaded.parquet.org.apache.thrift.transport.TMemoryBuffer;
-import shaded.parquet.org.apache.thrift.transport.TTransportException;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +38,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -135,24 +129,23 @@ public class ParquetFileReader {
                 fileMetaData = Util.readFileMetaData(in);
             }
         }
-
-        System.out.println(fileMetaData);
-        try (final TMemoryBuffer buffer = new TMemoryBuffer(128)) {
-            fileMetaData.write(new TJSONProtocol(buffer, true));
-            buffer.flush();
-            System.out.println(buffer.toString(StandardCharsets.UTF_8));
-        } catch (TException e) {
-            // ignore
-        }
-        try (final TMemoryBuffer buffer = new TMemoryBuffer(128)) {
-            fileMetaData.write(new TSimpleJSONProtocol(buffer));
-            buffer.flush();
-            System.out.println(buffer.toString(StandardCharsets.UTF_8));
-        } catch (TException e) {
-            // ignore
-        }
-
         type = fromParquetSchema(fileMetaData.schema, fileMetaData.column_orders);
+        verify();
+    }
+
+    public long numRows() {
+        return fileMetaData.getNum_rows();
+    }
+
+    private void verify() {
+        if (numRows() < 0) {
+            throw new IllegalStateException(String.format("Negative row count: numRows=%d, rootURI=%s", numRows(), rootURI));
+        }
+        rowGroups().forEach(RowGroupContext::verify);
+        final long numRowsByRowGroups = rowGroups().mapToLong(RowGroupContext::numRows).sum();
+        if (numRows() != numRowsByRowGroups) {
+            throw new IllegalStateException(String.format("Inconsistent row count: numRows=%d, numRowsByRowGroups=%d, rootURI=%s", numRows(), numRowsByRowGroups, rootURI));
+        }
     }
 
     /**
@@ -284,7 +277,7 @@ public class ParquetFileReader {
      *
      * @param version The "version" string from deephaven specific parquet metadata, or null if it's not present.
      */
-    public RowGroupReader getRowGroup(final int groupNumber, final String version) {
+    public RowGroupReader rowGroup(final int groupNumber, final String version) {
         return new RowGroupReaderImpl(
                 fileMetaData.getRow_groups().get(groupNumber),
                 channelsProvider,
@@ -529,35 +522,47 @@ public class ParquetFileReader {
         return type;
     }
 
-    public Stream<FieldContext> fields() {
-        return IntStream.range(0, type.getFieldCount()).mapToObj(this::field);
+    private org.apache.parquet.schema.Type columnType(int fieldIndex) {
+        return type.getFields().get(fieldIndex);
     }
 
-    public FieldContext field(int fieldIndex) {
-        return new FieldContext(fieldIndex);
+    private RowGroupContext rowGroup(int rowGroupIndex) {
+        return new RowGroupContext(rowGroupIndex);
     }
 
-    public class FieldContext {
-        private final int fieldIndex;
+    private Stream<RowGroupContext> rowGroups() {
+        return IntStream.range(0, fileMetaData.getRow_groupsSize()).mapToObj(this::rowGroup);
+    }
 
-        private FieldContext(int fieldIndex) {
-            this.fieldIndex = fieldIndex;
+    public ColumnContext column(int columnIndex) {
+        return new ColumnContext(columnIndex);
+    }
+
+    public Stream<ColumnContext> columns() {
+        return IntStream.range(0, type.getFieldCount()).mapToObj(this::column);
+    }
+
+    public class ColumnContext {
+        private final int columnIndex;
+
+        private ColumnContext(int columnIndex) {
+            this.columnIndex = columnIndex;
         }
 
-        public org.apache.parquet.schema.Type fieldType() {
-            return getFieldType(fieldIndex);
+        public org.apache.parquet.schema.Type columnType() {
+            return ParquetFileReader.this.columnType(columnIndex);
         }
 
-        public FieldRowGroupContext rowGroup(int rowGroupIndex) {
-            return new FieldRowGroupContext(fieldIndex, rowGroupIndex);
+        public ColumnRowGroupContext rowGroup(int rowGroupIndex) {
+            return new ColumnRowGroupContext(columnIndex, rowGroupIndex);
         }
 
-        public Stream<FieldRowGroupContext> rowGroups() {
+        public Stream<ColumnRowGroupContext> rowGroups() {
             return IntStream.range(0, fileMetaData.getRow_groupsSize()).mapToObj(this::rowGroup);
         }
     }
 
-    class RowGroupContext {
+    public class RowGroupContext {
         private final int rowGroupIndex;
 
         private RowGroupContext(int rowGroupIndex) {
@@ -565,37 +570,50 @@ public class ParquetFileReader {
         }
 
         public RowGroup rowGroup() {
-            return getRowGroup(rowGroupIndex);
+            return fileMetaData.getRow_groups().get(rowGroupIndex);
         }
 
         public long numRows() {
             return rowGroup().getNum_rows();
         }
 
-        public FieldRowGroupContext field(int fieldIndex) {
-            return new FieldRowGroupContext(fieldIndex, rowGroupIndex);
+        public long totalByteSize() {
+            return rowGroup().getTotal_byte_size();
+        }
+
+        public ColumnRowGroupContext column(int columnIndex) {
+            return new ColumnRowGroupContext(columnIndex, rowGroupIndex);
+        }
+
+        private void verify() {
+            if (numRows() < 0) {
+                throw new IllegalStateException(String.format("Negative row group row count: rowGroupIndex=%d, numRows=%d, rootURI=%s", rowGroupIndex, numRows(), rootURI));
+            }
+            if (totalByteSize() < 0) {
+                throw new IllegalStateException(String.format("Negative totalByteSize: rowGroupIndex=%d, totalByteSize=%d, rootURI=%s", rowGroupIndex, totalByteSize(), rootURI));
+            }
         }
     }
 
-    public class FieldRowGroupContext {
-        private final int fieldIndex;
+    public class ColumnRowGroupContext {
+        private final int columnIndex;
         private final int rowGroupIndex;
 
-        private FieldRowGroupContext(int fieldIndex, int rowGroupIndex) {
-            this.fieldIndex = fieldIndex;
+        private ColumnRowGroupContext(int columnIndex, int rowGroupIndex) {
+            this.columnIndex = columnIndex;
             this.rowGroupIndex = rowGroupIndex;
         }
 
         org.apache.parquet.schema.Type fieldType() {
-            return getFieldType(fieldIndex);
+            return columnType(columnIndex);
         }
 
         RowGroup rowGroup() {
-            return getRowGroup(rowGroupIndex);
+            return fileMetaData.getRow_groups().get(rowGroupIndex);
         }
 
         ColumnChunk columnChunk() {
-            return rowGroup().getColumns().get(fieldIndex);
+            return rowGroup().getColumns().get(columnIndex);
         }
 
         URI columnChunkURI() {
@@ -628,14 +646,6 @@ public class ParquetFileReader {
         private List<org.apache.parquet.schema.Type> nonRequiredFields() {
             return ParquetFileReader.nonRequiredFields(type, columnChunk());
         }
-    }
-
-    private org.apache.parquet.schema.Type getFieldType(int fieldIndex) {
-        return type.getFields().get(fieldIndex);
-    }
-
-    private RowGroup getRowGroup(int rowGroupIndex) {
-        return fileMetaData.getRow_groups().get(rowGroupIndex);
     }
 
     static List<org.apache.parquet.schema.Type> nonRequiredFields(MessageType schema, ColumnChunk columnChunk) {

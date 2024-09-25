@@ -28,6 +28,7 @@ public interface ColumnChunkReader {
     /**
      * @return The number of rows in this ColumnChunk, or -1 if it's unknown.
      */
+    @Deprecated // this should be scoped to row group level
     long numRows();
 
     /**

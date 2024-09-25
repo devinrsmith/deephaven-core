@@ -83,6 +83,10 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
     private volatile RowGroupReader[] rowGroupReaders;
 
+    // missing means it's an illegal column name
+    // -1 means it's an fine column name, but the mapping does not exist
+    private final Map<String, Integer> columnNameToParquetColumnIndex;
+
     public ParquetTableLocation(@NotNull final TableKey tableKey,
             @NotNull final ParquetTableLocationKey tableLocationKey,
             @NotNull final ParquetInstructions readInstructions) {
@@ -175,7 +179,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 return local;
             }
             return rowGroupReaders = IntStream.of(rowGroupIndices)
-                    .mapToObj(idx -> parquetFileReader.getRowGroup(idx, version))
+                    .mapToObj(idx -> parquetFileReader.rowGroup(idx, version))
                     .sorted(Comparator.comparingInt(rgr -> rgr.getRowGroup().getOrdinal()))
                     .toArray(RowGroupReader[]::new);
         }
@@ -190,6 +194,9 @@ public class ParquetTableLocation extends AbstractTableLocation {
     @Override
     @NotNull
     protected ColumnLocation makeColumnLocation(@NotNull final String columnName) {
+
+        // todo: throw exception if columnName is not in table def?
+
         final int fieldId = readInstructions.getFieldIdForColumnName(columnName).orElse(Integer.MIN_VALUE);
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
         final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
@@ -200,22 +207,27 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 ? rgr -> rgr.getColumnChunk(columnName, nameList)
                 : rgr -> tryFieldIdFirst(rgr, columnName, fieldId, nameList);
 
-        final int fieldIndex = 0; // todo
+
+        final int columnIndex = 0; // todo
+
+        if (false) {
+            // Column does not exist in the source
+            return new ParquetColumnLocation<>(this, columnName, parquetColumnName, null);
+        }
+
+        if (parquetFileReader.numRows() == 0) {
+            // Parquet file is empty
+            return new ParquetColumnLocation<>(this, columnName, parquetColumnName, null);
+        }
 
         // todo: cache this, since getRowGroupReaders() was cached?
         final ColumnChunkReader[] columnChunkReaders = parquetFileReader
-                .field(fieldIndex)
+                .column(columnIndex)
                 .rowGroups()
                 .map(rg -> rg.reader(columnName, version))
                 .toArray(ColumnChunkReader[]::new);
 
-
-        // final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
-        // .map(f)
-        // .toArray(ColumnChunkReader[]::new);
-        final boolean exists = Arrays.stream(columnChunkReaders).anyMatch(ccr -> ccr != null && ccr.numRows() > 0);
-        return new ParquetColumnLocation<>(this, columnName, parquetColumnName,
-                exists ? columnChunkReaders : null);
+        return new ParquetColumnLocation<>(this, columnName, parquetColumnName, columnChunkReaders);
     }
 
     private static ColumnChunkReader tryFieldIdFirst(RowGroupReader reader, String columnName, int fieldId,

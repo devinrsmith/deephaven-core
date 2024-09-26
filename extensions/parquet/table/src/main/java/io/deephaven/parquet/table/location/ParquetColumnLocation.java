@@ -18,6 +18,7 @@ import io.deephaven.engine.table.impl.sources.regioned.*;
 import io.deephaven.parquet.base.BigDecimalParquetBytesCodec;
 import io.deephaven.parquet.base.BigIntegerParquetBytesCodec;
 import io.deephaven.parquet.base.ColumnChunkReader;
+import io.deephaven.parquet.base.ParquetFileReader.ColumnContext;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.parquet.table.metadata.CodecInfo;
 import io.deephaven.parquet.table.metadata.ColumnTypeInfo;
@@ -58,7 +59,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
     private static final int MAX_PAGE_CACHE_SIZE = Configuration.getInstance()
             .getIntegerForClassWithDefault(ParquetColumnLocation.class, "maxPageCacheSize", 8192);
 
-    private final String parquetColumnName;
+    private final ColumnContext parquetColumn;
     /**
      * Factory object needed for deferred initialization of the remaining fields. Reference serves as a barrier to
      * ensure visibility of the derived fields.
@@ -76,16 +77,16 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
      * Construct a new {@link ParquetColumnLocation} for the specified {@link ParquetTableLocation} and column name.
      *
      * @param tableLocation The table location enclosing this column location
-     * @param parquetColumnName The Parquet file column name
+     * @param parquetColumn The Parquet column
      * @param columnChunkReaders The {@link ColumnChunkReader column chunk readers} for this location
      */
     ParquetColumnLocation(
             @NotNull final ParquetTableLocation tableLocation,
             @NotNull final String columnName,
-            @NotNull final String parquetColumnName,
+            @Nullable final ColumnContext parquetColumn,
             @Nullable final ColumnChunkReader[] columnChunkReaders) {
         super(tableLocation, columnName);
-        this.parquetColumnName = parquetColumnName;
+        this.parquetColumn = parquetColumn;
         this.columnChunkReaders = columnChunkReaders;
     }
 
@@ -311,8 +312,8 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                                     ensurePageCache(),
                                     columnChunkReader,
                                     tl().getRegionParameters().regionMask,
-                                    makeToPage(tl().getColumnTypes().get(parquetColumnName),
-                                            tl().getReadInstructions(), parquetColumnName, columnChunkReader,
+                                    makeToPage(tl().getColumnTypes().get(parquetColumn.parquetColumnName()),
+                                            tl().getReadInstructions(), parquetColumn.parquetColumnName(), columnChunkReader,
                                             columnDefinition),
                                     columnDefinition);
                     pageStores[psi] = creatorResult.pageStore;

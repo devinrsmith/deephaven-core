@@ -28,6 +28,7 @@ import org.apache.parquet.format.Util;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Type.ID;
 import org.apache.parquet.schema.Types;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -141,10 +144,24 @@ public class ParquetFileReader {
         if (numRows() < 0) {
             throw new IllegalStateException(String.format("Negative row count: numRows=%d, rootURI=%s", numRows(), rootURI));
         }
-        rowGroups().forEach(RowGroupContext::verify);
-        final long numRowsByRowGroups = rowGroups().mapToLong(RowGroupContext::numRows).sum();
+        long numRowsByRowGroups = 0;
+        int currentOrdinal = 0;
+        final Iterator<RowGroupContext> rgIt = rowGroups().iterator();
+        while (rgIt.hasNext()) {
+            final RowGroupContext rowGroup = rgIt.next();
+            rowGroup.verify();
+            numRowsByRowGroups += rowGroup.numRows();
+            final int ordinal = rowGroup.ordinal().orElse(0);
+            if (ordinal < currentOrdinal) {
+                throw new IllegalStateException();
+            }
+        }
         if (numRows() != numRowsByRowGroups) {
             throw new IllegalStateException(String.format("Inconsistent row count: numRows=%d, numRowsByRowGroups=%d, rootURI=%s", numRows(), numRowsByRowGroups, rootURI));
+        }
+        if (columns().map(ColumnContext::parquetColumnName).distinct().count() != numColumns()) {
+            // todo, we could potentially support parquet files with duplicate names if they can be differentiated by field_id
+            throw new IllegalStateException(String.format("Duplicate column names found, rootURI=%s", rootURI));
         }
     }
 
@@ -526,12 +543,16 @@ public class ParquetFileReader {
         return type.getFields().get(fieldIndex);
     }
 
-    private RowGroupContext rowGroup(int rowGroupIndex) {
+    public RowGroupContext rowGroup(int rowGroupIndex) {
         return new RowGroupContext(rowGroupIndex);
     }
 
-    private Stream<RowGroupContext> rowGroups() {
-        return IntStream.range(0, fileMetaData.getRow_groupsSize()).mapToObj(this::rowGroup);
+    public Stream<RowGroupContext> rowGroups() {
+        return IntStream.range(0, numRowGroups()).mapToObj(this::rowGroup);
+    }
+
+    private int numRowGroups() {
+        return fileMetaData.getRow_groupsSize();
     }
 
     public ColumnContext column(int columnIndex) {
@@ -539,7 +560,15 @@ public class ParquetFileReader {
     }
 
     public Stream<ColumnContext> columns() {
-        return IntStream.range(0, type.getFieldCount()).mapToObj(this::column);
+        return IntStream.range(0, numColumns()).mapToObj(this::column);
+    }
+
+    public Iterable<ColumnContext> columnsIterable() {
+        return () -> columns().iterator();
+    }
+
+    public int numColumns() {
+        return type.getFieldCount();
     }
 
     public class ColumnContext {
@@ -547,6 +576,10 @@ public class ParquetFileReader {
 
         private ColumnContext(int columnIndex) {
             this.columnIndex = columnIndex;
+        }
+
+        public int columnIndex() {
+            return columnIndex;
         }
 
         public org.apache.parquet.schema.Type columnType() {
@@ -558,7 +591,18 @@ public class ParquetFileReader {
         }
 
         public Stream<ColumnRowGroupContext> rowGroups() {
-            return IntStream.range(0, fileMetaData.getRow_groupsSize()).mapToObj(this::rowGroup);
+            return IntStream.range(0, numRowGroups()).mapToObj(this::rowGroup);
+        }
+
+        public String parquetColumnName() {
+            return columnType().getName();
+        }
+
+        public OptionalInt fieldId() {
+            final ID id = columnType().getId();
+            return id == null
+                    ? OptionalInt.empty()
+                    : OptionalInt.of(id.intValue());
         }
     }
 
@@ -567,6 +611,10 @@ public class ParquetFileReader {
 
         private RowGroupContext(int rowGroupIndex) {
             this.rowGroupIndex = rowGroupIndex;
+        }
+
+        public int rowGroupIndex() {
+            return rowGroupIndex;
         }
 
         public RowGroup rowGroup() {
@@ -581,8 +629,18 @@ public class ParquetFileReader {
             return rowGroup().getTotal_byte_size();
         }
 
+        public ColumnRowGroupContext firstColumn() {
+            return column(0);
+        }
+
         public ColumnRowGroupContext column(int columnIndex) {
             return new ColumnRowGroupContext(columnIndex, rowGroupIndex);
+        }
+
+        public OptionalInt ordinal() {
+            return rowGroup().isSetOrdinal()
+                    ? OptionalInt.of(rowGroup().getOrdinal())
+                    : OptionalInt.empty();
         }
 
         private void verify() {
@@ -620,6 +678,10 @@ public class ParquetFileReader {
             return columnChunk().isSetFile_path()
                     ? resolve(rootURI, columnChunk().getFile_path())
                     : rootURI;
+        }
+
+        public Optional<String> filePath() {
+            return Optional.ofNullable(columnChunk().getFile_path());
         }
 
         long numRows() {

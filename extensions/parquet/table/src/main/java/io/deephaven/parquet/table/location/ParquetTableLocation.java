@@ -24,6 +24,8 @@ import io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedPageStore;
 import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ParquetFileReader;
+import io.deephaven.parquet.base.ParquetFileReader.ColumnContext;
+import io.deephaven.parquet.base.ParquetFileReader.RowGroupContext;
 import io.deephaven.parquet.base.RowGroupReader;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.parquet.table.ParquetSchemaReader;
@@ -69,9 +71,9 @@ public class ParquetTableLocation extends AbstractTableLocation {
     private final ParquetFileReader parquetFileReader;
     private final int[] rowGroupIndices;
 
-    private final RowGroup[] rowGroups;
+    private final RowGroupContext[] rowGroups;
     private final RegionedPageStore.Parameters regionParameters;
-    private final Map<String, String[]> parquetColumnNameToPath;
+//    private final Map<String, String[]> parquetColumnNameToPath;
 
     private final TableInfo tableInfo;
     private final Map<String, GroupingColumnInfo> groupingColumns;
@@ -104,19 +106,17 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
         final int rowGroupCount = rowGroupIndices.length;
         rowGroups = IntStream.of(rowGroupIndices)
-                .mapToObj(rgi -> parquetFileReader.fileMetaData.getRow_groups().get(rgi))
-                .sorted(Comparator.comparingInt(RowGroup::getOrdinal))
-                .toArray(RowGroup[]::new);
-        final long maxRowCount = Arrays.stream(rowGroups).mapToLong(RowGroup::getNum_rows).max().orElse(0L);
+                .mapToObj(parquetFileReader::rowGroup)
+                .sorted(Comparator.comparingInt(rg -> rg.ordinal().orElse(0)))
+                .toArray(RowGroupContext[]::new);
+        final long maxRowCount = Arrays.stream(rowGroups).mapToLong(RowGroupContext::numRows).max().orElse(0L);
         regionParameters = new RegionedPageStore.Parameters(
                 RegionedColumnSource.ROW_KEY_TO_SUB_REGION_ROW_INDEX_MASK, rowGroupCount, maxRowCount);
 
-        parquetColumnNameToPath = new HashMap<>();
-        for (final ColumnDescriptor column : parquetFileReader.getSchema().getColumns()) {
-            final String[] path = column.getPath();
-            if (path.length > 1) {
-                parquetColumnNameToPath.put(path[0], path);
-            }
+        columnNameToParquetColumnIndex = new HashMap<>(parquetFileReader.numColumns());
+        for (ColumnContext column : parquetFileReader.columnsIterable()) {
+            final String columnName = readInstructions.getColumnNameFromParquetColumnNameOrDefault(column.parquetColumnName());
+            columnNameToParquetColumnIndex.put(columnName, column.columnIndex());
         }
 
         // TODO (https://github.com/deephaven/deephaven-core/issues/958):
@@ -194,57 +194,39 @@ public class ParquetTableLocation extends AbstractTableLocation {
     @Override
     @NotNull
     protected ColumnLocation makeColumnLocation(@NotNull final String columnName) {
-
-        // todo: throw exception if columnName is not in table def?
-
-        final int fieldId = readInstructions.getFieldIdForColumnName(columnName).orElse(Integer.MIN_VALUE);
-        final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
-        final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
-
-        final List<String> nameList =
-                columnPath == null ? Collections.singletonList(parquetColumnName) : Arrays.asList(columnPath);
-        final Function<RowGroupReader, ColumnChunkReader> f = fieldId == Integer.MIN_VALUE
-                ? rgr -> rgr.getColumnChunk(columnName, nameList)
-                : rgr -> tryFieldIdFirst(rgr, columnName, fieldId, nameList);
-
-
-        final int columnIndex = 0; // todo
-
-        if (false) {
-            // Column does not exist in the source
-            return new ParquetColumnLocation<>(this, columnName, parquetColumnName, null);
+        final Integer parquetColumnIndex = columnNameToParquetColumnIndex.get(columnName);
+        if (parquetColumnIndex == null) {
+            // throw new IllegalArgumentException("ColumnBad column name");
+            return new ParquetColumnLocation<>(this, columnName, null, null);
         }
+        if (parquetColumnIndex == -1) {
+            // Column does not exist in the source
+            // There is no parquetColumnName...
+            return new ParquetColumnLocation<>(this, columnName, null, null);
+        }
+        return makeColumnLocationByColumnIndex(columnName, parquetColumnIndex);
+    }
 
+    ColumnLocation makeColumnLocationByColumnIndex(String columnName, int parquetColumnIndex) {
+        final ColumnContext column = parquetFileReader.column(parquetColumnIndex);
         if (parquetFileReader.numRows() == 0) {
             // Parquet file is empty
-            return new ParquetColumnLocation<>(this, columnName, parquetColumnName, null);
+            return new ParquetColumnLocation<>(this, columnName, column, null);
         }
-
         // todo: cache this, since getRowGroupReaders() was cached?
-        final ColumnChunkReader[] columnChunkReaders = parquetFileReader
-                .column(columnIndex)
+        // or cache ColumnLocation?
+        final ColumnChunkReader[] columnChunkReaders = column
                 .rowGroups()
                 .map(rg -> rg.reader(columnName, version))
                 .toArray(ColumnChunkReader[]::new);
-
-        return new ParquetColumnLocation<>(this, columnName, parquetColumnName, columnChunkReaders);
-    }
-
-    private static ColumnChunkReader tryFieldIdFirst(RowGroupReader reader, String columnName, int fieldId,
-            List<String> nameList) {
-        // this is very imprecise; the caller should know whether this field ID is actually valid or not.
-        final ColumnChunkReader columnChunkReader = reader.getColumnChunk(columnName, fieldId);
-        if (columnChunkReader != null) {
-            return columnChunkReader;
-        }
-        return reader.getColumnChunk(columnName, nameList);
+        return new ParquetColumnLocation<>(this, columnName, column, columnChunkReaders);
     }
 
     private RowSet computeIndex() {
         final RowSetBuilderSequential sequentialBuilder = RowSetFactory.builderSequential();
 
         for (int rgi = 0; rgi < rowGroups.length; ++rgi) {
-            final long subRegionSize = rowGroups[rgi].getNum_rows();
+            final long subRegionSize = rowGroups[rgi].numRows();
             final long subRegionFirstKey = (long) rgi << regionParameters.regionMaskNumBits;
             final long subRegionLastKey = subRegionFirstKey + subRegionSize - 1;
             sequentialBuilder.appendRange(subRegionFirstKey, subRegionLastKey);

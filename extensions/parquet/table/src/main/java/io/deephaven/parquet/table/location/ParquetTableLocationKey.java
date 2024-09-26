@@ -4,6 +4,8 @@
 package io.deephaven.parquet.table.location;
 
 import io.deephaven.engine.table.impl.locations.local.URITableLocationKey;
+import io.deephaven.parquet.base.ParquetFileReader.ColumnRowGroupContext;
+import io.deephaven.parquet.base.ParquetFileReader.RowGroupContext;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.locations.TableLocationKey;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static io.deephaven.parquet.base.ParquetUtils.PARQUET_FILE_EXTENSION;
@@ -154,20 +157,23 @@ public class ParquetTableLocationKey extends URITableLocationKey {
         if (rowGroupIndices != null) {
             return rowGroupIndices;
         }
-        final List<RowGroup> rowGroups = getFileReader().fileMetaData.getRow_groups();
-        return rowGroupIndices = IntStream.range(0, rowGroups.size()).filter(rgi -> {
-            // 1. We can safely assume there's always at least one column. Our tools will refuse to write a
-            // column-less table, and other readers we've tested fail catastrophically.
-            // 2. null file path means the column is local to the file the metadata was read from (which had
-            // better be this file, in that case).
-            // 3. We're assuming row groups are contained within a single file.
-            // While it seems that row group *could* have column chunks splayed out into multiple files,
-            // we're not expecting that in this code path. To support it, discovery tools should figure out
-            // the row groups for a partition themselves and call setRowGroupReaders.
-            final String filePath =
-                    FilenameUtils.separatorsToSystem(rowGroups.get(rgi).getColumns().get(0).getFile_path());
-            return filePath == null || convertToURI(filePath, false).equals(uri);
-        }).toArray();
+        return rowGroupIndices = getFileReader()
+                .rowGroups()
+                .filter(rg -> {
+                    // 1. We can safely assume there's always at least one column. Our tools will refuse to write a
+                    // column-less table, and other readers we've tested fail catastrophically.
+                    // 2. null file path means the column is local to the file the metadata was read from (which had
+                    // better be this file, in that case).
+                    // 3. We're assuming row groups are contained within a single file.
+                    // While it seems that row group *could* have column chunks splayed out into multiple files,
+                    // we're not expecting that in this code path. To support it, discovery tools should figure out
+                    // the row groups for a partition themselves and call setRowGroupReaders.
+                    final String filePath =
+                            FilenameUtils.separatorsToSystem(rg.firstColumn().filePath().orElse(null));
+                    return filePath == null || convertToURI(filePath, false).equals(uri);
+                })
+                .mapToInt(RowGroupContext::rowGroupIndex)
+                .toArray();
     }
 
     /**

@@ -142,7 +142,8 @@ public class ParquetFileReader {
 
     private void verify() {
         if (numRows() < 0) {
-            throw new IllegalStateException(String.format("Negative row count: numRows=%d, rootURI=%s", numRows(), rootURI));
+            throw new IllegalStateException(
+                    String.format("Negative row count: numRows=%d, rootURI=%s", numRows(), rootURI));
         }
         long numRowsByRowGroups = 0;
         int currentOrdinal = 0;
@@ -157,10 +158,13 @@ public class ParquetFileReader {
             }
         }
         if (numRows() != numRowsByRowGroups) {
-            throw new IllegalStateException(String.format("Inconsistent row count: numRows=%d, numRowsByRowGroups=%d, rootURI=%s", numRows(), numRowsByRowGroups, rootURI));
+            throw new IllegalStateException(
+                    String.format("Inconsistent row count: numRows=%d, numRowsByRowGroups=%d, rootURI=%s", numRows(),
+                            numRowsByRowGroups, rootURI));
         }
         if (columns().map(ColumnContext::parquetColumnName).distinct().count() != numColumns()) {
-            // todo, we could potentially support parquet files with duplicate names if they can be differentiated by field_id
+            // todo, we could potentially support parquet files with duplicate names if they can be differentiated by
+            // field_id
             throw new IllegalStateException(String.format("Duplicate column names found, rootURI=%s", rootURI));
         }
     }
@@ -645,10 +649,14 @@ public class ParquetFileReader {
 
         private void verify() {
             if (numRows() < 0) {
-                throw new IllegalStateException(String.format("Negative row group row count: rowGroupIndex=%d, numRows=%d, rootURI=%s", rowGroupIndex, numRows(), rootURI));
+                throw new IllegalStateException(
+                        String.format("Negative row group row count: rowGroupIndex=%d, numRows=%d, rootURI=%s",
+                                rowGroupIndex, numRows(), rootURI));
             }
             if (totalByteSize() < 0) {
-                throw new IllegalStateException(String.format("Negative totalByteSize: rowGroupIndex=%d, totalByteSize=%d, rootURI=%s", rowGroupIndex, totalByteSize(), rootURI));
+                throw new IllegalStateException(
+                        String.format("Negative totalByteSize: rowGroupIndex=%d, totalByteSize=%d, rootURI=%s",
+                                rowGroupIndex, totalByteSize(), rootURI));
             }
         }
     }

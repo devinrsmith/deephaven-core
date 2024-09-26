@@ -313,7 +313,8 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                                     columnChunkReader,
                                     tl().getRegionParameters().regionMask,
                                     makeToPage(tl().getColumnTypes().get(parquetColumn.parquetColumnName()),
-                                            tl().getReadInstructions(), parquetColumn.parquetColumnName(), columnChunkReader,
+                                            tl().getReadInstructions(), parquetColumn.parquetColumnName(),
+                                            columnChunkReader,
                                             columnDefinition),
                                     columnDefinition);
                     pageStores[psi] = creatorResult.pageStore;

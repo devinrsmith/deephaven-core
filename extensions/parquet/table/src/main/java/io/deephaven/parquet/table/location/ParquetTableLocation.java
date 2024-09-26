@@ -73,7 +73,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
     private final RowGroupContext[] rowGroups;
     private final RegionedPageStore.Parameters regionParameters;
-//    private final Map<String, String[]> parquetColumnNameToPath;
+    // private final Map<String, String[]> parquetColumnNameToPath;
 
     private final TableInfo tableInfo;
     private final Map<String, GroupingColumnInfo> groupingColumns;
@@ -85,9 +85,8 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
     private volatile RowGroupReader[] rowGroupReaders;
 
-    // missing means it's an illegal column name
-    // -1 means it's an fine column name, but the mapping does not exist
     private final Map<String, Integer> columnNameToParquetColumnIndex;
+    private final Map<Integer, Integer> fieldIdToParquetColumnIndex;
 
     public ParquetTableLocation(@NotNull final TableKey tableKey,
             @NotNull final ParquetTableLocationKey tableLocationKey,
@@ -115,7 +114,8 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
         columnNameToParquetColumnIndex = new HashMap<>(parquetFileReader.numColumns());
         for (ColumnContext column : parquetFileReader.columnsIterable()) {
-            final String columnName = readInstructions.getColumnNameFromParquetColumnNameOrDefault(column.parquetColumnName());
+            final String columnName =
+                    readInstructions.getColumnNameFromParquetColumnNameOrDefault(column.parquetColumnName());
             columnNameToParquetColumnIndex.put(columnName, column.columnIndex());
         }
 

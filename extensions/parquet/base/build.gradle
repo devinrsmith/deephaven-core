@@ -23,4 +23,7 @@ dependencies {
 
     compileOnly libs.jetbrains.annotations
     testImplementation libs.junit4
+
+    compileOnly project(':util-immutables')
+    annotationProcessor libs.immutables.value
 }

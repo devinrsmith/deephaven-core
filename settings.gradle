@@ -228,6 +228,9 @@ project(':extensions-kafka').projectDir = file('extensions/kafka')
 include(':extensions-parquet-base')
 project(':extensions-parquet-base').projectDir = file('extensions/parquet/base')
 
+include(':extensions-parquet-format')
+project(':extensions-parquet-format').projectDir = file('extensions/parquet/format')
+
 include(':extensions-parquet-compression')
 project(':extensions-parquet-compression').projectDir = file('extensions/parquet/compression')
 

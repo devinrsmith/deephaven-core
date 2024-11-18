@@ -255,6 +255,7 @@ oshi-core = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
 pac4j-http = { module = "org.pac4j:pac4j-http", version.ref = "pac4j" }
 pac4j-oidc = { module = "org.pac4j:pac4j-oidc", version.ref = "pac4j" }
 
+parquet-column = { module = "org.apache.parquet:parquet-column", version.ref = "parquet" }
 parquet-hadoop = { module = "org.apache.parquet:parquet-hadoop", version.ref = "parquet" }
 
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }

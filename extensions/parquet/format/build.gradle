@@ -1,0 +1,13 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+description 'Parquet Format: easy wrappers around parquet format'
+
+dependencies {
+    api libs.parquet.column
+
+    compileOnly project(':util-immutables')
+    annotationProcessor libs.immutables.value
+}

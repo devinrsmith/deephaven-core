@@ -152,7 +152,7 @@ public class ParquetInstructionsTest {
     public void columnResolver() {
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(TableDefinition.of(ColumnDefinition.ofInt("Foo")))
-                .setColumnResolver(ColumnResolverTestImpl.INSTANCE)
+                .setColumnResolverProvider(ColumnResolverTestImpl.INSTANCE)
                 .build();
         assertThat(instructions.getColumnResolver()).hasValue(ColumnResolverTestImpl.INSTANCE);
     }
@@ -161,7 +161,7 @@ public class ParquetInstructionsTest {
     public void columnResolverNoTableDefinition() {
         try {
             ParquetInstructions.builder()
-                    .setColumnResolver(ColumnResolverTestImpl.INSTANCE)
+                    .setColumnResolverProvider(ColumnResolverTestImpl.INSTANCE)
                     .build();
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {

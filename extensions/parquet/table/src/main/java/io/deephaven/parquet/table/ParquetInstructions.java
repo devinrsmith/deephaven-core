@@ -15,6 +15,7 @@ import io.deephaven.parquet.base.ParquetUtils;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.util.annotations.VisibleForTesting;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -706,7 +707,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         private ParquetFileLayout fileLayout;
         private TableDefinition tableDefinition;
         private Collection<List<String>> indexColumns;
-        private ParquetColumnResolver.Provider columnResolver;
+        private ParquetColumnResolver.Provider columnResolverProvider;
 
         /**
          * For each additional field added, make sure to update the copy constructor builder
@@ -734,7 +735,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             fileLayout = readOnlyParquetInstructions.getFileLayout().orElse(null);
             tableDefinition = readOnlyParquetInstructions.getTableDefinition().orElse(null);
             indexColumns = readOnlyParquetInstructions.getIndexColumns().orElse(null);
-            columnResolver = readOnlyParquetInstructions.getColumnResolver().orElse(null);
+            columnResolverProvider = readOnlyParquetInstructions.getColumnResolver().orElse(null);
         }
 
         public Builder addColumnNameMapping(final String parquetColumnName, final String columnName) {
@@ -963,8 +964,16 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             return this;
         }
 
-        public Builder setColumnResolver(ParquetColumnResolver.Provider columnResolver) {
-            this.columnResolver = columnResolver;
+        /**
+         * Sets the column resolver provider to allow higher-level managers (such as Iceberg) to use advanced
+         * column resolution logic based on each Parquet file's {@link FileMetaData}. When set,
+         * {@link #setTableDefinition(TableDefinition)} must also be set. As such, the provider is <i>not</i> used for
+         * inference purposes.
+         *
+         * @param columnResolverProvider the column resolver provider
+         */
+        public Builder setColumnResolverProvider(ParquetColumnResolver.Provider columnResolverProvider) {
+            this.columnResolverProvider = columnResolverProvider;
             return this;
         }
 
@@ -977,7 +986,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             return new ReadOnly(columnNameToInstructionsOut, parquetColumnNameToColumnNameOut, compressionCodecName,
                     maximumDictionaryKeys, maximumDictionarySize, isLegacyParquet, targetPageSize, isRefreshing,
                     specialInstructions, generateMetadataFiles, baseNameForPartitionedParquetData, fileLayout,
-                    tableDefinition, indexColumns, columnResolver);
+                    tableDefinition, indexColumns, columnResolverProvider);
         }
     }
 

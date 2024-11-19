@@ -9,20 +9,33 @@ import org.apache.parquet.hadoop.metadata.FileMetaData;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ *
+ */
 public interface ParquetColumnResolver {
 
+    /**
+     *
+     */
     interface Provider {
         ParquetColumnResolver init(FileMetaData metadata);
     }
 
+    /**
+     * Creates a parquet column resolver from a {@link Map#copyOf(Map) copy of} {@code map}.
+     *
+     * @param map the map
+     * @return the resolver
+     */
     static ParquetColumnResolver of(Map<String, ColumnPath> map) {
         return new ParquetColumnResolverImpl(Map.copyOf(map));
     }
 
+    /**
+     * Returns the column path for a given {@code columnName} if mapped.
+     *
+     * @param columnName the Deephaven column name
+     * @return the column path, if mapped
+     */
     Optional<ColumnPath> columnPath(String columnName);
-
-    // todo: this is _post_ inference, we are not changing the inference logic...
-    // do we _need_ to provide inference hooks?
-
-
 }

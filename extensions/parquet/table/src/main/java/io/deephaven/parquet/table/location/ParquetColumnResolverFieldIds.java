@@ -24,25 +24,31 @@ import java.util.stream.Stream;
  */
 public final class ParquetColumnResolverFieldIds implements ParquetColumnResolver.Provider {
 
-    public static ParquetColumnResolverFieldIds of(Map<String, Integer> fieldIds) {
-        final Map<Integer, Set<String>> inverse = new HashMap<>(fieldIds.size());
-        for (Map.Entry<String, Integer> e : fieldIds.entrySet()) {
+
+    /**
+     *
+     * @param columnNameToFieldId a map from Deephaven column names to field ids
+     * @return the column resolver provider
+     */
+    public static ParquetColumnResolverFieldIds of(Map<String, Integer> columnNameToFieldId) {
+        final Map<Integer, Set<String>> inverse = new HashMap<>(columnNameToFieldId.size());
+        for (Map.Entry<String, Integer> e : columnNameToFieldId.entrySet()) {
             final Set<String> set = inverse.computeIfAbsent(e.getValue(), id -> new HashSet<>());
             set.add(e.getKey());
         }
         return new ParquetColumnResolverFieldIds(inverse);
     }
 
-    private final Map<Integer, Set<String>> inverse;
+    private final Map<Integer, Set<String>> fieldIdsToDhColumnNames;
 
-    private ParquetColumnResolverFieldIds(Map<Integer, Set<String>> inverse) {
-        this.inverse = Objects.requireNonNull(inverse);
+    private ParquetColumnResolverFieldIds(Map<Integer, Set<String>> fieldIdsToDhColumnNames) {
+        this.fieldIdsToDhColumnNames = Objects.requireNonNull(fieldIdsToDhColumnNames);
     }
 
     @Override
     public ParquetColumnResolver init(FileMetaData metadata) {
         // This size estimate isn't correct if it's not a 1-to-1 mapping, but that is ok
-        final Map<String, ColumnPath> map = new HashMap<>(inverse.size());
+        final Map<String, ColumnPath> map = new HashMap<>(fieldIdsToDhColumnNames.size());
         // we don't want to include "schema" in the path, so _not_ concatenating metadata.getSchema().getName()
         metadata.getSchema().accept(new VisitorImpl(ColumnPath.get(), map));
         return ParquetColumnResolver.of(map);
@@ -93,7 +99,7 @@ public final class ParquetColumnResolverFieldIds implements ParquetColumnResolve
                 return;
             }
             final int fieldId = id.intValue();
-            final Set<String> deephavenColumnNames = inverse.get(fieldId);
+            final Set<String> deephavenColumnNames = fieldIdsToDhColumnNames.get(fieldId);
             if (deephavenColumnNames == null) {
                 return;
             }

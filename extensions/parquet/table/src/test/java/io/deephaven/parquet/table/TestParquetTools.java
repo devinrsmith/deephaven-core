@@ -1195,6 +1195,25 @@ public class TestParquetTools {
         }
     }
 
+    @Test
+    public void name() {
+        final String FOO = "Foo";
+        final TableDefinition td = TableDefinition.of(ColumnDefinition.of(FOO, Type.intType().arrayType()));
+        final Table expected = TableTools.newTable(td, new ColumnHolder<>(FOO, int[].class, int.class, false,
+                new int[] {1, 2, 3},
+                null,
+                new int[0],
+                new int[] {42}));
+
+
+
+//        final Table expected = newTable(td,
+//                longCol(BAZ, 99, 101),
+//                new ColumnHolder<>(ZAP, String[].class, String.class, false, new String[] {"Foo", "Bar"},
+//                        new String[] {"Hello"}));
+
+    }
+
     private static String sha256sum(Path path) throws NoSuchAlgorithmException, IOException {
         final MessageDigest digest = MessageDigest.getInstance("SHA-256");
         final DigestOutputStream out = new DigestOutputStream(OutputStream.nullOutputStream(), digest);

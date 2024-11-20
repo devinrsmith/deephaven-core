@@ -964,8 +964,8 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         }
 
         /**
-         * Sets the column resolver provider to allow higher-level managers (such as Iceberg) to use advanced
-         * column resolution logic based on each Parquet file's {@link FileMetaData}. When set,
+         * Sets the column resolver provider to allow higher-level managers (such as Iceberg) to use advanced column
+         * resolution logic based on each Parquet file's {@link FileMetaData}. When set,
          * {@link #setTableDefinition(TableDefinition)} must also be set. As such, the provider is <i>not</i> used for
          * inference purposes.
          *

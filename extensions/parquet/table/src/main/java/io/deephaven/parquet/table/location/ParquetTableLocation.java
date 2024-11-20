@@ -195,7 +195,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
     private class DefaultParquetColumnResolver implements ParquetColumnResolver {
 
         @Override
-        public Optional<ColumnPath> columnPath(String columnName) {
+        public Optional<ColumnPath> columnDescriptor(String columnName) {
             final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
             final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
             return columnPath == null ? Optional.empty() : Optional.of(ColumnPath.get(columnPath));
@@ -206,7 +206,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
     @NotNull
     protected ColumnLocation makeColumnLocation(@NotNull final String columnName) {
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
-        final ColumnPath path = resolver.columnPath(columnName).orElseGet(() -> ColumnPath.get(parquetColumnName));
+        final ColumnDescriptor path = resolver.columnDescriptor(columnName).orElseGet(() -> ColumnPath.get(parquetColumnName));
         final List<String> nameList = Arrays.asList(path.toArray());
         final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
                 .map(rgr -> rgr.getColumnChunk(columnName, nameList))

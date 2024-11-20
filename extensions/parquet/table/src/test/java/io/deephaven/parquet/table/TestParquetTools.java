@@ -1196,22 +1196,82 @@ public class TestParquetTools {
     }
 
     @Test
-    public void name() {
+    public void intArray() {
+        final File f = new File(testRoot, "intArray.parquet");
         final String FOO = "Foo";
         final TableDefinition td = TableDefinition.of(ColumnDefinition.of(FOO, Type.intType().arrayType()));
-        final Table expected = TableTools.newTable(td, new ColumnHolder<>(FOO, int[].class, int.class, false,
+        final Table table = TableTools.newTable(td, new ColumnHolder<>(FOO, int[].class, int.class, false,
                 new int[] {1, 2, 3},
                 null,
                 new int[0],
                 new int[] {42}));
+        {
+            ParquetTools.writeTable(table, f.getPath());
+        }
 
+        {
+            final MessageType expectedSchema = Types.buildMessage()
+                    .optionalList()
+                    .optionalElement(PrimitiveType.PrimitiveTypeName.INT32)
+                    .as(LogicalTypeAnnotation.intType(32))
+                    .named(FOO)
+                    .named(MappedSchema.SCHEMA_NAME);
+            assertEquals(readSchema(f), expectedSchema);
+        }
 
+        {
+            final Table actual = ParquetTools.readTable(f.getPath());
+            assertEquals(td, actual.getDefinition());
+            assertTableEquals(table, actual);
+        }
 
-//        final Table expected = newTable(td,
-//                longCol(BAZ, 99, 101),
-//                new ColumnHolder<>(ZAP, String[].class, String.class, false, new String[] {"Foo", "Bar"},
-//                        new String[] {"Hello"}));
+        {
+            final Table actual = ParquetTools.readTable(f.getPath(), ParquetInstructions.builder()
+                    .setTableDefinition(td)
+                    .build());
+            assertEquals(td, actual.getDefinition());
+            assertTableEquals(table, actual);
+        }
+    }
 
+    @Test
+    public void stringArray() {
+        final File f = new File(testRoot, "stringArray.parquet");
+        final String FOO = "Foo";
+        final TableDefinition td = TableDefinition.of(ColumnDefinition.of(FOO, Type.stringType().arrayType()));
+        final Table expected = TableTools.newTable(td, new ColumnHolder<>(FOO, String[].class, String.class, false,
+                new String[] {null, "", "Hello, world!"},
+                null,
+                new String[0],
+                new String[] {"42"}));
+        {
+            ParquetTools.writeTable(expected, f.getPath());
+        }
+
+        {
+            final MessageType expectedSchema = Types.buildMessage()
+                    .optionalList()
+                    .optionalElement(PrimitiveType.PrimitiveTypeName.BINARY)
+                    .as(LogicalTypeAnnotation.stringType())
+                    .named(FOO)
+                    .named(MappedSchema.SCHEMA_NAME);
+            assertEquals(readSchema(f), expectedSchema);
+        }
+
+        {
+            final Table actual = ParquetTools.readTable(f.getPath());
+            assertEquals(td, actual.getDefinition());
+            assertTableEquals(expected, actual);
+        }
+
+        {
+            final ParquetInstructions instructions = ParquetInstructions.builder()
+                    .setTableDefinition(td)
+                    .build();
+            final Table actual = ParquetTools.readTable(f.getPath(), instructions);
+            assertEquals(td, actual.getDefinition());
+            assertTableEquals(expected, actual);
+        }
     }
 
     private static String sha256sum(Path path) throws NoSuchAlgorithmException, IOException {

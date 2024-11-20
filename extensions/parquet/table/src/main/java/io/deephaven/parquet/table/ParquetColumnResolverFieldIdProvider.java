@@ -3,18 +3,23 @@
 //
 package io.deephaven.parquet.table;
 
+import io.deephaven.base.verify.Assert;
+import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.TypeVisitor;
 
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,19 +36,12 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
      * @return the column resolver provider
      */
     public static ParquetColumnResolverFieldIdProvider of(Map<String, Integer> columnNameToFieldId) {
-
-//        Map<Integer, Set<String>> inverse = columnNameToFieldId
-//                .entrySet()
-//                .stream()
-//                .collect(Collectors.groupingBy(
-//                        Map.Entry::getValue,
-//                        Collectors.mapping(Map.Entry::getKey, Collectors.toSet())));
-
-        final Map<Integer, Set<String>> inverse = new HashMap<>(columnNameToFieldId.size());
-        for (Map.Entry<String, Integer> e : columnNameToFieldId.entrySet()) {
-            inverse.computeIfAbsent(e.getValue(), id -> new HashSet<>()).add(e.getKey());
-        }
-        return new ParquetColumnResolverFieldIdProvider(inverse);
+        return new ParquetColumnResolverFieldIdProvider(columnNameToFieldId
+                .entrySet()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        Map.Entry::getValue,
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toSet()))));
     }
 
     private final Map<Integer, Set<String>> fieldIdsToDhColumnNames;
@@ -54,28 +52,70 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
 
     @Override
     public ParquetColumnResolver init(FileMetaData metadata) {
+        final Map<ColumnPath, Type> pathToType = new HashMap<>();
         // This size estimate isn't correct if it's not a 1-to-1 mapping, but that is ok
-        final Map<String, ColumnPath> map = new HashMap<>(fieldIdsToDhColumnNames.size());
+        final Map<String, ColumnPath> nameToFieldIdPath = new HashMap<>(fieldIdsToDhColumnNames.size());
         // we don't want to include "schema" in the path, so _not_ concatenating metadata.getSchema().getName()
-        metadata.getSchema().accept(new VisitorImpl(ColumnPath.get(), map));
-        return ParquetColumnResolver.of(map);
+        metadata.getSchema().accept(new VisitorImpl(ColumnPath.get(), pathToType, nameToFieldIdPath));
+
+
+        // This is an implementation detail that is tied to the implementation / RowGroupReader.getColumnChunk...
+        // We need to pass the leaf paths to the column chunks.
+
+        final Map<String, ColumnPath> nameToColumnChunkPath = new HashMap<>(nameToFieldIdPath.size());
+//        for (Map.Entry<String, ColumnPath> e : nameToFieldIdPath.entrySet()) {
+//            final ColumnPath path = e.getValue();
+//            final Type type = Objects.requireNonNull(pathToType.get(path));
+//            Type child = type;
+//            while ((!child.isPrimitive()) && child.asGroupType().getFieldCount() == 1) {
+//                child = child.asGroupType().getFields().get(0);
+//            }
+//        }
+
+        final Map<String, ColumnDescriptor> nameToColumnDescriptor = new HashMap<>();
+        // This could likely be implemented more efficiently by using a recursive type visitor, but it would take care
+        // to make sure we are calculating ColumnDescriptor correctly.
+        final List<ColumnDescriptor> columns = metadata.getSchema().getColumns();
+        for (final ColumnDescriptor column : columns) {
+            // Note: explicitly including length
+            for (int i = 0; i <= column.getPath().length; i++) {
+                final Type containingType = metadata.getSchema().getType(Arrays.copyOf(column.getPath(), i));
+                if (containingType.getId() == null) {
+                    continue;
+                }
+                final int fieldId = containingType.getId().intValue();
+                final Set<String> set = fieldIdsToDhColumnNames.get(fieldId);
+                if (set == null) {
+                    continue;
+                }
+                for (String columnName : set) {
+                    if (nameToColumnDescriptor.putIfAbsent(columnName, column) != null) {
+                        throw new IllegalStateException(); // todo
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        return ParquetColumnResolver.of(nameToColumnChunkPath);
     }
 
     private static ColumnPath append(ColumnPath path, String part) {
         return ColumnPath.get(Stream.concat(Stream.of(path.toArray()), Stream.of(part)).toArray(String[]::new));
     }
 
-    private void visit(Type type, ColumnPath path, Map<String, ColumnPath> map) {
-        type.accept(new VisitorImpl(append(path, type.getName()), map));
-    }
-
     private class VisitorImpl implements TypeVisitor {
         private final ColumnPath path;
-        private final Map<String, ColumnPath> map;
+        private final Map<ColumnPath, Type> pathToType;
+        private final Map<String, ColumnPath> nameToPath;
 
-        private VisitorImpl(ColumnPath path, Map<String, ColumnPath> map) {
+        private VisitorImpl(ColumnPath path, Map<ColumnPath, Type> pathToType, Map<String, ColumnPath> nameToPath) {
             this.path = Objects.requireNonNull(path);
-            this.map = Objects.requireNonNull(map);
+            this.pathToType = Objects.requireNonNull(pathToType);
+            this.nameToPath = Objects.requireNonNull(nameToPath);
         }
 
         @Override
@@ -96,11 +136,12 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
         private void handleGroupType(GroupType messageType) {
             handleType(messageType);
             for (Type field : messageType.getFields()) {
-                ParquetColumnResolverFieldIdProvider.this.visit(field, path, map);
+                field.accept(new VisitorImpl(append(path, field.getName()), pathToType, nameToPath));
             }
         }
 
         private void handleType(Type type) {
+            Assert.eqNull(pathToType.put(path, type), "pathToType.put(path, type)");
             final Type.ID id = type.getId();
             if (id == null) {
                 return;
@@ -111,7 +152,7 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
                 return;
             }
             for (final String deephavenColumnName : deephavenColumnNames) {
-                final ColumnPath existingPath = map.putIfAbsent(deephavenColumnName, path);
+                final ColumnPath existingPath = nameToPath.putIfAbsent(deephavenColumnName, path);
                 // Even though we know that based on the user input (Map<String, Integer> fieldIds) that the column
                 // names are unique, it's possible that the parquet file has multiple columns with the same field id.
                 // This is _not_ an issue with the Parquet file, as they don't provide any guarantees about the field
@@ -124,4 +165,99 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
             }
         }
     }
+
+    private static boolean isStandardList(Type t) {
+        if (!isStandardListOuter(t)) {
+            return false;
+        }
+        t = t.asGroupType().getFields().get(0);
+        if (!isStandardListMiddle(t)) {
+            return false;
+        }
+        t = t.asGroupType().getFields().get(0);
+        return isStandardListInner(t);
+    }
+
+    private static boolean isStandardListOuter(Type t) {
+        return !t.isPrimitive()
+                && (t.getRepetition() == Type.Repetition.REQUIRED || t.getRepetition() == Type.Repetition.OPTIONAL)
+                && LogicalTypeAnnotation.listType().equals(t.getLogicalTypeAnnotation())
+                && t.asGroupType().getFieldCount() == 1;
+    }
+
+    private static boolean isStandardListMiddle(Type t) {
+        // not checking name is "list"
+        // > However, these names may not be used in existing data and should not be enforced as errors when reading
+        return !t.isPrimitive()
+                && t.getRepetition() == Type.Repetition.REPEATED
+                && t.asGroupType().getFieldCount() == 1;
+    }
+
+    private static boolean isStandardListInner(Type t) {
+        // not checking name is "element"
+        // > However, these names may not be used in existing data and should not be enforced as errors when reading
+        return t.getRepetition() == Type.Repetition.REQUIRED || t.getRepetition() == Type.Repetition.OPTIONAL;
+    }
+
+    interface ListType {
+
+        GroupType listType();
+
+        Type elementType();
+
+        String[] elementPath();
+
+        default boolean listNullable() {
+            return listType().getRepetition() == Type.Repetition.OPTIONAL;
+        }
+
+        default boolean elementNullable() {
+            return elementType().getRepetition() == Type.Repetition.OPTIONAL;
+        }
+    }
+
+    final static class StandardList implements ListType {
+        private final GroupType listType;
+
+        private StandardList(GroupType listType) {
+            this.listType = Objects.requireNonNull(listType);
+        }
+
+        @Override
+        public GroupType listType() {
+            return listType;
+        }
+
+        @Override
+        public String[] elementPath() {
+            return new String[] { middleType().getName(), elementType().getName() };
+        }
+
+        @Override
+        public Type elementType() {
+            return middleType().getFields().get(0);
+        }
+
+        private GroupType middleType() {
+            return listType.getFields().get(0).asGroupType();
+        }
+    }
+
+    private static class ListType2 {
+        private final GroupType listType;
+        private final Type elementType;
+        private final String[] elementPath;
+        private final boolean nullableList;
+        private final boolean nullableElements;
+
+        public ListType(GroupType listType, Type elementType, String[] elementPath, boolean nullableList,
+                boolean nullableElements) {
+            this.listType = Objects.requireNonNull(listType);
+            this.elementType = Objects.requireNonNull(elementType);
+            this.elementPath = Objects.requireNonNull(elementPath);
+            this.nullableList = nullableList;
+            this.nullableElements = nullableElements;
+        }
+    }
+
 }

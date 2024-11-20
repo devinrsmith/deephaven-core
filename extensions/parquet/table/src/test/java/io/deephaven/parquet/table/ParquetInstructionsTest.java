@@ -177,7 +177,7 @@ public class ParquetInstructionsTest {
         }
 
         @Override
-        public Optional<ColumnPath> columnPath(String columnName) {
+        public Optional<ColumnPath> columnDescriptor(String columnName) {
             return Optional.empty();
         }
     }

@@ -3,8 +3,10 @@
 //
 package io.deephaven.parquet.table;
 
+import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.schema.MessageType;
 
 import java.util.Map;
 import java.util.Optional;
@@ -37,11 +39,13 @@ public interface ParquetColumnResolver {
         return new ParquetColumnResolverFixedImpl(Map.copyOf(map));
     }
 
+    MessageType schema();
+
     /**
      * Returns the column path for a given {@code columnName} if present.
      *
      * @param columnName the Deephaven column name
      * @return the column path, if mapped
      */
-    Optional<ColumnPath> columnPath(String columnName);
+    Optional<ColumnDescriptor> columnDescriptor(String columnName);
 }

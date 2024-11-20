@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.parquet.table.location;
+package io.deephaven.parquet.table;
 
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
@@ -16,32 +16,39 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * The following is an example {@link ParquetColumnResolver.Provider} that may be useful for testing and debugging
  * purposes, but is not meant to be used for production use cases.
  */
-public final class ParquetColumnResolverFieldIds implements ParquetColumnResolver.Provider {
-
+public final class ParquetColumnResolverFieldIdProvider implements ParquetColumnResolver.Provider {
 
     /**
      *
      * @param columnNameToFieldId a map from Deephaven column names to field ids
      * @return the column resolver provider
      */
-    public static ParquetColumnResolverFieldIds of(Map<String, Integer> columnNameToFieldId) {
+    public static ParquetColumnResolverFieldIdProvider of(Map<String, Integer> columnNameToFieldId) {
+
+//        Map<Integer, Set<String>> inverse = columnNameToFieldId
+//                .entrySet()
+//                .stream()
+//                .collect(Collectors.groupingBy(
+//                        Map.Entry::getValue,
+//                        Collectors.mapping(Map.Entry::getKey, Collectors.toSet())));
+
         final Map<Integer, Set<String>> inverse = new HashMap<>(columnNameToFieldId.size());
         for (Map.Entry<String, Integer> e : columnNameToFieldId.entrySet()) {
-            final Set<String> set = inverse.computeIfAbsent(e.getValue(), id -> new HashSet<>());
-            set.add(e.getKey());
+            inverse.computeIfAbsent(e.getValue(), id -> new HashSet<>()).add(e.getKey());
         }
-        return new ParquetColumnResolverFieldIds(inverse);
+        return new ParquetColumnResolverFieldIdProvider(inverse);
     }
 
     private final Map<Integer, Set<String>> fieldIdsToDhColumnNames;
 
-    private ParquetColumnResolverFieldIds(Map<Integer, Set<String>> fieldIdsToDhColumnNames) {
+    private ParquetColumnResolverFieldIdProvider(Map<Integer, Set<String>> fieldIdsToDhColumnNames) {
         this.fieldIdsToDhColumnNames = Objects.requireNonNull(fieldIdsToDhColumnNames);
     }
 
@@ -89,7 +96,7 @@ public final class ParquetColumnResolverFieldIds implements ParquetColumnResolve
         private void handleGroupType(GroupType messageType) {
             handleType(messageType);
             for (Type field : messageType.getFields()) {
-                ParquetColumnResolverFieldIds.this.visit(field, path, map);
+                ParquetColumnResolverFieldIdProvider.this.visit(field, path, map);
             }
         }
 

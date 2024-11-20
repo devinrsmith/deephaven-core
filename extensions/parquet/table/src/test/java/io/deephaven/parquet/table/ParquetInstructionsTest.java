@@ -5,7 +5,6 @@ package io.deephaven.parquet.table;
 
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.junit.Test;

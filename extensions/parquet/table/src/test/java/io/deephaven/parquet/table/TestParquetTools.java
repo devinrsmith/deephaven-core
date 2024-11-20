@@ -20,8 +20,6 @@ import io.deephaven.engine.testutil.junit4.EngineCleanup;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.parquet.base.InvalidParquetFileException;
 import io.deephaven.parquet.table.layout.ParquetKeyValuePartitionedLayout;
-import io.deephaven.parquet.table.location.ParquetColumnResolver;
-import io.deephaven.parquet.table.location.ParquetColumnResolverFieldIds;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stringset.HashStringSet;
@@ -656,7 +654,7 @@ public class TestParquetTools {
         {
             final ParquetInstructions readInstructions = ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID)))
                     .build();
@@ -717,7 +715,7 @@ public class TestParquetTools {
         final TableDefinition td = TableDefinition.of(bazCol, zapCol);
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(td)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(BAZ, BAZ_ID, ZAP, ZAP_ID)))
+                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID, ZAP, ZAP_ID)))
                 .build();
 
         // But, the user can still provide a TableDefinition
@@ -745,7 +743,7 @@ public class TestParquetTools {
                     ColumnDefinition.ofString("column_53f0de5ae06f476eb82aa3f9294fcd05"));
             final ParquetInstructions partialInstructions = ParquetInstructions.builder()
                     .setTableDefinition(partialTD)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(BAZ, BAZ_ID)))
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID)))
                     .build();
             final Table table = ParquetTools.readTable(file, partialInstructions);
             assertEquals(partialTD, table.getDefinition());
@@ -755,7 +753,7 @@ public class TestParquetTools {
         {
             final Table table = ParquetTools.readTable(file, ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             "Fake", 99)))
@@ -772,7 +770,7 @@ public class TestParquetTools {
                     TableDefinition.of(bazCol, zapCol, ColumnDefinition.ofShort("Fake"));
             final Table table = ParquetTools.readTable(file, ParquetInstructions.builder()
                     .setTableDefinition(tdWithFake)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             "Fake", 99)))
@@ -791,7 +789,7 @@ public class TestParquetTools {
                     TableDefinition.of(bazCol, zapCol, ColumnDefinition.ofLong(BAZ_DUPE));
             final ParquetInstructions dupeInstructions = ParquetInstructions.builder()
                     .setTableDefinition(dupeTd)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             BAZ_DUPE, BAZ_ID)))
@@ -811,7 +809,7 @@ public class TestParquetTools {
             final TableDefinition bazTd = TableDefinition.of(bazCol);
             final ParquetInstructions inconsistent = ParquetInstructions.builder()
                     .setTableDefinition(bazTd)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(BAZ, BAZ_ID)))
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID)))
                     .addColumnNameMapping("53f0de5a-e06f-476e-b82a-a3f9294fcd05", BAZ)
                     .build();
             final Table table = ParquetTools.readTable(file, inconsistent);
@@ -862,7 +860,7 @@ public class TestParquetTools {
         final TableDefinition expectedTd = TableDefinition.of(partitionColumn, bazCol, zapCol);
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(expectedTd)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                         BAZ, BAZ_ID,
                         ZAP, ZAP_ID)))
                 .build();
@@ -902,7 +900,7 @@ public class TestParquetTools {
         final TableDefinition td = TableDefinition.of(ColumnDefinition.of(FOO, Type.intType().arrayType()));
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(td)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(FOO, 999)))
+                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(FOO, 999)))
                 .build();
         final Table expected = TableTools.newTable(td, new ColumnHolder<>(FOO, int[].class, int.class, false,
                 new int[] {1, 2, 3},
@@ -955,7 +953,7 @@ public class TestParquetTools {
                     .build());
         }
 
-        final ParquetColumnResolver.Provider resolver = ParquetColumnResolverFieldIds.of(Map.of(
+        final ParquetColumnResolver.Provider resolver = ParquetColumnResolverFieldIdProvider.of(Map.of(
                 NAME, NAME_ID,
                 FIRST_NAME, FIRST_NAME_ID,
                 LAST_NAME, LAST_NAME_ID));
@@ -1084,7 +1082,7 @@ public class TestParquetTools {
         {
             final Table table = ParquetTools.readTable(f.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIds.of(Map.of(
+                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
                             FOO, fieldId,
                             BAR, fieldId)))
                     .build());

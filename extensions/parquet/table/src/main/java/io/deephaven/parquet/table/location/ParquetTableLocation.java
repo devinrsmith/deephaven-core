@@ -25,6 +25,7 @@ import io.deephaven.engine.table.impl.sources.regioned.RegionedPageStore;
 import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ParquetFileReader;
 import io.deephaven.parquet.base.RowGroupReader;
+import io.deephaven.parquet.table.ParquetColumnResolver;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.parquet.table.ParquetSchemaReader;
 import io.deephaven.parquet.table.ParquetTools;

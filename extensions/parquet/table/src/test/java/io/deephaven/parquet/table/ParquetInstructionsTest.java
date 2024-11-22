@@ -5,8 +5,10 @@ package io.deephaven.parquet.table;
 
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
+import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.schema.MessageType;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -176,8 +178,14 @@ public class ParquetInstructionsTest {
             return this;
         }
 
+
         @Override
-        public Optional<ColumnPath> columnDescriptor(String columnName) {
+        public MessageType schema() {
+            return null;
+        }
+
+        @Override
+        public Optional<ColumnDescriptor> columnDescriptor(String columnName) {
             return Optional.empty();
         }
     }

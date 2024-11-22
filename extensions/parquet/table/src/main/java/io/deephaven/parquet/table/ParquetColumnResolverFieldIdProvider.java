@@ -14,12 +14,10 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.TypeVisitor;
 
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,55 +50,36 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
 
     @Override
     public ParquetColumnResolver init(FileMetaData metadata) {
-        final Map<ColumnPath, Type> pathToType = new HashMap<>();
-        // This size estimate isn't correct if it's not a 1-to-1 mapping, but that is ok
-        final Map<String, ColumnPath> nameToFieldIdPath = new HashMap<>(fieldIdsToDhColumnNames.size());
-        // we don't want to include "schema" in the path, so _not_ concatenating metadata.getSchema().getName()
-        metadata.getSchema().accept(new VisitorImpl(ColumnPath.get(), pathToType, nameToFieldIdPath));
+        final FieldIdMappingVisitor visitor = new FieldIdMappingVisitor();
+        ParquetUtil.walk(metadata.getSchema(), visitor);
+        return ParquetColumnResolver.of(metadata.getSchema(), visitor.nameToColumnDescriptor);
+    }
 
+    private class FieldIdMappingVisitor implements ParquetUtil.Visitor {
+        private final Map<String, ColumnDescriptor> nameToColumnDescriptor = new HashMap<>();
 
-        // This is an implementation detail that is tied to the implementation / RowGroupReader.getColumnChunk...
-        // We need to pass the leaf paths to the column chunks.
-
-        final Map<String, ColumnPath> nameToColumnChunkPath = new HashMap<>(nameToFieldIdPath.size());
-//        for (Map.Entry<String, ColumnPath> e : nameToFieldIdPath.entrySet()) {
-//            final ColumnPath path = e.getValue();
-//            final Type type = Objects.requireNonNull(pathToType.get(path));
-//            Type child = type;
-//            while ((!child.isPrimitive()) && child.asGroupType().getFieldCount() == 1) {
-//                child = child.asGroupType().getFields().get(0);
-//            }
-//        }
-
-        final Map<String, ColumnDescriptor> nameToColumnDescriptor = new HashMap<>();
-        // This could likely be implemented more efficiently by using a recursive type visitor, but it would take care
-        // to make sure we are calculating ColumnDescriptor correctly.
-        final List<ColumnDescriptor> columns = metadata.getSchema().getColumns();
-        for (final ColumnDescriptor column : columns) {
-            // Note: explicitly including length
-            for (int i = 0; i <= column.getPath().length; i++) {
-                final Type containingType = metadata.getSchema().getType(Arrays.copyOf(column.getPath(), i));
-                if (containingType.getId() == null) {
+        @Override
+        public void accept(Collection<Type> path, PrimitiveType primitiveType) {
+            // There are different resolution strategies that could all be reasonable. We could consider using only the
+            // field id closest to the leaf. This version, however, takes the most general approach and considers field
+            // ids wherever they appear; ultimately, only being resolvable if the field id mapping is unambiguous.
+            for (Type type : path) {
+                if (type.getId() == null) {
                     continue;
                 }
-                final int fieldId = containingType.getId().intValue();
+                final int fieldId = type.getId().intValue();
                 final Set<String> set = fieldIdsToDhColumnNames.get(fieldId);
                 if (set == null) {
                     continue;
                 }
+                final ColumnDescriptor columnDescriptor = ParquetUtil.makeColumnDescriptor(path, primitiveType);
                 for (String columnName : set) {
-                    if (nameToColumnDescriptor.putIfAbsent(columnName, column) != null) {
+                    if (nameToColumnDescriptor.putIfAbsent(columnName, columnDescriptor) != null) {
                         throw new IllegalStateException(); // todo
                     }
                 }
             }
         }
-
-
-
-
-
-        return ParquetColumnResolver.of(nameToColumnChunkPath);
     }
 
     private static ColumnPath append(ColumnPath path, String part) {
@@ -240,23 +219,6 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
 
         private GroupType middleType() {
             return listType.getFields().get(0).asGroupType();
-        }
-    }
-
-    private static class ListType2 {
-        private final GroupType listType;
-        private final Type elementType;
-        private final String[] elementPath;
-        private final boolean nullableList;
-        private final boolean nullableElements;
-
-        public ListType(GroupType listType, Type elementType, String[] elementPath, boolean nullableList,
-                boolean nullableElements) {
-            this.listType = Objects.requireNonNull(listType);
-            this.elementType = Objects.requireNonNull(elementType);
-            this.elementPath = Objects.requireNonNull(elementPath);
-            this.nullableList = nullableList;
-            this.nullableElements = nullableElements;
         }
     }
 

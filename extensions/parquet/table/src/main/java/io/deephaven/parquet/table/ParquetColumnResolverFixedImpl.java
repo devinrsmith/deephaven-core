@@ -5,6 +5,7 @@ package io.deephaven.parquet.table;
 
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.schema.MessageType;
 
 import java.util.Map;
 import java.util.Objects;
@@ -21,8 +22,8 @@ final class ParquetColumnResolverFixedImpl implements ParquetColumnResolver {
     }
 
     @Override
-    public FileMetaData schema() {
-        return metadata;
+    public MessageType schema() {
+        return metadata.getSchema();
     }
 
     @Override

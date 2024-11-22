@@ -35,8 +35,8 @@ public interface ParquetColumnResolver {
      * @param map the map
      * @return the Parquet column resolver
      */
-    static ParquetColumnResolver of(Map<String, ColumnPath> map) {
-        return new ParquetColumnResolverFixedImpl(Map.copyOf(map));
+    static ParquetColumnResolver of(MessageType schema, Map<String, ColumnDescriptor> map) {
+        return null; //new ParquetColumnResolverFixedImpl(Map.copyOf(map));
     }
 
     MessageType schema();

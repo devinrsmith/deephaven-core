@@ -39,6 +39,7 @@ import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.format.RowGroup;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.schema.MessageType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -195,10 +196,15 @@ public class ParquetTableLocation extends AbstractTableLocation {
     private class DefaultParquetColumnResolver implements ParquetColumnResolver {
 
         @Override
-        public Optional<ColumnPath> columnDescriptor(String columnName) {
+        public MessageType schema() {
+            return null;
+        }
+
+        @Override
+        public Optional<ColumnDescriptor> columnDescriptor(String columnName) {
             final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
             final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
-            return columnPath == null ? Optional.empty() : Optional.of(ColumnPath.get(columnPath));
+            return columnPath == null ? Optional.empty() : null; //Optional.of(ColumnPath.get(columnPath));
         }
     }
 
@@ -206,8 +212,8 @@ public class ParquetTableLocation extends AbstractTableLocation {
     @NotNull
     protected ColumnLocation makeColumnLocation(@NotNull final String columnName) {
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
-        final ColumnDescriptor path = resolver.columnDescriptor(columnName).orElseGet(() -> ColumnPath.get(parquetColumnName));
-        final List<String> nameList = Arrays.asList(path.toArray());
+        final ColumnDescriptor path = null; //resolver.columnDescriptor(columnName).orElseGet(() -> ColumnPath.get(parquetColumnName));
+        final List<String> nameList = null; //Arrays.asList(path.toArray());
         final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
                 .map(rgr -> rgr.getColumnChunk(columnName, nameList))
                 .toArray(ColumnChunkReader[]::new);

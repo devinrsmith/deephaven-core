@@ -36,7 +36,7 @@ public interface ParquetColumnResolver {
      * @return the Parquet column resolver
      */
     static ParquetColumnResolver of(MessageType schema, Map<String, ColumnDescriptor> map) {
-        return null; //new ParquetColumnResolverFixedImpl(Map.copyOf(map));
+        return null; // new ParquetColumnResolverFixedImpl(Map.copyOf(map));
     }
 
     MessageType schema();

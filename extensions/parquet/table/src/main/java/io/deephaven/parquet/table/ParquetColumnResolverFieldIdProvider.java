@@ -209,7 +209,7 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
 
         @Override
         public String[] elementPath() {
-            return new String[] { middleType().getName(), elementType().getName() };
+            return new String[] {middleType().getName(), elementType().getName()};
         }
 
         @Override

@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2024 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.parquet.table;
 
 import org.apache.parquet.column.ColumnDescriptor;
@@ -54,7 +57,8 @@ public class ParquetUtilTest {
                 .addFields(required, repeated, optional, requiredGroup, repeatedGroup, optionalGroup)
                 .named("OptionalGroup2");
         final MessageType schema = Types.buildMessage()
-                .addFields(required, repeated, optional, requiredGroup, repeatedGroup, optionalGroup, requiredGroup2, repeatedGroup2, optionalGroup2)
+                .addFields(required, repeated, optional, requiredGroup, repeatedGroup, optionalGroup, requiredGroup2,
+                        repeatedGroup2, optionalGroup2)
                 .named("root");
         assertThat(ParquetUtil.getColumns(schema))
                 .usingElementComparator(COLUMN_DESCRIPTOR_COMPARATOR)

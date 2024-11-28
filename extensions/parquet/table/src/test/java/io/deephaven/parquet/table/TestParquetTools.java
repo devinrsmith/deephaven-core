@@ -1093,7 +1093,8 @@ public class TestParquetTools {
                 table.select();
                 failBecauseExceptionWasNotThrown(IllegalStateException.class);
             } catch (IllegalStateException e) {
-                assertThat(e).hasMessageContaining("Parquet schema has multiple paths with the same field id");
+                assertThat(e).hasMessageContaining(
+                        "Parquet columns can't be unambigously mapped. 31337 -> Bar has multiple paths [Foo], [Bar]");
             }
         }
     }

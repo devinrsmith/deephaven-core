@@ -23,18 +23,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The following is an example {@link ParquetColumnResolver.Provider} that may be useful for testing and debugging
+ * The following is an example {@link ParquetColumnResolver.Factory} that may be useful for testing and debugging
  * purposes, but is not meant to be used for production use cases.
  */
-public final class ParquetColumnResolverFieldIdProvider implements ParquetColumnResolver.Provider {
+public final class ParquetColumnResolverFieldIdFactory implements ParquetColumnResolver.Factory {
 
     /**
      *
      * @param columnNameToFieldId a map from Deephaven column names to field ids
      * @return the column resolver provider
      */
-    public static ParquetColumnResolverFieldIdProvider of(Map<String, Integer> columnNameToFieldId) {
-        return new ParquetColumnResolverFieldIdProvider(columnNameToFieldId
+    public static ParquetColumnResolverFieldIdFactory of(Map<String, Integer> columnNameToFieldId) {
+        return new ParquetColumnResolverFieldIdFactory(columnNameToFieldId
                 .entrySet()
                 .stream()
                 .collect(Collectors.groupingBy(
@@ -44,7 +44,7 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
 
     private final Map<Integer, Set<String>> fieldIdsToDhColumnNames;
 
-    private ParquetColumnResolverFieldIdProvider(Map<Integer, Set<String>> fieldIdsToDhColumnNames) {
+    private ParquetColumnResolverFieldIdFactory(Map<Integer, Set<String>> fieldIdsToDhColumnNames) {
         this.fieldIdsToDhColumnNames = Objects.requireNonNull(fieldIdsToDhColumnNames);
     }
 
@@ -52,7 +52,10 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
     public ParquetColumnResolver init(FileMetaData metadata) {
         final FieldIdMappingVisitor visitor = new FieldIdMappingVisitor();
         ParquetUtil.walk(metadata.getSchema(), visitor);
-        return ParquetColumnResolver.of(metadata.getSchema(), visitor.nameToColumnDescriptor);
+        return ParquetColumnResolver.builder()
+                .schema(metadata.getSchema())
+                .putAllMapping(visitor.nameToColumnDescriptor)
+                .build();
     }
 
     private class FieldIdMappingVisitor implements ParquetUtil.Visitor {
@@ -75,7 +78,7 @@ public final class ParquetColumnResolverFieldIdProvider implements ParquetColumn
                 final ColumnDescriptor columnDescriptor = ParquetUtil.makeColumnDescriptor(path, primitiveType);
                 for (String columnName : set) {
                     if (nameToColumnDescriptor.putIfAbsent(columnName, columnDescriptor) != null) {
-                        throw new IllegalStateException(); // todo
+                        throw new IllegalStateException("Parquet schema has multiple paths with the same field id");
                     }
                 }
             }

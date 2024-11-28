@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -49,6 +48,21 @@ final class ParquetUtil {
         return new ColumnDescriptor(namePath, primitiveType, maxRep, maxDef);
     }
 
+    static boolean columnDescriptorEquals(ColumnDescriptor a, ColumnDescriptor b) {
+        return a.equals(b)
+                && a.getPrimitiveType().equals(b.getPrimitiveType())
+                && a.getMaxRepetitionLevel() == b.getMaxRepetitionLevel()
+                && a.getMaxDefinitionLevel() == b.getMaxDefinitionLevel();
+    }
+
+    static boolean contains(MessageType schema, ColumnDescriptor descriptor) {
+        final ColumnDescriptor cd = getColumnDescriptor(schema, descriptor.getPath());
+        if (cd == null) {
+            return false;
+        }
+        return columnDescriptorEquals(descriptor, cd);
+    }
+
     /**
      * A more efficient implementation of {@link MessageType#getColumns()}.
      *
@@ -56,8 +70,61 @@ final class ParquetUtil {
      */
     static List<ColumnDescriptor> getColumns(MessageType schema) {
         final List<ColumnDescriptor> out = new ArrayList<>();
-        walk(schema, new ColumnDescriptorVisitor(out::add));
+        walkColumnDescriptors(schema, out::add);
         return out;
+    }
+
+    /**
+     * A more efficient implementation of {@link MessageType#getColumnDescription(String[])}
+     * 
+     * @param path
+     * @return
+     */
+    static ColumnDescriptor getColumnDescriptor(MessageType schema, String[] path) {
+        if (path.length == 0) {
+            return null;
+        }
+        int repeatedCount = 0;
+        int notRequiredCount = 0;
+        GroupType current = schema;
+        for (int i = 0; i < path.length - 1; ++i) {
+            if (!current.containsField(path[i])) {
+                return null;
+            }
+            final Type field = current.getFields().get(current.getFieldIndex(path[i]));
+            if (field == null || field.isPrimitive()) {
+                return null;
+            }
+            current = field.asGroupType();
+            if (isRepeated(current)) {
+                ++repeatedCount;
+            }
+            if (!isRequired(current)) {
+                ++notRequiredCount;
+            }
+        }
+        final PrimitiveType primitiveType;
+        {
+            if (!current.containsField(path[path.length - 1])) {
+                return null;
+            }
+            final Type field = current.getFields().get(current.getFieldIndex(path[path.length - 1]));
+            if (field == null || !field.isPrimitive()) {
+                return null;
+            }
+            primitiveType = field.asPrimitiveType();
+            if (isRepeated(primitiveType)) {
+                ++repeatedCount;
+            }
+            if (!isRequired(primitiveType)) {
+                ++notRequiredCount;
+            }
+        }
+        return new ColumnDescriptor(path, primitiveType, repeatedCount, notRequiredCount);
+    }
+
+    static void walkColumnDescriptors(MessageType type, Consumer<ColumnDescriptor> consumer) {
+        walk(type, new ColumnDescriptorVisitor(consumer));
     }
 
     static void walk(MessageType type, Visitor visitor) {

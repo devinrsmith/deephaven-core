@@ -168,7 +168,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
 
     public abstract Optional<Collection<List<String>>> getIndexColumns();
 
-    public abstract Optional<ParquetColumnResolver.Provider> getColumnResolver();
+    public abstract Optional<ParquetColumnResolver.Factory> getColumnResolver();
 
     /**
      * Creates a new {@link ParquetInstructions} object with the same properties as the current object but definition
@@ -320,7 +320,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         }
 
         @Override
-        public Optional<ParquetColumnResolver.Provider> getColumnResolver() {
+        public Optional<ParquetColumnResolver.Factory> getColumnResolver() {
             return Optional.empty();
         }
 
@@ -466,7 +466,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         private final TableDefinition tableDefinition;
         private final Collection<List<String>> indexColumns;
         private final OnWriteCompleted onWriteCompleted;
-        private final ParquetColumnResolver.Provider columnResolver;
+        private final ParquetColumnResolver.Factory columnResolver;
 
         private ReadOnly(
                 final KeyedObjectHashMap<String, ColumnInstructions> columnNameToInstructions,
@@ -484,7 +484,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
                 final TableDefinition tableDefinition,
                 final Collection<List<String>> indexColumns,
                 final OnWriteCompleted onWriteCompleted,
-                final ParquetColumnResolver.Provider columnResolver) {
+                final ParquetColumnResolver.Factory columnResolver) {
             this.columnNameToInstructions = columnNameToInstructions;
             this.parquetColumnNameToInstructions = parquetColumnNameToColumnName;
             this.compressionCodecName = compressionCodecName;
@@ -634,7 +634,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         }
 
         @Override
-        public Optional<ParquetColumnResolver.Provider> getColumnResolver() {
+        public Optional<ParquetColumnResolver.Factory> getColumnResolver() {
             return Optional.ofNullable(columnResolver);
         }
 
@@ -730,7 +730,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         private TableDefinition tableDefinition;
         private Collection<List<String>> indexColumns;
         private OnWriteCompleted onWriteCompleted;
-        private ParquetColumnResolver.Provider columnResolverProvider;
+        private ParquetColumnResolver.Factory columnResolverFactory;
 
         /**
          * For each additional field added, make sure to update the copy constructor builder
@@ -759,7 +759,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             tableDefinition = readOnlyParquetInstructions.getTableDefinition().orElse(null);
             indexColumns = readOnlyParquetInstructions.getIndexColumns().orElse(null);
             onWriteCompleted = readOnlyParquetInstructions.onWriteCompleted().orElse(null);
-            columnResolverProvider = readOnlyParquetInstructions.getColumnResolver().orElse(null);
+            columnResolverFactory = readOnlyParquetInstructions.getColumnResolver().orElse(null);
         }
 
         public Builder addColumnNameMapping(final String parquetColumnName, final String columnName) {
@@ -998,15 +998,15 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
         }
 
         /**
-         * Sets the column resolver provider to allow higher-level managers (such as Iceberg) to use advanced column
+         * Sets the column resolver factory to allow higher-level managers (such as Iceberg) to use advanced column
          * resolution logic based on each Parquet file's {@link FileMetaData}. When set,
-         * {@link #setTableDefinition(TableDefinition)} must also be set. As such, the provider is <i>not</i> used for
+         * {@link #setTableDefinition(TableDefinition)} must also be set. As such, the factory is <i>not</i> used for
          * inference purposes.
          *
-         * @param columnResolverProvider the column resolver provider
+         * @param columnResolverFactory the column resolver factory
          */
-        public Builder setColumnResolverProvider(ParquetColumnResolver.Provider columnResolverProvider) {
-            this.columnResolverProvider = columnResolverProvider;
+        public Builder setColumnResolverFactory(ParquetColumnResolver.Factory columnResolverFactory) {
+            this.columnResolverFactory = columnResolverFactory;
             return this;
         }
 
@@ -1019,7 +1019,7 @@ public abstract class ParquetInstructions implements ColumnToCodecMappings {
             return new ReadOnly(columnNameToInstructionsOut, parquetColumnNameToColumnNameOut, compressionCodecName,
                     maximumDictionaryKeys, maximumDictionarySize, isLegacyParquet, targetPageSize, isRefreshing,
                     specialInstructions, generateMetadataFiles, baseNameForPartitionedParquetData, fileLayout,
-                    tableDefinition, indexColumns, onWriteCompleted, columnResolverProvider);
+                    tableDefinition, indexColumns, onWriteCompleted, columnResolverFactory);
         }
     }
 

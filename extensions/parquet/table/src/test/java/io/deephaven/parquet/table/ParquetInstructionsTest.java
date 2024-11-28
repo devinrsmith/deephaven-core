@@ -6,7 +6,6 @@ package io.deephaven.parquet.table;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import org.apache.parquet.column.ColumnDescriptor;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.schema.MessageType;
 import org.junit.Test;
@@ -153,7 +152,7 @@ public class ParquetInstructionsTest {
     public void columnResolver() {
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(TableDefinition.of(ColumnDefinition.ofInt("Foo")))
-                .setColumnResolverProvider(ColumnResolverTestImpl.INSTANCE)
+                .setColumnResolverFactory(ColumnResolverTestImpl.INSTANCE)
                 .build();
         assertThat(instructions.getColumnResolver()).hasValue(ColumnResolverTestImpl.INSTANCE);
     }
@@ -162,7 +161,7 @@ public class ParquetInstructionsTest {
     public void columnResolverNoTableDefinition() {
         try {
             ParquetInstructions.builder()
-                    .setColumnResolverProvider(ColumnResolverTestImpl.INSTANCE)
+                    .setColumnResolverFactory(ColumnResolverTestImpl.INSTANCE)
                     .build();
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
@@ -170,23 +169,12 @@ public class ParquetInstructionsTest {
         }
     }
 
-    private enum ColumnResolverTestImpl implements ParquetColumnResolver.Provider, ParquetColumnResolver {
+    private enum ColumnResolverTestImpl implements ParquetColumnResolver.Factory {
         INSTANCE;
 
         @Override
         public ParquetColumnResolver init(FileMetaData metadata) {
-            return this;
-        }
-
-
-        @Override
-        public MessageType schema() {
-            return null;
-        }
-
-        @Override
-        public Optional<ColumnDescriptor> columnDescriptor(String columnName) {
-            return Optional.empty();
+            throw new UnsupportedOperationException();
         }
     }
 }

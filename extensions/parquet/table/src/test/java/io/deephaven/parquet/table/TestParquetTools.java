@@ -654,7 +654,7 @@ public class TestParquetTools {
         {
             final ParquetInstructions readInstructions = ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID)))
                     .build();
@@ -715,7 +715,7 @@ public class TestParquetTools {
         final TableDefinition td = TableDefinition.of(bazCol, zapCol);
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(td)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID, ZAP, ZAP_ID)))
+                .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(BAZ, BAZ_ID, ZAP, ZAP_ID)))
                 .build();
 
         // But, the user can still provide a TableDefinition
@@ -743,7 +743,7 @@ public class TestParquetTools {
                     ColumnDefinition.ofString("column_53f0de5ae06f476eb82aa3f9294fcd05"));
             final ParquetInstructions partialInstructions = ParquetInstructions.builder()
                     .setTableDefinition(partialTD)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID)))
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(BAZ, BAZ_ID)))
                     .build();
             final Table table = ParquetTools.readTable(file, partialInstructions);
             assertEquals(partialTD, table.getDefinition());
@@ -753,7 +753,7 @@ public class TestParquetTools {
         {
             final Table table = ParquetTools.readTable(file, ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             "Fake", 99)))
@@ -770,7 +770,7 @@ public class TestParquetTools {
                     TableDefinition.of(bazCol, zapCol, ColumnDefinition.ofShort("Fake"));
             final Table table = ParquetTools.readTable(file, ParquetInstructions.builder()
                     .setTableDefinition(tdWithFake)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             "Fake", 99)))
@@ -789,7 +789,7 @@ public class TestParquetTools {
                     TableDefinition.of(bazCol, zapCol, ColumnDefinition.ofLong(BAZ_DUPE));
             final ParquetInstructions dupeInstructions = ParquetInstructions.builder()
                     .setTableDefinition(dupeTd)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                             BAZ, BAZ_ID,
                             ZAP, ZAP_ID,
                             BAZ_DUPE, BAZ_ID)))
@@ -809,7 +809,7 @@ public class TestParquetTools {
             final TableDefinition bazTd = TableDefinition.of(bazCol);
             final ParquetInstructions inconsistent = ParquetInstructions.builder()
                     .setTableDefinition(bazTd)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(BAZ, BAZ_ID)))
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(BAZ, BAZ_ID)))
                     .addColumnNameMapping("53f0de5a-e06f-476e-b82a-a3f9294fcd05", BAZ)
                     .build();
             final Table table = ParquetTools.readTable(file, inconsistent);
@@ -860,7 +860,7 @@ public class TestParquetTools {
         final TableDefinition expectedTd = TableDefinition.of(partitionColumn, bazCol, zapCol);
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(expectedTd)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                         BAZ, BAZ_ID,
                         ZAP, ZAP_ID)))
                 .build();
@@ -900,7 +900,7 @@ public class TestParquetTools {
         final TableDefinition td = TableDefinition.of(ColumnDefinition.of(FOO, Type.intType().arrayType()));
         final ParquetInstructions instructions = ParquetInstructions.builder()
                 .setTableDefinition(td)
-                .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(FOO, 999)))
+                .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(FOO, 999)))
                 .build();
         final Table expected = TableTools.newTable(td, new ColumnHolder<>(FOO, int[].class, int.class, false,
                 new int[] {1, 2, 3},
@@ -953,7 +953,7 @@ public class TestParquetTools {
                     .build());
         }
 
-        final ParquetColumnResolver.Provider resolver = ParquetColumnResolverFieldIdProvider.of(Map.of(
+        final ParquetColumnResolver.Factory resolver = ParquetColumnResolverFieldIdFactory.of(Map.of(
                 NAME, NAME_ID,
                 FIRST_NAME, FIRST_NAME_ID,
                 LAST_NAME, LAST_NAME_ID));
@@ -962,7 +962,7 @@ public class TestParquetTools {
         {
             final Table actual = ParquetTools.readTable(f1.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td1)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td1, actual.getDefinition());
             assertTableEquals(t1, actual);
@@ -975,7 +975,7 @@ public class TestParquetTools {
                     stringCol(LAST_NAME, null, null));
             final Table actual = ParquetTools.readTable(f1.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td2)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td2, actual.getDefinition());
             assertTableEquals(expected, actual);
@@ -986,7 +986,7 @@ public class TestParquetTools {
             final Table expected = newTable(td1, stringCol(NAME, "Pete", "Colin"));
             final Table actual = ParquetTools.readTable(f2.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td1)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td1, actual.getDefinition());
             assertTableEquals(expected, actual);
@@ -996,7 +996,7 @@ public class TestParquetTools {
         {
             final Table actual = ParquetTools.readTable(f2.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td2)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td2, actual.getDefinition());
             assertTableEquals(t2, actual);
@@ -1008,7 +1008,7 @@ public class TestParquetTools {
                     stringCol(NAME, "Shivam", "Ryan", "Pete", "Colin"));
             final Table actual = ParquetTools.readTable(testRoot, ParquetInstructions.builder()
                     .setTableDefinition(td1)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td1, actual.getDefinition());
             assertTableEquals(expected, actual);
@@ -1021,7 +1021,7 @@ public class TestParquetTools {
                     stringCol(LAST_NAME, null, null, "Goddard", "Alworth"));
             final Table actual = ParquetTools.readTable(testRoot, ParquetInstructions.builder()
                     .setTableDefinition(td2)
-                    .setColumnResolverProvider(resolver)
+                    .setColumnResolverFactory(resolver)
                     .build());
             assertEquals(td2, actual.getDefinition());
             assertTableEquals(expected, actual);
@@ -1082,7 +1082,7 @@ public class TestParquetTools {
         {
             final Table table = ParquetTools.readTable(f.getPath(), ParquetInstructions.builder()
                     .setTableDefinition(td)
-                    .setColumnResolverProvider(ParquetColumnResolverFieldIdProvider.of(Map.of(
+                    .setColumnResolverFactory(ParquetColumnResolverFieldIdFactory.of(Map.of(
                             FOO, fieldId,
                             BAR, fieldId)))
                     .build());

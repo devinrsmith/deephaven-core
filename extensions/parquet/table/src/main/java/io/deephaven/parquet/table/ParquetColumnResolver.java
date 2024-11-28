@@ -3,23 +3,25 @@
 //
 package io.deephaven.parquet.table;
 
+import io.deephaven.annotations.BuildableStyle;
 import org.apache.parquet.column.ColumnDescriptor;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
 import org.apache.parquet.schema.MessageType;
+import org.immutables.value.Value;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * Resolves Deephaven column namen into Parquet ColumnPaths.
+ * A mapping between Deephaven column names and Parquet {@link ColumnDescriptor column descriptors}.
  */
-public interface ParquetColumnResolver {
+@Value.Immutable
+@BuildableStyle
+public abstract class ParquetColumnResolver {
 
     /**
-     * {@link ParquetInstructions.Builder#setColumnResolverProvider(Provider)}
+     * {@link ParquetInstructions.Builder#setColumnResolverFactory(Factory)}
      */
-    interface Provider {
+    public interface Factory {
 
         /**
          *
@@ -29,23 +31,31 @@ public interface ParquetColumnResolver {
         ParquetColumnResolver init(FileMetaData metadata);
     }
 
-    /**
-     * Creates a parquet column resolver from a {@link Map#copyOf(Map) copy of} {@code map}.
-     *
-     * @param map the map
-     * @return the Parquet column resolver
-     */
-    static ParquetColumnResolver of(MessageType schema, Map<String, ColumnDescriptor> map) {
-        return null; // new ParquetColumnResolverFixedImpl(Map.copyOf(map));
+    public static Builder builder() {
+        return ImmutableParquetColumnResolver.builder();
     }
 
-    MessageType schema();
+    abstract MessageType schema();
 
-    /**
-     * Returns the column path for a given {@code columnName} if present.
-     *
-     * @param columnName the Deephaven column name
-     * @return the column path, if mapped
-     */
-    Optional<ColumnDescriptor> columnDescriptor(String columnName);
+    public abstract Map<String, ColumnDescriptor> mapping();
+
+    @Value.Check
+    final void checkColumns() {
+        for (ColumnDescriptor columnDescriptor : mapping().values()) {
+            if (!ParquetUtil.contains(schema(), columnDescriptor)) {
+                throw new IllegalArgumentException("schema does not contain column descriptor " + columnDescriptor);
+            }
+        }
+    }
+
+    public interface Builder {
+
+        Builder schema(MessageType schema);
+
+        Builder putMapping(String key, ColumnDescriptor value);
+
+        Builder putAllMapping(Map<String, ? extends ColumnDescriptor> entries);
+
+        ParquetColumnResolver build();
+    }
 }

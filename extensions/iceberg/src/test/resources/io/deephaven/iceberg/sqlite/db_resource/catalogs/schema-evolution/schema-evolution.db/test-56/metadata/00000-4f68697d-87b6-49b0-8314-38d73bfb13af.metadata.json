@@ -1,0 +1,81 @@
+{
+    "location": "catalogs/schema-evolution/schema-evolution.db/test-56",
+    "table-uuid": "63b35451-6399-4381-8bd3-96f07eaf287c",
+    "last-updated-ms": 1739547670762,
+    "last-column-id": 2,
+    "schemas": [
+        {
+            "type": "struct",
+            "fields": [
+                {
+                    "id": 1,
+                    "name": "Field1",
+                    "type": "int",
+                    "required": false
+                },
+                {
+                    "id": 2,
+                    "name": "Field2",
+                    "type": "int",
+                    "required": false
+                }
+            ],
+            "schema-id": 0,
+            "identifier-field-ids": []
+        }
+    ],
+    "current-schema-id": 0,
+    "partition-specs": [
+        {
+            "spec-id": 0,
+            "fields": []
+        }
+    ],
+    "default-spec-id": 0,
+    "last-partition-id": 999,
+    "properties": {},
+    "current-snapshot-id": 1015702842272033383,
+    "snapshots": [
+        {
+            "snapshot-id": 1015702842272033383,
+            "sequence-number": 1,
+            "timestamp-ms": 1739547670762,
+            "manifest-list": "catalogs/schema-evolution/schema-evolution.db/test-56/metadata/snap-1015702842272033383-0-ba526524-f3d4-4e6f-901e-5db2fe4bba77.avro",
+            "summary": {
+                "operation": "append",
+                "added-files-size": "996",
+                "added-data-files": "1",
+                "added-records": "10",
+                "total-data-files": "1",
+                "total-delete-files": "0",
+                "total-records": "10",
+                "total-files-size": "996",
+                "total-position-deletes": "0",
+                "total-equality-deletes": "0"
+            },
+            "schema-id": 0
+        }
+    ],
+    "snapshot-log": [
+        {
+            "snapshot-id": 1015702842272033383,
+            "timestamp-ms": 1739547670762
+        }
+    ],
+    "metadata-log": [],
+    "sort-orders": [
+        {
+            "order-id": 0,
+            "fields": []
+        }
+    ],
+    "default-sort-order-id": 0,
+    "refs": {
+        "main": {
+            "snapshot-id": 1015702842272033383,
+            "type": "branch"
+        }
+    },
+    "format-version": 2,
+    "last-sequence-number": 1
+}

@@ -1,0 +1,133 @@
+{
+    "location": "catalogs/schema-evolution/schema-evolution.db/test-1",
+    "table-uuid": "6f5a254e-ce67-4e64-bc3c-870b19f312d5",
+    "last-updated-ms": 1738960723248,
+    "last-column-id": 2,
+    "schemas": [
+        {
+            "type": "struct",
+            "fields": [
+                {
+                    "id": 1,
+                    "name": "Field1",
+                    "type": "int",
+                    "required": false
+                },
+                {
+                    "id": 2,
+                    "name": "Field2",
+                    "type": "int",
+                    "required": false
+                }
+            ],
+            "schema-id": 0,
+            "identifier-field-ids": []
+        },
+        {
+            "type": "struct",
+            "fields": [
+                {
+                    "id": 1,
+                    "name": "Field1_B",
+                    "type": "int",
+                    "required": false
+                },
+                {
+                    "id": 2,
+                    "name": "Field2_B",
+                    "type": "int",
+                    "required": false
+                }
+            ],
+            "schema-id": 1,
+            "identifier-field-ids": []
+        }
+    ],
+    "current-schema-id": 1,
+    "partition-specs": [
+        {
+            "spec-id": 0,
+            "fields": []
+        }
+    ],
+    "default-spec-id": 0,
+    "last-partition-id": 999,
+    "properties": {},
+    "current-snapshot-id": 7826776845507595876,
+    "snapshots": [
+        {
+            "snapshot-id": 4876100518378062826,
+            "sequence-number": 1,
+            "timestamp-ms": 1738960723228,
+            "manifest-list": "catalogs/schema-evolution/schema-evolution.db/test-1/metadata/snap-4876100518378062826-0-6e0c81f5-8e2e-42d0-9961-94af5ae44b1e.avro",
+            "summary": {
+                "operation": "append",
+                "added-files-size": "996",
+                "added-data-files": "1",
+                "added-records": "10",
+                "total-data-files": "1",
+                "total-delete-files": "0",
+                "total-records": "10",
+                "total-files-size": "996",
+                "total-position-deletes": "0",
+                "total-equality-deletes": "0"
+            },
+            "schema-id": 0
+        },
+        {
+            "snapshot-id": 7826776845507595876,
+            "parent-snapshot-id": 4876100518378062826,
+            "sequence-number": 2,
+            "timestamp-ms": 1738960723248,
+            "manifest-list": "catalogs/schema-evolution/schema-evolution.db/test-1/metadata/snap-7826776845507595876-0-d70819f2-f3fc-4bb4-8a15-ff5f00a770c0.avro",
+            "summary": {
+                "operation": "append",
+                "added-files-size": "1016",
+                "added-data-files": "1",
+                "added-records": "10",
+                "total-data-files": "2",
+                "total-delete-files": "0",
+                "total-records": "20",
+                "total-files-size": "2012",
+                "total-position-deletes": "0",
+                "total-equality-deletes": "0"
+            },
+            "schema-id": 1
+        }
+    ],
+    "snapshot-log": [
+        {
+            "snapshot-id": 4876100518378062826,
+            "timestamp-ms": 1738960723228
+        },
+        {
+            "snapshot-id": 7826776845507595876,
+            "timestamp-ms": 1738960723248
+        }
+    ],
+    "metadata-log": [
+        {
+            "metadata-file": "catalogs/schema-evolution/schema-evolution.db/test-1/metadata/00000-28039c11-55d0-460b-980f-a81aeb690990.metadata.json",
+            "timestamp-ms": 1738960723228
+        },
+        {
+            "metadata-file": "catalogs/schema-evolution/schema-evolution.db/test-1/metadata/00001-8f6c425e-0e3b-4dd9-b89a-501c1c1c4a2d.metadata.json",
+            "timestamp-ms": 1738960723235
+        }
+    ],
+    "sort-orders": [
+        {
+            "order-id": 0,
+            "fields": []
+        }
+    ],
+    "default-sort-order-id": 0,
+    "refs": {
+        "main": {
+            "snapshot-id": 7826776845507595876,
+            "type": "branch"
+        }
+    },
+    "format-version": 2,
+    "last-sequence-number": 2
+}

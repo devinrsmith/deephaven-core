@@ -35,6 +35,8 @@ public abstract class IcebergReadInstructions {
      */
     public abstract Optional<TableDefinition> tableDefinition();
 
+    public abstract Optional<SchemaProvider> schema();
+
     /**
      * The data instructions to use for reading the Iceberg data files (might be S3Instructions or other cloud
      * provider-specific instructions).

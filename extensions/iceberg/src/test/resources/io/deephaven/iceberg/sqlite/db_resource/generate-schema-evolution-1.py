@@ -16,10 +16,20 @@ TABLE_ID = ("schema-evolution", "test-1")
 FIELD_ID_1 = 1
 FIELD_ID_2 = 2
 
+SCHEMA_INIT = Schema(
+    NestedField(field_id=-1, name="Field1", field_type=IntegerType()),
+    NestedField(field_id=-1, name="Field2", field_type=IntegerType()),
+)
+
+# Technically, the assigning of field ids is up to the Catalog implementation,
+# and we should be forced to create the Table first before we actually know what
 SCHEMA_0 = Schema(
     NestedField(field_id=FIELD_ID_1, name="Field1", field_type=IntegerType()),
     NestedField(field_id=FIELD_ID_2, name="Field2", field_type=IntegerType()),
 )
+
+# The rest of these schema modifications are renames, or re-orders, where we can
+# know the specific field ids.
 
 SCHEMA_1 = Schema(
     NestedField(field_id=FIELD_ID_1, name="Field1_B", field_type=IntegerType()),
@@ -70,10 +80,12 @@ catalog = SqlCatalog(
     },
 )
 
-with catalog.create_table_transaction(TABLE_ID, SCHEMA_0) as txn:
+with catalog.create_table_transaction(TABLE_ID, SCHEMA_INIT) as txn:
     txn.append(PyArrowTest1.table(range(10)))
 
 iceberg_table = catalog.load_table(TABLE_ID)
+if iceberg_table.schema() != SCHEMA_0:
+    raise Exception("Unexpected schema")
 
 with iceberg_table.transaction() as txn:
     with txn.update_schema() as update_schema:

@@ -44,14 +44,18 @@ public abstract class IcebergMapping {
                 : Optional.of(SchemaHelper.fieldPath(schema(), Arrays.asList(schemaPath).iterator()));
     }
 
-    final ParquetColumnResolver.Factory columnResolverFactory(Schema ) {
+    final ParquetColumnResolver.Factory columnResolverFactory() {
         return new ResolverFactory();
     }
 
     private class ResolverFactory implements ParquetColumnResolver.Factory {
         @Override
         public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
+
+
             final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
+
+
             // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
             return new Resolver(tableLocationKey.getSchema());
         }

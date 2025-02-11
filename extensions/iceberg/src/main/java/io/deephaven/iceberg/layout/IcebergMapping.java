@@ -2,9 +2,11 @@ package io.deephaven.iceberg.layout;
 
 import com.google.common.collect.AbstractIterator;
 import io.deephaven.annotations.BuildableStyle;
+import io.deephaven.api.util.NameValidator;
+import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableKey;
-import io.deephaven.iceberg.location.IcebergTableParquetLocationKey;
+import io.deephaven.iceberg.base.IcebergUtils;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
 import org.apache.iceberg.Schema;
@@ -15,15 +17,19 @@ import org.apache.parquet.schema.Type;
 import org.immutables.value.Value;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -31,17 +37,54 @@ import java.util.stream.StreamSupport;
 @BuildableStyle
 public abstract class IcebergMapping {
 
-    public abstract TableDefinition definition();
+    public static Builder builder() {
+        return ImmutableIcebergMapping.builder();
+    }
+
+    public static IcebergMapping infer(Schema schema) {
+        // todo: option to throw error on unmappable fields
+        // todo: map key/value could be "key" / "value"?
+        // similar to io.deephaven.iceberg.util.IcebergTableAdapter.fromSchema
+        final Set<String> usedNames = new HashSet<>();
+        final List<ColumnDefinition<?>> columnDefinitions = new ArrayList<>();
+        Builder builder = IcebergMapping.builder();
+        for (final Types.NestedField column : schema.columns()) {
+            if (column.type().isPrimitiveType()) {
+                final String dhName = NameValidator.legalizeColumnName(column.name(), usedNames);
+                usedNames.add(dhName);
+                builder.putMap(dhName, new int[] { column.fieldId() });
+                columnDefinitions.add(ColumnDefinition.of(dhName, IcebergUtils.convertToDHType(column.type())));
+            }
+        }
+        return builder
+                .schema(schema)
+                .definition(TableDefinition.of(columnDefinitions))
+                .build();
+    }
 
     public abstract Schema schema();
 
-    public abstract Map<String, String[]> map(); // todo: verify this is pointing to a schema leaf
+    public abstract TableDefinition definition();
+
+    // does not support mapping to a key / value of a map type
+    abstract Map<String, int[]> map(); // todo: verify this is pointing to a schema leaf
+
+    public interface Builder {
+
+        Builder definition(TableDefinition definition);
+
+        Builder schema(Schema schema);
+
+        Builder putMap(String key, int[] value);
+
+        IcebergMapping build();
+    }
 
     final Optional<Stream<Types.NestedField>> fieldPath(String columnName) {
-        final String[] schemaPath = map().get(columnName);
+        final int[] schemaPath = map().get(columnName);
         return schemaPath == null
                 ? Optional.empty()
-                : Optional.of(SchemaHelper.fieldPath(schema(), Arrays.asList(schemaPath).iterator()));
+                : Optional.of(SchemaHelper.nestedFields(schema(), IntStream.of(schemaPath).iterator()));
     }
 
     final ParquetColumnResolver.Factory columnResolverFactory() {
@@ -51,11 +94,7 @@ public abstract class IcebergMapping {
     private class ResolverFactory implements ParquetColumnResolver.Factory {
         @Override
         public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
-
-
-            final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
-
-
+            //final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
             // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
             return new Resolver(tableLocationKey.getSchema());
         }
@@ -88,8 +127,8 @@ public abstract class IcebergMapping {
                     // we should know apriori if a field has been deleted
 
                     // we don't have a good way to communicate this state to the upper level;
-                    // in the case of a NotFound, it's possible the ,
-
+                    // in the case of a NotFound, it's possible the
+                    throw e; // todo: don't do this
                 } else {
                     throw e;
                 }
@@ -188,4 +227,21 @@ public abstract class IcebergMapping {
     private static class ListUnsupported extends MappingException {
 
     }
+
+    private static class IcebergVisitor {
+
+        private Builder builder;
+
+        private List<String> path;
+        private List<Types.NestedField> prefix;
+
+
+    }
+
+//    private static List<String> name(IntStream path) {
+//
+//
+//    }
+//
+//    private static class NestedFieldIterator
 }

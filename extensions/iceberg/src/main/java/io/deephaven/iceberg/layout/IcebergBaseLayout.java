@@ -6,7 +6,6 @@ package io.deephaven.iceberg.layout;
 import io.deephaven.base.FileUtils;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableDataException;
-import io.deephaven.engine.table.impl.locations.TableKey;
 import io.deephaven.engine.table.impl.locations.impl.TableLocationKeyFinder;
 import io.deephaven.iceberg.base.IcebergUtils;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
@@ -17,23 +16,18 @@ import io.deephaven.iceberg.util.IcebergTableAdapter;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
-import io.deephaven.parquet.table.location.ParquetFieldIdColumnResolverFactory;
-import io.deephaven.parquet.table.location.ParquetTableLocationKey;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.util.channel.SeekableChannelsProviderLoader;
 import org.apache.iceberg.*;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.io.FileIO;
-import org.apache.parquet.schema.MessageType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -118,13 +112,16 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
     }
 
     /**
+     * @param columnResolverFactory
      * @param tableAdapter The {@link IcebergTableAdapter} that will be used to access the table.
      * @param instructions The instructions for customizations while reading.
      */
-    public IcebergBaseLayout(
+    IcebergBaseLayout(
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final IcebergReadInstructions instructions,
-            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
+            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider,
+            @NotNull final ParquetColumnResolver.Factory columnResolverFactory
+    ) {
         this.tableAdapter = tableAdapter;
         {
             UUID uuid;
@@ -154,9 +151,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
             // Add the table definition.
             builder.setTableDefinition(tableDef);
 
-            // we need
-
-            builder.setColumnResolverFactory(ParquetFieldIdColumnResolverFactory.of(Map.of("tood", 1)));
+            builder.setColumnResolverFactory(columnResolverFactory);
 
             // Add any column rename mappings.
             if (!instructions.columnRenames().isEmpty()) {

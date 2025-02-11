@@ -279,6 +279,8 @@ public class IcebergTableAdapter {
         final PartitionSpec partitionSpec;
         final IcebergReadInstructions updatedInstructions;
 
+//        readInstructions.schema().
+
         final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
         if (snapshotFromInstructions == null) {
             synchronized (this) {

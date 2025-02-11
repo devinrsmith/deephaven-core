@@ -26,7 +26,7 @@ public final class IcebergFlatLayout extends IcebergBaseLayout {
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final IcebergReadInstructions instructions,
             @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
-        super(tableAdapter, instructions, dataInstructionsProvider);
+        super(tableAdapter, instructions, dataInstructionsProvider, null);
     }
 
     @Override

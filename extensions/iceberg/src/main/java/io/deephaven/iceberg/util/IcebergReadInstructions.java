@@ -12,6 +12,7 @@ import org.immutables.value.Value.Immutable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.UUID;
 
 /**
  * This class provides instructions intended for reading Iceberg catalogs and tables. The default values documented in
@@ -36,6 +37,9 @@ public abstract class IcebergReadInstructions {
     public abstract Optional<TableDefinition> tableDefinition();
 
     public abstract Optional<SchemaProvider> schema();
+
+    
+    public abstract Optional<UUID> uuid();
 
     /**
      * The data instructions to use for reading the Iceberg data files (might be S3Instructions or other cloud
@@ -101,6 +105,8 @@ public abstract class IcebergReadInstructions {
         Builder snapshotId(long snapshotId);
 
         Builder snapshot(Snapshot snapshot);
+
+        Builder schema(SchemaProvider schemaProvider);
 
         IcebergReadInstructions build();
     }

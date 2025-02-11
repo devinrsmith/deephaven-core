@@ -12,7 +12,7 @@ import pyarrow as pa
 
 import iceberg_utils
 
-TABLE_ID = ("schema-evolution", "test-1")
+TABLE_ID = ("schema-evolution", "test-55")
 FIELD_ID_1 = 1
 FIELD_ID_2 = 2
 

@@ -273,6 +273,7 @@ public class IcebergTableAdapter {
      * read instructions with the requested snapshot, or the latest snapshot if none is requested.
      */
     private SpecAndSchema getSpecAndSchema(@NotNull final IcebergReadInstructions readInstructions) {
+        readInstructions.checkUuid(table);
         final Snapshot snapshot;
         final Schema schema;
         final PartitionSpec partitionSpec;

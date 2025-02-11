@@ -5,13 +5,16 @@ package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.CopyableStyle;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.iceberg.impl.TableUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Immutable;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.UUID;
 
 /**
  * This class provides instructions intended for reading Iceberg catalogs and tables. The default values documented in
@@ -85,6 +88,13 @@ public abstract class IcebergReadInstructions {
      */
     public abstract IcebergReadInstructions withSnapshot(Snapshot value);
 
+    /**
+     * The expected {@code table-uuid}.
+     *
+     * @see <a href="https://iceberg.apache.org/spec/#table-metadata-fields">Table metadata fields</a>
+     */
+    public abstract Optional<UUID> uuid();
+
     public interface Builder {
         Builder tableDefinition(TableDefinition tableDefinition);
 
@@ -100,6 +110,8 @@ public abstract class IcebergReadInstructions {
 
         Builder snapshot(Snapshot snapshot);
 
+        Builder uuid(UUID uuid);
+
         IcebergReadInstructions build();
     }
 
@@ -109,6 +121,18 @@ public abstract class IcebergReadInstructions {
                 snapshotId().getAsLong() != snapshot().get().snapshotId()) {
             throw new IllegalArgumentException("If both snapshotID and snapshot are provided, the snapshot Ids " +
                     "must match, found " + snapshotId().getAsLong() + " and " + snapshot().get().snapshotId());
+        }
+    }
+
+    final void checkUuid(Table table) {
+        final UUID expected = uuid().orElse(null);
+        if (expected == null) {
+            return;
+        }
+        final UUID actual = TableUtil.uuid(table).orElse(null);
+        if (!expected.equals(actual)) {
+            throw new IllegalStateException(
+                    String.format("Expected `table-uuid` of `%s`, found `%s`", expected, actual));
         }
     }
 }

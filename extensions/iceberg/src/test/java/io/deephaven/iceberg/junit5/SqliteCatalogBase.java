@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import static io.deephaven.engine.testutil.TstUtils.assertTableEquals;
 import static io.deephaven.engine.util.TableTools.col;
@@ -1036,5 +1037,57 @@ public abstract class SqliteCatalogBase {
 
         final Table expected2 = TableTools.merge(expected, part3.update("PC = `cat`"));
         assertTableEquals(expected2, fromIcebergRefreshing.select());
+    }
+
+    @Test
+    void testUuid() {
+        final Schema schema = new Schema(Types.NestedField.required(1, "Foo", Types.StringType.get()));
+        final Namespace myNamespace = Namespace.of("MyNamespace");
+        final TableIdentifier myTableId = TableIdentifier.of(myNamespace, "MyUuidTest");
+        catalogAdapter.catalog().createTable(myTableId, schema);
+        final IcebergTableAdapter tableAdapter = catalogAdapter.loadTable(myTableId);
+        final TableDefinition expectedDefinition = TableDefinition.of(ColumnDefinition.ofString("Foo"));
+        // no UUID
+        {
+            final Table table;
+            {
+
+                assertThat(tableAdapter.definition()).isEqualTo(expectedDefinition);
+                table = tableAdapter.table();
+                assertThat(table.getDefinition()).isEqualTo(expectedDefinition);
+            }
+            assertThat(table.isEmpty()).isTrue();
+        }
+        // good UUID
+        {
+            final Table table;
+            {
+                final IcebergReadInstructions readInstructions = IcebergReadInstructions.builder()
+                        .uuid(tableAdapter.icebergTable().uuid())
+                        .build();
+                assertThat(tableAdapter.definition(readInstructions)).isEqualTo(expectedDefinition);
+                table = tableAdapter.table(readInstructions);
+                assertThat(table.getDefinition()).isEqualTo(expectedDefinition);
+            }
+            assertThat(table.isEmpty()).isTrue();
+        }
+        // bad UUID
+        {
+            final IcebergReadInstructions readInstructions = IcebergReadInstructions.builder()
+                    .uuid(new UUID(0xDEADBEEFL, 0xC0FFEECAFEL))
+                    .build();
+            try {
+                tableAdapter.definition(readInstructions);
+                failBecauseExceptionWasNotThrown(IllegalStateException.class);
+            } catch (IllegalStateException e) {
+                assertThat(e).hasMessageContaining("Expected `table-uuid` of ");
+            }
+            try {
+                tableAdapter.table(readInstructions);
+                failBecauseExceptionWasNotThrown(IllegalStateException.class);
+            } catch (IllegalStateException e) {
+                assertThat(e).hasMessageContaining("Expected `table-uuid` of ");
+            }
+        }
     }
 }

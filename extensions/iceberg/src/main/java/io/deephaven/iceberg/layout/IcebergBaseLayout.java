@@ -8,6 +8,7 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.locations.impl.TableLocationKeyFinder;
 import io.deephaven.iceberg.base.IcebergUtils;
+import io.deephaven.iceberg.impl.TableUtil;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
 import io.deephaven.iceberg.location.IcebergTableParquetLocationKey;
 import io.deephaven.iceberg.relative.RelativeFileIO;
@@ -27,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -119,16 +119,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
             @NotNull final IcebergReadInstructions instructions,
             @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
         this.tableAdapter = tableAdapter;
-        {
-            UUID uuid;
-            try {
-                uuid = tableAdapter.icebergTable().uuid();
-            } catch (final RuntimeException e) {
-                // The UUID method is unsupported for v1 Iceberg tables since uuid is optional for v1 tables.
-                uuid = null;
-            }
-            this.tableUuid = uuid;
-        }
+        this.tableUuid = TableUtil.uuid(tableAdapter.icebergTable()).orElse(null);
 
         this.catalogName = tableAdapter.catalog().name();
         this.tableIdentifier = tableAdapter.tableIdentifier();

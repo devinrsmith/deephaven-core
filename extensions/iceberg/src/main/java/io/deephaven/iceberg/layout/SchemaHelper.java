@@ -1,17 +1,12 @@
 package io.deephaven.iceberg.layout;
 
-import com.google.common.collect.AbstractIterator;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types.NestedField;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-import java.util.PrimitiveIterator;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 class SchemaHelper {
 
@@ -21,20 +16,69 @@ class SchemaHelper {
 //                false);
 //    }
 
-    public static Stream<NestedField> nestedFields(Schema schema, PrimitiveIterator.OfInt idPath) {
-        if (!idPath.hasNext()) {
-            return Stream.empty();
+//    public static boolean contains(Schema schema, int... idPath) {
+//        if (idPath.length == 0) {
+//            return true;
+//        }
+//        final NestedField firstField = schema.findField(idPath[0]);
+//        if (firstField == null) {
+//            return false;
+//        }
+//        return contains(firstField, idPath, 1, idPath.length - 1);
+//    }
+//
+//    private static boolean contains(NestedField field, int[] idPath, int offset, int len) {
+//        if (len == 0) {
+//            return true;
+//        }
+//        if (!field.type().isNestedType()) {
+//            throw new IllegalArgumentException("todo");
+//        }
+//        final NestedField next = field.type().asNestedType().field(idPath[offset]);
+//        if (next == null) {
+//            return false;
+//        }
+//        return contains(next, idPath, offset + 1, len - 1);
+//    }
+
+    public static List<NestedField> nestedFields(Schema schema, int... idPath) {
+        final List<NestedField> out = new ArrayList<>(idPath.length);
+        if (idPath.length == 0) {
+            return out;
         }
-        final int firstId = idPath.nextInt();
-        final NestedField firstField = schema.findField(firstId);
-        if (firstField == null) {
-            throw invalidIdPath(firstId, 0);
+        NestedField current = schema.findField(idPath[0]);
+        if (current == null) {
+            throw idPathNotFound(idPath, out);
         }
-        return Stream.concat(
-                Stream.of(firstField),
-                StreamSupport.stream(
-                        Spliterators.spliteratorUnknownSize(new ItById(idPath, firstField), Spliterator.ORDERED | Spliterator.NONNULL), false));
+        out.add(current);
+        for (int i = 1; i < idPath.length; ++i) {
+            if (!current.type().isNestedType()) {
+                throw idPathTooLong(idPath, out);
+            }
+            current = current.type().asNestedType().field(idPath[i]);
+            if (current == null) {
+                throw idPathNotFound(idPath, out);
+            }
+            out.add(current);
+        }
+        return out;
     }
+
+
+//    public static Stream<NestedField> nestedFields(Schema schema, PrimitiveIterator.OfInt idPath) {
+//        if (!idPath.hasNext()) {
+//            return Stream.empty();
+//        }
+//        final int firstId = idPath.nextInt();
+//        final NestedField firstField = schema.findField(firstId);
+//        if (firstField == null) {
+//            throw invalidIdPath(firstId, 0);
+//        }
+//        return Stream.concat(
+//                Stream.of(firstField),
+//                StreamSupport.stream(
+//                        Spliterators.spliteratorUnknownSize(new ItById(idPath, firstField), Spliterator.ORDERED | Spliterator.NONNULL), false));
+//    }
 
 //    public static Stream<Type> nestedFields(Schema schema, Iterator<String> namePath) {
 //        if (!namePath.hasNext()) {
@@ -57,44 +101,44 @@ class SchemaHelper {
 //
 
 
-    public static void walk(NestedField field, Consumer<NestedField> consumer) {
-        if (field.type().isNestedType()) {
-            for (NestedField nestedField : field.type().asNestedType().fields()) {
-                consumer.accept(nestedField);
-            }
-        }
-    }
-
-
-    private static class ItById extends AbstractIterator<NestedField> {
-        private final PrimitiveIterator.OfInt it;
-        private NestedField computed;
-        private int computedIx;
-
-        public ItById(PrimitiveIterator.OfInt it, NestedField computed) {
-            this.it = Objects.requireNonNull(it);
-            this.computed = Objects.requireNonNull(computed);
-            this.computedIx = 0;
-        }
-
-        @Override
-        protected @Nullable NestedField computeNext() {
-            if (computed == null || !it.hasNext()) {
-                computed = null;
-                return endOfData();
-            }
-            if (!computed.type().isNestedType()) {
-                throw new IllegalArgumentException("Invalid path, is too long");
-            }
-            final int fieldId = it.nextInt();
-            computed = computed.type().asNestedType().field(fieldId);
-            ++computedIx;
-            if (computed == null) {
-                throw invalidIdPath(fieldId, computedIx);
-            }
-            return computed;
-        }
-    }
+//    public static void walk(NestedField field, Consumer<NestedField> consumer) {
+//        if (field.type().isNestedType()) {
+//            for (NestedField nestedField : field.type().asNestedType().fields()) {
+//                consumer.accept(nestedField);
+//            }
+//        }
+//    }
+//
+//
+//    private static class ItById extends AbstractIterator<NestedField> {
+//        private final PrimitiveIterator.OfInt it;
+//        private NestedField computed;
+//        private int computedIx;
+//
+//        public ItById(PrimitiveIterator.OfInt it, NestedField computed) {
+//            this.it = Objects.requireNonNull(it);
+//            this.computed = Objects.requireNonNull(computed);
+//            this.computedIx = 0;
+//        }
+//
+//        @Override
+//        protected @Nullable NestedField computeNext() {
+//            if (computed == null || !it.hasNext()) {
+//                computed = null;
+//                return endOfData();
+//            }
+//            if (!computed.type().isNestedType()) {
+//                throw new IllegalArgumentException("Invalid path, is too long");
+//            }
+//            final int fieldId = it.nextInt();
+//            computed = computed.type().asNestedType().field(fieldId);
+//            ++computedIx;
+//            if (computed == null) {
+//                throw invalidIdPath(fieldId, computedIx);
+//            }
+//            return computed;
+//        }
+//    }
 
     // TODO: special handling for "key", "value", "element"
 //    private static class ItByName extends AbstractIterator<Type> {
@@ -127,8 +171,16 @@ class SchemaHelper {
 //        }
 //    }
 
-    private static IllegalArgumentException invalidIdPath(int id, int ix) {
-        throw new IllegalArgumentException(String.format("Invalid id path, id=%d @ ix=%d", id, ix));
+    private static IllegalArgumentException idPathNotFound(int[] id, List<NestedField> context) {
+        final int ix = context.size();
+        final String contextStr = context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
+        throw new IllegalArgumentException(String.format("id path not found, path=%s, context=%s", Arrays.toString(id), contextStr));
+    }
+
+    private static IllegalArgumentException idPathTooLong(int[] id, List<NestedField> context) {
+        final int ix = context.size();
+        final String contextStr = context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
+        throw new IllegalArgumentException(String.format("id path too long, path=%s, context=%s", Arrays.toString(id), contextStr));
     }
 
 //    private static IllegalArgumentException invalidNamePath(String name, int ix) {

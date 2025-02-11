@@ -371,10 +371,14 @@ public class IcebergTableAdapter {
      * @return The loaded table
      */
     public IcebergTable table(@NotNull final IcebergReadInstructions readInstructions) {
+        final IcebergMapping infer = IcebergMapping.infer(table.schema());
+
         final SpecAndSchema specAndSchema = getSpecAndSchema(readInstructions);
         final Schema schema = specAndSchema.schema;
         final PartitionSpec partitionSpec = specAndSchema.partitionSpec;
         IcebergReadInstructions updatedInstructions = specAndSchema.readInstructions;
+
+
 
         // Get the user supplied table definition.
         final TableDefinition userTableDef = updatedInstructions.tableDefinition().orElse(null);
@@ -392,11 +396,11 @@ public class IcebergTableAdapter {
         final IcebergBaseLayout keyFinder;
         if (partitionSpec.isUnpartitioned()) {
             // Create the flat layout location key finder
-            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader);
+            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader, infer.columnResolverFactory());
         } else {
             // Create the partitioning column location key finder
             keyFinder = new IcebergKeyValuePartitionedLayout(this, partitionSpec, updatedInstructions,
-                    dataInstructionsProviderLoader);
+                    dataInstructionsProviderLoader, infer.columnResolverFactory());
         }
 
         if (updatedInstructions.updateMode().updateType() == IcebergUpdateMode.IcebergUpdateType.STATIC) {

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -67,7 +68,7 @@ public abstract class IcebergMapping {
     public abstract TableDefinition definition();
 
     // does not support mapping to a key / value of a map type
-    abstract Map<String, int[]> map(); // todo: verify this is pointing to a schema leaf
+    abstract Map<String, int[]> map(); // todo: verify this is pointing to a schema leaf; arguably, doesn't have to be a leaf if it's a list? b/c really, the list type is probably better than a path to the elemnt
 
     public interface Builder {
 
@@ -80,14 +81,14 @@ public abstract class IcebergMapping {
         IcebergMapping build();
     }
 
-    final Optional<Stream<Types.NestedField>> fieldPath(String columnName) {
+    final Optional<List<Types.NestedField>> fieldPath(String columnName) {
         final int[] schemaPath = map().get(columnName);
         return schemaPath == null
                 ? Optional.empty()
-                : Optional.of(SchemaHelper.nestedFields(schema(), IntStream.of(schemaPath).iterator()));
+                : Optional.of(SchemaHelper.nestedFields(schema(), schemaPath));
     }
 
-    final ParquetColumnResolver.Factory columnResolverFactory() {
+    public final ParquetColumnResolver.Factory columnResolverFactory() {
         return new ResolverFactory();
     }
 
@@ -111,7 +112,7 @@ public abstract class IcebergMapping {
 
         @Override
         public Optional<List<String>> of(String columnName) {
-            final Stream<Types.NestedField> fields = fieldPath(columnName).orElse(null);
+            final List<Types.NestedField> fields = fieldPath(columnName).orElse(null);
             if (fields == null) {
                 // DH did not map this columnName
                 return Optional.empty();
@@ -151,6 +152,7 @@ public abstract class IcebergMapping {
         public It2(MessageType schema, Iterator<Types.NestedField> fieldIt) {
             this.fieldIt = Objects.requireNonNull(fieldIt);
             this.current = Objects.requireNonNull(schema);
+            this.nextIt = Collections.emptyIterator(); // TODO: VALIDATE
         }
 
         @Override

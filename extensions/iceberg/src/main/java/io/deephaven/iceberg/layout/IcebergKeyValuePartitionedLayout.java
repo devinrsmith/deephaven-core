@@ -10,6 +10,7 @@ import io.deephaven.iceberg.location.IcebergTableLocationKey;
 import io.deephaven.iceberg.util.IcebergReadInstructions;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
+import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.util.type.TypeUtils;
 import org.apache.iceberg.*;
 import org.apache.iceberg.data.IdentityPartitionConverters;
@@ -38,6 +39,7 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
     private final List<IdentityPartitioningColData> identityPartitioningColumns;
 
     /**
+     * @param columnResolverFactory
      * @param tableAdapter The {@link IcebergTableAdapter} that will be used to access the table.
      * @param partitionSpec The Iceberg {@link PartitionSpec partition spec} for the table.
      * @param instructions The instructions for customizations while reading.
@@ -46,8 +48,8 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final PartitionSpec partitionSpec,
             @NotNull final IcebergReadInstructions instructions,
-            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
-        super(tableAdapter, instructions, dataInstructionsProvider, null);
+            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider, ParquetColumnResolver.@NotNull Factory columnResolverFactory) {
+        super(tableAdapter, instructions, dataInstructionsProvider, columnResolverFactory);
 
         // We can assume due to upstream validation that there are no duplicate names (after renaming) that are included
         // in the output definition, so we can ignore duplicates.

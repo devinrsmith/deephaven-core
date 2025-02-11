@@ -8,6 +8,7 @@ import io.deephaven.iceberg.location.IcebergTableLocationKey;
 import io.deephaven.iceberg.util.IcebergReadInstructions;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
+import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import org.apache.iceberg.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,14 +20,15 @@ import java.net.URI;
  */
 public final class IcebergFlatLayout extends IcebergBaseLayout {
     /**
+     * @param columnResolverFactory
      * @param tableAdapter The {@link IcebergTableAdapter} that will be used to access the table.
      * @param instructions The instructions for customizations while reading.
      */
     public IcebergFlatLayout(
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final IcebergReadInstructions instructions,
-            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider) {
-        super(tableAdapter, instructions, dataInstructionsProvider, null);
+            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider, ParquetColumnResolver.@NotNull Factory columnResolverFactory) {
+        super(tableAdapter, instructions, dataInstructionsProvider, columnResolverFactory);
     }
 
     @Override

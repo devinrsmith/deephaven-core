@@ -1,104 +1,47 @@
 package io.deephaven.iceberg.layout;
 
 import com.google.common.collect.AbstractIterator;
-import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.api.util.NameValidator;
-import io.deephaven.engine.table.ColumnDefinition;
-import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableKey;
-import io.deephaven.iceberg.base.IcebergUtils;
+import io.deephaven.iceberg.internal.IcebergMapping;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;
-import org.immutables.value.Value;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-@Value.Immutable
-@BuildableStyle
-public abstract class IcebergMapping {
+final class IcebergParquetColumnResolverFactory implements ParquetColumnResolver.Factory {
 
-    public static Builder builder() {
-        return ImmutableIcebergMapping.builder();
+    private final IcebergMapping mapping;
+
+    IcebergParquetColumnResolverFactory(IcebergMapping mapping) {
+        this.mapping = Objects.requireNonNull(mapping);
     }
 
-    public static IcebergMapping infer(Schema schema) {
-        // todo: option to throw error on unmappable fields
-        // todo: map key/value could be "key" / "value"?
-        // similar to io.deephaven.iceberg.util.IcebergTableAdapter.fromSchema
-        final Set<String> usedNames = new HashSet<>();
-        final List<ColumnDefinition<?>> columnDefinitions = new ArrayList<>();
-        Builder builder = IcebergMapping.builder();
-        for (final Types.NestedField column : schema.columns()) {
-            if (column.type().isPrimitiveType()) {
-                final String dhName = NameValidator.legalizeColumnName(column.name(), usedNames);
-                usedNames.add(dhName);
-                builder.putMap(dhName, new int[] { column.fieldId() });
-                columnDefinitions.add(ColumnDefinition.of(dhName, IcebergUtils.convertToDHType(column.type())));
-            }
-        }
-        return builder
-                .schema(schema)
-                .definition(TableDefinition.of(columnDefinitions))
-                .build();
+    @Override
+    public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
+        //final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
+        // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
+        return new Resolver(tableLocationKey.getSchema());
     }
 
-    public abstract Schema schema();
-
-    public abstract TableDefinition definition();
-
-    // does not support mapping to a key / value of a map type
-    abstract Map<String, int[]> map(); // todo: verify this is pointing to a schema leaf; arguably, doesn't have to be a leaf if it's a list? b/c really, the list type is probably better than a path to the elemnt
-
-    public interface Builder {
-
-        Builder definition(TableDefinition definition);
-
-        Builder schema(Schema schema);
-
-        Builder putMap(String key, int[] value);
-
-        IcebergMapping build();
-    }
-
-    final Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        final int[] schemaPath = map().get(columnName);
+    private Optional<List<Types.NestedField>> fieldPath(String columnName) {
+        final int[] schemaPath = mapping.map().get(columnName);
         return schemaPath == null
                 ? Optional.empty()
-                : Optional.of(SchemaHelper.nestedFields(schema(), schemaPath));
-    }
-
-    public final ParquetColumnResolver.Factory columnResolverFactory() {
-        return new ResolverFactory();
-    }
-
-    private class ResolverFactory implements ParquetColumnResolver.Factory {
-        @Override
-        public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
-            //final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
-            // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
-            return new Resolver(tableLocationKey.getSchema());
-        }
+                : Optional.of(SchemaHelper.fieldPath(mapping.schema(), schemaPath));
     }
 
     private class Resolver implements ParquetColumnResolver {
@@ -229,21 +172,4 @@ public abstract class IcebergMapping {
     private static class ListUnsupported extends MappingException {
 
     }
-
-    private static class IcebergVisitor {
-
-        private Builder builder;
-
-        private List<String> path;
-        private List<Types.NestedField> prefix;
-
-
-    }
-
-//    private static List<String> name(IntStream path) {
-//
-//
-//    }
-//
-//    private static class NestedFieldIterator
 }

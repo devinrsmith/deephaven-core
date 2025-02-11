@@ -21,6 +21,7 @@ import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.iceberg.base.IcebergUtils.SpecAndSchema;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
+import io.deephaven.iceberg.internal.IcebergMapping;
 import io.deephaven.iceberg.layout.*;
 import io.deephaven.iceberg.location.IcebergTableLocationFactory;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;

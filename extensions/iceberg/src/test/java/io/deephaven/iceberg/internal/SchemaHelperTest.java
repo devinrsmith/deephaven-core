@@ -1,4 +1,7 @@
-package io.deephaven.iceberg.layout;
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+package io.deephaven.iceberg.internal;
 
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types.IntegerType;
@@ -10,7 +13,9 @@ import org.assertj.core.api.AbstractListAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -24,7 +29,8 @@ class SchemaHelperTest {
         final NestedField i3 = NestedField.of(3, true, "I3", IntegerType.get());
         final NestedField i4 = NestedField.of(4, true, "I4", StructType.of(i2, i3));
         final NestedField i6 = NestedField.of(6, true, "I6", ListType.ofOptional(5, IntegerType.get()));
-        final NestedField i9 = NestedField.of(9, true, "I9", MapType.ofOptional(7, 8, IntegerType.get(), IntegerType.get()));
+        final NestedField i9 =
+                NestedField.of(9, true, "I9", MapType.ofOptional(7, 8, IntegerType.get(), IntegerType.get()));
         final Schema schema = new Schema(i1, i4, i6, i9);
 
         assertFieldPath(schema).isEmpty();
@@ -50,13 +56,17 @@ class SchemaHelperTest {
         assertFieldPathError("id path too long, path=[9, 8, 6], context=['I9', 'value']", schema, 9, 8, 6);
     }
 
-    private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(Schema schema, int... values) {
-        return assertThat(SchemaHelper.fieldPath(schema, values)).extracting(NestedField::name);
+    private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(
+            Schema schema, int... values) {
+        final List<Integer> path = Arrays.stream(values).boxed().collect(Collectors.toList());
+        return assertThat(SchemaHelper.fieldPath(schema, path)).extracting(NestedField::name);
     }
 
     private static void assertFieldPathError(String message, Schema schema, int... values) {
+        final List<Integer> path = Arrays.stream(values).boxed().collect(Collectors.toList());
         try {
-            SchemaHelper.fieldPath(schema, values).forEach(x -> {});
+            SchemaHelper.fieldPath(schema, path).forEach(x -> {
+            });
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {
             assertThat(e).hasMessageContaining(message);

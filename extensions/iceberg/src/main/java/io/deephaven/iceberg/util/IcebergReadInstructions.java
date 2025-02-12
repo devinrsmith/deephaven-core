@@ -38,7 +38,7 @@ public abstract class IcebergReadInstructions {
 
     public abstract Optional<SchemaProvider> schema();
 
-    
+
     public abstract Optional<UUID> uuid();
 
     /**

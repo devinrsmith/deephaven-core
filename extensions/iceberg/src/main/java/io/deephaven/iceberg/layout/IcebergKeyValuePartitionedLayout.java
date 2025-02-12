@@ -48,7 +48,8 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final PartitionSpec partitionSpec,
             @NotNull final IcebergReadInstructions instructions,
-            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider, ParquetColumnResolver.@NotNull Factory columnResolverFactory) {
+            @NotNull final DataInstructionsProviderLoader dataInstructionsProvider,
+            ParquetColumnResolver.@NotNull Factory columnResolverFactory) {
         super(tableAdapter, instructions, dataInstructionsProvider, columnResolverFactory);
 
         // We can assume due to upstream validation that there are no duplicate names (after renaming) that are included

@@ -48,7 +48,8 @@ class SchemaProviderInternal {
         DirectSchemaProvider(final Schema schema) {
             if (schema.schemaId() != 0) {
                 // It's unfortunate that org.apache.iceberg.Schema.DEFAULT_SCHEMA_ID overlaps with a real schema id
-                throw new IllegalArgumentException("Direct schemas should not set an schema id; use fromSchemaId instead");
+                throw new IllegalArgumentException(
+                        "Direct schemas should not set an schema id; use fromSchemaId instead");
             }
             this.schema = schema;
         }

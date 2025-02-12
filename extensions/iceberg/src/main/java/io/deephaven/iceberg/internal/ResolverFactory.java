@@ -1,8 +1,10 @@
-package io.deephaven.iceberg.layout;
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
+package io.deephaven.iceberg.internal;
 
 import com.google.common.collect.AbstractIterator;
 import io.deephaven.engine.table.impl.locations.TableKey;
-import io.deephaven.iceberg.internal.IcebergMapping;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
 import org.apache.iceberg.types.Types;
@@ -22,23 +24,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-final class IcebergParquetColumnResolverFactory implements ParquetColumnResolver.Factory {
+public final class ResolverFactory implements ParquetColumnResolver.Factory {
 
-    private final IcebergMapping mapping;
+    private final Mapping mapping;
 
-    IcebergParquetColumnResolverFactory(IcebergMapping mapping) {
+    ResolverFactory(Mapping mapping) {
         this.mapping = Objects.requireNonNull(mapping);
     }
 
     @Override
     public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
-        //final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
+        // final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
         // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
         return new Resolver(tableLocationKey.getSchema());
     }
 
     private Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        final int[] schemaPath = mapping.map().get(columnName);
+        final List<Integer> schemaPath = mapping.path().get(columnName);
         return schemaPath == null
                 ? Optional.empty()
                 : Optional.of(SchemaHelper.fieldPath(mapping.schema(), schemaPath));
@@ -82,7 +84,8 @@ final class IcebergParquetColumnResolverFactory implements ParquetColumnResolver
 
         private Stream<Type> adapt(Iterator<Types.NestedField> it) {
             return StreamSupport.stream(
-                    Spliterators.spliteratorUnknownSize(new It2(parquetSchema, it), Spliterator.ORDERED | Spliterator.NONNULL),
+                    Spliterators.spliteratorUnknownSize(new It2(parquetSchema, it),
+                            Spliterator.ORDERED | Spliterator.NONNULL),
                     false);
         }
     }

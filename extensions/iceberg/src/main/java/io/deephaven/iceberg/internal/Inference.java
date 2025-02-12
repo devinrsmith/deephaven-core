@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.internal;
 
 import io.deephaven.base.verify.Assert;
@@ -9,9 +12,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
+import java.util.List;
 import java.util.Objects;
 
 
@@ -24,9 +27,11 @@ public final class Inference {
         void onError(Collection<? extends Types.NestedField> path, Exception e);
     }
 
-    // depth first traversal
+    /**
+     * Depth-first traversal dictated by the order in the schema.
+     */
     public static void of(Schema schema, Consumer consumer) {
-        final Deque<Types.NestedField> prefix = new ArrayDeque<>();
+        final List<Types.NestedField> prefix = new ArrayList<>();
         nestedType(prefix, schema.asStruct(), consumer);
     }
 
@@ -50,10 +55,10 @@ public final class Inference {
                 return of((Types.TimestampType) primitiveType);
             case STRING:
                 return of((Types.StringType) primitiveType);
-            case FIXED:
-                return of((Types.FixedType) primitiveType);
             case BINARY:
                 return of((Types.BinaryType) primitiveType);
+            case FIXED:
+                return of((Types.FixedType) primitiveType);
             case DECIMAL:
                 return of((Types.DecimalType) primitiveType);
             case STRUCT:
@@ -61,7 +66,7 @@ public final class Inference {
             case MAP:
                 // Should never get here, we know it's a primitive type
                 throw new IllegalStateException();
-                // v3, likely the same as TIMESTAMP but should test
+            // v3, likely the same as TIMESTAMP but should test
             case TIMESTAMP_NANO:
                 // should be able to support UUID, maybe fixed length codec?
             case UUID:
@@ -87,7 +92,7 @@ public final class Inference {
     }
 
     static Type<?> of(@SuppressWarnings("unused") Types.DoubleType type) {
-        return Type.longType();
+        return Type.doubleType();
     }
 
     static Type<?> of(@SuppressWarnings("unused") Types.DateType type) {
@@ -108,11 +113,12 @@ public final class Inference {
         return Type.stringType();
     }
 
-    static Type<?> of(@SuppressWarnings("unused") Types.FixedType type) {
+    static Type<?> of(@SuppressWarnings("unused") Types.BinaryType type) {
         return Type.byteType().arrayType();
     }
 
-    static Type<?> of(@SuppressWarnings("unused") Types.BinaryType type) {
+    static Type<?> of(@SuppressWarnings("unused") Types.FixedType type) {
+        // TODO: should we have QST type that captures len?
         return Type.byteType().arrayType();
     }
 
@@ -122,18 +128,21 @@ public final class Inference {
     }
 
     private static void structField(
-            Deque<Types.NestedField> prefix,
+            List<Types.NestedField> prefix,
             Types.NestedField structField,
             Consumer consumer) {
-        prefix.push(structField);
+        push(prefix, structField);
         try {
             nestedType(prefix, structField.type().asStructType(), consumer);
         } finally {
-            Assert.eq(structField, "structField", prefix.pop());
+            pop(prefix, structField);
         }
     }
 
-    private static void nestedType(Deque<Types.NestedField> path, org.apache.iceberg.types.Type.NestedType nestedType, Consumer consumer) {
+    private static void nestedType(
+            List<Types.NestedField> path,
+            org.apache.iceberg.types.Type.NestedType nestedType,
+            Consumer consumer) {
         for (final Types.NestedField field : nestedType.fields()) {
             if (field.type().isPrimitiveType()) {
                 primitiveField(path, field, consumer);
@@ -147,24 +156,19 @@ public final class Inference {
     }
 
     private static void primitiveField(
-            Deque<Types.NestedField> prefix,
+            List<Types.NestedField> prefix,
             Types.NestedField primitiveField,
             Consumer consumer) {
-        for (Types.NestedField nestedField : prefix) {
-            if (!nestedField.type().isStructType()) {
-                throw new IllegalStateException();
-            }
-        }
-        prefix.push(primitiveField);
+        push(prefix, primitiveField);
         try {
             primitiveType(prefix, primitiveField.type().asPrimitiveType(), consumer);
         } finally {
-            Assert.eq(primitiveField, "primitiveField", prefix.pop());
+            pop(prefix, primitiveField);
         }
     }
 
     private static void primitiveType(
-            Deque<Types.NestedField> path,
+            List<Types.NestedField> path,
             org.apache.iceberg.types.Type.PrimitiveType primitiveType,
             Consumer consumer) {
         final Type<?> type;
@@ -174,12 +178,22 @@ public final class Inference {
             consumer.onError(path, e);
             return;
         }
+        if (!Mapping.isCompatible(path, type)) {
+
+        }
         consumer.onType(path, type);
     }
 
-    public abstract static class Exception extends java.lang.Exception {
-        public Exception() {
-        }
+    private static <T> void push(List<T> stack, T item) {
+        stack.add(item);
+    }
+
+    private static <T> void pop(List<T> stack, T item) {
+        Assert.eq(item, "item", stack.remove(stack.size() - 1));
+    }
+
+    public static abstract class Exception extends java.lang.Exception {
+        public Exception() {}
 
         public Exception(String message) {
             super(message);

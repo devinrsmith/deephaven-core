@@ -120,8 +120,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
             @NotNull final IcebergTableAdapter tableAdapter,
             @NotNull final IcebergReadInstructions instructions,
             @NotNull final DataInstructionsProviderLoader dataInstructionsProvider,
-            @NotNull final ParquetColumnResolver.Factory columnResolverFactory
-    ) {
+            @NotNull final ParquetColumnResolver.Factory columnResolverFactory) {
         this.tableAdapter = tableAdapter;
         {
             UUID uuid;

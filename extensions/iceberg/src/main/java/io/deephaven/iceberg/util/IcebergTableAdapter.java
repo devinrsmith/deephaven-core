@@ -21,7 +21,7 @@ import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.iceberg.base.IcebergUtils.SpecAndSchema;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
-import io.deephaven.iceberg.internal.IcebergMapping;
+import io.deephaven.iceberg.internal.Mapping;
 import io.deephaven.iceberg.layout.*;
 import io.deephaven.iceberg.location.IcebergTableLocationFactory;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
@@ -280,7 +280,7 @@ public class IcebergTableAdapter {
         final PartitionSpec partitionSpec;
         final IcebergReadInstructions updatedInstructions;
 
-//        readInstructions.schema().
+        // readInstructions.schema().
 
         final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
         if (snapshotFromInstructions == null) {
@@ -372,7 +372,7 @@ public class IcebergTableAdapter {
      * @return The loaded table
      */
     public IcebergTable table(@NotNull final IcebergReadInstructions readInstructions) {
-        final IcebergMapping infer = IcebergMapping.infer(table.schema());
+        final Mapping infer = Mapping.infer(table.schema());
 
         final SpecAndSchema specAndSchema = getSpecAndSchema(readInstructions);
         final Schema schema = specAndSchema.schema;
@@ -397,11 +397,11 @@ public class IcebergTableAdapter {
         final IcebergBaseLayout keyFinder;
         if (partitionSpec.isUnpartitioned()) {
             // Create the flat layout location key finder
-            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader, infer.columnResolverFactory());
+            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader, infer.factory());
         } else {
             // Create the partitioning column location key finder
             keyFinder = new IcebergKeyValuePartitionedLayout(this, partitionSpec, updatedInstructions,
-                    dataInstructionsProviderLoader, infer.columnResolverFactory());
+                    dataInstructionsProviderLoader, infer.factory());
         }
 
         if (updatedInstructions.updateMode().updateType() == IcebergUpdateMode.IcebergUpdateType.STATIC) {

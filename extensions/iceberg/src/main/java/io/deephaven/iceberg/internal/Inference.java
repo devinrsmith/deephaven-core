@@ -4,6 +4,7 @@
 package io.deephaven.iceberg.internal;
 
 import io.deephaven.base.verify.Assert;
+import io.deephaven.iceberg.util.DefinitionInstructions;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -177,9 +178,6 @@ public final class Inference {
         } catch (UnsupportedType e) {
             consumer.onError(path, e);
             return;
-        }
-        if (!Mapping.isCompatible(path, type)) {
-
         }
         consumer.onType(path, type);
     }

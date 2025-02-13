@@ -4,6 +4,7 @@
 package io.deephaven.iceberg.internal;
 
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types.NestedField;
 
 import java.util.ArrayList;
@@ -15,39 +16,80 @@ import java.util.stream.Collectors;
 public final class SchemaHelper {
 
     public static List<NestedField> fieldPath(Schema schema, int[] idPath) {
+        return path(schema.asStruct(), idPath);
+    }
+
+    public static List<NestedField> fieldPath(Schema schema, String[] namePath) {
+        return path(schema.asStruct(), namePath);
+    }
+
+    public static String toNameString(Collection<? extends NestedField> context) {
+        return context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
+    }
+
+    private static List<NestedField> path(final Type.NestedType type, final int[] idPath) {
+        Type currentType = type;
         final List<NestedField> out = new ArrayList<>(idPath.length);
-        if (idPath.length == 0) {
-            return out;
-        }
-        NestedField current = schema.findField(idPath[0]);
-        if (current == null) {
-            throw idPathNotFound(idPath, out);
-        }
-        out.add(current);
-        for (int i = 1; i < idPath.length; ++i) {
-            if (!current.type().isNestedType()) {
+        for (final int fieldId : idPath) {
+            if (!currentType.isNestedType()) {
                 throw idPathTooLong(idPath, out);
             }
-            current = current.type().asNestedType().field(idPath[i]);
-            if (current == null) {
+            final NestedField field = currentType.asNestedType().field(fieldId);
+            if (field == null) {
                 throw idPathNotFound(idPath, out);
             }
-            out.add(current);
+            out.add(field);
+            currentType = field.type();
         }
         return out;
     }
 
-    static String toNameString(Collection<? extends NestedField> context) {
-        return context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
+    private static List<NestedField> path(final Type.NestedType type, final String[] namePath) {
+        Type currentType = type;
+        final List<NestedField> out = new ArrayList<>(namePath.length);
+        for (final String name : namePath) {
+            if (!currentType.isNestedType()) {
+                throw namePathTooLong(namePath, out);
+            }
+            final NestedField field = fieldByName(currentType.asNestedType(), name);
+            if (field == null) {
+                throw namePathNotFound(namePath, out);
+            }
+            out.add(field);
+            currentType = field.type();
+        }
+        return out;
     }
 
-    private static IllegalArgumentException idPathNotFound(int[] path, List<NestedField> context) {
-        throw new IllegalArgumentException(
-                String.format("id path not found, path=%s, context=%s", Arrays.toString(path), toNameString(context)));
+    private static NestedField fieldByName(final Type.NestedType type, final String name) {
+        // Iceberg itself does not provide this directly. They provide a _related_ method type.fieldType(String), and
+        // it makes sense they don't provide the actual fieldByName because for Map/List, it's somewhat of an
+        // implementation detail and callers should really be using ids.
+        for (NestedField field : type.fields()) {
+            if (name.equals(field.name())) {
+                return field;
+            }
+        }
+        return null;
     }
 
-    private static IllegalArgumentException idPathTooLong(int[] path, List<NestedField> context) {
+    private static IllegalArgumentException idPathNotFound(int[] idPath, List<NestedField> context) {
         throw new IllegalArgumentException(
-                String.format("id path too long, path=%s, context=%s", Arrays.toString(path), toNameString(context)));
+                String.format("id path not found, path=%s, context=%s", Arrays.toString(idPath), toNameString(context)));
+    }
+
+    private static IllegalArgumentException idPathTooLong(int[] idPath, List<NestedField> context) {
+        throw new IllegalArgumentException(
+                String.format("id path too long, path=%s, context=%s", Arrays.toString(idPath), toNameString(context)));
+    }
+
+    private static IllegalArgumentException namePathNotFound(String[] namePath, List<NestedField> context) {
+        throw new IllegalArgumentException(
+                String.format("name path not found, path=%s, context=%s", Arrays.toString(namePath), toNameString(context)));
+    }
+
+    private static IllegalArgumentException namePathTooLong(String[] namePath, List<NestedField> context) {
+        throw new IllegalArgumentException(
+                String.format("name path too long, path=%s, context=%s", Arrays.toString(namePath), toNameString(context)));
     }
 }

@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.iceberg.internal;
+package io.deephaven.iceberg.util;
 
 import com.google.common.collect.AbstractIterator;
 import io.deephaven.engine.table.impl.locations.TableKey;
@@ -26,10 +26,10 @@ import java.util.stream.StreamSupport;
 
 public final class ResolverFactory implements ParquetColumnResolver.Factory {
 
-    private final Mapping mapping;
+    private final DefinitionInstructions instructions;
 
-    ResolverFactory(Mapping mapping) {
-        this.mapping = Objects.requireNonNull(mapping);
+    ResolverFactory(DefinitionInstructions instructions) {
+        this.instructions = Objects.requireNonNull(instructions);
     }
 
     @Override
@@ -40,10 +40,10 @@ public final class ResolverFactory implements ParquetColumnResolver.Factory {
     }
 
     private Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        ColumnInstructionsBase instructions = (ColumnInstructionsBase) mapping.columnInstructions().get(columnName);
+        final ColumnInstructions instructions = this.instructions.columnInstructions().get(columnName);
         return instructions == null
                 ? Optional.empty()
-                : Optional.of(instructions.fieldPath(mapping.schema()));
+                : Optional.of(instructions.path().resolve(this.instructions.schema()));
     }
 
     private class Resolver implements ParquetColumnResolver {

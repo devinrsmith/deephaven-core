@@ -8,6 +8,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.iceberg.base.IcebergUtils;
+import io.deephaven.iceberg.internal.SpecAndSchema;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.internal.DataInstructionsProviderPlugin;
 import io.deephaven.util.annotations.VisibleForTesting;
@@ -291,7 +292,7 @@ public class IcebergCatalogAdapter {
     public IcebergTableAdapter createTable(
             @NotNull final TableIdentifier tableIdentifier,
             @NotNull final TableDefinition definition) {
-        final IcebergUtils.SpecAndSchema specAndSchema = IcebergUtils.createSpecAndSchema(definition);
+        final SpecAndSchema specAndSchema = IcebergUtils.createSpecAndSchema(definition);
         return createTable(tableIdentifier, specAndSchema.schema, specAndSchema.partitionSpec);
     }
 

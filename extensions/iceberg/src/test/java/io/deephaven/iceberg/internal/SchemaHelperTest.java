@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 class SchemaHelperTest {
 
     @Test
-    void fieldPath() {
+    void fieldPathById() {
         final NestedField i1 = NestedField.of(1, true, "I1", IntegerType.get());
         final NestedField i2 = NestedField.of(2, true, "I2", IntegerType.get());
         final NestedField i3 = NestedField.of(3, true, "I3", IntegerType.get());
@@ -33,7 +33,7 @@ class SchemaHelperTest {
                 NestedField.of(9, true, "I9", MapType.ofOptional(7, 8, IntegerType.get(), IntegerType.get()));
         final Schema schema = new Schema(i1, i4, i6, i9);
 
-        assertFieldPath(schema).isEmpty();
+        assertFieldPath(schema, new int[0]).isEmpty();
 
         assertFieldPath(schema, 1).containsExactly("I1");
         assertFieldPathError("id path too long, path=[1, 2], context=['I1']", schema, 1, 2);
@@ -56,16 +56,63 @@ class SchemaHelperTest {
         assertFieldPathError("id path too long, path=[9, 8, 6], context=['I9', 'value']", schema, 9, 8, 6);
     }
 
+    @Test
+    void fieldPathByName() {
+        final NestedField i1 = NestedField.of(1, true, "I1", IntegerType.get());
+        final NestedField i2 = NestedField.of(2, true, "I2", IntegerType.get());
+        final NestedField i3 = NestedField.of(3, true, "I3", IntegerType.get());
+        final NestedField i4 = NestedField.of(4, true, "I4", StructType.of(i2, i3));
+        final NestedField i6 = NestedField.of(6, true, "I6", ListType.ofOptional(5, IntegerType.get()));
+        final NestedField i9 =
+                NestedField.of(9, true, "I9", MapType.ofOptional(7, 8, IntegerType.get(), IntegerType.get()));
+        final Schema schema = new Schema(i1, i4, i6, i9);
+
+        assertFieldPath(schema, new String[0]).isEmpty();
+
+        assertFieldPath(schema, "I1").containsExactly("I1");
+        assertFieldPathError("name path too long, path=[I1, I2], context=['I1']", schema, "I1", "I2");
+
+        assertFieldPath(schema, "I4", "I2").containsExactly("I4", "I2");
+        assertFieldPath(schema, "I4", "I3").containsExactly("I4", "I3");
+        assertFieldPathError("name path not found, path=[I4, I1], context=['I4']", schema, "I4", "I1");
+        assertFieldPathError("name path too long, path=[I4, I2, I1], context=['I4', 'I2']", schema, "I4", "I2", "I1");
+
+        assertFieldPath(schema, "I6").containsExactly("I6");
+        assertFieldPath(schema, "I6", "element").containsExactly("I6", "element");
+        assertFieldPathError("name path not found, path=[I6, dne], context=['I6']", schema, "I6", "dne");
+        assertFieldPathError("name path too long, path=[I6, element, dne], context=['I6', 'element']", schema, "I6", "element", "dne");
+
+        assertFieldPath(schema, "I9").containsExactly("I9");
+        assertFieldPath(schema, "I9", "key").containsExactly("I9", "key");
+        assertFieldPath(schema, "I9", "value").containsExactly("I9", "value");
+        assertFieldPathError("name path not found, path=[I9, dne], context=['I9']", schema, "I9", "dne");
+        assertFieldPathError("name path too long, path=[I9, key, dne], context=['I9', 'key']", schema, "I9", "key", "dne");
+        assertFieldPathError("name path too long, path=[I9, value, dne], context=['I9', 'value']", schema, "I9", "value", "dne");
+    }
+
     private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(
             Schema schema, int... values) {
-        final List<Integer> path = Arrays.stream(values).boxed().collect(Collectors.toList());
-        return assertThat(SchemaHelper.fieldPath(schema, path)).extracting(NestedField::name);
+        return assertThat(SchemaHelper.fieldPath(schema, values)).extracting(NestedField::name);
+    }
+
+    private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(
+            Schema schema, String... values) {
+        return assertThat(SchemaHelper.fieldPath(schema, values)).extracting(NestedField::name);
     }
 
     private static void assertFieldPathError(String message, Schema schema, int... values) {
-        final List<Integer> path = Arrays.stream(values).boxed().collect(Collectors.toList());
         try {
-            SchemaHelper.fieldPath(schema, path).forEach(x -> {
+            SchemaHelper.fieldPath(schema, values).forEach(x -> {
+            });
+            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+        } catch (IllegalArgumentException e) {
+            assertThat(e).hasMessageContaining(message);
+        }
+    }
+
+    private static void assertFieldPathError(String message, Schema schema, String... values) {
+        try {
+            SchemaHelper.fieldPath(schema, values).forEach(x -> {
             });
             failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
         } catch (IllegalArgumentException e) {

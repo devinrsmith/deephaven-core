@@ -6,7 +6,7 @@ package io.deephaven.iceberg.base;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableDataException;
-import io.deephaven.iceberg.util.IcebergReadInstructions;
+import io.deephaven.iceberg.internal.SpecAndSchema;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestContent;
 import org.apache.iceberg.ManifestFile;
@@ -24,7 +24,6 @@ import org.apache.iceberg.exceptions.NamespaceNotEmptyException;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -184,24 +183,6 @@ public final class IcebergUtils {
             return icebergType;
         } else {
             throw new TableDataException("Unsupported deephaven column type " + columnType.getName());
-        }
-    }
-
-    /**
-     * Used to hold a {@link Schema}, {@link PartitionSpec} and {@link IcebergReadInstructions} together.
-     */
-    public static final class SpecAndSchema {
-        public final Schema schema;
-        public final PartitionSpec partitionSpec;
-        public final IcebergReadInstructions readInstructions;
-
-        public SpecAndSchema(
-                @NotNull final Schema schema,
-                @NotNull final PartitionSpec partitionSpec,
-                @Nullable final IcebergReadInstructions readInstructions) {
-            this.schema = schema;
-            this.partitionSpec = partitionSpec;
-            this.readInstructions = readInstructions;
         }
     }
 

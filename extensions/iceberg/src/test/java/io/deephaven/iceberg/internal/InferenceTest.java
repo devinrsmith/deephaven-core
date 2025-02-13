@@ -5,6 +5,8 @@ package io.deephaven.iceberg.internal;
 
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.iceberg.util.DefinitionInstructions;
+import io.deephaven.iceberg.util.FieldPath;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types.BinaryType;
@@ -31,13 +33,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
- * All of these tests run through {@link Mapping#infer(Schema)} and {@link Mapping#inferAll(Schema)}; this is an easier
+ * All of these tests run through {@link DefinitionInstructions#infer(Schema)} and {@link DefinitionInstructions#inferAll(Schema)}; this is an easier
  * setup than creating or mocking our own consumer via {@link Inference#of(Schema, Inference.Consumer)}.
  */
 class InferenceTest {
@@ -47,81 +48,81 @@ class InferenceTest {
     @Test
     void BooleanType() throws Inference.Exception {
         final Schema schema = simpleSchema(BooleanType.get());
-        final Mapping expected = simpleMapping(schema, Type.booleanType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.booleanType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void IntegerType() throws Inference.Exception {
         final Schema schema = simpleSchema(IT);
-        final Mapping expected = simpleMapping(schema, Type.intType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.intType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void LongType() throws Inference.Exception {
         final Schema schema = simpleSchema(LongType.get());
-        final Mapping expected = simpleMapping(schema, Type.longType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.longType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void FloatType() throws Inference.Exception {
         final Schema schema = simpleSchema(FloatType.get());
-        final Mapping expected = simpleMapping(schema, Type.floatType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.floatType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void DoubleType() throws Inference.Exception {
         final Schema schema = simpleSchema(DoubleType.get());
-        final Mapping expected = simpleMapping(schema, Type.doubleType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.doubleType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void DateType() throws Inference.Exception {
         final Schema schema = simpleSchema(DateType.get());
-        final Mapping expected = simpleMapping(schema, Type.find(LocalDate.class));
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.find(LocalDate.class));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void TimeType() throws Inference.Exception {
         final Schema schema = simpleSchema(TimeType.get());
-        final Mapping expected = simpleMapping(schema, Type.find(LocalTime.class));
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.find(LocalTime.class));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void TimestampTypeWithZone() throws Inference.Exception {
         final Schema schema = simpleSchema(TimestampType.withZone());
-        final Mapping expected = simpleMapping(schema, Type.instantType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.instantType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void TimestampTypeWithoutZone() throws Inference.Exception {
         final Schema schema = simpleSchema(TimestampType.withoutZone());
-        final Mapping expected = simpleMapping(schema, Type.find(LocalDateTime.class));
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.find(LocalDateTime.class));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void TimestampNanoTypeWithZone() {
         final Schema schema = simpleSchema(TimestampNanoType.withZone());
-        assertThat(Mapping.infer(schema)).isEqualTo(Mapping.empty(schema));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(DefinitionInstructions.empty(schema));
         try {
-            Mapping.inferAll(schema);
+            DefinitionInstructions.inferAll(schema);
             failBecauseExceptionWasNotThrown(Inference.Exception.class);
         } catch (Inference.Exception e) {
             assertThat(e).hasMessageContaining("Unsupported Iceberg type: `timestamptz_ns`");
@@ -131,9 +132,9 @@ class InferenceTest {
     @Test
     void TimestampNanoTypeWithoutZone() {
         final Schema schema = simpleSchema(TimestampNanoType.withoutZone());
-        assertThat(Mapping.infer(schema)).isEqualTo(Mapping.empty(schema));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(DefinitionInstructions.empty(schema));
         try {
-            Mapping.inferAll(schema);
+            DefinitionInstructions.inferAll(schema);
             failBecauseExceptionWasNotThrown(Inference.Exception.class);
         } catch (Inference.Exception e) {
             assertThat(e).hasMessageContaining("Unsupported Iceberg type: `timestamp_ns`");
@@ -143,41 +144,41 @@ class InferenceTest {
     @Test
     void StringType() throws Inference.Exception {
         final Schema schema = simpleSchema(StringType.get());
-        final Mapping expected = simpleMapping(schema, Type.stringType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.stringType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void BinaryType() throws Inference.Exception {
         final Schema schema = simpleSchema(BinaryType.get());
-        final Mapping expected = simpleMapping(schema, Type.byteType().arrayType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.byteType().arrayType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void FixedType_4() throws Inference.Exception {
         final Schema schema = simpleSchema(FixedType.ofLength(4));
-        final Mapping expected = simpleMapping(schema, Type.byteType().arrayType());
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.byteType().arrayType());
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void DecimalType_3_4() throws Inference.Exception {
         final Schema schema = simpleSchema(DecimalType.of(3, 4));
-        final Mapping expected = simpleMapping(schema, Type.find(BigDecimal.class));
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        final DefinitionInstructions expected = simpleMapping(schema, Type.find(BigDecimal.class));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
     void UuidType() {
         final Schema schema = simpleSchema(UUIDType.get());
-        assertThat(Mapping.infer(schema)).isEqualTo(Mapping.empty(schema));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(DefinitionInstructions.empty(schema));
         try {
-            Mapping.inferAll(schema);
+            DefinitionInstructions.inferAll(schema);
             failBecauseExceptionWasNotThrown(Inference.Exception.class);
         } catch (Inference.Exception e) {
             assertThat(e).hasMessageContaining("Unsupported Iceberg type: `uuid`");
@@ -193,20 +194,20 @@ class InferenceTest {
                 NestedField.required(6, "S2", StructType.of(
                         NestedField.optional(4, "F1", IT),
                         NestedField.required(5, "F2", IT))));
-        final Mapping expected = Mapping.builder()
+        final DefinitionInstructions expected = DefinitionInstructions.builder()
                 .schema(schema)
                 .definition(TableDefinition.of(
                         ColumnDefinition.ofInt("S1_F1"),
                         ColumnDefinition.ofInt("S1_F2"),
                         ColumnDefinition.ofInt("S2_F1"),
                         ColumnDefinition.ofInt("S2_F2")))
-                .putPath("S1_F1", List.of(3, 1))
-                .putPath("S1_F2", List.of(3, 2))
-                .putPath("S2_F1", List.of(6, 4))
-                .putPath("S2_F2", List.of(6, 5))
+                .putColumnInstructions("S1_F1", FieldPath.of(3, 1))
+                .putColumnInstructions("S1_F2", FieldPath.of(3, 2))
+                .putColumnInstructions("S2_F1", FieldPath.of(6, 4))
+                .putColumnInstructions("S2_F2", FieldPath.of(6, 5))
                 .build();
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
@@ -217,16 +218,16 @@ class InferenceTest {
                         NestedField.required(4, "F2", IT)
                 ))
         )));
-        final Mapping expected = Mapping.builder()
+        final DefinitionInstructions expected = DefinitionInstructions.builder()
                 .schema(schema)
                 .definition(TableDefinition.of(
                         ColumnDefinition.ofInt("S1_S2_F1"),
                         ColumnDefinition.ofInt("S1_S2_F2")))
-                .putPath("S1_S2_F1", List.of(1, 2, 3))
-                .putPath("S1_S2_F2", List.of(1, 2, 4))
+                .putColumnInstructions("S1_S2_F1", FieldPath.of(1, 2, 3))
+                .putColumnInstructions("S1_S2_F2", FieldPath.of(1, 2, 4))
                 .build();
-        assertThat(Mapping.infer(schema)).isEqualTo(expected);
-        assertThat(Mapping.inferAll(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(expected);
+        assertThat(DefinitionInstructions.inferAll(schema)).isEqualTo(expected);
     }
 
     @Test
@@ -236,9 +237,9 @@ class InferenceTest {
                 NestedField.optional(6, "L2", ListType.ofRequired(2, IT)),
                 NestedField.required(7, "L3", ListType.ofOptional(3, IT)),
                 NestedField.required(8, "L4", ListType.ofRequired(4, IT)));
-        assertThat(Mapping.infer(schema)).isEqualTo(Mapping.empty(schema));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(DefinitionInstructions.empty(schema));
         try {
-            Mapping.inferAll(schema);
+            DefinitionInstructions.inferAll(schema);
             failBecauseExceptionWasNotThrown(Inference.Exception.class);
         } catch (Inference.Exception e) {
             assertThat(e).hasMessageContaining("Unsupported Iceberg type: `list<int>`");
@@ -252,9 +253,9 @@ class InferenceTest {
                 NestedField.optional(10, "M2", MapType.ofRequired(3, 4, IT, IT)),
                 NestedField.required(11, "M3", MapType.ofOptional(5, 6, IT, IT)),
                 NestedField.required(12, "M4", MapType.ofRequired(7, 8, IT, IT)));
-        assertThat(Mapping.infer(schema)).isEqualTo(Mapping.empty(schema));
+        assertThat(DefinitionInstructions.infer(schema)).isEqualTo(DefinitionInstructions.empty(schema));
         try {
-            Mapping.inferAll(schema);
+            DefinitionInstructions.inferAll(schema);
             failBecauseExceptionWasNotThrown(Inference.Exception.class);
         } catch (Inference.Exception e) {
             assertThat(e).hasMessageContaining("Unsupported Iceberg type: `map<int, int>`");
@@ -273,12 +274,12 @@ class InferenceTest {
                 ColumnDefinition.of("F2", type));
     }
 
-    private static Mapping simpleMapping(Schema schema, Type<?> type) {
-        return Mapping.builder()
+    private static DefinitionInstructions simpleMapping(Schema schema, Type<?> type) {
+        return DefinitionInstructions.builder()
                 .schema(schema)
                 .definition(simpleDefinition(type))
-                .putPath("F1", List.of(42))
-                .putPath("F2", List.of(43))
+                .putColumnInstructions("F1", FieldPath.of(42))
+                .putColumnInstructions("F2", FieldPath.of(43))
                 .build();
     }
 }

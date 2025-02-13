@@ -5,6 +5,7 @@ package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.CopyableStyle;
 import io.deephaven.engine.table.TableDefinition;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Immutable;
@@ -12,7 +13,6 @@ import org.immutables.value.Value.Immutable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.UUID;
 
 /**
  * This class provides instructions intended for reading Iceberg catalogs and tables. The default values documented in
@@ -32,13 +32,17 @@ public abstract class IcebergReadInstructions {
     }
 
     /**
+     * The table definition instructions. Callers are encouraged to set this. If not set, one will be
+     * {@link DefinitionInstructions#infer(Schema) inferred}.
+     */
+    public abstract Optional<DefinitionInstructions> definitionInstructions();
+
+    /**
      * The {@link TableDefinition} to use when reading Iceberg data files.
      */
-    public abstract Optional<TableDefinition> tableDefinition();
-
-    public abstract Optional<SchemaProvider> schema();
-
-    public abstract Optional<UUID> uuid();
+    public final Optional<TableDefinition> tableDefinition() {
+        return definitionInstructions().map(DefinitionInstructions::definition);
+    }
 
     /**
      * The data instructions to use for reading the Iceberg data files (might be S3Instructions or other cloud
@@ -56,6 +60,7 @@ public abstract class IcebergReadInstructions {
     /**
      * Return a copy of this instructions object with the column renames replaced by {@code entries}.
      */
+    @Deprecated
     public abstract IcebergReadInstructions withColumnRenames(Map<String, ? extends String> entries);
 
     /**
@@ -92,12 +97,19 @@ public abstract class IcebergReadInstructions {
     public abstract IcebergReadInstructions withSnapshot(Snapshot value);
 
     public interface Builder {
-        Builder tableDefinition(TableDefinition tableDefinition);
+        Builder definitionInstructions(DefinitionInstructions definitionInstructions);
+
+        @Deprecated
+        default Builder tableDefinition(TableDefinition tableDefinition) {
+            throw new UnsupportedOperationException("Use definitionInstructions");
+        }
 
         Builder dataInstructions(Object s3Instructions);
 
+        @Deprecated
         Builder putColumnRenames(String key, String value);
 
+        @Deprecated
         Builder putAllColumnRenames(Map<String, ? extends String> entries);
 
         Builder updateMode(IcebergUpdateMode updateMode);
@@ -105,8 +117,6 @@ public abstract class IcebergReadInstructions {
         Builder snapshotId(long snapshotId);
 
         Builder snapshot(Snapshot snapshot);
-
-        Builder schema(SchemaProvider schemaProvider);
 
         IcebergReadInstructions build();
     }
@@ -118,5 +128,9 @@ public abstract class IcebergReadInstructions {
             throw new IllegalArgumentException("If both snapshotID and snapshot are provided, the snapshot Ids " +
                     "must match, found " + snapshotId().getAsLong() + " and " + snapshot().get().snapshotId());
         }
+    }
+
+    final DefinitionInstructions instructionsOrInfer(Schema schema) {
+        return definitionInstructions().orElseGet(() -> DefinitionInstructions.infer(schema));
     }
 }

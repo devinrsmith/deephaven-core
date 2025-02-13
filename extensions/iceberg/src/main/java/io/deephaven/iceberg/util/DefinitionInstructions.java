@@ -1,12 +1,14 @@
 //
 // Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.iceberg.internal;
+package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.api.util.NameValidator;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.iceberg.internal.Inference;
+import io.deephaven.iceberg.internal.SchemaHelper;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
@@ -21,35 +23,34 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
+// This is a mapping for _read_
 @Value.Immutable
 @BuildableStyle
-public abstract class Mapping {
-
-    public interface ColumnInstructions {
-
-        static ColumnInstructions of(int[] idPath) {
-            return FieldIdPath.of(idPath);
-        }
-    }
+public abstract class DefinitionInstructions {
 
     public static Builder builder() {
-        return ImmutableMapping.builder();
+        return ImmutableDefinitionInstructions.builder();
     }
 
-    public static Mapping empty(Schema schema) {
+    public static DefinitionInstructions empty(Schema schema) {
         return builder()
                 .schema(schema)
                 .definition(TableDefinition.of(List.of()))
                 .build();
     }
 
-    public static Mapping infer(Schema schema) {
+    /**
+     * Infer a table definition instructions based on the {@code schema}.
+     */
+    public static DefinitionInstructions infer(Schema schema) {
+        // TODO: NEED TO HANDLE PARTITIONING
         final InferenceBuilder builder = new InferenceBuilder(false);
         Inference.of(schema, builder);
         return builder.build(schema);
     }
 
-    public static Mapping inferAll(Schema schema) throws Inference.Exception {
+    public static DefinitionInstructions inferAll(Schema schema) throws Inference.Exception {
         final InferenceBuilder builder = new InferenceBuilder(true);
         try {
             Inference.of(schema, builder);
@@ -59,16 +60,32 @@ public abstract class Mapping {
         return builder.build(schema);
     }
 
+//    public static DefinitionInstructions inferUpdate(DefinitionInstructions existingInstructions, Schema newSchema) {
+//        // TODO
+//        return null;
+//    }
 
+    /**
+     * The Iceberg schema. This schema is set at the time these instructions were originally made - it is often <b>not</b> the most recent schema for an Iceberg table.
+     */
     public abstract Schema schema();
 
+    /**
+     * The Deephaven table definition.
+     */
     public abstract TableDefinition definition();
+
+    /**
+     * The mapping from Deephaven column name to column instruction.
+     */
+    public abstract Map<String, ColumnInstructions> columnInstructions();
 
     // We need to store as List so we can get test out the mapping wrt equals
     // todo: verify this is pointing to a schema leaf; arguably, doesn't
     // have to be a leaf if it's a list? b/c really, the list type is
     // probably better than a path to the elemnt
-    public abstract Map<String, ColumnInstructions> columnInstructions();
+
+
 
     @Value.Default
     boolean allowUnmappedColumns() {
@@ -84,15 +101,19 @@ public abstract class Mapping {
 
     public interface Builder {
 
-        Builder definition(TableDefinition definition);
-
         Builder schema(Schema schema);
+
+        Builder definition(TableDefinition definition);
 
         Builder putColumnInstructions(String columnName, ColumnInstructions columnInstructions);
 
+        default Builder putColumnInstructions(String columnName, FieldPath fieldPath) {
+            return putColumnInstructions(columnName, ColumnInstructions.of(fieldPath));
+        }
+
         Builder allowUnmappedColumns(boolean allowUnmappedColumns);
 
-        Mapping build();
+        DefinitionInstructions build();
     }
 
     @Value.Check
@@ -112,8 +133,8 @@ public abstract class Mapping {
         for (Map.Entry<String, ColumnInstructions> e : columnInstructions().entrySet()) {
             definition().checkHasColumn(e.getKey());
             final ColumnDefinition<?> column = definition().getColumn(e.getKey());
-            final List<NestedField> fieldPath = ((ColumnInstructionsBase) e.getValue()).fieldPath(schema());
-
+            final ColumnInstructions columnInstructions = e.getValue();
+            final List<NestedField> fieldPath = columnInstructions.path().resolve(schema());
             // TODO: we need to make this official
             final Type<?> type = Type.find(column.getDataType());
             checkCompatible(fieldPath, type);
@@ -130,7 +151,7 @@ public abstract class Mapping {
             this.throwOnError = throwOnError;
         }
 
-        Mapping build(Schema schema) {
+        DefinitionInstructions build(Schema schema) {
             return builder
                     .schema(schema)
                     .definition(TableDefinition.of(definitions))
@@ -146,7 +167,7 @@ public abstract class Mapping {
             final String joinedNames = path.stream().map(NestedField::name).collect(Collectors.joining("_"));
             final String columnName = NameValidator.legalizeColumnName(joinedNames, usedNames);
             final int[] idPath = path.stream().mapToInt(NestedField::fieldId).toArray();
-            builder.putColumnInstructions(columnName, ColumnInstructions.of(idPath));
+            builder.putColumnInstructions(columnName, ColumnInstructions.of(FieldPath.of(idPath)));
             definitions.add(ColumnDefinition.of(columnName, type));
             usedNames.add(columnName);
         }
@@ -167,6 +188,7 @@ public abstract class Mapping {
             return false;
         }
     }
+
 
     static void checkCompatible(Collection<? extends NestedField> path, Type<?> type) {
         // We are assuming that fieldPath has been properly constructed from a Schema. This makes it a poor candidate

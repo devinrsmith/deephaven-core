@@ -1,4 +1,4 @@
-package io.deephaven.iceberg.internal;
+package io.deephaven.iceberg.util;
 
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.BooleanType;

@@ -19,9 +19,8 @@ import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedTableComponentFactoryImpl;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
-import io.deephaven.iceberg.base.IcebergUtils.SpecAndSchema;
+import io.deephaven.iceberg.internal.SpecAndSchema;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
-import io.deephaven.iceberg.internal.Mapping;
 import io.deephaven.iceberg.layout.*;
 import io.deephaven.iceberg.location.IcebergTableLocationFactory;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
@@ -306,7 +305,6 @@ public class IcebergTableAdapter {
             partitionSpec = table.spec();
             updatedInstructions = readInstructions.withSnapshot(snapshot);
         }
-
         return new SpecAndSchema(schema, partitionSpec, updatedInstructions);
     }
 
@@ -327,14 +325,15 @@ public class IcebergTableAdapter {
      */
     public TableDefinition definition(@NotNull final IcebergReadInstructions readInstructions) {
         final SpecAndSchema specAndSchema = getSpecAndSchema(readInstructions);
-        final Schema schema = specAndSchema.schema;
-        final PartitionSpec partitionSpec = specAndSchema.partitionSpec;
-        final IcebergReadInstructions updatedInstructions = specAndSchema.readInstructions;
-
-        return fromSchema(schema,
-                partitionSpec,
-                updatedInstructions.tableDefinition().orElse(null),
-                getRenameColumnMap(table, schema, updatedInstructions));
+        return readInstructions.instructionsOrInfer(specAndSchema.schema).definition();
+//        final Schema schema = specAndSchema.schema;
+//        final PartitionSpec partitionSpec = specAndSchema.partitionSpec;
+//        final IcebergReadInstructions updatedInstructions = specAndSchema.readInstructions;
+//
+//        return fromSchema(schema,
+//                partitionSpec,
+//                updatedInstructions.tableDefinition().orElse(null),
+//                getRenameColumnMap(table, schema, updatedInstructions));
     }
 
     /**
@@ -372,36 +371,35 @@ public class IcebergTableAdapter {
      * @return The loaded table
      */
     public IcebergTable table(@NotNull final IcebergReadInstructions readInstructions) {
-        final Mapping infer = Mapping.infer(table.schema());
-
         final SpecAndSchema specAndSchema = getSpecAndSchema(readInstructions);
-        final Schema schema = specAndSchema.schema;
+        final DefinitionInstructions instructions = readInstructions.instructionsOrInfer(specAndSchema.schema);
         final PartitionSpec partitionSpec = specAndSchema.partitionSpec;
-        IcebergReadInstructions updatedInstructions = specAndSchema.readInstructions;
-
+        final IcebergReadInstructions updatedInstructions = specAndSchema.readInstructions;
+        final TableDefinition tableDef = instructions.definition();
+        final ResolverFactory factory = new ResolverFactory(instructions);
 
 
         // Get the user supplied table definition.
-        final TableDefinition userTableDef = updatedInstructions.tableDefinition().orElse(null);
+//        final TableDefinition userTableDef = updatedInstructions.tableDefinition().orElse(null);
 
-        // Map all the column names in the schema to their legalized names.
-        final Map<String, String> legalizedColumnRenames = getRenameColumnMap(table, schema, updatedInstructions);
+//        // Map all the column names in the schema to their legalized names.
+//        final Map<String, String> legalizedColumnRenames = getRenameColumnMap(table, schema, updatedInstructions);
 
-        // Get the table definition from the schema (potentially limited by the user supplied table definition and
-        // applying column renames).
-        final TableDefinition tableDef = fromSchema(schema, partitionSpec, userTableDef, legalizedColumnRenames);
+//        // Get the table definition from the schema (potentially limited by the user supplied table definition and
+//        // applying column renames).
+//        final TableDefinition tableDef = fromSchema(schema, partitionSpec, userTableDef, legalizedColumnRenames);
 
         // Create the final instructions with the legalized column renames.
-        updatedInstructions = updatedInstructions.withColumnRenames(legalizedColumnRenames);
+//        updatedInstructions = updatedInstructions.withColumnRenames(legalizedColumnRenames);
 
         final IcebergBaseLayout keyFinder;
         if (partitionSpec.isUnpartitioned()) {
             // Create the flat layout location key finder
-            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader, infer.factory());
+            keyFinder = new IcebergFlatLayout(this, updatedInstructions, dataInstructionsProviderLoader, factory);
         } else {
             // Create the partitioning column location key finder
             keyFinder = new IcebergKeyValuePartitionedLayout(this, partitionSpec, updatedInstructions,
-                    dataInstructionsProviderLoader, infer.factory());
+                    dataInstructionsProviderLoader, factory);
         }
 
         if (updatedInstructions.updateMode().updateType() == IcebergUpdateMode.IcebergUpdateType.STATIC) {

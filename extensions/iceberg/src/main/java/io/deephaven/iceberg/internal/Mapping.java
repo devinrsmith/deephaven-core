@@ -10,7 +10,6 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.types.Types.NestedField;
 import org.immutables.value.Value;
 
@@ -25,6 +24,13 @@ import java.util.stream.Collectors;
 @Value.Immutable
 @BuildableStyle
 public abstract class Mapping {
+
+    public interface ColumnInstructions {
+
+        static ColumnInstructions of(int[] idPath) {
+            return FieldIdPath.of(idPath);
+        }
+    }
 
     public static Builder builder() {
         return ImmutableMapping.builder();
@@ -44,16 +50,13 @@ public abstract class Mapping {
     }
 
     public static Mapping inferAll(Schema schema) throws Inference.Exception {
-        final InferenceBuilder mapViaInference = new InferenceBuilder(true);
+        final InferenceBuilder builder = new InferenceBuilder(true);
         try {
-            Inference.of(schema, mapViaInference);
+            Inference.of(schema, builder);
         } catch (RuntimeException e) {
-            if (e.getCause() instanceof Inference.Exception) {
-                throw ((Inference.Exception) e.getCause());
-            }
-            throw e;
+            throw extract(e);
         }
-        return mapViaInference.build(schema);
+        return builder.build(schema);
     }
 
 
@@ -65,7 +68,7 @@ public abstract class Mapping {
     // todo: verify this is pointing to a schema leaf; arguably, doesn't
     // have to be a leaf if it's a list? b/c really, the list type is
     // probably better than a path to the elemnt
-    abstract Map<String, List<Integer>> path();
+    public abstract Map<String, ColumnInstructions> columnInstructions();
 
     @Value.Default
     boolean allowUnmappedColumns() {
@@ -76,8 +79,6 @@ public abstract class Mapping {
         return new ResolverFactory(this);
     }
 
-
-
     // todo: need to specify any special transformations that happen
 
 
@@ -87,7 +88,7 @@ public abstract class Mapping {
 
         Builder schema(Schema schema);
 
-        Builder putPath(String deephavenColumnName, List<Integer> idPath);
+        Builder putColumnInstructions(String columnName, ColumnInstructions columnInstructions);
 
         Builder allowUnmappedColumns(boolean allowUnmappedColumns);
 
@@ -100,7 +101,7 @@ public abstract class Mapping {
             return;
         }
         for (String column : definition().getColumnNameSet()) {
-            if (!path().containsKey(column)) {
+            if (!columnInstructions().containsKey(column)) {
                 throw new MappingException(String.format("Column `%s` is not mapped", column));
             }
         }
@@ -108,10 +109,10 @@ public abstract class Mapping {
 
     @Value.Check
     final void checkCompatibility() {
-        for (Map.Entry<String, List<Integer>> e : path().entrySet()) {
+        for (Map.Entry<String, ColumnInstructions> e : columnInstructions().entrySet()) {
             definition().checkHasColumn(e.getKey());
             final ColumnDefinition<?> column = definition().getColumn(e.getKey());
-            final List<NestedField> fieldPath = SchemaHelper.fieldPath(schema(), e.getValue());
+            final List<NestedField> fieldPath = ((ColumnInstructionsBase) e.getValue()).fieldPath(schema());
 
             // TODO: we need to make this official
             final Type<?> type = Type.find(column.getDataType());
@@ -144,8 +145,8 @@ public abstract class Mapping {
             }
             final String joinedNames = path.stream().map(NestedField::name).collect(Collectors.joining("_"));
             final String columnName = NameValidator.legalizeColumnName(joinedNames, usedNames);
-            final List<Integer> idPath = path.stream().map(NestedField::fieldId).collect(Collectors.toList());
-            builder.putPath(columnName, idPath);
+            final int[] idPath = path.stream().mapToInt(NestedField::fieldId).toArray();
+            builder.putColumnInstructions(columnName, ColumnInstructions.of(idPath));
             definitions.add(ColumnDefinition.of(columnName, type));
             usedNames.add(columnName);
         }
@@ -158,7 +159,7 @@ public abstract class Mapping {
         }
     }
 
-    static boolean isCompatible(Collection<? extends Types.NestedField> path, Type<?> type) {
+    static boolean isCompatible(Collection<? extends NestedField> path, Type<?> type) {
         try {
             checkCompatible(path, type);
             return true;
@@ -167,7 +168,7 @@ public abstract class Mapping {
         }
     }
 
-    static void checkCompatible(Collection<? extends Types.NestedField> path, Type<?> type) {
+    static void checkCompatible(Collection<? extends NestedField> path, Type<?> type) {
         // We are assuming that fieldPath has been properly constructed from a Schema. This makes it a poor candidate
         // as public API.
         checkCompatible(path);
@@ -252,5 +253,12 @@ public abstract class Mapping {
         public MappingException(String message) {
             super(message);
         }
+    }
+
+    private static RuntimeException extract(RuntimeException e) throws Inference.Exception {
+        if (e.getCause() instanceof Inference.Exception) {
+            throw ((Inference.Exception) e.getCause());
+        }
+        throw e;
     }
 }

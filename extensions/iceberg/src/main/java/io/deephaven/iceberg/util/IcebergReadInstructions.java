@@ -38,7 +38,6 @@ public abstract class IcebergReadInstructions {
 
     public abstract Optional<SchemaProvider> schema();
 
-
     public abstract Optional<UUID> uuid();
 
     /**
@@ -51,6 +50,7 @@ public abstract class IcebergReadInstructions {
      * A {@link Map map} of rename instructions from Iceberg to Deephaven column names to use when reading the Iceberg
      * data files.
      */
+    @Deprecated
     public abstract Map<String, String> columnRenames();
 
     /**

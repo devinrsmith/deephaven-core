@@ -40,10 +40,10 @@ public final class ResolverFactory implements ParquetColumnResolver.Factory {
     }
 
     private Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        final List<Integer> schemaPath = mapping.path().get(columnName);
-        return schemaPath == null
+        ColumnInstructionsBase instructions = (ColumnInstructionsBase) mapping.columnInstructions().get(columnName);
+        return instructions == null
                 ? Optional.empty()
-                : Optional.of(SchemaHelper.fieldPath(mapping.schema(), schemaPath));
+                : Optional.of(instructions.fieldPath(mapping.schema()));
     }
 
     private class Resolver implements ParquetColumnResolver {

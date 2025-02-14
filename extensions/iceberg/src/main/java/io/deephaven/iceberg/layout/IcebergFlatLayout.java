@@ -5,13 +5,13 @@ package io.deephaven.iceberg.layout;
 
 import io.deephaven.engine.table.impl.locations.impl.TableLocationKeyFinder;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
-import io.deephaven.iceberg.util.IcebergReadInstructions;
-import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
 import io.deephaven.parquet.table.ParquetInstructions;
-import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.util.channel.SeekableChannelsProvider;
-import org.apache.iceberg.*;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,8 +39,9 @@ public final class IcebergFlatLayout extends IcebergBaseLayout {
     @Override
     IcebergTableLocationKey keyFromDataFile(
             @NotNull final ManifestFile manifestFile,
+            @NotNull final PartitionSpec spec,
             @NotNull final DataFile dataFile,
             @NotNull final URI fileUri) {
-        return locationKey(manifestFile, dataFile, fileUri, null);
+        return locationKey(manifestFile, spec, dataFile, fileUri, null);
     }
 }

@@ -37,9 +37,9 @@ public abstract class FieldPath {
      * @param fieldIdPath the field id path
      * @return the field path
      */
-    public static FieldPath of(Schema schema, int... fieldIdPath) {
+    public static FieldPath of(Schema schema, int... fieldIdPath) throws SchemaHelper.PathException {
         // Check that the fieldIdPath is resolvable
-        SchemaHelper.fieldPath(schema, fieldIdPath);
+        SchemaHelper.fieldPath(schema, fieldIdPath); // todo
         return of(fieldIdPath);
     }
 
@@ -51,7 +51,8 @@ public abstract class FieldPath {
      * @param fieldNamePath the field name path
      * @return the field path
      */
-    public static FieldPath of(Schema schema, String... fieldNamePath) {
+    public static FieldPath of(Schema schema, String... fieldNamePath) throws SchemaHelper.PathException {
+        // todo
         final int[] idPath = SchemaHelper.fieldPath(schema, fieldNamePath)
                 .stream()
                 .mapToInt(NestedField::fieldId)
@@ -63,7 +64,12 @@ public abstract class FieldPath {
     abstract int[] path();
 
     // todo: make package private
-    final List<NestedField> resolve(Schema schema) {
+    // todo
+    final List<NestedField> resolve(Schema schema) throws SchemaHelper.PathException {
         return SchemaHelper.fieldPath(schema, path());
+    }
+
+    final boolean isContainedIn(Schema schema) {
+        return SchemaHelper.hasFieldPath(schema, path());
     }
 }

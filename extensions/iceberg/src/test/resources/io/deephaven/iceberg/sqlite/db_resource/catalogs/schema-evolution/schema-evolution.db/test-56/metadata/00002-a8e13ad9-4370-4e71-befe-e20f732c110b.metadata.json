@@ -1,1 +1,133 @@
-{"location":"catalogs/schema-evolution/schema-evolution.db/test-56","table-uuid":"63b35451-6399-4381-8bd3-96f07eaf287c","last-updated-ms":1739547670785,"last-column-id":2,"schemas":[{"type":"struct","fields":[{"id":1,"name":"Field1","type":"int","required":false},{"id":2,"name":"Field2","type":"int","required":false}],"schema-id":0,"identifier-field-ids":[]},{"type":"struct","fields":[{"id":1,"name":"Field1_B","type":"int","required":false},{"id":2,"name":"Field2_B","type":"int","required":false}],"schema-id":1,"identifier-field-ids":[]}],"current-schema-id":1,"partition-specs":[{"spec-id":0,"fields":[]}],"default-spec-id":0,"last-partition-id":999,"properties":{},"current-snapshot-id":4839311159351605646,"snapshots":[{"snapshot-id":1015702842272033383,"sequence-number":1,"timestamp-ms":1739547670762,"manifest-list":"catalogs/schema-evolution/schema-evolution.db/test-56/metadata/snap-1015702842272033383-0-ba526524-f3d4-4e6f-901e-5db2fe4bba77.avro","summary":{"operation":"append","added-files-size":"996","added-data-files":"1","added-records":"10","total-data-files":"1","total-delete-files":"0","total-records":"10","total-files-size":"996","total-position-deletes":"0","total-equality-deletes":"0"},"schema-id":0},{"snapshot-id":4839311159351605646,"parent-snapshot-id":1015702842272033383,"sequence-number":2,"timestamp-ms":1739547670785,"manifest-list":"catalogs/schema-evolution/schema-evolution.db/test-56/metadata/snap-4839311159351605646-0-6b796be4-24b0-4c5d-a92b-b776f4e6c247.avro","summary":{"operation":"append","added-files-size":"1016","added-data-files":"1","added-records":"10","total-data-files":"2","total-delete-files":"0","total-records":"20","total-files-size":"2012","total-position-deletes":"0","total-equality-deletes":"0"},"schema-id":1}],"snapshot-log":[{"snapshot-id":1015702842272033383,"timestamp-ms":1739547670762},{"snapshot-id":4839311159351605646,"timestamp-ms":1739547670785}],"metadata-log":[{"metadata-file":"catalogs/schema-evolution/schema-evolution.db/test-56/metadata/00000-4f68697d-87b6-49b0-8314-38d73bfb13af.metadata.json","timestamp-ms":1739547670762},{"metadata-file":"catalogs/schema-evolution/schema-evolution.db/test-56/metadata/00001-4326375c-b91d-414a-a50c-dd56a65e9ea1.metadata.json","timestamp-ms":1739547670771}],"sort-orders":[{"order-id":0,"fields":[]}],"default-sort-order-id":0,"refs":{"main":{"snapshot-id":4839311159351605646,"type":"branch"}},"format-version":2,"last-sequence-number":2}
+{
+    "location": "catalogs/schema-evolution/schema-evolution.db/test-56",
+    "table-uuid": "63b35451-6399-4381-8bd3-96f07eaf287c",
+    "last-updated-ms": 1739547670785,
+    "last-column-id": 2,
+    "schemas": [
+        {
+            "type": "struct",
+            "fields": [
+                {
+                    "id": 1,
+                    "name": "Field1",
+                    "type": "int",
+                    "required": false
+                },
+                {
+                    "id": 2,
+                    "name": "Field2",
+                    "type": "int",
+                    "required": false
+                }
+            ],
+            "schema-id": 0,
+            "identifier-field-ids": []
+        },
+        {
+            "type": "struct",
+            "fields": [
+                {
+                    "id": 1,
+                    "name": "Field1_B",
+                    "type": "int",
+                    "required": false
+                },
+                {
+                    "id": 2,
+                    "name": "Field2_B",
+                    "type": "int",
+                    "required": false
+                }
+            ],
+            "schema-id": 1,
+            "identifier-field-ids": []
+        }
+    ],
+    "current-schema-id": 1,
+    "partition-specs": [
+        {
+            "spec-id": 0,
+            "fields": []
+        }
+    ],
+    "default-spec-id": 0,
+    "last-partition-id": 999,
+    "properties": {},
+    "current-snapshot-id": 4839311159351605646,
+    "snapshots": [
+        {
+            "snapshot-id": 1015702842272033383,
+            "sequence-number": 1,
+            "timestamp-ms": 1739547670762,
+            "manifest-list": "catalogs/schema-evolution/schema-evolution.db/test-56/metadata/snap-1015702842272033383-0-ba526524-f3d4-4e6f-901e-5db2fe4bba77.avro",
+            "summary": {
+                "operation": "append",
+                "added-files-size": "996",
+                "added-data-files": "1",
+                "added-records": "10",
+                "total-data-files": "1",
+                "total-delete-files": "0",
+                "total-records": "10",
+                "total-files-size": "996",
+                "total-position-deletes": "0",
+                "total-equality-deletes": "0"
+            },
+            "schema-id": 0
+        },
+        {
+            "snapshot-id": 4839311159351605646,
+            "parent-snapshot-id": 1015702842272033383,
+            "sequence-number": 2,
+            "timestamp-ms": 1739547670785,
+            "manifest-list": "catalogs/schema-evolution/schema-evolution.db/test-56/metadata/snap-4839311159351605646-0-6b796be4-24b0-4c5d-a92b-b776f4e6c247.avro",
+            "summary": {
+                "operation": "append",
+                "added-files-size": "1016",
+                "added-data-files": "1",
+                "added-records": "10",
+                "total-data-files": "2",
+                "total-delete-files": "0",
+                "total-records": "20",
+                "total-files-size": "2012",
+                "total-position-deletes": "0",
+                "total-equality-deletes": "0"
+            },
+            "schema-id": 1
+        }
+    ],
+    "snapshot-log": [
+        {
+            "snapshot-id": 1015702842272033383,
+            "timestamp-ms": 1739547670762
+        },
+        {
+            "snapshot-id": 4839311159351605646,
+            "timestamp-ms": 1739547670785
+        }
+    ],
+    "metadata-log": [
+        {
+            "metadata-file": "catalogs/schema-evolution/schema-evolution.db/test-56/metadata/00000-4f68697d-87b6-49b0-8314-38d73bfb13af.metadata.json",
+            "timestamp-ms": 1739547670762
+        },
+        {
+            "metadata-file": "catalogs/schema-evolution/schema-evolution.db/test-56/metadata/00001-4326375c-b91d-414a-a50c-dd56a65e9ea1.metadata.json",
+            "timestamp-ms": 1739547670771
+        }
+    ],
+    "sort-orders": [
+        {
+            "order-id": 0,
+            "fields": []
+        }
+    ],
+    "default-sort-order-id": 0,
+    "refs": {
+        "main": {
+            "snapshot-id": 4839311159351605646,
+            "type": "branch"
+        }
+    },
+    "format-version": 2,
+    "last-sequence-number": 2
+}

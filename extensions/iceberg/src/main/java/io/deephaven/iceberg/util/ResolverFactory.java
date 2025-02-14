@@ -5,8 +5,11 @@ package io.deephaven.iceberg.util;
 
 import com.google.common.collect.AbstractIterator;
 import io.deephaven.engine.table.impl.locations.TableKey;
+import io.deephaven.iceberg.internal.SchemaHelper;
+import io.deephaven.iceberg.location.IcebergTableParquetLocationKey;
 import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
@@ -32,54 +35,48 @@ final class ResolverFactory implements ParquetColumnResolver.Factory {
         this.instructions = Objects.requireNonNull(instructions);
     }
 
-    @Override
-    public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
-        // final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
-        // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
-        return new Resolver(tableLocationKey.getSchema());
+    private Schema readersSchema() {
+        return instructions.schema();
     }
 
-    private Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        final ColumnInstructions ci = instructions.columnInstructions().get(columnName);
-        return ci == null
-                ? Optional.empty()
-                : Optional.of(ci.path().resolve(instructions.schema()));
+    @Override
+    public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
+        final IcebergTableParquetLocationKey itplk = (IcebergTableParquetLocationKey) tableLocationKey;
+        // TODO: we should be able to get the writtenSchema for this location to enhance our error messages
+        return new Resolver(tableLocationKey.getSchema(), itplk.writersSchema());
     }
 
     private class Resolver implements ParquetColumnResolver {
 
-        // private final Schema writtenSchema;
         private final MessageType parquetSchema;
+        private final Schema writersSchema;
 
-        private Resolver(MessageType parquetSchema) {
+        private Resolver(MessageType parquetSchema, Schema writersSchema) {
             this.parquetSchema = Objects.requireNonNull(parquetSchema);
+            this.writersSchema = Objects.requireNonNull(writersSchema);
+            // todo: should we double check that the schemas are compatible? ie, everything in readers
+            // instructions.columnInstructions()
+            // resolves to the same thing?
         }
 
         @Override
         public Optional<List<String>> of(String columnName) {
-            final List<Types.NestedField> fields = fieldPath(columnName).orElse(null);
-            if (fields == null) {
-                // DH did not map this columnName
+            final ColumnInstructions ci = instructions.columnInstructions().get(columnName);
+            if (ci == null) {
+                // DH did not map this column name
                 return Optional.empty();
             }
-            try {
-                return Optional.of(adapt(fields.iterator())
-                        .map(Type::getName)
-                        .collect(Collectors.toList()));
-            } catch (RuntimeException e) {
-                if (e.getCause() instanceof MappingException) {
-                    // https://lists.apache.org/thread/88md2fdk17k26cl4gj3sz6sdbtwcgbk5
-                    // We can improve the state of our errors here if we incorporate the "writtenSchema"; for example,
-                    // we should know apriori if a field has been deleted
 
-                    // we don't have a good way to communicate this state to the upper level;
-                    // in the case of a NotFound, it's possible the
-                    // throw e; // todo: don't do this
-                    return Optional.empty();
-                } else {
-                    throw e;
-                }
+            final List<Types.NestedField> fields;
+            try {
+                fields = ci.path().resolve(writersSchema);
+            } catch (SchemaHelper.PathException e) {
+                // The file does not have this column
+                return Optional.empty();
             }
+            return Optional.of(adapt(fields.iterator())
+                    .map(Type::getName)
+                    .collect(Collectors.toList()));
         }
 
         private Stream<Type> adapt(Iterator<Types.NestedField> it) {

@@ -15,11 +15,20 @@ import java.util.stream.Collectors;
 
 public final class SchemaHelper {
 
-    public static List<NestedField> fieldPath(Schema schema, int[] idPath) {
+    public static boolean hasFieldPath(Schema schema, int[] idPath) {
+        try {
+            fieldPath(schema, idPath);
+        } catch (PathException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public static List<NestedField> fieldPath(Schema schema, int[] idPath) throws PathException {
         return path(schema.asStruct(), idPath);
     }
 
-    public static List<NestedField> fieldPath(Schema schema, String[] namePath) {
+    public static List<NestedField> fieldPath(Schema schema, String[] namePath) throws PathException {
         return path(schema.asStruct(), namePath);
     }
 
@@ -27,7 +36,7 @@ public final class SchemaHelper {
         return context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
     }
 
-    private static List<NestedField> path(final Type.NestedType type, final int[] idPath) {
+    private static List<NestedField> path(final Type.NestedType type, final int[] idPath) throws PathException {
         Type currentType = type;
         final List<NestedField> out = new ArrayList<>(idPath.length);
         for (final int fieldId : idPath) {
@@ -44,7 +53,7 @@ public final class SchemaHelper {
         return out;
     }
 
-    private static List<NestedField> path(final Type.NestedType type, final String[] namePath) {
+    private static List<NestedField> path(final Type.NestedType type, final String[] namePath) throws PathException {
         Type currentType = type;
         final List<NestedField> out = new ArrayList<>(namePath.length);
         for (final String name : namePath) {
@@ -73,25 +82,34 @@ public final class SchemaHelper {
         return null;
     }
 
-    private static IllegalArgumentException idPathNotFound(int[] idPath, List<NestedField> context) {
-        throw new IllegalArgumentException(
+    // todo: typed exceptions?
+
+    public static class PathException extends Exception {
+
+        public PathException(String message) {
+            super(message);
+        }
+    }
+
+    private static PathException idPathNotFound(int[] idPath, List<NestedField> context) {
+        return new PathException(
                 String.format("id path not found, path=%s, context=%s", Arrays.toString(idPath),
                         toNameString(context)));
     }
 
-    private static IllegalArgumentException idPathTooLong(int[] idPath, List<NestedField> context) {
-        throw new IllegalArgumentException(
+    private static PathException idPathTooLong(int[] idPath, List<NestedField> context) {
+        return new PathException(
                 String.format("id path too long, path=%s, context=%s", Arrays.toString(idPath), toNameString(context)));
     }
 
-    private static IllegalArgumentException namePathNotFound(String[] namePath, List<NestedField> context) {
-        throw new IllegalArgumentException(
+    private static PathException namePathNotFound(String[] namePath, List<NestedField> context) {
+        return new PathException(
                 String.format("name path not found, path=%s, context=%s", Arrays.toString(namePath),
                         toNameString(context)));
     }
 
-    private static IllegalArgumentException namePathTooLong(String[] namePath, List<NestedField> context) {
-        throw new IllegalArgumentException(
+    private static PathException namePathTooLong(String[] namePath, List<NestedField> context) {
+        return new PathException(
                 String.format("name path too long, path=%s, context=%s", Arrays.toString(namePath),
                         toNameString(context)));
     }

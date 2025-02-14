@@ -443,47 +443,6 @@ public class IcebergTableAdapter {
     }
 
     /**
-     * Get a legalized column rename map from a table schema and user instructions.
-     */
-    private Map<String, String> getRenameColumnMap(
-            @NotNull final org.apache.iceberg.Table table,
-            @NotNull final Schema schema,
-            @NotNull final IcebergReadInstructions instructions) {
-
-        final Set<String> takenNames = new HashSet<>();
-
-        // Map all the column names in the schema to their legalized names.
-        final Map<String, String> legalizedColumnRenames = new HashMap<>();
-
-        // Validate user-supplied names meet legalization instructions
-        for (final Map.Entry<String, String> entry : instructions.columnRenames().entrySet()) {
-            final String destinationName = entry.getValue();
-            if (!NameValidator.isValidColumnName(destinationName)) {
-                throw new TableDataException(
-                        String.format("%s - invalid column name provided (%s)", table, destinationName));
-            }
-            // Add these renames to the legalized list.
-            legalizedColumnRenames.put(entry.getKey(), destinationName);
-            takenNames.add(destinationName);
-        }
-
-        for (final Types.NestedField field : schema.columns()) {
-            final String name = field.name();
-            // Do we already have a valid rename for this column from the user or a partitioned column?
-            if (!legalizedColumnRenames.containsKey(name)) {
-                final String legalizedName =
-                        NameValidator.legalizeColumnName(name, s -> s.replace(" ", "_"), takenNames);
-                if (!legalizedName.equals(name)) {
-                    legalizedColumnRenames.put(name, legalizedName);
-                    takenNames.add(legalizedName);
-                }
-            }
-        }
-
-        return legalizedColumnRenames;
-    }
-
-    /**
      * Create a single {@link TableDefinition} from a given Schema, PartitionSpec, and TableDefinition. Takes into
      * account {@link Map<> column rename instructions}
      *

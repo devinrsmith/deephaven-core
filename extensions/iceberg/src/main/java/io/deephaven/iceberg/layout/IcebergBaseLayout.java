@@ -83,6 +83,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
      */
     protected IcebergTableLocationKey locationKey(
             @NotNull final ManifestFile manifestFile,
+            @NotNull final PartitionSpec spec,
             @NotNull final DataFile dataFile,
             @NotNull final URI fileUri,
             @Nullable final Map<String, Comparable<?>> partitions) {
@@ -93,6 +94,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
                     tableUuid,
                     tableAdapter.tableIdentifier(),
                     manifestFile,
+                    spec,
                     dataFile,
                     fileUri,
                     0,
@@ -130,7 +132,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
         this.channelsProvider = Objects.requireNonNull(channelsProvider);
     }
 
-    abstract IcebergTableLocationKey keyFromDataFile(ManifestFile manifestFile, DataFile dataFile, URI fileUri);
+    abstract IcebergTableLocationKey keyFromDataFile(ManifestFile manifestFile, PartitionSpec spec, DataFile dataFile, URI fileUri);
 
     private static String path(String path, FileIO io) {
         return io instanceof RelativeFileIO ? ((RelativeFileIO) io).absoluteLocation(path) : path;
@@ -155,8 +157,6 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
             manifestFiles.forEach(manifestFile -> {
                 final ManifestReader<DataFile> reader = ManifestFiles.read(manifestFile, table.io());
                 final PartitionSpec spec = reader.spec();
-                final Schema schemaForDataFile = spec.schema();
-
                 IcebergUtils.toStream(reader)
                         .map(dataFile -> {
                             final URI fileUri = dataFileUri(table, dataFile);
@@ -166,7 +166,7 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
                                                 "fileUri=%s",
                                         table, snapshot.snapshotId(), uriScheme, fileUri));
                             }
-                            return keyFromDataFile(manifestFile, dataFile, fileUri);
+                            return keyFromDataFile(manifestFile, spec, dataFile, fileUri);
                         })
                         .forEach(locationKeyObserver);
             });

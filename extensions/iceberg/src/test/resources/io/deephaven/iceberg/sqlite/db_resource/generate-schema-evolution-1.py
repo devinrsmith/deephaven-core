@@ -12,9 +12,10 @@ import pyarrow as pa
 
 import iceberg_utils
 
-TABLE_ID = ("schema-evolution", "test-55")
+TABLE_ID = ("schema-evolution", "test-56")
 FIELD_ID_1 = 1
 FIELD_ID_2 = 2
+FIELD_ID_3 = 3
 
 SCHEMA_INIT = Schema(
     NestedField(field_id=-1, name="Field1", field_type=IntegerType()),
@@ -44,6 +45,12 @@ SCHEMA_2 = Schema(
 SCHEMA_3 = Schema(
     NestedField(field_id=FIELD_ID_2, name="Field2_C", field_type=IntegerType()),
     NestedField(field_id=FIELD_ID_1, name="Field1_C", field_type=IntegerType()),
+)
+
+SCHEMA_4 = Schema(
+    NestedField(field_id=FIELD_ID_1, name="Field1_D", field_type=IntegerType()),
+    NestedField(field_id=FIELD_ID_2, name="Field2_D", field_type=IntegerType()),
+    NestedField(field_id=FIELD_ID_3, name="Field3_D", field_type=IntegerType()),
 )
 
 
@@ -106,3 +113,16 @@ with iceberg_table.transaction() as txn:
         update_schema.move_first(SCHEMA_3.find_field(FIELD_ID_2).name)
         iceberg_utils._verify(update_schema, SCHEMA_3)
     txn.append(PyArrowTest1.table(range(50, 60)))
+
+with iceberg_table.transaction() as txn:
+    with txn.update_schema() as update_schema:
+        update_schema.move_first(SCHEMA_3.find_field(FIELD_ID_1).name)
+        update_schema.rename_column(
+            SCHEMA_3.find_field(FIELD_ID_1).name, SCHEMA_4.find_field(FIELD_ID_1).name
+        )
+        update_schema.rename_column(
+            SCHEMA_3.find_field(FIELD_ID_2).name, SCHEMA_4.find_field(FIELD_ID_2).name
+        )
+
+        f3 = SCHEMA_4.find_field(FIELD_ID_3)
+        update_schema.add_column(f3.name, f3.field_type, f3.doc, f3.required)

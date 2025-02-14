@@ -80,14 +80,17 @@ class SchemaHelperTest {
         assertFieldPath(schema, "I6").containsExactly("I6");
         assertFieldPath(schema, "I6", "element").containsExactly("I6", "element");
         assertFieldPathError("name path not found, path=[I6, dne], context=['I6']", schema, "I6", "dne");
-        assertFieldPathError("name path too long, path=[I6, element, dne], context=['I6', 'element']", schema, "I6", "element", "dne");
+        assertFieldPathError("name path too long, path=[I6, element, dne], context=['I6', 'element']", schema, "I6",
+                "element", "dne");
 
         assertFieldPath(schema, "I9").containsExactly("I9");
         assertFieldPath(schema, "I9", "key").containsExactly("I9", "key");
         assertFieldPath(schema, "I9", "value").containsExactly("I9", "value");
         assertFieldPathError("name path not found, path=[I9, dne], context=['I9']", schema, "I9", "dne");
-        assertFieldPathError("name path too long, path=[I9, key, dne], context=['I9', 'key']", schema, "I9", "key", "dne");
-        assertFieldPathError("name path too long, path=[I9, value, dne], context=['I9', 'value']", schema, "I9", "value", "dne");
+        assertFieldPathError("name path too long, path=[I9, key, dne], context=['I9', 'key']", schema, "I9", "key",
+                "dne");
+        assertFieldPathError("name path too long, path=[I9, value, dne], context=['I9', 'value']", schema, "I9",
+                "value", "dne");
     }
 
     private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(

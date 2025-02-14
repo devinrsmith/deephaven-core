@@ -75,7 +75,8 @@ public final class SchemaHelper {
 
     private static IllegalArgumentException idPathNotFound(int[] idPath, List<NestedField> context) {
         throw new IllegalArgumentException(
-                String.format("id path not found, path=%s, context=%s", Arrays.toString(idPath), toNameString(context)));
+                String.format("id path not found, path=%s, context=%s", Arrays.toString(idPath),
+                        toNameString(context)));
     }
 
     private static IllegalArgumentException idPathTooLong(int[] idPath, List<NestedField> context) {
@@ -85,11 +86,13 @@ public final class SchemaHelper {
 
     private static IllegalArgumentException namePathNotFound(String[] namePath, List<NestedField> context) {
         throw new IllegalArgumentException(
-                String.format("name path not found, path=%s, context=%s", Arrays.toString(namePath), toNameString(context)));
+                String.format("name path not found, path=%s, context=%s", Arrays.toString(namePath),
+                        toNameString(context)));
     }
 
     private static IllegalArgumentException namePathTooLong(String[] namePath, List<NestedField> context) {
         throw new IllegalArgumentException(
-                String.format("name path too long, path=%s, context=%s", Arrays.toString(namePath), toNameString(context)));
+                String.format("name path too long, path=%s, context=%s", Arrays.toString(namePath),
+                        toNameString(context)));
     }
 }

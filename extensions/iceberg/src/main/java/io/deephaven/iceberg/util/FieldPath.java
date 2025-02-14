@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.SimpleStyle;
@@ -41,8 +44,8 @@ public abstract class FieldPath {
     }
 
     /**
-     * Creates a field path that resolves fields via {@link NestedField#name()}. This method ensures that the field
-     * name path exists in {@code schema}.
+     * Creates a field path that resolves fields via {@link NestedField#name()}. This method ensures that the field name
+     * path exists in {@code schema}.
      *
      * @param schema the schema
      * @param fieldNamePath the field name path

@@ -7,6 +7,7 @@ import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.iceberg.internal.SpecAndSchema;
+import io.deephaven.iceberg.internal.SpecAndSchema2;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestContent;
 import org.apache.iceberg.ManifestFile;
@@ -189,7 +190,7 @@ public final class IcebergUtils {
     /**
      * Create {@link PartitionSpec} and {@link Schema} from a {@link TableDefinition}.
      *
-     * @return A {@link SpecAndSchema} object containing the partition spec and schema, and {@code null} for read
+     * @return A {@link SpecAndSchema2} object containing the partition spec and schema, and {@code null} for read
      *         instructions.
      */
     public static SpecAndSchema createSpecAndSchema(@NotNull final TableDefinition tableDefinition) {
@@ -208,9 +209,8 @@ public final class IcebergUtils {
             fieldID++;
         }
         final Schema schema = new Schema(fields);
-
         final PartitionSpec partitionSpec = createPartitionSpec(schema, partitioningColumnNames);
-        return new SpecAndSchema(schema, partitionSpec, null);
+        return new SpecAndSchema(schema, partitionSpec);
     }
 
     public static PartitionSpec createPartitionSpec(

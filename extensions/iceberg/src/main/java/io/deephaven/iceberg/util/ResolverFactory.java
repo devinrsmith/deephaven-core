@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class ResolverFactory implements ParquetColumnResolver.Factory {
+final class ResolverFactory implements ParquetColumnResolver.Factory {
 
     private final DefinitionInstructions instructions;
 
@@ -40,10 +40,10 @@ public final class ResolverFactory implements ParquetColumnResolver.Factory {
     }
 
     private Optional<List<Types.NestedField>> fieldPath(String columnName) {
-        final ColumnInstructions instructions = this.instructions.columnInstructions().get(columnName);
-        return instructions == null
+        final ColumnInstructions ci = instructions.columnInstructions().get(columnName);
+        return ci == null
                 ? Optional.empty()
-                : Optional.of(instructions.path().resolve(this.instructions.schema()));
+                : Optional.of(ci.path().resolve(instructions.schema()));
     }
 
     private class Resolver implements ParquetColumnResolver {
@@ -62,24 +62,24 @@ public final class ResolverFactory implements ParquetColumnResolver.Factory {
                 // DH did not map this columnName
                 return Optional.empty();
             }
-            List<String> parquetPath = null;
             try {
-                parquetPath = adapt(fields.iterator())
+                return Optional.of(adapt(fields.iterator())
                         .map(Type::getName)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList()));
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof MappingException) {
+                    // https://lists.apache.org/thread/88md2fdk17k26cl4gj3sz6sdbtwcgbk5
                     // We can improve the state of our errors here if we incorporate the "writtenSchema"; for example,
                     // we should know apriori if a field has been deleted
 
                     // we don't have a good way to communicate this state to the upper level;
                     // in the case of a NotFound, it's possible the
-                    throw e; // todo: don't do this
+                    // throw e; // todo: don't do this
+                    return Optional.empty();
                 } else {
                     throw e;
                 }
             }
-            return Optional.of(parquetPath);
         }
 
         private Stream<Type> adapt(Iterator<Types.NestedField> it) {
@@ -151,17 +151,25 @@ public final class ResolverFactory implements ParquetColumnResolver.Factory {
             }
         }
         if (found == null) {
-            throw new NotFound();
+            throw new NotFound("not found " + fieldId);
         }
         return found;
     }
 
     private static abstract class MappingException extends Exception {
 
+        public MappingException() {}
+
+        public MappingException(String message) {
+            super(message);
+        }
     }
 
     private static class NotFound extends MappingException {
 
+        public NotFound(String message) {
+            super(message);
+        }
     }
 
     private static class Duplicate extends MappingException {

@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.util;
 
 import io.deephaven.qst.type.ArrayType;
@@ -9,26 +12,33 @@ import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.DoubleType;
 import io.deephaven.qst.type.FloatType;
 import io.deephaven.qst.type.GenericType;
+import io.deephaven.qst.type.GenericVectorType;
 import io.deephaven.qst.type.InstantType;
 import io.deephaven.qst.type.IntType;
 import io.deephaven.qst.type.LongType;
+import io.deephaven.qst.type.NativeArrayType;
 import io.deephaven.qst.type.PrimitiveType;
+import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.types.Types;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
 
-final class IcebergPrimitiveCompat implements Type.Visitor<Boolean>, PrimitiveType.Visitor<Boolean>, GenericType.Visitor<Boolean> {
+final class IcebergPrimitiveCompat
+        implements Type.Visitor<Boolean>, PrimitiveType.Visitor<Boolean>, GenericType.Visitor<Boolean> {
 
     // Note: "primitive" for Iceberg is not equivalent to Java primitives.
     // It means it's not a "complex" type (struct, list, map).
     private final org.apache.iceberg.types.Type.PrimitiveType pt;
 
     public IcebergPrimitiveCompat(org.apache.iceberg.types.Type.PrimitiveType pt) {
-        this.pt = pt;
+        this.pt = Objects.requireNonNull(pt);
     }
 
     @Override
@@ -60,23 +70,27 @@ final class IcebergPrimitiveCompat implements Type.Visitor<Boolean>, PrimitiveTy
 
     @Override
     public Boolean visit(ArrayType<?, ?> arrayType) {
-        return null;
+        // todo: more advanced array walk later
+        return Type.byteType().arrayType().equals(arrayType)
+                && (pt == Types.BinaryType.get() || pt instanceof Types.FixedType);
     }
 
     @Override
     public Boolean visit(CustomType<?> customType) {
-
         final Class<?> clazz = customType.clazz();
+        if (pt == Types.TimestampType.withoutZone()) {
+            return LocalDateTime.class.equals(clazz);
+        }
         if (pt == Types.DateType.get()) {
             return LocalDate.class.equals(clazz);
         }
         if (pt == Types.TimeType.get()) {
             return LocalTime.class.equals(clazz);
         }
-
-
-
-        return null;
+        if (pt instanceof Types.DecimalType) {
+            return BigDecimal.class.equals(clazz);
+        }
+        return false;
     }
 
     @Override
@@ -86,12 +100,12 @@ final class IcebergPrimitiveCompat implements Type.Visitor<Boolean>, PrimitiveTy
 
     @Override
     public Boolean visit(ByteType byteType) {
-        return null;
+        return false;
     }
 
     @Override
     public Boolean visit(CharType charType) {
-        return null;
+        return false;
     }
 
     @Override

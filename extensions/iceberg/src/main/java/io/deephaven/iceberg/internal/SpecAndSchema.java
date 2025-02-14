@@ -12,14 +12,11 @@ import org.jetbrains.annotations.Nullable;
 public final class SpecAndSchema {
     public final Schema schema;
     public final PartitionSpec partitionSpec;
-    public final IcebergReadInstructions readInstructions;
 
     public SpecAndSchema(
             @NotNull final Schema schema,
-            @NotNull final PartitionSpec partitionSpec,
-            @Nullable final IcebergReadInstructions readInstructions) {
+            @NotNull final PartitionSpec partitionSpec) {
         this.schema = schema;
         this.partitionSpec = partitionSpec;
-        this.readInstructions = readInstructions;
     }
 }

@@ -38,8 +38,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
- * All of these tests run through {@link DefinitionInstructions#infer(Schema)} and {@link DefinitionInstructions#inferAll(Schema)}; this is an easier
- * setup than creating or mocking our own consumer via {@link Inference#of(Schema, Inference.Consumer)}.
+ * All of these tests run through {@link DefinitionInstructions#infer(Schema)} and
+ * {@link DefinitionInstructions#inferAll(Schema)}; this is an easier setup than creating or mocking our own consumer
+ * via {@link Inference#of(Schema, Inference.Consumer)}.
  */
 class InferenceTest {
 
@@ -215,9 +216,7 @@ class InferenceTest {
         final Schema schema = new Schema(NestedField.optional(1, "S1", StructType.of(
                 NestedField.optional(2, "S2", StructType.of(
                         NestedField.optional(3, "F1", IT),
-                        NestedField.required(4, "F2", IT)
-                ))
-        )));
+                        NestedField.required(4, "F2", IT))))));
         final DefinitionInstructions expected = DefinitionInstructions.builder()
                 .schema(schema)
                 .definition(TableDefinition.of(

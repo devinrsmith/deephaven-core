@@ -9,7 +9,6 @@ import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.iceberg.internal.Inference;
 import io.deephaven.iceberg.internal.SchemaHelper;
-import io.deephaven.parquet.table.location.ParquetColumnResolver;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types.NestedField;
@@ -60,13 +59,14 @@ public abstract class DefinitionInstructions {
         return builder.build(schema);
     }
 
-//    public static DefinitionInstructions inferUpdate(DefinitionInstructions existingInstructions, Schema newSchema) {
-//        // TODO
-//        return null;
-//    }
+    // public static DefinitionInstructions inferUpdate(DefinitionInstructions existingInstructions, Schema newSchema) {
+    // // TODO
+    // return null;
+    // }
 
     /**
-     * The Iceberg schema. This schema is set at the time these instructions were originally made - it is often <b>not</b> the most recent schema for an Iceberg table.
+     * The Iceberg schema. This schema is set at the time these instructions were originally made - it is often
+     * <b>not</b> the most recent schema for an Iceberg table.
      */
     public abstract Schema schema();
 
@@ -76,7 +76,7 @@ public abstract class DefinitionInstructions {
     public abstract TableDefinition definition();
 
     /**
-     * The mapping from Deephaven column name to column instruction.
+     * The column instructions keyed by Deephaven column name.
      */
     public abstract Map<String, ColumnInstructions> columnInstructions();
 
@@ -85,15 +85,9 @@ public abstract class DefinitionInstructions {
     // have to be a leaf if it's a list? b/c really, the list type is
     // probably better than a path to the elemnt
 
-
-
     @Value.Default
     boolean allowUnmappedColumns() {
         return false;
-    }
-
-    public final ParquetColumnResolver.Factory factory() {
-        return new ResolverFactory(this);
     }
 
     // todo: need to specify any special transformations that happen
@@ -141,6 +135,11 @@ public abstract class DefinitionInstructions {
         }
     }
 
+    // TODO
+    public final ResolverFactory factory() {
+        return new ResolverFactory(this);
+    }
+
     private static class InferenceBuilder implements Inference.Consumer {
         private final Set<String> usedNames = new HashSet<>();
         private final List<ColumnDefinition<?>> definitions = new ArrayList<>();
@@ -162,7 +161,9 @@ public abstract class DefinitionInstructions {
         @Override
         public void onType(Collection<? extends NestedField> path, Type<?> type) {
             if (!isCompatible(path, type)) {
-                throw new IllegalStateException(String.format("Inference is producing an invalid mapping path=%s, type=%s", SchemaHelper.toNameString(path), type));
+                throw new IllegalStateException(
+                        String.format("Inference is producing an invalid mapping path=%s, type=%s",
+                                SchemaHelper.toNameString(path), type));
             }
             final String joinedNames = path.stream().map(NestedField::name).collect(Collectors.joining("_"));
             final String columnName = NameValidator.legalizeColumnName(joinedNames, usedNames);
@@ -195,10 +196,10 @@ public abstract class DefinitionInstructions {
         // as public API.
         checkCompatible(path);
         // todo: compare against DH type(s)
-
         final NestedField lastField = path.stream().reduce((p, n) -> n).orElseThrow();
         if (!type.walk(new IcebergPrimitiveCompat(lastField.type().asPrimitiveType()))) {
-            throw new MappingException(String.format("Unable to map Iceberg type `%s` to Deephaven type `%s`", lastField.type(), type));
+            throw new MappingException(
+                    String.format("Unable to map Iceberg type `%s` to Deephaven type `%s`", lastField.type(), type));
         }
     }
 

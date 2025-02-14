@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.internal;
 
 import io.deephaven.engine.table.ColumnDefinition;
@@ -116,42 +119,43 @@ class DefinitionInstructionsTest {
                     .build();
             failBecauseExceptionWasNotThrown(DefinitionInstructions.MappingException.class);
         } catch (DefinitionInstructions.MappingException e) {
-            assertThat(e).hasMessageContaining("Unable to map Iceberg type `int` to Deephaven type `io.deephaven.qst.type.StringType`");
+            assertThat(e).hasMessageContaining(
+                    "Unable to map Iceberg type `int` to Deephaven type `io.deephaven.qst.type.StringType`");
         }
     }
 
-    //    @Test
-//    void simpleSubset() {
-//        final Mapping mapping = Mapping.builder()
-//                .schema(simpleSchema(IT))
-//                .definition(simpleDefinition(Type.intType()))
-//                .putPath("F1", FieldPath.of(42))
-//                .build();
-//    }
-//
-//    @Test
-//    void name() {
-//        Mapping.builder()
-//                .schema(simpleSchema(IT))
-//                .definition(TableDefinition.of(
-//                        ColumnDefinition.ofShort("F1"),
-//                        ColumnDefinition.ofShort("F2")))
-//                .putPath("F1", FieldPath.of(42))
-//                .putPath("F2", FieldPath.of(43))
-//                .build();
-//    }
-//
-//    @Test
-//    void ListType() {
-//
-//        final Schema schema = new Schema(NestedField.optional(2, "L1", Types.ListType.ofOptional(1, IT)));
-//
-//        Mapping.builder()
-//                .schema(schema)
-//                .definition(TableDefinition.of(ColumnDefinition.of("L1", Type.intType().arrayType())))
-//                .putPath("L1", FieldPath.of(2))
-//                .build();
-//    }
+    // @Test
+    // void simpleSubset() {
+    // final Mapping mapping = Mapping.builder()
+    // .schema(simpleSchema(IT))
+    // .definition(simpleDefinition(Type.intType()))
+    // .putPath("F1", FieldPath.of(42))
+    // .build();
+    // }
+    //
+    // @Test
+    // void name() {
+    // Mapping.builder()
+    // .schema(simpleSchema(IT))
+    // .definition(TableDefinition.of(
+    // ColumnDefinition.ofShort("F1"),
+    // ColumnDefinition.ofShort("F2")))
+    // .putPath("F1", FieldPath.of(42))
+    // .putPath("F2", FieldPath.of(43))
+    // .build();
+    // }
+    //
+    // @Test
+    // void ListType() {
+    //
+    // final Schema schema = new Schema(NestedField.optional(2, "L1", Types.ListType.ofOptional(1, IT)));
+    //
+    // Mapping.builder()
+    // .schema(schema)
+    // .definition(TableDefinition.of(ColumnDefinition.of("L1", Type.intType().arrayType())))
+    // .putPath("L1", FieldPath.of(2))
+    // .build();
+    // }
 
     private static Schema simpleSchema(org.apache.iceberg.types.Type type) {
         return new Schema(

@@ -122,7 +122,7 @@ public class IcebergTableParquetLocationKey extends ParquetTableLocationKey impl
         this.readInstructions = readInstructions;
     }
 
-    public Schema writersSchema() {
+    public Schema manifestSchema() {
         return schema;
     }
 

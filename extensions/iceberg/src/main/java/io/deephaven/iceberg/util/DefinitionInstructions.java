@@ -128,7 +128,12 @@ public abstract class DefinitionInstructions {
             definition().checkHasColumn(e.getKey());
             final ColumnDefinition<?> column = definition().getColumn(e.getKey());
             final ColumnInstructions columnInstructions = e.getValue();
-            final List<NestedField> fieldPath = columnInstructions.path().resolve(schema());
+            final List<NestedField> fieldPath;
+            try {
+                fieldPath = columnInstructions.path().resolve(schema());
+            } catch (SchemaHelper.PathException ex) {
+                throw new RuntimeException(ex);
+            }
             // TODO: we need to make this official
             final Type<?> type = Type.find(column.getDataType());
             checkCompatible(fieldPath, type);
@@ -136,8 +141,8 @@ public abstract class DefinitionInstructions {
     }
 
     // TODO
-    public final ResolverFactory factory() {
-        return new ResolverFactory(this);
+    public final ResolverFactory factory(boolean raiseErrorOnUnexpectedMappingError) {
+        return new ResolverFactory(this, raiseErrorOnUnexpectedMappingError);
     }
 
     private static class InferenceBuilder implements Inference.Consumer {

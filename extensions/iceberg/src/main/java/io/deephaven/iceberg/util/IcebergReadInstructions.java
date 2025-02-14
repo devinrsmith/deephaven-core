@@ -96,6 +96,8 @@ public abstract class IcebergReadInstructions {
      */
     public abstract IcebergReadInstructions withSnapshot(Snapshot value);
 
+
+
     public interface Builder {
         Builder definitionInstructions(DefinitionInstructions definitionInstructions);
 

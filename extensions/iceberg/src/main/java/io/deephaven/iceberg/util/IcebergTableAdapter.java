@@ -3,7 +3,6 @@
 //
 package io.deephaven.iceberg.util;
 
-import io.deephaven.api.util.NameValidator;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.table.ColumnDefinition;
@@ -30,7 +29,6 @@ import io.deephaven.util.annotations.InternalUseOnly;
 import io.deephaven.util.annotations.VisibleForTesting;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.util.channel.SeekableChannelsProviderLoader;
-import io.deephaven.util.type.TypeUtils;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -411,7 +409,7 @@ public class IcebergTableAdapter {
         final SeekableChannelsProvider channelsProvider = SeekableChannelsProviderLoader.getInstance().load(uriScheme, specialInstructions);
         final ParquetInstructions parquetInstructions = ParquetInstructions.builder()
                 .setTableDefinition(ss.di.definition())
-                .setColumnResolverFactory(ss.di.factory())
+                .setColumnResolverFactory(ss.di.factory(true))
                 .setSpecialInstructions(specialInstructions)
                 .build();
         if (ss.partitionSpec.isUnpartitioned()) {

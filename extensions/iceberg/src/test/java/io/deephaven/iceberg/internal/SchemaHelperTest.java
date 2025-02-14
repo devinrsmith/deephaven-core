@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 class SchemaHelperTest {
 
     @Test
-    void fieldPathById() {
+    void fieldPathById() throws SchemaHelper.PathException {
         final NestedField i1 = NestedField.of(1, true, "I1", IntegerType.get());
         final NestedField i2 = NestedField.of(2, true, "I2", IntegerType.get());
         final NestedField i3 = NestedField.of(3, true, "I3", IntegerType.get());
@@ -57,7 +57,7 @@ class SchemaHelperTest {
     }
 
     @Test
-    void fieldPathByName() {
+    void fieldPathByName() throws SchemaHelper.PathException {
         final NestedField i1 = NestedField.of(1, true, "I1", IntegerType.get());
         final NestedField i2 = NestedField.of(2, true, "I2", IntegerType.get());
         final NestedField i3 = NestedField.of(3, true, "I3", IntegerType.get());
@@ -94,12 +94,12 @@ class SchemaHelperTest {
     }
 
     private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(
-            Schema schema, int... values) {
+            Schema schema, int... values) throws SchemaHelper.PathException {
         return assertThat(SchemaHelper.fieldPath(schema, values)).extracting(NestedField::name);
     }
 
     private static AbstractListAssert<?, List<? extends String>, String, ObjectAssert<String>> assertFieldPath(
-            Schema schema, String... values) {
+            Schema schema, String... values) throws SchemaHelper.PathException {
         return assertThat(SchemaHelper.fieldPath(schema, values)).extracting(NestedField::name);
     }
 
@@ -107,8 +107,8 @@ class SchemaHelperTest {
         try {
             SchemaHelper.fieldPath(schema, values).forEach(x -> {
             });
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-        } catch (IllegalArgumentException e) {
+            failBecauseExceptionWasNotThrown(SchemaHelper.PathException.class);
+        } catch (SchemaHelper.PathException e) {
             assertThat(e).hasMessageContaining(message);
         }
     }
@@ -117,8 +117,8 @@ class SchemaHelperTest {
         try {
             SchemaHelper.fieldPath(schema, values).forEach(x -> {
             });
-            failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-        } catch (IllegalArgumentException e) {
+            failBecauseExceptionWasNotThrown(SchemaHelper.PathException.class);
+        } catch (SchemaHelper.PathException e) {
             assertThat(e).hasMessageContaining(message);
         }
     }

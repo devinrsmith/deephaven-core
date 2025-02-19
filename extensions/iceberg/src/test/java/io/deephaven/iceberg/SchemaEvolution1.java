@@ -203,6 +203,20 @@ public class SchemaEvolution1 {
                     .putColumnInstructions(col2, FieldPath.of(fieldId2))
                     .build());
         }
+        // subset, just id3 (ideally, )
+        {
+            final String col3 = "Baz";
+            final TableDefinition td = TableDefinition.of(ColumnDefinition.ofInt(col3));
+            final Table expected = TableTools.newTable(
+                    td,
+                    TableTools.intCol(col3, nullData(60)));
+            read(expected, DefinitionInstructions.builder()
+                    .schema(schema_4())
+                    .definition(td)
+                    .allowUnmappedColumns(true)
+//                    .putColumnInstructions(col3, FieldPath.of(fieldId3))
+                    .build());
+        }
         // superset
         {
             final String col1 = "Foo";

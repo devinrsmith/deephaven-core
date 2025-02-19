@@ -156,7 +156,12 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
         try (final Stream<ManifestFile> manifestFiles = allManifestFiles(table, snapshot)) {
             manifestFiles.forEach(manifestFile -> {
                 final ManifestReader<DataFile> reader = ManifestFiles.read(manifestFile, table.io());
+
+                // Note: this spec contains the *latest* Schema at the time the ManifestFile was produced, and not the
+                // actual Schema the producer may have used to write the DataFiles.
+                // https://lists.apache.org/thread/98m6d7b08fzxkbxlm78c5tnx5zp93mgc
                 final PartitionSpec spec = reader.spec();
+
                 IcebergUtils.toStream(reader)
                         .map(dataFile -> {
                             final URI fileUri = dataFileUri(table, dataFile);

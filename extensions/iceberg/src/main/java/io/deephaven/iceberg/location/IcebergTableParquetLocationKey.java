@@ -122,8 +122,16 @@ public class IcebergTableParquetLocationKey extends ParquetTableLocationKey impl
         this.readInstructions = readInstructions;
     }
 
-    public Schema manifestSchema() {
+    /**
+     * This is the <b>latest</b> {@link Schema} at the time the {@link ManifestFile} was written.
+     */
+    public Schema latestSchema() {
         return schema;
+    }
+
+    public Schema writersSchema() {
+        // Note: this does not exist
+        throw new UnsupportedOperationException();
     }
 
     @Override

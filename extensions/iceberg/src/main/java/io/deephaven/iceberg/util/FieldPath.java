@@ -43,6 +43,7 @@ public abstract class FieldPath {
         return of(fieldIdPath);
     }
 
+
     /**
      * Creates a field path that resolves fields via {@link NestedField#name()}. This method ensures that the field name
      * path exists in {@code schema}.

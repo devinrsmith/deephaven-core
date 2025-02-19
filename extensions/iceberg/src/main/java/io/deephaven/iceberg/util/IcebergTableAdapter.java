@@ -18,6 +18,7 @@ import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedTableComponentFactoryImpl;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
+import io.deephaven.iceberg.internal.NameMappingUtil;
 import io.deephaven.iceberg.internal.SpecAndSchema2;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.layout.*;
@@ -35,6 +36,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.jetbrains.annotations.NotNull;
@@ -280,6 +282,7 @@ public class IcebergTableAdapter {
         final Snapshot snapshot;
         final Schema implicitSchema;
         final PartitionSpec partitionSpec;
+        final NameMapping nameMapping;
         final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
         if (snapshotFromInstructions == null) {
             synchronized (this) {
@@ -288,6 +291,7 @@ public class IcebergTableAdapter {
                 snapshot = table.currentSnapshot();
                 implicitSchema = table.schema();
                 partitionSpec = table.spec();
+                nameMapping = NameMappingUtil.readNameMappingDefault(table).orElse(null);
             }
         } else {
             // Use the schema from the snapshot
@@ -296,6 +300,7 @@ public class IcebergTableAdapter {
                     "Schema with id " + snapshot.schemaId() + " not found for table " + tableIdentifier + ", snapshot "
                             + snapshot.snapshotId()));
             partitionSpec = table.spec();
+            nameMapping = NameMappingUtil.readNameMappingDefault(table).orElse(null);
         }
         // Note: we are only using the implicit schema from above if the user did not set the instructions.
         final DefinitionInstructions di = readInstructions.instructionsOrInfer(implicitSchema);
@@ -409,7 +414,7 @@ public class IcebergTableAdapter {
         final SeekableChannelsProvider channelsProvider = SeekableChannelsProviderLoader.getInstance().load(uriScheme, specialInstructions);
         final ParquetInstructions parquetInstructions = ParquetInstructions.builder()
                 .setTableDefinition(ss.di.definition())
-                .setColumnResolverFactory(ss.di.factory(true))
+                .setColumnResolverFactory(ss.di.factory())
                 .setSpecialInstructions(specialInstructions)
                 .build();
         if (ss.partitionSpec.isUnpartitioned()) {

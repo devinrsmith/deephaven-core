@@ -10,7 +10,9 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.iceberg.internal.Inference;
 import io.deephaven.iceberg.internal.SchemaHelper;
 import io.deephaven.qst.type.Type;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.types.Types.NestedField;
 import org.immutables.value.Value;
 
@@ -19,6 +21,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,14 @@ public abstract class DefinitionInstructions {
                 .definition(TableDefinition.of(List.of()))
                 .build();
     }
+
+    public static DefinitionInstructions infer(InferenceInstructions instructions) {
+        final InferenceBuilder builder = new InferenceBuilder(instructions);
+        Inference.of(instructions.schema(), builder);
+        return builder.build();
+    }
+
+
 
     /**
      * Infer a table definition instructions based on the {@code schema}.
@@ -70,6 +81,8 @@ public abstract class DefinitionInstructions {
      */
     public abstract Schema schema();
 
+    public abstract PartitionSpec spec();
+
     /**
      * The Deephaven table definition.
      */
@@ -79,6 +92,11 @@ public abstract class DefinitionInstructions {
      * The column instructions keyed by Deephaven column name.
      */
     public abstract Map<String, ColumnInstructions> columnInstructions();
+
+    // todo: should this be here, or somewhere else?
+    // todo: this doesn't implement equals
+    public abstract Optional<NameMapping> fallback();
+
 
     // We need to store as List so we can get test out the mapping wrt equals
     // todo: verify this is pointing to a schema leaf; arguably, doesn't
@@ -92,10 +110,11 @@ public abstract class DefinitionInstructions {
 
     // todo: need to specify any special transformations that happen
 
-
     public interface Builder {
 
         Builder schema(Schema schema);
+
+        Builder spec(PartitionSpec spec);
 
         Builder definition(TableDefinition definition);
 
@@ -105,9 +124,21 @@ public abstract class DefinitionInstructions {
             return putColumnInstructions(columnName, ColumnInstructions.of(fieldPath));
         }
 
+        Builder fallback(NameMapping fallback);
+
         Builder allowUnmappedColumns(boolean allowUnmappedColumns);
 
         DefinitionInstructions build();
+    }
+
+    @Value.Check
+    final void checkSpecSchema() {
+        if (spec() == PartitionSpec.unpartitioned()) {
+            return;
+        }
+        if (!schema().sameSchema(spec().schema())) {
+            throw new IllegalArgumentException("schema and spec schema are not the same");
+        }
     }
 
     @Value.Check
@@ -141,25 +172,46 @@ public abstract class DefinitionInstructions {
     }
 
     // TODO
-    public final ResolverFactory factory(boolean raiseErrorOnUnexpectedMappingError) {
-        return new ResolverFactory(this, raiseErrorOnUnexpectedMappingError);
+    public final ResolverFactory factory() {
+        return new ResolverFactory(this);
+    }
+
+    // todo:
+    public final Optional<List<NestedField>> resolveViaReadersSchema(String columnName) {
+        try {
+            return resolveVia(columnName, schema());
+        } catch (SchemaHelper.PathException e) {
+            // should already be accounted for in checkCompatibility
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public final Optional<List<NestedField>> resolveVia(String columnName, Schema schema) throws SchemaHelper.PathException {
+        final ColumnInstructions ci = columnInstructions().get(columnName);
+        if (ci == null) {
+            return Optional.empty();
+        }
+        return Optional.of(ci.path().resolve(schema));
     }
 
     private static class InferenceBuilder implements Inference.Consumer {
         private final Set<String> usedNames = new HashSet<>();
         private final List<ColumnDefinition<?>> definitions = new ArrayList<>();
-        private final Builder builder = builder();
-        private final boolean throwOnError;
+        private final Builder builder;
+        private final boolean failOnUnsupportedTypes;
 
-        public InferenceBuilder(boolean throwOnError) {
-            this.throwOnError = throwOnError;
+        public InferenceBuilder(InferenceInstructions ii) {
+            this.builder = builder()
+                    .schema(ii.schema())
+                    .spec(ii.spec())
+                    .allowUnmappedColumns(false);
+            ii.nameMapping().ifPresent(builder::fallback);
+            this.failOnUnsupportedTypes = ii.failOnUnsupportedTypes();
         }
 
-        DefinitionInstructions build(Schema schema) {
+        DefinitionInstructions build() {
             return builder
-                    .schema(schema)
                     .definition(TableDefinition.of(definitions))
-                    .allowUnmappedColumns(false)
                     .build();
         }
 
@@ -180,7 +232,7 @@ public abstract class DefinitionInstructions {
 
         @Override
         public void onError(Collection<? extends NestedField> path, Inference.Exception e) {
-            if (throwOnError) {
+            if (failOnUnsupportedTypes) {
                 throw new RuntimeException(e);
             }
         }

@@ -131,8 +131,4 @@ public abstract class IcebergReadInstructions {
                     "must match, found " + snapshotId().getAsLong() + " and " + snapshot().get().snapshotId());
         }
     }
-
-    final DefinitionInstructions instructionsOrInfer(Schema schema) {
-        return definitionInstructions().orElseGet(() -> DefinitionInstructions.infer(schema));
-    }
 }

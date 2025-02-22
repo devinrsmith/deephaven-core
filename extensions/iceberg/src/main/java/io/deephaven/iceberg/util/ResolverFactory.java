@@ -63,7 +63,7 @@ final class ResolverFactory implements ParquetColumnResolver.Factory {
             // Note: intentionally delaying the reading of the Parquet schema as late as possible.
             final MessageType parquetSchema = key.getSchema();
             try {
-                return Optional.of(resolve(parquetSchema, readersPath, instructions.fallback().orElse(null)));
+                return Optional.of(resolve(parquetSchema, readersPath, instructions.nameMapping().orElse(null)));
             } catch (MappingException e) {
                 // TODO: we don't have enough info to know whether this is expected or not. log?
                 return Optional.empty();

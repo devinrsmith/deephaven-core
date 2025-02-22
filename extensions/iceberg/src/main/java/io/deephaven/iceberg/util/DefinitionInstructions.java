@@ -42,33 +42,41 @@ public abstract class DefinitionInstructions {
                 .build();
     }
 
-    public static DefinitionInstructions infer(InferenceInstructions instructions) {
+    public static DefinitionInstructions infer(InferenceInstructions instructions) throws Inference.Exception {
         final InferenceBuilder builder = new InferenceBuilder(instructions);
-        Inference.of(instructions.schema(), builder);
+        try {
+            Inference.of(instructions.schema(), builder);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Inference.Exception) {
+                throw (Inference.Exception) e.getCause();
+            }
+            throw e;
+        }
         return builder.build();
     }
 
-
-
-    /**
-     * Infer a table definition instructions based on the {@code schema}.
-     */
-    public static DefinitionInstructions infer(Schema schema) {
-        // TODO: NEED TO HANDLE PARTITIONING
-        final InferenceBuilder builder = new InferenceBuilder(false);
-        Inference.of(schema, builder);
-        return builder.build(schema);
-    }
-
-    public static DefinitionInstructions inferAll(Schema schema) throws Inference.Exception {
-        final InferenceBuilder builder = new InferenceBuilder(true);
-        try {
-            Inference.of(schema, builder);
-        } catch (RuntimeException e) {
-            throw extract(e);
-        }
-        return builder.build(schema);
-    }
+//    /**
+//     * Infer a table definition instructions based on the {@code schema}.
+//     */
+//    public static DefinitionInstructions infer(Schema schema) {
+//        // TODO: NEED TO HANDLE PARTITIONING
+//
+//        //InferenceInstructions
+//
+//        final InferenceBuilder builder = new InferenceBuilder(false);
+//        Inference.of(schema, builder);
+//        return builder.build();
+//    }
+//
+//    public static DefinitionInstructions inferAll(Schema schema) throws Inference.Exception {
+//        final InferenceBuilder builder = new InferenceBuilder(true);
+//        try {
+//            Inference.of(schema, builder);
+//        } catch (RuntimeException e) {
+//            throw extract(e);
+//        }
+//        return builder.build();
+//    }
 
     // public static DefinitionInstructions inferUpdate(DefinitionInstructions existingInstructions, Schema newSchema) {
     // // TODO
@@ -95,8 +103,8 @@ public abstract class DefinitionInstructions {
 
     // todo: should this be here, or somewhere else?
     // todo: this doesn't implement equals
-    public abstract Optional<NameMapping> fallback();
-
+    // MappedFields
+    public abstract Optional<NameMapping> nameMapping();
 
     // We need to store as List so we can get test out the mapping wrt equals
     // todo: verify this is pointing to a schema leaf; arguably, doesn't
@@ -124,7 +132,7 @@ public abstract class DefinitionInstructions {
             return putColumnInstructions(columnName, ColumnInstructions.of(fieldPath));
         }
 
-        Builder fallback(NameMapping fallback);
+        Builder nameMapping(NameMapping nameMapping);
 
         Builder allowUnmappedColumns(boolean allowUnmappedColumns);
 
@@ -195,17 +203,18 @@ public abstract class DefinitionInstructions {
     }
 
     private static class InferenceBuilder implements Inference.Consumer {
-        private final Set<String> usedNames = new HashSet<>();
         private final List<ColumnDefinition<?>> definitions = new ArrayList<>();
+        private final InferenceInstructions.Namer namer;
         private final Builder builder;
         private final boolean failOnUnsupportedTypes;
 
         public InferenceBuilder(InferenceInstructions ii) {
+            this.namer = ii.namerFactory().create();
             this.builder = builder()
                     .schema(ii.schema())
                     .spec(ii.spec())
+                    .nameMapping(ii.nameMapping())
                     .allowUnmappedColumns(false);
-            ii.nameMapping().ifPresent(builder::fallback);
             this.failOnUnsupportedTypes = ii.failOnUnsupportedTypes();
         }
 
@@ -222,17 +231,16 @@ public abstract class DefinitionInstructions {
                         String.format("Inference is producing an invalid mapping path=%s, type=%s",
                                 SchemaHelper.toNameString(path), type));
             }
-            final String joinedNames = path.stream().map(NestedField::name).collect(Collectors.joining("_"));
-            final String columnName = NameValidator.legalizeColumnName(joinedNames, usedNames);
+            final String columnName = namer.of(path, type);
             final int[] idPath = path.stream().mapToInt(NestedField::fieldId).toArray();
             builder.putColumnInstructions(columnName, ColumnInstructions.of(FieldPath.of(idPath)));
             definitions.add(ColumnDefinition.of(columnName, type));
-            usedNames.add(columnName);
         }
 
         @Override
         public void onError(Collection<? extends NestedField> path, Inference.Exception e) {
             if (failOnUnsupportedTypes) {
+                // todo: more specific exception type
                 throw new RuntimeException(e);
             }
         }

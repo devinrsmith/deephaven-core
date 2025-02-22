@@ -97,11 +97,11 @@ public class SchemaEvolution1 {
     @Test
     void inference() throws Inference.Exception {
         // This is a meta test, making sure test setup is correct
-        assertThat(DefinitionInstructions.inferAll(schema_0()).definition()).isEqualTo(IDEF_0);
-        assertThat(DefinitionInstructions.inferAll(schema_1()).definition()).isEqualTo(IDEF_1);
-        assertThat(DefinitionInstructions.inferAll(schema_2()).definition()).isEqualTo(IDEF_2);
-        assertThat(DefinitionInstructions.inferAll(schema_3()).definition()).isEqualTo(IDEF_3);
-        assertThat(DefinitionInstructions.inferAll(schema_4()).definition()).isEqualTo(IDEF_4);
+        assertThat(DefinitionInstructions.infer(Infschema_0()).definition()).isEqualTo(IDEF_0);
+        assertThat(DefinitionInstructions.infer(schema_1()).definition()).isEqualTo(IDEF_1);
+        assertThat(DefinitionInstructions.infer(schema_2()).definition()).isEqualTo(IDEF_2);
+        assertThat(DefinitionInstructions.infer(schema_3()).definition()).isEqualTo(IDEF_3);
+        assertThat(DefinitionInstructions.infer(schema_4()).definition()).isEqualTo(IDEF_4);
     }
 
     @Test

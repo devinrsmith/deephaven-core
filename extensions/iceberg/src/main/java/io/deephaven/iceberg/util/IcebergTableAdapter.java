@@ -18,6 +18,7 @@ import io.deephaven.engine.table.impl.sources.InMemoryColumnSource;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedTableComponentFactoryImpl;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
+import io.deephaven.iceberg.internal.Inference;
 import io.deephaven.iceberg.internal.NameMappingUtil;
 import io.deephaven.iceberg.internal.SpecAndSchema2;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
@@ -279,32 +280,29 @@ public class IcebergTableAdapter {
      * read instructions with the requested snapshot, or the latest snapshot if none is requested.
      */
     private SpecAndSchema2 getSpecAndSchema(@NotNull final IcebergReadInstructions readInstructions) {
+        // TODO: this is a change in behavior, unless w/ definitionInstructions, we will infer based on the latest schema
         final Snapshot snapshot;
-        final Schema implicitSchema;
-        final PartitionSpec partitionSpec;
-        final NameMapping nameMapping;
-        final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
-        if (snapshotFromInstructions == null) {
-            synchronized (this) {
-                // Refresh only once and record the current schema and partition spec.
-                refresh();
+        {
+            final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
+            if (snapshotFromInstructions == null) {
+                // todo: not sure why we were sync and refreshing before?
                 snapshot = table.currentSnapshot();
-                implicitSchema = table.schema();
-                partitionSpec = table.spec();
-                nameMapping = NameMappingUtil.readNameMappingDefault(table).orElse(null);
+            } else {
+                // Use the schema from the snapshot
+                snapshot = snapshotFromInstructions;
             }
-        } else {
-            // Use the schema from the snapshot
-            snapshot = snapshotFromInstructions;
-            implicitSchema = schema(snapshot.schemaId()).orElseThrow(() -> new IllegalArgumentException(
-                    "Schema with id " + snapshot.schemaId() + " not found for table " + tableIdentifier + ", snapshot "
-                            + snapshot.snapshotId()));
-            partitionSpec = table.spec();
-            nameMapping = NameMappingUtil.readNameMappingDefault(table).orElse(null);
         }
-        // Note: we are only using the implicit schema from above if the user did not set the instructions.
-        final DefinitionInstructions di = readInstructions.instructionsOrInfer(implicitSchema);
-        return new SpecAndSchema2(di, partitionSpec, snapshot);
+        final DefinitionInstructions di;
+        if (readInstructions.definitionInstructions().isPresent()) {
+            di = readInstructions.definitionInstructions().orElseThrow();
+        } else {
+            try {
+                di = DefinitionInstructions.infer(InferenceInstructions.fromLatest(table));
+            } catch (Inference.Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return new SpecAndSchema2(di, snapshot);
     }
 
     /**
@@ -417,12 +415,13 @@ public class IcebergTableAdapter {
                 .setColumnResolverFactory(ss.di.factory())
                 .setSpecialInstructions(specialInstructions)
                 .build();
-        if (ss.partitionSpec.isUnpartitioned()) {
+        final PartitionSpec spec = ss.di.spec();
+        if (spec.isUnpartitioned()) {
             // Create the flat layout location key finder
             return new IcebergFlatLayout(this, ss.snapshot, parquetInstructions, channelsProvider);
         } else {
             // Create the partitioning column location key finder
-            return new IcebergKeyValuePartitionedLayout(this, ss.snapshot, parquetInstructions, channelsProvider, ss.partitionSpec);
+            return new IcebergKeyValuePartitionedLayout(this, ss.snapshot, parquetInstructions, channelsProvider, spec);
         }
     }
 

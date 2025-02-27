@@ -33,15 +33,16 @@ public abstract class IcebergReadInstructions {
 
     /**
      * The table definition instructions. Callers are encouraged to set this. If not set, one will be
-     * {@link DefinitionInstructions#infer(Schema) inferred}.
+     * {@link Resolver#infer(Schema) inferred}.
      */
-    public abstract Optional<DefinitionInstructions> definitionInstructions();
+    public abstract Optional<Resolver> resolver();
 
     /**
      * The {@link TableDefinition} to use when reading Iceberg data files.
      */
+    @Deprecated
     public final Optional<TableDefinition> tableDefinition() {
-        return definitionInstructions().map(DefinitionInstructions::definition);
+        return resolver().map(Resolver::definition);
     }
 
     /**
@@ -99,7 +100,7 @@ public abstract class IcebergReadInstructions {
 
 
     public interface Builder {
-        Builder definitionInstructions(DefinitionInstructions definitionInstructions);
+        Builder definitionInstructions(Resolver definitionInstructions);
 
         @Deprecated
         default Builder tableDefinition(TableDefinition tableDefinition) {

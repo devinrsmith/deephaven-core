@@ -10,7 +10,7 @@ import io.deephaven.engine.testutil.TstUtils;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.iceberg.internal.Inference;
 import io.deephaven.iceberg.sqlite.DbResource;
-import io.deephaven.iceberg.util.DefinitionInstructions;
+import io.deephaven.iceberg.util.Resolver;
 import io.deephaven.iceberg.util.FieldPath;
 import io.deephaven.iceberg.util.IcebergReadInstructions;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
@@ -97,11 +97,11 @@ public class SchemaEvolution1 {
     @Test
     void inference() throws Inference.Exception {
         // This is a meta test, making sure test setup is correct
-        assertThat(DefinitionInstructions.infer(Infschema_0()).definition()).isEqualTo(IDEF_0);
-        assertThat(DefinitionInstructions.infer(schema_1()).definition()).isEqualTo(IDEF_1);
-        assertThat(DefinitionInstructions.infer(schema_2()).definition()).isEqualTo(IDEF_2);
-        assertThat(DefinitionInstructions.infer(schema_3()).definition()).isEqualTo(IDEF_3);
-        assertThat(DefinitionInstructions.infer(schema_4()).definition()).isEqualTo(IDEF_4);
+        assertThat(Resolver.infer(Infschema_0()).definition()).isEqualTo(IDEF_0);
+        assertThat(Resolver.infer(schema_1()).definition()).isEqualTo(IDEF_1);
+        assertThat(Resolver.infer(schema_2()).definition()).isEqualTo(IDEF_2);
+        assertThat(Resolver.infer(schema_3()).definition()).isEqualTo(IDEF_3);
+        assertThat(Resolver.infer(schema_4()).definition()).isEqualTo(IDEF_4);
     }
 
     @Test
@@ -184,7 +184,7 @@ public class SchemaEvolution1 {
             final Table expected = TableTools.newTable(
                     td,
                     TableTools.intCol(col1, data(60, false)));
-            read(expected, DefinitionInstructions.builder()
+            read(expected, Resolver.builder()
                     .schema(schema_4())
                     .definition(td)
                     .putColumnInstructions(col1, FieldPath.of(fieldId1))
@@ -197,7 +197,7 @@ public class SchemaEvolution1 {
             final Table expected = TableTools.newTable(
                     td,
                     TableTools.intCol(col2, data(60, true)));
-            read(expected, DefinitionInstructions.builder()
+            read(expected, Resolver.builder()
                     .schema(schema_4())
                     .definition(td)
                     .putColumnInstructions(col2, FieldPath.of(fieldId2))
@@ -210,7 +210,7 @@ public class SchemaEvolution1 {
             final Table expected = TableTools.newTable(
                     td,
                     TableTools.intCol(col3, nullData(60)));
-            read(expected, DefinitionInstructions.builder()
+            read(expected, Resolver.builder()
                     .schema(schema_4())
                     .definition(td)
                     .allowUnmappedColumns(true)
@@ -234,7 +234,7 @@ public class SchemaEvolution1 {
                     TableTools.intCol(col2, data(60, true)),
                     TableTools.intCol(col3, nullData(60)),
                     TableTools.intCol(col4, nullData(60)));
-            read(expected, DefinitionInstructions.builder()
+            read(expected, Resolver.builder()
                     .schema(schema_4())
                     .definition(td)
                     .putColumnInstructions(col1, FieldPath.of(fieldId1))
@@ -245,7 +245,7 @@ public class SchemaEvolution1 {
         }
     }
 
-    private void read(Table expected, DefinitionInstructions di) {
+    private void read(Table expected, Resolver di) {
         read(expected, IcebergReadInstructions.builder().definitionInstructions(di).build());
     }
 
@@ -283,14 +283,14 @@ public class SchemaEvolution1 {
 
     private IcebergReadInstructions readLatestAs(int schemaVersion) throws Inference.Exception {
         return IcebergReadInstructions.builder()
-                .definitionInstructions(DefinitionInstructions.inferAll(schema(schemaVersion)))
+                .definitionInstructions(Resolver.inferAll(schema(schemaVersion)))
                 .build();
     }
 
     private IcebergReadInstructions readSnapshotAs(int snapshotIx, int schemaVersion) throws Inference.Exception {
         return IcebergReadInstructions.builder()
                 .snapshot(tableAdapter.listSnapshots().get(snapshotIx))
-                .definitionInstructions(DefinitionInstructions.inferAll(schema(schemaVersion)))
+                .definitionInstructions(Resolver.inferAll(schema(schemaVersion)))
                 .build();
     }
 

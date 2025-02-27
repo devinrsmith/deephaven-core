@@ -4,7 +4,6 @@
 package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.BuildableStyle;
-import io.deephaven.api.util.NameValidator;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.iceberg.internal.Inference;
@@ -18,31 +17,28 @@ import org.immutables.value.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 
 // This is a mapping for _read_
 @Value.Immutable
 @BuildableStyle
-public abstract class DefinitionInstructions {
+public abstract class Resolver {
 
     public static Builder builder() {
         return ImmutableDefinitionInstructions.builder();
     }
 
-    public static DefinitionInstructions empty(Schema schema) {
+    public static Resolver empty(Schema schema) {
         return builder()
                 .schema(schema)
                 .definition(TableDefinition.of(List.of()))
                 .build();
     }
 
-    public static DefinitionInstructions infer(InferenceInstructions instructions) throws Inference.Exception {
+    public static Resolver infer(InferenceInstructions instructions) throws Inference.Exception {
         final InferenceBuilder builder = new InferenceBuilder(instructions);
         try {
             Inference.of(instructions.schema(), builder);
@@ -136,7 +132,7 @@ public abstract class DefinitionInstructions {
 
         Builder allowUnmappedColumns(boolean allowUnmappedColumns);
 
-        DefinitionInstructions build();
+        Resolver build();
     }
 
     @Value.Check
@@ -218,7 +214,7 @@ public abstract class DefinitionInstructions {
             this.failOnUnsupportedTypes = ii.failOnUnsupportedTypes();
         }
 
-        DefinitionInstructions build() {
+        Resolver build() {
             return builder
                     .definition(TableDefinition.of(definitions))
                     .build();

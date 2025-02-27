@@ -3,7 +3,7 @@
 //
 package io.deephaven.iceberg.internal;
 
-import io.deephaven.iceberg.util.DefinitionInstructions;
+import io.deephaven.iceberg.util.Resolver;
 import io.deephaven.iceberg.util.IcebergReadInstructions;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -15,11 +15,11 @@ import java.util.Objects;
  * Used to hold a {@link Schema}, {@link PartitionSpec} and {@link IcebergReadInstructions} together.
  */
 public final class SpecAndSchema2 {
-    public final DefinitionInstructions di;
+    public final Resolver di;
     //public final PartitionSpec partitionSpec;
     public final Snapshot snapshot;
 
-    public SpecAndSchema2(DefinitionInstructions di, /*PartitionSpec partitionSpec,*/ Snapshot snapshot) {
+    public SpecAndSchema2(Resolver di, /*PartitionSpec partitionSpec,*/ Snapshot snapshot) {
         this.di = Objects.requireNonNull(di);
         //this.partitionSpec = Objects.requireNonNull(partitionSpec);
         this.snapshot = snapshot;

@@ -23,9 +23,9 @@ import java.util.Optional;
 
 final class ResolverFactory implements ParquetColumnResolver.Factory {
 
-    private final DefinitionInstructions instructions;
+    private final io.deephaven.iceberg.util.Resolver instructions;
 
-    ResolverFactory(DefinitionInstructions instructions) {
+    ResolverFactory(io.deephaven.iceberg.util.Resolver instructions) {
         this.instructions = Objects.requireNonNull(instructions);
     }
 

@@ -6,8 +6,7 @@ package io.deephaven.iceberg.internal;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.NoSuchColumnException;
-import io.deephaven.iceberg.util.ColumnInstructions;
-import io.deephaven.iceberg.util.DefinitionInstructions;
+import io.deephaven.iceberg.util.Resolver;
 import io.deephaven.iceberg.util.FieldPath;
 import io.deephaven.qst.type.Type;
 import org.apache.iceberg.Schema;
@@ -28,7 +27,7 @@ class DefinitionInstructionsTest {
     @Test
     void noSuchColumn() {
         try {
-            DefinitionInstructions.builder()
+            Resolver.builder()
                     .schema(simpleSchema(IT))
                     .definition(simpleDefinition(Type.intType()))
                     .putColumnInstructions("F1", FieldPath.of(42))
@@ -43,7 +42,7 @@ class DefinitionInstructionsTest {
     @Test
     void noSuchPath() {
         try {
-            DefinitionInstructions.builder()
+            Resolver.builder()
                     .schema(simpleSchema(IT))
                     .definition(simpleDefinition(Type.intType()))
                     .putColumnInstructions("F1", FieldPath.of(42))
@@ -58,18 +57,18 @@ class DefinitionInstructionsTest {
     void unmappedColumn() {
         // All DH columns must be mapped by default.
         try {
-            DefinitionInstructions.builder()
+            Resolver.builder()
                     .schema(simpleSchema(IT))
                     .definition(simpleDefinition(Type.intType()))
                     .putColumnInstructions("F1", FieldPath.of(42))
                     .build();
-            failBecauseExceptionWasNotThrown(DefinitionInstructions.MappingException.class);
-        } catch (DefinitionInstructions.MappingException e) {
+            failBecauseExceptionWasNotThrown(Resolver.MappingException.class);
+        } catch (Resolver.MappingException e) {
             assertThat(e).hasMessageContaining("Column `F2` is not mapped");
         }
         // But, there is support to allow them, which is necessary for cases where a Schema field has been deleted, but
         // we want to keep the column in DH
-        DefinitionInstructions.builder()
+        Resolver.builder()
                 .schema(simpleSchema(IT))
                 .definition(simpleDefinition(Type.intType()))
                 .putColumnInstructions("F1", FieldPath.of(42))
@@ -80,7 +79,7 @@ class DefinitionInstructionsTest {
     @Test
     void duplicateMapping() {
         // It's okay to map the same Iceberg field to different DH columns
-        DefinitionInstructions.builder()
+        Resolver.builder()
                 .schema(simpleSchema(IT))
                 .definition(TableDefinition.of(
                         ColumnDefinition.of("F1", Type.intType()),
@@ -96,7 +95,7 @@ class DefinitionInstructionsTest {
     @Test
     void unmappedIcebergField() {
         // It's okay to not map all the Iceberg fields
-        DefinitionInstructions.builder()
+        Resolver.builder()
                 .schema(new Schema(
                         NestedField.optional(42, "F1", IT),
                         NestedField.required(43, "F2", IT),
@@ -111,14 +110,14 @@ class DefinitionInstructionsTest {
     void invalidMappingType() {
         // TODO: we should try to be thorough in describing what we do and do not support
         try {
-            DefinitionInstructions.builder()
+            Resolver.builder()
                     .schema(simpleSchema(IT))
                     .definition(simpleDefinition(Type.stringType()))
                     .putColumnInstructions("F1", FieldPath.of(42))
                     .putColumnInstructions("F2", FieldPath.of(43))
                     .build();
-            failBecauseExceptionWasNotThrown(DefinitionInstructions.MappingException.class);
-        } catch (DefinitionInstructions.MappingException e) {
+            failBecauseExceptionWasNotThrown(Resolver.MappingException.class);
+        } catch (Resolver.MappingException e) {
             assertThat(e).hasMessageContaining(
                     "Unable to map Iceberg type `int` to Deephaven type `io.deephaven.qst.type.StringType`");
         }

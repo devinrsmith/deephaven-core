@@ -19,7 +19,6 @@ import io.deephaven.engine.table.impl.sources.regioned.RegionedTableComponentFac
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.iceberg.internal.Inference;
-import io.deephaven.iceberg.internal.NameMappingUtil;
 import io.deephaven.iceberg.internal.SpecAndSchema2;
 import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.layout.*;
@@ -37,7 +36,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.jetbrains.annotations.NotNull;
@@ -292,12 +290,12 @@ public class IcebergTableAdapter {
                 snapshot = snapshotFromInstructions;
             }
         }
-        final DefinitionInstructions di;
-        if (readInstructions.definitionInstructions().isPresent()) {
-            di = readInstructions.definitionInstructions().orElseThrow();
+        final Resolver di;
+        if (readInstructions.resolver().isPresent()) {
+            di = readInstructions.resolver().orElseThrow();
         } else {
             try {
-                di = DefinitionInstructions.infer(InferenceInstructions.fromLatest(table));
+                di = Resolver.infer(InferenceInstructions.fromLatest(table));
             } catch (Inference.Exception e) {
                 throw new RuntimeException(e);
             }

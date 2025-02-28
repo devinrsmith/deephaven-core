@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.util;
 
 import io.deephaven.annotations.BuildableStyle;
@@ -23,20 +26,24 @@ public abstract class InferenceInstructions {
         return ImmutableInferenceInstructions.builder();
     }
 
-    public static InferenceInstructions fromSchema(Schema schema) {
-        return builder()
-                .schema(schema)
-                .spec(PartitionSpec.unpartitioned())
-                .build();
+    public static InferenceInstructions of(Schema schema, PartitionSpec partitionSpec) {
+        return builder().schema(schema).spec(partitionSpec).build();
     }
 
-    public static InferenceInstructions fromLatest(Table table) {
-        return builder()
-                .schema(table.schema())
-                .spec(table.spec())
-//                .nameMapping(NameMappingUtil.readNameMappingDefault(table).orElse(NameMapping.empty()))
-                .build();
-    }
+    // public static InferenceInstructions fromSchema(Schema schema) {
+    // return builder()
+    // .schema(schema)
+    // .spec(PartitionSpec.unpartitioned())
+    // .build();
+    // }
+    //
+    // public static InferenceInstructions fromLatest(Table table) {
+    // return builder()
+    // .schema(table.schema())
+    // .spec(table.spec())
+    //// .nameMapping(NameMappingUtil.readNameMappingDefault(table).orElse(NameMapping.empty()))
+    // .build();
+    // }
 
     /**
      * The schema to use for inference.
@@ -48,13 +55,14 @@ public abstract class InferenceInstructions {
      */
     public abstract PartitionSpec spec();
 
-//    /**
-//     * The name mapping to use as fallback if field-ids are not present in the data file paths. By default, is {@link NameMapping#empty()}.
-//     */
-//    @Value.Default
-//    public NameMapping nameMapping() {
-//        return NameMapping.empty();
-//    }
+    // /**
+    // * The name mapping to use as fallback if field-ids are not present in the data file paths. By default, is {@link
+    // NameMapping#empty()}.
+    // */
+    // @Value.Default
+    // public NameMapping nameMapping() {
+    // return NameMapping.empty();
+    // }
 
     /**
      * The namer factory. Defaults to {@link Namer.Factory#ofDefault()}.
@@ -65,7 +73,8 @@ public abstract class InferenceInstructions {
     }
 
     /**
-     * If inference should fail if any of the Iceberg fields fail to map to Deephaven columns. By default, is {@code false}.
+     * If inference should fail if any of the Iceberg fields fail to map to Deephaven columns. By default, is
+     * {@code false}.
      */
     @Value.Default
     public boolean failOnUnsupportedTypes() {
@@ -110,7 +119,7 @@ public abstract class InferenceInstructions {
 
         Builder spec(PartitionSpec spec);
 
-//        Builder nameMapping(NameMapping nameMapping);
+        // Builder nameMapping(NameMapping nameMapping);
 
         Builder failOnUnsupportedTypes(boolean failOnUnsupportedTypes);
 

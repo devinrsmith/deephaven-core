@@ -16,12 +16,12 @@ import java.util.Objects;
  */
 public final class SpecAndSchema2 {
     public final Resolver di;
-    //public final PartitionSpec partitionSpec;
+    // public final PartitionSpec partitionSpec;
     public final Snapshot snapshot;
 
-    public SpecAndSchema2(Resolver di, /*PartitionSpec partitionSpec,*/ Snapshot snapshot) {
+    public SpecAndSchema2(Resolver di, /* PartitionSpec partitionSpec, */ Snapshot snapshot) {
         this.di = Objects.requireNonNull(di);
-        //this.partitionSpec = Objects.requireNonNull(partitionSpec);
+        // this.partitionSpec = Objects.requireNonNull(partitionSpec);
         this.snapshot = snapshot;
     }
 }

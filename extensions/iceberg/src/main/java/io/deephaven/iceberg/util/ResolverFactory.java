@@ -23,28 +23,29 @@ import java.util.Optional;
 
 final class ResolverFactory implements ParquetColumnResolver.Factory {
 
-    private final io.deephaven.iceberg.util.Resolver instructions;
+    private final Resolver resolver;
 
-    ResolverFactory(io.deephaven.iceberg.util.Resolver instructions) {
-        this.instructions = Objects.requireNonNull(instructions);
+    ResolverFactory(Resolver resolver) {
+        this.resolver = Objects.requireNonNull(resolver);
     }
 
     @Override
     public ParquetColumnResolver of(TableKey tableKey, ParquetTableLocationKey tableLocationKey) {
-        return new Resolver((IcebergTableParquetLocationKey) tableLocationKey);
+        return new ResolverImpl((IcebergTableParquetLocationKey) tableLocationKey);
     }
 
-    private class Resolver implements ParquetColumnResolver {
+    private class ResolverImpl implements ParquetColumnResolver {
 
         private final IcebergTableParquetLocationKey key;
 
-        public Resolver(IcebergTableParquetLocationKey key) {
+        public ResolverImpl(IcebergTableParquetLocationKey key) {
             this.key = Objects.requireNonNull(key);
         }
 
         @Override
         public Optional<List<String>> of(String columnName) {
-            final List<Types.NestedField> readersPath = instructions.resolveViaReadersSchema(columnName).orElse(null);
+            final List<Types.NestedField> readersPath =
+                    resolver.resolveSchemaFieldViaReadersSchema(columnName).orElse(null);
             if (readersPath == null) {
                 // DH did not map this column name
                 return Optional.empty();
@@ -54,16 +55,16 @@ final class ResolverFactory implements ParquetColumnResolver.Factory {
             // check. As it stands now, we need to read the schema and physically check if it's been written out or not.
             // See https://lists.apache.org/thread/98m6d7b08fzxkbxlm78c5tnx5zp93mgc
             // final List<Types.NestedField> writersFields;
-            //try {
-            //    writersFields = instructions.resolveVia(columnName, key.writersSchema()).orElse(null);
-            //} catch (SchemaHelper.PathException e) {
-            //    // Writer did not write this column
-            //    return Optional.empty();
-            //}
+            // try {
+            // writersFields = instructions.resolveVia(columnName, key.writersSchema()).orElse(null);
+            // } catch (SchemaHelper.PathException e) {
+            // // Writer did not write this column
+            // return Optional.empty();
+            // }
             // Note: intentionally delaying the reading of the Parquet schema as late as possible.
             final MessageType parquetSchema = key.getSchema();
             try {
-                return Optional.of(resolve(parquetSchema, readersPath, instructions.nameMapping().orElse(null)));
+                return Optional.of(resolve(parquetSchema, readersPath, resolver.nameMapping().orElse(null)));
             } catch (MappingException e) {
                 // TODO: we don't have enough info to know whether this is expected or not. log?
                 return Optional.empty();
@@ -150,7 +151,8 @@ final class ResolverFactory implements ParquetColumnResolver.Factory {
         for (Type field : type.getFields()) {
             if (fallback.names().contains(field.getName())) {
                 if (found != null) {
-                    throw new Duplicate(String.format("Duplicate field names %s, %s found for field-id %d", found.getName(), field.getName(), fallback.id()));
+                    throw new Duplicate(String.format("Duplicate field names %s, %s found for field-id %d",
+                            found.getName(), field.getName(), fallback.id()));
                 }
                 found = field;
             }

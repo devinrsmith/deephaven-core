@@ -10,11 +10,13 @@ import io.deephaven.engine.testutil.TstUtils;
 import io.deephaven.engine.util.TableTools;
 import io.deephaven.iceberg.internal.Inference;
 import io.deephaven.iceberg.sqlite.DbResource;
+import io.deephaven.iceberg.util.InferenceInstructions;
 import io.deephaven.iceberg.util.Resolver;
 import io.deephaven.iceberg.util.FieldPath;
 import io.deephaven.iceberg.util.IcebergReadInstructions;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
 import io.deephaven.util.QueryConstants;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types.IntegerType;
@@ -97,11 +99,11 @@ public class SchemaEvolution1 {
     @Test
     void inference() throws Inference.Exception {
         // This is a meta test, making sure test setup is correct
-        assertThat(Resolver.infer(Infschema_0()).definition()).isEqualTo(IDEF_0);
-        assertThat(Resolver.infer(schema_1()).definition()).isEqualTo(IDEF_1);
-        assertThat(Resolver.infer(schema_2()).definition()).isEqualTo(IDEF_2);
-        assertThat(Resolver.infer(schema_3()).definition()).isEqualTo(IDEF_3);
-        assertThat(Resolver.infer(schema_4()).definition()).isEqualTo(IDEF_4);
+        assertThat(Resolver.infer(ia(schema_0())).definition()).isEqualTo(IDEF_0);
+        assertThat(Resolver.infer(ia(schema_1())).definition()).isEqualTo(IDEF_1);
+        assertThat(Resolver.infer(ia(schema_2())).definition()).isEqualTo(IDEF_2);
+        assertThat(Resolver.infer(ia(schema_3())).definition()).isEqualTo(IDEF_3);
+        assertThat(Resolver.infer(ia(schema_4())).definition()).isEqualTo(IDEF_4);
     }
 
     @Test
@@ -214,7 +216,7 @@ public class SchemaEvolution1 {
                     .schema(schema_4())
                     .definition(td)
                     .allowUnmappedColumns(true)
-//                    .putColumnInstructions(col3, FieldPath.of(fieldId3))
+                    // .putColumnInstructions(col3, FieldPath.of(fieldId3))
                     .build());
         }
         // superset
@@ -246,7 +248,7 @@ public class SchemaEvolution1 {
     }
 
     private void read(Table expected, Resolver di) {
-        read(expected, IcebergReadInstructions.builder().definitionInstructions(di).build());
+        read(expected, IcebergReadInstructions.builder().resolver(di).build());
     }
 
     private void read(Table expected, IcebergReadInstructions instructions) {
@@ -283,14 +285,14 @@ public class SchemaEvolution1 {
 
     private IcebergReadInstructions readLatestAs(int schemaVersion) throws Inference.Exception {
         return IcebergReadInstructions.builder()
-                .definitionInstructions(Resolver.inferAll(schema(schemaVersion)))
+                .resolver(Resolver.infer(ia(schema(schemaVersion))))
                 .build();
     }
 
     private IcebergReadInstructions readSnapshotAs(int snapshotIx, int schemaVersion) throws Inference.Exception {
         return IcebergReadInstructions.builder()
                 .snapshot(tableAdapter.listSnapshots().get(snapshotIx))
-                .definitionInstructions(Resolver.inferAll(schema(schemaVersion)))
+                .resolver(Resolver.infer(ia(schema(schemaVersion))))
                 .build();
     }
 
@@ -340,5 +342,22 @@ public class SchemaEvolution1 {
                 NestedField.of(fieldId1, true, "Field1_D", IntegerType.get()),
                 NestedField.of(fieldId2, true, "Field2_D", IntegerType.get()),
                 NestedField.of(fieldId3, true, "Field3_D", IntegerType.get()));
+    }
+
+    static InferenceInstructions i(Schema schema) {
+        return InferenceInstructions.builder()
+                .schema(schema)
+                .spec(PartitionSpec.unpartitioned())
+                // .nameMapping(NameMapping.empty())
+                .build();
+    }
+
+    static InferenceInstructions ia(Schema schema) {
+        return InferenceInstructions.builder()
+                .schema(schema)
+                .spec(PartitionSpec.unpartitioned())
+                // .nameMapping(NameMapping.empty())
+                .failOnUnsupportedTypes(true)
+                .build();
     }
 }

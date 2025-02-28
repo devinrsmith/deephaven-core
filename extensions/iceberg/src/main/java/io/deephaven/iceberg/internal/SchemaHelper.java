@@ -33,7 +33,7 @@ public final class SchemaHelper {
     }
 
     public static String toNameString(Collection<? extends NestedField> context) {
-        return context.stream().map(NestedField::name).collect(Collectors.joining("', '", "['", "']"));
+        return context.stream().map(NestedField::name).collect(Collectors.joining(", ", "[", "]"));
     }
 
     private static List<NestedField> path(final Type.NestedType type, final int[] idPath) throws PathException {

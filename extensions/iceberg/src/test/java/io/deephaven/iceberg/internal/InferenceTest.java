@@ -41,9 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
- * All of these tests run through {@link Resolver#infer(i(schema))} and
- * {@link Resolver#infer(ia(schema))}; this is an easier setup than creating or mocking our own consumer
- * via {@link Inference#of(Schema, Inference.Consumer)}.
+ * All of these tests run through {@link Resolver#infer(i(schema))} and {@link Resolver#infer(ia(schema))}; this is an
+ * easier setup than creating or mocking our own consumer via {@link Inference#of(Schema, Inference.Consumer)}.
  */
 class InferenceTest {
 
@@ -53,7 +52,7 @@ class InferenceTest {
         return InferenceInstructions.builder()
                 .schema(schema)
                 .spec(PartitionSpec.unpartitioned())
-                .nameMapping(NameMapping.empty())                
+                // .nameMapping(NameMapping.empty())
                 .build();
     }
 
@@ -61,11 +60,11 @@ class InferenceTest {
         return InferenceInstructions.builder()
                 .schema(schema)
                 .spec(PartitionSpec.unpartitioned())
-                .nameMapping(NameMapping.empty())
+                // .nameMapping(NameMapping.empty())
                 .failOnUnsupportedTypes(true)
                 .build();
     }
-    
+
     @Test
     void BooleanType() throws Inference.Exception {
         final Schema schema = simpleSchema(BooleanType.get());
@@ -217,6 +216,7 @@ class InferenceTest {
                         NestedField.required(5, "F2", IT))));
         final Resolver expected = Resolver.builder()
                 .schema(schema)
+                .spec(PartitionSpec.unpartitioned())
                 .definition(TableDefinition.of(
                         ColumnDefinition.ofInt("S1_F1"),
                         ColumnDefinition.ofInt("S1_F2"),
@@ -239,6 +239,7 @@ class InferenceTest {
                         NestedField.required(4, "F2", IT))))));
         final Resolver expected = Resolver.builder()
                 .schema(schema)
+                .spec(PartitionSpec.unpartitioned())
                 .definition(TableDefinition.of(
                         ColumnDefinition.ofInt("S1_S2_F1"),
                         ColumnDefinition.ofInt("S1_S2_F2")))
@@ -296,6 +297,7 @@ class InferenceTest {
     private static Resolver simpleMapping(Schema schema, Type<?> type) {
         return Resolver.builder()
                 .schema(schema)
+                .spec(PartitionSpec.unpartitioned())
                 .definition(simpleDefinition(type))
                 .putColumnInstructions("F1", FieldPath.of(42))
                 .putColumnInstructions("F2", FieldPath.of(43))

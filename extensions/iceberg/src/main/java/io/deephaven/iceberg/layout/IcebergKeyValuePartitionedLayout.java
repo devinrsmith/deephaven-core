@@ -8,6 +8,7 @@ import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.locations.impl.TableLocationKeyFinder;
 import io.deephaven.iceberg.location.IcebergTableLocationKey;
 import io.deephaven.iceberg.util.IcebergTableAdapter;
+import io.deephaven.iceberg.util.Resolver;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.util.channel.SeekableChannelsProvider;
 import io.deephaven.util.type.TypeUtils;
@@ -65,19 +66,23 @@ public final class IcebergKeyValuePartitionedLayout extends IcebergBaseLayout {
                 continue;
             }
 
+            // Resolver resolver;
+
+            // resolver.columnInstructions()
+
             // TODO: use field ids
 
             throw new RuntimeException("todo");
 
-//            final String icebergColName = partitionField.name();
-//            final String dhColName = instructions.columnRenames().getOrDefault(icebergColName, icebergColName);
-//            final ColumnDefinition<?> columnDef = tableDef.getColumn(dhColName);
-//            if (columnDef == null) {
-//                // Table definition provided by the user doesn't have this column, so skip.
-//                continue;
-//            }
-//            identityPartitioningColumns.add(new IdentityPartitioningColData(dhColName,
-//                    TypeUtils.getBoxedType(columnDef.getDataType()), fieldId));
+            // final String icebergColName = partitionField.name();
+            // final String dhColName = instructions.columnRenames().getOrDefault(icebergColName, icebergColName);
+            // final ColumnDefinition<?> columnDef = tableDef.getColumn(dhColName);
+            // if (columnDef == null) {
+            // // Table definition provided by the user doesn't have this column, so skip.
+            // continue;
+            // }
+            // identityPartitioningColumns.add(new IdentityPartitioningColData(dhColName,
+            // TypeUtils.getBoxedType(columnDef.getDataType()), fieldId));
 
         }
     }

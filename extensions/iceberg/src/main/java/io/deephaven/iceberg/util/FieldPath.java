@@ -6,10 +6,13 @@ package io.deephaven.iceberg.util;
 import io.deephaven.annotations.SimpleStyle;
 import io.deephaven.iceberg.internal.SchemaHelper;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types.NestedField;
 import org.immutables.value.Value;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -43,6 +46,37 @@ public abstract class FieldPath {
         return of(fieldIdPath);
     }
 
+    public static Optional<FieldPath> find(Schema schema, int fieldId) {
+        return find(new ArrayList<>(), schema.asStruct(), fieldId).map(FieldPath::fp);
+    }
+
+    private static FieldPath fp(List<NestedField> x) {
+        return of(x.stream().mapToInt(NestedField::fieldId).toArray());
+    }
+
+    private static Optional<List<NestedField>> find(List<NestedField> context, Type.NestedType nestedType,
+            int fieldId) {
+        final NestedField field = nestedType.field(fieldId);
+        if (field != null) {
+            context.add(field);
+            return Optional.of(context);
+        }
+        for (NestedField nestedField : nestedType.fields()) {
+            final Type fieldType = nestedField.type();
+            if (!fieldType.isNestedType()) {
+                continue;
+            }
+            // push
+            context.add(nestedField);
+            final Optional<List<NestedField>> found = find(context, fieldType.asNestedType(), fieldId);
+            if (found.isPresent()) {
+                return found;
+            }
+            // pop
+            context.remove(context.size() - 1);
+        }
+        return Optional.empty();
+    }
 
     /**
      * Creates a field path that resolves fields via {@link NestedField#name()}. This method ensures that the field name
@@ -53,12 +87,7 @@ public abstract class FieldPath {
      * @return the field path
      */
     public static FieldPath of(Schema schema, String... fieldNamePath) throws SchemaHelper.PathException {
-        // todo
-        final int[] idPath = SchemaHelper.fieldPath(schema, fieldNamePath)
-                .stream()
-                .mapToInt(NestedField::fieldId)
-                .toArray();
-        return of(idPath);
+        return fp(SchemaHelper.fieldPath(schema, fieldNamePath));
     }
 
     @Value.Parameter

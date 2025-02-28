@@ -100,7 +100,7 @@ public abstract class IcebergReadInstructions {
 
 
     public interface Builder {
-        Builder definitionInstructions(Resolver definitionInstructions);
+        Builder resolver(Resolver resolver);
 
         @Deprecated
         default Builder tableDefinition(TableDefinition tableDefinition) {

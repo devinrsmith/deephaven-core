@@ -126,13 +126,14 @@ public abstract class IcebergBaseLayout implements TableLocationKeyFinder<Iceber
         this.uriScheme = locationUri(tableAdapter.icebergTable()).getScheme();
         // Add the data instructions if provided as part of the IcebergReadInstructions, or else attempt to create
         // data instructions from the properties collection and URI scheme.
-//        final Object specialInstructions = instructions.dataInstructions()
-//                .orElseGet(() -> dataInstructionsProvider.load(uriScheme));
+        // final Object specialInstructions = instructions.dataInstructions()
+        // .orElseGet(() -> dataInstructionsProvider.load(uriScheme));
         this.parquetInstructions = Objects.requireNonNull(pi);
         this.channelsProvider = Objects.requireNonNull(channelsProvider);
     }
 
-    abstract IcebergTableLocationKey keyFromDataFile(ManifestFile manifestFile, PartitionSpec spec, DataFile dataFile, URI fileUri);
+    abstract IcebergTableLocationKey keyFromDataFile(ManifestFile manifestFile, PartitionSpec spec, DataFile dataFile,
+            URI fileUri);
 
     private static String path(String path, FileIO io) {
         return io instanceof RelativeFileIO ? ((RelativeFileIO) io).absoluteLocation(path) : path;

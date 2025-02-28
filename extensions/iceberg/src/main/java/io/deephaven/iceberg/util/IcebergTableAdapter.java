@@ -278,7 +278,8 @@ public class IcebergTableAdapter {
      * read instructions with the requested snapshot, or the latest snapshot if none is requested.
      */
     private SpecAndSchema2 getSpecAndSchema(@NotNull final IcebergReadInstructions readInstructions) {
-        // TODO: this is a change in behavior, unless w/ definitionInstructions, we will infer based on the latest schema
+        // TODO: this is a change in behavior, unless w/ definitionInstructions, we will infer based on the latest
+        // schema
         final Snapshot snapshot;
         {
             final Snapshot snapshotFromInstructions = getSnapshot(readInstructions);
@@ -295,7 +296,8 @@ public class IcebergTableAdapter {
             di = readInstructions.resolver().orElseThrow();
         } else {
             try {
-                di = Resolver.infer(InferenceInstructions.fromLatest(table));
+                // note: using the latest schema, even if specific snapshot is set
+                di = Resolver.infer(InferenceInstructions.of(table.schema(), table.spec()));
             } catch (Inference.Exception e) {
                 throw new RuntimeException(e);
             }
@@ -407,7 +409,8 @@ public class IcebergTableAdapter {
         final String uriScheme = locationUri(table).getScheme();
         final Object specialInstructions = ri.dataInstructions()
                 .orElseGet(() -> dataInstructionsProviderLoader.load(uriScheme));
-        final SeekableChannelsProvider channelsProvider = SeekableChannelsProviderLoader.getInstance().load(uriScheme, specialInstructions);
+        final SeekableChannelsProvider channelsProvider =
+                SeekableChannelsProviderLoader.getInstance().load(uriScheme, specialInstructions);
         final ParquetInstructions parquetInstructions = ParquetInstructions.builder()
                 .setTableDefinition(ss.di.definition())
                 .setColumnResolverFactory(ss.di.factory())

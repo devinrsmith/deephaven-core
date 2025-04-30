@@ -14,6 +14,7 @@ import io.deephaven.iceberg.internal.DataInstructionsProviderLoader;
 import io.deephaven.iceberg.internal.DataInstructionsProviderPlugin;
 import io.deephaven.qst.type.Type;
 import io.deephaven.util.annotations.VisibleForTesting;
+import io.deephaven.util.channel.SeekableChannelsProvider;
 import org.apache.iceberg.BaseMetadataTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -288,13 +289,18 @@ public class IcebergCatalogAdapter {
             throw new RuntimeException(e);
         }
         final NameMapping nameMapping = ((NameMappingProviderImpl) options.nameMapping()).create(table);
+        // TODO: special instructions in load?
+        final Object specialInstructions = null;
+        final SeekableChannelsProvider provider = FileIOAdapter.fromServiceLoader(table.io(), specialInstructions);
         return new IcebergTableAdapter(
                 catalog,
                 options.id(),
                 table,
                 dataInstructionsProvider,
                 resolver,
-                nameMapping);
+                nameMapping,
+                provider,
+                specialInstructions);
     }
 
     /**
@@ -346,8 +352,11 @@ public class IcebergCatalogAdapter {
         final org.apache.iceberg.Table table =
                 createTable(tableIdentifier, internalResolver.schema(), internalResolver.specOrUnpartitioned());
         final Resolver resolver = Resolver.refreshIds(internalResolver, table.schema(), table.spec());
+        // TODO: special instructions in load?
+        final Object specialInstructions = null;
+        final SeekableChannelsProvider provider = FileIOAdapter.fromServiceLoader(table.io(), specialInstructions);
         return new IcebergTableAdapter(catalog, tableIdentifier, table, dataInstructionsProvider, resolver,
-                NameMapping.empty());
+                NameMapping.empty(), provider, specialInstructions);
     }
 
     private org.apache.iceberg.Table createTable(

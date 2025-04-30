@@ -80,6 +80,13 @@ class S3SeekableChannelProvider implements SeekableChannelsProvider {
         this.fileSizeCacheRef = new SoftReference<>(new KeyedObjectHashMap<>(FileSizeInfo.URI_MATCH_KEY));
     }
 
+    S3SeekableChannelProvider(S3AsyncClient s3AsyncClient, S3Instructions s3Instructions) {
+        this.s3AsyncClient = Objects.requireNonNull(s3AsyncClient);
+        this.s3Instructions = Objects.requireNonNull(s3Instructions);
+        this.sharedReadCache = new S3ReadRequestCache(s3Instructions.fragmentSize());
+        this.fileSizeCacheRef = new SoftReference<>(new KeyedObjectHashMap<>(FileSizeInfo.URI_MATCH_KEY));
+    }
+
     @Override
     public boolean exists(@NotNull final URI uri) {
         if (getCachedSize(uri) != UNKNOWN_SIZE) {

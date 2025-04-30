@@ -71,6 +71,8 @@ public final class IcebergTableAdapter {
     private final URI locationUri;
     private final Resolver resolver;
     private final NameMapping nameMapping;
+    private final SeekableChannelsProvider channelsProvider;
+    private final Object specialInstructions;
 
     public IcebergTableAdapter(
             final Catalog catalog,
@@ -78,7 +80,9 @@ public final class IcebergTableAdapter {
             final org.apache.iceberg.Table table,
             final DataInstructionsProviderLoader dataInstructionsProviderLoader,
             final Resolver resolver,
-            final NameMapping nameMapping) {
+            final NameMapping nameMapping,
+            final SeekableChannelsProvider channelsProvider,
+            final Object specialInstructions) {
         this.catalog = Objects.requireNonNull(catalog);
         this.table = Objects.requireNonNull(table);
         this.tableIdentifier = Objects.requireNonNull(tableIdentifier);
@@ -86,6 +90,8 @@ public final class IcebergTableAdapter {
         this.locationUri = IcebergUtils.locationUri(table);
         this.resolver = Objects.requireNonNull(resolver);
         this.nameMapping = Objects.requireNonNull(nameMapping);
+        this.channelsProvider = Objects.requireNonNull(channelsProvider);
+        this.specialInstructions = specialInstructions;
     }
 
     /**
@@ -436,7 +442,7 @@ public final class IcebergTableAdapter {
         final Snapshot snapshot = snapshot(readInstructions);
         final IcebergBaseLayout keyFinder = keyFinder(
                 snapshot,
-                readInstructions.dataInstructions().orElse(null),
+                // readInstructions.dataInstructions().orElse(null),
                 readInstructions.ignoreResolvingErrors());
         if (readInstructions.updateMode().updateType() == IcebergUpdateMode.IcebergUpdateType.STATIC) {
             return new IcebergStaticTableLocationProvider<>(
@@ -473,17 +479,17 @@ public final class IcebergTableAdapter {
 
     private @NotNull IcebergBaseLayout keyFinder(
             @Nullable final Snapshot snapshot,
-            @Nullable final Object dataInstructions,
+            // @Nullable final Object dataInstructions,
             final boolean ignoreResolvingErrors) {
-        final Object specialInstructions;
-        final SeekableChannelsProvider channelsProvider;
-        {
-            final String uriScheme = locationUri.getScheme();
-            specialInstructions = dataInstructions == null
-                    ? dataInstructionsProviderLoader.load(uriScheme)
-                    : dataInstructions;
-            channelsProvider = seekableChannelsProvider(uriScheme, specialInstructions);
-        }
+        // final Object specialInstructions;
+        // final SeekableChannelsProvider channelsProvider;
+        // {
+        // final String uriScheme = locationUri.getScheme();
+        // specialInstructions = dataInstructions == null
+        // ? dataInstructionsProviderLoader.load(uriScheme)
+        // : dataInstructions;
+        // channelsProvider = seekableChannelsProvider(uriScheme, specialInstructions);
+        // }
         final ParquetInstructions parquetInstructions = ParquetInstructions.builder()
                 .setTableDefinition(resolver.definition())
                 .setColumnResolverFactory(new ResolverFactory(resolver, nameMapping, ignoreResolvingErrors))

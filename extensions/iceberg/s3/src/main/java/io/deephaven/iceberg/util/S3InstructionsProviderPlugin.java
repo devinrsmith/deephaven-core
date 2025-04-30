@@ -4,9 +4,7 @@
 package io.deephaven.iceberg.util;
 
 import com.google.auto.service.AutoService;
-import io.deephaven.extensions.s3.Credentials;
 import io.deephaven.extensions.s3.DeephavenAwsClientFactory;
-import io.deephaven.extensions.s3.S3Constants;
 import io.deephaven.extensions.s3.S3Instructions;
 import io.deephaven.iceberg.internal.DataInstructionsProviderPlugin;
 import org.apache.iceberg.aws.AwsClientProperties;
@@ -24,6 +22,7 @@ import java.util.Map;
 @AutoService(DataInstructionsProviderPlugin.class)
 @SuppressWarnings("unused")
 public final class S3InstructionsProviderPlugin implements DataInstructionsProviderPlugin {
+
     @Override
     public S3Instructions createInstructions(@NotNull final String uriScheme,
             @NotNull final Map<String, String> properties) {
@@ -31,33 +30,6 @@ public final class S3InstructionsProviderPlugin implements DataInstructionsProvi
         if (s3Instructions != null) {
             return s3Instructions;
         }
-
-        // If the URI scheme is "s3","s3a","s3n" or if the properties contain one of these specific keys, we can
-        // create a useful S3Instructions object.
-        if (S3Constants.S3_URI_SCHEME.equals(uriScheme)
-                || S3Constants.S3A_URI_SCHEME.equals(uriScheme)
-                || S3Constants.S3N_URI_SCHEME.equals(uriScheme)
-                || properties.containsKey(AwsClientProperties.CLIENT_REGION)
-                || properties.containsKey(S3FileIOProperties.ACCESS_KEY_ID)
-                || properties.containsKey(S3FileIOProperties.SECRET_ACCESS_KEY)
-                || properties.containsKey(S3FileIOProperties.ENDPOINT)) {
-
-            final S3Instructions.Builder builder = S3Instructions.builder();
-            if (properties.containsKey(AwsClientProperties.CLIENT_REGION)) {
-                builder.regionName(properties.get(AwsClientProperties.CLIENT_REGION));
-            }
-            if (properties.containsKey(S3FileIOProperties.ENDPOINT)) {
-                builder.endpointOverride(properties.get(S3FileIOProperties.ENDPOINT));
-            }
-            if (properties.containsKey(S3FileIOProperties.ACCESS_KEY_ID)
-                    && properties.containsKey(S3FileIOProperties.SECRET_ACCESS_KEY)) {
-                builder.credentials(
-                        Credentials.basic(properties.get(S3FileIOProperties.ACCESS_KEY_ID),
-                                properties.get(S3FileIOProperties.SECRET_ACCESS_KEY)));
-            }
-            return builder.build();
-        }
-
         // We have no useful properties for creating an S3Instructions object.
         return null;
     }

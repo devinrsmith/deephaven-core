@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.SkipValue;
@@ -16,8 +15,8 @@ import java.util.stream.Stream;
 
 final class SkipMixin extends Mixin<SkipValue> implements ValueProcessor {
 
-    public SkipMixin(SkipValue options, JsonFactory factory) {
-        super(factory, options);
+    public SkipMixin(SkipValue options) {
+        super(options);
     }
 
     @Override

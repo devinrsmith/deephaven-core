@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ObjectEntriesValue;
@@ -17,10 +16,10 @@ final class ObjectEntriesMixin extends Mixin<ObjectEntriesValue> {
     private final Mixin<?> key;
     private final Mixin<?> value;
 
-    public ObjectEntriesMixin(ObjectEntriesValue options, JsonFactory factory) {
-        super(factory, options);
-        key = Mixin.of(options.key(), factory);
-        value = Mixin.of(options.value(), factory);
+    public ObjectEntriesMixin(ObjectEntriesValue options) {
+        super(options);
+        key = Mixin.of(options.key());
+        value = Mixin.of(options.value());
     }
 
     @Override

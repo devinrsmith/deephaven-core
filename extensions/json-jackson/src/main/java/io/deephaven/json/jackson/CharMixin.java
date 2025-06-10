@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.MathUtil;
 import io.deephaven.chunk.WritableCharChunk;
@@ -19,8 +18,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 final class CharMixin extends Mixin<CharValue> {
-    public CharMixin(CharValue options, JsonFactory factory) {
-        super(factory, options);
+    public CharMixin(CharValue options) {
+        super(options);
     }
 
     @Override

@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.MathUtil;
 import io.deephaven.chunk.WritableChunk;
@@ -19,8 +18,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 final class ShortMixin extends Mixin<ShortValue> {
-    public ShortMixin(ShortValue options, JsonFactory factory) {
-        super(factory, options);
+    public ShortMixin(ShortValue options) {
+        super(options);
     }
 
     @Override

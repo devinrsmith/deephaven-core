@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import io.deephaven.json.AnyValue;
@@ -12,8 +11,8 @@ import io.deephaven.qst.type.Type;
 import java.io.IOException;
 
 final class AnyMixin extends GenericObjectMixin<AnyValue, TreeNode> {
-    public AnyMixin(AnyValue options, JsonFactory factory) {
-        super(factory, options, Type.ofCustom(TreeNode.class));
+    public AnyMixin(AnyValue options) {
+        super(options, Type.ofCustom(TreeNode.class));
     }
 
     @Override

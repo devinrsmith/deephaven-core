@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.json.BigIntegerValue;
 import io.deephaven.qst.type.Type;
@@ -13,8 +12,8 @@ import java.math.BigInteger;
 
 final class BigIntegerMixin extends GenericObjectMixin<BigIntegerValue, BigInteger> {
 
-    public BigIntegerMixin(BigIntegerValue options, JsonFactory factory) {
-        super(factory, options, Type.ofCustom(BigInteger.class));
+    public BigIntegerMixin(BigIntegerValue options) {
+        super(options, Type.ofCustom(BigInteger.class));
     }
 
     @Override

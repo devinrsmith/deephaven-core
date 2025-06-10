@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableObjectChunk;
@@ -19,8 +18,8 @@ import java.util.stream.Stream;
 abstract class GenericObjectMixin<T extends Value, TT> extends Mixin<T> implements ToObject<TT> {
     private final GenericType<TT> type;
 
-    public GenericObjectMixin(JsonFactory factory, T options, GenericType<TT> type) {
-        super(factory, options);
+    public GenericObjectMixin(T options, GenericType<TT> type) {
+        super(options);
         this.type = Objects.requireNonNull(type);
     }
 

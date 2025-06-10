@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableByteChunk;
 import io.deephaven.chunk.WritableChunk;
@@ -22,8 +21,8 @@ final class BoolMixin extends Mixin<BoolValue> {
     private final byte onNullByte;
     private final byte onMissingByte;
 
-    public BoolMixin(BoolValue options, JsonFactory factory) {
-        super(factory, options);
+    public BoolMixin(BoolValue options) {
+        super(options);
         onNull = options.onNull().orElse(null);
         onMissing = options.onMissing().orElse(null);
         onNullByte = BooleanUtils.booleanAsByte(onNull);

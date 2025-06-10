@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.base.MathUtil;
 import io.deephaven.chunk.WritableChunk;
@@ -20,8 +19,8 @@ import java.util.stream.Stream;
 
 final class LongMixin extends Mixin<LongValue> {
 
-    public LongMixin(LongValue options, JsonFactory config) {
-        super(config, options);
+    public LongMixin(LongValue options) {
+        super(options);
     }
 
     @Override

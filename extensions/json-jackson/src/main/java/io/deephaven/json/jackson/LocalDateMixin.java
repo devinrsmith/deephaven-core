@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.json.LocalDateValue;
 import io.deephaven.qst.type.Type;
@@ -14,8 +13,8 @@ import java.time.temporal.TemporalAccessor;
 
 final class LocalDateMixin extends GenericObjectMixin<LocalDateValue, LocalDate> {
 
-    public LocalDateMixin(LocalDateValue options, JsonFactory factory) {
-        super(factory, options, Type.ofCustom(LocalDate.class));
+    public LocalDateMixin(LocalDateValue options) {
+        super(options, Type.ofCustom(LocalDate.class));
     }
 
     @Override

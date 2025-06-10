@@ -30,15 +30,9 @@ import io.deephaven.json.StringValue;
 import io.deephaven.json.TupleValue;
 import io.deephaven.json.TypedObjectValue;
 import io.deephaven.json.Value;
-import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.qst.type.Type;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract class Mixin<T extends Value> implements JacksonProvider {
+abstract class Mixin<T extends Value> {
 
     static final Function<List<String>, String> TO_COLUMN_NAME = Mixin::toColumnName;
 
@@ -57,102 +51,32 @@ abstract class Mixin<T extends Value> implements JacksonProvider {
         return path.isEmpty() ? "Value" : String.join("_", path);
     }
 
-    static Mixin<?> of(Value options, JsonFactory factory) {
-        return options.walk(new MixinImpl(factory));
+    static Mixin<?> of(Value options) {
+        return options.walk(MixinImpl.MIXIN_VISITOR);
     }
 
-    private final JsonFactory factory;
     final T options;
 
-    Mixin(JsonFactory factory, T options) {
-        this.factory = Objects.requireNonNull(factory);
+    Mixin(T options) {
         this.options = Objects.requireNonNull(options);
     }
 
-    @Override
+    public final JacksonProvider provider(final JsonFactory factory) {
+        return new MixinJacksonProvider(this, factory);
+    }
+
+    public abstract int outputSize();
+
     public final List<Type<?>> outputTypes() {
         return outputTypesImpl().collect(Collectors.toList());
     }
 
-    @Override
     public final List<String> names() {
         return names(TO_COLUMN_NAME);
     }
 
-    @Override
     public final List<String> names(Function<List<String>, String> f) {
         return Arrays.asList(NameValidator.legalizeColumnNames(paths().map(f).toArray(String[]::new), true));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public final <X> ObjectProcessor<? super X> processor(Type<X> inputType) {
-        final Class<X> clazz = inputType.clazz();
-        if (String.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) stringProcessor();
-        }
-        if (byte[].class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) bytesProcessor();
-        }
-        if (char[].class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) charsProcessor();
-        }
-        if (File.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) fileProcessor();
-        }
-        if (Path.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) pathProcessor();
-        }
-        if (URL.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) urlProcessor();
-        }
-        if (ByteBuffer.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) byteBufferProcessor();
-        }
-        if (CharBuffer.class.isAssignableFrom(clazz)) {
-            return (ObjectProcessor<? super X>) charBufferProcessor();
-        }
-        throw new IllegalArgumentException("Unable to create JSON processor from type " + inputType);
-    }
-
-    @Override
-    public final ObjectProcessor<String> stringProcessor() {
-        return new StringIn();
-    }
-
-    @Override
-    public final ObjectProcessor<byte[]> bytesProcessor() {
-        return new BytesIn();
-    }
-
-    @Override
-    public final ObjectProcessor<char[]> charsProcessor() {
-        return new CharsIn();
-    }
-
-    @Override
-    public final ObjectProcessor<File> fileProcessor() {
-        return new FileIn();
-    }
-
-    @Override
-    public final ObjectProcessor<Path> pathProcessor() {
-        return new PathIn();
-    }
-
-    @Override
-    public final ObjectProcessor<URL> urlProcessor() {
-        return new URLIn();
-    }
-
-    @Override
-    public final ObjectProcessor<ByteBuffer> byteBufferProcessor() {
-        return new ByteBufferIn();
-    }
-
-    @Override
-    public final ObjectProcessor<CharBuffer> charBufferProcessor() {
-        return new CharBufferIn();
     }
 
     abstract ValueProcessor processor(String context);
@@ -162,31 +86,6 @@ abstract class Mixin<T extends Value> implements JacksonProvider {
     abstract Stream<List<String>> paths();
 
     abstract Stream<Type<?>> outputTypesImpl();
-
-    @Override
-    public final LinesProcessor linesProcessor(final URL url, final int bufferSize) throws IOException {
-        return lp(JacksonSource.of(factory, url), bufferSize);
-    }
-
-    @Override
-    public final LinesProcessor linesProcessor(final File file, final int bufferSize) throws IOException {
-        return lp(JacksonSource.of(factory, file), bufferSize);
-    }
-
-    private LinesProcessor lp(final JsonParser parser, final int bufferSize) throws IOException {
-        try {
-            final ValueProcessor processor = processor("<root>");
-            parser.nextToken();
-            return new LinesProcessor(parser, processor, bufferSize);
-        } catch (RuntimeException | IOException e) {
-            try {
-                parser.close();
-            } catch (RuntimeException | IOException e2) {
-                e.addSuppressed(e2);
-            }
-            throw e;
-        }
-    }
 
     static List<String> prefixWith(String prefix, List<String> path) {
         return Stream.concat(Stream.of(prefix), path.stream()).collect(Collectors.toList());
@@ -211,178 +110,112 @@ abstract class Mixin<T extends Value> implements JacksonProvider {
         return paths.stream().flatMap(Function.identity());
     }
 
-    private abstract class ObjectProcessorMixin<X> extends ObjectProcessorJsonValue<X> {
-        public ObjectProcessorMixin() {
-            super(Mixin.this.processor("<root>"));
-        }
-    }
-
-    private class StringIn extends ObjectProcessorMixin<String> {
-        @Override
-        protected JsonParser createParser(String in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private class BytesIn extends ObjectProcessorMixin<byte[]> {
-        @Override
-        protected JsonParser createParser(byte[] in) throws IOException {
-            return JacksonSource.of(factory, in, 0, in.length);
-        }
-    }
-
-    private class ByteBufferIn extends ObjectProcessorMixin<ByteBuffer> {
-        @Override
-        protected JsonParser createParser(ByteBuffer in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private class CharBufferIn extends ObjectProcessorMixin<CharBuffer> {
-        @Override
-        protected JsonParser createParser(CharBuffer in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private class CharsIn extends ObjectProcessorMixin<char[]> {
-        @Override
-        protected JsonParser createParser(char[] in) throws IOException {
-            return JacksonSource.of(factory, in, 0, in.length);
-        }
-    }
-
-    private class FileIn extends ObjectProcessorMixin<File> {
-        @Override
-        protected JsonParser createParser(File in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private class PathIn extends ObjectProcessorMixin<Path> {
-        @Override
-        protected JsonParser createParser(Path in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private class URLIn extends ObjectProcessorMixin<URL> {
-        @Override
-        protected JsonParser createParser(URL in) throws IOException {
-            return JacksonSource.of(factory, in);
-        }
-    }
-
-    private static class MixinImpl implements Value.Visitor<Mixin<?>> {
-        private final JsonFactory factory;
-
-        public MixinImpl(JsonFactory factory) {
-            this.factory = Objects.requireNonNull(factory);
-        }
+    private enum MixinImpl implements Value.Visitor<Mixin<?>> {
+        MIXIN_VISITOR;
 
         @Override
         public StringMixin visit(StringValue _string) {
-            return new StringMixin(_string, factory);
+            return new StringMixin(_string);
         }
 
         @Override
         public Mixin<?> visit(BoolValue _bool) {
-            return new BoolMixin(_bool, factory);
+            return new BoolMixin(_bool);
         }
 
         @Override
         public Mixin<?> visit(ByteValue _byte) {
-            return new ByteMixin(_byte, factory);
+            return new ByteMixin(_byte);
         }
 
         @Override
         public Mixin<?> visit(CharValue _char) {
-            return new CharMixin(_char, factory);
+            return new CharMixin(_char);
         }
 
         @Override
         public Mixin<?> visit(ShortValue _short) {
-            return new ShortMixin(_short, factory);
+            return new ShortMixin(_short);
         }
 
         @Override
         public IntMixin visit(IntValue _int) {
-            return new IntMixin(_int, factory);
+            return new IntMixin(_int);
         }
 
         @Override
         public LongMixin visit(LongValue _long) {
-            return new LongMixin(_long, factory);
+            return new LongMixin(_long);
         }
 
         @Override
         public FloatMixin visit(FloatValue _float) {
-            return new FloatMixin(_float, factory);
+            return new FloatMixin(_float);
         }
 
         @Override
         public DoubleMixin visit(DoubleValue _double) {
-            return new DoubleMixin(_double, factory);
+            return new DoubleMixin(_double);
         }
 
         @Override
         public ObjectMixin visit(ObjectValue object) {
-            return new ObjectMixin(object, factory);
+            return new ObjectMixin(object);
         }
 
         @Override
         public Mixin<?> visit(ObjectEntriesValue objectKv) {
-            return new ObjectEntriesMixin(objectKv, factory);
+            return new ObjectEntriesMixin(objectKv);
         }
 
         @Override
         public InstantMixin visit(InstantValue instant) {
-            return new InstantMixin(instant, factory);
+            return new InstantMixin(instant);
         }
 
         @Override
         public InstantNumberMixin visit(InstantNumberValue instantNumber) {
-            return new InstantNumberMixin(instantNumber, factory);
+            return new InstantNumberMixin(instantNumber);
         }
 
         @Override
         public BigIntegerMixin visit(BigIntegerValue bigInteger) {
-            return new BigIntegerMixin(bigInteger, factory);
+            return new BigIntegerMixin(bigInteger);
         }
 
         @Override
         public BigDecimalMixin visit(BigDecimalValue bigDecimal) {
-            return new BigDecimalMixin(bigDecimal, factory);
+            return new BigDecimalMixin(bigDecimal);
         }
 
         @Override
         public SkipMixin visit(SkipValue skip) {
-            return new SkipMixin(skip, factory);
+            return new SkipMixin(skip);
         }
 
         @Override
         public TupleMixin visit(TupleValue tuple) {
-            return new TupleMixin(tuple, factory);
+            return new TupleMixin(tuple);
         }
 
         @Override
         public TypedObjectMixin visit(TypedObjectValue typedObject) {
-            return new TypedObjectMixin(typedObject, factory);
+            return new TypedObjectMixin(typedObject);
         }
 
         @Override
         public LocalDateMixin visit(LocalDateValue localDate) {
-            return new LocalDateMixin(localDate, factory);
+            return new LocalDateMixin(localDate);
         }
 
         @Override
         public ArrayMixin visit(ArrayValue array) {
-            return new ArrayMixin(array, factory);
+            return new ArrayMixin(array);
         }
 
         @Override
         public AnyMixin visit(AnyValue any) {
-            return new AnyMixin(any, factory);
+            return new AnyMixin(any);
         }
     }
 

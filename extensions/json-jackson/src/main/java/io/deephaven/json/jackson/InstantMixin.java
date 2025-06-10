@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableLongChunk;
@@ -23,8 +22,8 @@ final class InstantMixin extends Mixin<InstantValue> {
     private final long onNull;
     private final long onMissing;
 
-    public InstantMixin(InstantValue options, JsonFactory factory) {
-        super(factory, options);
+    public InstantMixin(InstantValue options) {
+        super(options);
         onNull = DateTimeUtils.epochNanos(options.onNull().orElse(null));
         onMissing = DateTimeUtils.epochNanos(options.onMissing().orElse(null));
     }

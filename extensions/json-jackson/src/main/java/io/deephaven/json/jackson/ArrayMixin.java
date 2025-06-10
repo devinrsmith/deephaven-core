@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.json.ArrayValue;
@@ -17,9 +16,9 @@ final class ArrayMixin extends Mixin<ArrayValue> {
 
     private final Mixin<?> element;
 
-    public ArrayMixin(ArrayValue options, JsonFactory factory) {
-        super(factory, options);
-        element = Mixin.of(options.element(), factory);
+    public ArrayMixin(ArrayValue options) {
+        super(options);
+        element = Mixin.of(options.element());
     }
 
     @Override

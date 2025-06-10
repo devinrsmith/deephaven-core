@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.chunk.WritableChunk;
@@ -34,8 +33,8 @@ final class TypedObjectMixin extends Mixin<TypedObjectValue> {
     private final int numSharedColumns;
     private final int numSpecificColumns;
 
-    public TypedObjectMixin(TypedObjectValue options, JsonFactory factory) {
-        super(factory, options);
+    public TypedObjectMixin(TypedObjectValue options) {
+        super(options);
         if (!(options.typeField().options() instanceof StringValue)) {
             throw new IllegalArgumentException("Only string-valued type fields are currently supported");
         }
@@ -51,14 +50,14 @@ final class TypedObjectMixin extends Mixin<TypedObjectValue> {
         {
             final LinkedHashMap<ObjectField, Mixin<?>> map = new LinkedHashMap<>(options.sharedFields().size());
             for (ObjectField sharedField : options.sharedFields()) {
-                map.put(sharedField, Mixin.of(sharedField.options(), factory));
+                map.put(sharedField, Mixin.of(sharedField.options()));
             }
             sharedFields = Collections.unmodifiableMap(map);
         }
         {
             final LinkedHashMap<String, ObjectMixin> map = new LinkedHashMap<>(options.objects().size());
             for (Entry<Object, ObjectValue> e : options.objects().entrySet()) {
-                map.put((String) e.getKey(), new ObjectMixin(combinedObject(e.getValue()), factory));
+                map.put((String) e.getKey(), new ObjectMixin(combinedObject(e.getValue())));
             }
             combinedFields = Collections.unmodifiableMap(map);
         }

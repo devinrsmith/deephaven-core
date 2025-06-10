@@ -7,10 +7,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Any;
+import io.deephaven.json.Value;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.util.SafeCloseable;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
@@ -20,7 +20,12 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class LinesProcessor implements Iterator<List<WritableChunk<?>>>, Closeable {
+public final class LinesProcessor implements Iterator<List<WritableChunk<?>>> {
+
+    public static LinesProcessor of(final Value options, final JsonParser parser, final int bufferSize)
+            throws IOException {
+        return new LinesProcessor(parser, Mixin.of(options).processor("<root>"), bufferSize);
+    }
 
     private final JsonParser parser;
     private final ValueProcessor processor;
@@ -59,11 +64,6 @@ public final class LinesProcessor implements Iterator<List<WritableChunk<?>>>, C
         }
     }
 
-    @Override
-    public void close() throws IOException {
-        parser.close();
-    }
-
     private List<WritableChunk<?>> nextImpl() throws IOException {
         final List<WritableChunk<?>> buffer = newChunks();
         processor.setContext(buffer);
@@ -84,20 +84,6 @@ public final class LinesProcessor implements Iterator<List<WritableChunk<?>>>, C
         }
         return buffer;
     }
-
-//    public Stream<List<WritableChunk<?>>> stream() {
-//        final Spliterator<List<WritableChunk<?>>> spliterator = Spliterators.spliteratorUnknownSize(this,
-//                Spliterator.NONNULL | Spliterator.ORDERED);
-//        return StreamSupport.stream(spliterator, false).onClose(this::closeUnchecked);
-//    }
-
-//    private void closeUnchecked() {
-//        try {
-//            close();
-//        } catch (IOException e) {
-//            throw new UncheckedIOException(e);
-//        }
-//    }
 
     private List<WritableChunk<?>> nextUnchecked() {
         try {

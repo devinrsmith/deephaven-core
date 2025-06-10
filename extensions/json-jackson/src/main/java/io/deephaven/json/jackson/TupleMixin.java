@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.json.TupleValue;
@@ -29,11 +28,11 @@ final class TupleMixin extends Mixin<TupleValue> {
     private final Map<String, Mixin<?>> mixins;
     private final int numColumns;
 
-    public TupleMixin(TupleValue options, JsonFactory factory) {
-        super(factory, options);
+    public TupleMixin(TupleValue options) {
+        super(options);
         final LinkedHashMap<String, Mixin<?>> map = new LinkedHashMap<>(options.namedValues().size());
         for (Entry<String, Value> e : options.namedValues().entrySet()) {
-            map.put(e.getKey(), Mixin.of(e.getValue(), factory));
+            map.put(e.getKey(), Mixin.of(e.getValue()));
         }
         mixins = Collections.unmodifiableMap(map);
         numColumns = mixins.values().stream().mapToInt(Mixin::outputSize).sum();

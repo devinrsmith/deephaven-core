@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.json.StringValue;
 import io.deephaven.qst.type.Type;
@@ -12,8 +11,8 @@ import java.io.IOException;
 
 final class StringMixin extends GenericObjectMixin<StringValue, String> {
 
-    public StringMixin(StringValue options, JsonFactory factory) {
-        super(factory, options, Type.stringType());
+    public StringMixin(StringValue options) {
+        super(options, Type.stringType());
     }
 
     @Override

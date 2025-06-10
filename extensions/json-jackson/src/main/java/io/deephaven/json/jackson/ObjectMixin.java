@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import io.deephaven.json.ObjectField;
@@ -31,11 +30,11 @@ final class ObjectMixin extends Mixin<ObjectValue> {
     private final Map<ObjectField, Mixin<?>> mixins;
     private final int numOutputs;
 
-    public ObjectMixin(ObjectValue options, JsonFactory factory) {
-        super(factory, options);
+    public ObjectMixin(ObjectValue options) {
+        super(options);
         final LinkedHashMap<ObjectField, Mixin<?>> map = new LinkedHashMap<>(options.fields().size());
         for (ObjectField field : options.fields()) {
-            map.put(field, Mixin.of(field.options(), factory));
+            map.put(field, Mixin.of(field.options()));
         }
         mixins = Collections.unmodifiableMap(map);
         numOutputs = mixins.values().stream().mapToInt(Mixin::outputSize).sum();

@@ -3,6 +3,7 @@
 //
 package io.deephaven.json.jackson;
 
+import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.ObjectChunk;
 import io.deephaven.chunk.WritableChunk;
@@ -29,9 +30,10 @@ class LinesTest {
                 .putFields("age", IntValue.strict())
                 .build();
 
-        final Mixin<?> mixin = Mixin.of(value, JacksonConfiguration.defaultFactory());
-        try (final LinesProcessor lines =
-                mixin.linesProcessor(resource("/io/deephaven/json/test-newline-objects.json.txt"), 128)) {
+        try (final JsonParser parser = parser("/io/deephaven/json/test-newline-objects.json.txt")) {
+            parser.nextToken();
+
+            final LinesProcessor lines = LinesProcessor.of(value, parser, 128);
             {
                 assertThat(lines).hasNext();
                 final List<WritableChunk<?>> chunks = lines.nextChunks();
@@ -51,9 +53,10 @@ class LinesTest {
                 .putFields("age", IntValue.strict())
                 .build();
 
-        final Mixin<?> mixin = Mixin.of(value, JacksonConfiguration.defaultFactory());
-        try (final LinesProcessor lines =
-                mixin.linesProcessor(resource("/io/deephaven/json/test-newline-objects.json.txt"), 1)) {
+        try (final JsonParser parser = parser("/io/deephaven/json/test-newline-objects.json.txt")) {
+            parser.nextToken();
+
+            final LinesProcessor lines = LinesProcessor.of(value, parser, 1);
             {
                 assertThat(lines).hasNext();
                 final List<WritableChunk<?>> chunks = lines.nextChunks();
@@ -72,7 +75,11 @@ class LinesTest {
         }
     }
 
-    private static URL resource(final String name) {
-        return LinesTest.class.getResource(name);
+    private static URL resource(final String resourceName) {
+        return LinesTest.class.getResource(resourceName);
+    }
+
+    private static JsonParser parser(final String resourceName) throws IOException {
+        return JacksonSource.of(JacksonConfiguration.defaultFactory(), resource(resourceName));
     }
 }

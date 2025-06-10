@@ -21,8 +21,8 @@ import io.deephaven.json.IntValue;
 import io.deephaven.json.JsonValueTypes;
 import io.deephaven.json.LocalDateValue;
 import io.deephaven.json.LongValue;
-import io.deephaven.json.ObjectField;
 import io.deephaven.json.ObjectEntriesValue;
+import io.deephaven.json.ObjectField;
 import io.deephaven.json.ObjectValue;
 import io.deephaven.json.ShortValue;
 import io.deephaven.json.SkipValue;
@@ -162,6 +162,31 @@ abstract class Mixin<T extends Value> implements JacksonProvider {
     abstract Stream<List<String>> paths();
 
     abstract Stream<Type<?>> outputTypesImpl();
+
+    @Override
+    public final LinesProcessor linesProcessor(final URL url, final int bufferSize) throws IOException {
+        return lp(JacksonSource.of(factory, url), bufferSize);
+    }
+
+    @Override
+    public final LinesProcessor linesProcessor(final File file, final int bufferSize) throws IOException {
+        return lp(JacksonSource.of(factory, file), bufferSize);
+    }
+
+    private LinesProcessor lp(final JsonParser parser, final int bufferSize) throws IOException {
+        try {
+            final ValueProcessor processor = processor("<root>");
+            parser.nextToken();
+            return new LinesProcessor(parser, processor, bufferSize);
+        } catch (RuntimeException | IOException e) {
+            try {
+                parser.close();
+            } catch (RuntimeException | IOException e2) {
+                e.addSuppressed(e2);
+            }
+            throw e;
+        }
+    }
 
     static List<String> prefixWith(String prefix, List<String> path) {
         return Stream.concat(Stream.of(prefix), path.stream()).collect(Collectors.toList());

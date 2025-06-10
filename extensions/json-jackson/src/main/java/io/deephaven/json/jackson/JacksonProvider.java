@@ -24,6 +24,7 @@ import io.deephaven.qst.type.Type;
 import io.deephaven.util.annotations.FinalDefault;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -288,4 +289,8 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider {
      * @return the object processor
      */
     ObjectProcessor<CharBuffer> charBufferProcessor();
+
+    LinesProcessor linesProcessor(final URL url, final int bufferSize) throws IOException;
+
+    LinesProcessor linesProcessor(final File file, final int bufferSize) throws IOException;
 }

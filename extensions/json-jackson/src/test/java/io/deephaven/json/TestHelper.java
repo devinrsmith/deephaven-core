@@ -85,7 +85,7 @@ public class TestHelper {
         }
     }
 
-    static void check(Chunk<?> actual, Chunk<?> expected) {
+    public static void check(Chunk<?> actual, Chunk<?> expected) {
         assertThat(actual.getChunkType()).isEqualTo(expected.getChunkType());
         assertThat(actual.size()).isEqualTo(expected.size());
         assertThat(getChunkEquals(actual).equalReduce(actual, expected)).isTrue();

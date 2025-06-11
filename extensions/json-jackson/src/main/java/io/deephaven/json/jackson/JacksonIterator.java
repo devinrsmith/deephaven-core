@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Any;
-import io.deephaven.json.Value;
 import io.deephaven.processor.ObjectProcessor;
 import io.deephaven.util.SafeCloseable;
 
@@ -20,58 +19,61 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public final class LinesProcessor implements Iterator<List<WritableChunk<?>>> {
+public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>> {
 
-    public static LinesProcessor of(final Value options, final JsonParser parser, final int bufferSize)
-            throws IOException {
-        return new LinesProcessor(parser, Mixin.of(options).processor("<root>"), bufferSize);
-    }
-
-    private final JsonParser parser;
+    protected final JsonParser parser;
     private final ValueProcessor processor;
     private final int bufferSize;
 
-    LinesProcessor(final JsonParser parser, final ValueProcessor processor, final int bufferSize) {
+    JacksonIterator(final ValueProcessor processor, final JsonParser parser, final int bufferSize) {
         this.parser = Objects.requireNonNull(parser);
         this.processor = Objects.requireNonNull(processor);
         this.bufferSize = bufferSize;
     }
 
     @Override
-    public boolean hasNext() {
-        return parser.hasCurrentToken();
-    }
-
-    @Override
-    public List<WritableChunk<?>> next() {
-        if (!parser.hasCurrentToken()) {
+    public final List<WritableChunk<?>> next() {
+        if (!hasNext()) {
             throw new NoSuchElementException();
         }
         return nextUnchecked();
     }
 
-    public List<WritableChunk<?>> nextChunks() throws IOException {
-        if (!parser.hasCurrentToken()) {
+    public final List<WritableChunk<?>> nextChunks() throws IOException {
+        return nextChunks(bufferSize);
+    }
+
+    public final List<WritableChunk<?>> nextChunks(final int maxItems) throws IOException {
+        if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return nextImpl();
+        return nextImpl(maxItems);
     }
 
     @Override
-    public void forEachRemaining(final Consumer<? super List<WritableChunk<?>>> action) {
-        while (parser.hasCurrentToken()) {
+    public final void forEachRemaining(final Consumer<? super List<WritableChunk<?>>> action) {
+        while (hasNext()) {
             action.accept(nextUnchecked());
         }
     }
 
-    private List<WritableChunk<?>> nextImpl() throws IOException {
-        final List<WritableChunk<?>> buffer = newChunks();
+    private List<WritableChunk<?>> nextImpl(final int maxItems) throws IOException {
+        final List<WritableChunk<?>> buffer = newChunks(maxItems);
         processor.setContext(buffer);
         try {
-            for (int i = 0; i < bufferSize && parser.hasCurrentToken(); ++i) {
-                processor.processCurrentValue(parser);
-                parser.nextToken();
+            for (int i = 0; i < maxItems && hasNext(); ++i) {
+                processCurrent(buffer);
             }
+        } finally {
+            processor.clearContext();
+        }
+        return buffer;
+    }
+
+    private void processCurrent(final List<WritableChunk<?>> buffer) throws IOException {
+        try {
+            processor.processCurrentValue(parser);
+            parser.nextToken();
         } catch (final IOException | RuntimeException e) {
             try {
                 SafeCloseable.closeAll(buffer.iterator());
@@ -79,29 +81,26 @@ public final class LinesProcessor implements Iterator<List<WritableChunk<?>>> {
                 e.addSuppressed(e2);
             }
             throw e;
-        } finally {
-            processor.clearContext();
         }
-        return buffer;
     }
 
     private List<WritableChunk<?>> nextUnchecked() {
         try {
-            return nextImpl();
+            return nextImpl(bufferSize);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private List<WritableChunk<?>> newChunks() {
+    private List<WritableChunk<?>> newChunks(final int maxItems) {
         return processor.columnTypes()
                 .map(ObjectProcessor::chunkType)
-                .map(this::chunk)
+                .map(x -> chunk(x, maxItems))
                 .collect(Collectors.toList());
     }
 
-    private WritableChunk<Any> chunk(final ChunkType chunkType) {
-        final WritableChunk<Any> chunk = chunkType.makeWritableChunk(bufferSize);
+    private static WritableChunk<Any> chunk(final ChunkType chunkType, final int maxItems) {
+        final WritableChunk<Any> chunk = chunkType.makeWritableChunk(maxItems);
         chunk.setSize(0);
         return chunk;
     }

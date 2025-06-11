@@ -3,7 +3,6 @@
 //
 package io.deephaven.json.jackson;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.api.util.NameValidator;
 import io.deephaven.json.AnyValue;
@@ -61,9 +60,7 @@ abstract class Mixin<T extends Value> {
         this.options = Objects.requireNonNull(options);
     }
 
-    public final JacksonProvider provider(final JsonFactory factory) {
-        return new MixinJacksonProvider(this, factory);
-    }
+    // TODO: make these 4 methods into interface so JacksonIteratorProvider can easily expose this info too
 
     public abstract int outputSize();
 

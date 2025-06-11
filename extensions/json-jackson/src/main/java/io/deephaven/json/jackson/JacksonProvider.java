@@ -176,7 +176,7 @@ public interface JacksonProvider extends NamedObjectProcessor.Provider {
      * @return the jackson provider
      */
     static JacksonProvider of(Value options, JsonFactory factory) {
-        return Mixin.of(options).provider(factory);
+        return new MixinJacksonProvider(Mixin.of(options), factory);
     }
 
     /**

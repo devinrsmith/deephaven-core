@@ -34,7 +34,7 @@ dependencies {
     testImplementation platform(libs.jackson.bom)
     testImplementation libs.jackson.databind
 
-    testImplementation project(':engine-table')
+    implementation project(':engine-table')
     testImplementation project(':engine-test-utils')
 
     testRuntimeOnly project(':test-configs')

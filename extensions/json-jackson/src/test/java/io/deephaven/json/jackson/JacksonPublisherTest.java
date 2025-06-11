@@ -37,17 +37,17 @@ class JacksonPublisherTest {
 
     @Test
     void stream() throws IOException, InterruptedException {
-        final JacksonPublisher publisher = JacksonPublisher.stream(options());
+        final JacksonStreamPublisher publisher = JacksonStreamPublisher.stream(options());
         doTest(publisher, "/io/deephaven/json/test-newline-objects.json.txt");
     }
 
     @Test
     void array() throws IOException, InterruptedException {
-        final JacksonPublisher publisher = JacksonPublisher.array(options());
+        final JacksonStreamPublisher publisher = JacksonStreamPublisher.array(options());
         doTest(publisher, "/io/deephaven/json/test-array-objects.json");
     }
 
-    private static void doTest(final JacksonPublisher publisher, final String resourceName)
+    private static void doTest(final JacksonStreamPublisher publisher, final String resourceName)
             throws IOException, InterruptedException {
         final TableDefinition td = TableDefinition.of(
                 ColumnDefinition.ofString("name"),

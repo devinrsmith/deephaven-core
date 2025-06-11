@@ -12,6 +12,8 @@ final class JacksonArrayIterator extends JacksonIterator {
 
     JacksonArrayIterator(ValueProcessor processor, JsonParser parser, int bufferSize) throws IOException {
         super(processor, parser, bufferSize);
+
+        // TODO
         if (parser.isExpectedStartArrayToken()) {
             parser.nextToken();
         } else {

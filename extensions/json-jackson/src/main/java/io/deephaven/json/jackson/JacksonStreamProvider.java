@@ -5,30 +5,19 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.json.Value;
-import io.deephaven.qst.type.Type;
 
-import java.util.Objects;
-import java.util.stream.Stream;
-
-final class JacksonStreamProvider implements JacksonIteratorProvider {
+final class JacksonStreamProvider extends JacksonIteratorProviderBase {
 
     public static JacksonStreamProvider of(final Value options) {
-        return new JacksonStreamProvider(Mixin.of(options).processor("<root>"));
+        return new JacksonStreamProvider(Mixin.of(options));
     }
 
-    private final ValueProcessor processor;
-
-    JacksonStreamProvider(ValueProcessor processor) {
-        this.processor = Objects.requireNonNull(processor);
+    JacksonStreamProvider(Mixin<?> mixin) {
+        super(mixin);
     }
 
     @Override
     public JacksonIterator iterator(final JsonParser parser, final int bufferSize) {
         return new JacksonStreamIterator(processor, parser, bufferSize);
-    }
-
-    @Override
-    public Stream<Type<?>> columnTypes() {
-        return processor.columnTypes();
     }
 }

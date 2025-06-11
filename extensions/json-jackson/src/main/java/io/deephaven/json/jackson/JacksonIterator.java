@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,9 @@ public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>
     private final int bufferSize;
 
     JacksonIterator(final ValueProcessor processor, final JsonParser parser, final int bufferSize) {
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("bufferSize must be positive");
+        }
         this.parser = Objects.requireNonNull(parser);
         this.processor = Objects.requireNonNull(processor);
         this.bufferSize = bufferSize;
@@ -40,14 +44,10 @@ public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>
     }
 
     public final List<WritableChunk<?>> nextChunks() throws IOException {
-        return nextChunks(bufferSize);
-    }
-
-    public final List<WritableChunk<?>> nextChunks(final int maxItems) throws IOException {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return nextImpl(maxItems);
+        return nextImpl();
     }
 
     @Override
@@ -57,23 +57,32 @@ public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>
         }
     }
 
-    private List<WritableChunk<?>> nextImpl(final int maxItems) throws IOException {
-        final List<WritableChunk<?>> buffer = newChunks(maxItems);
-        processor.setContext(buffer);
-        try {
-            for (int i = 0; i < maxItems && hasNext(); ++i) {
-                processCurrent(buffer);
-            }
-        } finally {
-            processor.clearContext();
+    public final boolean forEachRemaining(
+            final Consumer<? super List<WritableChunk<?>>> action,
+            final BooleanSupplier condition) throws IOException {
+        boolean hasNext;
+        while ((hasNext = hasNext()) && condition.getAsBoolean()) {
+            action.accept(nextImpl());
         }
-        return buffer;
+        return !hasNext;
     }
 
-    private void processCurrent(final List<WritableChunk<?>> buffer) throws IOException {
+    private List<WritableChunk<?>> nextUnchecked() {
         try {
-            processor.processCurrentValue(parser);
-            parser.nextToken();
+            return nextImpl();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private List<WritableChunk<?>> nextImpl() throws IOException {
+        final List<WritableChunk<?>> buffer = newChunks();
+        processor.setContext(buffer);
+        try {
+            for (int i = 0; i < bufferSize && hasNext(); ++i) {
+                processor.processCurrentValue(parser);
+                parser.nextToken();
+            }
         } catch (final IOException | RuntimeException e) {
             try {
                 SafeCloseable.closeAll(buffer.iterator());
@@ -81,26 +90,22 @@ public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>
                 e.addSuppressed(e2);
             }
             throw e;
+        } finally {
+            processor.clearContext();
         }
+        return buffer;
     }
 
-    private List<WritableChunk<?>> nextUnchecked() {
-        try {
-            return nextImpl(bufferSize);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private List<WritableChunk<?>> newChunks(final int maxItems) {
+    private List<WritableChunk<?>> newChunks() {
+        // StreamChunkUtils.makeChunksForDefinition(tableDefinition, CHUNK_SIZE);
         return processor.columnTypes()
                 .map(ObjectProcessor::chunkType)
-                .map(x -> chunk(x, maxItems))
+                .map(this::chunk)
                 .collect(Collectors.toList());
     }
 
-    private static WritableChunk<Any> chunk(final ChunkType chunkType, final int maxItems) {
-        final WritableChunk<Any> chunk = chunkType.makeWritableChunk(maxItems);
+    private WritableChunk<Any> chunk(final ChunkType chunkType) {
+        final WritableChunk<Any> chunk = chunkType.makeWritableChunk(bufferSize);
         chunk.setSize(0);
         return chunk;
     }

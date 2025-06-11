@@ -8,7 +8,8 @@ import io.deephaven.json.Value;
 import io.deephaven.qst.type.Type;
 
 import java.io.IOException;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.function.Function;
 
 public interface JacksonIteratorProvider {
 
@@ -22,5 +23,11 @@ public interface JacksonIteratorProvider {
 
     JacksonIterator iterator(final JsonParser parser, final int bufferSize) throws IOException;
 
-    Stream<Type<?>> columnTypes();
+    List<Type<?>> outputTypes();
+
+    int outputSize();
+
+    List<String> names();
+
+    List<String> names(Function<List<String>, String> f);
 }

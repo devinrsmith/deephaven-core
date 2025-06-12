@@ -11,12 +11,10 @@ import java.util.function.Function;
 
 abstract class JacksonIteratorProviderBase implements JacksonIteratorProvider {
 
-    private final Mixin<?> mixin;
-    final ValueProcessor processor;
+    final Mixin<?> mixin;
 
-    JacksonIteratorProviderBase(Mixin<?> mixin) {
+    JacksonIteratorProviderBase(final Mixin<?> mixin) {
         this.mixin = Objects.requireNonNull(mixin);
-        this.processor = mixin.processor("<root>");
     }
 
     @Override

@@ -60,7 +60,13 @@ abstract class Mixin<T extends Value> {
         this.options = Objects.requireNonNull(options);
     }
 
-    // TODO: make these 4 methods into interface so JacksonIteratorProvider can easily expose this info too
+    public JacksonIteratorProvider arrayProvider() {
+        return new JIPArray();
+    }
+
+    public JacksonIteratorProvider streamProvider() {
+        return new JIPStream();
+    }
 
     public abstract int outputSize();
 
@@ -371,6 +377,51 @@ abstract class Mixin<T extends Value> {
 
         private ValueAwareException wrap(JsonParser parser, IOException e, String msg) {
             return new ValueAwareException(msg, parser.currentLocation(), e, options);
+        }
+    }
+
+
+    final class JIPArray extends JIPBase {
+
+        @Override
+        public JacksonIterator iterator(JsonParser parser, int bufferSize) throws IOException {
+            return new JacksonArrayIterator(processor("<root>"), parser, bufferSize);
+        }
+    }
+
+    final class JIPStream extends JIPBase {
+
+        @Override
+        public JacksonIterator iterator(JsonParser parser, int bufferSize) throws IOException {
+            return new JacksonStreamIterator(processor("<root>"), parser, bufferSize);
+        }
+    }
+
+    abstract class JIPBase implements JacksonIteratorProvider {
+
+        @Override
+        public final Value options() {
+            return Mixin.this.options;
+        }
+
+        @Override
+        public final List<Type<?>> outputTypes() {
+            return Mixin.this.outputTypes();
+        }
+
+        @Override
+        public final int outputSize() {
+            return Mixin.this.outputSize();
+        }
+
+        @Override
+        public final List<String> names() {
+            return Mixin.this.names();
+        }
+
+        @Override
+        public final List<String> names(Function<List<String>, String> f) {
+            return Mixin.this.names(f);
         }
     }
 }

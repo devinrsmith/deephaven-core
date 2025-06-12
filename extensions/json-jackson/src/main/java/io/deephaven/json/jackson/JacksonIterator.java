@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -55,16 +56,6 @@ public abstract class JacksonIterator implements Iterator<List<WritableChunk<?>>
         while (hasNext()) {
             action.accept(nextUnchecked());
         }
-    }
-
-    public final boolean forEachRemaining(
-            final Consumer<? super List<WritableChunk<?>>> action,
-            final BooleanSupplier condition) throws IOException {
-        boolean hasNext;
-        while ((hasNext = hasNext()) && condition.getAsBoolean()) {
-            action.accept(nextImpl());
-        }
-        return !hasNext;
     }
 
     private List<WritableChunk<?>> nextUnchecked() {

@@ -14,12 +14,14 @@ import java.util.function.Function;
 public interface JacksonIteratorProvider {
 
     static JacksonIteratorProvider array(final Value options) {
-        return JacksonArrayProvider.of(options);
+        return Mixin.of(options).arrayProvider();
     }
 
     static JacksonIteratorProvider stream(final Value options) {
-        return JacksonStreamProvider.of(options);
+        return Mixin.of(options).streamProvider();
     }
+
+    Value options();
 
     JacksonIterator iterator(final JsonParser parser, final int bufferSize) throws IOException;
 

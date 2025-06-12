@@ -4,6 +4,7 @@
 package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
@@ -12,6 +13,8 @@ import org.immutables.value.Value;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -19,23 +22,27 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 @Value.Immutable
+@BuildableStyle
 public abstract class JacksonStreamPublisherJob {
+
+    public static Builder builder() {
+        return ImmutableJacksonStreamPublisherJob.builder();
+    }
 
     public abstract JacksonIteratorSpec iteratorSpec();
 
-    public abstract Executor executor();
-
-    public abstract List<? extends Queue<? extends Supplier<JsonParser>>> jobs();
+    public abstract List<Queue<? extends Supplier<JsonParser>>> jobs();
 
     @Value.Default
     public String name() {
-        return JacksonStreamPublisherJob.class.getSimpleName() + "-" + UUID.randomUUID();
+        return JacksonStreamPublisherJob.class.getSimpleName();
     }
 
     @Value.Default
@@ -48,8 +55,47 @@ public abstract class JacksonStreamPublisherJob {
         return ExecutionContext.getContext().getUpdateGraph();
     }
 
+    @Value.Default
+    public Executor executor() {
+        return ForkJoinPool.commonPool();
+    }
+
     public final State state() {
         return new State();
+    }
+
+    public interface Builder {
+
+        Builder iteratorSpec(JacksonIteratorSpec iteratorSpec);
+
+        default Builder addSerialJobs(Supplier<JsonParser>... elements) {
+            return addJobs(new LinkedList<>(Arrays.asList(elements)));
+        }
+
+        default Builder addParallelJobs(Supplier<JsonParser>... elements) {
+            //noinspection unchecked
+            return addJobs(Arrays.stream(elements).map(List::of).map(LinkedList::new).toArray(Queue[]::new));
+        }
+
+        default Builder addJobs(Supplier<JsonParser> element) {
+            return addJobs(new LinkedList<>(List.of(element)));
+        }
+
+        Builder addJobs(Queue<? extends Supplier<JsonParser>> element);
+
+        Builder addJobs(Queue<? extends Supplier<JsonParser>>... elements);
+
+        Builder addAllJobs(Iterable<? extends Queue<? extends Supplier<JsonParser>>> elements);
+
+        Builder name(String name);
+
+        Builder bufferSize(int bufferSize);
+
+        Builder registrar(UpdateSourceRegistrar registrar);
+
+        Builder executor(Executor executor);
+
+        JacksonStreamPublisherJob build();
     }
 
     public final class State {
@@ -65,7 +111,7 @@ public abstract class JacksonStreamPublisherJob {
                     publisher.definition(),
                     publisher,
                     registrar(),
-                    name(),
+                    name() + "-" + UUID.randomUUID(),
                     Map.of(),
                     false);
             continueCondition = new AtomicBoolean(true);

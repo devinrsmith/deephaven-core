@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -27,15 +28,19 @@ public final class JacksonStreamPublisherHelper {
             final int bufferSize,
             final UpdateSourceRegistrar registrar,
             final Executor executor,
-            final Collection<? extends Queue<? extends Supplier<JsonParser>>> suppliers) {
+            final List<? extends Queue<? extends Supplier<JsonParser>>> parserJobs,
+            final CountDownLatch latch) {
+        if (parserJobs.size() != latch.getCount()) {
+            throw new IllegalArgumentException();
+        }
         final StreamToBlinkTableAdapter adapter = new StreamToBlinkTableAdapter(
                 publisher.definition(),
                 publisher,
                 registrar,
                 name);
         final AtomicBoolean continueCondition = new AtomicBoolean(true);
-        for (final Queue<? extends Supplier<JsonParser>> queue : suppliers) {
-            executor.execute(new ProcessJob(publisher, bufferSize, queue, continueCondition));
+        for (final Queue<? extends Supplier<JsonParser>> queue : parserJobs) {
+            executor.execute(new ProcessJob(publisher, bufferSize, queue, continueCondition, latch));
         }
         return adapter.table();
     }
@@ -46,8 +51,8 @@ public final class JacksonStreamPublisherHelper {
             final int bufferSize,
             final UpdateSourceRegistrar registrar,
             final Executor executor,
-            final Collection<? extends Supplier<JsonParser>> suppliers) {
-        return execute(publisher, name, bufferSize, registrar, executor, copyOne(suppliers));
+            final Collection<? extends Supplier<JsonParser>> parsers) {
+        return execute(publisher, name, bufferSize, registrar, executor, copyOne(parsers));
     }
 
     public static Table parallel(
@@ -56,8 +61,8 @@ public final class JacksonStreamPublisherHelper {
             final int bufferSize,
             final UpdateSourceRegistrar registrar,
             final Executor executor,
-            final Collection<? extends Supplier<JsonParser>> suppliers) {
-        return execute(publisher, name, bufferSize, registrar, executor, pushOne(suppliers));
+            final Collection<? extends Supplier<JsonParser>> parsers) {
+        return execute(publisher, name, bufferSize, registrar, executor, pushOne(parsers));
     }
 
     public static Table parallel(
@@ -88,20 +93,31 @@ public final class JacksonStreamPublisherHelper {
         private final int bufferSize;
         private final Queue<? extends Supplier<JsonParser>> queue;
         private final AtomicBoolean continueCondition;
+        private final CountDownLatch latch;
 
         ProcessJob(
                 final JacksonStreamPublisher publisher,
                 final int bufferSize,
                 final Queue<? extends Supplier<JsonParser>> queue,
-                final AtomicBoolean continueCondition) {
+                final AtomicBoolean continueCondition,
+                final CountDownLatch latch) {
             this.publisher = Objects.requireNonNull(publisher);
             this.bufferSize = bufferSize;
             this.queue = Objects.requireNonNull(queue);
             this.continueCondition = Objects.requireNonNull(continueCondition);
+            this.latch = Objects.requireNonNull(latch);
         }
 
         @Override
         public void run() {
+            try {
+                runImpl();
+            } finally {
+                latch.countDown();
+            }
+        }
+
+        private void runImpl() {
             Supplier<JsonParser> supplier;
             while ((supplier = queue.poll()) != null) {
                 try (final JsonParser parser = supplier.get()) {

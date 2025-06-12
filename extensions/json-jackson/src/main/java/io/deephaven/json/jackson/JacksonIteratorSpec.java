@@ -11,13 +11,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
-public interface JacksonIteratorProvider {
+public interface JacksonIteratorSpec {
 
-    static JacksonIteratorProvider array(final Value options) {
+    static JacksonIteratorSpec array(final Value options) {
         return Mixin.of(options).arrayProvider();
     }
 
-    static JacksonIteratorProvider stream(final Value options) {
+    static JacksonIteratorSpec stream(final Value options) {
         return Mixin.of(options).streamProvider();
     }
 

@@ -22,19 +22,19 @@ import java.util.function.BooleanSupplier;
 
 public final class JacksonStreamPublisher implements StreamPublisher {
 
-    public static JacksonStreamPublisher of(final JacksonIteratorProvider processorProvider) {
+    public static JacksonStreamPublisher of(final JacksonIteratorSpec processorProvider) {
         return new JacksonStreamPublisher(processorProvider);
     }
 
     public static JacksonStreamPublisher stream(final Value options) {
-        return of(JacksonIteratorProvider.stream(options));
+        return of(JacksonIteratorSpec.stream(options));
     }
 
     public static JacksonStreamPublisher array(final Value options) {
-        return of(JacksonIteratorProvider.array(options));
+        return of(JacksonIteratorSpec.array(options));
     }
 
-    private static TableDefinition definition(final JacksonIteratorProvider processorProvider) {
+    private static TableDefinition definition(final JacksonIteratorSpec processorProvider) {
         final List<String> names = processorProvider.names();
         final List<Type<?>> types = processorProvider.outputTypes();
         final int L = names.size();
@@ -45,11 +45,11 @@ public final class JacksonStreamPublisher implements StreamPublisher {
         return TableDefinition.of(cds);
     }
 
-    private final JacksonIteratorProvider processorProvider;
+    private final JacksonIteratorSpec processorProvider;
     private volatile boolean shutdown;
     private StreamConsumer consumer;
 
-    JacksonStreamPublisher(final JacksonIteratorProvider processorProvider) {
+    JacksonStreamPublisher(final JacksonIteratorSpec processorProvider) {
         this.processorProvider = Objects.requireNonNull(processorProvider);
     }
 

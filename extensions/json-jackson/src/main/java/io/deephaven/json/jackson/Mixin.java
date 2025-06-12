@@ -60,11 +60,11 @@ abstract class Mixin<T extends Value> {
         this.options = Objects.requireNonNull(options);
     }
 
-    public JacksonIteratorProvider arrayProvider() {
+    public JacksonIteratorSpec arrayProvider() {
         return new JIPArray();
     }
 
-    public JacksonIteratorProvider streamProvider() {
+    public JacksonIteratorSpec streamProvider() {
         return new JIPStream();
     }
 
@@ -397,7 +397,7 @@ abstract class Mixin<T extends Value> {
         }
     }
 
-    abstract class JIPBase implements JacksonIteratorProvider {
+    abstract class JIPBase implements JacksonIteratorSpec {
 
         @Override
         public final Value options() {

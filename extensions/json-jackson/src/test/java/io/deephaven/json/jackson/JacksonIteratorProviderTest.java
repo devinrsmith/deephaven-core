@@ -26,24 +26,24 @@ class JacksonIteratorProviderTest {
 
     @Test
     void iterator() throws IOException {
-        checkIterator(JacksonIteratorProvider.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
-        checkIterator(JacksonIteratorProvider.array(options()), "/io/deephaven/json/test-array-objects.json");
+        checkIterator(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
+        checkIterator(JacksonIteratorSpec.array(options()), "/io/deephaven/json/test-array-objects.json");
     }
 
     @Test
     void iteratorSmallBufferSize() throws IOException {
-        checkIterator2(JacksonIteratorProvider.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
-        checkIterator2(JacksonIteratorProvider.array(options()), "/io/deephaven/json/test-array-objects.json");
+        checkIterator2(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
+        checkIterator2(JacksonIteratorSpec.array(options()), "/io/deephaven/json/test-array-objects.json");
     }
 
-    private static void checkIterator(final JacksonIteratorProvider jip, final String resourceName) throws IOException {
+    private static void checkIterator(final JacksonIteratorSpec jip, final String resourceName) throws IOException {
         try (final JsonParser parser = parser(resourceName)) {
             parser.nextToken();
             Helper.check(jip.iterator(parser, 128));
         }
     }
 
-    private static void checkIterator2(final JacksonIteratorProvider jip, final String resourceName)
+    private static void checkIterator2(final JacksonIteratorSpec jip, final String resourceName)
             throws IOException {
         try (final JsonParser parser = parser(resourceName)) {
             parser.nextToken();

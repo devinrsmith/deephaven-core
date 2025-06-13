@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.annotations.BuildableStyle;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.iterators.ChunkedColumnIterator;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
 import org.immutables.value.Value;
@@ -40,21 +41,36 @@ public abstract class JacksonStreamPublisherJob {
 
     public abstract List<Queue<? extends Supplier<JsonParser>>> jobs();
 
+    /**
+     * The name prefix. By default, is "JacksonStreamPublisherJob".
+     */
     @Value.Default
     public String name() {
         return JacksonStreamPublisherJob.class.getSimpleName();
     }
 
+    /**
+     * The chunk capacity. By default, is {@value ChunkedColumnIterator#DEFAULT_CHUNK_SIZE}.
+     */
     @Value.Default
-    public int bufferSize() {
-        return 4096; // todo: what is the best value?
+    public int chunkCapacity() {
+        return ChunkedColumnIterator.DEFAULT_CHUNK_SIZE;
     }
 
+    /**
+     * The update source registrar. By default, is {@code ExecutionContext.getContext().getUpdateGraph()}.
+     *
+     * @see ExecutionContext#getContext()
+     * @see ExecutionContext#getUpdateGraph()
+     */
     @Value.Default
     public UpdateSourceRegistrar registrar() {
         return ExecutionContext.getContext().getUpdateGraph();
     }
 
+    /**
+     * The executor. By default, is {@link ForkJoinPool#commonPool()}.
+     */
     @Value.Default
     public Executor executor() {
         return ForkJoinPool.commonPool();
@@ -73,7 +89,7 @@ public abstract class JacksonStreamPublisherJob {
         }
 
         default Builder addParallelJobs(Supplier<JsonParser>... elements) {
-            //noinspection unchecked
+            // noinspection unchecked
             return addJobs(Arrays.stream(elements).map(List::of).map(LinkedList::new).toArray(Queue[]::new));
         }
 
@@ -89,7 +105,7 @@ public abstract class JacksonStreamPublisherJob {
 
         Builder name(String name);
 
-        Builder bufferSize(int bufferSize);
+        Builder chunkCapacity(int chunkCapacity);
 
         Builder registrar(UpdateSourceRegistrar registrar);
 
@@ -119,6 +135,13 @@ public abstract class JacksonStreamPublisherJob {
             started = new AtomicBoolean(false);
         }
 
+        public StreamToBlinkTableAdapter adapter() {
+            return adapter;
+        }
+
+        /**
+         * The {@link StreamToBlinkTableAdapter#table()}.
+         */
         public Table table() {
             return adapter.table();
         }
@@ -178,7 +201,7 @@ public abstract class JacksonStreamPublisherJob {
                 while ((parserSupplier = queue.poll()) != null) {
                     try (final JsonParser parser = parserSupplier.get()) {
                         parser.nextToken();
-                        if (!publisher.process(parser, bufferSize(), continueCondition::get)) {
+                        if (!publisher.process(parser, chunkCapacity(), continueCondition::get)) {
                             // Iterator not exhausted, means that shutdown has been invoked on the publisher (ie, the
                             // resulting table is no longer needed), or that continueCondition is false (either b/c
                             // there was an error on processing on another thread, or the user explicitly cancelled).

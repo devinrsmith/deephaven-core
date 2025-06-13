@@ -37,17 +37,25 @@ class JacksonPublisherTest {
 
     @Test
     void stream() throws IOException, InterruptedException {
-        final JacksonStreamPublisher publisher = JacksonStreamPublisher.stream(options());
-        doTest(publisher, "/io/deephaven/json/test-newline-objects.json.txt");
+        {
+            doTest(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
+        }
+        {
+            doTest(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-compact-objects.json.txt");
+        }
     }
 
     @Test
     void array() throws IOException, InterruptedException {
-        final JacksonStreamPublisher publisher = JacksonStreamPublisher.array(options());
-        doTest(publisher, "/io/deephaven/json/test-array-objects.json");
+        doTest(JacksonIteratorSpec.array(options()), "/io/deephaven/json/test-array-objects.json");
     }
 
-    private static void doTest(final JacksonStreamPublisher publisher, final String resourceName)
+    @Test
+    void objectEntries() throws IOException, InterruptedException {
+        doTest(JacksonIteratorSpec.objectEntries(StringValue.strict(), IntValue.strict()), "/io/deephaven/json/test-object-entries.json");
+    }
+
+    private static void doTest(final JacksonIteratorSpec spec, final String resourceName)
             throws IOException, InterruptedException {
         final TableDefinition td = TableDefinition.of(
                 ColumnDefinition.ofString("name"),
@@ -56,6 +64,8 @@ class JacksonPublisherTest {
         final Table expected = TableTools.newTable(td,
                 TableTools.stringCol("name", "foo", "bar"),
                 TableTools.intCol("age", 42, 43));
+
+        final JacksonStreamPublisher publisher = JacksonStreamPublisher.of(spec);
 
         final ControlledUpdateGraph ug = ExecutionContext.getContext().getUpdateGraph().cast();
         try (
@@ -71,7 +81,7 @@ class JacksonPublisherTest {
     }
 
     private static URL resource(final String resourceName) {
-        return JacksonIteratorProviderTest.class.getResource(resourceName);
+        return JacksonIteratorTest.class.getResource(resourceName);
     }
 
     private static JsonParser parser(final String resourceName) throws IOException {

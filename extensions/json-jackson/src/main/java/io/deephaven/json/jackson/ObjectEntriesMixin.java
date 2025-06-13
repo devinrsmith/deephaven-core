@@ -82,6 +82,7 @@ final class ObjectEntriesMixin extends Mixin<ObjectEntriesValue> {
         protected void processCurrentValueImpl(JsonParser parser) throws IOException {
             switch (parser.currentToken()) {
                 case START_OBJECT:
+                    // case FIELD_NAME:
                     RepeaterProcessor.processObjectKeyValues(parser, keyProcessor, valueProcessor);
                     return;
                 case VALUE_NULL:

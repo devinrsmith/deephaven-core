@@ -36,11 +36,13 @@ interface ValueProcessor extends ContextAware {
     /**
      * Called when the JSON value is present; the current token should be one of {@link JsonToken#START_OBJECT},
      * {@link JsonToken#START_ARRAY}, {@link JsonToken#VALUE_STRING}, {@link JsonToken#VALUE_NUMBER_INT},
-     * {@link JsonToken#VALUE_NUMBER_FLOAT}, {@link JsonToken#VALUE_TRUE}, {@link JsonToken#VALUE_FALSE}, or
-     * {@link JsonToken#VALUE_NULL}. When the current token is {@link JsonToken#START_OBJECT}, the implementation must
-     * end with the corresponding {@link JsonToken#END_OBJECT} as the current token; when the current token is
-     * {@link JsonToken#START_ARRAY}, the implementation must end with the corresponding {@link JsonToken#END_ARRAY} as
-     * the current token; otherwise, the implementation must not change the current token.
+     * {@link JsonToken#VALUE_NUMBER_FLOAT}, {@link JsonToken#VALUE_TRUE}, {@link JsonToken#VALUE_FALSE},
+     * {@link JsonToken#VALUE_NULL}, or {@link JsonToken#FIELD_NAME}. When the current token is
+     * {@link JsonToken#START_OBJECT}, the implementation must end with the corresponding {@link JsonToken#END_OBJECT}
+     * as the current token; when the current token is {@link JsonToken#START_ARRAY}, the implementation must end with
+     * the corresponding {@link JsonToken#END_ARRAY} as the current token; when the current token is
+     * {@link JsonToken#FIELD_NAME}, the implementation must end with the last token of that field's value as the
+     * current token; otherwise, the implementation must not change the current token.
      *
      * @param parser the parser
      * @throws IOException if an IOException occurs

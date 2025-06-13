@@ -10,16 +10,11 @@ import java.io.IOException;
 
 final class JacksonArrayIterator extends JacksonIterator {
 
-    JacksonArrayIterator(ValueProcessor processor, JsonParser parser, int bufferSize) throws IOException {
-        super(processor, parser, bufferSize);
-
-        // TODO
-        if (parser.isExpectedStartArrayToken()) {
-            parser.nextToken();
-        } else {
-            if (!parser.getParsingContext().inArray()) {
-                throw new IllegalArgumentException();
-            }
+    JacksonArrayIterator(ValueProcessor processor, JsonParser parser, int chunkCapacity) {
+        super(processor, parser, chunkCapacity);
+        if (!parser.getParsingContext().getParent().inArray()) {
+            throw new IllegalArgumentException(String.format("Expected parent to be an array. ptr @ '%s'",
+                    parser.getParsingContext().pathAsPointer()));
         }
     }
 

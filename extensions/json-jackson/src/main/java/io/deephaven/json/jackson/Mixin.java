@@ -61,11 +61,11 @@ abstract class Mixin<T extends Value> {
     }
 
     public JacksonIteratorSpec arrayProvider() {
-        return new JIPArray();
+        return new JIArray();
     }
 
     public JacksonIteratorSpec streamProvider() {
-        return new JIPStream();
+        return new JIStream();
     }
 
     public abstract int outputSize();
@@ -381,28 +381,26 @@ abstract class Mixin<T extends Value> {
     }
 
 
-    final class JIPArray extends JIPBase {
+    final class JIArray extends JIBase {
 
         @Override
-        public JacksonIterator iterator(JsonParser parser, int bufferSize) throws IOException {
-            return new JacksonArrayIterator(processor("<root>"), parser, bufferSize);
+        public JacksonIterator iterator(JsonParser parser, int chunkCapacity) throws IOException {
+            if (parser.isExpectedStartArrayToken()) {
+                parser.nextToken();
+            }
+            return new JacksonArrayIterator(processor("<root>"), parser, chunkCapacity);
         }
     }
 
-    final class JIPStream extends JIPBase {
+    final class JIStream extends JIBase {
 
         @Override
-        public JacksonIterator iterator(JsonParser parser, int bufferSize) throws IOException {
-            return new JacksonStreamIterator(processor("<root>"), parser, bufferSize);
+        public JacksonIterator iterator(JsonParser parser, int chunkCapacity) {
+            return new JacksonStreamIterator(processor("<root>"), parser, chunkCapacity);
         }
     }
 
-    abstract class JIPBase implements JacksonIteratorSpec {
-
-        @Override
-        public final Value options() {
-            return Mixin.this.options;
-        }
+    abstract class JIBase implements JacksonIteratorSpec {
 
         @Override
         public final List<Type<?>> outputTypes() {

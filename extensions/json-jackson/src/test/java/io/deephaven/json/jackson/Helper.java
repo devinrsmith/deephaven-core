@@ -14,7 +14,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Helper {
-    public static void check(final JacksonIterator it) throws IOException {
+    public static void checkRows(final JacksonIterator it) throws IOException {
         {
             assertThat(it).hasNext();
             final List<WritableChunk<?>> chunks = it.nextChunks();
@@ -25,21 +25,25 @@ public class Helper {
         assertThat(it).isExhausted();
     }
 
-    public static void check2(final JacksonIterator it) throws IOException {
-        {
-            assertThat(it).hasNext();
-            final List<WritableChunk<?>> chunks = it.nextChunks();
-            assertThat(chunks.size()).isEqualTo(2);
-            TestHelper.check(chunks.get(0), ObjectChunk.chunkWrap(new String[] {"foo"}));
-            TestHelper.check(chunks.get(1), IntChunk.chunkWrap(new int[] {42}));
-        }
-        {
-            assertThat(it).hasNext();
-            final List<WritableChunk<?>> chunks = it.nextChunks();
-            assertThat(chunks.size()).isEqualTo(2);
-            TestHelper.check(chunks.get(0), ObjectChunk.chunkWrap(new String[] {"bar"}));
-            TestHelper.check(chunks.get(1), IntChunk.chunkWrap(new int[] {43}));
-        }
+    public static void checkRows2Shot(final JacksonIterator it) throws IOException {
+        checkExactlyRow1(it);
+        checkExactlyRow2(it);
         assertThat(it).isExhausted();
+    }
+
+    public static void checkExactlyRow1(final JacksonIterator it) throws IOException {
+        assertThat(it).hasNext();
+        final List<WritableChunk<?>> chunks = it.nextChunks();
+        assertThat(chunks.size()).isEqualTo(2);
+        TestHelper.check(chunks.get(0), ObjectChunk.chunkWrap(new String[] {"foo"}));
+        TestHelper.check(chunks.get(1), IntChunk.chunkWrap(new int[] {42}));
+    }
+
+    public static void checkExactlyRow2(final JacksonIterator it) throws IOException {
+        assertThat(it).hasNext();
+        final List<WritableChunk<?>> chunks = it.nextChunks();
+        assertThat(chunks.size()).isEqualTo(2);
+        TestHelper.check(chunks.get(0), ObjectChunk.chunkWrap(new String[] {"bar"}));
+        TestHelper.check(chunks.get(1), IntChunk.chunkWrap(new int[] {43}));
     }
 }

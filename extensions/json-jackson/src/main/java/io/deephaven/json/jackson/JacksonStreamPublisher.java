@@ -8,7 +8,6 @@ import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
-import io.deephaven.json.Value;
 import io.deephaven.qst.type.Type;
 import io.deephaven.stream.StreamConsumer;
 import io.deephaven.stream.StreamPublisher;
@@ -26,14 +25,6 @@ public final class JacksonStreamPublisher implements StreamPublisher {
         return new JacksonStreamPublisher(processorProvider);
     }
 
-    public static JacksonStreamPublisher stream(final Value options) {
-        return of(JacksonIteratorSpec.stream(options));
-    }
-
-    public static JacksonStreamPublisher array(final Value options) {
-        return of(JacksonIteratorSpec.array(options));
-    }
-
     private static TableDefinition definition(final JacksonIteratorSpec processorProvider) {
         final List<String> names = processorProvider.names();
         final List<Type<?>> types = processorProvider.outputTypes();
@@ -43,6 +34,15 @@ public final class JacksonStreamPublisher implements StreamPublisher {
             cds.add(ColumnDefinition.of(names.get(i), types.get(i)));
         }
         return TableDefinition.of(cds);
+    }
+
+    private enum AlwaysTrue implements BooleanSupplier {
+        ALWAYS_TRUE;
+
+        @Override
+        public boolean getAsBoolean() {
+            return true;
+        }
     }
 
     private final JacksonIteratorSpec processorProvider;
@@ -71,16 +71,27 @@ public final class JacksonStreamPublisher implements StreamPublisher {
         this.consumer = Objects.requireNonNull(consumer);
     }
 
-    public boolean process(final JsonParser parser, final int bufferSize) throws IOException, InterruptedException {
-        return process(parser, bufferSize, () -> true);
+    public boolean process(final JsonParser parser, final int chunkCapacity) throws IOException, InterruptedException {
+        return process(parser, chunkCapacity, AlwaysTrue.ALWAYS_TRUE);
     }
 
-    public boolean process(final JsonParser parser, final int bufferSize, final BooleanSupplier continueCondition)
+    /**
+     *
+     * @param parser
+     * @param chunkCapacity
+     * @param continueCondition
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean process(final JsonParser parser, final int chunkCapacity, final BooleanSupplier continueCondition)
             throws IOException, InterruptedException {
         final Thread currentThread = Thread.currentThread();
-        final JacksonIterator it = processorProvider.iterator(parser, bufferSize);
+        final JacksonIterator it = processorProvider.iterator(parser, chunkCapacity);
         boolean hasNext;
-        while ((hasNext = it.hasNext()) && !shutdown && !currentThread.isInterrupted()
+        while ((hasNext = it.hasNext())
+                && !shutdown
+                && !currentThread.isInterrupted()
                 && continueCondition.getAsBoolean()) {
             accept(it.nextChunks());
         }

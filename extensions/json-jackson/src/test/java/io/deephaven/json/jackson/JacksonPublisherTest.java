@@ -37,25 +37,22 @@ class JacksonPublisherTest {
 
     @Test
     void stream() throws IOException, InterruptedException {
-        {
-            doTest(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
-        }
-        {
-            doTest(JacksonIteratorSpec.stream(options()), "/io/deephaven/json/test-compact-objects.json.txt");
-        }
+        doTest(JacksonValue2.stream(options()), "/io/deephaven/json/test-newline-objects.json.txt");
+        doTest(JacksonValue2.stream(options()), "/io/deephaven/json/test-compact-objects.json.txt");
     }
 
     @Test
     void array() throws IOException, InterruptedException {
-        doTest(JacksonIteratorSpec.array(options()), "/io/deephaven/json/test-array-objects.json");
+        doTest(JacksonValue2.array(options()), "/io/deephaven/json/test-array-objects.json");
     }
 
     @Test
     void objectEntries() throws IOException, InterruptedException {
-        doTest(JacksonIteratorSpec.objectEntries(StringValue.strict(), IntValue.strict()), "/io/deephaven/json/test-object-entries.json");
+        doTest(JacksonValue2.objectEntries(StringValue.strict(), IntValue.strict()),
+                "/io/deephaven/json/test-object-entries.json");
     }
 
-    private static void doTest(final JacksonIteratorSpec spec, final String resourceName)
+    private static void doTest(final JacksonValue2 spec, final String resourceName)
             throws IOException, InterruptedException {
         final TableDefinition td = TableDefinition.of(
                 ColumnDefinition.ofString("name"),

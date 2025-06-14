@@ -16,7 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class ObjectEntriesIteratorSpec implements JacksonIteratorSpec {
+final class ObjectEntriesIteratorSpec implements JacksonValue2 {
     private final Mixin<?> key;
     private final Mixin<?> value;
 

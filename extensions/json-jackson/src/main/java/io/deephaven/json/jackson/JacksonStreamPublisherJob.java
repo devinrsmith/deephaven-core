@@ -10,6 +10,7 @@ import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.iterators.ChunkedColumnIterator;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import io.deephaven.stream.StreamToBlinkTableAdapter;
+import io.deephaven.util.annotations.VisibleForTesting;
 import org.immutables.value.Value;
 
 import java.io.IOException;
@@ -29,15 +30,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+/**
+ * An opinionated structuring around {@link JacksonStreamPublisher}.
+ */
 @Value.Immutable
 @BuildableStyle
 public abstract class JacksonStreamPublisherJob {
+
+
+    public static State of(final JacksonValue2 spec, final Supplier<JsonParser> parserSupplier) {
+        return builder()
+                .iteratorSpec(spec)
+                .addJobs(parserSupplier)
+                .build()
+                .state();
+    }
 
     public static Builder builder() {
         return ImmutableJacksonStreamPublisherJob.builder();
     }
 
-    public abstract JacksonIteratorSpec iteratorSpec();
+    /**
+     * The iteration specification for
+     * 
+     * @return
+     */
+    public abstract JacksonValue2 iteratorSpec();
 
     public abstract List<Queue<? extends Supplier<JsonParser>>> jobs();
 
@@ -76,13 +94,18 @@ public abstract class JacksonStreamPublisherJob {
         return ForkJoinPool.commonPool();
     }
 
+    /**
+     * Creates a state, composed of {@link JacksonStreamPublisher} and {@link StreamToBlinkTableAdapter}.
+     * 
+     * @return
+     */
     public final State state() {
         return new State();
     }
 
     public interface Builder {
 
-        Builder iteratorSpec(JacksonIteratorSpec iteratorSpec);
+        Builder iteratorSpec(JacksonValue2 iteratorSpec);
 
         default Builder addSerialJobs(Supplier<JsonParser>... elements) {
             return addJobs(new LinkedList<>(Arrays.asList(elements)));
@@ -135,10 +158,6 @@ public abstract class JacksonStreamPublisherJob {
             started = new AtomicBoolean(false);
         }
 
-        public StreamToBlinkTableAdapter adapter() {
-            return adapter;
-        }
-
         /**
          * The {@link StreamToBlinkTableAdapter#table()}.
          */
@@ -173,6 +192,11 @@ public abstract class JacksonStreamPublisherJob {
 
         public boolean await(Duration duration) throws InterruptedException {
             return latch.await(duration.toNanos(), TimeUnit.NANOSECONDS);
+        }
+
+        @VisibleForTesting
+        void runAdapter() {
+            adapter.run();
         }
 
         private class ProcessJob implements Runnable {

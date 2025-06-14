@@ -5,7 +5,6 @@ package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import io.deephaven.json.IntValue;
-import io.deephaven.json.ObjectEntriesValue;
 import io.deephaven.json.ObjectValue;
 import io.deephaven.json.StringValue;
 import org.junit.jupiter.api.Test;
@@ -30,16 +29,16 @@ class JacksonIteratorTest {
                 .build();
     }
 
-    private static JacksonIteratorSpec arraySpec() {
-        return JacksonIteratorSpec.array(options());
+    private static JacksonValue2 arraySpec() {
+        return JacksonValue2.array(options());
     }
 
-    private static JacksonIteratorSpec streamSpec() {
-        return JacksonIteratorSpec.stream(options());
+    private static JacksonValue2 streamSpec() {
+        return JacksonValue2.stream(options());
     }
 
-    private static JacksonIteratorSpec objectEntriesSpec() {
-        return JacksonIteratorSpec.objectEntries(StringValue.strict(), IntValue.strict());
+    private static JacksonValue2 objectEntriesSpec() {
+        return JacksonValue2.objectEntries(StringValue.strict(), IntValue.strict());
     }
 
     @Test
@@ -80,7 +79,7 @@ class JacksonIteratorTest {
         checkIterator(objectEntriesSpec(), "/io/deephaven/json/test-object-entries.json");
     }
 
-    private static void checkIterator(final JacksonIteratorSpec jip, final String resourceName) throws IOException {
+    private static void checkIterator(final JacksonValue2 jip, final String resourceName) throws IOException {
         // Check we can consume it in one shot
         try (final JsonParser parser = parser(resourceName)) {
             parser.nextToken();

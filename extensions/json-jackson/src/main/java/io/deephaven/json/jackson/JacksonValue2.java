@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
-public interface JacksonIteratorSpec {
+public interface JacksonValue2 {
 
     /**
      * Creates an iterator specification for parsing JSON values from a JSON array. The iterator will be capable of
@@ -22,7 +22,7 @@ public interface JacksonIteratorSpec {
      * @param options the element options
      * @return the iterator specification
      */
-    static JacksonIteratorSpec array(final Value options) {
+    static JacksonValue2 array(final Value options) {
         return Mixin.of(options).arrayProvider();
     }
 
@@ -34,7 +34,7 @@ public interface JacksonIteratorSpec {
      * @param options the element options
      * @return the iterator specification
      */
-    static JacksonIteratorSpec stream(final Value options) {
+    static JacksonValue2 stream(final Value options) {
         return Mixin.of(options).streamProvider();
     }
 
@@ -47,13 +47,22 @@ public interface JacksonIteratorSpec {
      * @param value the value options
      * @return the iterator specification
      */
-    static JacksonIteratorSpec objectEntries(final Value key, final Value value) {
+    static JacksonValue2 objectEntries(final Value key, final Value value) {
         return new ObjectEntriesIteratorSpec(Mixin.of(key), Mixin.of(value));
     }
 
     /**
+     * Creates an iterator specification for parsing generic JSON tokens and values.
+     *
+     * @return the spec
+     */
+    static JacksonValue2 meta() {
+        return JacksonMetaProcessor.Spec.META_SPEC;
+    }
+
+    /**
      * Creates an iterator. The {@code parser} must be in the context appropriate for this spec. The resulting chunks
-     * will have capacity {@code chunkCapacity}.
+     * will have capacity {@code chunkCapacity}. The
      *
      * @param parser the parser
      * @param chunkCapacity the chunk capacity
@@ -61,6 +70,8 @@ public interface JacksonIteratorSpec {
      * @throws IOException if an IO exception occurs
      */
     JacksonIterator iterator(final JsonParser parser, final int chunkCapacity) throws IOException;
+
+    // TODO processor(...), internal
 
     /**
      * The output chunk types that will be produced from an {@link #iterator(JsonParser, int) iterator}, corresponding

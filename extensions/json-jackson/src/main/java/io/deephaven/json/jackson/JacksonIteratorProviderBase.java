@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-abstract class JacksonIteratorProviderBase implements JacksonIteratorSpec {
+abstract class JacksonIteratorProviderBase implements JacksonValue2 {
 
     final Mixin<?> mixin;
 

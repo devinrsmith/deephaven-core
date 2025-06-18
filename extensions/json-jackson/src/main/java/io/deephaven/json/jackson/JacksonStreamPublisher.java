@@ -103,20 +103,6 @@ public final class JacksonStreamPublisher implements StreamPublisher {
         return !hasNext;
     }
 
-    // public boolean processUninterruptibly(final JsonParser parser, final int bufferSize) throws IOException {
-    // return processUninterruptibly(parser, bufferSize, () -> true);
-    // }
-    //
-    // public boolean processUninterruptibly(final JsonParser parser, final int bufferSize, final BooleanSupplier
-    // continueCondition) throws IOException {
-    // final JacksonIterator it = processorProvider.iterator(parser, bufferSize);
-    // boolean hasNext;
-    // while ((hasNext = it.hasNext()) && !shutdown && continueCondition.getAsBoolean()) {
-    // accept(it.nextChunks());
-    // }
-    // return !hasNext;
-    // }
-
     private void accept(final List<WritableChunk<?>> chunks) {
         // noinspection unchecked
         final WritableChunk<Values>[] array = chunks.toArray(new WritableChunk[0]);

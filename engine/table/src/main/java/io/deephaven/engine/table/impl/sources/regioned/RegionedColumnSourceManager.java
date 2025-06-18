@@ -906,7 +906,7 @@ public class RegionedColumnSourceManager
             final Consumer<Exception> onError) {
         final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
         if (overlappingRegions.isEmpty()) {
-            onComplete.accept(PushdownResult.noMatch(selection.copy()));
+            PushdownFilterMatcher.accept(PushdownResult.noMatch(selection.copy()), onComplete, onError);
             return;
         }
         new PushdownFilterJobBuilder(selection.copy(), overlappingRegions, onComplete, onError)
@@ -977,7 +977,7 @@ public class RegionedColumnSourceManager
                     0,
                     regions.size(),
                     new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
-                    new OnComplete(),
+                    new OnComplete1(),
                     new OnError());
         }
 
@@ -1051,12 +1051,53 @@ public class RegionedColumnSourceManager
             }
         }
 
-        private final class OnComplete implements Runnable {
+
+        // TODO: if onComplete.accept(result) throws an error, is the implementation expected to call onError?
+        // if yes:
+        //   AbstractColumnSource.pushdownFilter needs to be updated
+        // if no:
+        //   implementations of pushdownFilter using JobScheduler.iterateParallel need to be very careful
+
+        private final class OnComplete1 implements Runnable {
 
             @Override
             public void run() {
+                try {
+
+                }
+
+                final PushdownResult result;
                 try (PushdownFilterJobBuilder.this) {
-                    onComplete.accept(build());
+                    result = build();
+                }
+                onComplete.accept(result);
+            }
+        }
+
+        private final class OnError1 implements Consumer<Exception> {
+
+            @Override
+            public void accept(Exception e) {
+
+            }
+        }
+
+
+        private final class OnComplete2 implements Runnable {
+
+            @Override
+            public void run() {
+                // If there is an error here, we want to invoke onError
+                final PushdownResult result = build();
+                // TODO: if this throws an error, OnError will be invoked. Do we need to call onError?
+                onComplete.accept(result);
+                try {
+                    close();
+                } catch (final RuntimeException e) {
+                    // we probably _don't_ want to invoke onError, propogate to OnError after onComplete has
+                    // successfully returned.
+                    // Alternatively to this impl, we could close before calling onComplete, and if that throws an
+                    // error, propagate to OnError.
                 }
             }
         }
@@ -1065,7 +1106,8 @@ public class RegionedColumnSourceManager
 
             @Override
             public void accept(Exception e) {
-                // TODO: are we guaranteed that no jobs are currently running if we get an OnError?
+                // TODO: are we guaranteed that no jobs are currently running if we get an OnError? (And no more jobs
+                // will be run?)
                 // try (PushdownFilterJobBuilder.this) {
                 onError.accept(e);
                 // }

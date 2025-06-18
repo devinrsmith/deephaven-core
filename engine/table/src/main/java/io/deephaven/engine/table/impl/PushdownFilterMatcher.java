@@ -23,6 +23,30 @@ import java.util.function.Consumer;
  * to return accurate cost estimates for the next step.
  */
 public interface PushdownFilterMatcher {
+
+    /**
+     *
+     * @param result the result
+     * @param onComplete the on complete handler
+     * @param onError the on error handler
+     */
+    static void accept(
+            final PushdownResult result,
+            final Consumer<PushdownResult> onComplete,
+            final Consumer<Exception> onError) {
+        try {
+            onComplete.accept(result);
+        } catch (final RuntimeException e) {
+            try (result) {
+                onError.accept(e);
+            } catch (final RuntimeException e2) {
+                // If e is not handled, we will throw it to the higher layer with the additional context of e2
+                e.addSuppressed(e2);
+                throw e;
+            }
+        }
+    }
+
     /**
      * Estimate the cost of pushing down the next pushdown filter. This returns a unitless value to compare the cost of
      * executing different filters. Common costs are listed in {@link PushdownResult} (such as
@@ -58,6 +82,8 @@ public interface PushdownFilterMatcher {
      * <p>
      * A no-op implementation should simply return {@code PushdownResult.maybeMatch(selection.copy())}. Note that any
      * references to {@code selection} should be {@link RowSet#copy() copied}.
+     *
+     * TODO: if onComplete.accept(result) throws an error, is the implementation expected to call onError?
      *
      * @param filter The {@link Filter filter} to apply.
      * @param renameMap Map of filter column names to underlying column names.

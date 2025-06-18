@@ -389,6 +389,7 @@ public interface JobScheduler {
         if (count == 0) {
             // no work to do
             onComplete.run();
+            // TODO: do we need to return here? Is it possible that onComplete will be invoked twice?
         }
 
         final IterationManager<CONTEXT_TYPE> iterationManager =

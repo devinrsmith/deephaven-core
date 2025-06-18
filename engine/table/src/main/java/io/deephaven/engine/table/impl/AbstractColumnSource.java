@@ -374,7 +374,15 @@ public abstract class AbstractColumnSource<T> implements
             final Consumer<PushdownResult> onComplete,
             final Consumer<Exception> onError) {
         // Default to returning all results as "maybe"
-        onComplete.accept(PushdownResult.maybeMatch(selection.copy()));
+        PushdownFilterMatcher.accept(PushdownResult.maybeMatch(selection.copy()), onComplete, onError);
+        final PushdownResult result;
+        try {
+            result = PushdownResult.maybeMatch(selection.copy());
+        } catch (final RuntimeException e) {
+            onError.accept(e);
+            return;
+        }
+        onComplete.accept(result);
     }
 
     @Override

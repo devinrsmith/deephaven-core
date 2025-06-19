@@ -20,6 +20,7 @@ import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ObjectArraySource;
 import io.deephaven.engine.table.impl.util.DelayedErrorNotifier;
 import io.deephaven.engine.table.impl.util.JobScheduler;
+import io.deephaven.engine.table.impl.util.JobSchedulerFuture;
 import io.deephaven.engine.updategraph.UpdateCommitter;
 import io.deephaven.hash.KeyedObjectHashMap;
 import io.deephaven.hash.KeyedObjectKey;
@@ -32,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -906,11 +908,13 @@ public class RegionedColumnSourceManager
             final Consumer<Exception> onError) {
         final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
         if (overlappingRegions.isEmpty()) {
-            PushdownFilterMatcher.accept(PushdownResult.noMatch(selection.copy()), onComplete, onError);
+            onComplete.accept(PushdownResult.noMatch(selection.copy()));
             return;
         }
-        new PushdownFilterJobBuilder(selection.copy(), overlappingRegions, onComplete, onError)
-                .iterateParallel(jobScheduler, filter, renameMap, usePrev, context, costCeiling);
+        final PushdownFilterJobBuilder job =
+                new PushdownFilterJobBuilder(selection.copy(), overlappingRegions, onComplete, onError);
+        job.execute(jobScheduler, filter, renameMap, usePrev, context, costCeiling)
+                .whenComplete((o, t) -> job.close());
     }
 
     @Override
@@ -942,13 +946,13 @@ public class RegionedColumnSourceManager
         return new BasePushdownFilterContext();
     }
 
-    static final class PushdownFilterJobBuilder implements Closeable {
+    private static final class PushdownFilterJobBuilder {
 
         private final WritableRowSet selection;
         private final List<RegionInfoHolder> regions;
         private final PushdownResult[] results;
-        private final Consumer<PushdownResult> onComplete;
-        private final Consumer<Exception> onError;
+        private final Consumer<PushdownResult> pushdownOnComplete;
+        private final Consumer<Exception> pushdownOnError;
 
         private PushdownFilterJobBuilder(
                 final WritableRowSet selection,
@@ -957,12 +961,12 @@ public class RegionedColumnSourceManager
                 final Consumer<Exception> onError) {
             this.selection = Objects.requireNonNull(selection);
             this.regions = Objects.requireNonNull(regions);
-            this.onComplete = Objects.requireNonNull(onComplete);
-            this.onError = Objects.requireNonNull(onError);
+            this.pushdownOnComplete = Objects.requireNonNull(onComplete);
+            this.pushdownOnError = Objects.requireNonNull(onError);
             results = new PushdownResult[regions.size()];
         }
 
-        public void iterateParallel(
+        public void execute(
                 final JobScheduler jobScheduler,
                 final WhereFilter filter,
                 final Map<String, String> renameMap,
@@ -970,15 +974,25 @@ public class RegionedColumnSourceManager
                 final PushdownFilterContext context,
                 long costCeiling) {
             // Use the job scheduler to run every location in parallel.
-            jobScheduler.iterateParallel(
+            JobSchedulerFuture.iterateParallel(
+                    jobScheduler,
                     ExecutionContext.getContext(),
                     PushdownFilterJobBuilder::logName,
                     JobScheduler.DEFAULT_CONTEXT_FACTORY,
                     0,
                     regions.size(),
                     new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
-                    new OnComplete1(),
-                    new OnError());
+                    this::buildAndPushdownOnComplete,
+                    this::pushdownOnError)
+                    .whenComplete((s, t) -> close());
+        }
+
+        private void buildAndPushdownOnComplete() {
+            pushdownOnComplete.accept(build());
+        }
+
+        private void pushdownOnError(Exception t) {
+            pushdownOnError.accept(t);
         }
 
         private static LogOutput logName(LogOutput logOutput) {
@@ -1007,6 +1021,8 @@ public class RegionedColumnSourceManager
             public void run(JobScheduler.JobThreadContext taskThreadContext, int idx,
                     Consumer<Exception> nestedErrorConsumer, Runnable locationResume) {
                 final RegionInfoHolder regionInfo = regions.get(idx);
+                final UnshiftAndAdd callbacks =
+                        new UnshiftAndAdd(idx, regionInfo.tle.firstRowKey(), locationResume, nestedErrorConsumer);
                 regionInfo.tle.location.pushdownFilter(
                         filter,
                         renameMap,
@@ -1015,107 +1031,48 @@ public class RegionedColumnSourceManager
                         context,
                         costCeiling,
                         jobScheduler,
-                        new UnshiftAndAdd(idx, regionInfo.tle.firstRowKey(), locationResume),
-                        nestedErrorConsumer);
+                        callbacks::addAndResumeOnComplete,
+                        callbacks::nestedErrorOnError);
             }
         }
 
-        private final class UnshiftAndAdd implements Consumer<PushdownResult> {
+        // Can't have this implement both Consumer<PushdownResult>, Consumer<Exception>
+        private final class UnshiftAndAdd {
             private final int ix;
             private final long shiftAmount;
             private final Runnable locationResume;
+            private final Consumer<Exception> nestedErrorConsumer;
 
-            public UnshiftAndAdd(int ix, long shiftAmount, Runnable locationResume) {
+            public UnshiftAndAdd(int ix, long shiftAmount, Runnable locationResume,
+                    Consumer<Exception> nestedErrorConsumer) {
                 this.ix = ix;
                 this.shiftAmount = shiftAmount;
                 this.locationResume = Objects.requireNonNull(locationResume);
+                this.nestedErrorConsumer = Objects.requireNonNull(nestedErrorConsumer);
             }
 
-            @Override
-            public void accept(final PushdownResult results) {
-                final PushdownResult copy;
-                try (results) {
-                    copy = results.copy();
+            public void addAndResumeOnComplete(final PushdownResult result) {
+                // ownership of result is passed to the consumer, so we are safe to modify
+                if (result.selection().isNonempty()) {
+                    result.selection().shiftInPlace(shiftAmount);
                 }
-                if (copy.selection().isNonempty()) {
-                    copy.selection().shiftInPlace(shiftAmount);
+                if (result.match().isNonempty()) {
+                    result.match().shiftInPlace(shiftAmount);
                 }
-                if (copy.match().isNonempty()) {
-                    copy.match().shiftInPlace(shiftAmount);
+                if (result.maybeMatch().isNonempty()) {
+                    result.maybeMatch().shiftInPlace(shiftAmount);
                 }
-                if (copy.maybeMatch().isNonempty()) {
-                    copy.maybeMatch().shiftInPlace(shiftAmount);
-                }
-                add(ix, copy);
+                add(ix, result);
                 locationResume.run();
             }
-        }
 
-
-        // TODO: if onComplete.accept(result) throws an error, is the implementation expected to call onError?
-        // if yes:
-        //   AbstractColumnSource.pushdownFilter needs to be updated
-        // if no:
-        //   implementations of pushdownFilter using JobScheduler.iterateParallel need to be very careful
-
-        private final class OnComplete1 implements Runnable {
-
-            @Override
-            public void run() {
-                try {
-
-                }
-
-                final PushdownResult result;
-                try (PushdownFilterJobBuilder.this) {
-                    result = build();
-                }
-                onComplete.accept(result);
+            public void nestedErrorOnError(final Exception e) {
+                nestedErrorConsumer.accept(e);
             }
         }
 
-        private final class OnError1 implements Consumer<Exception> {
-
-            @Override
-            public void accept(Exception e) {
-
-            }
-        }
-
-
-        private final class OnComplete2 implements Runnable {
-
-            @Override
-            public void run() {
-                // If there is an error here, we want to invoke onError
-                final PushdownResult result = build();
-                // TODO: if this throws an error, OnError will be invoked. Do we need to call onError?
-                onComplete.accept(result);
-                try {
-                    close();
-                } catch (final RuntimeException e) {
-                    // we probably _don't_ want to invoke onError, propogate to OnError after onComplete has
-                    // successfully returned.
-                    // Alternatively to this impl, we could close before calling onComplete, and if that throws an
-                    // error, propagate to OnError.
-                }
-            }
-        }
-
-        private final class OnError implements Consumer<Exception> {
-
-            @Override
-            public void accept(Exception e) {
-                // TODO: are we guaranteed that no jobs are currently running if we get an OnError? (And no more jobs
-                // will be run?)
-                // try (PushdownFilterJobBuilder.this) {
-                onError.accept(e);
-                // }
-            }
-        }
-
-        private synchronized void add(final int ix, final PushdownResult results) {
-            this.results[ix] = results;
+        private synchronized void add(final int ix, final PushdownResult result) {
+            this.results[ix] = result;
         }
 
         public synchronized PushdownResult build() {
@@ -1146,8 +1103,7 @@ public class RegionedColumnSourceManager
                             .union(Stream.of(results).map(PushdownResult::maybeMatch).collect(Collectors.toList())));
         }
 
-        @Override
-        public void close() {
+        private void close() {
             // noinspection RedundantTypeArguments
             SafeCloseable.closeAll(Stream.of(
                     Stream.of(selection),

@@ -235,3 +235,7 @@ message FieldPathTesting {
   }
   Foo foo = 1;
 }
+
+message MyProto {
+  int32 dispatcherPort = 20;
+}

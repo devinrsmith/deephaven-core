@@ -10,11 +10,14 @@ import com.google.protobuf.BytesValue;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.DoubleValue;
+import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.FloatValue;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.Int64Value;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
+import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.UInt32Value;
@@ -45,6 +48,7 @@ import io.deephaven.protobuf.test.ByteWrapper;
 import io.deephaven.protobuf.test.ByteWrapperRepeated;
 import io.deephaven.protobuf.test.FieldMaskWrapper;
 import io.deephaven.protobuf.test.MultiRepeated;
+import io.deephaven.protobuf.test.MyProto;
 import io.deephaven.protobuf.test.NestedArrays;
 import io.deephaven.protobuf.test.NestedByteWrapper;
 import io.deephaven.protobuf.test.NestedRepeatedTimestamps;
@@ -1574,6 +1578,21 @@ public class ProtobufDescriptorParserTest {
                                 .build(), new String[][] {new String[0], new String[] {"Foo", "Bar"}});
                     }
                 });
+    }
+
+    @Test
+    void dynamicMessageGetFieldResults() throws InvalidProtocolBufferException {
+        final MyProto foo = MyProto.newBuilder()/* .setDispatcherPort(0) */.build();
+        final DynamicMessage bar = DynamicMessage.parseFrom(MyProto.getDescriptor(), foo.toByteArray());
+        assertThat(foo).isEqualTo(bar);
+        // https://github.com/protocolbuffers/protobuf/issues/19080
+        // assertThat(foo).hasSameHashCodeAs(bar);
+        assertThat(foo).extracting(ProtobufDescriptorParserTest::getDispatcherPort).isEqualTo(0);
+        assertThat(bar).extracting(ProtobufDescriptorParserTest::getDispatcherPort).isEqualTo(0);
+    }
+
+    private static Object getDispatcherPort(final MessageOrBuilder m) {
+        return m.getField(MyProto.getDescriptor().findFieldByNumber(MyProto.DISPATCHERPORT_FIELD_NUMBER));
     }
 
     private static Map<List<String>, TypedFunction<Message>> nf(Descriptor descriptor) {

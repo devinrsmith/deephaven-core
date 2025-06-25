@@ -1591,6 +1591,15 @@ public class ProtobufDescriptorParserTest {
         assertThat(bar).extracting(ProtobufDescriptorParserTest::getDispatcherPort).isEqualTo(0);
     }
 
+    @Test
+    void dispatcherPortParsing() throws InvalidProtocolBufferException {
+        final MyProto foo = MyProto.newBuilder().setDispatcherPort(0).build();
+        final DynamicMessage bar = DynamicMessage.parseFrom(MyProto.getDescriptor(), foo.toByteArray());
+        checkKey(MyProto.getDescriptor(), List.of("dispatcherPort"), Type.intType(), Map.of(foo, 0));
+        // not doing in same map due to https://github.com/protocolbuffers/protobuf/issues/19080
+        checkKey(MyProto.getDescriptor(), List.of("dispatcherPort"), Type.intType(), Map.of(bar, 0));
+    }
+
     private static Object getDispatcherPort(final MessageOrBuilder m) {
         return m.getField(MyProto.getDescriptor().findFieldByNumber(MyProto.DISPATCHERPORT_FIELD_NUMBER));
     }

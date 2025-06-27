@@ -3,13 +3,14 @@ import io.deephaven.project.util.PublishingTools
 plugins {
   id 'java'
   id 'signing'
-  id 'maven-publish'
+  id 'com.vanniktech.maven.publish'
   id 'io.deephaven.javadoc-conventions'
 }
 
 java {
-  withJavadocJar()
-  withSourcesJar()
+  // https://github.com/vanniktech/gradle-maven-publish-plugin/issues/1028
+  // withSourcesJar()
+  // withJavadocJar()
 }
 
 // Any published source jar should contain apt-generated sources

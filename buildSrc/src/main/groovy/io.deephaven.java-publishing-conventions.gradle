@@ -28,10 +28,4 @@ tasks.withType(Javadoc) {
   options.addStringOption('sourcepath', sourceSets.main.allJava.getSourceDirectories().getAsPath())
 }
 
-PublishingTools.setupPublications(project) {
-  from components.java
-}
-
-PublishingTools.setupRepositories(project)
-PublishingTools.setupMavenPublication(project, publishing.publications.mavenJava)
-PublishingTools.setupSigning(project, publishing.publications.mavenJava)
+PublishingTools.setupPublishing(project)

@@ -51,7 +51,12 @@ def gencode = { name, template, output ->
         mustRunAfter gen
     }
 
-    [sourceSets.main.compileJavaTaskName, sourceSets.main.sourcesJarTaskName, sourceSets.main.javadocTaskName].each {
+//    [sourceSets.main.compileJavaTaskName, sourceSets.main.sourcesJarTaskName, sourceSets.main.javadocTaskName].each {
+//        tasks.named(it).configure {
+//            dependsOn(gen)
+//        }
+//    }
+    [sourceSets.main.compileJavaTaskName].each {
         tasks.named(it).configure {
             dependsOn(gen)
         }

@@ -1,5 +1,6 @@
 package io.deephaven.project.util
 
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import groovy.transform.CompileStatic
 import io.deephaven.tools.License
 import org.gradle.api.Action
@@ -8,8 +9,8 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.artifacts.repositories.PasswordCredentials
 import org.gradle.api.plugins.BasePluginExtension
-import org.gradle.api.publish.Publication
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.plugins.signing.SigningExtension
@@ -51,13 +52,7 @@ class PublishingTools {
             container.create('mavenJava', MavenPublication) { publication ->
                 action.execute(publication)
                 publication.pom {pom ->
-                    pom.licenses { licenses ->
-                        licenses.license { license ->
-                            license.name.set projectLicense.name
-                            license.url.set projectLicense.url
-                        }
-                    }
-
+                    setPomLicense pom, projectLicense
                 }
             }
         }
@@ -80,31 +75,7 @@ class PublishingTools {
     }
 
     static void setupMavenPublication(Project project, MavenPublication mavenPublication) {
-        mavenPublication.pom {pom ->
-            pom.url.set PROJECT_URL
-            pom.organization {org ->
-                org.name.set ORG_NAME
-                org.url.set ORG_URL
-            }
-            pom.scm { scm ->
-                scm.url.set SCM_URL
-                scm.connection.set SCM_CONNECTION
-                scm.developerConnection.set SCM_DEV_CONNECTION
-            }
-            pom.issueManagement { im ->
-                im.system.set ISSUES_SYSTEM
-                im.url.set ISSUES_URL
-            }
-            pom.developers { devs ->
-                devs.developer { dev ->
-                    dev.id.set DEVELOPER_ID
-                    dev.name.set DEVELOPER_NAME
-                    dev.email.set DEVELOPER_EMAIL
-                    dev.organization.set ORG_NAME
-                    dev.organizationUrl.set ORG_URL
-                }
-            }
-        }
+        mavenPublication.pom {pom -> setPomConstants pom }
 
         def publishToOssrhTask = project.tasks.getByName("publish${mavenPublication.getName().capitalize()}PublicationToOssrhRepository")
 
@@ -129,10 +100,70 @@ class PublishingTools {
         }
     }
 
-    static void setupSigning(Project project, Publication publication) {
+    static void setupPublishing(Project project) {
+        MavenPublishBaseExtension mpb = project.extensions.getByType(MavenPublishBaseExtension)
+        BasePluginExtension base = project.extensions.getByType(BasePluginExtension)
+        License license = project.extensions.extraProperties.get('license') as License
+        mpb.publishToMavenCentral()
+        mpb.signAllPublications()
+        mpb.pom { pom ->
+            setPomConstants pom
+            setPomLicense pom, license
+        }
+        project.afterEvaluate {
+            mpb.coordinates(null, base.archivesName.get(), null)
+            mpb.pom { pom ->
+                pom.name.set base.archivesName.get()
+                pom.description.set project.description
+            }
+        }
+        def assertIsRelease = assertIsReleaseTask(project)
+        // Note: would be nice if MavenPublishBaseExtension exposed the tasks it created
+        [ "publishToMavenCentral", "publishAllPublicationsToMavenCentralRepository" ].each {taskName ->
+            project.tasks.named(taskName) {
+                it.dependsOn assertIsRelease
+            }
+        }
+    }
+
+    private static void setPomLicense(MavenPom pom, License projectLicense) {
+        pom.licenses { licenses ->
+            licenses.license { license ->
+                license.name.set projectLicense.name
+                license.url.set projectLicense.url
+            }
+        }
+    }
+
+    private static void setPomConstants(MavenPom pom) {
+        pom.url.set PROJECT_URL
+        pom.organization { org ->
+            org.name.set ORG_NAME
+            org.url.set ORG_URL
+        }
+        pom.scm { scm ->
+            scm.url.set SCM_URL
+            scm.connection.set SCM_CONNECTION
+            scm.developerConnection.set SCM_DEV_CONNECTION
+        }
+        pom.issueManagement { im ->
+            im.system.set ISSUES_SYSTEM
+            im.url.set ISSUES_URL
+        }
+        pom.developers { devs ->
+            devs.developer { dev ->
+                dev.id.set DEVELOPER_ID
+                dev.name.set DEVELOPER_NAME
+                dev.email.set DEVELOPER_EMAIL
+                dev.organization.set ORG_NAME
+                dev.organizationUrl.set ORG_URL
+            }
+        }
+    }
+
+    static void setupSigning(Project project) {
         SigningExtension signingExtension = project.extensions.getByType(SigningExtension)
         signingExtension.required = "true" == project.findProperty('signingRequired')
-        signingExtension.sign(publication)
         String signingKey = project.findProperty('signingKey')
         String signingPassword = project.findProperty('signingPassword')
         if (signingKey != null && signingPassword != null) {

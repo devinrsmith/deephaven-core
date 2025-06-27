@@ -26,7 +26,7 @@ publishing {
 
 PublishingTools.setupRepositories(project)
 PublishingTools.setupMavenPublication(project, publishing.publications.myPlatform)
-PublishingTools.setupSigning(project, publishing.publications.myPlatform)
+PublishingTools.setupSigning(project)
 
 project.tasks
         .getByName('quick')

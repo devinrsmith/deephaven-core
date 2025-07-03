@@ -186,7 +186,6 @@ abstract class AbstractFilterExecution {
                         resume.run();
                     };
 
-                    // TODO: iterateParallel needs to keep a copy of input if it wants to reference it.
                     // Filter this segment of the input rows.
                     doFilter(filter, inputCopy, startOffSet, endOffset, onFilterComplete, nec);
                 },

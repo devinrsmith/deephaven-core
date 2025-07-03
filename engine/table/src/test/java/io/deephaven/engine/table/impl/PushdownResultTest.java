@@ -17,7 +17,7 @@ public class PushdownResultTest {
     public void match() {
         try (
                 final WritableRowSet selection = RowSetFactory.fromRange(0, 29);
-                final PushdownResult r = PushdownResult.match(selection.copy())) {
+                final PushdownResult r = PushdownResult.match(selection)) {
             assertThat(r.isFinished()).isTrue();
             assertThat(r.selection()).isEqualTo(selection);
             assertThat(r.match()).isEqualTo(selection);
@@ -33,7 +33,7 @@ public class PushdownResultTest {
     public void maybeMatch() {
         try (
                 final WritableRowSet selection = RowSetFactory.fromRange(0, 29);
-                final PushdownResult r = PushdownResult.maybeMatch(selection.copy())) {
+                final PushdownResult r = PushdownResult.maybeMatch(selection)) {
             assertThat(r.isFinished()).isFalse();
             assertThat(r.selection()).isEqualTo(selection);
             assertThat(r.match().isEmpty()).isTrue();
@@ -49,7 +49,7 @@ public class PushdownResultTest {
     public void noMatch() {
         try (
                 final WritableRowSet selection = RowSetFactory.fromRange(0, 29);
-                final PushdownResult r = PushdownResult.noMatch(selection.copy())) {
+                final PushdownResult r = PushdownResult.noMatch(selection)) {
             assertThat(r.isFinished()).isTrue();
             assertThat(r.selection()).isEqualTo(selection);
             assertThat(r.match().isEmpty()).isTrue();
@@ -68,8 +68,8 @@ public class PushdownResultTest {
                 final WritableRowSet match = RowSetFactory.fromRange(0, 9);
                 final WritableRowSet maybeMatch = RowSetFactory.fromRange(10, 19);
                 final WritableRowSet noMatch = RowSetFactory.fromRange(20, 29);
-                final PushdownResult r1 = PushdownResult.of(selection.copy(), match.copy(), maybeMatch.copy());
-                final PushdownResult r2 = PushdownResult.ofUnsafe(selection.copy(), match.copy(), maybeMatch.copy())) {
+                final PushdownResult r1 = PushdownResult.of(selection, match, maybeMatch);
+                final PushdownResult r2 = PushdownResult.ofUnsafe(selection, match, maybeMatch)) {
             for (final PushdownResult r : Arrays.asList(r1, r2)) {
                 assertThat(r.isFinished()).isFalse();
                 assertThat(r.selection()).isEqualTo(selection);

@@ -906,7 +906,7 @@ public class RegionedColumnSourceManager
             final Consumer<Exception> onError) {
         final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
         if (overlappingRegions.isEmpty()) {
-            onComplete.accept(PushdownResult.noMatch(selection.copy()));
+            onComplete.accept(PushdownResult.noMatch(selection));
             return;
         }
         new PushdownFilterJobBuilder(selection.copy(), overlappingRegions, onComplete, onError)
@@ -1088,20 +1088,22 @@ public class RegionedColumnSourceManager
             Assert.eq(selection.size(), "selection.size()", selectionSize, "selectionSize");
             if (matchSize == selectionSize) {
                 Assert.eqZero(maybeMatchSize, "maybeMatchSize");
-                return PushdownResult.match(selection.copy());
+                return PushdownResult.match(selection);
             }
             if (maybeMatchSize == selectionSize) {
                 Assert.eqZero(matchSize, "matchSize");
-                return PushdownResult.maybeMatch(selection.copy());
+                return PushdownResult.maybeMatch(selection);
             }
             if (matchSize == 0 && maybeMatchSize == 0) {
-                return PushdownResult.noMatch(selection.copy());
+                return PushdownResult.noMatch(selection);
             }
-            return PushdownResult.ofUnsafe(
-                    selection.copy(),
-                    RowSetFactory.union(Stream.of(results).map(PushdownResult::match).collect(Collectors.toList())),
-                    RowSetFactory
-                            .union(Stream.of(results).map(PushdownResult::maybeMatch).collect(Collectors.toList())));
+            try (
+                    final WritableRowSet match = RowSetFactory
+                            .union(Stream.of(results).map(PushdownResult::match).collect(Collectors.toList()));
+                    final WritableRowSet maybeMatch = RowSetFactory
+                            .union(Stream.of(results).map(PushdownResult::maybeMatch).collect(Collectors.toList()))) {
+                return PushdownResult.ofUnsafe(selection, match, maybeMatch);
+            }
         }
 
         @Override

@@ -39,44 +39,40 @@ public final class PushdownResult implements SafeCloseable {
     private final WritableRowSet maybeMatch;
 
     /**
-     * Constructs a new result with all of {@code selection} as {@link #maybeMatch() maybeMatch}. The ownership of
-     * {@code selection} is transferred to the pushdown result.
+     * Constructs a new result with all of {@code selection} as {@link #maybeMatch() maybeMatch}.
      *
      * @param selection the selection
      * @return the result
      */
-    public static PushdownResult maybeMatch(final WritableRowSet selection) {
-        return new PushdownResult(selection, RowSetFactory.empty(), selection.copy());
+    public static PushdownResult maybeMatch(final RowSet selection) {
+        return new PushdownResult(selection.copy(), RowSetFactory.empty(), selection.copy());
     }
 
     /**
-     * Constructs a new result with all of {@code selection} as {@link #match() match}. The ownership of
-     * {@code selection} is transferred to the pushdown result.
+     * Constructs a new result with all of {@code selection} as {@link #match() match}.
      *
      * @param selection the selection
      * @return the result
      */
-    public static PushdownResult match(final WritableRowSet selection) {
-        return new PushdownResult(selection, selection.copy(), RowSetFactory.empty());
+    public static PushdownResult match(final RowSet selection) {
+        return new PushdownResult(selection.copy(), selection.copy(), RowSetFactory.empty());
     }
 
     /**
-     * Constructs a new result with all of {@code selection} as {@link #noMatchCopy() noMatch}. The ownership of
-     * {@code selection} is transferred to the pushdown result.
+     * Constructs a new result with all of {@code selection} as {@link #noMatchCopy() noMatch}.
      *
      * @param selection the selection
      * @return the result
      */
-    public static PushdownResult noMatch(final WritableRowSet selection) {
-        return new PushdownResult(selection, RowSetFactory.empty(), RowSetFactory.empty());
+    public static PushdownResult noMatch(final RowSet selection) {
+        return new PushdownResult(selection.copy(), RowSetFactory.empty(), RowSetFactory.empty());
     }
 
     /**
      * Constructs a new result with {@code selection}, {@code match}, and {@code maybeMatch}. {@code match} and
      * {@code maybeMatch} must be non-overlapping subsets of {@code selection}, which is checked via
-     * {@link RowSet#overlaps(RowSet)} and {@link RowSet#subsetOf(RowSet)}. The ownership of {@code selection},
-     * {@code match}, and {@code maybeMatch} is transferred to the pushdown result. Callers that are careful in their
-     * construction may prefer to call {@link #ofUnsafe(WritableRowSet, WritableRowSet, WritableRowSet)}.
+     * {@link RowSet#overlaps(RowSet)} and {@link RowSet#subsetOf(RowSet)}. Callers that are careful in their
+     * construction may prefer to call {@link #ofUnsafe(RowSet, RowSet, RowSet)}.
      *
      * @param selection the selection
      * @param match rows that match
@@ -84,9 +80,9 @@ public final class PushdownResult implements SafeCloseable {
      * @return the result
      */
     public static PushdownResult of(
-            final WritableRowSet selection,
-            final WritableRowSet match,
-            final WritableRowSet maybeMatch) {
+            final RowSet selection,
+            final RowSet match,
+            final RowSet maybeMatch) {
         if (!match.subsetOf(selection)) {
             throw new IllegalArgumentException("match must be a subset of selection");
         }
@@ -96,13 +92,12 @@ public final class PushdownResult implements SafeCloseable {
         if (match.overlaps(maybeMatch)) {
             throw new IllegalArgumentException("match and maybeMatch should be non-overlapping row sets");
         }
-        return new PushdownResult(selection, match, maybeMatch);
+        return new PushdownResult(selection.copy(), match.copy(), maybeMatch.copy());
     }
 
     /**
      * Constructs a new result with {@code selection}, {@code match}, and {@code maybeMatch}. {@code match} and
      * {@code maybeMatch} must be non-overlapping subsets of {@code selection}, but this is <b>not</b> thoroughly check.
-     * The ownership of {@code selection}, {@code match}, and {@code maybeMatch} is transferred to the pushdown result.
      *
      * @param selection the selection
      * @param match rows that match
@@ -110,9 +105,9 @@ public final class PushdownResult implements SafeCloseable {
      * @return the result
      */
     public static PushdownResult ofUnsafe(
-            final WritableRowSet selection,
-            final WritableRowSet match,
-            final WritableRowSet maybeMatch) {
+            final RowSet selection,
+            final RowSet match,
+            final RowSet maybeMatch) {
         final long matchSize = match.size();
         final long maybeMatchSize = maybeMatch.size();
         final long selectionSize = selection.size();
@@ -121,7 +116,7 @@ public final class PushdownResult implements SafeCloseable {
                     String.format("Invalid PushdownResult, matchSize + maybeMatchSize > selectionSize, %d + %d > %d",
                             matchSize, maybeMatchSize, selectionSize));
         }
-        return new PushdownResult(selection, match, maybeMatch);
+        return new PushdownResult(selection.copy(), match.copy(), maybeMatch.copy());
     }
 
     private PushdownResult(

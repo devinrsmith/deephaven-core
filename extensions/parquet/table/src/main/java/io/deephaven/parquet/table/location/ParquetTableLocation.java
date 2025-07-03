@@ -565,7 +565,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
             final Consumer<Exception> onError) {
         if (selection.isEmpty()) {
             log.warn().append("Pushdown filter called with empty selection for table ").append(getTableKey()).endl();
-            onComplete.accept(PushdownResult.noMatch(selection.copy()));
+            onComplete.accept(PushdownResult.noMatch(selection));
             return;
         }
 
@@ -575,7 +575,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
         final Optional<List<ResolvedColumnInfo>> maybeResolvedColumns = resolveColumns(filter, renameMap);
         if (maybeResolvedColumns.isEmpty()) {
             // One or more columns could not be resolved, so we return all rows as "maybe" rows.
-            onComplete.accept(PushdownResult.maybeMatch(selection.copy()));
+            onComplete.accept(PushdownResult.maybeMatch(selection));
             return;
         }
         final List<ResolvedColumnInfo> resolvedColumnsInfo = maybeResolvedColumns.get();
@@ -636,7 +636,11 @@ public class ParquetTableLocation extends AbstractTableLocation {
             }
         }
 
-        onComplete.accept(PushdownResult.ofUnsafe(selection.copy(), RowSetFactory.empty(), maybeMatch));
+        try (
+                final WritableRowSet empty = RowSetFactory.empty();
+                maybeMatch) {
+            onComplete.accept(PushdownResult.ofUnsafe(selection, empty, maybeMatch));
+        }
     }
 
     /**
@@ -810,12 +814,17 @@ public class ParquetTableLocation extends AbstractTableLocation {
             } catch (final Exception e) {
                 // Exception occurs here if we have a data type mismatch between the index and the filter.
                 // Just swallow the exception and return a copy of the original result
-                return PushdownResult.ofUnsafe(selection.copy(), RowSetFactory.empty(), maybeMatch.copy());
+                try (final WritableRowSet empty = RowSetFactory.empty()) {
+                    return PushdownResult.ofUnsafe(selection, empty, maybeMatch);
+                }
             }
         }
         // Retain only the maybe rows
-        final WritableRowSet matching = matchingBuilder.build();
-        matching.retain(maybeMatch);
-        return PushdownResult.ofUnsafe(selection.copy(), matching, RowSetFactory.empty());
+        try (
+                final WritableRowSet matching = matchingBuilder.build();
+                final WritableRowSet empty = RowSetFactory.empty()) {
+            matching.retain(maybeMatch);
+            return PushdownResult.ofUnsafe(selection, matching, empty);
+        }
     }
 }

@@ -8,6 +8,7 @@ import io.deephaven.api.SortColumn;
 import io.deephaven.base.Pair;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
+import io.deephaven.csv.util.MutableBoolean;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.engine.rowset.*;
@@ -736,7 +737,8 @@ public class ParquetTableLocation extends AbstractTableLocation {
         // Only one column in a RangeFilter
         final Integer columnIndex = columnIndices.get(0);
         final List<BlockMetaData> blocks = parquetMetadata.getBlocks();
-        final boolean[] isIdentical = {true};
+        final MutableBoolean isIdentical = new MutableBoolean();
+        isIdentical.setValue(true);
         iterateRowGroupsAndRowSet(maybeMatch, (rgIdx, rs) -> {
             final Pair<Object, Object> p = getMinMax(
                     blocks.get(rgIdx).getColumns().get(columnIndex).getStatistics());
@@ -746,10 +748,10 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 newMaybeMatch.appendRowSequence(rs);
             } else {
                 // rs can be dropped from maybeMatch, we know it doesn't match
-                isIdentical[0] = false;
+                isIdentical.setValue(false);
             }
         });
-        return isIdentical[0] ? maybeMatch.copy() : newMaybeMatch.build();
+        return isIdentical.booleanValue() ? maybeMatch.copy() : newMaybeMatch.build();
     }
 
     private WritableRowSet refineViaParquetStats(

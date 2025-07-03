@@ -24,7 +24,8 @@ public final class PushdownResult implements SafeCloseable {
     public static long DEFERRED_DATA_INDEX_COST = 50_000L;
 
     /**
-     * The selection.
+     * The selection. Retaining selection here makes the pushdown result "self-contained" which helps with composability
+     * and potential safety checks when results are combined.
      */
     private final WritableRowSet selection;
 
@@ -201,6 +202,9 @@ public final class PushdownResult implements SafeCloseable {
         return new PushdownResult(selection.copy(), match.copy(), maybeMatch.copy());
     }
 
+    /**
+     * Closes {@link #selection()}, {@link #match()}, and {@link #maybeMatch()}.
+     */
     @Override
     public void close() {
         SafeCloseable.closeAll(selection, match, maybeMatch);

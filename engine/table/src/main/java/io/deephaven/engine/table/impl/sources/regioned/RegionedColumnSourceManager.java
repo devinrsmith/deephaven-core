@@ -978,6 +978,8 @@ public class RegionedColumnSourceManager
                     regions.size(),
                     new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
                     new OnComplete(),
+                    () -> {
+                    },
                     new OnError());
         }
 

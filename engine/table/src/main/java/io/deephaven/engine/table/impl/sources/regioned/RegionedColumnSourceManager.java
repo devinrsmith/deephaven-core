@@ -1040,6 +1040,8 @@ public class RegionedColumnSourceManager
                     final int idx,
                     final Consumer<Exception> nestedErrorConsumer,
                     final Runnable locationResume) {
+
+
                 final RegionInfoHolder regionInfo = regions.get(idx);
 
 

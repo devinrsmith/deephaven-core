@@ -906,6 +906,10 @@ public class RegionedColumnSourceManager
             final Consumer<Exception> onError) {
         final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
         if (overlappingRegions.isEmpty()) {
+            // TODO: is this base case necessary for correctness?
+            // it seems like the expectations in PushdownFilterJobBuilder.build don't align with this...
+            // I think for correctness, we still need to return all of the regions, even if they are empty, so that the
+            // selection totals can all add up.
             onComplete.accept(PushdownResult.noMatch(selection));
             return;
         }
@@ -942,7 +946,7 @@ public class RegionedColumnSourceManager
         return new BasePushdownFilterContext();
     }
 
-    static final class PushdownFilterJobBuilder implements Closeable {
+    private static final class PushdownFilterJobBuilder {
 
         private final WritableRowSet selection;
         private final List<RegionInfoHolder> regions;
@@ -977,10 +981,34 @@ public class RegionedColumnSourceManager
                     0,
                     regions.size(),
                     new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
-                    new OnComplete(),
-                    () -> {
-                    },
-                    new OnError());
+                    this::onComplete,
+                    this::cleanup,
+                    this::onError);
+        }
+
+        private void onComplete() {
+            onComplete.accept(build());
+        }
+
+        private void cleanup() {
+            close();
+        }
+
+        private void onError(final Exception e) {
+            try {
+                onError.accept(e);
+            } finally {
+                close();
+            }
+        }
+
+        private void close() {
+            // noinspection RedundantTypeArguments
+            SafeCloseable.closeAll(Stream.of(
+                    Stream.of(selection),
+                    Stream.of(results),
+                    regions.stream())
+                    .<SafeCloseable>flatMap(Function.identity()));
         }
 
         private static LogOutput logName(LogOutput logOutput) {
@@ -1006,8 +1034,11 @@ public class RegionedColumnSourceManager
             }
 
             @Override
-            public void run(JobScheduler.JobThreadContext taskThreadContext, int idx,
-                    Consumer<Exception> nestedErrorConsumer, Runnable locationResume) {
+            public void run(
+                    final JobScheduler.JobThreadContext taskThreadContext,
+                    final int idx,
+                    final Consumer<Exception> nestedErrorConsumer,
+                    final Runnable locationResume) {
                 final RegionInfoHolder regionInfo = regions.get(idx);
                 regionInfo.tle.location.pushdownFilter(
                         filter,
@@ -1035,42 +1066,18 @@ public class RegionedColumnSourceManager
 
             @Override
             public void accept(final PushdownResult results) {
-                final PushdownResult copy;
-                try (results) {
-                    copy = results.copy();
+                // Ownership of results passes to us, so we can modify in place
+                if (results.selection().isNonempty()) {
+                    results.selection().shiftInPlace(shiftAmount);
                 }
-                if (copy.selection().isNonempty()) {
-                    copy.selection().shiftInPlace(shiftAmount);
+                if (results.match().isNonempty()) {
+                    results.match().shiftInPlace(shiftAmount);
                 }
-                if (copy.match().isNonempty()) {
-                    copy.match().shiftInPlace(shiftAmount);
+                if (results.maybeMatch().isNonempty()) {
+                    results.maybeMatch().shiftInPlace(shiftAmount);
                 }
-                if (copy.maybeMatch().isNonempty()) {
-                    copy.maybeMatch().shiftInPlace(shiftAmount);
-                }
-                add(ix, copy);
+                add(ix, results);
                 locationResume.run();
-            }
-        }
-
-        private final class OnComplete implements Runnable {
-
-            @Override
-            public void run() {
-                try (PushdownFilterJobBuilder.this) {
-                    onComplete.accept(build());
-                }
-            }
-        }
-
-        private final class OnError implements Consumer<Exception> {
-
-            @Override
-            public void accept(Exception e) {
-                // TODO: are we guaranteed that no jobs are currently running if we get an OnError?
-                // try (PushdownFilterJobBuilder.this) {
-                onError.accept(e);
-                // }
             }
         }
 
@@ -1106,16 +1113,6 @@ public class RegionedColumnSourceManager
                             .union(Stream.of(results).map(PushdownResult::maybeMatch).collect(Collectors.toList()))) {
                 return PushdownResult.ofUnsafe(selection, match, maybeMatch);
             }
-        }
-
-        @Override
-        public void close() {
-            // noinspection RedundantTypeArguments
-            SafeCloseable.closeAll(Stream.of(
-                    Stream.of(selection),
-                    Stream.of(results),
-                    regions.stream())
-                    .<SafeCloseable>flatMap(Function.identity()));
         }
     }
 }

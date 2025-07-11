@@ -56,7 +56,7 @@ public interface PushdownFilterMatcher {
      * ownership passes to {@code onComplete}.
      *
      * <p>
-     * A no-op implementation should simply return {@code PushdownResult.maybeMatch(selection.copy())}. Note that any
+     * A no-op implementation should simply return {@code PushdownResult.maybeMatch(selection)}. Note that any
      * references to {@code selection} should be {@link RowSet#copy() copied}.
      *
      * @param filter The {@link Filter filter} to apply.

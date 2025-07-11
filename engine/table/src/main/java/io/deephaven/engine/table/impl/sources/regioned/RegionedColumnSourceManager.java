@@ -30,7 +30,6 @@ import io.deephaven.util.annotations.ReferentialIntegrity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.Closeable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -749,16 +748,18 @@ public class RegionedColumnSourceManager
          * @return A writable row set for the location
          */
         private WritableRowSet getOverlappingShiftedRowSet(final RowSet inputRows) {
-            final long locationStartKey = firstRowKey();
-
-            // Extract the portion of inputRows that overlaps this region.
-            final WritableRowSet overlappingRows = inputRows.subSetByKeyRange(locationStartKey, lastRowKey());
-
-            // Shift to the region's key space
-            overlappingRows.shiftInPlace(-locationStartKey);
-
+            final WritableRowSet overlappingRows = shiftedRowSet(inputRows);
             // Retain only rows that still exist in the region.
             overlappingRows.retain(rowSetAtLastUpdate);
+            return overlappingRows;
+        }
+
+        private WritableRowSet shiftedRowSet(final RowSet inputRows) {
+            final long locationStartKey = firstRowKey();
+            // Extract the portion of inputRows that overlaps this region.
+            final WritableRowSet overlappingRows = inputRows.subSetByKeyRange(locationStartKey, lastRowKey());
+            // Shift to the region's key space
+            overlappingRows.shiftInPlace(-locationStartKey);
             return overlappingRows;
         }
 
@@ -808,18 +809,18 @@ public class RegionedColumnSourceManager
      */
     private static class RegionInfoHolder implements SafeCloseable {
         private final IncludedTableLocationEntry tle;
-        private final WritableRowSet rowSet;
+        private final WritableRowSet selectionSubset;
 
         private RegionInfoHolder(
                 @NotNull final IncludedTableLocationEntry tle,
-                @NotNull final WritableRowSet rowSet) {
+                @NotNull final WritableRowSet selectionSubset) {
             this.tle = tle;
-            this.rowSet = rowSet;
+            this.selectionSubset = selectionSubset;
         }
 
         @Override
         public void close() {
-            rowSet.close();
+            selectionSubset.close();
         }
     }
 
@@ -887,7 +888,7 @@ public class RegionedColumnSourceManager
             return overlappingRegionsSample
                     .parallelStream()
                     .mapToLong(overlappingRegion -> overlappingRegion.tle.location.estimatePushdownFilterCost(
-                            filter, renameMap, overlappingRegion.rowSet, usePrev, context))
+                            filter, renameMap, overlappingRegion.selectionSubset, usePrev, context))
                     .min()
                     .orElse(Long.MAX_VALUE);
         }
@@ -1040,10 +1041,13 @@ public class RegionedColumnSourceManager
                     final Consumer<Exception> nestedErrorConsumer,
                     final Runnable locationResume) {
                 final RegionInfoHolder regionInfo = regions.get(idx);
+
+
+
                 regionInfo.tle.location.pushdownFilter(
                         filter,
                         renameMap,
-                        regionInfo.rowSet,
+                        regionInfo.selectionSubset,
                         usePrev,
                         context,
                         costCeiling,

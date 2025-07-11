@@ -7,12 +7,40 @@ import io.deephaven.base.log.LogOutput;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.context.ExecutionContext;
-import io.deephaven.engine.liveness.*;
-import io.deephaven.engine.rowset.*;
-import io.deephaven.engine.table.*;
-import io.deephaven.engine.table.impl.*;
+import io.deephaven.engine.liveness.DelegatingLivenessNode;
+import io.deephaven.engine.liveness.LivenessArtifact;
+import io.deephaven.engine.liveness.LivenessNode;
+import io.deephaven.engine.liveness.LivenessScopeStack;
+import io.deephaven.engine.liveness.ReferenceCountedLivenessNode;
+import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.RowSetBuilderSequential;
+import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.RowSetShiftData;
+import io.deephaven.engine.rowset.TrackingWritableRowSet;
+import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.ColumnDefinition;
+import io.deephaven.engine.table.ColumnSource;
+import io.deephaven.engine.table.DataIndex;
+import io.deephaven.engine.table.ModifiedColumnSet;
+import io.deephaven.engine.table.Table;
+import io.deephaven.engine.table.TableDefinition;
+import io.deephaven.engine.table.TableListener;
+import io.deephaven.engine.table.TableUpdate;
+import io.deephaven.engine.table.WritableColumnSource;
+import io.deephaven.engine.table.impl.BasePushdownFilterContext;
+import io.deephaven.engine.table.impl.ColumnSourceManager;
+import io.deephaven.engine.table.impl.ColumnToCodecMappings;
+import io.deephaven.engine.table.impl.PushdownFilterContext;
+import io.deephaven.engine.table.impl.PushdownPredicateManager;
+import io.deephaven.engine.table.impl.PushdownResult;
+import io.deephaven.engine.table.impl.QueryTable;
+import io.deephaven.engine.table.impl.TableUpdateImpl;
+import io.deephaven.engine.table.impl.TableUpdateMode;
 import io.deephaven.engine.table.impl.indexer.DataIndexer;
-import io.deephaven.engine.table.impl.locations.*;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
+import io.deephaven.engine.table.impl.locations.ImmutableTableLocationKey;
+import io.deephaven.engine.table.impl.locations.TableDataException;
+import io.deephaven.engine.table.impl.locations.TableLocation;
 import io.deephaven.engine.table.impl.locations.impl.AbstractTableLocation;
 import io.deephaven.engine.table.impl.locations.impl.TableLocationUpdateSubscriptionBuffer;
 import io.deephaven.engine.table.impl.select.WhereFilter;
@@ -30,14 +58,28 @@ import io.deephaven.util.annotations.ReferentialIntegrity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource.*;
+import static io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource.ROW_KEY_TO_SUB_REGION_ROW_INDEX_MASK;
+import static io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource.getFirstRowKey;
+import static io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource.getLastRowKey;
 
 /**
  * Manage column sources made up of regions in their own row key address space.
@@ -740,6 +782,51 @@ public class RegionedColumnSourceManager
             return Integer.compare(regionIndex, other.regionIndex);
         }
 
+        public void pushdownLocationSubset(
+                final WhereFilter filter,
+                final Map<String, String> renameMap,
+                final RowSet selection,
+                final boolean usePrev,
+                final PushdownFilterContext context,
+                final long costCeiling,
+                final JobScheduler jobScheduler,
+                final Consumer<PushdownResult> onComplete,
+                final Consumer<Exception> onError) {
+            final WritableRowSet subset = subsetAndShiftIntoLocationSpace(selection);
+            location.pushdownFilter(filter, renameMap, subset, usePrev, context, costCeiling, jobScheduler, result -> unshiftIntoRegionSpaceAndComplete(onComplete, result), onError);
+        }
+
+        private WritableRowSet subsetAndShiftIntoLocationSpace(final RowSet selection) {
+            final long locationStartKey = firstRowKey();
+            // Extract the portion of selection that overlaps this region.
+            final WritableRowSet overlappingRows = selection.subSetByKeyRange(locationStartKey, lastRowKey());
+            // Shift to the region's key space
+            overlappingRows.shiftInPlace(-locationStartKey);
+            return overlappingRows;
+        }
+
+        private void unshiftIntoRegionSpaceAndComplete(final Consumer<PushdownResult> onComplete, final PushdownResult result) {
+            unshiftIntoRegionSpace(result);
+            onComplete.accept(result);
+        }
+
+        private void unshiftIntoRegionSpace(final WritableRowSet rowSet) {
+            rowSet.shiftInPlace(firstRowKey());
+        }
+
+        private void unshiftIntoRegionSpace(final PushdownResult result) {
+            if (result.selection().isNonempty()) {
+                unshiftIntoRegionSpace(result.selection());
+            }
+            if (result.match().isNonempty()) {
+                unshiftIntoRegionSpace(result.match());
+            }
+            if (result.maybeMatch().isNonempty()) {
+                unshiftIntoRegionSpace(result.maybeMatch());
+            }
+        }
+
+
         /**
          * Get the row set for this region that intersects with the input row set, shifted to the region's key space.
          * The user is responsible for closing the returned row set.
@@ -748,18 +835,9 @@ public class RegionedColumnSourceManager
          * @return A writable row set for the location
          */
         private WritableRowSet getOverlappingShiftedRowSet(final RowSet inputRows) {
-            final WritableRowSet overlappingRows = shiftedRowSet(inputRows);
+            final WritableRowSet overlappingRows = subsetAndShiftIntoLocationSpace(inputRows);
             // Retain only rows that still exist in the region.
             overlappingRows.retain(rowSetAtLastUpdate);
-            return overlappingRows;
-        }
-
-        private WritableRowSet shiftedRowSet(final RowSet inputRows) {
-            final long locationStartKey = firstRowKey();
-            // Extract the portion of inputRows that overlaps this region.
-            final WritableRowSet overlappingRows = inputRows.subSetByKeyRange(locationStartKey, lastRowKey());
-            // Shift to the region's key space
-            overlappingRows.shiftInPlace(-locationStartKey);
             return overlappingRows;
         }
 
@@ -900,6 +978,16 @@ public class RegionedColumnSourceManager
             final JobScheduler jobScheduler,
             final Consumer<PushdownResult> onComplete,
             final Consumer<Exception> onError) {
+
+        try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
+            while (rit.hasNext()) {
+                final int regionIndex = rit.nextInt();
+                final IncludedTableLocationEntry region = orderedIncludedTableLocations.get(regionIndex);
+                region.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, onComplete, onError);
+            }
+        }
+
+        /*
         final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
         if (overlappingRegions.isEmpty()) {
             // TODO: is this base case necessary for correctness?
@@ -909,8 +997,16 @@ public class RegionedColumnSourceManager
             onComplete.accept(PushdownResult.noMatch(selection));
             return;
         }
+        final int[] regionIndices;
+        try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
+            final IntStream.Builder builder = IntStream.builder();
+            rit.forEachRemaining(builder);
+            regionIndices = builder.build().toArray();
+        }
+
+
         new PushdownFilterJobBuilder(selection.copy(), overlappingRegions, onComplete, onError)
-                .iterateParallel(jobScheduler, filter, renameMap, usePrev, context, costCeiling);
+                .iterateParallel(jobScheduler, filter, renameMap, usePrev, context, costCeiling);*/
     }
 
     @Override
@@ -942,10 +1038,11 @@ public class RegionedColumnSourceManager
         return new BasePushdownFilterContext();
     }
 
-    private static final class PushdownFilterJobBuilder {
+    private final class PushdownFilterJobBuilder {
 
         private final WritableRowSet selection;
         private final List<RegionInfoHolder> regions;
+        private final int[] regionIndices;
         private final PushdownResult[] results;
         private final Consumer<PushdownResult> onComplete;
         private final Consumer<Exception> onError;
@@ -960,6 +1057,33 @@ public class RegionedColumnSourceManager
             this.onComplete = Objects.requireNonNull(onComplete);
             this.onError = Objects.requireNonNull(onError);
             results = new PushdownResult[regions.size()];
+        }
+
+        private void exec(
+                final int jobIndex,
+                final JobScheduler jobScheduler,
+                final WhereFilter filter,
+                final Map<String, String> renameMap,
+                final boolean usePrev,
+                final PushdownFilterContext context,
+                long costCeiling) {
+            final int regionIndex = regionIndices[jobIndex];
+            // todo: does this need to be synchronized? can it change?
+            final IncludedTableLocationEntry tle = orderedIncludedTableLocations.get(regionIndex);
+            tle.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, new AddAndResumeForSubset(jobIndex, locationResume), nestedErrorConsumer);
+        }
+
+        public void it(final JobScheduler jobScheduler,
+                       final WhereFilter filter,
+                       final Map<String, String> renameMap,
+                       final boolean usePrev,
+                       final PushdownFilterContext context,
+                       long costCeiling) {
+
+            for (int regionIndex : regionIndices) {
+
+            }
+
         }
 
         public void iterateParallel(
@@ -1032,52 +1156,28 @@ public class RegionedColumnSourceManager
             @Override
             public void run(
                     final JobScheduler.JobThreadContext taskThreadContext,
-                    final int idx,
+                    final int jobIndex,
                     final Consumer<Exception> nestedErrorConsumer,
                     final Runnable locationResume) {
-
-
-                final RegionInfoHolder regionInfo = regions.get(idx);
-
-
-
-                regionInfo.tle.location.pushdownFilter(
-                        filter,
-                        renameMap,
-                        regionInfo.selectionSubset,
-                        usePrev,
-                        context,
-                        costCeiling,
-                        jobScheduler,
-                        new UnshiftAndAdd(idx, regionInfo.tle.firstRowKey(), locationResume),
-                        nestedErrorConsumer);
+                final int regionIndex = regionIndices[jobIndex];
+                // todo: does this need to be synchronized? can it change?
+                final IncludedTableLocationEntry tle = orderedIncludedTableLocations.get(regionIndex);
+                tle.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, new AddAndResumeForSubset(jobIndex, locationResume), nestedErrorConsumer);
             }
         }
 
-        private final class UnshiftAndAdd implements Consumer<PushdownResult> {
-            private final int ix;
-            private final long shiftAmount;
+        private final class AddAndResumeForSubset implements Consumer<PushdownResult> {
+            private final int jobIndex;
             private final Runnable locationResume;
 
-            public UnshiftAndAdd(int ix, long shiftAmount, Runnable locationResume) {
-                this.ix = ix;
-                this.shiftAmount = shiftAmount;
+            public AddAndResumeForSubset(int jobIndex, Runnable locationResume) {
+                this.jobIndex = jobIndex;
                 this.locationResume = Objects.requireNonNull(locationResume);
             }
 
             @Override
             public void accept(final PushdownResult results) {
-                // Ownership of results passes to us, so we can modify in place
-                if (results.selection().isNonempty()) {
-                    results.selection().shiftInPlace(shiftAmount);
-                }
-                if (results.match().isNonempty()) {
-                    results.match().shiftInPlace(shiftAmount);
-                }
-                if (results.maybeMatch().isNonempty()) {
-                    results.maybeMatch().shiftInPlace(shiftAmount);
-                }
-                add(ix, results);
+                add(jobIndex, results);
                 locationResume.run();
             }
         }

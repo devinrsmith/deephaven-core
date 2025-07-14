@@ -783,17 +783,39 @@ public class RegionedColumnSourceManager
         }
 
         public void pushdownLocationSubset(
-                final WhereFilter filter,
-                final Map<String, String> renameMap,
+                final PushdownFilterJobBuilder.JobRunner runner,
                 final RowSet selection,
-                final boolean usePrev,
-                final PushdownFilterContext context,
-                final long costCeiling,
-                final JobScheduler jobScheduler,
-                final Consumer<PushdownResult> onComplete,
-                final Consumer<Exception> onError) {
-            final WritableRowSet subset = subsetAndShiftIntoLocationSpace(selection);
-            location.pushdownFilter(filter, renameMap, subset, usePrev, context, costCeiling, jobScheduler, result -> unshiftIntoRegionSpaceAndComplete(onComplete, result), onError);
+                final Consumer<PushdownResult> onSubsetComplete,
+                final Consumer<Exception> onSubsetError) {
+            new LocationSubsetObserver(onSubsetComplete, onSubsetError)
+                    .pushdownFilter(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler);
+        }
+
+        private final class LocationSubsetObserver {
+            private final Consumer<PushdownResult> onSubsetComplete;
+            private final Consumer<Exception> onSubsetError;
+
+            LocationSubsetObserver(final Consumer<PushdownResult> onSubsetComplete, final Consumer<Exception> onSubsetError) {
+                this.onSubsetComplete = Objects.requireNonNull(onSubsetComplete);
+                this.onSubsetError = Objects.requireNonNull(onSubsetError);
+            }
+
+            public void pushdownFilter(
+                    final WhereFilter filter,
+                    final Map<String, String> renameMap,
+                    final RowSet selection,
+                    final boolean usePrev,
+                    final PushdownFilterContext context,
+                    final long costCeiling,
+                    final JobScheduler jobScheduler) {
+                final WritableRowSet subset = subsetAndShiftIntoLocationSpace(selection);
+                location.pushdownFilter(filter, renameMap, subset, usePrev, context, costCeiling, jobScheduler, this::onSubsetComplete, onSubsetError);
+            }
+
+            private void onSubsetComplete(final PushdownResult result) {
+                unshiftIntoRegionSpace(result);
+                onSubsetComplete.accept(result);
+            }
         }
 
         private WritableRowSet subsetAndShiftIntoLocationSpace(final RowSet selection) {
@@ -805,10 +827,10 @@ public class RegionedColumnSourceManager
             return overlappingRows;
         }
 
-        private void unshiftIntoRegionSpaceAndComplete(final Consumer<PushdownResult> onComplete, final PushdownResult result) {
-            unshiftIntoRegionSpace(result);
-            onComplete.accept(result);
-        }
+//        private void unshiftIntoRegionSpaceAndComplete(final Consumer<PushdownResult> onComplete, final PushdownResult result) {
+//            unshiftIntoRegionSpace(result);
+//            onComplete.accept(result);
+//        }
 
         private void unshiftIntoRegionSpace(final WritableRowSet rowSet) {
             rowSet.shiftInPlace(firstRowKey());
@@ -967,6 +989,7 @@ public class RegionedColumnSourceManager
         }
     }
 
+
     @Override
     public void pushdownFilter(
             final WhereFilter filter,
@@ -978,25 +1001,6 @@ public class RegionedColumnSourceManager
             final JobScheduler jobScheduler,
             final Consumer<PushdownResult> onComplete,
             final Consumer<Exception> onError) {
-
-        try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
-            while (rit.hasNext()) {
-                final int regionIndex = rit.nextInt();
-                final IncludedTableLocationEntry region = orderedIncludedTableLocations.get(regionIndex);
-                region.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, onComplete, onError);
-            }
-        }
-
-        /*
-        final List<RegionInfoHolder> overlappingRegions = getOverlappingRegions(selection);
-        if (overlappingRegions.isEmpty()) {
-            // TODO: is this base case necessary for correctness?
-            // it seems like the expectations in PushdownFilterJobBuilder.build don't align with this...
-            // I think for correctness, we still need to return all of the regions, even if they are empty, so that the
-            // selection totals can all add up.
-            onComplete.accept(PushdownResult.noMatch(selection));
-            return;
-        }
         final int[] regionIndices;
         try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
             final IntStream.Builder builder = IntStream.builder();
@@ -1038,10 +1042,13 @@ public class RegionedColumnSourceManager
         return new BasePushdownFilterContext();
     }
 
+    private static LogOutput pushdownFilterLogName(LogOutput logOutput) {
+        return logOutput.append("RegionedColumnSourceManager#pushdownFilter");
+    }
+
     private final class PushdownFilterJobBuilder {
 
         private final WritableRowSet selection;
-        private final List<RegionInfoHolder> regions;
         private final int[] regionIndices;
         private final PushdownResult[] results;
         private final Consumer<PushdownResult> onComplete;
@@ -1049,41 +1056,14 @@ public class RegionedColumnSourceManager
 
         private PushdownFilterJobBuilder(
                 final WritableRowSet selection,
-                final List<RegionInfoHolder> regions,
+                final int[] regionIndices,
                 final Consumer<PushdownResult> onComplete,
                 final Consumer<Exception> onError) {
             this.selection = Objects.requireNonNull(selection);
-            this.regions = Objects.requireNonNull(regions);
+            this.regionIndices = Objects.requireNonNull(regionIndices);
             this.onComplete = Objects.requireNonNull(onComplete);
             this.onError = Objects.requireNonNull(onError);
-            results = new PushdownResult[regions.size()];
-        }
-
-        private void exec(
-                final int jobIndex,
-                final JobScheduler jobScheduler,
-                final WhereFilter filter,
-                final Map<String, String> renameMap,
-                final boolean usePrev,
-                final PushdownFilterContext context,
-                long costCeiling) {
-            final int regionIndex = regionIndices[jobIndex];
-            // todo: does this need to be synchronized? can it change?
-            final IncludedTableLocationEntry tle = orderedIncludedTableLocations.get(regionIndex);
-            tle.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, new AddAndResumeForSubset(jobIndex, locationResume), nestedErrorConsumer);
-        }
-
-        public void it(final JobScheduler jobScheduler,
-                       final WhereFilter filter,
-                       final Map<String, String> renameMap,
-                       final boolean usePrev,
-                       final PushdownFilterContext context,
-                       long costCeiling) {
-
-            for (int regionIndex : regionIndices) {
-
-            }
-
+            results = new PushdownResult[regionIndices.length];
         }
 
         public void iterateParallel(
@@ -1096,10 +1076,10 @@ public class RegionedColumnSourceManager
             // Use the job scheduler to run every location in parallel.
             jobScheduler.iterateParallel(
                     ExecutionContext.getContext(),
-                    PushdownFilterJobBuilder::logName,
+                    RegionedColumnSourceManager::pushdownFilterLogName,
                     JobScheduler.DEFAULT_CONTEXT_FACTORY,
                     0,
-                    regions.size(),
+                    regionIndices.length,
                     new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
                     this::onComplete,
                     this::cleanup,
@@ -1126,13 +1106,8 @@ public class RegionedColumnSourceManager
             // noinspection RedundantTypeArguments
             SafeCloseable.closeAll(Stream.of(
                     Stream.of(selection),
-                    Stream.of(results),
-                    regions.stream())
+                    Stream.of(results))
                     .<SafeCloseable>flatMap(Function.identity()));
-        }
-
-        private static LogOutput logName(LogOutput logOutput) {
-            return logOutput.append("RegionedColumnSourceManager#pushdownFilter");
         }
 
         final class JobRunner implements JobScheduler.IterateResumeAction<JobScheduler.JobThreadContext> {
@@ -1143,8 +1118,13 @@ public class RegionedColumnSourceManager
             private final long costCeiling;
             private final JobScheduler jobScheduler;
 
-            JobRunner(WhereFilter filter, Map<String, String> renameMap, boolean usePrev,
-                    PushdownFilterContext context, long costCeiling, JobScheduler jobScheduler) {
+            JobRunner(
+                    final WhereFilter filter,
+                    final Map<String, String> renameMap,
+                    final boolean usePrev,
+                    final PushdownFilterContext context,
+                    final long costCeiling,
+                    final JobScheduler jobScheduler) {
                 this.filter = Objects.requireNonNull(filter);
                 this.renameMap = Objects.requireNonNull(renameMap);
                 this.usePrev = usePrev;
@@ -1159,26 +1139,30 @@ public class RegionedColumnSourceManager
                     final int jobIndex,
                     final Consumer<Exception> nestedErrorConsumer,
                     final Runnable locationResume) {
-                final int regionIndex = regionIndices[jobIndex];
-                // todo: does this need to be synchronized? can it change?
-                final IncludedTableLocationEntry tle = orderedIncludedTableLocations.get(regionIndex);
-                tle.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, new AddAndResumeForSubset(jobIndex, locationResume), nestedErrorConsumer);
-            }
-        }
-
-        private final class AddAndResumeForSubset implements Consumer<PushdownResult> {
-            private final int jobIndex;
-            private final Runnable locationResume;
-
-            public AddAndResumeForSubset(int jobIndex, Runnable locationResume) {
-                this.jobIndex = jobIndex;
-                this.locationResume = Objects.requireNonNull(locationResume);
+                new Job(jobIndex, nestedErrorConsumer, locationResume).pushdownLocationSubset();
             }
 
-            @Override
-            public void accept(final PushdownResult results) {
-                add(jobIndex, results);
-                locationResume.run();
+            private final class Job {
+                private final int jobIndex;
+                private final Consumer<Exception> nestedErrorConsumer;
+                private final Runnable locationResume;
+
+                Job(final int jobIndex, final Consumer<Exception> nestedErrorConsumer, final Runnable locationResume) {
+                    this.jobIndex = jobIndex;
+                    this.locationResume = Objects.requireNonNull(locationResume);
+                    this.nestedErrorConsumer = Objects.requireNonNull(nestedErrorConsumer);
+                }
+
+                public void pushdownLocationSubset() {
+                    // todo: does this need to be synchronized? can it change?
+                    final IncludedTableLocationEntry tle = orderedIncludedTableLocations.get(regionIndices[jobIndex]);
+                    tle.pushdownLocationSubset(filter, renameMap, selection, usePrev, context, costCeiling, jobScheduler, this::pushdownLocationSubsetOnComplete, nestedErrorConsumer);
+                }
+
+                private void pushdownLocationSubsetOnComplete(final PushdownResult result) {
+                    add(jobIndex, result);
+                    locationResume.run();
+                }
             }
         }
 

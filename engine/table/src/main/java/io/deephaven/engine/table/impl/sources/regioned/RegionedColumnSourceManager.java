@@ -47,6 +47,7 @@ import io.deephaven.engine.table.impl.select.WhereFilter;
 import io.deephaven.engine.table.impl.sources.ArrayBackedColumnSource;
 import io.deephaven.engine.table.impl.sources.ObjectArraySource;
 import io.deephaven.engine.table.impl.util.DelayedErrorNotifier;
+import io.deephaven.engine.table.impl.util.ImmediateJobScheduler;
 import io.deephaven.engine.table.impl.util.JobScheduler;
 import io.deephaven.engine.updategraph.UpdateCommitter;
 import io.deephaven.hash.KeyedObjectHashMap;
@@ -55,6 +56,7 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.ReferentialIntegrity;
+import io.deephaven.util.mutable.MutableLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,11 +72,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -808,25 +813,6 @@ public class RegionedColumnSourceManager
             }
         }
 
-
-        /**
-         * Get the row set for this region that intersects with the input row set, shifted to the region's key space.
-         * The user is responsible for closing the returned row set.
-         *
-         * @param inputRows The input row set
-         * @return A writable row set for the location
-         */
-        private WritableRowSet getOverlappingShiftedRowSet(final RowSet inputRows) {
-            final WritableRowSet overlappingRows = subsetAndShiftIntoLocationSpace(inputRows);
-            // Retain only rows that still exist in the region.
-            overlappingRows.retain(rowSetAtLastUpdate);
-            return overlappingRows;
-        }
-
-        private WritableRowSet subset(final RowSet rowSet) {
-            return rowSet.subSetByKeyRange(firstRowKey(), lastRowKey());
-        }
-
         private long firstRowKey() {
             return getFirstRowKey(regionIndex);
         }
@@ -867,57 +853,6 @@ public class RegionedColumnSourceManager
         return attributes;
     }
 
-    /**
-     * Lightweight wrapper that couples an {@link IncludedTableLocationEntry} with the {@link WritableRowSet}
-     * representing the subset of rows from that region that participate in a filter-pushdown operation.
-     */
-    private static class RegionInfoHolder implements SafeCloseable {
-        private final IncludedTableLocationEntry tle;
-        private final WritableRowSet selectionSubset;
-
-        private RegionInfoHolder(
-                @NotNull final IncludedTableLocationEntry tle,
-                @NotNull final WritableRowSet selectionSubset) {
-            this.tle = tle;
-            this.selectionSubset = selectionSubset;
-        }
-
-        @Override
-        public void close() {
-            selectionSubset.close();
-        }
-    }
-
-    /**
-     * Return up to {@code maxRegions} regions and their corresponding row sets that overlap with the input row set. The
-     * user is responsible for closing the returned objects.
-     */
-    private List<RegionInfoHolder> getOverlappingRegions(final RowSet inputRowSet, final int maxRegions) {
-        final List<IncludedTableLocationEntry> tableLocationEntries = includedLocationEntries();
-        final ArrayList<RegionInfoHolder> includedRegions = new ArrayList<>();
-        try (final RegionIndexIterator rit = RegionIndexIterator.of(inputRowSet)) {
-            while (includedRegions.size() < maxRegions && rit.hasNext()) {
-                final int regionIndex = rit.nextInt();
-                if (regionIndex >= tableLocationEntries.size()) {
-                    throw new IllegalStateException("Region index " + regionIndex + " exceeds the number of included " +
-                            "locations: " + tableLocationEntries.size() + " for input row set: " + inputRowSet);
-                }
-                final IncludedTableLocationEntry entry = tableLocationEntries.get(regionIndex);
-                // Note: Based on the cost of computing overlapping row sets, we can push overlap computation into the
-                // parallel region-processing jobs in the future. For now, we can compute it serially here.
-                try (final WritableRowSet overlappingShiftedRowSet = entry.getOverlappingShiftedRowSet(inputRowSet)) {
-                    if (overlappingShiftedRowSet.isEmpty()) {
-                        throw new IllegalStateException(
-                                "Overlapping row set is empty for region index " + regionIndex + " and input row set: "
-                                        + inputRowSet);
-                    }
-                    includedRegions.add(new RegionInfoHolder(entry, overlappingShiftedRowSet.copy()));
-                }
-            }
-        }
-        return includedRegions;
-    }
-
     @Override
     public long estimatePushdownFilterCost(
             final WhereFilter filter,
@@ -925,40 +860,23 @@ public class RegionedColumnSourceManager
             final RowSet selection,
             final boolean usePrev,
             final PushdownFilterContext context) {
-        // java.util.Collection.parallelStream
-        // We want to test out a small sample of locations to estimate the cost of the filter pushdown, and assume the
-        // rest of the locations are similar.
-        /*final List<RegionInfoHolder> overlappingRegionsSample =
-                getOverlappingRegions(selection, PUSHDOWN_LOCATION_SAMPLES);
-        if (overlappingRegionsSample.isEmpty()) {
-            return Long.MAX_VALUE;
-        }
-
-        final int[] regionIndices;
-        try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
-            IntStream.Builder builder = IntStream.builder();
-
-        }
-
-
-        try (final SafeCloseable ignored = () -> SafeCloseable.closeAll(overlappingRegionsSample.stream())) {
-            return overlappingRegionsSample
-                    .parallelStream()
-                    .mapToLong(overlappingRegion -> overlappingRegion.tle.location.estimatePushdownFilterCost(
-                            filter, renameMap, overlappingRegion.selectionSubset, usePrev, context))
-                    .min()
-                    .orElse(Long.MAX_VALUE);
-        }*/
         final int[] regionIndices;
         try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
             final IntStream.Builder builder = IntStream.builder();
-            for (int i = 0; i < 5 && rit.hasNext(); ++i) {
+            for (int i = 0; i < PUSHDOWN_LOCATION_SAMPLES && rit.hasNext(); ++i) {
                 builder.add(rit.nextInt());
             }
             regionIndices = builder.build().toArray();
         }
-        return new PushdownFilterJobBuilder(selection.copy(), regionIndices, null, null)
-                .estimatePushdownFilterCost();
+        final CompletableFuture<Void> future = new CompletableFuture<>();
+        final MutableLong result = new MutableLong();
+        new PushdownFilterJobBuilder(selection.copy(), regionIndices, value -> {
+            result.set(value);
+            future.complete(null);
+        }, future::completeExceptionally, null, null)
+                .runEstimateJobs(new ImmediateJobScheduler(), filter, renameMap, usePrev, context);
+        future.join();
+        return result.get();
     }
 
 
@@ -979,8 +897,8 @@ public class RegionedColumnSourceManager
             rit.forEachRemaining(builder);
             regionIndices = builder.build().toArray();
         }
-        new PushdownFilterJobBuilder(selection.copy(), regionIndices, onComplete, onError)
-                .iterateParallel(jobScheduler, filter, renameMap, usePrev, context, costCeiling);
+        new PushdownFilterJobBuilder(selection.copy(), regionIndices, null, null, onComplete, onError)
+                .runPushdownFilterJobs(jobScheduler, filter, renameMap, usePrev, context, costCeiling);
     }
 
     @Override
@@ -1012,6 +930,10 @@ public class RegionedColumnSourceManager
         return new BasePushdownFilterContext();
     }
 
+    private static LogOutput estimateFilterLogName(LogOutput logOutput) {
+        return logOutput.append("RegionedColumnSourceManager#estimate");
+    }
+
     private static LogOutput pushdownFilterLogName(LogOutput logOutput) {
         return logOutput.append("RegionedColumnSourceManager#pushdownFilter");
     }
@@ -1020,121 +942,172 @@ public class RegionedColumnSourceManager
 
         private final WritableRowSet selection;
         private final int[] regionIndices;
-        private final PushdownResult[] results;
-        private final Consumer<PushdownResult> onComplete;
-        private final Consumer<Exception> onError;
+
+        // only relevant for estimation
+        private final LongConsumer onEstimateComplete;
+        private final Consumer<Exception> onEstimateError;
+        private final long[] estimateResults;
+
+        // only relevant for pushdown
+        private final Consumer<PushdownResult> onPushdownComplete;
+        private final Consumer<Exception> onPushdownError;
+        private final PushdownResult[] pushdownResults;
 
         private PushdownFilterJobBuilder(
                 final WritableRowSet selection,
                 final int[] regionIndices,
-                final Consumer<PushdownResult> onComplete,
-                final Consumer<Exception> onError) {
+                final LongConsumer onEstimateComplete,
+                final Consumer<Exception> onEstimateError,
+                final Consumer<PushdownResult> onPushdownComplete,
+                final Consumer<Exception> onPushdownError) {
             this.selection = Objects.requireNonNull(selection);
             this.regionIndices = Objects.requireNonNull(regionIndices);
-            this.onComplete = Objects.requireNonNull(onComplete);
-            this.onError = Objects.requireNonNull(onError);
-            results = new PushdownResult[regionIndices.length];
+            if (onEstimateComplete != null) {
+                this.onEstimateComplete = Objects.requireNonNull(onEstimateComplete);
+                this.onEstimateError = Objects.requireNonNull(onEstimateError);
+                this.estimateResults = new long[regionIndices.length];
+            } else {
+                this.onEstimateComplete = null;
+                this.onEstimateError = null;
+                this.estimateResults = null;
+            }
+            if (onPushdownComplete != null) {
+                this.onPushdownComplete = Objects.requireNonNull(onPushdownComplete);
+                this.onPushdownError = Objects.requireNonNull(onPushdownError);
+                this.pushdownResults = new PushdownResult[regionIndices.length];
+            } else {
+                this.onPushdownComplete = null;
+                this.onPushdownError = null;
+                this.pushdownResults = null;
+            }
         }
 
-        public long estimatePushdownFilterCost() {
-            JobRunner jobRunner = new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler);
-
-
-
-            return overlappingRegionsSample
-                    .parallelStream()
-                    .mapToLong(overlappingRegion -> overlappingRegion.tle.location.estimatePushdownFilterCost(
-                            filter, renameMap, overlappingRegion.selectionSubset, usePrev, context))
-                    .min()
-                    .orElse(Long.MAX_VALUE);
-
-            return jobRunner.estimate(0);
+        public void runEstimateJobs(
+                final JobScheduler jobScheduler,
+                final WhereFilter filter,
+                final Map<String, String> renameMap,
+                final boolean usePrev,
+                final PushdownFilterContext context) {
+            final JobRunner jobRunner = new JobRunner(filter, renameMap, usePrev, context, jobScheduler, Long.MAX_VALUE);
+            jobScheduler.iterateParallel(
+                    ExecutionContext.getContext(),
+                    RegionedColumnSourceManager::estimateFilterLogName,
+                    JobScheduler.DEFAULT_CONTEXT_FACTORY,
+                    0,
+                    regionIndices.length,
+                    jobRunner::runEstimateJob,
+                    this::onEstimateComplete,
+                    this::estimateCleanup,
+                    this::onEstimateError);
         }
 
-        public void iterateParallel(
+        private void onEstimateComplete() {
+            onEstimateComplete.accept(buildEstimate());
+        }
+
+        private void estimateCleanup() {
+            estimateClose();
+        }
+
+        private void onEstimateError(final Exception e) {
+            try (final SafeCloseable ignored = this::estimateClose) {
+                onEstimateError.accept(e);
+            }
+        }
+
+        private void estimateClose() {
+            selection.close();
+        }
+
+        public void runPushdownFilterJobs(
                 final JobScheduler jobScheduler,
                 final WhereFilter filter,
                 final Map<String, String> renameMap,
                 final boolean usePrev,
                 final PushdownFilterContext context,
                 long costCeiling) {
-            // Use the job scheduler to run every location in parallel.
+            final JobRunner jobRunner = new JobRunner(filter, renameMap, usePrev, context, jobScheduler, costCeiling);
             jobScheduler.iterateParallel(
                     ExecutionContext.getContext(),
                     RegionedColumnSourceManager::pushdownFilterLogName,
                     JobScheduler.DEFAULT_CONTEXT_FACTORY,
                     0,
                     regionIndices.length,
-                    new JobRunner(filter, renameMap, usePrev, context, costCeiling, jobScheduler),
-                    this::onComplete,
-                    this::cleanup,
-                    this::onError);
+                    jobRunner::runPushdownFilterJob,
+                    this::onPushdownComplete,
+                    this::pushdownCleanup,
+                    this::onPushdownError);
         }
 
-        private void onComplete() {
-            onComplete.accept(build());
+        private void onPushdownComplete() {
+            onPushdownComplete.accept(buildPushdown());
         }
 
-        private void cleanup() {
-            close();
+        private void pushdownCleanup() {
+            pushdownClose();
         }
 
-        private void onError(final Exception e) {
-            try (final SafeCloseable ignored = this::close) {
-                onError.accept(e);
+        private void onPushdownError(final Exception e) {
+            try (final SafeCloseable ignored = this::pushdownClose) {
+                onPushdownError.accept(e);
             }
         }
 
-        private void close() {
+        private void pushdownClose() {
             // noinspection RedundantTypeArguments
             SafeCloseable.closeAll(Stream.of(
                     Stream.of(selection),
-                    Stream.of(results))
+                    Stream.of(pushdownResults))
                     .<SafeCloseable>flatMap(Function.identity()));
         }
 
-        final class JobRunner implements JobScheduler.IterateResumeAction<JobScheduler.JobThreadContext> {
+        final class JobRunner {
             private final WhereFilter filter;
             private final Map<String, String> renameMap;
             private final boolean usePrev;
             private final PushdownFilterContext context;
-            private final long costCeiling;
             private final JobScheduler jobScheduler;
+
+            // only relevant for pushdown
+            private final long costCeiling;
 
             JobRunner(
                     final WhereFilter filter,
                     final Map<String, String> renameMap,
                     final boolean usePrev,
                     final PushdownFilterContext context,
-                    final long costCeiling,
-                    final JobScheduler jobScheduler) {
+                    final JobScheduler jobScheduler,
+                    final long costCeiling) {
                 this.filter = Objects.requireNonNull(filter);
                 this.renameMap = Objects.requireNonNull(renameMap);
                 this.usePrev = usePrev;
                 this.context = Objects.requireNonNull(context);
-                this.costCeiling = costCeiling;
                 this.jobScheduler = Objects.requireNonNull(jobScheduler);
+                this.costCeiling = costCeiling;
             }
 
-            @Override
-            public void run(
+            public void runEstimateJob(
                     final JobScheduler.JobThreadContext taskThreadContext,
                     final int jobIndex,
                     final Consumer<Exception> nestedErrorConsumer,
                     final Runnable locationResume) {
-                new Job(jobIndex, nestedErrorConsumer, locationResume).pushdownFilter();
+                new EstimateJob(jobIndex, nestedErrorConsumer, locationResume).estimatePushdownFilterCost();
             }
 
-            public long estimate(int jobIndex) {
-                return new Job(jobIndex, null, null).estimatePushdownFilterCost();
+            public void runPushdownFilterJob(
+                    final JobScheduler.JobThreadContext taskThreadContext,
+                    final int jobIndex,
+                    final Consumer<Exception> nestedErrorConsumer,
+                    final Runnable locationResume) {
+                new PushdownJob(jobIndex, nestedErrorConsumer, locationResume).pushdownFilter();
             }
 
-            private final class Job implements SafeCloseable {
-                private final int jobIndex;
+            private abstract class Job {
+                protected final int jobIndex;
                 private final Consumer<Exception> nestedErrorConsumer;
-                private final Runnable locationResume;
-                private final IncludedTableLocationEntry tle;
-                private final WritableRowSet shiftedSubset;
+                protected final Runnable locationResume;
+                protected final IncludedTableLocationEntry tle;
+                protected final WritableRowSet shiftedSubset;
                 private final AtomicBoolean closed;
 
                 Job(final int jobIndex, final Consumer<Exception> nestedErrorConsumer, final Runnable locationResume) {
@@ -1147,6 +1120,46 @@ public class RegionedColumnSourceManager
                     this.closed = new AtomicBoolean(false);
                 }
 
+                protected final void onError(Exception e) {
+                    try (final SafeCloseable ignored = this::close) {
+                        nestedErrorConsumer.accept(e);
+                    }
+                }
+
+                protected final void close() {
+                    if (!closed.compareAndSet(false, true)) {
+                        return;
+                    }
+                    shiftedSubset.close();
+                }
+            }
+
+            private final class EstimateJob extends Job {
+                public EstimateJob(int jobIndex, Consumer<Exception> nestedErrorConsumer, Runnable locationResume) {
+                    super(jobIndex, nestedErrorConsumer, locationResume);
+                }
+
+                public void estimatePushdownFilterCost() {
+                    try {
+                        final long estimate = tle.location.estimatePushdownFilterCost(filter, renameMap, shiftedSubset, usePrev, context);
+                        onComplete(estimate);
+                    } catch (Exception e) {
+                        onError(e);
+                    }
+                }
+
+                private void onComplete(long estimatedCost) {
+                    addEstimate(jobIndex, estimatedCost);
+                    locationResume.run();
+                    close();
+                }
+            }
+
+            private final class PushdownJob extends Job {
+                public PushdownJob(int jobIndex, Consumer<Exception> nestedErrorConsumer, Runnable locationResume) {
+                    super(jobIndex, nestedErrorConsumer, locationResume);
+                }
+
                 public void pushdownFilter() {
                     tle.location.pushdownFilter(
                             filter,
@@ -1156,46 +1169,37 @@ public class RegionedColumnSourceManager
                             context,
                             costCeiling,
                             jobScheduler,
-                            this::onPushdownSubsetComplete,
-                            this::onPushdownSubsetError);
+                            this::onComplete,
+                            this::onError);
                 }
 
-                public long estimatePushdownFilterCost() {
-                    return tle.location.estimatePushdownFilterCost(filter, renameMap, shiftedSubset, usePrev, context);
-                }
-
-                private void onPushdownSubsetComplete(final PushdownResult result) {
+                private void onComplete(final PushdownResult result) {
                     tle.unshiftIntoRegionSpace(result);
-                    add(jobIndex, result);
+                    addPushdown(jobIndex, result);
                     locationResume.run();
                     close();
                 }
-
-                private void onPushdownSubsetError(Exception e) {
-                    try (final SafeCloseable ignored = this::close) {
-                        nestedErrorConsumer.accept(e);
-                    }
-                }
-
-                @Override
-                public void close() {
-                    if (!closed.compareAndSet(false, true)) {
-                        return;
-                    }
-                    shiftedSubset.close();
-                }
             }
+
         }
 
-        private synchronized void add(final int ix, final PushdownResult results) {
-            this.results[ix] = results;
+        private synchronized void addEstimate(final int ix, final long estimate) {
+            this.estimateResults[ix] = estimate;
         }
 
-        public synchronized PushdownResult build() {
+        public synchronized long buildEstimate() {
+            return LongStream.of(estimateResults).min().orElse(Long.MAX_VALUE);
+        }
+
+        private synchronized void addPushdown(final int ix, final PushdownResult results) {
+            this.pushdownResults[ix] = results;
+        }
+
+        public synchronized PushdownResult buildPushdown() {
             long selectionSize = 0;
             long matchSize = 0;
             long maybeMatchSize = 0;
-            for (final PushdownResult result : results) {
+            for (final PushdownResult result : pushdownResults) {
                 selectionSize += result.selection().size();
                 matchSize += result.match().size();
                 maybeMatchSize += result.maybeMatch().size();
@@ -1214,9 +1218,9 @@ public class RegionedColumnSourceManager
             }
             try (
                     final WritableRowSet match = RowSetFactory
-                            .union(Stream.of(results).map(PushdownResult::match).collect(Collectors.toList()));
+                            .union(Stream.of(pushdownResults).map(PushdownResult::match).collect(Collectors.toList()));
                     final WritableRowSet maybeMatch = RowSetFactory
-                            .union(Stream.of(results).map(PushdownResult::maybeMatch).collect(Collectors.toList()))) {
+                            .union(Stream.of(pushdownResults).map(PushdownResult::maybeMatch).collect(Collectors.toList()))) {
                 return PushdownResult.ofUnsafe(selection, match, maybeMatch);
             }
         }

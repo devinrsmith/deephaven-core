@@ -26,7 +26,6 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Consumer;
 
@@ -298,7 +297,6 @@ public abstract class AbstractTableLocation
     @Override
     public long estimatePushdownFilterCost(
             final WhereFilter filter,
-            final Map<String, String> renameMap,
             final RowSet selection,
             final boolean usePrev,
             final PushdownFilterContext context) {
@@ -309,7 +307,6 @@ public abstract class AbstractTableLocation
     @Override
     public void pushdownFilter(
             final WhereFilter filter,
-            final Map<String, String> renameMap,
             final RowSet selection,
             final boolean usePrev,
             final PushdownFilterContext context,
@@ -322,13 +319,9 @@ public abstract class AbstractTableLocation
     }
 
     @Override
-    public Map<String, String> renameMap(final WhereFilter filter, final ColumnSource<?>[] filterSources) {
-        // Default to returning an empty map
-        return Map.of();
-    }
-
-    @Override
-    public PushdownFilterContext makePushdownFilterContext() {
+    public PushdownFilterContext makePushdownFilterContext(
+            final WhereFilter filter,
+            final List<ColumnSource<?>> filterSources) {
         throw new UnsupportedOperationException(
                 "makePushdownFilterContext() not supported for AbstractTableLocation");
     }

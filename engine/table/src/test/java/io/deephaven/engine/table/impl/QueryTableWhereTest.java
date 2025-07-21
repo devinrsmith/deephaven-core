@@ -1934,14 +1934,14 @@ public abstract class QueryTableWhereTest {
         }
 
         @Override
-        public long estimatePushdownFilterCost(WhereFilter filter, RowSet selection, RowSet fullSet, boolean usePrev,
+        public long estimatePushdownFilterCost(WhereFilter filter, RowSet selection, boolean usePrev,
                 final PushdownFilterContext context) {
             return pushdownCost;
         }
 
         @Override
         public void pushdownFilter(final WhereFilter filter, final RowSet input,
-                final RowSet fullSet, final boolean usePrev, final PushdownFilterContext context,
+                final boolean usePrev, final PushdownFilterContext context,
                 final long costCeiling, final JobScheduler jobScheduler, final Consumer<PushdownResult> onComplete,
                 final Consumer<Exception> onError) {
             encounterOrder = counter.getAndIncrement();

@@ -279,8 +279,7 @@ abstract class AbstractFilterExecution {
                 final PushdownFilterContext context) {
             pushdownFilterCost = pushdownMatcher == null
                     ? Long.MAX_VALUE
-                    : pushdownMatcher.estimatePushdownFilterCost(filter, selection, sourceTable.getRowSet(), usePrev,
-                            context);
+                    : pushdownMatcher.estimatePushdownFilterCost(filter, selection, usePrev, context);
         }
 
         @Override
@@ -457,7 +456,7 @@ abstract class AbstractFilterExecution {
         final RowSet input = localInput.getValue();
         if (sf.pushdownMatcher != null && sf.pushdownFilterCost < Long.MAX_VALUE) {
             // Execute the pushdown filter and return.
-            sf.pushdownMatcher.pushdownFilter(sf.filter, input, sourceTable.getRowSet(), usePrev, sf.context,
+            sf.pushdownMatcher.pushdownFilter(sf.filter, input, usePrev, sf.context,
                     costCeiling, jobScheduler(), onPushdownComplete, filterNec);
             return;
         }

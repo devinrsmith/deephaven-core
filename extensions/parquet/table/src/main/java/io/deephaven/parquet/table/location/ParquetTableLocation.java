@@ -7,7 +7,6 @@ import io.deephaven.api.ColumnName;
 import io.deephaven.api.SortColumn;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
-import io.deephaven.csv.util.MutableBoolean;
 import io.deephaven.engine.liveness.LivenessScopeStack;
 import io.deephaven.engine.primitive.iterator.CloseableIterator;
 import io.deephaven.engine.rowset.*;
@@ -635,13 +634,13 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 ((MatchFilter) filter).getFailoverFilterIfCached() == null;
 
         // Initialize the pushdown result with the selection rowset as "maybe" rows
-        PushdownResult result = PushdownResult.of(RowSetFactory.empty(), selection.copy());
+        PushdownResult result = PushdownResult.maybeMatch(selection);
 
         final Map<String, String> renameMap = ctx.renameMap();
         final Optional<List<ResolvedColumnInfo>> maybeResolvedColumns = resolveColumns(filter, renameMap);
         if (maybeResolvedColumns.isEmpty()) {
             // One or more columns could not be resolved, so we return all rows as "maybe" rows.
-            onComplete.accept(PushdownResult.maybeMatch(selection));
+            onComplete.accept(result);
             return;
         }
         final List<ResolvedColumnInfo> resolvedColumnsInfo = maybeResolvedColumns.get();
@@ -657,7 +656,6 @@ public class ParquetTableLocation extends AbstractTableLocation {
             columnIndices.add(resolvedColumn.columnIndex);
         }
 
-        final WritableRowSet maybeMatch;
         // Should we look at the metadata?
         if (shouldExecute(QueryTable.DISABLE_WHERE_PUSHDOWN_PARQUET_ROW_GROUP_METADATA,
                 PushdownResult.METADATA_STATS_COST, executedFilterCost, costCeiling)
@@ -685,34 +683,32 @@ public class ParquetTableLocation extends AbstractTableLocation {
                     return;
                 }
             }
+        }
 
-            if (shouldExecute(QueryTable.DISABLE_WHERE_PUSHDOWN_DATA_INDEX,
-                    PushdownResult.DEFERRED_DATA_INDEX_COST, executedFilterCost, costCeiling)) {
-                // If we have a data index, apply the filter to the data index table and retain the incoming maybe rows.
-                final BasicDataIndex dataIndex =
-                        hasDataIndex(parquetColumnNames) ? getDataIndex(parquetColumnNames) : null;
-                if (dataIndex != null) {
-                    finishWithDataIndex(selection, filter, renameMap, dataIndex, maybeMatch, onComplete);
+        if (shouldExecute(QueryTable.DISABLE_WHERE_PUSHDOWN_DATA_INDEX,
+                PushdownResult.DEFERRED_DATA_INDEX_COST, executedFilterCost, costCeiling)) {
+            // If we have a data index, apply the filter to the data index table and retain the incoming maybe rows.
+            final BasicDataIndex dataIndex = hasDataIndex(parquetColumnNames) ? getDataIndex(parquetColumnNames) : null;
+            if (dataIndex != null) {
+                // No maybe rows remaining, so no reason to continue filtering.
+                try (final PushdownResult ignored = result) {
+                    onComplete.accept(pushdownDataIndex(filter, renameMap, dataIndex, result));
                     return;
                 }
             }
         }
 
-        try (
-                final WritableRowSet empty = RowSetFactory.empty();
-                maybeMatch) {
-            onComplete.accept(PushdownResult.ofUnsafe(selection, empty, maybeMatch));
-        }
+        onComplete.accept(result);
     }
 
     /**
      * Helper methods to determine if we should execute this push-down technique.
      */
-    private static boolean shouldExecute(final boolean disable, final long filterCost, final long executedFilterCost) {
+    private boolean shouldExecute(final boolean disable, final long filterCost, final long executedFilterCost) {
         return !disable && executedFilterCost < filterCost;
     }
 
-    private static boolean shouldExecute(final boolean disable, final long filterCost, final long executedFilterCost,
+    private boolean shouldExecute(final boolean disable, final long filterCost, final long executedFilterCost,
             final long costCeiling) {
         return shouldExecute(disable, filterCost, executedFilterCost) && filterCost <= costCeiling;
     }
@@ -728,8 +724,6 @@ public class ParquetTableLocation extends AbstractTableLocation {
      * Iterate over the row groups and the matching row sets, calling the consumer for each row group and row set.
      */
     private void iterateRowGroupsAndRowSet(final RowSet input, final RowGroupAndRowSetConsumer consumer) {
-        // todo: worth using search it? probably not, since we expect there to be relatively small number of row
-        // groups in most cases?
         try (final RowSequence.Iterator rsIt = input.getRowSequenceIterator()) {
             final RowGroupReader[] rgReaders = getRowGroupReaders();
             for (int rgIdx = 0; rgIdx < rgReaders.length; rgIdx++) {
@@ -827,34 +821,25 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 maybeCount.add(rs.size());
             }
         });
-        return PushdownResult.of(result.match().copy(),
-                maybeCount.get() == result.maybeMatch().size() ? result.maybeMatch().copy() : maybeBuilder.build());
+
+        if (maybeCount.get() == result.maybeMatch().size()) {
+            return result.copy();
+        }
+
+        try (final WritableRowSet maybeMatch = maybeBuilder.build()) {
+            return PushdownResult.ofUnsafe(result.selection(), result.match(), maybeMatch);
+        }
     }
 
     /**
-     * Apply the filter to the data index table and return the result. Ownership of {@code maybeMatch} transfers to this
-     * method.
+     * Apply the filter to the data index table and return the result.
      */
-    private void finishWithDataIndex(
-            final RowSet selection,
+    @NotNull
+    private PushdownResult pushdownDataIndex(
             final WhereFilter filter,
             final Map<String, String> renameMap,
             final BasicDataIndex dataIndex,
-            final WritableRowSet maybeMatch,
-            final Consumer<PushdownResult> onComplete) {
-        final PushdownResult results;
-        try (maybeMatch) {
-            results = pushdownDataIndex(selection, filter, renameMap, dataIndex, maybeMatch);
-        }
-        onComplete.accept(results);
-    }
-
-    private static @NotNull PushdownResult pushdownDataIndex(
-            final RowSet selection,
-            final WhereFilter filter,
-            final Map<String, String> renameMap,
-            final BasicDataIndex dataIndex,
-            final RowSet maybeMatch) {
+            final PushdownResult result) {
         final RowSetBuilderRandom matchingBuilder = RowSetFactory.builderRandom();
         try (final SafeCloseable ignored = LivenessScopeStack.open()) {
             final WhereFilter copiedFilter = filter.copy();
@@ -882,18 +867,14 @@ public class ParquetTableLocation extends AbstractTableLocation {
                 }
             } catch (final Exception e) {
                 // Exception occurs here if we have a data type mismatch between the index and the filter.
-                // Just swallow the exception and return a copy of the original result
-                try (final WritableRowSet empty = RowSetFactory.empty()) {
-                    return PushdownResult.ofUnsafe(selection, empty, maybeMatch);
-                }
+                // Just swallow the exception return a copy of the original input
+                return result.copy();
             }
         }
-        // Retain only the maybe rows
-        try (
-                final WritableRowSet matching = matchingBuilder.build();
-                final WritableRowSet empty = RowSetFactory.empty()) {
-            matching.retain(maybeMatch);
-            return PushdownResult.ofUnsafe(selection, matching, empty);
+        // Retain only the maybe rows and add the previously found matches.
+        try (final WritableRowSet matching = matchingBuilder.build()) {
+            matching.insert(result.match());
+            return PushdownResult.match(matching);
         }
     }
 

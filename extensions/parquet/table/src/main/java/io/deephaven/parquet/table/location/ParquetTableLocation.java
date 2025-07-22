@@ -872,9 +872,11 @@ public class ParquetTableLocation extends AbstractTableLocation {
             }
         }
         // Retain only the maybe rows and add the previously found matches.
-        try (final WritableRowSet matching = matchingBuilder.build()) {
+        try (
+                final WritableRowSet matching = matchingBuilder.build();
+                final WritableRowSet empty = RowSetFactory.empty()) {
             matching.insert(result.match());
-            return PushdownResult.match(matching);
+            return PushdownResult.ofUnsafe(result.selection(), matching, empty);
         }
     }
 

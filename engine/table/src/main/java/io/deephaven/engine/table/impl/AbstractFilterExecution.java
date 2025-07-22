@@ -187,6 +187,7 @@ abstract class AbstractFilterExecution {
                         // Clean up the row sets created by the filter.
                         try (result) {
                             synchronized (filterResult) {
+                                // todo: turn this into union after-the-fact?
                                 filterResult.insert(result);
                             }
                         }

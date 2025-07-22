@@ -809,7 +809,7 @@ public class RegionedColumnSourceManager
             rowSet.shiftInPlace(firstRowKey());
         }
 
-        private void unshiftIntoRegionSpace(final PushdownResult result) {
+        void unshiftIntoRegionSpace(final PushdownResult result) {
             if (result.selection().isNonempty()) {
                 unshiftIntoRegionSpace(result.selection());
             }
@@ -1166,6 +1166,7 @@ public class RegionedColumnSourceManager
                 }
 
                 private void onComplete(final PushdownResult pushdownResult) {
+                    tle.unshiftIntoRegionSpace(pushdownResult);
                     addResult(jobIndex, pushdownResult);
                     locationResume.run();
                     close();

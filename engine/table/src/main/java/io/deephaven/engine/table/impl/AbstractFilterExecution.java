@@ -171,8 +171,7 @@ abstract class AbstractFilterExecution {
                 QueryTable.PARALLEL_WHERE_ROWS_PER_SEGMENT - 1) / QueryTable.PARALLEL_WHERE_ROWS_PER_SEGMENT);
         final long targetSize = (inputSize + targetSegments - 1) / targetSegments;
 
-        // noinspection resource
-        final WritableRowSet filterResult = RowSetFactory.empty();
+        final WritableRowSet[] results = new WritableRowSet[targetSegments];
 
         jobScheduler().iterateParallel(
                 ExecutionContext.getContext(),
@@ -184,12 +183,8 @@ abstract class AbstractFilterExecution {
                     final long endOffset = startOffSet + targetSize;
 
                     final Consumer<WritableRowSet> onFilterComplete = (result) -> {
-                        // Clean up the row sets created by the filter.
-                        try (result) {
-                            synchronized (filterResult) {
-                                // todo: turn this into union after-the-fact?
-                                filterResult.insert(result);
-                            }
+                        synchronized (results) {
+                            results[idx] = result;
                         }
                         resume.run();
                     };
@@ -197,10 +192,11 @@ abstract class AbstractFilterExecution {
                     // Filter this segment of the input rows.
                     doFilter(filter, inputCopy, startOffSet, endOffset, onFilterComplete, nec);
                 },
-                () -> onComplete.accept(filterResult),
-                inputCopy::close,
+                () -> onComplete.accept(RowSetFactory.union(Arrays.asList(results))),
+                () -> SafeCloseable.closeAll(Stream.concat(Stream.of(inputCopy), Stream.of(results))),
                 exception -> {
-                    try (inputCopy) {
+                    try (final SafeCloseable ignore =
+                            () -> SafeCloseable.closeAll(Stream.concat(Stream.of(inputCopy), Stream.of(results)))) {
                         onError.accept(exception);
                     }
                 });

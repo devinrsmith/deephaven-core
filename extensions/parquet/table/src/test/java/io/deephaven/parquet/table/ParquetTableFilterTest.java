@@ -910,18 +910,18 @@ public final class ParquetTableFilterTest {
         // row group stats.
 
         // int range and match filters
-         filterAndVerifyResults(diskTable, memTable, "id <= 3000"); // entirely inside file with no metadata
-         filterAndVerifyResults(diskTable, memTable, "id <= 1000", "id >= 900"); // inside
-         filterAndVerifyResults(diskTable, memTable, "id <= 100000", "id >= 1900"); // all
+        filterAndVerifyResults(diskTable, memTable, "id <= 3000"); // entirely inside file with no metadata
+        filterAndVerifyResults(diskTable, memTable, "id <= 1000", "id >= 900"); // inside
+        filterAndVerifyResults(diskTable, memTable, "id <= 100000", "id >= 1900"); // all
         filterAndVerifyResults(diskTable, memTable, "id = 3000"); // inside
-         filterAndVerifyResults(diskTable, memTable, "id = 50000"); // outside
-         filterAndVerifyResults(diskTable, memTable, "id % 10 == 0"); // all
+        filterAndVerifyResults(diskTable, memTable, "id = 50000"); // outside
+        filterAndVerifyResults(diskTable, memTable, "id % 10 == 0"); // all
 
-         // combined filters
-         filterAndVerifyResults(diskTable, memTable, "random_int < 50", "id <= 3000");
-         filterAndVerifyResults(diskTable, memTable, "random_int < 50", "id <= 100000", "id >= 1900");
-         filterAndVerifyResults(diskTable, memTable, "random_int < 900", "id = 3000");
-         filterAndVerifyResults(diskTable, memTable, "random_int < 900", "id = 50000");
+        // combined filters
+        filterAndVerifyResults(diskTable, memTable, "random_int < 50", "id <= 3000");
+        filterAndVerifyResults(diskTable, memTable, "random_int < 50", "id <= 100000", "id >= 1900");
+        filterAndVerifyResults(diskTable, memTable, "random_int < 900", "id = 3000");
+        filterAndVerifyResults(diskTable, memTable, "random_int < 900", "id = 50000");
     }
 
     /**

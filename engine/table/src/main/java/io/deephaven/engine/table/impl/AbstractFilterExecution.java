@@ -284,9 +284,9 @@ abstract class AbstractFilterExecution {
                 onComplete.run();
                 return;
             }
-            pushdownMatcher.estimatePushdownFilterCost(filter, selection, sourceTable.getRowSet(), usePrev, context,
-                    jobScheduler(), value -> {
-                        pushdownFilterCost = value;
+            pushdownMatcher.estimatePushdownFilterCost(filter, selection, usePrev, context,
+                    jobScheduler(), estimatedCost -> {
+                        pushdownFilterCost = estimatedCost;
                         onComplete.run();
                     }, onError);
         }

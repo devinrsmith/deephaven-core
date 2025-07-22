@@ -862,11 +862,14 @@ public class RegionedColumnSourceManager
     }
 
     @Override
-    public long estimatePushdownFilterCost(
+    public void estimatePushdownFilterCost(
             final WhereFilter filter,
             final RowSet selection,
             final boolean usePrev,
-            final PushdownFilterContext context) {
+            final PushdownFilterContext context,
+            final JobScheduler jobScheduler,
+            final LongConsumer onComplete,
+            final Consumer<Exception> onError) {
         final int[] regionIndices;
         try (final RegionIndexIterator rit = RegionIndexIterator.of(selection)) {
             final IntStream.Builder builder = IntStream.builder();
@@ -875,16 +878,9 @@ public class RegionedColumnSourceManager
             }
             regionIndices = builder.build().toArray();
         }
-        final CompletableFuture<Void> future = new CompletableFuture<>();
-        final MutableLong result = new MutableLong();
-        new EstimateJobBuilder(selection.copy(), regionIndices, value -> {
-            result.set(value);
-            future.complete(null);
-        }, future::completeExceptionally).run(new ImmediateJobScheduler(), filter, usePrev, context);
-        future.join();
-        return result.get();
+        new EstimateJobBuilder(selection.copy(), regionIndices, onComplete, onError)
+                .run(jobScheduler, filter, usePrev, context);
     }
-
 
     @Override
     public void pushdownFilter(
@@ -1038,13 +1034,8 @@ public class RegionedColumnSourceManager
                 }
 
                 public void estimatePushdownFilterCost() {
-                    try {
-                        final long estimate =
-                                tle.location.estimatePushdownFilterCost(filter, shiftedSubset, usePrev, context);
-                        onComplete(estimate);
-                    } catch (Exception e) {
-                        onError(e);
-                    }
+                    tle.location.estimatePushdownFilterCost(filter, shiftedSubset, usePrev, context, jobScheduler,
+                            this::onComplete, this::onError);
                 }
 
                 private void onComplete(long estimatedCost) {

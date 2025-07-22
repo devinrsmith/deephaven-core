@@ -125,16 +125,16 @@ public final class PushdownResult implements SafeCloseable {
             final RowSet selection,
             final RowSet match,
             final RowSet maybeMatch) {
-        return of(selection, match, maybeMatch);
-        // final long matchSize = match.size();
-        // final long maybeMatchSize = maybeMatch.size();
-        // final long selectionSize = selection.size();
-        // if (matchSize + maybeMatchSize > selectionSize) {
-        // throw new IllegalArgumentException(
-        // String.format("Invalid PushdownResult, matchSize + maybeMatchSize > selectionSize, %d + %d > %d",
-        // matchSize, maybeMatchSize, selectionSize));
-        // }
-        // return new PushdownResult(selection.copy(), match.copy(), maybeMatch.copy());
+        // return of(selection, match, maybeMatch);
+        final long matchSize = match.size();
+        final long maybeMatchSize = maybeMatch.size();
+        final long selectionSize = selection.size();
+        if (matchSize + maybeMatchSize > selectionSize) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid PushdownResult, matchSize + maybeMatchSize > selectionSize, %d + %d > %d",
+                            matchSize, maybeMatchSize, selectionSize));
+        }
+        return new PushdownResult(selection.copy(), match.copy(), maybeMatch.copy());
     }
 
     private PushdownResult(

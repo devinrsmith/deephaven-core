@@ -498,7 +498,17 @@ public class WritableRowSetImpl extends RowSequenceAsChunkImpl implements Writab
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public final boolean equals(final Object obj) {
-        return RowSetUtils.equals(this, obj);
+        if (!(obj instanceof RowSet)) {
+            return false;
+        }
+        final RowSet other = (RowSet) obj;
+        return isReference(other) || RowSetUtils.equals(this, other);
+    }
+
+    @Override
+    public final boolean isReference(RowSet other) {
+        return this == other
+                || (other instanceof WritableRowSetImpl && innerSet == ((WritableRowSetImpl) other).innerSet);
     }
 
     @Override

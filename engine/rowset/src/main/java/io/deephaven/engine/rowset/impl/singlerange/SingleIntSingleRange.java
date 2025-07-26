@@ -24,9 +24,4 @@ public final class SingleIntSingleRange extends SingleRange {
     public long getCardinality() {
         return 1;
     }
-
-    @Override
-    public SingleRange copy() {
-        return new SingleIntSingleRange(unsignedIntValue);
-    }
 }

@@ -529,4 +529,6 @@ public interface RowSet extends RowSequence, LongSizedDataStructure, SafeCloseab
     default TrackingRowSet trackingCast() {
         return (TrackingRowSet) this;
     }
+
+    boolean isReference(RowSet other);
 }

@@ -5,6 +5,7 @@ package io.deephaven.engine.table.impl;
 
 import com.google.common.collect.Streams;
 import io.deephaven.base.log.LogOutput;
+import io.deephaven.base.verify.Assert;
 import io.deephaven.base.verify.Require;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.exceptions.CancellationException;
@@ -377,8 +378,8 @@ abstract class AbstractFilterExecution {
             final MutableObject<WritableRowSet> localInput,
             final Runnable filterComplete,
             final Consumer<Exception> filterNec) {
-
         final StatelessFilter sf = Objects.requireNonNull(statelessFilters[filterIdx]);
+        final RowSet input = localInput.get();
 
         // Our ceiling cost is the cost of the next filter in the list, or Long.MAX_VALUE if this is the last filter.
         // This will limit the pushdown filters excecuted during this cycle to this maximum cost.
@@ -396,45 +397,47 @@ abstract class AbstractFilterExecution {
                     filterNec);
         };
 
-        // Result consumer for push-down filtering.
-        final Consumer<PushdownResult> onPushdownComplete = (pushdownResult) -> {
-            // Update the context to reflect the filtering already executed..
-            sf.context.updateExecutedFilterCost(costCeiling);
-
-            if (pushdownResult.maybeMatch().isEmpty()) {
-                localInput.setValue(pushdownResult.match().copy());
-                scheduleAndSortCostEstimates(statelessFilters, filterIdx + 1, localInput.get(),
-                        filterComplete, filterNec);
-                return;
-            }
-
-            // We still have some maybe rows, sort the filters again, including the current index.
-            scheduleAndSortCostEstimates(statelessFilters, filterIdx, localInput.get(), () -> {
-                // If there is a new filter at the current index, need to evaluate it.
-                if (!sf.equals(statelessFilters[filterIdx])) {
-                    // Use the union of the match and maybe rows as the input for the next filter.
-                    localInput.setValue(pushdownResult.match().union(pushdownResult.maybeMatch()));
-
-                    // Store the result for later use by the companion regular filter.
-                    sf.pushdownResult = pushdownResult;
-
-                    // Do the next round of filtering with the new filter that bubbled up to the current index.
-                    executeStatelessFilter(statelessFilters, filterIdx, localInput, filterComplete, filterNec);
-                } else {
-                    // Leverage push-down results to reduce the chunk filter input.
-                    final Consumer<WritableRowSet> localConsumer = (rows) -> {
-                        try (final RowSet ignored = rows; final PushdownResult ignored2 = pushdownResult) {
-                            onFilterComplete.accept(rows.union(pushdownResult.match()));
-                        }
-                    };
-                    // Do the final filtering at this position.
-                    executeFinalFilter(sf.filter, pushdownResult.maybeMatch(), localConsumer, filterNec);
-                }
-            }, filterNec);
-        };
-
-        final RowSet input = localInput.get();
         if (sf.pushdownMatcher != null && sf.pushdownFilterCost < Long.MAX_VALUE) {
+            // Result consumer for push-down filtering.
+            final Consumer<PushdownResult> onPushdownComplete = (pushdownResult) -> {
+                Assert.eqTrue(input.isReference(pushdownResult.selection()),
+                        "input.isReference(pushdownResult.selection())");
+
+                // Update the context to reflect the filtering already executed..
+                sf.context.updateExecutedFilterCost(costCeiling);
+
+                if (pushdownResult.maybeMatch().isEmpty()) {
+                    localInput.setValue(pushdownResult.match().copy());
+                    scheduleAndSortCostEstimates(statelessFilters, filterIdx + 1, localInput.get(),
+                            filterComplete, filterNec);
+                    return;
+                }
+
+                // We still have some maybe rows, sort the filters again, including the current index.
+                scheduleAndSortCostEstimates(statelessFilters, filterIdx, localInput.get(), () -> {
+                    // If there is a new filter at the current index, need to evaluate it.
+                    if (!sf.equals(statelessFilters[filterIdx])) {
+                        // Use the union of the match and maybe rows as the input for the next filter.
+                        localInput.setValue(pushdownResult.match().union(pushdownResult.maybeMatch()));
+
+                        // Store the result for later use by the companion regular filter.
+                        sf.pushdownResult = pushdownResult;
+
+                        // Do the next round of filtering with the new filter that bubbled up to the current index.
+                        executeStatelessFilter(statelessFilters, filterIdx, localInput, filterComplete, filterNec);
+                    } else {
+                        // Leverage push-down results to reduce the chunk filter input.
+                        final Consumer<WritableRowSet> localConsumer = (rows) -> {
+                            try (final RowSet ignored = rows; final PushdownResult ignored2 = pushdownResult) {
+                                onFilterComplete.accept(rows.union(pushdownResult.match()));
+                            }
+                        };
+                        // Do the final filtering at this position.
+                        executeFinalFilter(sf.filter, pushdownResult.maybeMatch(), localConsumer, filterNec);
+                    }
+                }, filterNec);
+            };
+
             // Execute the pushdown filter and return.
             sf.pushdownMatcher.pushdownFilter(sf.filter, input, usePrev, sf.context,
                     costCeiling, jobScheduler(), onPushdownComplete, filterNec);

@@ -29,11 +29,6 @@ public final class LongStartIntDeltaSingleRange extends SingleRange {
         return delta() + 1;
     }
 
-    @Override
-    public LongStartIntDeltaSingleRange copy() {
-        return new LongStartIntDeltaSingleRange(rangeStart, unsignedIntDelta);
-    }
-
     private long delta() {
         return unsignedIntToLong(unsignedIntDelta);
     }

@@ -29,11 +29,6 @@ public final class ShortStartShortDeltaSingleRange extends SingleRange {
         return delta() + 1;
     }
 
-    @Override
-    public ShortStartShortDeltaSingleRange copy() {
-        return new ShortStartShortDeltaSingleRange(unsignedShortStart, unsignedShortDelta);
-    }
-
     private long delta() {
         return unsignedShortToLong(unsignedShortDelta);
     }

@@ -123,12 +123,8 @@ public class RowSetUtils {
         return !(it1.hasNext() || it2.hasNext());
     }
 
-    static boolean equals(final RowSet index, final Object other) {
-        if (!(other instanceof RowSet)) {
-            return false;
-        }
-        final RowSet otherRowSet = (RowSet) other;
-        return index.size() == otherRowSet.size() && RowSetUtils.equalsDeepImpl(index, otherRowSet);
+    static boolean equals(RowSet index, RowSet other) {
+        return index.size() == other.size() && RowSetUtils.equalsDeepImpl(index, other);
     }
 
     public interface Comparator {

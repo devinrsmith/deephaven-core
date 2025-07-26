@@ -24,9 +24,4 @@ public final class SingleLongSingleRange extends SingleRange {
     public long getCardinality() {
         return 1;
     }
-
-    @Override
-    public SingleRange copy() {
-        return new SingleLongSingleRange(value);
-    }
 }

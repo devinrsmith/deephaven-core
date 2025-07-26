@@ -28,9 +28,4 @@ public final class IntStartLongDeltaSingleRange extends SingleRange {
     public long getCardinality() {
         return delta + 1;
     }
-
-    @Override
-    public IntStartLongDeltaSingleRange copy() {
-        return new IntStartLongDeltaSingleRange(unsignedIntStart, delta);
-    }
 }

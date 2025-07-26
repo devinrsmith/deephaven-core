@@ -26,9 +26,4 @@ public final class IntStartIntDeltaSingleRange extends SingleRange {
     public long getCardinality() {
         return unsignedIntToLong(unsignedIntDelta) + 1;
     }
-
-    @Override
-    public SingleRange copy() {
-        return new IntStartIntDeltaSingleRange(unsignedIntStart, unsignedIntDelta);
-    }
 }

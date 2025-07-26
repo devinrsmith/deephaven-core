@@ -1212,6 +1212,9 @@ public class RegionedColumnSourceManager
                 }
 
                 private void onComplete(final PushdownResult pushdownResult) {
+                    Assert.eqTrue(
+                            shiftedSubset.isReference(pushdownResult.selection()),
+                            "shiftedSubset.isReference(pushdownResult.selection())");
                     tle.unshiftIntoRegionSpace(pushdownResult);
                     addResult(jobIndex, pushdownResult);
                     onCompleteSuccess();

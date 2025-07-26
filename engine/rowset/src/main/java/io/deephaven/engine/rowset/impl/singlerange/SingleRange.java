@@ -32,8 +32,6 @@ public abstract class SingleRange implements OrderedLongSet {
 
     public abstract long getCardinality();
 
-    public abstract SingleRange copy();
-
     protected static long unsignedIntToLong(final int unsignedInt) {
         return maxUnsignedInt() & unsignedInt;
     }
@@ -120,7 +118,7 @@ public abstract class SingleRange implements OrderedLongSet {
 
     @Override
     public final SingleRange ixCowRef() {
-        return copy();
+        return this;
     }
 
     @Override

@@ -3,10 +3,7 @@
 //
 package io.deephaven.engine.table.impl.hierarchical;
 
-import io.deephaven.api.ColumnName;
-import io.deephaven.api.Selectable;
-import io.deephaven.api.SortColumn;
-import io.deephaven.api.Strings;
+import io.deephaven.api.*;
 import io.deephaven.api.agg.Aggregation;
 import io.deephaven.api.agg.AggregationDescriptions;
 import io.deephaven.api.agg.AggregationPairs;
@@ -495,7 +492,7 @@ public class RollupTableImpl extends HierarchicalTableImpl<RollupTable, RollupTa
                             constituentColumnName = baseColumnNameToAbsoluteName(constituentColumnName);
                         }
                     }
-                    return aggregatedSortColumn.order() == SortColumn.Order.ASCENDING
+                    return aggregatedSortColumn.isAscending()
                             ? SortColumn.asc(ColumnName.of(constituentColumnName))
                             : SortColumn.desc(ColumnName.of(constituentColumnName));
 
@@ -687,9 +684,9 @@ public class RollupTableImpl extends HierarchicalTableImpl<RollupTable, RollupTa
         while (!columnsToReaggregateBy.isEmpty()) {
             nullColumnNames.addFirst(columnsToReaggregateBy.removeLast().name());
             final TableDefinition lastLevelDefinition = lastLevel.getDefinition();
-            final Map<String, Class<?>> nullColumns = nullColumnNames.stream().collect(Collectors.toMap(
-                    Function.identity(), ncn -> lastLevelDefinition.getColumn(ncn).getDataType(),
-                    Assert::neverInvoked, LinkedHashMap::new));
+            final List<ColumnDefinition<?>> nullColumns =
+                    nullColumnNames.stream().map(lastLevelDefinition::getColumn).collect(Collectors.toList());
+
             lastLevel = lastLevel.aggNoMemo(
                     AggregationProcessor.forRollupReaggregated(aggregations, nullColumns, ROLLUP_COLUMN),
                     false, null, new ArrayList<>(columnsToReaggregateBy));

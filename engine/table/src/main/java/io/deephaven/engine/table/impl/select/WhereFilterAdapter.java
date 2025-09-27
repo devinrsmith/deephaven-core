@@ -9,15 +9,7 @@ import io.deephaven.api.Strings;
 import io.deephaven.api.expression.Expression;
 import io.deephaven.api.expression.Function;
 import io.deephaven.api.expression.Method;
-import io.deephaven.api.filter.Filter;
-import io.deephaven.api.filter.FilterAnd;
-import io.deephaven.api.filter.FilterComparison;
-import io.deephaven.api.filter.FilterIn;
-import io.deephaven.api.filter.FilterIsNull;
-import io.deephaven.api.filter.FilterNot;
-import io.deephaven.api.filter.FilterOr;
-import io.deephaven.api.filter.FilterPattern;
-import io.deephaven.api.filter.FilterSerial;
+import io.deephaven.api.filter.*;
 import io.deephaven.api.literal.Literal;
 import io.deephaven.engine.table.impl.select.MatchFilter.MatchType;
 import io.deephaven.gui.table.filters.Condition;
@@ -138,6 +130,17 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
         return WhereFilterSerialImpl.of(innerFilter);
     }
 
+    public static WhereFilter of(FilterWithDeclaredBarriers barrier, boolean inverted) {
+        final WhereFilter innerFilter = WhereFilter.of(inverted ? barrier.filter().invert() : barrier.filter());
+        return WhereFilterWithDeclaredBarriersImpl.of(innerFilter, barrier.declaredBarriers());
+    }
+
+    public static WhereFilter of(FilterWithRespectedBarriers respectedBarrier, boolean inverted) {
+        final WhereFilter innerFilter = WhereFilter.of(
+                inverted ? respectedBarrier.filter().invert() : respectedBarrier.filter());
+        return WhereFilterWithRespectedBarriersImpl.of(innerFilter, respectedBarrier.respectedBarriers());
+    }
+
     public static WhereFilter of(Function function, boolean inverted) {
         // TODO(deephaven-core#3740): Remove engine crutch on io.deephaven.api.Strings
         return WhereFilterFactory.getExpression(Strings.of(function, inverted));
@@ -197,6 +200,16 @@ class WhereFilterAdapter implements Filter.Visitor<WhereFilter> {
     @Override
     public WhereFilter visit(FilterSerial serial) {
         return of(serial, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterWithDeclaredBarriers declaredBarrier) {
+        return of(declaredBarrier, inverted);
+    }
+
+    @Override
+    public WhereFilter visit(FilterWithRespectedBarriers respectedBarrier) {
+        return of(respectedBarrier, inverted);
     }
 
     @Override

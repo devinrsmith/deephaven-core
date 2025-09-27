@@ -188,7 +188,8 @@ public class AggregationProcessor implements AggregationContextFactory {
         baseAggregations.addAll(aggregations);
         baseAggregations.add(includeConstituents
                 ? Partition.of(rollupColumn)
-                : RollupAggregation.nullColumns(rollupColumn.name(), Table.class));
+                : RollupAggregation.nullColumns(
+                        ColumnDefinition.of(rollupColumn.name(), io.deephaven.qst.type.Type.find(Table.class))));
         return new AggregationProcessor(baseAggregations, Type.ROLLUP_BASE);
     }
 
@@ -204,7 +205,7 @@ public class AggregationProcessor implements AggregationContextFactory {
      */
     public static AggregationContextFactory forRollupReaggregated(
             @NotNull final Collection<? extends Aggregation> aggregations,
-            @NotNull final Map<String, Class<?>> nullColumns,
+            @NotNull final Collection<ColumnDefinition<?>> nullColumns,
             @NotNull final ColumnName rollupColumn) {
         if (aggregations.stream().anyMatch(agg -> agg instanceof Partition)) {
             rollupUnsupported("Partition");
@@ -228,7 +229,7 @@ public class AggregationProcessor implements AggregationContextFactory {
      */
     public static AggregationContextFactory forRollupReaggregatedLeaf(
             @NotNull final Collection<? extends Aggregation> aggregations,
-            @NotNull final Map<String, Class<?>> nullColumns,
+            @NotNull final Collection<ColumnDefinition<?>> nullColumns,
             @NotNull final ColumnName rollupColumn) {
         if (aggregations.stream().anyMatch(agg -> agg instanceof Partition)) {
             rollupUnsupported("Partition");
@@ -236,7 +237,8 @@ public class AggregationProcessor implements AggregationContextFactory {
         final Collection<Aggregation> reaggregations = new ArrayList<>(aggregations.size() + 2);
         reaggregations.add(RollupAggregation.nullColumns(nullColumns));
         reaggregations.addAll(aggregations);
-        reaggregations.add(RollupAggregation.nullColumns(rollupColumn.name(), Table.class));
+        reaggregations.add(RollupAggregation
+                .nullColumns(ColumnDefinition.of(rollupColumn.name(), io.deephaven.qst.type.Type.find(Table.class))));
         return new AggregationProcessor(reaggregations, Type.ROLLUP_REAGGREGATED);
     }
 
@@ -597,7 +599,7 @@ public class AggregationProcessor implements AggregationContextFactory {
         }
 
         final void descendingSortedFirstOrLastUnsupported(@NotNull final SortColumn sortColumn, final boolean isFirst) {
-            if (sortColumn.order() == SortColumn.Order.ASCENDING) {
+            if (sortColumn.isAscending()) {
                 return;
             }
             throw new UnsupportedOperationException(String.format("%s does not support sort order in %s",

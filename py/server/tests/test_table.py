@@ -1,6 +1,9 @@
 #
 # Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
 #
+ #
+# Copyright (c) 2016-2025 Deephaven Data Labs and Patent Pending
+#
 import random
 import unittest
 from types import SimpleNamespace
@@ -219,6 +222,17 @@ class TableTestCase(BaseTestCase):
         self.assertLessEqual(filtered_table.size, self.test_table.size)
 
         filtered_table = self.test_table.where(filters="a > 10")
+        self.assertLessEqual(filtered_table.size, self.test_table.size)
+
+    def test_where_pushdown_virtualrowvariables(self):
+        filtered_table = self.test_table.where(filters="ii % 2 == 0")
+        self.assertLessEqual(filtered_table.size, self.test_table.size)
+
+        # Test a virtual function that uses a real column and a virtual column
+        def pyfunc_bool(p1, p2) -> bool:
+            return p1 < p2
+
+        filtered_table = self.test_table.where(filters="pyfunc_bool(a, ii)")
         self.assertLessEqual(filtered_table.size, self.test_table.size)
 
     def test_where_in(self):
@@ -698,6 +712,18 @@ class TableTestCase(BaseTestCase):
         t = self.test_table.format_columns("a = heatmap(b, 1, 400, BRIGHT_GREEN, BRIGHT_RED)")
         self.assertIsNotNone(t)
 
+    def test_format_columns_scope(self):
+        def format_columns_formula():
+            def my_fn(val):
+                return val > 3
+
+            t = empty_table(10).update_view(["A=i%2", "B=A+3"])
+            t = t.format_columns("B = (boolean) my_fn(B) ? BLUE : RED")
+            return t
+
+        t = format_columns_formula()
+        self.assertIsNotNone(t)
+
     def test_format_column_where(self):
         t = self.test_table.format_column_where("c", "c % 2 = 0", "ORANGE")
         self.assertIsNotNone(t)
@@ -705,8 +731,30 @@ class TableTestCase(BaseTestCase):
         t = self.test_table.format_column_where("c", "c % 2 = 0", "bg(colorRGB(255, 93, 0))")
         self.assertIsNotNone(t)
 
+    def test_format_column_where_scope(self):
+        def format_column_where_formula():
+            def my_fn(val):
+                return val > 3
+            t = empty_table(1000).update_view(["A=i%2", "B=A+3"])
+            t = t.format_column_where(col="B", cond="(boolean)my_fn(B)", formula="BLUE")
+            return t
+
+        t = format_column_where_formula()
+        self.assertIsNotNone(t)
+
     def test_format_row_where(self):
         t = self.test_table.format_row_where("e % 3 = 1", "TEAL")
+        self.assertIsNotNone(t)
+
+    def test_format_row_where_scope(self):
+        def format_row_where_formula():
+            def my_fn(val):
+                return val > 3
+            t = empty_table(1000).update_view(["A=i%2", "B=A+3"])
+            t = t.format_row_where(cond="(boolean)my_fn(B)", formula="BLUE") # This fails, my_fn cannot be found
+            return t
+
+        t = format_row_where_formula()
         self.assertIsNotNone(t)
 
     def test_layout_hints(self):
@@ -1197,6 +1245,21 @@ class TableTestCase(BaseTestCase):
             t = partitioned_by_formula()
             self.assertIsNotNone(t)
 
+        with self.subTest("agg_by_new_formula_variant"):
+            def agg_by_formula():
+                def my_fn(vals):
+                    import deephaven.dtypes as dht
+                    return dht.array(dht.double, [i + 2 for i in vals])
+
+                t = empty_table(1000).update_view(["A=i%2", "B=A+3"])
+                t = t.agg_by(formula("D=(double[])my_fn(B)"))
+                return t
+
+            t = agg_by_formula()
+            self.assertIsNotNone(t)
+            self.assertIn("D", t.column_names)
+            self.assertEqual(t.columns[0].data_type, dtypes.double_array)
+
     def test_arg_validation(self):
         t = empty_table(1).update(["A=i", "B=i", "C=i"])
         with self.assertRaises(DHError) as cm:
@@ -1264,6 +1327,7 @@ class TableTestCase(BaseTestCase):
             t2 = empty_table(10).update(["A = i", "B = (float)(i + 1.005)"])
             d = table_diff(t1, t2, max_diffs=10, floating_comparison='relative')
             self.assertFalse(d)
+
 
 
 if __name__ == "__main__":

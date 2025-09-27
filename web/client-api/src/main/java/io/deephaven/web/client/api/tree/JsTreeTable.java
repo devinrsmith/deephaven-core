@@ -143,6 +143,7 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
 
     private Column rowDepthCol;
     private Column rowExpandedCol;
+    private JsArray<Column> aggregatedColumns;
     private JsArray<Column> groupedColumns;
     private JsLayoutHints layoutHints;
 
@@ -200,7 +201,7 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
         // Load the table and column definitions from the descriptor
         extractDefinition(treeDescriptor);
 
-        actionCol = new Column(-1, -1, null, null, "byte", "__action__", false, null, null, false, false);
+        actionCol = new Column(-1, -1, null, null, "byte", "__action__", false, null, null, false, false, false);
 
         keyTableData = new Object[keyColumns.length + 2][0];
 
@@ -232,6 +233,7 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
         boolean hasConstituentColumns = !columnDefsByName.get(true).isEmpty();
 
         Map<String, Column> constituentColumns = new HashMap<>();
+        JsArray<Column> aggregatedColumns = new JsArray<>();
         JsArray<Column> groupedColumns = new JsArray<>();
         for (ColumnDefinition definition : tableDefinition.getColumns()) {
             Column column = definition.makeJsColumn(columns.length, columnDefsByName);
@@ -260,6 +262,8 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
                         if (hasConstituentColumns) {
                             column.setConstituentType(columnDefsByName.get(true).get(definition.getName()).getType());
                         }
+                    } else if (definition.isRollupAggregatedNodeColumn()) {
+                        aggregatedColumns.push(column);
                     }
                     String aggInputCol = definition.getRollupAggregationInputColumn();
                     if (hasConstituentColumns && aggInputCol != null && !aggInputCol.isEmpty()) {
@@ -269,26 +273,26 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
                 }
             }
         }
+        this.aggregatedColumns = JsObject.freeze(aggregatedColumns);
         this.groupedColumns = JsObject.freeze(groupedColumns);
 
-        sourceColumns = columnDefsByName.get(false).values().stream()
-                .map(c -> {
-                    if (c.getRollupAggregationInputColumn() != null && !c.getRollupAggregationInputColumn().isEmpty()) {
-                        // Use the specified input column
-                        return constituentColumns.remove(c.getRollupAggregationInputColumn());
-                    }
-                    if (c.isRollupGroupByColumn()) {
-                        // use the groupby column's own name
-                        return constituentColumns.remove(c.getName());
-                    }
-                    // filter out the rest
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(
-                        Column::getName,
-                        Function.identity()));
+        sourceColumns = new HashMap<>();
+        for (ColumnDefinition c : columnDefsByName.get(false).values()) {
+            if (c.getRollupAggregationInputColumn() != null && !c.getRollupAggregationInputColumn().isEmpty()) {
+                // Use the specified input column
+                if (constituentColumns.containsKey(c.getRollupAggregationInputColumn())) {
+                    sourceColumns.put(c.getName(), constituentColumns.get(c.getRollupAggregationInputColumn()));
+                }
+            } else if (c.isRollupGroupByColumn()) {
+                // use the groupby column's own name
+                if (constituentColumns.containsKey(c.getName())) {
+                    sourceColumns.put(c.getName(), constituentColumns.get(c.getName()));
+                }
+            }
+        }
+
         // add the rest of the constituent columns as themselves, they will only show up in constituent rows
+        sourceColumns.values().stream().map(Column::getName).forEach(constituentColumns::remove);
         sourceColumns.putAll(constituentColumns);
 
         // restore remaining unmatched constituent columns to the column array
@@ -690,7 +694,7 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
             serverViewport = RangeSet.ofRange((long) firstRow, (long) lastRow);
 
             sendBarrageSubscriptionRequest(RangeSet.ofRange((long) firstRow, (long) lastRow), Js.uncheckedCast(columns),
-                    updateInterval, false);
+                    updateInterval, false, 0);
         }
 
         @Override
@@ -1265,6 +1269,16 @@ public class JsTreeTable extends HasLifecycle implements ServerObject {
     @JsProperty
     public boolean isIncludeConstituents() {
         return Arrays.stream(tableDefinition.getColumns()).anyMatch(ColumnDefinition::isRollupConstituentNodeColumn);
+    }
+
+    /**
+     * Returns the columns that are aggregated.
+     * 
+     * @return array of aggregated columns
+     */
+    @JsProperty
+    public JsArray<Column> getAggregatedColumns() {
+        return aggregatedColumns;
     }
 
     @JsProperty

@@ -37,8 +37,9 @@ dependencies {
     implementation project(':engine-table')
     testImplementation project(':engine-test-utils')
 
-    testRuntimeOnly project(':test-configs')
     testRuntimeOnly project(':log-to-slf4j')
+    testRuntimeOnly project(':configs')
+    testRuntimeOnly project(':test-configs')
     testRuntimeOnly libs.slf4j.simple
 }
 

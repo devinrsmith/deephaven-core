@@ -15,6 +15,7 @@ public abstract class JacksonValue {
         return null;
     }
 
+    @Value.Parameter
     public abstract io.deephaven.json.Value options();
 
     public final JacksonProvider provider() {

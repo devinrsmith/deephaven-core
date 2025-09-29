@@ -4,13 +4,24 @@
 package io.deephaven.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
+import io.deephaven.chunk.LongChunk;
+import io.deephaven.chunk.ObjectChunk;
+import io.deephaven.chunk.WritableChunk;
+import io.deephaven.json.InstantValue;
 import io.deephaven.json.IntValue;
+import io.deephaven.json.LongValue;
+import io.deephaven.json.ObjectField;
 import io.deephaven.json.ObjectValue;
 import io.deephaven.json.StringValue;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import static com.fasterxml.jackson.core.JsonToken.END_ARRAY;
 import static com.fasterxml.jackson.core.JsonToken.END_OBJECT;
@@ -77,6 +88,105 @@ class JacksonIteratorTest {
     @Test
     void objectEntriesJson() throws IOException {
         checkIterator(objectEntriesSpec(), "/io/deephaven/json/test-object-entries.json");
+    }
+
+    @Test
+    void name2() throws IOException {
+
+        final ObjectValue ov = ObjectValue.builder()
+                .putFields("id", LongValue.lenient())
+                .putFields("type", StringValue.strict())
+                .putFields("actor", ObjectValue.strict(Map.of("id", LongValue.strict())))
+                .putFields("repo", ObjectValue.strict(Map.of("id", LongValue.strict())))
+//                .putFields("payload", ObjectValue.strict(Map.of("action", StringValue.strict())))
+                .putFields("created_at", InstantValue.strict())
+                .putFields("org", ObjectValue.builder()
+                        .putFields("id", LongValue.standard())
+                        .putFields("login", StringValue.standard())
+                        .build())
+                .build();
+        JacksonValue2 stream = JacksonValue2.stream(ov);
+
+        try (
+                final InputStream in = new GZIPInputStream(new URL("https://data.gharchive.org/2025-01-01-15.json.gz").openStream(), 4096);
+                final JsonParser parser = JacksonSource.of(JacksonConfiguration.defaultFactory(), in)) {
+            parser.nextToken();
+            final JacksonIterator iterator = stream.iterator(parser, 128);
+            while (iterator.hasNext()) {
+                final List<WritableChunk<?>> chunks = iterator.nextChunks();
+                LongChunk<?> ids = chunks.get(0).asLongChunk();
+                ObjectChunk<String, ?> types = chunks.get(1).asObjectChunk();
+                LongChunk<?> actorIds = chunks.get(2).asLongChunk();
+                LongChunk<?> repoIds = chunks.get(3).asLongChunk();
+                LongChunk<?> createdAts = chunks.get(4).asLongChunk();
+                LongChunk<?> orgIds = chunks.get(5).asLongChunk();
+                ObjectChunk<String, ?> orgLogins = chunks.get(6).asObjectChunk();
+
+
+                int size = ids.size();
+                for (int i = 0; i < size; ++i) {
+
+                    System.out.println(types.get(i));
+
+                    if (orgIds.get(i) == Long.MIN_VALUE && orgLogins.get(i) != null) {
+                        System.out.println(orgLogins.get(i));
+                    }
+                }
+
+                for (WritableChunk<?> chunk : chunks) {
+                    chunk.close();
+                }
+            }
+        }
+
+    }
+
+    @Test
+    void name() throws IOException {
+        final ObjectValue ov = ObjectValue.builder()
+                .putFields("id", LongValue.lenient())
+                .putFields("type", StringValue.strict())
+                .putFields("actor", ObjectValue.strict(Map.of("id", LongValue.strict())))
+                .putFields("repo", ObjectValue.strict(Map.of("id", LongValue.strict())))
+//                .putFields("payload", ObjectValue.strict(Map.of("action", StringValue.strict())))
+                .putFields("created_at", InstantValue.strict())
+                .putFields("org", ObjectValue.builder()
+                        .putFields("id", LongValue.standard())
+                        .putFields("login", StringValue.standard())
+                        .build())
+                .build();
+        JacksonValue2 stream = JacksonValue2.stream(ov);
+
+
+        try (final JsonParser parser = parser("/io/deephaven/json/2015-01-01-15.json")) {
+            parser.nextToken();
+            final JacksonIterator iterator = stream.iterator(parser, 128);
+            while (iterator.hasNext()) {
+                final List<WritableChunk<?>> chunks = iterator.nextChunks();
+                LongChunk<?> ids = chunks.get(0).asLongChunk();
+                ObjectChunk<String, ?> types = chunks.get(1).asObjectChunk();
+                LongChunk<?> actorIds = chunks.get(2).asLongChunk();
+                LongChunk<?> repoIds = chunks.get(3).asLongChunk();
+                LongChunk<?> createdAts = chunks.get(4).asLongChunk();
+                LongChunk<?> orgIds = chunks.get(5).asLongChunk();
+                ObjectChunk<String, ?> orgLogins = chunks.get(6).asObjectChunk();
+
+
+                int size = ids.size();
+                for (int i = 0; i < size; ++i) {
+
+                    System.out.println(types.get(i));
+
+                    if (orgIds.get(i) == Long.MIN_VALUE && orgLogins.get(i) != null) {
+                        System.out.println(orgLogins.get(i));
+                    }
+                }
+
+                for (WritableChunk<?> chunk : chunks) {
+                    chunk.close();
+                }
+            }
+        }
     }
 
     private static void checkIterator(final JacksonValue2 jip, final String resourceName) throws IOException {

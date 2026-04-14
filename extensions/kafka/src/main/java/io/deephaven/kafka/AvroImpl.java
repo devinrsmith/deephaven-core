@@ -34,14 +34,23 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericContainer;
+import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -63,41 +72,84 @@ class AvroImpl {
 
     private static final Type<Utf8> utf8Type = Type.find(Utf8.class);
 
-    static final class AvroConsume extends Consume.KeyOrValueSpec {
+    static abstract class AvroConsumeBase extends Consume.KeyOrValueSpec {
         private static final Pattern NESTED_FIELD_NAME_SEPARATOR_PATTERN =
                 Pattern.compile(Pattern.quote(NESTED_FIELD_NAME_SEPARATOR));
 
-        private Schema schema;
-        private final String schemaName;
-        private final String schemaVersion;
+        Schema schema;
         /** fields mapped to null are skipped. */
         private final Function<String, String> fieldPathToColumnName;
-
         private final boolean useUTF8Strings;
 
-        AvroConsume(final Schema schema, final Function<String, String> fieldPathToColumnName) {
+        AvroConsumeBase(final Schema schema, final Function<String, String> fieldPathToColumnName, boolean useUTF8Strings) {
             this.schema = Objects.requireNonNull(schema);
+            this.fieldPathToColumnName = Objects.requireNonNull(fieldPathToColumnName);
+            this.useUTF8Strings = useUTF8Strings;
+        }
+
+        AvroConsumeBase(Function<String, String> fieldPathToColumnName) {
+            this.fieldPathToColumnName = Objects.requireNonNull(fieldPathToColumnName);
+            this.useUTF8Strings = false;
+        }
+
+        AvroConsumeBase(Function<String, String> fieldPathToColumnName, boolean useUTF8Strings) {
+            this.fieldPathToColumnName = Objects.requireNonNull(fieldPathToColumnName);
+            this.useUTF8Strings = useUTF8Strings;
+        }
+
+        protected abstract void ensureSchema(SchemaRegistryClient schemaRegistryClient);
+
+        @Override
+        protected final KeyOrValueIngestData getIngestData(KeyOrValue keyOrValue,
+                                                     SchemaRegistryClient schemaRegistryClient, Map<String, ?> configs, MutableInt nextColumnIndexMut,
+                                                     List<ColumnDefinition<?>> columnDefinitionsOut) {
+            ensureSchema(schemaRegistryClient);
+            KeyOrValueIngestData data = new KeyOrValueIngestData();
+            data.fieldPathToColumnName = new HashMap<>();
+            avroSchemaToColumnDefinitions(columnDefinitionsOut, data.fieldPathToColumnName, schema,
+                    fieldPathToColumnName, useUTF8Strings);
+            data.extra = schema;
+            return data;
+        }
+
+        @Override
+        protected final KeyOrValueProcessor getProcessor(TableDefinition tableDef, KeyOrValueIngestData data) {
+            return GenericRecordChunkAdapter.make(
+                    tableDef,
+                    ci -> StreamChunkUtils.chunkTypeForColumnIndex(tableDef, ci),
+                    data.fieldPathToColumnName,
+                    NESTED_FIELD_NAME_SEPARATOR_PATTERN,
+                    (Schema) data.extra,
+                    true);
+        }
+    }
+
+    static final class AvroConsume extends AvroConsumeBase {
+
+        private final String schemaName;
+        private final String schemaVersion;
+
+        AvroConsume(final Schema schema, final Function<String, String> fieldPathToColumnName) {
+            super(schema, fieldPathToColumnName, false);
             this.schemaName = null;
             this.schemaVersion = null;
-            this.fieldPathToColumnName = fieldPathToColumnName;
-            this.useUTF8Strings = false;
         }
 
         AvroConsume(final String schemaName,
                 final String schemaVersion,
                 final Function<String, String> fieldPathToColumnName) {
-            this(schemaName, schemaVersion, fieldPathToColumnName, false);
+            super(fieldPathToColumnName);
+            this.schemaName = schemaName;
+            this.schemaVersion = schemaVersion;
         }
 
         AvroConsume(final String schemaName,
                 final String schemaVersion,
                 final Function<String, String> fieldPathToColumnName,
                 final boolean useUTF8Strings) {
-            this.schema = null;
+            super(fieldPathToColumnName, useUTF8Strings);
             this.schemaName = schemaName;
             this.schemaVersion = schemaVersion;
-            this.fieldPathToColumnName = fieldPathToColumnName;
-            this.useUTF8Strings = useUTF8Strings;
         }
 
         @Override
@@ -112,31 +164,7 @@ class AvroImpl {
             return new KafkaAvroDeserializerWithReaderSchema(schemaRegistryClient);
         }
 
-        @Override
-        protected KeyOrValueIngestData getIngestData(KeyOrValue keyOrValue,
-                SchemaRegistryClient schemaRegistryClient, Map<String, ?> configs, MutableInt nextColumnIndexMut,
-                List<ColumnDefinition<?>> columnDefinitionsOut) {
-            ensureSchema(schemaRegistryClient);
-            KeyOrValueIngestData data = new KeyOrValueIngestData();
-            data.fieldPathToColumnName = new HashMap<>();
-            avroSchemaToColumnDefinitions(columnDefinitionsOut, data.fieldPathToColumnName, schema,
-                    fieldPathToColumnName, useUTF8Strings);
-            data.extra = schema;
-            return data;
-        }
-
-        @Override
-        protected KeyOrValueProcessor getProcessor(TableDefinition tableDef, KeyOrValueIngestData data) {
-            return GenericRecordChunkAdapter.make(
-                    tableDef,
-                    ci -> StreamChunkUtils.chunkTypeForColumnIndex(tableDef, ci),
-                    data.fieldPathToColumnName,
-                    NESTED_FIELD_NAME_SEPARATOR_PATTERN,
-                    (Schema) data.extra,
-                    true);
-        }
-
-        private void ensureSchema(SchemaRegistryClient schemaRegistryClient) {
+        protected void ensureSchema(SchemaRegistryClient schemaRegistryClient) {
             // This adds a little bit of stateful-ness to AvroConsume. Typically, this is not something we want /
             // encourage for implementations, but due to the getDeserializer / getProcessor dependency on the exact
             // same schema, we need to ensure we don't race if the user has set AVRO_LATEST_VERSION. Alternatively, we
@@ -164,6 +192,79 @@ class AvroImpl {
             @Override
             public java.lang.Object deserialize(String topic, Headers headers, byte[] bytes) {
                 return super.deserialize(topic, headers, bytes, schema);
+            }
+        }
+    }
+
+    static final class AvroConsumeRaw extends AvroConsumeBase {
+//        private final MessageDecoder<?> yep;
+
+        AvroConsumeRaw(final Schema schema, final Function<String, String> fieldPathToColumnName, boolean useUTF8Strings) {
+            super(schema, fieldPathToColumnName, useUTF8Strings);
+        }
+
+        @Override
+        public Optional<SchemaProvider> getSchemaProvider() {
+            return Optional.empty();
+        }
+
+        @Override
+        protected Deserializer<?> getDeserializer(KeyOrValue keyOrValue, SchemaRegistryClient schemaRegistryClient,
+                                                  Map<String, ?> configs) {
+
+
+
+            return new AvroRawDeserializer<>(DecoderFactory.get(), new GenericDatumReader<>(schema));
+        }
+
+
+        protected void ensureSchema(SchemaRegistryClient schemaRegistryClient) {
+            // should always be set in constructor
+            if (schema == null) {
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    public static class AvroRawSerializer<D> implements Serializer<D> {
+        private final EncoderFactory encoderFactory;
+        private final DatumWriter<D> writer;
+
+        public AvroRawSerializer(EncoderFactory encoderFactory, DatumWriter<D> writer) {
+            this.encoderFactory = Objects.requireNonNull(encoderFactory);
+            this.writer = Objects.requireNonNull(writer);
+        }
+
+        @Override
+        public byte[] serialize(String topic, D data) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final BinaryEncoder encoder = encoderFactory.binaryEncoder(baos, null);
+            try {
+                writer.write(data, encoder);
+                encoder.flush();
+            } catch (IOException e) {
+                throw new SerializationException(e);
+            }
+            return baos.toByteArray();
+        }
+    }
+
+    private static class AvroRawDeserializer<D> implements Deserializer<D> {
+        private final DecoderFactory decoderFactory;
+        private final DatumReader<D> reader;
+
+        private AvroRawDeserializer(DecoderFactory decoderFactory, DatumReader<D> reader) {
+            this.decoderFactory = Objects.requireNonNull(decoderFactory);
+            this.reader = Objects.requireNonNull(reader);
+        }
+
+        @Override
+        public D deserialize(String topic, byte[] data) {
+            final BinaryDecoder decoder = decoderFactory.binaryDecoder(data, null);
+            try {
+                return reader.read(null, decoder);
+            } catch (IOException e) {
+                throw new SerializationException(e);
             }
         }
     }

@@ -594,6 +594,10 @@ public class KafkaTools {
             return new AvroConsume(schemaName, AVRO_LATEST_VERSION, DIRECT_MAPPING);
         }
 
+        public static KeyOrValueSpec rawAvroSpec(final Schema schema) {
+            return new AvroImpl.AvroConsumeRaw(schema, DIRECT_MAPPING, false);
+        }
+
         /**
          * The kafka protobuf specs. This will fetch the {@link com.google.protobuf.Descriptors.Descriptor protobuf
          * descriptor} based on the {@link ProtobufConsumeOptions#descriptorProvider()} and create the

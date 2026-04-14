@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public enum KafkaService {
-    CONFLUENT_KAFKA {
+    /*CONFLUENT_KAFKA {
         @Override
         public void init() {
             ConfluentKafka.init();
@@ -36,7 +36,7 @@ public enum KafkaService {
         public Map<String, Object> propertiesMap() {
             return Kafka.propertiesMap();
         }
-    },
+    },*/
     KAFKA_NATIVE {
         @Override
         public void init() {
@@ -47,7 +47,8 @@ public enum KafkaService {
         public Map<String, Object> propertiesMap() {
             return KafkaNative.propertiesMap();
         }
-    },
+    }
+    /*,
     REDPANDA {
         @Override
         public void init() {
@@ -58,7 +59,7 @@ public enum KafkaService {
         public Map<String, Object> propertiesMap() {
             return Redpanda.propertiesMap();
         }
-    };
+    }*/;
 
     public abstract void init();
 

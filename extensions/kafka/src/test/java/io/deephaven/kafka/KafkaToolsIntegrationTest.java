@@ -3,6 +3,7 @@
 //
 package io.deephaven.kafka;
 
+import avro.examples.baseball.FieldTest;
 import io.deephaven.engine.context.ExecutionContext;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
@@ -16,11 +17,21 @@ import io.deephaven.json.StringValue;
 import io.deephaven.json.jackson.JacksonProvider;
 import io.deephaven.kafka.KafkaTools.TableType;
 import io.deephaven.kafka.testcontainers.KafkaService;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.message.BinaryMessageDecoder;
+import org.apache.avro.message.RawMessageEncoder;
+import org.apache.avro.specific.SpecificData;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.ByteBufferSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.VoidSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -29,12 +40,18 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static io.deephaven.engine.table.ColumnDefinition.ofBoolean;
 import static io.deephaven.engine.table.ColumnDefinition.ofInt;
 import static io.deephaven.engine.table.ColumnDefinition.ofLong;
 import static io.deephaven.engine.table.ColumnDefinition.ofString;
@@ -272,6 +289,84 @@ class KafkaToolsIntegrationTest {
             producer.flush();
 
             awaitEquals(e3, taa);
+        }
+    }
+
+    @ParameterizedTest(name = "rawAvroValue {0}")
+    @EnumSource
+    @Timeout(10)
+    void rawAvroValue(final KafkaService kafkaService, final TestInfo testInfo) throws Exception {
+        kafkaService.init();
+        final String topic = sanitizedTopicName(testInfo);
+        final FieldTest f1 = FieldTest.newBuilder()
+                .setNumber(42)
+                .setLastName("Smith")
+//                .setTruthiness(true)
+                .setTimestamp(Instant.parse("2026-04-13T22:30:11.593613979Z"))
+//                .setTimestampMicros(Instant.parse("2026-04-13T22:30:11.593613979Z"))
+//                .setTimeMillis(LocalTime.parse("22:30:11.593613979"))
+//                .setTimeMicros(LocalTime.parse("22:30:11.593613979"))
+                .build();
+
+        final TableDefinition td;
+        final Table e1;
+        final Table e2;
+        {
+            td = TableDefinition.of(
+                    PARTITION_COLUMN,
+                    OFFSET_COLUMN,
+                    TIMESTAMP_COLUMN,
+                    ofInt("number"),
+                    ofString("last_name"),
+//                    ofBoolean("truthiness"),
+                    ofTime("timestamp")
+//                    ofTime("timestampMicros"),
+//                    ofInt("timeMillis"),
+//                    ofLong("timeMicros")
+            );
+            e1 = TableTools.newTable(td);
+//            e2 = TableTools.newTable(td,
+//                    intCol(PARTITION_COLUMN.getName(), 0, 0),
+//                    longCol(OFFSET_COLUMN.getName(), 0, 1),
+//                    instantCol(TIMESTAMP_COLUMN.getName(), Instant.ofEpochMilli(42L), Instant.ofEpochMilli(43L)),
+//                    stringCol(fooName, "foo1", "foo2"),
+//                    stringCol(barName, "bar1", "bar2"),
+//                    stringCol(zipName, "zip1", "zip2"),
+//                    stringCol(zapName, "zap1", "zap2"));
+        }
+
+        createTopic(kafkaService, topic);
+
+
+        final KafkaTools.TableAndAdapter taa = KafkaTools.consumeToTableAndAdapter(
+                kafkaService.properties(),
+                topic,
+                ALL_PARTITIONS,
+                ALL_PARTITIONS_SEEK_TO_BEGINNING,
+                KafkaTools.Consume.ignoreSpec(),
+                KafkaTools.Consume.rawAvroSpec(FieldTest.getClassSchema()),
+                TableType.append());
+        try (final KafkaProducer<Void, FieldTest> producer =
+                     kafkaService.producer(new VoidSerializer(), new AvroImpl.AvroRawSerializer<>(EncoderFactory.get(), new SpecificDatumWriter<>(FieldTest.class)))) {
+            awaitEquals(e1, taa);
+
+//            final ByteBuffer out;
+//            {
+//                SpecificDatumWriter<FieldTest> writer = new SpecificDatumWriter<>(FieldTest.class);
+//                EncoderFactory encoderFactory = EncoderFactory.get();
+//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//                BinaryEncoder encoder = encoderFactory.binaryEncoder(baos, null);
+//                writer.write(f1, encoder);
+//                encoder.flush();
+//                out = ByteBuffer.wrap(baos.toByteArray());
+//            }
+
+            //final ByteBuffer out = new RawMessageEncoder<>(SpecificData.getForClass(FieldTest.class), FieldTest.getClassSchema()).encode(f1);
+//             final ByteBuffer out = f1.toByteBuffer();
+            producer.send(new ProducerRecord<>(topic, null, 42L, null, f1));
+            producer.flush();
+            Thread.sleep(1000);
+            awaitEquals(e1, taa);
         }
     }
 

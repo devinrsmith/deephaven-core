@@ -287,6 +287,8 @@ public interface Table extends
      */
     <T> ColumnSource<T> getColumnSource(String sourceName, Class<? extends T> clazz, @Nullable Class<?> componentType);
 
+    <T> ColumnSource<T> getColumnSource(ColumnDefinition<? extends T> columnDefinition);
+
     Map<String, ? extends ColumnSource<?>> getColumnSourceMap();
 
     Collection<? extends ColumnSource<?>> getColumnSources();

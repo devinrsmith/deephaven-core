@@ -112,6 +112,15 @@ public interface TableDefaults extends Table, TableOperationsDefaults<Table, Tab
         return rawColumnSource.cast(clazz, componentType, sourceName);
     }
 
+    @Override
+    default <T> ColumnSource<T> getColumnSource(ColumnDefinition<? extends T> columnDefinition) {
+        String sourceName = columnDefinition.getName();
+        @SuppressWarnings("rawtypes")
+        ColumnSource rawColumnSource = getColumnSource(sourceName);
+        // noinspection unchecked
+        return rawColumnSource.cast(columnDefinition.getDataType(), columnDefinition.getComponentType(), sourceName);
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
     // Filter Operations
     // -----------------------------------------------------------------------------------------------------------------

@@ -107,13 +107,23 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
     }
 
     public static ColumnDefinition<?> of(String name, PrimitiveType<?> type) {
-        final PrimitiveType.Visitor<ColumnDefinition<?>> adapter = new Adapter(name);
-        return type.walk(adapter);
+        return type.walk((PrimitiveType.Visitor<ColumnDefinition<?>>) new Adapter(name));
     }
 
     public static ColumnDefinition<?> of(String name, GenericType<?> type) {
-        final GenericType.Visitor<ColumnDefinition<?>> adapter = new Adapter(name);
-        return type.walk(adapter);
+        return type.walk((GenericType.Visitor<ColumnDefinition<?>>) new Adapter(name));
+    }
+
+    public static <T> ColumnDefinition<T> of(String name, PrimitiveVectorType<T, ?> type) {
+        return new ColumnDefinition<>(name, type.clazz(), type.componentType().clazz(), ColumnType.Normal);
+    }
+
+    public static <T> ColumnDefinition<T> of(String name, GenericVectorType<T, ?> type) {
+        return new ColumnDefinition<>(name, type.clazz(), type.componentType().clazz(), ColumnType.Normal);
+    }
+
+    public static <T> ColumnDefinition<T> of(String name, NativeArrayType<T, ?> type) {
+        return new ColumnDefinition<>(name, type.clazz(), type.componentType().clazz(), ColumnType.Normal);
     }
 
     public static <T extends Vector<?>> ColumnDefinition<T> ofVector(
@@ -230,7 +240,11 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
             }
             return inputComponentType;
         }
-        return inputComponentType;
+        if (inputComponentType != null) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid componentType %s for non-array, non-Vector dataType %s", inputComponentType, dataType));
+        }
+        return null;
     }
 
     public static ColumnDefinition<?> from(ColumnHeader<?> header) {
@@ -317,18 +331,17 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
             return arrayType.walk(new ArrayType.Visitor<>() {
                 @Override
                 public ColumnDefinition<?> visit(NativeArrayType<?, ?> nativeArrayType) {
-                    return fromGenericType(name, nativeArrayType.clazz(), nativeArrayType.componentType().clazz());
+                    return of(name, nativeArrayType);
                 }
 
                 @Override
                 public ColumnDefinition<?> visit(PrimitiveVectorType<?, ?> vectorPrimitiveType) {
-                    // noinspection unchecked
-                    return ofVector(name, (Class<? extends Vector<?>>) vectorPrimitiveType.clazz());
+                    return of(name, vectorPrimitiveType);
                 }
 
                 @Override
                 public ColumnDefinition<?> visit(GenericVectorType<?, ?> genericVectorType) {
-                    return fromGenericType(name, ObjectVector.class, genericVectorType.componentType().clazz());
+                    return of(name, genericVectorType);
                 }
             });
         }

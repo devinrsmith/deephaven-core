@@ -3,18 +3,25 @@
 //
 package io.deephaven.client.impl;
 
+import io.deephaven.client.grpc.Calls;
 import io.deephaven.client.impl.TableHandle.TableHandleException;
 import io.deephaven.proto.backplane.grpc.ExportedTableCreationResponse;
 import io.deephaven.proto.flight.util.SchemaHelper;
 import io.deephaven.qst.table.NewTable;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 import org.apache.arrow.flight.*;
+import org.apache.arrow.flight.impl.Flight;
+import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 public class FlightSession implements AutoCloseable {
 
@@ -85,6 +92,28 @@ public class FlightSession implements AutoCloseable {
      */
     public Schema schema(HasPathId pathId) {
         return FlightClientHelper.getSchema(client, pathId).getSchema();
+    }
+
+    /**
+     * Perform a blocking GetSchema with timeout to get the schema.
+     *
+     * @param pathId the path ID
+     * @param timeout the timeout
+     * @return the schema
+     */
+    public Schema schema(HasPathId pathId, Duration timeout) throws InterruptedException, TimeoutException {
+        final Flight.FlightDescriptor request = ProtocolExposer.toProtocol(FlightClientHelper.descriptor(pathId));
+        final Flight.SchemaResult response;
+        try {
+            response = Calls.blockingUnaryCall(
+                    session.channel().channel2(),
+                    FlightServiceGrpc.getGetSchemaMethod(),
+                    session.channel().callOptions().withWaitForReady().withDeadlineAfter(timeout),
+                    request);
+        } catch (StatusException e) {
+            throw new StatusRuntimeException(e.getStatus(), e.getTrailers());
+        }
+        return ProtocolExposer.fromProtocol(response).getSchema();
     }
 
     /**

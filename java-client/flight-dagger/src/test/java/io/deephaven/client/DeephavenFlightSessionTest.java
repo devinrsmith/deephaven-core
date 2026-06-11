@@ -29,6 +29,7 @@ import org.apache.arrow.vector.util.Validator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +47,17 @@ public class DeephavenFlightSessionTest extends DeephavenFlightSessionTestBase {
         final TableSpec table = i132768(TableCreatorImpl.INSTANCE);
         try (final TableHandle handle = flightSession.session().execute(table)) {
             final Schema schema = flightSession.schema(handle.export());
+            final Schema expected = new Schema(Collections.singletonList(
+                    new Field("I", new FieldType(true, MinorType.INT.getType(), null, null), Collections.emptyList())));
+            assertThat(stripMetadata(schema)).isEqualTo(expected);
+        }
+    }
+
+    @Test
+    public void getSchemaWithTimeout() throws Exception {
+        final TableSpec table = i132768(TableCreatorImpl.INSTANCE);
+        try (final TableHandle handle = flightSession.session().execute(table)) {
+            final Schema schema = flightSession.schema(handle.export(), Duration.ofSeconds(5));
             final Schema expected = new Schema(Collections.singletonList(
                     new Field("I", new FieldType(true, MinorType.INT.getType(), null, null), Collections.emptyList())));
             assertThat(stripMetadata(schema)).isEqualTo(expected);

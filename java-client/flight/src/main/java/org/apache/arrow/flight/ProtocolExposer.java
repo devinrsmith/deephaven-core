@@ -51,4 +51,8 @@ public final class ProtocolExposer {
     public static Ticket fromProtocol(Flight.Ticket ticket) {
         return new Ticket(ticket);
     }
+
+    public static SchemaResult fromProtocol(Flight.SchemaResult result) {
+        return SchemaResult.fromProtocol(result);
+    }
 }

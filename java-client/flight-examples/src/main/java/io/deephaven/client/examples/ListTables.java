@@ -10,6 +10,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.time.Duration;
+
 @Command(name = "list-tables", mixinStandardHelpOptions = true, description = "List the flights",
         version = "0.1.0")
 class ListTables extends FlightExampleBase {
@@ -18,9 +20,12 @@ class ListTables extends FlightExampleBase {
             defaultValue = "false")
     boolean showSchema;
 
+    @Option(names = {"--timeout"}, description = "The timeout", defaultValue = "PT10s")
+    Duration timeout;
+
     @Override
     protected void execute(FlightSession flight) throws Exception {
-        for (FlightInfo flightInfo : flight.list()) {
+        for (FlightInfo flightInfo : flight.listFlights(timeout)) {
             if (showSchema) {
                 StringBuilder sb = new StringBuilder(flightInfo.getDescriptor().toString())
                         .append(System.lineSeparator());

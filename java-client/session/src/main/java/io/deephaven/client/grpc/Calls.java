@@ -11,11 +11,15 @@ import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.BlockingClientCall;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -25,6 +29,38 @@ import java.util.function.Function;
  */
 @InternalUseOnly
 public final class Calls {
+
+    public static StatusRuntimeException elevateOrRuntime(StatusException e) throws InterruptedException, TimeoutException {
+        maybeElevate(e);
+        return new StatusRuntimeException(e.getStatus(), e.getTrailers());
+    }
+
+    public static StatusException elevateOrOriginal(StatusException e) throws InterruptedException, TimeoutException {
+        maybeElevate(e);
+        return e;
+    }
+
+    private static void maybeElevate(StatusException e) throws InterruptedException, TimeoutException {
+        final Status status = elevateInterruptedOrOriginal(e);
+        if (status.getCode() == Status.Code.DEADLINE_EXCEEDED) {
+            final TimeoutException te = new TimeoutException();
+            te.initCause(e);
+            throw te;
+        }
+    }
+
+    private static Status elevateInterruptedOrOriginal(StatusException e) throws InterruptedException {
+        final Status status = e.getStatus();
+        // Note: it's possible that the current thread _is_ interrupted, but some other StatusException was thrown.
+        // In that case, it's better to throw the explicit StatusException since the caller can always find out they
+        // were interrupted by calling Thread.interrupted() (Thread.interrupted() is checked last here).
+        if (status.getCode() == Status.Code.CANCELLED
+                && status.getCause() instanceof InterruptedException
+                && Thread.interrupted()) {
+            throw new InterruptedException();
+        }
+        return status;
+    }
 
     /**
      * Executes a blocking unary call. Callers are strongly encouraged to set a {@link CallOptions#getDeadline()
@@ -45,20 +81,7 @@ public final class Calls {
         try {
             return ClientCalls.blockingV2UnaryCall(channel, method, callOptions, request);
         } catch (final StatusException e) {
-            final Status status = e.getStatus();
-            // Note: it's possible that the current thread _is_ interrupted, but some other StatusException was thrown.
-            // In that case, it's better to throw the explicit StatusException since the caller can always find out they
-            // were interrupted by calling Thread.interrupted() (Thread.interrupted() is checked last here).
-            if (status.getCode() == Status.Code.CANCELLED
-                    && status.getCause() instanceof InterruptedException
-                    && Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-            if (status.getCode() == Status.Code.DEADLINE_EXCEEDED) {
-                final TimeoutException te = new TimeoutException();
-                te.initCause(e);
-                throw te;
-            }
+            maybeElevate(e);
             throw e;
         }
     }
@@ -158,6 +181,33 @@ public final class Calls {
             StreamObserver<RespT> responseObserver) {
         return (ClientCallStreamObserver<ReqT>) ClientCalls.asyncBidiStreamingCall(channel.newCall(method, callOptions),
                 responseObserver);
+    }
+
+    public static <ReqT, RespT> List<RespT> blockingServerStreamingList(
+            final Channel channel,
+            final MethodDescriptor<ReqT, RespT> method,
+            final CallOptions callOptions,
+            final ReqT req) throws InterruptedException, StatusException {
+        final BlockingClientCall<ReqT, RespT> call = ClientCalls
+                .blockingV2ServerStreamingCall(channel, method, callOptions, req);
+        try {
+            return toList(call);
+        } catch (Throwable t) {
+            call.cancel(null, t);
+            throw t;
+        }
+    }
+
+    private static <ReqT, RespT> List<RespT> toList(
+            final BlockingClientCall<ReqT, RespT> call) throws InterruptedException, StatusException {
+        final List<RespT> results = new ArrayList<>();
+        // read != null is the "better" than call.hasNext() - only does the drain once, and you can add a timeout to it
+        // if you need (no timeout for .hasNext()).
+        RespT read;
+        while ((read = call.read()) != null) {
+            results.add(read);
+        }
+        return results;
     }
 
     private Calls() {}

@@ -3,10 +3,8 @@
 //
 package io.deephaven.client.impl;
 
-import io.deephaven.engine.table.Table;
 import io.deephaven.extensions.barrage.BarrageSnapshotOptions;
 import io.deephaven.extensions.barrage.BarrageSubscriptionOptions;
-import io.deephaven.extensions.barrage.util.BarrageUtil;
 import io.deephaven.proto.DeephavenChannel;
 import io.deephaven.qst.table.TableSpec;
 import io.deephaven.util.annotations.InternalUseOnly;
@@ -15,9 +13,7 @@ import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightGrpcUtilsExtension;
 import org.apache.arrow.memory.BufferAllocator;
 
-import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.TimeoutException;
 
 public class BarrageSession extends FlightSession implements BarrageSubscription.Factory, BarrageSnapshot.Factory {
 
@@ -46,6 +42,10 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
     public static BarrageSession create(
             SessionImpl session, BufferAllocator incomingAllocator, ManagedChannel channel) {
         return BarrageSession.of(session, incomingAllocator, channel);
+    }
+
+    public static void what() {
+
     }
 
     protected BarrageSession(
@@ -86,16 +86,5 @@ public class BarrageSession extends FlightSession implements BarrageSubscription
      */
     public DeephavenChannel channel() {
         return session.channel();
-    }
-
-    /**
-     * Perform a blocking GetSchema with timeout to get the converted schema for a Deephaven {@link Table}.
-     *
-     * @param pathId the path ID
-     * @param timeout the timeout
-     * @return the schema
-     */
-    public BarrageUtil.ConvertedArrowSchema convertedSchema(HasPathId pathId, Duration timeout) throws InterruptedException, TimeoutException {
-        return BarrageUtil.convertArrowSchema(schema(pathId, timeout));
     }
 }

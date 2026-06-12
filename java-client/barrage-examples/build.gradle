@@ -38,6 +38,8 @@ def createApplication = { String name, String mainClass ->
 application.applicationDistribution.into('bin') {
     from(createApplication('subscribe-table', 'io.deephaven.client.examples.SubscribeTable'))
     from(createApplication('snapshot-table', 'io.deephaven.client.examples.SnapshotTable'))
+    from(createApplication('get-table-definition', 'io.deephaven.client.examples.GetTableDefinition'))
+
     fileMode = 0755
 }
 

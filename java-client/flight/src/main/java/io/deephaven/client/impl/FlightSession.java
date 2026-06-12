@@ -19,9 +19,11 @@ import org.apache.arrow.vector.types.pojo.Schema;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 public class FlightSession implements AutoCloseable {
 
@@ -95,7 +97,7 @@ public class FlightSession implements AutoCloseable {
     }
 
     /**
-     * Perform a blocking GetSchema with timeout to get the schema.
+     * Perform a blocking GetSchema with timeout.
      *
      * @param pathId the path ID
      * @param timeout the timeout
@@ -114,6 +116,28 @@ public class FlightSession implements AutoCloseable {
             throw new StatusRuntimeException(e.getStatus(), e.getTrailers());
         }
         return ProtocolExposer.fromProtocol(response).getSchema();
+    }
+
+    /**
+     * Perform a blocking GetFlightInfo with timeout.
+     *
+     * @param pathId the path ID
+     * @param timeout the timeout
+     * @return the flight info
+     */
+    public FlightInfo flightInfo(HasPathId pathId, Duration timeout) throws InterruptedException, TimeoutException {
+        final Flight.FlightDescriptor request = ProtocolExposer.toProtocol(FlightClientHelper.descriptor(pathId));
+        final Flight.FlightInfo response;
+        try {
+            response = Calls.blockingUnaryCall(
+                    session.channel().channel2(),
+                    FlightServiceGrpc.getGetFlightInfoMethod(),
+                    session.channel().callOptions().withWaitForReady().withDeadlineAfter(timeout),
+                    request);
+        } catch (StatusException e) {
+            throw new StatusRuntimeException(e.getStatus(), e.getTrailers());
+        }
+        return ProtocolExposer.fromProtocol(response);
     }
 
     /**
@@ -362,6 +386,23 @@ public class FlightSession implements AutoCloseable {
      */
     public Iterable<FlightInfo> list() {
         return client.listFlights(Criteria.ALL);
+    }
+
+    public List<FlightInfo> listFlights(Duration timeout) throws InterruptedException, TimeoutException {
+        final List<Flight.FlightInfo> results;
+        try {
+            results = Calls.blockingServerStreamingList(
+                    session.channel().channel2(),
+                    FlightServiceGrpc.getListFlightsMethod(),
+                    session.channel().callOptions().withWaitForReady().withDeadlineAfter(timeout),
+                    Flight.Criteria.newBuilder().build());
+        } catch (StatusException e) {
+            results = null;
+        }
+        return results
+                .stream()
+                .map(ProtocolExposer::fromProtocol)
+                .collect(Collectors.toList());
     }
 
     /**

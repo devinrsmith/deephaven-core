@@ -281,6 +281,6 @@ public class ScopeTicketResolver extends TicketResolverBase {
 
     private static @NotNull StatusRuntimeException newNotFoundSRE(String logId, String scopeName) {
         return Exceptions.statusRuntimeException(Code.NOT_FOUND,
-                "Could not resolve '" + logId + ": variable '" + scopeName + "' not found");
+                "Could not resolve '" + logId + "': variable '" + scopeName + "' not found");
     }
 }

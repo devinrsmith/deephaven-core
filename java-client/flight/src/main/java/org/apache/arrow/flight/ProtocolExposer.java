@@ -5,6 +5,8 @@ package org.apache.arrow.flight;
 
 import org.apache.arrow.flight.impl.Flight;
 
+import java.net.URISyntaxException;
+
 
 public final class ProtocolExposer {
 
@@ -54,5 +56,15 @@ public final class ProtocolExposer {
 
     public static SchemaResult fromProtocol(Flight.SchemaResult result) {
         return SchemaResult.fromProtocol(result);
+    }
+
+    public static FlightInfo fromProtocol(Flight.FlightInfo result) {
+        try {
+            return new FlightInfo(result);
+        } catch (URISyntaxException e) {
+            // We don't expect this will happen for conforming Flight implementations. For instance, a
+            // Java server itself wouldn't be able to construct an invalid Location.
+            throw new RuntimeException(e);
+        }
     }
 }

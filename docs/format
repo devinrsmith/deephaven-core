@@ -28,7 +28,12 @@ while getopts ":ch" opt; do
 done
 
 pushd "$(dirname "$0")" > /dev/null # Set pwd to this directory
-docker run --rm --name deephaven-docs-formatter --pull=always -e DPRINT_CMD="$DPRINT_CMD" --volume ./python:/format/python --volume ./groovy:/format/groovy ghcr.io/deephaven/salmon-formatter:1
+docker build -t my-image-test-core:latest .
+docker run --name deephaven-docs-formatter -e DPRINT_CMD="$DPRINT_CMD" my-image-test-core:latest
+docker cp deephaven-docs-formatter:/format/python .
+docker cp deephaven-docs-formatter:/format/groovy .
+docker rm -v deephaven-docs-formatter
+
 EXIT_CODE=$?
 echo Formatting complete. You may need to run 'docs/updateSnapshots' if this reported files were changed.
 popd > /dev/null # Reset pwd

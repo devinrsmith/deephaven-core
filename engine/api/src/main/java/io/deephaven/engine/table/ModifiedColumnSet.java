@@ -66,6 +66,11 @@ public class ModifiedColumnSet {
         }
 
         @Override
+        public boolean full() {
+            return true;
+        }
+
+        @Override
         public int numColumns() {
             throw new UnsupportedOperationException();
         }
@@ -153,6 +158,11 @@ public class ModifiedColumnSet {
         @Override
         public boolean empty() {
             return true;
+        }
+
+        @Override
+        public boolean full() {
+            return false;
         }
 
         @Override
@@ -434,6 +444,13 @@ public class ModifiedColumnSet {
      */
     public boolean empty() {
         return dirtyColumns.isEmpty();
+    }
+
+    /**
+     * @return whether or not this set is fully occupied
+     */
+    public boolean full() {
+        return dirtyColumns.cardinality() == columns.size();
     }
 
     /**

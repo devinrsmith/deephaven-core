@@ -93,10 +93,10 @@ the same sandboxed environment runs with only Podman and `bash` on the host.
 ./devc.sh shell      Open an interactive zsh shell in the container
 ./devc.sh exec CMD   Run a one-off command in the container
 ./devc.sh stop       Stop the container (keeps volumes/image)
-./devc.sh destroy [--purge-auth]
+./devc.sh destroy [--purge-auth] [--purge-gradle]
                       Remove container + image (+ bash-history volume).
-                      Claude/gh login volumes are kept unless --purge-auth
-                      is passed.
+                      Claude/gh login and Gradle cache volumes are kept
+                      unless --purge-auth / --purge-gradle is passed.
 ./devc.sh status     Show what's running
 ```
 
@@ -139,6 +139,18 @@ and `gh` login both live in named Podman volumes (`devc-<project>-claude-config`
 If a login still doesn't survive a rebuild/re-create, check that you didn't
 run `destroy --purge-auth`, and that nothing outside devc.sh removed the
 volumes (`podman volume ls`, `podman volume prune`, a host reset).
+
+## Gradle cache persistence
+
+`~/.gradle` (Gradle's default `GRADLE_USER_HOME`) holds the dependency
+cache, the wrapper's downloaded distribution, auto-provisioned JDK
+toolchains, and the build daemon/state — all expensive to rebuild, and
+this repo's build downloads a lot of it (a full sync is 1GB+). It's backed
+by the `devc-<project>-gradle` named volume, mounted the same way as the
+Claude/gh config volumes, so it survives `build`/`up`/`stop`/plain
+container re-creation, and is kept by default on `destroy` too. Pass
+`destroy --purge-gradle` if you want to force a clean Gradle state (e.g.
+you suspect cache corruption).
 
 ## Docker API access for Testcontainers / gradle-docker-plugin builds
 

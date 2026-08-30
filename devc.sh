@@ -13,10 +13,10 @@
 #   ./devc.sh shell       Open an interactive zsh shell in the container
 #   ./devc.sh exec CMD    Run a one-off command in the container
 #   ./devc.sh stop        Stop the container (keeps volumes/image)
-#   ./devc.sh destroy [--purge-auth]
+#   ./devc.sh destroy [--purge-auth] [--purge-gradle]
 #                         Remove container + image (+ bash-history volume).
-#                         Claude/gh login volumes are kept unless
-#                         --purge-auth is given.
+#                         Claude/gh login and Gradle cache volumes are kept
+#                         unless --purge-auth / --purge-gradle is given.
 #   ./devc.sh status      Show what's running
 #
 # Env vars:
@@ -49,6 +49,7 @@ CONTAINER_GID=1000
 VOL_HISTORY="devc-${PROJECT_NAME}-bashhistory"
 VOL_CLAUDE_CONFIG="devc-${PROJECT_NAME}-claude-config"
 VOL_GH_CONFIG="devc-${PROJECT_NAME}-gh-config"
+VOL_GRADLE="devc-${PROJECT_NAME}-gradle"
 
 WORKSPACE_HOST="$(pwd)"
 WORKSPACE_CONTAINER="/workspace"
@@ -179,6 +180,7 @@ cmd_up() {
     -v "${VOL_HISTORY}:/commandhistory"
     -v "${VOL_CLAUDE_CONFIG}:/home/vscode/.claude"
     -v "${VOL_GH_CONFIG}:/home/vscode/.config/gh"
+    -v "${VOL_GRADLE}:/home/vscode/.gradle"
     -v "${HOME}/.gitconfig:/home/vscode/.gitconfig:ro,Z"
     -v "${WORKSPACE_HOST}/${DEVCONTAINER_DIR}:${WORKSPACE_CONTAINER}/${DEVCONTAINER_DIR}:ro,Z"
     -v "${WORKSPACE_HOST}:${WORKSPACE_CONTAINER}:Z"
@@ -270,9 +272,11 @@ cmd_destroy() {
   require_podman
 
   local purge_auth=false
+  local purge_gradle=false
   for arg in "$@"; do
     case "$arg" in
       --purge-auth) purge_auth=true ;;
+      --purge-gradle) purge_gradle=true ;;
       *) die "Unknown option for destroy: $arg" ;;
     esac
   done
@@ -284,8 +288,10 @@ cmd_destroy() {
 
   # VOL_CLAUDE_CONFIG and VOL_GH_CONFIG hold logged-in auth state (Claude's
   # .credentials.json, gh's config) that's expensive to redo interactively.
-  # Keep them by default so a routine destroy/up cycle doesn't force a
-  # re-login; only bash history is always disposable.
+  # VOL_GRADLE holds the Gradle dependency/wrapper/toolchain cache, expensive
+  # to redownload. Keep them all by default so a routine destroy/up cycle
+  # doesn't force a re-login or a from-scratch Gradle sync; only bash
+  # history is always disposable.
   podman volume rm -f "$VOL_HISTORY" >/dev/null 2>&1 || true
   if [[ "$purge_auth" == true ]]; then
     for v in "$VOL_CLAUDE_CONFIG" "$VOL_GH_CONFIG"; do
@@ -293,17 +299,24 @@ cmd_destroy() {
     done
     log "Removed auth volumes (--purge-auth)."
   fi
+  if [[ "$purge_gradle" == true ]]; then
+    podman volume rm -f "$VOL_GRADLE" >/dev/null 2>&1 || true
+    log "Removed Gradle cache volume (--purge-gradle)."
+  fi
 
   if podman image exists "$IMAGE_NAME"; then
     podman rmi -f "$IMAGE_NAME" >/dev/null
     log "Removed image."
   fi
 
-  if [[ "$purge_auth" == true ]]; then
-    log "Destroyed everything for this project, including auth."
-  else
-    log "Destroyed container/image for this project (Claude/gh login preserved; use --purge-auth to wipe it too)."
-  fi
+  local kept=()
+  [[ "$purge_auth" == true ]] || kept+=("Claude/gh login")
+  [[ "$purge_gradle" == true ]] || kept+=("Gradle cache")
+  case "${#kept[@]}" in
+    0) log "Destroyed everything for this project, including auth and Gradle cache." ;;
+    1) log "Destroyed container/image for this project (${kept[0]} preserved; use --purge-auth / --purge-gradle to wipe it too)." ;;
+    *) log "Destroyed container/image for this project (${kept[0]} and ${kept[1]} preserved; use --purge-auth / --purge-gradle to wipe them too)." ;;
+  esac
 }
 
 cmd_status() {
@@ -337,10 +350,11 @@ Usage: $0 <command>
   shell      Open a zsh shell inside the container
   exec CMD   Run a command inside the container
   stop       Stop the container
-  destroy [--purge-auth]
+  destroy [--purge-auth] [--purge-gradle]
              Remove container, image, and bash-history volume for this
-             project. Claude/gh login volumes are kept unless --purge-auth
-             is given, which also wipes them.
+             project. Claude/gh login and Gradle cache volumes are kept
+             unless --purge-auth / --purge-gradle is given, which also
+             wipes them.
   status     Show current state
 EOF
     exit 1

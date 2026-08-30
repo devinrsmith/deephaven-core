@@ -140,6 +140,53 @@ If a login still doesn't survive a rebuild/re-create, check that you didn't
 run `destroy --purge-auth`, and that nothing outside devc.sh removed the
 volumes (`podman volume ls`, `podman volume prune`, a host reset).
 
+## Docker API access for Testcontainers / gradle-docker-plugin builds
+
+Some of deephaven-core's Gradle tasks need a real Docker-API endpoint, not
+just an image registry:
+
+- `testOutOfBand` in `extensions/kafka`, `extensions/iceberg/s3`,
+  `extensions/parquet/table`, `extensions/s3`, etc. use **Testcontainers**
+  to spin up Kafka/Redpanda/MinIO/LocalStack.
+- The `:docker-*` subprojects and `buildSrc/.../Docker.groovy` use the
+  **bmuschko gradle-docker-plugin**, which talks to the Docker API directly
+  (via `docker-java`) to build/tag/run images.
+
+Both are plain Java clients that speak the Docker Engine API over a
+Unix socket — they don't need the `docker` or `podman` CLI installed
+inside the sandbox, just a socket and `DOCKER_HOST` pointing at it.
+
+`devc.sh` can expose the **host's** rootless Podman API socket into the
+container for this (Podman speaks a Docker-compatible API on the same
+socket). It's off by default; opt in with:
+
+```bash
+DEVC_DOCKER_API=1 ./devc.sh up
+```
+
+This binds the host's `$XDG_RUNTIME_DIR/podman/podman.sock` into the
+container at the *same path* (required — the API server resolves
+bind-mount sources like Testcontainers' Ryuk-reaper socket mount against
+its own, host-side filesystem) and sets `DOCKER_HOST`/
+`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` accordingly. `ensure_podman_socket`
+starts `podman system service` on the host automatically if it isn't
+already listening — no `systemctl --user enable podman.socket` needed.
+
+**Security tradeoff — read before enabling.** This is Docker-outside-of-
+Docker: containers created through that socket are **siblings on the
+host**, not nested inside the sandbox. Anything running inside the
+container — including Claude Code under `--dangerously-skip-permissions`
+— can use it to launch a container as your host user with an arbitrary
+bind mount (e.g. your home directory) and read/write/execute anything that
+user can. That's a real reduction of the isolation this whole script
+exists to provide, so only set `DEVC_DOCKER_API=1` when you actually need
+to run the Docker-dependent build/test tasks, not as a standing default.
+
+Known rough edge: Testcontainers' Ryuk reaper has had issues cleaning up
+under rootless Podman. If it hangs or fails, try
+`-e TESTCONTAINERS_RYUK_DISABLED=true` (leftover containers then need
+manual `podman ps -a` / `podman rm` cleanup on the host instead).
+
 ## Known rough edges to watch for
 
 - **`SHELL is not supported for OCI image format`** warning during build is

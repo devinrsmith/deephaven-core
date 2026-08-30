@@ -19,6 +19,13 @@
 #                         --purge-auth is given.
 #   ./devc.sh status      Show what's running
 #
+# Env vars:
+#   DEVC_DOCKER_API=1     On `up`, expose the host's rootless Podman API
+#                         socket inside the container (Docker-outside-of-
+#                         Docker) for Testcontainers / gradle-docker-plugin
+#                         builds. Weakens sandbox isolation — see
+#                         devc-README.md before enabling.
+#
 set -euo pipefail
 
 # ---- Configuration -----------------------------------------------------
@@ -46,6 +53,18 @@ VOL_GH_CONFIG="devc-${PROJECT_NAME}-gh-config"
 WORKSPACE_HOST="$(pwd)"
 WORKSPACE_CONTAINER="/workspace"
 
+# Opt-in: expose the *host's* rootless Podman API socket inside the
+# container (Docker-outside-of-Docker), for Gradle tasks that need a
+# Docker-compatible API (Testcontainers-based `testOutOfBand` tests, the
+# bmuschko gradle-docker-plugin's DockerBuildImage tasks). This is a real
+# reduction in the sandbox's isolation: anything running inside the
+# container — including Claude under --dangerously-skip-permissions — can
+# use that socket to launch *sibling* containers on the host as your host
+# user, which can bind-mount and touch anything that user can. Off by
+# default; set DEVC_DOCKER_API=1 to enable it. See devc-README.md.
+DEVC_DOCKER_API="${DEVC_DOCKER_API:-0}"
+PODMAN_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock"
+
 # ---- Helpers -------------------------------------------------------------
 
 log() { printf '\033[1;34m[devc]\033[0m %s\n' "$*" >&2; }
@@ -71,6 +90,27 @@ fetch_devcontainer_files() {
         || die "Failed to fetch $f. Place it manually in $DEVCONTAINER_DIR/."
     fi
   done
+}
+
+# Starts `podman system service` on the host if its API socket isn't
+# already listening at $PODMAN_SOCK. Only called when DEVC_DOCKER_API=1.
+# Deliberately doesn't rely on `systemctl --user enable podman.socket`
+# (socket activation), matching this script's no-systemd-dependency stance
+# elsewhere (see the cgroupfs note above) — it's spawned directly instead.
+ensure_podman_socket() {
+  if [[ -S "$PODMAN_SOCK" ]] && podman --url "unix://${PODMAN_SOCK}" info >/dev/null 2>&1; then
+    return 0
+  fi
+  log "Starting host Podman API service at ${PODMAN_SOCK}..."
+  mkdir -p "$(dirname "$PODMAN_SOCK")"
+  nohup podman system service --time=0 "unix://${PODMAN_SOCK}" >/dev/null 2>&1 &
+  disown
+  local i
+  for ((i = 0; i < 40; i++)); do
+    [[ -S "$PODMAN_SOCK" ]] && return 0
+    sleep 0.25
+  done
+  die "Podman API socket did not come up at ${PODMAN_SOCK}."
 }
 
 container_exists() {
@@ -153,6 +193,15 @@ cmd_up() {
     mount_args+=(-v "${WORKSPACE_HOST}/.git/hooks:${WORKSPACE_CONTAINER}/.git/hooks:ro,Z")
   fi
 
+  if [[ "$DEVC_DOCKER_API" == "1" ]]; then
+    ensure_podman_socket
+    # Bind at the identical path on both sides: the API server resolves
+    # bind-mount sources (e.g. Testcontainers' Ryuk mounting "the docker
+    # socket" into itself) against its own (host) filesystem, so the path
+    # has to already be valid there too.
+    mount_args+=(-v "${PODMAN_SOCK}:${PODMAN_SOCK}:Z")
+  fi
+
   local env_args=(
     -e "NODE_OPTIONS=--max-old-space-size=4096"
     -e "CLAUDE_CONFIG_DIR=/home/vscode/.claude"
@@ -170,6 +219,13 @@ cmd_up() {
     -e "CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN:-}"
     -e "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}"
   )
+
+  if [[ "$DEVC_DOCKER_API" == "1" ]]; then
+    env_args+=(
+      -e "DOCKER_HOST=unix://${PODMAN_SOCK}"
+      -e "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=${PODMAN_SOCK}"
+    )
+  fi
 
   log "Creating container ${CONTAINER_NAME}..."
   podman run -d \

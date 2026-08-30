@@ -93,7 +93,10 @@ the same sandboxed environment runs with only Podman and `bash` on the host.
 ./devc.sh shell      Open an interactive zsh shell in the container
 ./devc.sh exec CMD   Run a one-off command in the container
 ./devc.sh stop       Stop the container (keeps volumes/image)
-./devc.sh destroy    Remove container + this project's volumes + image
+./devc.sh destroy [--purge-auth]
+                      Remove container + image (+ bash-history volume).
+                      Claude/gh login volumes are kept unless --purge-auth
+                      is passed.
 ./devc.sh status     Show what's running
 ```
 
@@ -119,6 +122,23 @@ USER vscode
 as `<image>`; otherwise `<image>-base` is tagged directly as `<image>`. This
 keeps the upstream mirror untouched while letting each repo layer on
 whatever it needs (a JDK for deephaven-core's Gradle build, `gh`, etc.).
+
+## Claude/gh login persistence
+
+Your Claude Code login (`~/.claude/.credentials.json`, from `claude login`)
+and `gh` login both live in named Podman volumes (`devc-<project>-claude-config`,
+`devc-<project>-gh-config`), not in the container or image. That means:
+
+- `./devc.sh build` (image rebuild) never touches them — login survives.
+- `podman rm`-ing the container and re-running `./devc.sh up` never touches
+  them either — login survives, since volumes outlive the container.
+- `./devc.sh destroy` also leaves them alone by default — pass
+  `--purge-auth` if you actually want to force a fresh login (e.g. rotating
+  a token, or the auth got corrupted).
+
+If a login still doesn't survive a rebuild/re-create, check that you didn't
+run `destroy --purge-auth`, and that nothing outside devc.sh removed the
+volumes (`podman volume ls`, `podman volume prune`, a host reset).
 
 ## Known rough edges to watch for
 

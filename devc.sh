@@ -13,7 +13,10 @@
 #   ./devc.sh shell       Open an interactive zsh shell in the container
 #   ./devc.sh exec CMD    Run a one-off command in the container
 #   ./devc.sh stop        Stop the container (keeps volumes/image)
-#   ./devc.sh destroy     Remove container + this project's volumes + image
+#   ./devc.sh destroy [--purge-auth]
+#                         Remove container + image (+ bash-history volume).
+#                         Claude/gh login volumes are kept unless
+#                         --purge-auth is given.
 #   ./devc.sh status      Show what's running
 #
 set -euo pipefail
@@ -209,18 +212,42 @@ cmd_stop() {
 
 cmd_destroy() {
   require_podman
+
+  local purge_auth=false
+  for arg in "$@"; do
+    case "$arg" in
+      --purge-auth) purge_auth=true ;;
+      *) die "Unknown option for destroy: $arg" ;;
+    esac
+  done
+
   if container_exists; then
     podman rm -f "$CONTAINER_NAME" >/dev/null
     log "Removed container."
   fi
-  for v in "$VOL_HISTORY" "$VOL_CLAUDE_CONFIG" "$VOL_GH_CONFIG"; do
-    podman volume rm -f "$v" >/dev/null 2>&1 || true
-  done
+
+  # VOL_CLAUDE_CONFIG and VOL_GH_CONFIG hold logged-in auth state (Claude's
+  # .credentials.json, gh's config) that's expensive to redo interactively.
+  # Keep them by default so a routine destroy/up cycle doesn't force a
+  # re-login; only bash history is always disposable.
+  podman volume rm -f "$VOL_HISTORY" >/dev/null 2>&1 || true
+  if [[ "$purge_auth" == true ]]; then
+    for v in "$VOL_CLAUDE_CONFIG" "$VOL_GH_CONFIG"; do
+      podman volume rm -f "$v" >/dev/null 2>&1 || true
+    done
+    log "Removed auth volumes (--purge-auth)."
+  fi
+
   if podman image exists "$IMAGE_NAME"; then
     podman rmi -f "$IMAGE_NAME" >/dev/null
     log "Removed image."
   fi
-  log "Destroyed everything for this project."
+
+  if [[ "$purge_auth" == true ]]; then
+    log "Destroyed everything for this project, including auth."
+  else
+    log "Destroyed container/image for this project (Claude/gh login preserved; use --purge-auth to wipe it too)."
+  fi
 }
 
 cmd_status() {
@@ -243,7 +270,7 @@ case "${1:-}" in
   shell)   cmd_shell ;;
   exec)    shift; cmd_exec "$@" ;;
   stop)    cmd_stop ;;
-  destroy) cmd_destroy ;;
+  destroy) shift; cmd_destroy "$@" ;;
   status)  cmd_status ;;
   *)
     cat >&2 <<EOF
@@ -254,7 +281,10 @@ Usage: $0 <command>
   shell      Open a zsh shell inside the container
   exec CMD   Run a command inside the container
   stop       Stop the container
-  destroy    Remove container, volumes, and image for this project
+  destroy [--purge-auth]
+             Remove container, image, and bash-history volume for this
+             project. Claude/gh login volumes are kept unless --purge-auth
+             is given, which also wipes them.
   status     Show current state
 EOF
     exit 1

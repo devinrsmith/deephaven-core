@@ -56,7 +56,14 @@ RUN nix build /home/vscode/deephaven-flake#devEnv --out-link /opt/nix-dev-env
 # volume over /nix at container-create time: without it, this whole
 # prewarmed store would just get rebuilt from scratch on every image
 # rebuild instead of persisting.
-RUN nix develop /home/vscode/deephaven-flake#full --command true
+#
+# DEVC_PODMAN_PREWARM_ONLY=1 tells nix/podman.nix's shellHook (pulled in by
+# `full`) to skip its newuidmap/newgidmap check here -- this RUN step's
+# environment is the ephemeral `podman build` container itself, which can
+# never have those (no host to inherit them from, no live container yet to
+# wire a Docker-API socket into), so the check would otherwise print an
+# unavoidable, harmless-but-alarming-looking warning on every build.
+RUN DEVC_PODMAN_PREWARM_ONLY=1 nix develop /home/vscode/deephaven-flake#full --command true
 
 # Baked as plain image ENV -- not sourced from .zshrc -- because devc.sh's
 # `exec` runs `podman exec ... "$@"` directly with no shell in between, so

@@ -7,8 +7,19 @@
 # vars) but for a bare `nix develop` shell instead of the Claude-Code
 # sandbox container devc.sh builds.
 #
-# What Nix can and can't provide here, confirmed by inspecting the actual
-# built package rather than assumed:
+# Inside devc.sh's sandbox container specifically, don't rely on this
+# module's own nested Podman at all -- launch the container with
+# `DEVC_DOCKER_API=1 ./devc.sh up` instead, which bind-mounts the *real*
+# host's Podman socket into the container at this same conventional path.
+# The shellHook below checks for that first and, when present, just uses
+# it: no local rootless Podman needs to run inside the sandbox, so none of
+# the newuidmap/subuid requirements below apply in that case. They only
+# matter for the fallback path, where this module starts its own nested
+# `podman system service` -- confirmed NOT to work inside devc.sh's
+# container (see below), so treat it as the bare-host case.
+#
+# What Nix can and can't provide for that fallback path, confirmed by
+# inspecting the actual built package rather than assumed:
 #   - pkgs.podman bundles its own OCI runtime (crun/runc), conmon, network
 #     backend (netavark/aardvark-dns), and passt/pasta under
 #     $out/libexec/podman/ -- confirmed via `find`/`strings` on the built
@@ -34,9 +45,14 @@
 #
 # NOT independently verified end-to-end against a real container run: the
 # sandbox this was developed in is itself a nested Podman container
-# without newuidmap/newgidmap at all (demonstrated above), so actual
-# `podman run` / gradle-docker-plugin / Testcontainers behavior needs
-# confirming on a real host.
+# without newuidmap/newgidmap at all (demonstrated above) -- and, tested
+# separately, installing newuidmap/newgidmap by hand there still isn't
+# enough: the nested newuidmap call fails with "Operation not permitted"
+# under devc.sh's --userns=keep-id mapping, a kernel-namespace limitation,
+# not a missing-package one. So actual nested `podman run` /
+# gradle-docker-plugin / Testcontainers behavior via this module's own
+# Podman needs confirming on a real host with shadow-utils installed --
+# inside devc.sh's sandbox, use DEVC_DOCKER_API=1 instead (see above).
 { pkgs }:
 {
   extraBuildInputs = [ pkgs.podman ];
@@ -50,11 +66,32 @@
     # already applies for the same reason -- see its own comment on this.
     podman() { command podman --cgroup-manager=cgroupfs "$@"; }
 
-    if ! command -v newuidmap >/dev/null 2>&1 || ! command -v newgidmap >/dev/null 2>&1; then
+    if [[ -n "''${DEVC_PODMAN_PREWARM_ONLY:-}" ]]; then
+      : # Set by project.Dockerfile's image-build-time
+        # `nix develop .../#full --command true` (prewarms the Nix store,
+        # nothing more). That RUN step's environment is the ephemeral
+        # `podman build` container itself, which can never have host-level
+        # newuidmap/newgidmap -- there's no host to inherit them from at
+        # image-build time, and no live container yet to plumb a socket
+        # into either. Skip straight past the checks below instead of
+        # printing a warning that would otherwise fire on every single
+        # build, for every user, unconditionally.
+    elif [[ -n "''${DOCKER_HOST:-}" ]] && podman --url "$DOCKER_HOST" info >/dev/null 2>&1; then
+      : # Already wired up, e.g. by devc.sh's DEVC_DOCKER_API=1 -- nothing
+        # to do, and no need for the newuidmap/subuid checks below, since
+        # nothing here needs to start its own nested Podman.
+    elif [[ -S "$_podman_sock" ]] && podman --url "unix://$_podman_sock" info >/dev/null 2>&1; then
+      # Same idea, but the socket's already there at the conventional path
+      # (e.g. devc.sh's bind mount) without DOCKER_HOST having been set.
+      export DOCKER_HOST="unix://$_podman_sock"
+      export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$_podman_sock"
+    elif ! command -v newuidmap >/dev/null 2>&1 || ! command -v newgidmap >/dev/null 2>&1; then
       echo "podman: newuidmap/newgidmap not found on PATH -- rootless Podman needs" >&2
       echo "  these from your host (shadow-utils/shadow package). Docker-API" >&2
       echo "  wiring skipped; gradle-docker-plugin/Testcontainers tasks needing" >&2
-      echo "  it will not work in this shell." >&2
+      echo "  it will not work in this shell. Inside devc.sh's sandbox, use" >&2
+      echo "  'DEVC_DOCKER_API=1 ./devc.sh up' instead of relying on this" >&2
+      echo "  shell's own nested Podman -- see nix/podman.nix's header comment." >&2
     elif [[ ! -s /etc/subuid || ! -s /etc/subgid ]]; then
       echo "podman: /etc/subuid or /etc/subgid is empty -- rootless Podman needs" >&2
       echo "  subordinate UID/GID ranges configured for your user (your distro's" >&2

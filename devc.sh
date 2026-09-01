@@ -141,10 +141,15 @@ cmd_build() {
   local project_dockerfile="${DEVCONTAINER_DIR}/project.Dockerfile"
   if [[ -f "$project_dockerfile" ]]; then
     # project.Dockerfile's build context is $DEVCONTAINER_DIR (below), not
-    # the repo root, so flake.nix/flake.lock can't be COPY'd from their
-    # canonical repo-root location directly -- stage copies alongside it,
-    # the same way fetch_devcontainer_files() stages the upstream files.
+    # the repo root, so the flake can't be COPY'd from its canonical
+    # repo-root location directly -- stage copies alongside it, the same
+    # way fetch_devcontainer_files() stages the upstream files. nix/ holds
+    # the flake's own local modules (gradle-wrapper.nix, podman.nix) that
+    # flake.nix imports, so it has to come along too, not just the two
+    # top-level files.
     cp flake.nix flake.lock "$DEVCONTAINER_DIR/"
+    rm -rf "$DEVCONTAINER_DIR/nix"
+    cp -r nix "$DEVCONTAINER_DIR/nix"
 
     log "Building project image ${IMAGE_NAME}..."
     podman build \

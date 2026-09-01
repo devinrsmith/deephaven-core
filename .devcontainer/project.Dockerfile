@@ -28,8 +28,13 @@ RUN mkdir -p /home/vscode/.config/nix && \
 
 # Copied into a plain (non-git) directory deliberately: a flake source
 # tree that lives inside a Git working tree must have every file checked
-# in (`git add`) before Nix will read it, which doesn't apply here.
+# in (`git add`) before Nix will read it, which doesn't apply here. nix/
+# holds the flake's own local modules (gradle-wrapper.nix, podman.nix)
+# that flake.nix imports, so it has to come along too -- devc.sh's
+# cmd_build stages all three (flake.nix, flake.lock, nix/) into this
+# build context before running `podman build`.
 COPY --chown=vscode:vscode flake.nix flake.lock /home/vscode/deephaven-flake/
+COPY --chown=vscode:vscode nix/ /home/vscode/deephaven-flake/nix/
 
 # --out-link produces a *stable* path (not content-hashed), so it's safe to
 # hardcode below in ENV -- unlike the /nix/store/<hash>-... path it resolves

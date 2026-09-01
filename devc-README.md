@@ -169,6 +169,28 @@ container re-creation, and is kept by default on `destroy` too. Pass
 `destroy --purge-gradle` if you want to force a clean Gradle state (e.g.
 you suspect cache corruption).
 
+## Nix store persistence
+
+`/nix` (built by `project.Dockerfile` — see "Adding project-specific
+tools" below) holds the Nix package manager, the whole `devEnv`/devShell
+closures it fetches from cache.nixos.org, and the vendored Gradle
+distribution `nix/gradle-wrapper.nix` pulls in — all a genuinely large,
+network-heavy download. It's backed by the `devc-<project>-nix-store`
+named volume, mounted the same way as the Gradle cache above.
+
+Podman (like Docker) auto-copies a named volume's mount point from the
+image the first time it's attached to an *empty* volume, so `cmd_build`
+doesn't need to know the volume exists at all — the image it produces is
+still a complete, standalone `/nix` on its own. The volume only matters
+once `cmd_up` creates a container from that image: from then on, the
+volume — not that image's layer — is what's actually populated, so a
+later `./devc.sh build` that changes something in `project.Dockerfile`
+*after* the Nix-related `RUN` steps, or a base-image update upstream,
+doesn't force re-fetching the whole Nix store again on the next `up`;
+it's still sitting in the volume. Kept by default on `destroy`, same as
+the Gradle cache; pass `destroy --purge-nix-store` to force it to rebuild
+from scratch.
+
 ## Docker API access for Testcontainers / gradle-docker-plugin builds
 
 Some of deephaven-core's Gradle tasks need a real Docker-API endpoint, not

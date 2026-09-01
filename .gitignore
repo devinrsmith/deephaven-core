@@ -61,9 +61,11 @@ node_modules
 # Personal workflows (fork-specific)
 .devin/workflows/sync-fork.md
 
-# devc.sh stages copies of the root flake.nix/flake.lock/nix/ here so
+# devc.sh stages copies of the root flake.nix/flake.lock/nix/ (and the
+# gradle-wrapper.properties nix/gradle-wrapper.nix reads) here so
 # project.Dockerfile's build context (.devcontainer/) can COPY them; the
 # root copies remain the single source of truth.
 .devcontainer/flake.nix
 .devcontainer/flake.lock
 .devcontainer/nix/
+.devcontainer/gradle/

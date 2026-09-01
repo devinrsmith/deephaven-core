@@ -13,10 +13,11 @@
 #   ./devc.sh shell       Open an interactive zsh shell in the container
 #   ./devc.sh exec CMD    Run a one-off command in the container
 #   ./devc.sh stop        Stop the container (keeps volumes/image)
-#   ./devc.sh destroy [--purge-auth] [--purge-gradle]
+#   ./devc.sh destroy [--purge-auth] [--purge-gradle] [--purge-nix-store]
 #                         Remove container + image (+ bash-history volume).
-#                         Claude/gh login and Gradle cache volumes are kept
-#                         unless --purge-auth / --purge-gradle is given.
+#                         Claude/gh login, Gradle cache, and Nix store
+#                         volumes are kept unless --purge-auth /
+#                         --purge-gradle / --purge-nix-store is given.
 #   ./devc.sh status      Show what's running
 #
 # Env vars:
@@ -50,6 +51,7 @@ VOL_HISTORY="devc-${PROJECT_NAME}-bashhistory"
 VOL_CLAUDE_CONFIG="devc-${PROJECT_NAME}-claude-config"
 VOL_GH_CONFIG="devc-${PROJECT_NAME}-gh-config"
 VOL_GRADLE="devc-${PROJECT_NAME}-gradle"
+VOL_NIX_STORE="devc-${PROJECT_NAME}-nix-store"
 
 WORKSPACE_HOST="$(pwd)"
 WORKSPACE_CONTAINER="/workspace"
@@ -145,11 +147,15 @@ cmd_build() {
     # repo-root location directly -- stage copies alongside it, the same
     # way fetch_devcontainer_files() stages the upstream files. nix/ holds
     # the flake's own local modules (gradle-wrapper.nix, podman.nix) that
-    # flake.nix imports, so it has to come along too, not just the two
+    # flake.nix imports, and nix/gradle-wrapper.nix in turn reads
+    # gradle/wrapper/gradle-wrapper.properties (relative to the flake
+    # root) at eval time -- both have to come along too, not just the two
     # top-level files.
     cp flake.nix flake.lock "$DEVCONTAINER_DIR/"
-    rm -rf "$DEVCONTAINER_DIR/nix"
+    rm -rf "$DEVCONTAINER_DIR/nix" "$DEVCONTAINER_DIR/gradle"
     cp -r nix "$DEVCONTAINER_DIR/nix"
+    mkdir -p "$DEVCONTAINER_DIR/gradle/wrapper"
+    cp gradle/wrapper/gradle-wrapper.properties "$DEVCONTAINER_DIR/gradle/wrapper/"
 
     log "Building project image ${IMAGE_NAME}..."
     podman build \
@@ -192,6 +198,16 @@ cmd_up() {
     -v "${VOL_CLAUDE_CONFIG}:/home/vscode/.claude"
     -v "${VOL_GH_CONFIG}:/home/vscode/.config/gh"
     -v "${VOL_GRADLE}:/home/vscode/.gradle"
+    # project.Dockerfile builds a full Nix install + `devEnv`/devShell
+    # closures into the image's own /nix at build time, so this volume
+    # starts out empty on first use -- Podman (like Docker) auto-copies a
+    # named volume's mount point from the image the first time it's
+    # attached to an empty volume, so nothing is lost. From then on the
+    # volume, not the image layer, is what's actually populated, so a
+    # `./devc.sh build` that only touches project.Dockerfile *after* the
+    # COPY+nix build steps (or a base-image update upstream) doesn't force
+    # re-downloading the whole Nix store again -- it's still sitting here.
+    -v "${VOL_NIX_STORE}:/nix"
     -v "${HOME}/.gitconfig:/home/vscode/.gitconfig:ro,Z"
     -v "${WORKSPACE_HOST}/${DEVCONTAINER_DIR}:${WORKSPACE_CONTAINER}/${DEVCONTAINER_DIR}:ro,Z"
     -v "${WORKSPACE_HOST}:${WORKSPACE_CONTAINER}:Z"
@@ -284,10 +300,12 @@ cmd_destroy() {
 
   local purge_auth=false
   local purge_gradle=false
+  local purge_nix_store=false
   for arg in "$@"; do
     case "$arg" in
       --purge-auth) purge_auth=true ;;
       --purge-gradle) purge_gradle=true ;;
+      --purge-nix-store) purge_nix_store=true ;;
       *) die "Unknown option for destroy: $arg" ;;
     esac
   done
@@ -299,10 +317,12 @@ cmd_destroy() {
 
   # VOL_CLAUDE_CONFIG and VOL_GH_CONFIG hold logged-in auth state (Claude's
   # .credentials.json, gh's config) that's expensive to redo interactively.
-  # VOL_GRADLE holds the Gradle dependency/wrapper/toolchain cache, expensive
-  # to redownload. Keep them all by default so a routine destroy/up cycle
-  # doesn't force a re-login or a from-scratch Gradle sync; only bash
-  # history is always disposable.
+  # VOL_GRADLE holds the Gradle dependency/wrapper/toolchain cache, and
+  # VOL_NIX_STORE the whole Nix store (Gradle's own bootstrap JDK, Node,
+  # Python, etc. -- see flake.nix), both expensive to redownload. Keep
+  # them all by default so a routine destroy/up cycle doesn't force a
+  # re-login or a from-scratch sync; only bash history is always
+  # disposable.
   podman volume rm -f "$VOL_HISTORY" >/dev/null 2>&1 || true
   if [[ "$purge_auth" == true ]]; then
     for v in "$VOL_CLAUDE_CONFIG" "$VOL_GH_CONFIG"; do
@@ -314,6 +334,10 @@ cmd_destroy() {
     podman volume rm -f "$VOL_GRADLE" >/dev/null 2>&1 || true
     log "Removed Gradle cache volume (--purge-gradle)."
   fi
+  if [[ "$purge_nix_store" == true ]]; then
+    podman volume rm -f "$VOL_NIX_STORE" >/dev/null 2>&1 || true
+    log "Removed Nix store volume (--purge-nix-store)."
+  fi
 
   if podman image exists "$IMAGE_NAME"; then
     podman rmi -f "$IMAGE_NAME" >/dev/null
@@ -323,11 +347,14 @@ cmd_destroy() {
   local kept=()
   [[ "$purge_auth" == true ]] || kept+=("Claude/gh login")
   [[ "$purge_gradle" == true ]] || kept+=("Gradle cache")
-  case "${#kept[@]}" in
-    0) log "Destroyed everything for this project, including auth and Gradle cache." ;;
-    1) log "Destroyed container/image for this project (${kept[0]} preserved; use --purge-auth / --purge-gradle to wipe it too)." ;;
-    *) log "Destroyed container/image for this project (${kept[0]} and ${kept[1]} preserved; use --purge-auth / --purge-gradle to wipe them too)." ;;
-  esac
+  [[ "$purge_nix_store" == true ]] || kept+=("Nix store")
+  if [[ "${#kept[@]}" -eq 0 ]]; then
+    log "Destroyed everything for this project, including auth, Gradle cache, and Nix store."
+  else
+    local kept_str
+    kept_str="$(IFS=', '; echo "${kept[*]}")"
+    log "Destroyed container/image for this project (${kept_str} preserved; use --purge-auth / --purge-gradle / --purge-nix-store to wipe them too)."
+  fi
 }
 
 cmd_status() {
@@ -361,11 +388,11 @@ Usage: $0 <command>
   shell      Open a zsh shell inside the container
   exec CMD   Run a command inside the container
   stop       Stop the container
-  destroy [--purge-auth] [--purge-gradle]
+  destroy [--purge-auth] [--purge-gradle] [--purge-nix-store]
              Remove container, image, and bash-history volume for this
-             project. Claude/gh login and Gradle cache volumes are kept
-             unless --purge-auth / --purge-gradle is given, which also
-             wipes them.
+             project. Claude/gh login, Gradle cache, and Nix store volumes
+             are kept unless --purge-auth / --purge-gradle /
+             --purge-nix-store is given, which also wipes them.
   status     Show current state
 EOF
     exit 1

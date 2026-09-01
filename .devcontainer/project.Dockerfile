@@ -30,16 +30,33 @@ RUN mkdir -p /home/vscode/.config/nix && \
 # tree that lives inside a Git working tree must have every file checked
 # in (`git add`) before Nix will read it, which doesn't apply here. nix/
 # holds the flake's own local modules (gradle-wrapper.nix, podman.nix)
-# that flake.nix imports, so it has to come along too -- devc.sh's
-# cmd_build stages all three (flake.nix, flake.lock, nix/) into this
-# build context before running `podman build`.
+# that flake.nix imports, and nix/gradle-wrapper.nix in turn reads
+# gradle/wrapper/gradle-wrapper.properties (relative to the flake root)
+# at eval time -- devc.sh's cmd_build stages all of flake.nix, flake.lock,
+# nix/, and gradle/wrapper/gradle-wrapper.properties into this build
+# context before running `podman build`.
 COPY --chown=vscode:vscode flake.nix flake.lock /home/vscode/deephaven-flake/
 COPY --chown=vscode:vscode nix/ /home/vscode/deephaven-flake/nix/
+COPY --chown=vscode:vscode gradle/wrapper/gradle-wrapper.properties /home/vscode/deephaven-flake/gradle/wrapper/gradle-wrapper.properties
 
 # --out-link produces a *stable* path (not content-hashed), so it's safe to
 # hardcode below in ENV -- unlike the /nix/store/<hash>-... path it resolves
 # to, which changes whenever flake.lock's pins change.
 RUN nix build /home/vscode/deephaven-flake#devEnv --out-link /opt/nix-dev-env
+
+# `devEnv` (above) only covers what's baked into this image's own PATH.
+# `nix develop`'s devShells pull in a bit more on top of that (mkShell's
+# own stdenv/build-tooling closure, plus the docker devShell's Podman
+# stack) -- prewarm `full`, the superset of all of them, at build time so
+# a `nix develop` run *inside* the container later (e.g. for the Gradle
+# wrapper vendoring/toolchain-isolation shellHooks -- see
+# nix/gradle-wrapper.nix -- which devEnv's static PATH doesn't provide)
+# doesn't need to fetch anything new. --command true makes this a no-op
+# beyond the fetch/build itself. This is why devc.sh mounts a Nix store
+# volume over /nix at container-create time: without it, this whole
+# prewarmed store would just get rebuilt from scratch on every image
+# rebuild instead of persisting.
+RUN nix develop /home/vscode/deephaven-flake#full --command true
 
 # Baked as plain image ENV -- not sourced from .zshrc -- because devc.sh's
 # `exec` runs `podman exec ... "$@"` directly with no shell in between, so

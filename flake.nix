@@ -136,6 +136,59 @@
         # the MD5 itself is computed at eval time with Nix's builtin hasher.
         gradleDistMd5Hex = builtins.hashString "md5" gradleDistUrl;
 
+        # ---- Isolate toolchain resolution from host-installed JDKs --------
+        #
+        # Gradle's toolchain auto-detection scans common host locations
+        # (/usr/lib/jvm, etc.) in addition to whatever's actually running
+        # the build, so `./gradlew javaToolchains` sees both the Nix JDK
+        # *and* any host-installed ones. `org.gradle.java.installations.auto-detect=false`
+        # turns off that scanning -- confirmed empirically (this repo's own
+        # AGENTS.md-documented `javaToolchains` task) that this must be a
+        # Gradle *project property* (gradle.properties / -P), not a JVM
+        # system property: neither `GRADLE_OPTS=-D...` nor the
+        # `ORG_GRADLE_PROJECT_<dotted.key>` env var convention are honored
+        # for this key, only an actual gradle.properties file or `-P`/`-D`
+        # passed directly on the command line.
+        #
+        # The project's own (committed, shared) ./gradle.properties isn't
+        # the place for this -- it'd apply to every contributor and CI, not
+        # just Nix shell users. Gradle's *per-user* $GRADLE_USER_HOME/gradle.properties
+        # would work and stay out of the repo, but since GRADLE_USER_HOME
+        # defaults to the same ~/.gradle whether or not you're in `nix
+        # develop`, writing there would silently change toolchain behavior
+        # for this user's *other* Gradle projects too, and outside this
+        # shell. Instead, GRADLE_USER_HOME is pointed at a Nix-shell-only
+        # directory holding just our own gradle.properties, with everything
+        # else (caches, the vendored wrapper distribution above, daemon,
+        # etc.) symlinked back to the real one -- so nothing is duplicated
+        # or re-downloaded, only the settings file differs, and only for the
+        # duration of this shell.
+        gradleIsolatedHomeHook = ''
+          _gradle_real_home="''${GRADLE_USER_HOME:-$HOME/.gradle}"
+          _gradle_isolated_home="''${XDG_CACHE_HOME:-$HOME/.cache}/deephaven-core-nix-gradle-home"
+          mkdir -p "$_gradle_real_home" "$_gradle_isolated_home"
+          shopt -s nullglob
+          # Always share these two -- the large, expensive-to-rebuild ones
+          # -- even on a from-scratch $_gradle_real_home that doesn't have
+          # them yet.
+          for _d in caches wrapper; do
+            ln -sfn "$_gradle_real_home/$_d" "$_gradle_isolated_home/$_d"
+          done
+          # Mirror whatever else already exists (daemon, jdks, ...), except
+          # gradle.properties itself -- that's the one file we deliberately
+          # don't want to inherit.
+          for _entry in "$_gradle_real_home"/*; do
+            _name="$(basename "$_entry")"
+            if [[ "$_name" != "gradle.properties" && ! -e "$_gradle_isolated_home/$_name" ]]; then
+              ln -sfn "$_entry" "$_gradle_isolated_home/$_name"
+            fi
+          done
+          shopt -u nullglob
+          echo "org.gradle.java.installations.auto-detect=false" > "$_gradle_isolated_home/gradle.properties"
+          export GRADLE_USER_HOME="$_gradle_isolated_home"
+          unset _gradle_real_home _gradle_isolated_home _entry _name _d
+        '';
+
         gradleWarmupHook = ''
           _gradle_home="''${GRADLE_USER_HOME:-$HOME/.gradle}"
           _gradle_hash_hex=$(printf '%s' "${gradleDistMd5Hex}" | tr 'a-f' 'A-F')
@@ -177,7 +230,7 @@
           default = pkgs.mkShell {
             buildInputs = common;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleWarmupHook + ''
+            shellHook = gradleIsolatedHomeHook + gradleWarmupHook + ''
               echo "deephaven-core dev shell (bootstrap JDK $(java -version 2>&1 | head -1))"
               echo "Run: ./gradlew server-jetty-app:run"
             '';
@@ -186,25 +239,25 @@
           web = pkgs.mkShell {
             buildInputs = common ++ webTools;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleWarmupHook;
+            shellHook = gradleIsolatedHomeHook + gradleWarmupHook;
           };
 
           python = pkgs.mkShell {
             buildInputs = common ++ pythonTools;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleWarmupHook;
+            shellHook = gradleIsolatedHomeHook + gradleWarmupHook;
           };
 
           cpp = pkgs.mkShell {
             buildInputs = common ++ cppTools;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleWarmupHook;
+            shellHook = gradleIsolatedHomeHook + gradleWarmupHook;
           };
 
           full = pkgs.mkShell {
             buildInputs = common ++ webTools ++ pythonTools ++ cppTools;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleWarmupHook;
+            shellHook = gradleIsolatedHomeHook + gradleWarmupHook;
           };
         };
       });

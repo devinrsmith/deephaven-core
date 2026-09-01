@@ -142,13 +142,23 @@
         # (/usr/lib/jvm, etc.) in addition to whatever's actually running
         # the build, so `./gradlew javaToolchains` sees both the Nix JDK
         # *and* any host-installed ones. `org.gradle.java.installations.auto-detect=false`
-        # turns off that scanning -- confirmed empirically (this repo's own
-        # AGENTS.md-documented `javaToolchains` task) that this must be a
-        # Gradle *project property* (gradle.properties / -P), not a JVM
-        # system property: neither `GRADLE_OPTS=-D...` nor the
-        # `ORG_GRADLE_PROJECT_<dotted.key>` env var convention are honored
-        # for this key, only an actual gradle.properties file or `-P`/`-D`
-        # passed directly on the command line.
+        # turns off that scanning, and `...auto-download=false` also stops
+        # Gradle from downloading a toolchain it can't find -- so the
+        # bootstrap JDK above is the *only* one available in this shell.
+        # Anything that requests another version (e.g. this repo's nightly
+        # CI matrix, which runs with -PtestRuntimeVersion=17/25 --
+        # see .github/workflows/nightly-check-ci.yml) will fail with "no
+        # matching toolchain found" here rather than silently downloading
+        # one; re-run with -Porg.gradle.java.installations.auto-download=true
+        # if you need to reproduce that locally.
+        #
+        # Confirmed empirically (this repo's own `javaToolchains` task) that
+        # these must be set as a Gradle *project property*
+        # (gradle.properties / -P), not a JVM system property: neither
+        # `GRADLE_OPTS=-D...` nor the `ORG_GRADLE_PROJECT_<dotted.key>` env
+        # var convention are honored for these keys, only an actual
+        # gradle.properties file or `-P`/`-D` passed directly on the
+        # command line.
         #
         # The project's own (committed, shared) ./gradle.properties isn't
         # the place for this -- it'd apply to every contributor and CI, not
@@ -184,7 +194,15 @@
             fi
           done
           shopt -u nullglob
-          echo "org.gradle.java.installations.auto-detect=false" > "$_gradle_isolated_home/gradle.properties"
+          {
+            echo "org.gradle.java.installations.auto-detect=false"
+            # Only the bootstrap JDK (above) is available as a toolchain in
+            # this shell -- anything requesting another version (e.g. this
+            # repo's nightly CI matrix, which runs with
+            # -PtestRuntimeVersion=17/25) will fail with "no matching
+            # toolchain found" here rather than downloading one.
+            echo "org.gradle.java.installations.auto-download=false"
+          } > "$_gradle_isolated_home/gradle.properties"
           export GRADLE_USER_HOME="$_gradle_isolated_home"
           unset _gradle_real_home _gradle_isolated_home _entry _name _d
         '';

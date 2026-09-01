@@ -60,3 +60,9 @@ node_modules
 
 # Personal workflows (fork-specific)
 .devin/workflows/sync-fork.md
+
+# devc.sh stages copies of the root flake.nix/flake.lock here so
+# project.Dockerfile's build context (.devcontainer/) can COPY them; the
+# root copies remain the single source of truth.
+.devcontainer/flake.nix
+.devcontainer/flake.lock

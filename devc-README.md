@@ -121,7 +121,24 @@ USER vscode
 `project.Dockerfile` exists — builds it `FROM` that base and tags the result
 as `<image>`; otherwise `<image>-base` is tagged directly as `<image>`. This
 keeps the upstream mirror untouched while letting each repo layer on
-whatever it needs (a JDK for deephaven-core's Gradle build, `gh`, etc.).
+whatever it needs.
+
+deephaven-core's own `project.Dockerfile` uses this to install [Nix](https://nixos.org)
+and build the dev toolchain described in the repo's `flake.nix` (bootstrap
+JDK, Node, Python + native build toolchain, C++ client build deps) — see
+`flake.nix`'s top comment for why it's the single source of truth for those
+versions instead of hand-written `apt-get`/`nix-env` lines. `cmd_build`
+stages copies of `flake.nix`/`flake.lock` into `.devcontainer/` before this
+build, since `project.Dockerfile`'s build context is `.devcontainer/`, not
+the repo root (see the `cp` call in `cmd_build`). The resulting toolchain is
+exposed as image-level `ENV PATH`/`JAVA_HOME`, not sourced from `.zshrc`,
+because `devc.sh exec` runs `podman exec ... "$@"` with no shell in
+between — only image `ENV` is visible to both `shell` and `exec` alike.
+
+The same `flake.nix` also works standalone, independent of this
+Claude-Code-specific sandbox — see its top comment for `nix develop`
+usage if you just want a reproducible shell to build deephaven-core in,
+without any of the Claude Code / sandboxing tooling below.
 
 ## Claude/gh login persistence
 

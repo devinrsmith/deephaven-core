@@ -72,6 +72,20 @@
         ];
       in
       {
+        packages = {
+          # A single, non-content-hashed store path bundling every tool the
+          # `full` devShell provides. Consumed by
+          # .devcontainer/project.Dockerfile via `nix build .#devEnv
+          # --out-link <stable-path>` so it can be referenced by a fixed
+          # Dockerfile `ENV PATH=...` -- unlike a raw /nix/store/<hash>-...
+          # path, the --out-link target doesn't change between builds even
+          # as the store path it resolves to does.
+          devEnv = pkgs.buildEnv {
+            name = "deephaven-dev-env";
+            paths = common ++ webTools ++ pythonTools ++ cppTools;
+          };
+        };
+
         devShells = {
           default = pkgs.mkShell {
             buildInputs = common;

@@ -135,11 +135,17 @@ cmd_build() {
     -f "$DEVCONTAINER_DIR/Dockerfile" \
     "$DEVCONTAINER_DIR"
 
-  # Project-specific tooling (e.g. a JDK for this repo's Gradle build) lives
-  # in an optional, repo-tracked project.Dockerfile layered on top of the
-  # upstream-fetched base, rather than editing the fetched Dockerfile.
+  # Project-specific tooling (the dev toolchain described in ../flake.nix)
+  # lives in an optional, repo-tracked project.Dockerfile layered on top of
+  # the upstream-fetched base, rather than editing the fetched Dockerfile.
   local project_dockerfile="${DEVCONTAINER_DIR}/project.Dockerfile"
   if [[ -f "$project_dockerfile" ]]; then
+    # project.Dockerfile's build context is $DEVCONTAINER_DIR (below), not
+    # the repo root, so flake.nix/flake.lock can't be COPY'd from their
+    # canonical repo-root location directly -- stage copies alongside it,
+    # the same way fetch_devcontainer_files() stages the upstream files.
+    cp flake.nix flake.lock "$DEVCONTAINER_DIR/"
+
     log "Building project image ${IMAGE_NAME}..."
     podman build \
       --build-arg "BASE_IMAGE=${IMAGE_NAME}-base" \

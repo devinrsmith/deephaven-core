@@ -16,6 +16,11 @@
 #   nix develop .#web      # + Node, for web/ frontend work
 #   nix develop .#python   # + Python + native build toolchain, for py-server/jpy
 #   nix develop .#cpp      # + cmake/g++/etc., for cpp-client
+#   nix develop .#docker   # + a rootless Podman-backed Docker-compatible API,
+#                          #   for gradle-docker-plugin / Testcontainers tasks
+#                          #   (see nix/podman.nix -- requires host-level
+#                          #   newuidmap/newgidmap and subuid/subgid, which
+#                          #   Nix cannot provide; not needed for most work)
 #   nix develop .#full     # everything above, one shell
 #
 # Every shell above also vendors the exact Gradle distribution
@@ -49,6 +54,10 @@
           inherit pkgs;
           wrapperPropertiesFile = ./gradle/wrapper/gradle-wrapper.properties;
         };
+
+        # Named podmanModule, not podman, so it doesn't shadow pkgs.podman
+        # inside the `with pkgs; [ ... ]` tool lists below.
+        podmanModule = import ./nix/podman.nix { inherit pkgs; };
 
         common = with pkgs; [
           bootstrapJdk
@@ -131,10 +140,16 @@
             shellHook = gradleShellHook;
           };
 
-          full = pkgs.mkShell {
-            buildInputs = common ++ webTools ++ pythonTools ++ cppTools;
+          docker = pkgs.mkShell {
+            buildInputs = common ++ podmanModule.extraBuildInputs;
             JAVA_HOME = bootstrapJdk.home;
-            shellHook = gradleShellHook;
+            shellHook = gradleShellHook + podmanModule.shellHook;
+          };
+
+          full = pkgs.mkShell {
+            buildInputs = common ++ webTools ++ pythonTools ++ cppTools ++ podmanModule.extraBuildInputs;
+            JAVA_HOME = bootstrapJdk.home;
+            shellHook = gradleShellHook + podmanModule.shellHook;
           };
         };
       });

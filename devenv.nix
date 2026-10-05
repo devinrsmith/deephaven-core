@@ -1,22 +1,13 @@
 # Reproducible development environment for deephaven-core, via devenv.sh
 # (https://devenv.sh).
 #
-# This is deliberately narrow: it provisions the tools a human needs on
-# PATH to run `./gradlew`, work on the web client, or build the C++/Python
-# clients -- it does not try to replace Gradle's own JDK toolchain
-# provisioning (org.gradle.toolchains.foojay-resolver-convention, declared
-# in settings.gradle), which already downloads whatever per-subproject JDK
-# (11-25) a given build target requests. Pinning every one of those here
-# too would just be a second, competing source of truth for the same
-# versions -- so only the *bootstrap* JDK needed to launch Gradle itself is
-# pinned below.
+# This is deliberately minimal: just the bootstrap JDK needed to run
+# `./gradlew`. The Python, Node, and protoc parts of the build run inside
+# Docker images (see the docker-* subprojects), so they need a running
+# Docker or Podman rather than host toolchains.
 #
 # Usage:
-#   devenv shell           # enter the environment (Java/Node/Python/C++
-#                           # toolchains all present at once -- devenv
-#                           # doesn't have the flake-style per-language
-#                           # `nix develop .#foo` split, everything
-#                           # declared here is just always on PATH)
+#   devenv shell
 #
 # Every shell entry also vendors the exact Gradle distribution
 # gradle-wrapper.properties pins into the Nix store, pre-seeds
@@ -128,46 +119,7 @@ in
   # option (a plain conflicting assignment would otherwise error).
   env.JAVA_HOME = pkgs.lib.mkForce bootstrapJdkHome;
 
-  languages.javascript = {
-    enable = true;
-    # Track web/client-api/types/.nvmrc. devenv has no .nvmrc
-    # auto-detection (confirmed against its source) -- version pinning is
-    # just "pick the matching nixpkgs package."
-    package = pkgs.nodejs_24;
-  };
-
-  languages.python = {
-    enable = true;
-    # Matches python-version in .github/workflows/quick-ci.yml. Using an
-    # explicit package (rather than `languages.python.version = "3.12"`)
-    # avoids pulling in the extra nixpkgs-python devenv.yaml input that
-    # form requires, for the same pin.
-    package = pkgs.python312;
-  };
-
-  languages.cplusplus.enable = true; # LSP (ccls) + debugger only -- the
-  # actual C/C++ toolchain packages are plain Nix packages below, same as
-  # a raw `nix develop` shell; devenv's C/C++ language modules don't do
-  # compiler/dependency selection themselves (confirmed against source).
-
-  packages = with pkgs; [
-    git
-    jq
-    curl
-
-    # py-server's jpy (its JNI bridge) compiles a native extension against
-    # languages.python's interpreter, so a compiler toolchain is required
-    # alongside it.
-    gcc
-    gnumake
-
-    # Mirrors cpp-client/README.md's `apt install` line.
-    cmake
-    zlib
-    bzip2
-    openssl
-    pkg-config
-  ] ++ gradleWrapper.extraBuildInputs;
+  packages = gradleWrapper.extraBuildInputs;
 
   enterShell = gradleWrapper.isolatedHomeHook + gradleWrapper.warmupHook + ''
     echo "deephaven-core dev shell (bootstrap JDK $(java -version 2>&1 | head -1))"

@@ -73,11 +73,6 @@ jobs:
         run: |
           echo "== java ==";       java -version
           echo "== JAVA_HOME ==";  echo "$JAVA_HOME"
-          echo "== node ==";       node --version
-          echo "== python3 ==";    python3 --version
-          echo "== gcc ==";        gcc --version
-          echo "== cmake ==";      cmake --version
-          echo "== pkg-config ==="; pkg-config --version
 
       # gradle-wrapper.properties' distribution is vendored into the Nix
       # store and pre-seeded into $GRADLE_USER_HOME/wrapper/dists by the

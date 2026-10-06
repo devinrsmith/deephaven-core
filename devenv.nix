@@ -89,7 +89,7 @@ let
   # libstdc++ is already found, and putting nixpkgs' (which may need a
   # newer glibc than the host's) on LD_LIBRARY_PATH could break host
   # programs run from this shell.
-  nixosLibstdcxxHook = pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+  nixosLibstdcxxHook = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
     if [[ -e /etc/NIXOS ]]; then
       export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     fi

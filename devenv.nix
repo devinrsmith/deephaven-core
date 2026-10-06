@@ -46,39 +46,78 @@ let
     javaHome = bootstrapJdkHome;
   };
 
-  # Auto-detects a rootless Podman API socket so Docker-API-consuming
-  # Gradle tasks (Testcontainers, the bmuschko gradle-docker-plugin) work
-  # without a per-machine DOCKER_HOST hardcoded anywhere -- the socket's
-  # path is $XDG_RUNTIME_DIR/podman/podman.sock, i.e. it embeds your UID
-  # (e.g. /run/user/1001/podman/podman.sock), so a value that works on one
-  # contributor's machine won't work on another's.
+  # Finds a Docker-API engine for the Docker-API-consuming Gradle tasks
+  # (Testcontainers, the bmuschko gradle-docker-plugin), without a
+  # per-machine DOCKER_HOST hardcoded anywhere. Never starts or configures
+  # an engine; it only wires up one that is already running.
   #
-  # `podman info`'s `.Host.RemoteSocket.Path` is Podman's own reported
-  # socket location -- confirmed directly against podman-info(1)'s
-  # documented output -- already accounting for XDG_RUNTIME_DIR/whatever
-  # the podman.socket systemd unit is actually configured with, so
-  # querying it beats guessing the path by hand. This only ever *reads*
-  # that value; it never starts or configures the socket/service itself --
-  # it assumes you already have `podman.socket` (or Docker) running
-  # normally, and just wires the resulting env vars up for you.
+  # 1. An already-set DOCKER_HOST is an explicit choice and is never
+  #    overridden (a warning is printed if nothing answers on it).
+  # 2. A working Docker engine on the default socket is left alone -- the
+  #    Java Docker clients already find /var/run/docker.sock by themselves.
+  # 3. Otherwise look for Podman's API socket: first wherever `podman info`
+  #    reports it, then -- if podman isn't installed, `podman info` fails,
+  #    or nothing answers there -- the known locations: $CONTAINER_HOST,
+  #    rootless ($XDG_RUNTIME_DIR/podman/podman.sock), rootful
+  #    (/run/podman/podman.sock). The rootless path embeds your UID, so a
+  #    value that works on one contributor's machine won't on another's.
+  #    The first that answers becomes DOCKER_HOST, plus
+  #    TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE, which Testcontainers needs
+  #    with Podman.
   #
-  # Only kicks in when DOCKER_HOST isn't already set (never overrides an
-  # explicit choice) and the reported path is an actual live socket, not
-  # just Podman's unconditionally-computed default (e.g. if podman.socket
-  # is installed but not currently running).
-  podmanDockerHostHook = ''
-    if [[ -z "''${DOCKER_HOST:-}" ]] && command -v podman >/dev/null 2>&1; then
-      _podman_sock="$(podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null || true)"
-      # Depending on podman version/rootless-vs-rootful setup, this value
-      # may already carry a "unix://" scheme prefix or may be a bare
-      # filesystem path -- normalize to a bare path before testing/using it.
-      _podman_sock="''${_podman_sock#unix://}"
-      if [[ -n "$_podman_sock" && -S "$_podman_sock" ]]; then
-        export DOCKER_HOST="unix://$_podman_sock"
-        export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$_podman_sock"
+  # "Answers" means a Docker-API GET /_ping returns OK (Podman's
+  # compatibility API serves it too), not just that a socket file exists --
+  # a stale socket from a stopped service doesn't count. The shell carries
+  # no Docker CLI, so nixpkgs' curl does the ping, referenced by store path
+  # so it isn't added to PATH. The chosen engine is printed on entry, and a
+  # warning if none is reachable.
+  dockerHostHook = ''
+    _dh_ping() { # unix socket path -> success if a Docker-API engine answers
+      [[ -S "$1" ]] && [[ "$(${pkgs.curl}/bin/curl -fsS --max-time 3 --unix-socket "$1" http://localhost/_ping 2>/dev/null)" == OK ]]
+    }
+    _dh_engine=""
+    if [[ -n "''${DOCKER_HOST:-}" ]]; then
+      if [[ "$DOCKER_HOST" != unix://* ]]; then
+        _dh_engine="$DOCKER_HOST (preset, not checked)"
+      elif _dh_ping "''${DOCKER_HOST#unix://}"; then
+        _dh_engine="$DOCKER_HOST (preset)"
+      else
+        echo "warning: DOCKER_HOST=$DOCKER_HOST is set but no Docker-API engine answers there." >&2
       fi
-      unset _podman_sock
+    elif _dh_ping /var/run/docker.sock; then
+      _dh_engine="Docker (/var/run/docker.sock)"
+    else
+      _dh_candidates=()
+      if command -v podman >/dev/null 2>&1 \
+          && _dh_sock="$(podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)"; then
+        _dh_candidates+=("$_dh_sock")
+      fi
+      _dh_candidates+=(
+        "''${CONTAINER_HOST:-}"
+        "''${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/podman/podman.sock}"
+        /run/podman/podman.sock
+      )
+      for _dh_sock in "''${_dh_candidates[@]}"; do
+        # Depending on podman version, a reported path may or may not
+        # carry a "unix://" prefix; CONTAINER_HOST always does.
+        _dh_sock="''${_dh_sock#unix://}"
+        if [[ -n "$_dh_sock" ]] && _dh_ping "$_dh_sock"; then
+          export DOCKER_HOST="unix://$_dh_sock"
+          export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$_dh_sock"
+          _dh_engine="Podman ($DOCKER_HOST)"
+          break
+        fi
+      done
     fi
+    if [[ -n "$_dh_engine" ]]; then
+      echo "engine: $_dh_engine"
+    elif [[ -z "''${DOCKER_HOST:-}" ]]; then
+      echo "warning: no Docker or Podman engine reachable; Docker-based tasks will fail until one is running." >&2
+      echo "         Start Docker, or Podman's API socket (e.g. 'systemctl --user start podman.socket')," >&2
+      echo "         or point DOCKER_HOST at one, then re-enter the shell." >&2
+    fi
+    unset -f _dh_ping
+    unset _dh_engine _dh_candidates _dh_sock
   '';
 
   # Native libraries that dependencies unpack from their jars and load at
@@ -138,14 +177,14 @@ in
   enterShell = gradleWrapper.isolatedHomeHook + gradleWrapper.warmupHook + ''
     echo "deephaven-core dev shell (bootstrap JDK $(java -version 2>&1 | head -1))"
     echo "Run: ./gradlew server-jetty-app:run"
-  '' + podmanDockerHostHook + nixosLibstdcxxHook;
+  '' + dockerHostHook + nixosLibstdcxxHook;
 
   # Docker-API access (Testcontainers-based `testOutOfBand` tests in
   # extensions/kafka, extensions/iceberg/s3, etc.; the bmuschko
   # gradle-docker-plugin's :docker-* subprojects) needs a real Docker or
   # Podman install already running on your host -- this file doesn't
   # provision one, it only wires up DOCKER_HOST for whatever's already
-  # there (see podmanDockerHostHook above). devenv's own containers.*
+  # there (see dockerHostHook above). devenv's own containers.*
   # option builds OCI images from this environment; it isn't a
   # Docker-API-compatible daemon/socket, so it wouldn't help here anyway.
 }

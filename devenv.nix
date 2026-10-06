@@ -49,75 +49,65 @@ let
   # Finds a Docker-API engine for the Docker-API-consuming Gradle tasks
   # (Testcontainers, the bmuschko gradle-docker-plugin), without a
   # per-machine DOCKER_HOST hardcoded anywhere. Never starts or configures
-  # an engine; it only wires up one that is already running.
+  # an engine; it only wires up one that is already there.
   #
-  # 1. An already-set DOCKER_HOST is an explicit choice and is never
-  #    overridden (a warning is printed if nothing answers on it).
-  # 2. A working Docker engine on the default socket is left alone -- the
-  #    Java Docker clients already find /var/run/docker.sock by themselves.
-  # 3. Otherwise look for Podman's API socket: first wherever `podman info`
-  #    reports it, then -- if podman isn't installed, `podman info` fails,
-  #    or nothing answers there -- the known locations: $CONTAINER_HOST,
-  #    rootless ($XDG_RUNTIME_DIR/podman/podman.sock), rootful
-  #    (/run/podman/podman.sock). The rootless path embeds your UID, so a
-  #    value that works on one contributor's machine won't on another's.
-  #    The first that answers becomes DOCKER_HOST, plus
-  #    TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE, which Testcontainers needs
-  #    with Podman.
+  # 1. An already-set DOCKER_HOST is an explicit choice: used as is.
+  # 2. A Docker socket at the default /var/run/docker.sock is left alone --
+  #    the Java Docker clients already find it by themselves.
+  # 3. If `podman info` succeeds and reports an API socket path, use it:
+  #    Podman's own answer already accounts for rootless vs. rootful and
+  #    however podman.socket is configured.
+  # 4. Otherwise (no podman CLI, or `podman info` fails or reports
+  #    nothing), take the first conventional location where a socket file
+  #    exists: $CONTAINER_HOST, rootless ($XDG_RUNTIME_DIR/podman/
+  #    podman.sock -- it embeds your UID, so it differs per contributor),
+  #    rootful (/run/podman/podman.sock).
   #
-  # "Answers" means a Docker-API GET /_ping returns OK (Podman's
-  # compatibility API serves it too), not just that a socket file exists --
-  # a stale socket from a stopped service doesn't count. The shell carries
-  # no Docker CLI, so nixpkgs' curl does the ping, referenced by store path
-  # so it isn't added to PATH. The chosen engine is printed on entry, and a
-  # warning if none is reachable.
+  # 3 and 4 also set TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE, which
+  # Testcontainers needs with Podman. The checks are file-existence only
+  # (-S: the path exists and is a socket); nothing verifies that a service
+  # is listening behind it. The chosen engine is printed on entry, and a
+  # warning if none was found.
   dockerHostHook = ''
-    _dh_ping() { # unix socket path -> success if a Docker-API engine answers
-      [[ -S "$1" ]] && [[ "$(${pkgs.curl}/bin/curl -fsS --max-time 3 --unix-socket "$1" http://localhost/_ping 2>/dev/null)" == OK ]]
-    }
     _dh_engine=""
     if [[ -n "''${DOCKER_HOST:-}" ]]; then
-      if [[ "$DOCKER_HOST" != unix://* ]]; then
-        _dh_engine="$DOCKER_HOST (preset, not checked)"
-      elif _dh_ping "''${DOCKER_HOST#unix://}"; then
-        _dh_engine="$DOCKER_HOST (preset)"
-      else
-        echo "warning: DOCKER_HOST=$DOCKER_HOST is set but no Docker-API engine answers there." >&2
-      fi
-    elif _dh_ping /var/run/docker.sock; then
+      _dh_engine="$DOCKER_HOST (preset)"
+    elif [[ -S /var/run/docker.sock ]]; then
       _dh_engine="Docker (/var/run/docker.sock)"
     else
-      _dh_candidates=()
-      if command -v podman >/dev/null 2>&1 \
-          && _dh_sock="$(podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)"; then
-        _dh_candidates+=("$_dh_sock")
+      _dh_sock=""
+      if command -v podman >/dev/null 2>&1; then
+        _dh_sock="$(podman info --format '{{.Host.RemoteSocket.Path}}' 2>/dev/null)" || _dh_sock=""
       fi
-      _dh_candidates+=(
-        "''${CONTAINER_HOST:-}"
-        "''${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/podman/podman.sock}"
-        /run/podman/podman.sock
-      )
-      for _dh_sock in "''${_dh_candidates[@]}"; do
-        # Depending on podman version, a reported path may or may not
-        # carry a "unix://" prefix; CONTAINER_HOST always does.
+      if [[ -z "$_dh_sock" ]]; then
+        for _dh_candidate in \
+            "''${CONTAINER_HOST:-}" \
+            "''${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/podman/podman.sock}" \
+            /run/podman/podman.sock; do
+          _dh_candidate="''${_dh_candidate#unix://}"
+          if [[ -n "$_dh_candidate" && -S "$_dh_candidate" ]]; then
+            _dh_sock="$_dh_candidate"
+            break
+          fi
+        done
+      fi
+      if [[ -n "$_dh_sock" ]]; then
+        # Depending on podman version, a reported path may or may not carry
+        # a "unix://" prefix -- normalize to a bare path.
         _dh_sock="''${_dh_sock#unix://}"
-        if [[ -n "$_dh_sock" ]] && _dh_ping "$_dh_sock"; then
-          export DOCKER_HOST="unix://$_dh_sock"
-          export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$_dh_sock"
-          _dh_engine="Podman ($DOCKER_HOST)"
-          break
-        fi
-      done
+        export DOCKER_HOST="unix://$_dh_sock"
+        export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE="$_dh_sock"
+        _dh_engine="Podman ($DOCKER_HOST)"
+      fi
     fi
     if [[ -n "$_dh_engine" ]]; then
       echo "engine: $_dh_engine"
-    elif [[ -z "''${DOCKER_HOST:-}" ]]; then
-      echo "warning: no Docker or Podman engine reachable; Docker-based tasks will fail until one is running." >&2
+    else
+      echo "warning: no Docker or Podman engine found; Docker-based tasks will fail until one is running." >&2
       echo "         Start Docker, or Podman's API socket (e.g. 'systemctl --user start podman.socket')," >&2
       echo "         or point DOCKER_HOST at one, then re-enter the shell." >&2
     fi
-    unset -f _dh_ping
-    unset _dh_engine _dh_candidates _dh_sock
+    unset _dh_engine _dh_sock _dh_candidate
   '';
 
   # Native libraries that dependencies unpack from their jars and load at

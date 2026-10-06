@@ -80,6 +80,20 @@ let
       unset _podman_sock
     fi
   '';
+
+  # Native libraries that dependencies unpack from their jars and load at
+  # runtime (e.g. brotli-codec's libbrotli.so, used by
+  # :extensions-parquet-table:brotliTest) expect libstdc++.so.6 from the
+  # system's default library path. NixOS has none, so point the loader at
+  # nixpkgs' copy there. Only on NixOS: elsewhere the distro's own
+  # libstdc++ is already found, and putting nixpkgs' (which may need a
+  # newer glibc than the host's) on LD_LIBRARY_PATH could break host
+  # programs run from this shell.
+  nixosLibstdcxxHook = pkgs.lib.optionalString pkgs.stdenv.isLinux ''
+    if [[ -e /etc/NIXOS ]]; then
+      export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    fi
+  '';
 in
 {
   languages.java = {
@@ -124,7 +138,7 @@ in
   enterShell = gradleWrapper.isolatedHomeHook + gradleWrapper.warmupHook + ''
     echo "deephaven-core dev shell (bootstrap JDK $(java -version 2>&1 | head -1))"
     echo "Run: ./gradlew server-jetty-app:run"
-  '' + podmanDockerHostHook;
+  '' + podmanDockerHostHook + nixosLibstdcxxHook;
 
   # Docker-API access (Testcontainers-based `testOutOfBand` tests in
   # extensions/kafka, extensions/iceberg/s3, etc.; the bmuschko

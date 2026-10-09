@@ -32,6 +32,13 @@
           # Propagated because the installed deephavenConfig.cmake does
           # find_dependency() on these. The second line is what nixpkgs' gRPC
           # CMake config itself needs to resolve its imported targets.
+          #
+          # Possible later work: the runtime closure of a program linking the
+          # client is ~455 MiB. Splitting outputs (out/dev) would keep this
+          # propagation, and with it the -dev outputs, out of the runtime
+          # closure. Overriding arrow-cpp with enableS3/enableGcs = false would
+          # drop google-cloud-cpp (~290M) and probably most of Boost, but Arrow
+          # would then be built from source rather than fetched from the cache.
           propagatedBuildInputs = with pkgs; [
             arrow-cpp grpc protobuf immer
             abseil-cpp c-ares openssl re2 zlib

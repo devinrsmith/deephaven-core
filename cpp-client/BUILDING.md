@@ -29,6 +29,45 @@ You can build and install client libraries, tests, and examples
 without having a server installed. However you will eventually need to
 connect to a server when you want to run them.
 
+# Building the C++ client with Nix
+
+As an alternative to the Ubuntu instructions below, `cpp-client/flake.nix` describes the
+whole build environment: compiler, CMake, and every dependency library, pinned by
+`cpp-client/flake.lock`. It works on any x86-64 or aarch64 Linux distribution with
+[Nix](https://nixos.org/download/) installed and flakes enabled, and needs neither
+`build-dependencies.sh` nor `env.sh`. Prebuilt dependencies come from the public Nix binary
+cache, so nothing but the client itself is compiled.
+
+The dependency versions are whatever the pinned nixpkgs revision provides, not the versions
+`build-dependencies.sh` builds; `nix flake update nixpkgs` moves them forward.
+
+Build and install into the Nix store (the result is symlinked at `./result`, with the
+libraries in `result/lib`, headers in `result/include`, the CMake package config in
+`result/lib/cmake/deephaven`, and `dhclient_tests` in `result/bin`):
+
+```
+cd $DHSRC/deephaven-core/cpp-client
+nix build
+```
+
+For development, enter the shell and use CMake as usual:
+
+```
+cd $DHSRC/deephaven-core/cpp-client
+nix develop
+cmake -S deephaven -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=ON
+cmake --build build
+```
+
+`nix flake check` builds the client, an AddressSanitizer variant, and a small out-of-tree
+program that uses the installed package through `find_package(deephaven)`. The tests are
+not run by any of these, because they need a server; run `result/bin/dhclient_tests` (or
+`build/tests/dhclient_tests`) against one as described in step 8 below.
+
+Note that the libraries built this way refer to their dependencies by `/nix/store` paths,
+so they are meant for use on the machine that built them (or one sharing its Nix store),
+not for copying to other systems.
+
 # Building the C++ client on Ubuntu 22.04
 
 1. Start with an Ubuntu 22.04 install
@@ -222,3 +261,7 @@ The protobuf and gRPC C++ stubs are not checked in. They are generated at build 
 `<build-dir>/dhclient/proto`. There is nothing to regenerate by hand; a normal build picks up
 any change to the `.proto` files. Adding a new `.proto` file requires adding it to the
 `PROTO_FILES` list in that `CMakeLists.txt`.
+
+The location of the `.proto` tree is the CMake cache variable `DH_PROTO_DIR`, which defaults to
+its place in the deephaven-core checkout. The Nix build sets it to the `protoSrc` output of
+`proto/proto-backplane-grpc/flake.nix`, a store path holding only the `.proto` files.

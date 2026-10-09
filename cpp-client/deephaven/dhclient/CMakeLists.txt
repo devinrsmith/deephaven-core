@@ -13,8 +13,12 @@ find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
-set(PROTO_SRC_DIR
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../../proto/proto-backplane-grpc/src/main/proto")
+# Root of the .proto tree (the directory containing deephaven_core/). Defaults to its
+# location in the deephaven-core checkout; the Nix build passes a store path instead.
+set(DH_PROTO_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../proto/proto-backplane-grpc/src/main/proto"
+  CACHE PATH "Directory containing the deephaven_core/proto/*.proto sources")
+set(PROTO_SRC_DIR "${DH_PROTO_DIR}")
 set(PROTO_GEN_DIR
   "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/proto")
 set(PROTO_OUT_DIR "${PROTO_GEN_DIR}/deephaven_core/proto")

@@ -121,7 +121,11 @@ Once the tree is configured, an incremental rebuild is just
 `--target dhclient dhclient_tests` to skip the examples).
 
 Useful CMake options: `-DDHCORE_ONLY=ON` (skip dhclient/tests/examples — fast loop when only
-touching the core), `-DSANITIZE_ADDRESS=ON`.
+touching the core), `-DSANITIZE_ADDRESS=ON`, `-DDH_STATIC_CLIENT=ON` (static `dhclient` and
+only `dhcore_static`, linked against the static Arrow targets; used by the Nix static build),
+`-DDH_PROTOC=…` / `-DDH_GRPC_CPP_PLUGIN=…` (code generators to run instead of the
+`protobuf::protoc` / `gRPC::grpc_cpp_plugin` targets, which gRPC does not define when
+cross-compiling).
 
 Notes:
 - Warnings are errors: `-Wall -Werror` on Linux for all three targets. Windows uses `/W3`.

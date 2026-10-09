@@ -68,6 +68,29 @@ Note that the libraries built this way refer to their dependencies by `/nix/stor
 so they are meant for use on the machine that built them (or one sharing its Nix store),
 not for copying to other systems.
 
+## Static build (standalone executables)
+
+```
+cd $DHSRC/deephaven-core/cpp-client
+nix build .#deephaven-cpp-client-static
+```
+
+This builds the client and all of its dependencies statically against musl, producing
+`result/bin/hello_world` and `result/bin/dhclient_tests` as fully static executables that
+run on any x86-64 Linux, with no shared libraries and no dependency on the host's glibc
+(tested on CentOS 7, Ubuntu 16.04, Alpine, and an empty `scratch` container image), plus
+`libdhclient.a` / `libdhcore_static.a` and a CMake package for linking your own static
+programs. `hello_world` is about 42 MB (11 MB compressed with `xz -9`).
+
+The static dependencies are not in the public Nix binary cache, so the first build compiles
+Arrow (a minimal configuration: core, IPC, Flight, CSV), gRPC, protobuf and abseil from
+source. It uses the CMake options `DH_STATIC_CLIENT=ON`, and `DH_PROTOC` /
+`DH_GRPC_CPP_PLUGIN` to run the build machine's code generators.
+
+Not yet verified for the static build: TLS connections that rely on the system's CA
+certificates (OpenSSL's built-in certificate directory points into `/nix/store`), and
+performance under musl's memory allocator on data-heavy workloads.
+
 # Building the C++ client on Ubuntu 22.04
 
 1. Start with an Ubuntu 22.04 install

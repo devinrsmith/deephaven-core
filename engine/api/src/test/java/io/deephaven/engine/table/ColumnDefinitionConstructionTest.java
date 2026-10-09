@@ -3,6 +3,7 @@
 //
 package io.deephaven.engine.table;
 
+import io.deephaven.api.util.NameValidator;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
@@ -22,7 +23,11 @@ import io.deephaven.vector.ShortVector;
 import io.deephaven.vector.Vector;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ColumnDefinitionConstructionTest {
     private static final String CN = "Foo";
@@ -190,6 +195,263 @@ public class ColumnDefinitionConstructionTest {
     @Test
     public void customTypeVector() {
         checkGenericVector(ObjectVector.type(MyCustomType.type()));
+    }
+
+    @Test
+    public void boxedTypesMapToSupportedTypes() {
+        // The qst boxed types are the only way to name a boxed primitive through of(...), and they map to the
+        // supported representation: Boolean for boolean, and the primitive for the other boxed types.
+        assertThat(ColumnDefinition.of(CN, Type.booleanType().boxedType())).isEqualTo(ColumnDefinition.ofBoolean(CN));
+        assertThat(ColumnDefinition.of(CN, Type.byteType().boxedType())).isEqualTo(ColumnDefinition.ofByte(CN));
+        assertThat(ColumnDefinition.of(CN, Type.charType().boxedType())).isEqualTo(ColumnDefinition.ofChar(CN));
+        assertThat(ColumnDefinition.of(CN, Type.shortType().boxedType())).isEqualTo(ColumnDefinition.ofShort(CN));
+        assertThat(ColumnDefinition.of(CN, Type.intType().boxedType())).isEqualTo(ColumnDefinition.ofInt(CN));
+        assertThat(ColumnDefinition.of(CN, Type.longType().boxedType())).isEqualTo(ColumnDefinition.ofLong(CN));
+        assertThat(ColumnDefinition.of(CN, Type.floatType().boxedType())).isEqualTo(ColumnDefinition.ofFloat(CN));
+        assertThat(ColumnDefinition.of(CN, Type.doubleType().boxedType())).isEqualTo(ColumnDefinition.ofDouble(CN));
+    }
+
+    @Test
+    public void voidDataTypes() {
+        for (final Class<?> dataType : new Class<?>[] {void.class, Void.class}) {
+            checkInvalidDataType(dataType);
+        }
+    }
+
+    @Test
+    public void normalizedDataTypes() {
+        checkNormalizedDataType(boolean.class, ColumnDefinition.ofBoolean(CN));
+        checkNormalizedDataType(Byte.class, ColumnDefinition.ofByte(CN));
+        checkNormalizedDataType(Character.class, ColumnDefinition.ofChar(CN));
+        checkNormalizedDataType(Short.class, ColumnDefinition.ofShort(CN));
+        checkNormalizedDataType(Integer.class, ColumnDefinition.ofInt(CN));
+        checkNormalizedDataType(Long.class, ColumnDefinition.ofLong(CN));
+        checkNormalizedDataType(Float.class, ColumnDefinition.ofFloat(CN));
+        checkNormalizedDataType(Double.class, ColumnDefinition.ofDouble(CN));
+    }
+
+    @Test
+    public void normalizedDataTypesAreNotCustomTypes() {
+        // boolean and the boxed primitives are qst static types, so they cannot reach the constructor un-normalized
+        // through CustomType
+        for (final Class<?> dataType : new Class<?>[] {boolean.class, Byte.class, Character.class, Short.class,
+                Integer.class, Long.class, Float.class, Double.class}) {
+            assertThatThrownBy(() -> Type.ofCustom(dataType))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Use static type");
+        }
+    }
+
+    @Test
+    public void voidCustomTypes() {
+        // void and Void are not qst static types, so CustomType accepts them; ColumnDefinition must reject them
+        for (final Class<?> dataType : new Class<?>[] {void.class, Void.class}) {
+            final CustomType<?> type = Type.ofCustom(dataType);
+            assertThatThrownBy(() -> ColumnDefinition.of(CN, type))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> ColumnDefinition.of(CN, (Type<?>) type))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    public void invalidColumnNames() {
+        // Empty, query language reserved names, Java keywords and literals, and non-identifiers
+        for (final String name : new String[] {"", "i", "ii", "k", "in", "not", "class", "_", "true", "null", "1abc",
+                "has space", "a-b", "a.b"}) {
+            checkInvalidColumnName(name);
+        }
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void validColumnNames() {
+        for (final String name : new String[] {"_x", "$x", "__RowDepth__", "I", "Ii", "inValue", "x1"}) {
+            assertThat(ColumnDefinition.ofInt(name).getName()).isEqualTo(name);
+            assertThat(ColumnDefinition.ofInt(CN).withName(name).getName()).isEqualTo(name);
+        }
+    }
+
+    private static void checkInvalidColumnName(final String name) {
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(name))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.ofString(name))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.of(name, Type.intType()))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.of(name, MyCustomType.type()))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.of(name, Type.intType().arrayType()))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.ofVector(name, IntVector.class))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(name, String.class))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(CN).withName(name))
+                .isInstanceOf(NameValidator.InvalidNameException.class);
+    }
+
+    @Test
+    public void inferredComponentTypes() {
+        assertThat(ColumnDefinition.fromGenericType(CN, int[].class).getComponentType()).isEqualTo(int.class);
+        assertThat(ColumnDefinition.fromGenericType(CN, String[][].class).getComponentType())
+                .isEqualTo(String[].class);
+        assertThat(ColumnDefinition.fromGenericType(CN, IntVector.class).getComponentType()).isEqualTo(int.class);
+        assertThat(ColumnDefinition.fromGenericType(CN, ObjectVector.class).getComponentType())
+                .isEqualTo(Object.class);
+        assertThat(ColumnDefinition.ofVector(CN, DoubleVector.class, null).getComponentType()).isEqualTo(double.class);
+        assertThat(ColumnDefinition.ofInt(CN).withDataType(String[].class).getComponentType())
+                .isEqualTo(String.class);
+        // Non-array, non-Vector data types have no component type unless one is given
+        assertThat(ColumnDefinition.fromGenericType(CN, String.class).getComponentType()).isNull();
+    }
+
+    @Test
+    public void validComponentTypes() {
+        // An array's component type may be more specific than the array class's, and an ObjectVector's component type
+        // is its element type, which ObjectVector only expresses through generics
+        assertThat(ColumnDefinition.fromGenericType(CN, Object[].class, Instant.class).getComponentType())
+                .isEqualTo(Instant.class);
+        assertThat(ColumnDefinition.fromGenericType(CN, ObjectVector.class, String.class).getComponentType())
+                .isEqualTo(String.class);
+        assertThat(ColumnDefinition.ofVector(CN, ObjectVector.class, Instant.class).getComponentType())
+                .isEqualTo(Instant.class);
+        // Some callers depend on giving a component type for other data types, such as collections
+        assertThat(ColumnDefinition.fromGenericType(CN, List.class, String.class).getComponentType())
+                .isEqualTo(String.class);
+    }
+
+    @Test
+    public void numberArrayComponentTypes() {
+        // A reference example of how the component type relates to an array data type. A native array class already
+        // carries its element type, here Number, so the component type is either that or a more specific type that
+        // all elements are known to have. Compare objectVectorComponentTypes.
+
+        // Inferred: the array's component type
+        assertThat(ColumnDefinition.fromGenericType(CN, Number[].class).getComponentType()).isEqualTo(Number.class);
+        assertThat(ColumnDefinition.fromGenericType(CN, Number[].class, null).getComponentType())
+                .isEqualTo(Number.class);
+
+        // More specific: accepted, and kept as given; component types are never normalized, so Integer stays boxed,
+        // which is right since the elements are Integer objects
+        final ColumnDefinition<Number[]> integers = ColumnDefinition.fromGenericType(CN, Number[].class, Integer.class);
+        assertThat(integers.getDataType()).isEqualTo(Number[].class);
+        assertThat(integers.getComponentType()).isEqualTo(Integer.class);
+
+        // Primitive: rejected, as a primitive type is never assignable to a reference type; a Number[] cannot hold ints
+        checkInvalidComponentType(Number[].class, int.class, "array");
+
+        // Wider: rejected
+        checkInvalidComponentType(Number[].class, Object.class, "array");
+
+        // Unrelated: rejected, even though some elements could be both a Number and a Comparable
+        checkInvalidComponentType(Number[].class, Comparable.class, "array");
+    }
+
+    @Test
+    public void objectVectorComponentTypes() {
+        // A reference example of how the component type relates to an ObjectVector data type. Unlike a native array
+        // class, ObjectVector expresses its element type only through generics, so the component type supplies it:
+        // ObjectVector with component type Integer is ObjectVector<Integer>, the Vector equivalent of Integer[], not an
+        // Object[]-like column with a narrower component type. Compare numberArrayComponentTypes.
+
+        // Inferred: Object, making it ObjectVector<Object>, the Vector equivalent of Object[]
+        assertThat(ColumnDefinition.fromGenericType(CN, ObjectVector.class).getComponentType())
+                .isEqualTo(Object.class);
+        assertThat(ColumnDefinition.ofVector(CN, ObjectVector.class).getComponentType()).isEqualTo(Object.class);
+        assertThat(ColumnDefinition.ofVector(CN, ObjectVector.class, null).getComponentType())
+                .isEqualTo(Object.class);
+
+        // ObjectVector<Integer>, the Vector equivalent of Integer[]; component types are never normalized, so Integer
+        // stays boxed, which is right since the elements are Integer objects
+        final ColumnDefinition<?> integers = ColumnDefinition.fromGenericType(CN, ObjectVector.class, Integer.class);
+        assertThat(integers.getDataType()).isEqualTo(ObjectVector.class);
+        assertThat(integers.getComponentType()).isEqualTo(Integer.class);
+        assertThat(ColumnDefinition.ofVector(CN, ObjectVector.class, Integer.class)).isEqualTo(integers);
+
+        // ObjectVector<Comparable>, the Vector equivalent of Comparable[]: any reference type can be an element type
+        assertThat(ColumnDefinition.fromGenericType(CN, ObjectVector.class, Comparable.class).getComponentType())
+                .isEqualTo(Comparable.class);
+
+        // Primitive: rejected, as ObjectVector cannot hold primitives (there is no ObjectVector<int>); the Vector
+        // equivalent of int[] is IntVector
+        checkInvalidComponentType(ObjectVector.class, int.class, "Vector");
+        assertThatThrownBy(() -> ColumnDefinition.ofVector(CN, ObjectVector.class, int.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid component type int for column " + CN + " with Vector data type "
+                        + ObjectVector.class.getTypeName());
+    }
+
+    @Test
+    public void invalidArrayComponentTypes() {
+        checkInvalidComponentType(int[].class, Integer.class, "array");
+        checkInvalidComponentType(int[].class, long.class, "array");
+        checkInvalidComponentType(Instant[].class, String.class, "array");
+        // A wider component type than the array's is invalid
+        checkInvalidComponentType(String[].class, Object.class, "array");
+    }
+
+    @Test
+    public void invalidVectorComponentTypes() {
+        checkInvalidComponentType(IntVector.class, Integer.class, "Vector");
+        checkInvalidComponentType(IntVector.class, long.class, "Vector");
+        checkInvalidComponentType(ObjectVector.class, int.class, "Vector");
+        assertThatThrownBy(() -> ColumnDefinition.ofVector(CN, IntVector.class, long.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid component type long")
+                .hasMessageContaining("Vector data type " + IntVector.class.getName());
+    }
+
+    @Test
+    public void unrecognizedVectorType() {
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, Vector.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unrecognized Vector type");
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, Vector.class, Object.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unrecognized Vector type");
+    }
+
+    private static void checkInvalidComponentType(
+            final Class<?> dataType,
+            final Class<?> componentType,
+            final String kind) {
+        final String message = "Invalid component type " + componentType.getTypeName() + " for column " + CN
+                + " with " + kind + " data type " + dataType.getTypeName();
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, dataType, componentType))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, dataType, componentType,
+                ColumnDefinition.ColumnType.Partitioning))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(CN).withDataType(dataType, componentType))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(message);
+    }
+
+    private static void checkNormalizedDataType(final Class<?> dataType, final ColumnDefinition<?> expected) {
+        assertThat(ColumnDefinition.fromGenericType(CN, dataType)).isEqualTo(expected);
+        assertThat(ColumnDefinition.fromGenericType(CN, dataType, null)).isEqualTo(expected);
+        assertThat(ColumnDefinition.fromGenericType(CN, dataType, null, ColumnDefinition.ColumnType.Partitioning))
+                .isEqualTo(expected.withPartitioning());
+        assertThat(ColumnDefinition.ofString(CN).withDataType(dataType)).isEqualTo(expected);
+        assertThat(ColumnDefinition.ofString(CN).withDataType(dataType, null)).isEqualTo(expected);
+    }
+
+    private static void checkInvalidDataType(final Class<?> dataType) {
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, dataType))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(dataType.getName());
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, dataType, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ColumnDefinition.fromGenericType(CN, dataType, null,
+                ColumnDefinition.ColumnType.Partitioning))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(CN).withDataType(dataType))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ColumnDefinition.ofInt(CN).withDataType(dataType, null))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static void checkPrimitiveType(

@@ -98,7 +98,7 @@ def getCPythonTag = { String pythonVersion ->
     return "cp${noPeriodVersion}-cp${noPeriodVersion}".toString()
 }
 
-def pythonVersions = [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+def pythonVersions = [ '3.9', '3.10', '3.11', '3.12', '3.13', '3.14' ]
 
 Map<String, TaskProvider<? extends Task>> cpythonBuilds = pythonVersions.collectEntries { pythonVersion ->
     def cpythonTag = getCPythonTag(pythonVersion)
@@ -167,12 +167,13 @@ def testCPythonClientTicking = { String pythonVersion, String image -> Docker.re
     entrypoint = ['/entrypoint.sh', project.hasProperty("coverage.enabled")?project.property("coverage.enabled"):'false']
 }}
 
-Map<String, TaskProvider<? extends Task>> fedoraCPythonTests = pythonVersions.collectEntries { pythonVersion ->
+// Image only provides a 3.14 alpha
+Map<String, TaskProvider<? extends Task>> fedoraCPythonTests = (pythonVersions - ['3.14']).collectEntries { pythonVersion ->
     return [(pythonVersion): testCPythonClientTicking(pythonVersion, 'fedora')]
 }
 
-// Image does not support 3.10 nor 3.12
-Map<String, TaskProvider<? extends Task>> ubiMinimalCPythonTests = (pythonVersions - ['3.10', '3.12']).collectEntries { pythonVersion ->
+// Image does not support 3.10, 3.12, nor 3.14
+Map<String, TaskProvider<? extends Task>> ubiMinimalCPythonTests = (pythonVersions - ['3.10', '3.12', '3.14']).collectEntries { pythonVersion ->
     return [(pythonVersion): testCPythonClientTicking(pythonVersion, 'ubi-minimal')]
 }
 

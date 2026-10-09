@@ -117,18 +117,26 @@ set(ALL_FILES
 # https://stackoverflow.com/questions/38832528/transitive-target-include-directories-on-object-libraries
 #
 
-add_library(dhcore SHARED ${ALL_FILES})
 add_library(dhcore_static STATIC ${ALL_FILES})
 
-# This is so deephaven::dhcore works both when using the installed CMake config
-# and when using this project as a CMake subdirectory of your own project.
-add_library(deephaven::dhcore ALIAS dhcore)
+if (DH_STATIC_CLIENT)
+  set(DHCORE_LIBS dhcore_static)
+  # In a static build, what dhclient links as deephaven::dhcore is the static library.
+  add_library(deephaven::dhcore ALIAS dhcore_static)
+else()
+  add_library(dhcore SHARED ${ALL_FILES})
+  set(DHCORE_LIBS dhcore dhcore_static)
 
-if (WIN32)
-  set_property(TARGET dhcore PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  # This is so deephaven::dhcore works both when using the installed CMake config
+  # and when using this project as a CMake subdirectory of your own project.
+  add_library(deephaven::dhcore ALIAS dhcore)
+
+  if (WIN32)
+    set_property(TARGET dhcore PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
 endif()
 
-foreach (whichlib dhcore dhcore_static)
+foreach (whichlib ${DHCORE_LIBS})
   set_property(TARGET ${whichlib} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
   if (LINUX)
@@ -147,6 +155,9 @@ foreach (whichlib dhcore dhcore_static)
   target_include_directories(${whichlib} PRIVATE include/private)
   target_include_directories(${whichlib} PRIVATE third_party/date/include)
   target_include_directories(${whichlib} PRIVATE third_party/flatbuffers/include)
+  # Otherwise flatbuffers' text-to-number helpers (which we don't use) call
+  # strtoll_l/strtoull_l, which glibc has but musl does not.
+  target_compile_definitions(${whichlib} PRIVATE FLATBUFFERS_LOCALE_INDEPENDENT=0)
   target_include_directories(${whichlib} PRIVATE third_party/roaring/include)
   target_include_directories(${whichlib} PRIVATE flatbuf)
   target_include_directories(${whichlib} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/public>)

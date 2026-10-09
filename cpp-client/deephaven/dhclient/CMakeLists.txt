@@ -47,12 +47,29 @@ foreach(PROTO_FILE ${PROTO_FILES})
   )
 endforeach()
 
+# The code generators default to the protobuf/gRPC CMake targets. When cross-compiling
+# (which includes Nix's static builds), gRPC's config does not define the plugin target,
+# so the generators to run on the build machine can be given explicitly instead.
+set(DH_PROTOC "" CACHE FILEPATH "protoc executable to use (default: protobuf::protoc)")
+set(DH_GRPC_CPP_PLUGIN "" CACHE FILEPATH
+  "grpc_cpp_plugin executable to use (default: gRPC::grpc_cpp_plugin)")
+if(DH_PROTOC)
+  set(DH_PROTOC_CMD "${DH_PROTOC}")
+else()
+  set(DH_PROTOC_CMD protobuf::protoc)
+endif()
+if(DH_GRPC_CPP_PLUGIN)
+  set(DH_GRPC_CPP_PLUGIN_PATH "${DH_GRPC_CPP_PLUGIN}")
+else()
+  set(DH_GRPC_CPP_PLUGIN_PATH "$<TARGET_FILE:gRPC::grpc_cpp_plugin>")
+endif()
+
 add_custom_command(
   OUTPUT ${PROTO_GEN_FILES}
   COMMAND "${CMAKE_COMMAND}"
   ARGS -E make_directory "${PROTO_OUT_DIR}"
-  COMMAND protobuf::protoc
-  ARGS "--plugin=protoc-gen-grpc=\$<TARGET_FILE:gRPC::grpc_cpp_plugin>"
+  COMMAND ${DH_PROTOC_CMD}
+  ARGS "--plugin=protoc-gen-grpc=${DH_GRPC_CPP_PLUGIN_PATH}"
        "--cpp_out=${PROTO_GEN_DIR}"
        "--grpc_out=${PROTO_GEN_DIR}"
        "-I${PROTO_SRC_DIR}"
@@ -125,7 +142,13 @@ set(ALL_FILES
 
 list(APPEND ALL_FILES ${PROTO_GEN_FILES})
 
-add_library(dhclient SHARED ${ALL_FILES})
+if (DH_STATIC_CLIENT)
+  add_library(dhclient STATIC ${ALL_FILES})
+  set(DH_ARROW_LINKAGE static)
+else()
+  add_library(dhclient SHARED ${ALL_FILES})
+  set(DH_ARROW_LINKAGE shared)
+endif()
 
 # This is so deephaven::client works both when using the installed CMake config
 # and when using this project as a CMake subdirectory of your own project.
@@ -154,8 +177,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE "./flatbuf")
 
 target_link_libraries(${PROJECT_NAME} PUBLIC deephaven::dhcore)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ArrowFlight::arrow_flight_shared)
-target_link_libraries(${PROJECT_NAME} PUBLIC Arrow::arrow_shared)
+target_link_libraries(${PROJECT_NAME} PUBLIC ArrowFlight::arrow_flight_${DH_ARROW_LINKAGE})
+target_link_libraries(${PROJECT_NAME} PUBLIC Arrow::arrow_${DH_ARROW_LINKAGE})
 target_link_libraries(${PROJECT_NAME} PRIVATE protobuf::libprotobuf)
 target_link_libraries(${PROJECT_NAME} PRIVATE gRPC::grpc++)
 target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)

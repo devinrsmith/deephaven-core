@@ -31,6 +31,11 @@ endif()
 
 option(DHCORE_ONLY "Only build dhcore, skip rest" OFF)
 
+# Build dhclient as a static library (and dhcore only as dhcore_static), linked
+# against the static Arrow/Arrow Flight targets, so programs using the client can
+# be linked fully statically. Requires static builds of all dependencies.
+option(DH_STATIC_CLIENT "Build a static dhclient against static dependencies" OFF)
+
 add_subdirectory(dhcore)
 if(NOT DHCORE_ONLY)
     add_subdirectory(dhclient)
@@ -47,7 +52,12 @@ if(NOT DHCORE_ONLY)
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         )
 
-    install(TARGETS dhclient dhcore dhcore_static dhclient_tests
+    if(DH_STATIC_CLIENT)
+      set(DH_INSTALL_TARGETS dhclient dhcore_static dhclient_tests)
+    else()
+      set(DH_INSTALL_TARGETS dhclient dhcore dhcore_static dhclient_tests)
+    endif()
+    install(TARGETS ${DH_INSTALL_TARGETS}
         EXPORT deephavenTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

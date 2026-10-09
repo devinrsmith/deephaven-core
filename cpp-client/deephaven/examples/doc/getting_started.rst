@@ -70,7 +70,7 @@ This is the corresponding ``CMakeLists.txt``:
 
   add_executable(hello_world main.cc)
 
-  target_link_libraries(hello_world deephaven::client)
+  target_link_libraries(hello_world deephaven::dhclient)
 
 To build and run the example, type
 

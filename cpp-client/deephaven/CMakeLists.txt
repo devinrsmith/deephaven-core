@@ -24,6 +24,9 @@ option(SANITIZE_ADDRESS "Enable address sanitizer" "OFF")
 if(${SANITIZE_ADDRESS} STREQUAL "ON")
   add_compile_options("-fsanitize=address")
   link_libraries("-fsanitize=address")
+  # Sanitizer instrumentation makes GCC's -Wmaybe-uninitialized produce false
+  # positives (e.g. in protobuf's headers), which -Werror would turn into errors.
+  add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-maybe-uninitialized>")
 endif()
 
 option(DHCORE_ONLY "Only build dhcore, skip rest" OFF)

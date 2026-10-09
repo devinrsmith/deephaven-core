@@ -384,11 +384,9 @@ class span FLATBUFFERS_FINAL_CLASS {
   FLATBUFFERS_CONSTEXPR_CPP11 span(const span &other) FLATBUFFERS_NOEXCEPT
       : data_(other.data_), count_(other.count_) {}
 
-  FLATBUFFERS_CONSTEXPR_CPP14 span &operator=(const span &other)
-      FLATBUFFERS_NOEXCEPT {
-    data_ = other.data_;
-    count_ = other.count_;
-  }
+  // Deephaven local patch: upstream's copy-assignment operator assigned to the
+  // const member count_ (and returned nothing), so it could never be
+  // instantiated; GCC 15 rejects it outright (-Wtemplate-body). Removed.
 
   // Limited implementation of
   // `template <class It> constexpr std::span(It first, size_type count);`.

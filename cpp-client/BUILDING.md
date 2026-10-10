@@ -106,10 +106,10 @@ Instead of building in the manylinux2014 container, `dhcore_static` and the Cyth
 are compiled with Zig's C/C++ toolchain (`zig c++ -target x86_64-linux-gnu.2.17`), which links
 against stub libraries for glibc 2.17 and statically links its own libc++. The extension
 exports only `PyInit__core`, and `auditwheel repair --plat manylinux2014_x86_64` runs as part
-of the build, so a wheel that does not meet the policy fails to build. The flake uses the
-official Zig release from ziglang.org rather than nixpkgs' `zig`, whose build at the pinned
-revision produces objects that fail to link. The wheel version comes from the root
-`gradle.properties`, as in the Gradle build (e.g. `43.0-SNAPSHOT` becomes `43.0+snapshot`).
+of the build, so a wheel that does not meet the policy fails to build. The flake pins Zig to
+nixpkgs' `zig_0_17` rather than its default `zig` (0.16.0 at the pinned revision), whose
+output fails to link. The wheel version comes from the root `gradle.properties`, as in the
+Gradle build (e.g. `43.0-SNAPSHOT` becomes `43.0+snapshot`).
 
 The wheels were tested against a server with the ticking tests on glibc 2.17 (Python 3.11–3.13,
 pyarrow 20.0.0) and glibc 2.28 (Python 3.14, pyarrow 26.0.0). Note that pyarrow publishes

@@ -160,37 +160,12 @@
       wheelCpu = pkgs: pkgs.stdenv.hostPlatform.parsed.cpu.name;
       wheelPlatform = pkgs: "manylinux2014_${wheelCpu pkgs}";
 
-      # The official Zig release (statically linked, with its own LLVM) rather than nixpkgs'
-      # zig: the nixpkgs zig 0.16.0 at the pinned revision emits objects whose undefined
-      # symbols reach the linker with empty names ("undefined symbol: "), so the extension
-      # fails to link, while this build of the same version links it fine.
-      zigVersion = "0.16.0";
-      mkZigBin = pkgs:
-        let
-          cpu = wheelCpu pkgs;
-          hashes = {
-            x86_64 = "sha256-cOSWZKdDdLSLUebz/fv0N/Y5XUJQkFBYi9SavlK6PQA=";
-            aarch64 = "sha256-6ksJv7IuxvbGzqxXq2PvtrRuF6sI0h9p86SLOOFTTxc=";
-          };
-        in
-        pkgs.stdenvNoCC.mkDerivation {
-          pname = "zig-bin";
-          version = zigVersion;
-          src = pkgs.fetchurl {
-            url = "https://ziglang.org/download/${zigVersion}/zig-${cpu}-linux-${zigVersion}.tar.xz";
-            hash = hashes.${cpu};
-          };
-          installPhase = ''
-            mkdir -p $out/bin
-            cp -r . $out/lib
-            ln -s $out/lib/zig $out/bin/zig
-          '';
-          dontFixup = true;
-        };
-
+      # A specific Zig release, pinned rather than following nixpkgs' default `zig`. (At this
+      # nixpkgs revision the default, zig 0.16.0, emits objects whose undefined symbols reach
+      # the linker with empty names, so the extension fails to link with it.)
       mkZigToolchain = pkgs:
         let
-          zig = mkZigBin pkgs;
+          zig = pkgs.zig_0_17;
           target = "${wheelCpu pkgs}-linux-gnu.2.17";
           # Zig's default cache is under $HOME, which is not writable in the Nix sandbox.
           tool = name: args: pkgs.writeShellScriptBin name ''

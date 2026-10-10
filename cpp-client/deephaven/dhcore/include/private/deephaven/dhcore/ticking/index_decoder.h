@@ -24,7 +24,8 @@ public:
 
 private:
   const char *data_ = nullptr;
-  const char *end_ = nullptr;
+  // Not yet used: the Read* methods do not check bounds against it.
+  [[maybe_unused]] const char *end_ = nullptr;
 };
 
 struct IndexDecoder {

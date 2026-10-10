@@ -140,7 +140,15 @@ foreach (whichlib ${DHCORE_LIBS})
   set_property(TARGET ${whichlib} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
   if (LINUX)
-    target_compile_options(${whichlib} PRIVATE -Wall -Werror -Wno-deprecated-declarations -Wno-tautological-compare -Wno-stringop-overflow)
+    target_compile_options(${whichlib} PRIVATE -Wall -Werror -Wno-deprecated-declarations -Wno-tautological-compare
+      $<$<CXX_COMPILER_ID:GNU>:-Wno-stringop-overflow>
+      # The vendored fmt and date declare literal operators in the form clang 20+
+      # deprecates; older clangs don't know the warning, hence the second flag.
+      $<$<CXX_COMPILER_ID:Clang>:-Wno-deprecated-literal-operator -Wno-unknown-warning-option>)
+    # The vendored roaring's AVX-512 code does not compile with clang 18+ (it lacks the
+    # 'evex512' target feature); fall back to its non-AVX-512 code path there.
+    target_compile_definitions(${whichlib} PRIVATE
+      $<$<C_COMPILER_ID:Clang>:CROARING_COMPILER_SUPPORTS_AVX512=0>)
   endif()
 
   if (WIN32)

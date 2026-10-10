@@ -42,8 +42,8 @@ std::string Base64Encode(const std::string& input) {
 
     output.push_back(kEncodeLookup[(n >> 18) & 0x3F]);
     output.push_back(kEncodeLookup[(n >> 12) & 0x3F]);
-    output.push_back((i + 1 < input.size()) ? kEncodeLookup[(n >> 6) & 0x3F] : '=');
-    output.push_back((i + 2 < input.size()) ? kEncodeLookup[n & 0x3F] : '=');
+    output.push_back((i + 1 < input.size()) ? kEncodeLookup[(n >> 6) & 0x3F] : kPadCharacter);
+    output.push_back((i + 2 < input.size()) ? kEncodeLookup[n & 0x3F] : kPadCharacter);
   }
 
   return output;

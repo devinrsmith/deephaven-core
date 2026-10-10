@@ -6,9 +6,15 @@
     # Relative path input: resolved inside this repository and not pinned by hash
     # in flake.lock, so edits to the .proto files are picked up without relocking.
     dh-proto.url = "path:../proto/proto-backplane-grpc";
+    # Sources of the pydeephaven-ticking wheel (Cython over dhcore). Also a relative
+    # path input; narrowed with builtins.path below so the wheels depend only on it.
+    py-client-ticking = {
+      url = "path:../py/client-ticking";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, dh-proto }:
+  outputs = { self, nixpkgs, dh-proto, py-client-ticking }:
     let
       inherit (nixpkgs) lib;
       # Windows is built with vcpkg (README-windows.md); macOS is untested.
@@ -134,9 +140,163 @@
             platforms = systems;
           };
         };
+
+      # --- pydeephaven-ticking wheels, built with Zig instead of in a manylinux container ---
+      #
+      # zig cc/c++ links against stub libraries for a chosen glibc version and statically
+      # links its own libc++, so the extension needs nothing from the host but glibc 2.17.
+      # auditwheel then tags (and checks) the wheel as manylinux2014.
+
+      # The version Gradle passes as DEEPHAVEN_VERSION: <major>.<minor>[-<qualifier>].
+      deephavenVersion =
+        let
+          props = builtins.readFile ../gradle.properties;
+          prop = name: builtins.head (builtins.match ".*\n${name}=([^\n]*)\n.*" props);
+          qualifier = prop "deephavenBaseQualifier";
+        in
+        "${prop "deephavenMajorVersion"}.${prop "deephavenMinorVersion"}"
+        + lib.optionalString (qualifier != "") "-${qualifier}";
+
+      wheelCpu = pkgs: pkgs.stdenv.hostPlatform.parsed.cpu.name;
+      wheelPlatform = pkgs: "manylinux2014_${wheelCpu pkgs}";
+
+      # The official Zig release (statically linked, with its own LLVM) rather than nixpkgs'
+      # zig: the nixpkgs zig 0.16.0 at the pinned revision emits objects whose undefined
+      # symbols reach the linker with empty names ("undefined symbol: "), so the extension
+      # fails to link, while this build of the same version links it fine.
+      zigVersion = "0.16.0";
+      mkZigBin = pkgs:
+        let
+          cpu = wheelCpu pkgs;
+          hashes = {
+            x86_64 = "sha256-cOSWZKdDdLSLUebz/fv0N/Y5XUJQkFBYi9SavlK6PQA=";
+            aarch64 = "sha256-6ksJv7IuxvbGzqxXq2PvtrRuF6sI0h9p86SLOOFTTxc=";
+          };
+        in
+        pkgs.stdenvNoCC.mkDerivation {
+          pname = "zig-bin";
+          version = zigVersion;
+          src = pkgs.fetchurl {
+            url = "https://ziglang.org/download/${zigVersion}/zig-${cpu}-linux-${zigVersion}.tar.xz";
+            hash = hashes.${cpu};
+          };
+          installPhase = ''
+            mkdir -p $out/bin
+            cp -r . $out/lib
+            ln -s $out/lib/zig $out/bin/zig
+          '';
+          dontFixup = true;
+        };
+
+      mkZigToolchain = pkgs:
+        let
+          zig = mkZigBin pkgs;
+          target = "${wheelCpu pkgs}-linux-gnu.2.17";
+          # Zig's default cache is under $HOME, which is not writable in the Nix sandbox.
+          tool = name: args: pkgs.writeShellScriptBin name ''
+            export ZIG_GLOBAL_CACHE_DIR="''${ZIG_GLOBAL_CACHE_DIR:-''${TMPDIR:-/tmp}/zig-cache}"
+            export ZIG_LOCAL_CACHE_DIR="''${ZIG_LOCAL_CACHE_DIR:-$ZIG_GLOBAL_CACHE_DIR}"
+            exec ${zig}/bin/zig ${args} "$@"
+          '';
+        in
+        pkgs.symlinkJoin {
+          name = "zig-toolchain-${target}";
+          paths = [
+            (tool "zig-cc" "cc -target ${target}")
+            (tool "zig-c++" "c++ -target ${target}")
+            (tool "zig-ar" "ar")
+            (tool "zig-ranlib" "ranlib")
+          ];
+        };
+
+      # dhcore_static (its only dependency, immer, is header-only) built with the Zig toolchain.
+      mkDhcoreZig = pkgs:
+        let zigTools = mkZigToolchain pkgs; in
+        pkgs.stdenvNoCC.mkDerivation {
+          pname = "dhcore-zig-${wheelCpu pkgs}-glibc2.17";
+          inherit version;
+          src = lib.fileset.toSource {
+            root = ./deephaven;
+            fileset = ./deephaven;
+          };
+          nativeBuildInputs = [ pkgs.cmake pkgs.ninja zigTools ];
+          buildInputs = [ pkgs.immer ];
+          cmakeFlags = [
+            "-DDHCORE_ONLY=ON"
+            "-DDH_STATIC_CLIENT=ON" # only dhcore_static
+            "-DCMAKE_C_COMPILER=zig-cc"
+            "-DCMAKE_CXX_COMPILER=zig-c++"
+            "-DCMAKE_AR=${zigTools}/bin/zig-ar"
+            "-DCMAKE_RANLIB=${zigTools}/bin/zig-ranlib"
+          ];
+          # With DHCORE_ONLY, CMake installs only the headers.
+          postInstall = ''
+            install -Dm644 dhcore/libdhcore_static.a $out/lib/libdhcore_static.a
+          '';
+          dontStrip = true;
+        };
+
+      # One manylinux2014 wheel for one Python version.
+      mkTickingWheel = pkgs: python:
+        let
+          zigTools = mkZigToolchain pkgs;
+          dhcore = mkDhcoreZig pkgs;
+          pythonEnv = python.withPackages (ps: [ ps.cython ps.packaging ps.setuptools ps.wheel ]);
+          # Export only the module's init function, keeping the bundled libc++ private.
+          exportMap = pkgs.writeText "pydeephaven-ticking.map" "{ global: PyInit__core; local: *; };";
+          pyTag = "cp${lib.replaceStrings [ "." ] [ "" ] python.pythonVersion}";
+        in
+        pkgs.stdenvNoCC.mkDerivation {
+          pname = "pydeephaven-ticking-wheel-${pyTag}";
+          version = deephavenVersion;
+          src = builtins.path {
+            name = "py-client-ticking";
+            path = py-client-ticking;
+          };
+          # auditwheel is run by path: as a Python 3.14 application in nativeBuildInputs,
+          # its setup hook would leak that Python into this build.
+          nativeBuildInputs = [ pythonEnv zigTools pkgs.patchelf ];
+          env = {
+            DEEPHAVEN_VERSION = deephavenVersion;
+            CC = "zig-cc";
+            CXX = "zig-c++";
+            LDSHARED = "zig-c++ -shared";
+            LDCXXSHARED = "zig-c++ -shared";
+            CPPFLAGS = "-I${dhcore}/include";
+            LDFLAGS = "-L${dhcore}/lib -s -Wl,--version-script=${exportMap}";
+          };
+          buildPhase = ''
+            runHook preBuild
+            python setup.py bdist_wheel
+            runHook postBuild
+          '';
+          # auditwheel fails here if the wheel does not meet the manylinux2014 policy.
+          installPhase = ''
+            runHook preInstall
+            ${lib.getExe pkgs.auditwheel} repair --plat ${wheelPlatform pkgs} --wheel-dir $out dist/*.whl
+            runHook postInstall
+          '';
+          dontFixup = true;
+        };
+
+      # Every CPython version nixpkgs provides headers for (it no longer carries 3.9/3.10).
+      wheelPythons = pkgs: lib.filter (p: p != null) (map
+        (n: let p = builtins.tryEval (pkgs.${n} or null); in
+          if p.success && p.value != null && (builtins.tryEval p.value.version).success
+          then p.value else null)
+        [ "python39" "python310" "python311" "python312" "python313" "python314" ]);
+
+      tickingWheels = pkgs: lib.listToAttrs (map
+        (python: let w = mkTickingWheel pkgs python; in lib.nameValuePair w.pname w)
+        (wheelPythons pkgs));
     in
     {
-      packages = forAllSystems (pkgs: rec {
+      packages = forAllSystems (pkgs: (tickingWheels pkgs) // rec {
+        # All pydeephaven-ticking wheels in one directory (result/*.whl).
+        pydeephaven-ticking-wheels = pkgs.symlinkJoin {
+          name = "pydeephaven-ticking-wheels-${deephavenVersion}";
+          paths = lib.attrValues (tickingWheels pkgs);
+        };
         deephaven-cpp-client = mkClient pkgs { };
         default = deephaven-cpp-client;
         # Static libraries plus fully static (musl) hello_world and dhclient_tests
@@ -150,6 +310,8 @@
 
       checks = forAllSystems (pkgs: {
         gcc = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        # Building it runs auditwheel's manylinux2014 policy check.
+        ticking-wheel = mkTickingWheel pkgs (lib.last (wheelPythons pkgs));
         asan = mkClient pkgs {
           pnameSuffix = "-asan";
           extraCmakeFlags = [ "-DSANITIZE_ADDRESS=ON" ];

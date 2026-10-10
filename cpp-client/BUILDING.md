@@ -91,6 +91,31 @@ Not yet verified for the static build: TLS connections that rely on the system's
 certificates (OpenSSL's built-in certificate directory points into `/nix/store`), and
 performance under musl's memory allocator on data-heavy workloads.
 
+## pydeephaven-ticking wheels (manylinux2014, no container)
+
+```
+cd $DHSRC/deephaven-core/cpp-client
+nix build .#pydeephaven-ticking-wheels
+```
+
+This produces `result/*.whl`: one `manylinux2014_x86_64` (`manylinux_2_17`) wheel of
+`py/client-ticking` per CPython version nixpkgs provides (currently 3.11–3.14), each about
+1.2 MB. Individual versions are `.#pydeephaven-ticking-wheel-cp3XX`.
+
+Instead of building in the manylinux2014 container, `dhcore_static` and the Cython extension
+are compiled with Zig's C/C++ toolchain (`zig c++ -target x86_64-linux-gnu.2.17`), which links
+against stub libraries for glibc 2.17 and statically links its own libc++. The extension
+exports only `PyInit__core`, and `auditwheel repair --plat manylinux2014_x86_64` runs as part
+of the build, so a wheel that does not meet the policy fails to build. The flake uses the
+official Zig release from ziglang.org rather than nixpkgs' `zig`, whose build at the pinned
+revision produces objects that fail to link. The wheel version comes from the root
+`gradle.properties`, as in the Gradle build (e.g. `43.0-SNAPSHOT` becomes `43.0+snapshot`).
+
+The wheels were tested against a server with the ticking tests on glibc 2.17 (Python 3.11–3.13,
+pyarrow 20.0.0) and glibc 2.28 (Python 3.14, pyarrow 26.0.0). Note that pyarrow publishes
+`manylinux2014` wheels only up to 20.0.0, so users on glibc 2.17 systems need to pin pyarrow.
+The aarch64 variant is defined but has not been built or tested.
+
 # Building the C++ client on Ubuntu 22.04
 
 1. Start with an Ubuntu 22.04 install

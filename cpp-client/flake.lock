@@ -27,10 +27,23 @@
         "type": "github"
       }
     },
+    "py-client-ticking": {
+      "flake": false,
+      "locked": {
+        "path": "../py/client-ticking",
+        "type": "path"
+      },
+      "original": {
+        "path": "../py/client-ticking",
+        "type": "path"
+      },
+      "parent": []
+    },
     "root": {
       "inputs": {
         "dh-proto": "dh-proto",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "py-client-ticking": "py-client-ticking"
       }
     }
   },

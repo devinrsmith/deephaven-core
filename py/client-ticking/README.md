@@ -39,6 +39,24 @@ C++ client) are present in the [deephaven-core](https://github.com/deephaven/dee
 repository. It is assumed that you have the repository checked out at the location specified by 
 `${DHROOT}`.
 
+### Building manylinux wheels with Nix
+
+On Linux with [Nix](https://nixos.org/download/) (flakes enabled), the C++ client's flake
+builds release-style wheels directly, without the C++ client installation or the manylinux
+container described below:
+
+```sh
+cd ${DHROOT}/cpp-client
+nix build .#pydeephaven-ticking-wheels      # result/*.whl, one per CPython version
+nix build .#pydeephaven-ticking-wheel-cp313 # or a single version
+```
+
+They are compiled with [Zig](https://ziglang.org/)'s C/C++ toolchain targeting glibc 2.17 and
+checked by `auditwheel` as `manylinux2014` (`manylinux_2_17`). The extension links Zig's
+libc++ statically and exports only its module init function. The CPython versions are those
+nixpkgs provides (currently 3.11–3.14), and the version is taken from the root
+`gradle.properties`, as Gradle does. See `cpp-client/BUILDING.md` for details.
+
 ### Install the C++ client
 
 First, install the Deephaven C++ client. Follow the instructions in `$DHROOT/cpp-client/BUILDING.md`.

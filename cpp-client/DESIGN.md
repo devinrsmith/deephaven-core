@@ -58,7 +58,8 @@ cpp-client/
   DESIGN.md               this file
   build-dependencies.sh   builds/installs the dependent libraries into $DHCPP; writes env.sh
   build.gradle            Docker-based CI: build the client, run the tests against a server
-  flake.nix, flake.lock   Nix build: package, dev shell, checks (see BUILDING.md); takes the
+  flake.nix, flake.lock   Nix build: package, static package, pydeephaven-ticking wheels,
+                          dev shell, checks (see BUILDING.md); takes the
                           protos from proto/proto-backplane-grpc/flake.nix
   doc/                    Sphinx + Doxygen sources for the published API reference
   deephaven/              ← all of the source; everything below is relative to here

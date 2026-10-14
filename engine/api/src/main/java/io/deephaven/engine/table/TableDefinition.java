@@ -396,6 +396,35 @@ public class TableDefinition implements LogOutputAppendable {
     }
 
     /**
+     * Tests mutual-compatibility of {@code this} and the definition {@link #inferFrom(Map) inferred} from
+     * {@code columns}. Equivalent to {@code checkMutualCompatibility(TableDefinition.inferFrom(columns))}, but when
+     * {@code columns} are in the same order as this definition's columns, and compatible with them, as is usual, no
+     * definitions are created to check that.
+     *
+     * @param columns The column sources, by name
+     * @return {@code this} table definition, but in the column order of {@code columns}
+     * @throws IncompatibleTableDefinitionException if the definitions are not compatible
+     */
+    public TableDefinition checkMutualCompatibility(@NotNull final Map<String, ? extends ColumnSource<?>> columns) {
+        if (columns.size() == this.columns.size()) {
+            final Iterator<ColumnDefinition<?>> myColumns = this.columns.iterator();
+            boolean compatible = true;
+            for (final Map.Entry<String, ? extends ColumnSource<?>> entry : columns.entrySet()) {
+                final ColumnDefinition<?> myColumn = myColumns.next();
+                if (!myColumn.getName().equals(entry.getKey()) || !myColumn.hasCompatibleDataType(entry.getValue())) {
+                    compatible = false;
+                    break;
+                }
+            }
+            if (compatible) {
+                return this;
+            }
+        }
+        // Different order, sizes, or types: the inferred definition reorders this one, or describes the differences
+        return checkMutualCompatibility(inferFrom(columns));
+    }
+
+    /**
      * Tests mutual-compatibility of {@code this} and {@code other}. To be mutually compatible, they must have the same
      * number of columns, each matched up with {@link ColumnDefinition#isCompatible}. As such, this method has an
      * equivalence relation, ie {@code A.checkMutualCompatibility(B) == B.checkMutualCompatibility(A)}.

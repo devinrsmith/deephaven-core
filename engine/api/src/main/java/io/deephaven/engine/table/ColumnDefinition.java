@@ -895,6 +895,21 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
     }
 
     /**
+     * Whether {@code source} provides data compatible with this ColumnDefinition. Equivalent to
+     * {@code hasCompatibleDataType(fromGenericType(getName(), source.getType(), source.getComponentType()))}, but
+     * without creating a ColumnDefinition for {@code source}.
+     *
+     * @param source The column source to compare to
+     * @return True if {@code source} provides data compatible with this ColumnDefinition
+     */
+    boolean hasCompatibleDataType(@NotNull final ColumnSource<?> source) {
+        final Class<?> sourceDataType = normalizeDataType(source.getType());
+        // Only infer the source's component type once its data type is known to match ours, and so to be valid
+        return dataType == sourceDataType
+                && componentType == inferComponentType(sourceDataType, source.getComponentType());
+    }
+
+    /**
      * Describes the column definition with respect to the fields that are checked in
      * {@link #isCompatible(ColumnDefinition)}.
      *

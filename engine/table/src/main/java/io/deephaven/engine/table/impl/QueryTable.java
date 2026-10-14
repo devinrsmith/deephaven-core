@@ -444,7 +444,7 @@ public class QueryTable extends BaseTable<QueryTable> {
             @NotNull final TableDefinition definition,
             @NotNull final TrackingRowSet rowSet,
             @NotNull final Map<String, ? extends ColumnSource<?>> columns) {
-        this(definition.checkMutualCompatibility(TableDefinition.inferFrom(columns)).intern(),
+        this(definition.checkMutualCompatibility(columns).intern(),
                 Require.neqNull(rowSet, "rowSet"), new LinkedHashMap<>(columns), null, null);
     }
 

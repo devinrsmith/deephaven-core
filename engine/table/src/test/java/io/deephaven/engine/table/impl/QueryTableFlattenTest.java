@@ -12,6 +12,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.testutil.*;
 import io.deephaven.engine.testutil.generator.IntGenerator;
 import io.deephaven.engine.testutil.generator.SetGenerator;
+import io.deephaven.engine.util.TableTools;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,6 +26,27 @@ import static io.deephaven.engine.testutil.TstUtils.*;
 import static org.junit.Assert.*;
 
 public class QueryTableFlattenTest extends QueryTableTestBase {
+
+    @Test
+    public void testFlattenReusesParentDefinition() {
+        // A flatten result has the same columns as its parent, so it reuses the parent's definition rather than
+        // inferring a new one; but as its column sources are new (redirected) sources, partitioning columns become
+        // normal columns (DH-20040). Filter first so that the parent is not flat.
+        final TableDefinition definition = TableDefinition.of(
+                ColumnDefinition.ofString("P").withPartitioning(),
+                ColumnDefinition.ofInt("I"));
+        final Table sparse = TableTools.newTable(definition,
+                TableTools.stringCol("P", "a", "b", "c"), TableTools.intCol("I", 3, 1, 2)).where("I > 1");
+        assertFalse(sparse.isFlat());
+        assertTrue(sparse.getDefinition().getColumn("P").isPartitioning());
+        final Table flattened = sparse.flatten();
+        assertEquals(sparse.getDefinition().getWritable(true), flattened.getDefinition());
+        assertTrue(flattened.getDefinition().getColumn("P").isDirect());
+
+        final QueryTable refreshing = TstUtils.testRefreshingTable(i(2, 4, 6).toTracking(),
+                TableTools.stringCol("P", "a", "b", "c"), TableTools.intCol("I", 3, 1, 2));
+        assertEquals(refreshing.getDefinition(), refreshing.flatten().getDefinition());
+    }
 
     private void testFlatten(int size) {
         final Random random = new Random(0);

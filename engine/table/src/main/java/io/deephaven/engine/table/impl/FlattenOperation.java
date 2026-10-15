@@ -47,7 +47,10 @@ public class FlattenOperation implements QueryTable.MemoizableOperation<QueryTab
             resultColumns.put(entry.getKey(), RedirectedColumnSource.maybeRedirect(rowRedirection, entry.getValue()));
         }
 
-        resultTable = new QueryTable(RowSetFactory.flat(size).toTracking(), resultColumns);
+        // The result has the same columns as the parent, so the parent's definition need not be inferred again; but as
+        // its column sources are new (redirected) sources, its columns are no longer partitioning columns (DH-20040)
+        resultTable = new QueryTable(parent.getDefinition().getWritable(true), RowSetFactory.flat(size).toTracking(),
+                resultColumns);
         resultTable.setFlat();
         parent.copyAttributes(resultTable, BaseTable.CopyAttributeOperation.Flatten);
 

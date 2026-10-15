@@ -184,7 +184,7 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
         final Map<String, ColumnSource<?>> resultMap = new LinkedHashMap<>();
         final String sortMappingColumnName = populateRedirectedColumns(resultMap, sortMapping);
 
-        resultTable = new QueryTable(resultRowSet, resultMap);
+        resultTable = new QueryTable(resultDefinition(), resultRowSet, resultMap);
         parent.copyAttributes(resultTable, BaseTable.CopyAttributeOperation.Sort);
         resultTable.setFlat();
         resultTable.setAttribute(SORT_ROW_REDIRECTION_ATTRIBUTE, sortMappingColumnName);
@@ -217,7 +217,7 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
                     RedirectedColumnSource.maybeRedirect(sortMapping, stringColumnSourceEntry.getValue()));
         }
 
-        resultTable = new QueryTable(resultRowSet, resultMap);
+        resultTable = new QueryTable(resultDefinition(), resultRowSet, resultMap);
         parent.copyAttributes(resultTable, BaseTable.CopyAttributeOperation.Sort);
         resultTable.setFlat();
         setSorted(resultTable);
@@ -351,7 +351,7 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
                         .maybeConvertToPrimitive(sortedColumnsToSortBy[ii]);
             }
 
-            resultTable = new QueryTable(resultRowSet, resultMap);
+            resultTable = new QueryTable(resultDefinition(), resultRowSet, resultMap);
             parent.copyAttributes(resultTable, BaseTable.CopyAttributeOperation.Sort);
             resultTable.setAttribute(SORT_ROW_REDIRECTION_ATTRIBUTE, sortMappingColumnName);
             setReverseLookup(resultTable, (final long innerRowKey) -> {
@@ -375,6 +375,15 @@ public class SortOperation implements QueryTable.MemoizableOperation<QueryTable>
 
             return new Result<>(resultTable, listener);
         }
+    }
+
+    /**
+     * The result definition: the parent's, with partitioning columns as normal columns. A sort result has the same
+     * columns as its parent, so the parent's definition need not be inferred again; but as its column sources are new
+     * (redirected) sources, its columns are no longer partitioning columns (DH-20040).
+     */
+    private TableDefinition resultDefinition() {
+        return parent.getDefinition().getWritable(true);
     }
 
     private String populateRedirectedColumns(Map<String, ColumnSource<?>> resultMap, RowRedirection sortMapping) {

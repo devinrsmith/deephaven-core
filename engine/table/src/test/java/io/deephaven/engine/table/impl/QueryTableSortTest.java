@@ -63,6 +63,26 @@ public class QueryTableSortTest extends QueryTableTestBase {
     private static final float DELTA = 0.000001f;
 
     @Test
+    public void testSortReusesParentDefinition() {
+        // A sort result has the same columns as its parent, so it reuses the parent's definition rather than inferring
+        // a new one; but as its column sources are new (redirected) sources, partitioning columns become normal
+        // columns (DH-20040)
+        final TableDefinition definition = TableDefinition.of(
+                ColumnDefinition.ofString("P").withPartitioning(),
+                ColumnDefinition.ofInt("I"));
+        final Table staticTable = newTable(definition, stringCol("P", "a", "b", "c"), intCol("I", 3, 1, 2));
+        final Table staticSorted = staticTable.sort("I");
+        assertEquals(staticTable.getDefinition().getWritable(true), staticSorted.getDefinition());
+        assertTrue(staticSorted.getDefinition().getColumn("P").isDirect());
+        assertTableEquals(newTable(stringCol("P", "b", "c", "a"), intCol("I", 1, 2, 3)), staticSorted);
+
+        final QueryTable refreshing = TstUtils.testRefreshingTable(i(2, 4, 6).toTracking(),
+                stringCol("P", "a", "b", "c"), intCol("I", 3, 1, 2));
+        assertEquals(refreshing.getDefinition(), refreshing.sort("I").getDefinition());
+        assertEquals(refreshing.getDefinition(), refreshing.sortDescending("I").getDefinition());
+    }
+
+    @Test
     public void testSortStatic() {
         Table source;
         Table result;

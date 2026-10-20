@@ -4,6 +4,7 @@
 package io.deephaven.engine.table;
 
 import io.deephaven.api.util.NameValidator;
+import io.deephaven.engine.table.vectors.IntVectorColumnWrapper;
 import io.deephaven.qst.type.ArrayType;
 import io.deephaven.qst.type.CustomType;
 import io.deephaven.qst.type.GenericType;
@@ -21,6 +22,7 @@ import io.deephaven.vector.LongVector;
 import io.deephaven.vector.ObjectVector;
 import io.deephaven.vector.ShortVector;
 import io.deephaven.vector.Vector;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -89,12 +91,54 @@ public class ColumnDefinitionConstructionTest {
 
     @Test
     public void booleanArray() {
+        // Array component types are never normalized: unlike a boolean column, whose data type is Boolean, a boolean[]
+        // column keeps its primitive boolean elements
         checkNativeArray(Type.booleanType().arrayType());
+        assertThat(ColumnDefinition.fromGenericType(CN, boolean[].class).getComponentType()).isEqualTo(boolean.class);
     }
 
     @Test
     public void boxedBooleanArray() {
         checkNativeArray(Type.booleanType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedByteArray() {
+        checkNativeArray(Type.byteType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedCharArray() {
+        checkNativeArray(Type.charType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedShortArray() {
+        checkNativeArray(Type.shortType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedIntArray() {
+        // Array data types are never normalized either: Integer[] stays Integer[], with component type Integer
+        checkNativeArray(Type.intType().boxedType().arrayType());
+        final ColumnDefinition<Integer[]> integers = ColumnDefinition.fromGenericType(CN, Integer[].class);
+        assertThat(integers.getDataType()).isEqualTo(Integer[].class);
+        assertThat(integers.getComponentType()).isEqualTo(Integer.class);
+    }
+
+    @Test
+    public void boxedLongArray() {
+        checkNativeArray(Type.longType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedFloatArray() {
+        checkNativeArray(Type.floatType().boxedType().arrayType());
+    }
+
+    @Test
+    public void boxedDoubleArray() {
+        checkNativeArray(Type.doubleType().boxedType().arrayType());
     }
 
     @Test
@@ -195,6 +239,30 @@ public class ColumnDefinitionConstructionTest {
     @Test
     public void customTypeVector() {
         checkGenericVector(ObjectVector.type(MyCustomType.type()));
+    }
+
+    @Test
+    public void customTypeVectorImplementation() {
+        // CustomType only rejects Vector types in io.deephaven.vector, so a Vector implementation in another package is
+        // a custom type; its component type must still be inferred, as fromGenericType does
+        final ColumnDefinition<?> wrapper = ColumnDefinition.fromGenericType(CN, IntVectorColumnWrapper.class);
+        assertThat(wrapper.getComponentType()).isEqualTo(int.class);
+        final CustomType<IntVectorColumnWrapper> wrapperType = Type.ofCustom(IntVectorColumnWrapper.class);
+        assertThat(ColumnDefinition.of(CN, wrapperType)).isEqualTo(wrapper);
+        assertThat(ColumnDefinition.of(CN, (GenericType<?>) wrapperType)).isEqualTo(wrapper);
+        assertThat(ColumnDefinition.of(CN, (Type<?>) wrapperType)).isEqualTo(wrapper);
+
+        final CustomType<MyObjectVector> objectVectorType = Type.ofCustom(MyObjectVector.class);
+        final ColumnDefinition<?> objects = ColumnDefinition.of(CN, objectVectorType);
+        assertThat(objects.getDataType()).isEqualTo(MyObjectVector.class);
+        assertThat(objects.getComponentType()).isEqualTo(Object.class);
+        assertThat(objects).isEqualTo(ColumnDefinition.fromGenericType(CN, MyObjectVector.class));
+    }
+
+    /**
+     * A {@link Vector} type outside {@code io.deephaven.vector}, which {@link CustomType} therefore accepts.
+     */
+    private interface MyObjectVector extends ObjectVector<String> {
     }
 
     @Test
@@ -383,8 +451,44 @@ public class ColumnDefinitionConstructionTest {
     }
 
     @Test
+    public void voidElementTypes() {
+        // void and Void cannot be element types, whatever the data type: an ObjectVector<Void> or a Void[] can hold
+        // nothing but null, just like a Void column
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, ObjectVector.class, Void.class));
+        checkVoidElementType(() -> ColumnDefinition.ofVector(CN, ObjectVector.class, Void.class));
+        checkVoidElementType(() -> ColumnDefinition.ofInt(CN).withDataType(ObjectVector.class, Void.class));
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, ObjectVector.class, void.class));
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, Object[].class, Void.class));
+        // Arrays of Void, as data types (with their inferred component types) or as component types
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, Void[].class));
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, Void[][].class));
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, Object[].class, Void[].class));
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, ObjectVector.class, Void[].class));
+        checkVoidElementType(() -> ColumnDefinition.of(CN, Type.ofCustom(Void.class).arrayType()));
+        // Even data types that otherwise accept any component type
+        checkVoidElementType(() -> ColumnDefinition.fromGenericType(CN, List.class, Void.class));
+
+        // Other reference types remain valid element types
+        assertThat(ColumnDefinition.ofVector(CN, ObjectVector.class, Integer.class).getComponentType())
+                .isEqualTo(Integer.class);
+        assertThat(ColumnDefinition.fromGenericType(CN, Object[].class, Object[].class).getComponentType())
+                .isEqualTo(Object[].class);
+    }
+
+    private static void checkVoidElementType(final ThrowableAssert.ThrowingCallable construct) {
+        assertThatThrownBy(construct)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("void and Void are not valid element types");
+    }
+
+    @Test
     public void invalidArrayComponentTypes() {
+        // A primitive array's component type is its primitive type, and a boxed array's is its boxed type: neither
+        // accepts the other, as primitive and boxed classes are not assignable to each other
         checkInvalidComponentType(int[].class, Integer.class, "array");
+        checkInvalidComponentType(Integer[].class, int.class, "array");
+        checkInvalidComponentType(boolean[].class, Boolean.class, "array");
+        checkInvalidComponentType(Boolean[].class, boolean.class, "array");
         checkInvalidComponentType(int[].class, long.class, "array");
         checkInvalidComponentType(Instant[].class, String.class, "array");
         // A wider component type than the array's is invalid

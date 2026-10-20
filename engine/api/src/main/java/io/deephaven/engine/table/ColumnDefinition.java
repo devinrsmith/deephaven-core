@@ -212,7 +212,9 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
      * {@link BooleanType};</li>
      * <li>for {@link BoxedType boxed types}, the same as for the corresponding primitive type;</li>
      * <li>for other {@link GenericType generic types}, the type's class, with the array or {@link Vector} component
-     * type as the component type for {@link ArrayType array types}.</li>
+     * type as the component type for {@link ArrayType array types}. A {@link CustomType} whose class is a
+     * {@link Vector} implementation (outside {@code io.deephaven.vector}, which CustomType does not allow) gets an
+     * inferred component type, as by {@link #fromGenericType(String, Class)}.</li>
      * </ul>
      *
      * @param name the column name
@@ -239,7 +241,9 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
     /**
      * Creates a {@link ColumnType#Normal normal} column definition for a qst {@link GenericType}. The data type is the
      * same as for the corresponding primitive type for {@link BoxedType boxed types}, and otherwise the type's class,
-     * with the array or {@link Vector} component type as the component type for {@link ArrayType array types}.
+     * with the array or {@link Vector} component type as the component type for {@link ArrayType array types}. A
+     * {@link CustomType} whose class is a {@link Vector} implementation gets an inferred component type, as by
+     * {@link #fromGenericType(String, Class)}.
      *
      * @param name the column name
      * @param type the type
@@ -331,8 +335,9 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
      *
      * @param name the column name
      * @param vectorType the Vector type
-     * @param componentType the element type: any reference type for {@link ObjectVector}, or the primitive type for a
-     *        primitive Vector; or {@code null} for the default, which is {@link Object} for {@link ObjectVector}
+     * @param componentType the element type: any reference type but {@link Void} for {@link ObjectVector}, or the
+     *        primitive type for a primitive Vector; or {@code null} for the default, which is {@link Object} for
+     *        {@link ObjectVector}
      * @return the column definition
      * @throws IllegalArgumentException if {@code vectorType} is not a recognized Vector type, or {@code componentType}
      *         is not valid for it
@@ -396,10 +401,10 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
      * {@code Number[]}. Other data types have no component type unless one is given.
      *
      * @param name the column name
-     * @param dataType the data type; may not be {@code void} or {@link Void}
+     * @param dataType the data type; may not be {@code void} or {@link Void}, nor an array of {@link Void}
      * @param componentType the element type for array and {@link Vector} data types: for arrays, the array's component
      *        type or a more specific one; for {@link ObjectVector}, any reference type; for primitive Vectors, their
-     *        primitive type. Or {@code null} to infer it
+     *        primitive type. Never {@code void} or {@link Void}, nor an array of them. Or {@code null} to infer it
      * @param columnType the column type
      * @return the column definition
      * @throws IllegalArgumentException if {@code dataType} is not a valid column data type, or {@code componentType} is
@@ -540,13 +545,18 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
      * Array and {@link Vector} data types require a {@link #getComponentType() component type}: for arrays, the array's
      * component type or a more specific one; for Vectors, a type assignable to the Vector's
      * {@link #baseComponentTypeForVector(Class) base component type}, which allows any reference type as the element
-     * type of an {@link ObjectVector}, and only the matching primitive type for a primitive Vector.
+     * type of an {@link ObjectVector}, and only the matching primitive type for a primitive Vector. No component type
+     * may be {@code void} or {@link Void}, or an array of them, whatever the data type.
      */
     @Nullable
     private static String componentTypeError(
             @NotNull final String name,
             @NotNull final Class<?> dataType,
             @Nullable final Class<?> componentType) {
+        if (componentType != null && isVoidElementType(componentType)) {
+            return "Invalid component type " + componentType.getTypeName() + " for column " + name
+                    + ": void and Void are not valid element types";
+        }
         final Class<?> requiredComponentType;
         final String kind;
         if (dataType.isArray()) {
@@ -577,6 +587,17 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
                     + " data type " + dataType.getTypeName();
         }
         return null;
+    }
+
+    /**
+     * Whether {@code type} is {@code void} or {@link Void}, or an array (of any depth) whose innermost element type is.
+     * Neither can hold any values but {@code null}, so neither is a valid element type for a column.
+     */
+    private static boolean isVoidElementType(@NotNull Class<?> type) {
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
+        return type == void.class || type == Void.class;
     }
 
     /**
@@ -697,9 +718,11 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
 
         @Override
         public ColumnDefinition<?> visit(CustomType<?> customType) {
-            // CustomType excludes primitive, boxed, array, and Vector types, so the class needs no normalization or
-            // component type; it may still be void or Void, which are not static types, and create rejects those.
-            return create(name, customType.clazz());
+            // CustomType excludes primitive, boxed, and array types, but only excludes Vector types by package name
+            // (io.deephaven.vector), so it may still be a Vector implementation in another package, such as
+            // IntVectorColumnWrapper, whose component type must be inferred. It may also be void or Void, which are not
+            // static types. fromGenericType infers the component type, and rejects void and Void.
+            return fromGenericType(name, customType.clazz());
         }
     }
 
@@ -788,11 +811,28 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         this.columnType = columnType;
     }
 
+    /**
+     * The column name. It is always a valid column name, as determined by
+     * {@link NameValidator#validateColumnName(String)}.
+     *
+     * @return the column name
+     */
     @NotNull
     public String getName() {
         return name;
     }
 
+    /**
+     * The data type: the type of the column's values.
+     *
+     * <p>
+     * Like column sources, column definitions use {@link Boolean} for boolean columns, and the primitive type for other
+     * primitive columns (such as {@code int}, never {@link Integer}). The data type is never {@code void} or
+     * {@link Void}. For array and {@link Vector} data types, the type of the elements is the {@link #getComponentType()
+     * component type}.
+     *
+     * @return the data type
+     */
     @NotNull
     public Class<TYPE> getDataType() {
         return dataType;

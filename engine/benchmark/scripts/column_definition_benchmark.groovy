@@ -11,7 +11,10 @@
 //   identity: a baseline of transform overhead alone, which creates no new tables
 //   flatten:  creates a new table, and so a new or reused definition, per constituent; flattening adds little else
 //   sort:     the same, plus sorting
-// Partitioning itself reuses the parent's definition for each constituent, so only the transforms create
+//   joinLhs:  each constituent as the left side of a naturalJoin, adding two columns from a small lookup table
+//   joinRhs:  each constituent as the right side of a naturalJoin, adding all of its columns to that lookup table
+// Both joins match on the first Text column, so each constituent's single row matches one of the lookup table's 100
+// rows. Partitioning itself reuses the parent's definition for each constituent, so only the transforms create
 // definitions.
 //
 // Compare builds of main, agent/column-definition-validation (which validates every definition it creates), and
@@ -107,10 +110,19 @@ def source = TableTools.newTable(holders as ColumnHolder[])
 def pt = source.partitionBy("Key")
 println "partitions: ${pt.table().size()}, columns per constituent: ${source.numColumns()}"
 
+// The joins' lookup table: one row per distinct Text value
+def textColumn = source.getDefinition().getColumnNames().find { it.startsWith("Text_") }
+def lookup = TableTools.newTable(
+        TableTools.stringCol("Label", strings),
+        TableTools.intCol("Rank", (0..<strings.length) as int[]),
+        TableTools.doubleCol("Weight", strings.collect { it.length() * 0.5d } as double[]))
+
 def ops = [
         identity: { t -> t },               // baseline: transform overhead only, no new tables
         flatten : { t -> t.flatten() },     // a new table per constituent, so a new (or reused) definition
         sort    : { t -> t.sort("Int_0") }, // the same, plus sorting
+        joinLhs : { t -> t.naturalJoin(lookup, "${textColumn}=Label", "Rank,Weight") },
+        joinRhs : { t -> lookup.naturalJoin(t, "Label=${textColumn}") },
 ]
 
 // Memoization would make repeated runs return cached constituents

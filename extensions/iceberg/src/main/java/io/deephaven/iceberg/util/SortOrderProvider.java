@@ -3,7 +3,11 @@
 //
 package io.deephaven.iceberg.util;
 
+import io.deephaven.api.SortColumn;
 import org.apache.iceberg.SortOrder;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A specification for providing {@link org.apache.iceberg.SortOrder} while writing to an iceberg table.
@@ -15,30 +19,61 @@ import org.apache.iceberg.SortOrder;
  * {@code day}. Otherwise new data files declare no sort order. Either way, Deephaven also records the sort's leading
  * column in its own metadata in each data file.
  */
-public interface SortOrderProvider {
+public sealed interface SortOrderProvider {
 
-    // Static factory methods for creating SortOrderProvider instances
+    record Unsorted() implements SortOrderProvider {}
+
+    record UseTableDefaults(boolean failOnUnmapped) implements SortOrderProvider {
+
+        public UseTableDefaults withFailOnUnmapped(boolean failOnUnmapped) {
+            return new UseTableDefaults(failOnUnmapped);
+        }
+    }
+
+    record SortOrderDirect(SortOrder sortOrder, boolean failOnUnmapped) implements SortOrderProvider {
+        public SortOrderDirect {
+            Objects.requireNonNull(sortOrder);
+        }
+
+        public SortOrderDirect withFailOnUnmapped(boolean failOnUnmapped) {
+            return new SortOrderDirect(sortOrder, failOnUnmapped);
+        }
+    }
+
+    record SortOrderId(int id, boolean failOnUnmapped) implements SortOrderProvider {
+
+        public SortOrderId withFailOnUnmapped(boolean failOnUnmapped) {
+            return new SortOrderId(id, failOnUnmapped);
+        }
+    }
+
+    record SortColumns(List<SortColumn> columns) implements SortOrderProvider {
+
+        public SortColumns {
+            Objects.requireNonNull(columns);
+        }
+    }
 
     /**
      * Do not sort the data while writing new data to the iceberg table.
      */
-    static SortOrderProvider unsorted() {
-        return SortOrderProviderInternal.DisableSorting.DISABLE_SORTING;
+    static Unsorted unsorted() {
+        return new Unsorted();
     }
 
     /**
      * Use the default {@link org.apache.iceberg.Table#sortOrder()} of the table while writing new data. If no sort
      * order is set on the table, no sorting will be done.
      */
-    static SortOrderProvider useTableDefault() {
-        return new SortOrderProviderInternal.TableDefaultSortOrderProvider();
+    static UseTableDefaults useTableDefault() {
+        return new UseTableDefaults(true);
     }
 
     /**
      * Use the sort order with the given ID to sort new data while writing to the iceberg table.
      */
-    static SortOrderProvider fromSortId(final int id) {
-        return new SortOrderProviderInternal.IdSortOrderProvider(id);
+    static SortOrderId fromSortId(final int id) {
+        return new SortOrderId(id, true);
     }
 
     /**
@@ -46,8 +81,8 @@ public interface SortOrderProvider {
      * sort order must either have a valid {@link SortOrder#orderId()}, else this provider should be chained with an
      * {@link #withId(int)} call to set a valid order ID.
      */
-    static SortOrderProvider fromSortOrder(final SortOrder sortOrder) {
-        return new SortOrderProviderInternal.DirectSortOrderProvider(sortOrder);
+    static SortOrderDirect fromSortOrder(final SortOrder sortOrder) {
+        return new SortOrderDirect(sortOrder, true);
     }
 
     /**
@@ -62,7 +97,9 @@ public interface SortOrderProvider {
      *
      * @param sortOrderId the sort order ID to write to the iceberg table
      */
-    SortOrderProvider withId(final int sortOrderId);
+    default SortOrderProvider withId(final int sortOrderId) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Returns a sort order provider configured to fail (or not) if the sort order cannot be applied to the tables being
@@ -71,5 +108,5 @@ public interface SortOrderProvider {
      * @param failOnUnmapped whether to fail if the sort order cannot be applied to the tables being written. If
      *        {@code false} and the sort order cannot be applied, the tables will be written without sorting.
      */
-    SortOrderProvider withFailOnUnmapped(boolean failOnUnmapped);
+    //SortOrderProvider withFailOnUnmapped(boolean failOnUnmapped);
 }

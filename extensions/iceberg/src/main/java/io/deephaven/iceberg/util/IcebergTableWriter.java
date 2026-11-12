@@ -31,19 +31,25 @@ import org.apache.iceberg.NullOrder;
 import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortDirection;
 import org.apache.iceberg.SortField;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.SortOrderBuilder;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.expressions.Term;
+import org.apache.iceberg.expressions.UnboundTerm;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.transforms.Transform;
+import org.apache.iceberg.transforms.Transforms;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -52,16 +58,19 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import static io.deephaven.iceberg.base.IcebergUtils.deephavenNullOrderMatchesIceberg;
-import static io.deephaven.iceberg.base.IcebergUtils.deephavenOrderMatchesIceberg;
 import static io.deephaven.iceberg.base.IcebergUtils.verifyPartitioningColumns;
 import static io.deephaven.iceberg.base.IcebergUtils.verifyRequiredFields;
 
@@ -75,6 +84,11 @@ public class IcebergTableWriter {
      * The columns to sort the tables by before writing them, and the sort order to write down for the data files.
      */
     private record SortSpec(List<SortColumn> sortColumns, SortOrder sortOrderToWrite) {
+
+        public static SortSpec unsorted() {
+            return new SortSpec(List.of(), SortOrder.unsorted());
+        }
+
     }
 
     /**
@@ -184,8 +198,7 @@ public class IcebergTableWriter {
                 .format(FileFormat.PARQUET)
                 .build();
 
-        final SortSpec sortSpec = computeSortSpec(
-                (SortOrderProviderInternal.SortOrderProviderImpl) tableWriterOptions.sortOrderProvider());
+        final SortSpec sortSpec = computeSortSpec(tableWriterOptions.sortOrderProvider());
         sortColumnNames = sortSpec.sortColumns();
         sortOrderToWrite = sortSpec.sortOrderToWrite();
 
@@ -327,17 +340,42 @@ public class IcebergTableWriter {
      * values are where the orderings disagree, as
      * {@link IcebergUtils#deephavenOrderMatchesIceberg(SortDirection, NullOrder, Class, Type)} describes.
      */
-    private SortSpec computeSortSpec(@NotNull final SortOrderProviderInternal.SortOrderProviderImpl sortOrderProvider) {
-        final List<SortColumn> sortColumns =
-                computeSortColumns(sortOrderProvider.getSortOrderToUse(table), sortOrderProvider.failOnUnmapped());
+    private SortSpec computeSortSpec(@NotNull final SortOrderProvider sortOrderProvider) {
+        if (sortOrderProvider instanceof SortOrderProvider.Unsorted) {
+            return SortSpec.unsorted();
+        } else if (sortOrderProvider instanceof final SortOrderProvider.UseTableDefaults useTableDefaults) {
+            final SortOrder defaultTableSortOrder = table.sortOrder();
+            if (defaultTableSortOrder == null || defaultTableSortOrder.isUnsorted()) {
+                return SortSpec.unsorted();
+            }
+            final boolean failOnUnmapped = useTableDefaults.failOnUnmapped();
+            for (final SortField sortField : defaultTableSortOrder.fields()) {
+
+            }
+
+
+        } else if (sortOrderProvider instanceof final SortOrderProvider.SortColumns sortColumns) {
+
+            final SortOrder desiredSortOrder = sortOrder(null, sortColumns.columns(), null, null);
+
+            final SortOrder bestSortOrderToWrite = SortOrderSelection.bestDeclaredOrder(table, desiredSortOrder);
+            return new SortSpec(sortColumns.columns(), bestSortOrderToWrite);
+
+        }
+
+
+        final List<SortColumn> sortColumns = computeSortColumns(
+                SortOrderProviderInternal.getSortOrderToUse(sortOrderProvider, table),
+                SortOrderProviderInternal.getFailOnUnmapped(sortOrderProvider));
         // Computed even when not written down, since the provider checks the sort order to write against the table's
         // sort orders
-        final SortOrder sortOrderToWrite = sortOrderProvider.getSortOrderToWrite(table);
+        final SortOrder sortOrderToWrite = SortOrderProviderInternal.getSortOrderToWrite(sortOrderProvider, table);
         if (sortColumns.isEmpty() || !canDeclareSortOrder(sortOrderToWrite)) {
             return new SortSpec(sortColumns, SortOrder.unsorted());
         }
         return new SortSpec(sortColumns, sortOrderToWrite);
     }
+
 
     /**
      * Whether data files can declare {@code sortOrder}, given tables sorted by a sort order that
@@ -362,22 +400,184 @@ public class IcebergTableWriter {
             final ColumnDefinition<?> columnDefinition =
                     columnName == null ? null : tableDefinition.getColumn(columnName);
             final Type icebergType = userSchema.findType(sortField.sourceId());
-            if (columnDefinition == null || icebergType == null
-                    || !deephavenOrderMatchesIceberg(sortField.direction(), sortField.nullOrder(),
-                            columnDefinition.getDataType(), icebergType)) {
-                return false;
-            }
+//            if (columnDefinition == null || icebergType == null
+//                    || !deephavenOrderMatchesIceberg(sortField.direction(), sortField.nullOrder(),
+//                            columnDefinition.getDataType(), icebergType)) {
+//                return false;
+//            }
         }
         return true;
     }
 
-    private List<SortColumn> computeSortColumns(@NotNull final SortOrder sortOrder, final boolean failOnUnmapped) {
-        if (sortOrder.isUnsorted()) {
-            return List.of();
+    public static boolean deephavenSortColumnsSatisfiesIcebergSortOrder(
+            final TableDefinition tableDefinition,
+            final List<SortColumn> sortColumns,
+            final Schema schema,
+            final SortOrder sortOrder) {
+
+//        sortOrder.satisfies()
+
+        return true;
+    }
+
+    public static SortOrder sortOrder(
+            final TableDefinition tableDefinition,
+            final List<SortColumn> sortColumns,
+            final Schema schema,
+            final Map<String, Integer> deephavenColumnToFieldId) {
+        return createSortOrder(tableDefinition, sortColumns, schema, deephavenColumnToFieldId, () -> SortOrder.builderFor(schema)).build();
+    }
+
+    public static ReplaceSortOrder replaceSortOrder(
+            final TableDefinition tableDefinition,
+            final List<SortColumn> sortColumns,
+            final org.apache.iceberg.Table table,
+            final Map<String, Integer> deephavenColumnToFieldId) {
+        return createSortOrder(tableDefinition, sortColumns, table.schema(), deephavenColumnToFieldId, table::replaceSortOrder);
+    }
+
+    private static <Builder extends SortOrderBuilder<Builder>> Builder createSortOrder(
+            final TableDefinition tableDefinition,
+            final List<SortColumn> sortColumns,
+            final Schema schema,
+            final Map<String, Integer> deephavenColumnToFieldId,
+            final Supplier<Builder> builderSupplier) {
+        Builder builder = builderSupplier.get();
+        for (final SortColumn sortColumn : sortColumns) {
+            final SortDirective sortDirective = sortDirective(tableDefinition, sortColumn, schema, deephavenColumnToFieldId).orElse(null);
+            if (sortDirective == null) {
+                break;
+            }
+            sortDirective.addTo(builder);
         }
+        return builder;
+    }
+
+    private static Optional<SortDirective> sortDirective(
+            final TableDefinition tableDefinition,
+            final SortColumn sortColumn,
+            final Schema schema,
+            final Map<String, Integer> deephavenColumnToFieldId) {
+        final Types.NestedField field;
+        {
+            final Integer fieldId = deephavenColumnToFieldId.get(sortColumn.column().name());
+            if (fieldId == null) {
+                throw new IllegalArgumentException();
+            }
+            field = schema.findField(fieldId);
+            if (field == null) {
+                throw new IllegalArgumentException();
+            }
+        }
+        return SortDirective.of(tableDefinition, sortColumn, field);
+    }
+
+    /**
+     * Declarative wrapper around {@link SortOrderBuilder#asc(Term, NullOrder)} and {@link SortOrderBuilder#desc(Term, NullOrder)}; has a structure very similar to {@link SortField} (which has no public constructor).
+     */
+    record SortDirective(Transform<?, ?> transform, Types.NestedField field, SortDirection direction, NullOrder nullOrder) {
+
+        static Optional<SortDirective> of(
+                final TableDefinition tableDefinition,
+                final SortColumn sortColumn,
+                final Types.NestedField field) {
+            final ColumnDefinition<?> columnDefinition = tableDefinition.getColumn(sortColumn.column().name());
+            if (columnDefinition == null) {
+                throw new IllegalArgumentException();
+            }
+            final Class<?> dataType = columnDefinition.getDataType();
+
+
+//            IcebergUtils.deephavenOrderMatchesIceberg(sortColumn.order(), )
+
+            // The switch is exhaustive with no default, so a type ID that an Iceberg upgrade adds fails compilation here,
+            // forcing a decision on whether Deephaven orders the new type as the specification does
+            final boolean deephavenSortMatchesIceberg = switch (field.type().typeId()) {
+                case BOOLEAN -> dataType == Boolean.class;
+                case INTEGER, LONG -> dataType == byte.class || dataType == short.class || dataType == int.class
+                        || dataType == long.class;
+                case DATE -> dataType == LocalDate.class;
+                case TIME -> dataType == LocalTime.class;
+                case TIMESTAMP, TIMESTAMP_NANO -> dataType == Instant.class || dataType == LocalDateTime.class;
+                // Deephaven orders these differently than the specification does, as the Javadoc describes
+                case FLOAT, DOUBLE, STRING -> false;
+                // Deephaven does not read these types, or the two orderings have not been compared
+                case DECIMAL, UUID, FIXED, BINARY, GEOMETRY, GEOGRAPHY, VARIANT, UNKNOWN, STRUCT, LIST, MAP -> false;
+            };
+            if (!deephavenSortMatchesIceberg) {
+                return Optional.empty();
+            }
+            final SortDirection sortDirection = switch (sortColumn.order()) {
+                case ASCENDING -> SortDirection.ASC;
+                case DESCENDING -> SortDirection.DESC;
+            };
+            return Optional.of(new SortDirective(
+                    Transforms.identity(),
+                    field,
+                    sortDirection,
+                    io.deephaven.api.SortSpec.isNullsFirst(sortColumn)
+                            ? NullOrder.NULLS_FIRST
+                            : NullOrder.NULLS_LAST));
+        }
+
+        SortDirective {
+            Objects.requireNonNull(transform);
+            Objects.requireNonNull(field);
+            Objects.requireNonNull(direction);
+            Objects.requireNonNull(nullOrder);
+        }
+
+        void addTo(SortOrderBuilder<?> builder) {
+            final UnboundTerm<?> term = Expressions.transform(field.name(), transform);
+            var ignored = switch (direction) {
+                case ASC -> builder.asc(term, nullOrder);
+                case DESC -> builder.desc(term, nullOrder);
+            };
+        }
+    }
+
+
+    private static Term termFor(Schema schema, int fieldId, Transform<?, ?> transform) {
+        return Expressions.transform(schema.findColumnName(fieldId), transform);
+    }
+
+    public static boolean deephavenSortColumnSatisfiesIcebergSortField(
+            final TableDefinition tableDefinition,
+            final SortColumn sortColumn,
+            final Schema schema,
+            final SortField sortField,
+            final boolean isLastField) {
+        {
+            final Transform<?, ?> transform = sortField.transform();
+            // intermediate fields: we only support identity transforms
+            if (!isLastField) {
+                if (!transform.isIdentity()) {
+                    return false;
+                }
+            }
+            // last fields: we are a bit _looser_ in that we can support order-preserving transforms, since our sorting
+            // of the base column will satisfy the ordering constraint against the transformed column
+            else {
+                if (!transform.preservesOrder()) {
+                    return false;
+                }
+            }
+        }
+        final Type icebergType = schema.findType(sortField.sourceId());
+        final ColumnDefinition<Object> columnDefinition = tableDefinition.getColumn(sortColumn.column().name());
+        return true;
+//        return icebergType != null
+//                && columnDefinition != null
+//                && deephavenOrderMatchesIceberg(sortColumn.order(), sortField.direction(), sortField.nullOrder(), columnDefinition.getDataType(), icebergType);
+    }
+
+    private List<SortColumn> computeSortColumns(@NotNull final SortOrder sortOrder, final boolean failOnUnmapped) {
         final List<SortField> sortFields = sortOrder.fields();
         final List<SortColumn> sortColumns = new ArrayList<>(sortFields.size());
         for (final SortField sortField : sortOrder.fields()) {
+
+//            if (deephavenOrderMatchesIceberg(sortField.direction(), sortField.nullOrder(), ))
+
             if (!deephavenNullOrderMatchesIceberg(sortField.direction(), sortField.nullOrder())) {
                 if (failOnUnmapped) {
                     throw new IllegalArgumentException(

@@ -2803,17 +2803,6 @@ public abstract class SqliteCatalogBase {
                 doubleCol("doubleCol", 10.5, 2.5, 3.5, 40.5, 0.5),
                 longCol("longCol", 20L, 50L, 0L, 10L, 5L));
         final IcebergTableAdapter tableAdapter = buildTableToTestSortOrder(tableIdentifier, source.getDefinition());
-
-        try {
-            tableAdapter.tableWriter(writerOptionsBuilder()
-                    .tableDefinition(source.getDefinition())
-                    .sortOrderProvider(SortOrderProvider.unsorted().withFailOnUnmapped(true))
-                    .build());
-            failBecauseExceptionWasNotThrown(UnsupportedOperationException.class);
-        } catch (UnsupportedOperationException e) {
-            assertThat(e).hasMessageContaining("Cannot set failOnUnmapped for unsorted sort order provider");
-        }
-
         final IcebergTableWriter tableWriter = tableAdapter.tableWriter(writerOptionsBuilder()
                 .tableDefinition(source.getDefinition())
                 .sortOrderProvider(SortOrderProvider.unsorted())

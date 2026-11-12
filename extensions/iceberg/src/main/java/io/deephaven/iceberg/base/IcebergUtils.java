@@ -3,12 +3,12 @@
 //
 package io.deephaven.iceberg.base;
 
+import io.deephaven.api.SortColumn;
+import io.deephaven.api.SortSpec;
 import io.deephaven.base.FileUtils;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.iceberg.relative.RelativeFileIO;
-import io.deephaven.iceberg.util.ColumnInstructions;
-import io.deephaven.iceberg.util.Resolver;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.NullOrder;
 import org.apache.iceberg.PartitionField;
@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -138,10 +137,7 @@ public final class IcebergUtils {
         }
     }
 
-    /**
-     * Whether Deephaven places nulls where {@code nullOrder} does in a sort in {@code direction}. Deephaven orders null
-     * before every value, so nulls come first in an ascending sort and last in a descending one.
-     */
+
     public static boolean deephavenNullOrderMatchesIceberg(
             @NotNull final SortDirection direction,
             @NotNull final NullOrder nullOrder) {
@@ -161,16 +157,42 @@ public final class IcebergUtils {
      * A sort field's transform is not considered: the caller decides which transforms a sort by column values honors.
      */
     public static boolean deephavenOrderMatchesIceberg(
+            @NotNull final SortSpec spec,
             @NotNull final SortDirection direction,
             @NotNull final NullOrder nullOrder,
             @NotNull final Class<?> dataType,
             @NotNull final Type icebergType) {
-        if (!deephavenNullOrderMatchesIceberg(direction, nullOrder)) {
-            return false;
-        }
+
+        return spec instanceof SortColumn
+                && sortDirection(spec.order()) == direction
+                && nullOrder(spec) == nullOrder
+                && equivalentSortOrder(dataType, icebergType);
+    }
+
+
+    /**
+     *
+     * @param order the Deephaven sort order
+     * @return the corresponding Iceberg sort direction
+     */
+    public static SortDirection sortDirection(SortSpec.Order order) {
+        return switch (order) {
+            case ASCENDING -> SortDirection.ASC;
+            case DESCENDING -> SortDirection.DESC;
+        };
+    }
+
+    public static NullOrder nullOrder(SortSpec order) {
+        return switch (order.order()) {
+            case ASCENDING -> NullOrder.NULLS_FIRST;
+            case DESCENDING -> NullOrder.NULLS_LAST;
+        };
+    }
+
+    private static boolean equivalentSortOrder(@NotNull final Class<?> dataType, @NotNull final Type type) {
         // The switch is exhaustive with no default, so a type ID that an Iceberg upgrade adds fails compilation here,
         // forcing a decision on whether Deephaven orders the new type as the specification does
-        return switch (icebergType.typeId()) {
+        return switch (type.typeId()) {
             case BOOLEAN -> dataType == Boolean.class;
             case INTEGER, LONG -> dataType == byte.class || dataType == short.class || dataType == int.class
                     || dataType == long.class;

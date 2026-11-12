@@ -32,6 +32,10 @@ public interface SortSpec {
         return order() == Order.ASCENDING;
     }
 
+    static boolean isNullsFirst(SortSpec sortSpec) {
+        return sortSpec.order() == Order.ASCENDING;
+    }
+
     enum Order {
         ASCENDING, DESCENDING;
 

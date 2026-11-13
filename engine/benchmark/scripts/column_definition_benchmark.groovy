@@ -9,6 +9,9 @@
 // that setup involves no formula compilation, partitions it into numPartitions single-row constituents, then times
 // partitioned table transforms over them:
 //   identity: a baseline of transform overhead alone, which creates no new tables
+//   rewrap:   a copy(), but built through the QueryTable(rowSet, columnSources) constructor, which infers a definition
+//             from the existing column sources (TableDefinition.inferFrom) and interns it, rather than reusing the
+//             parent's definition
 //   flatten:  creates a new table, and so a new or reused definition, per constituent; flattening adds little else
 //   sort:     the same, plus sorting
 //   joinLhs:  each constituent as the left side of a naturalJoin, adding two columns from a small lookup table
@@ -119,6 +122,8 @@ def lookup = TableTools.newTable(
 
 def ops = [
         identity: { t -> t },               // baseline: transform overhead only, no new tables
+        // copy() through the simple constructor: inferFrom + intern
+        rewrap  : { t -> new QueryTable(t.getRowSet(), t.getColumnSourceMap()) },
         flatten : { t -> t.flatten() },     // a new table per constituent, so a new (or reused) definition
         sort    : { t -> t.sort("Int_0") }, // the same, plus sorting
         joinLhs : { t -> t.naturalJoin(lookup, "${textColumn}=Label", "Rank,Weight") },

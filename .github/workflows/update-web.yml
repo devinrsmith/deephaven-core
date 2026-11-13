@@ -16,9 +16,9 @@ jobs:
           sparse-checkout-cone-mode: false
           lfs: true
       - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: '/web/client-api/types/.nvmrc'
+          node-version-file: "web/client-api/types/.nvmrc"
       - name: Get web versions
         id: web_versions
         run: |
@@ -38,7 +38,7 @@ jobs:
           sed -i "s/^ARG CHART_VERSION=.*/ARG CHART_VERSION=$CHART_VERSION/" ./web/client-ui/Dockerfile
           sed -i "s/^ARG WIDGET_VERSION=.*/ARG WIDGET_VERSION=$WIDGET_VERSION/" ./web/client-ui/Dockerfile
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2
         env:
           WEB_VERSION: ${{steps.web_versions.outputs.WEB_VERSION}}
         with:

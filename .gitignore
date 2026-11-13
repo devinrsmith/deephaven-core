@@ -69,3 +69,6 @@ skills-lock.json
 # devenv.sh local state (see devenv.nix)
 .devenv/
 devenv.local.nix
+
+# skill-creator eval run outputs (grading, benchmarks, snapshots); only evals/evals.json and evals/files/ are committed
+.claude/skills/*-workspace/

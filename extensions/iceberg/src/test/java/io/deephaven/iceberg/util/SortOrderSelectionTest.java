@@ -1,3 +1,6 @@
+//
+// Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
+//
 package io.deephaven.iceberg.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +34,9 @@ class SortOrderSelectionTest {
                     Types.NestedField.optional(3, "symbol", Types.StringType.get()),
                     Types.NestedField.optional(4, "price", Types.DoubleType.get()));
 
-    /** The order the data is written in: [ts, symbol]. */
+    /**
+     * The order the data is written in: [ts, symbol].
+     */
     private static final SortOrder DESIRED =
             SortOrder.builderFor(SCHEMA).asc("ts").asc("symbol").build();
 
@@ -44,6 +49,9 @@ class SortOrderSelectionTest {
     private static final SortOrder DAY_TS =
             SortOrder.builderFor(SCHEMA).withOrderId(2).asc(Expressions.day("ts")).build();
 
+    /**
+     * Coarsens a non-final field; not satisfied by [ts, symbol] under lexicographic semantics.
+     */
     private static final SortOrder DAY_TS_SYMBOL =
             SortOrder.builderFor(SCHEMA)
                     .withOrderId(3)
@@ -57,17 +65,110 @@ class SortOrderSelectionTest {
     private static final SortOrder TS_DESC =
             SortOrder.builderFor(SCHEMA).withOrderId(5).desc("ts").build();
 
-    /** Equivalent to {@link #TS} but under a different ID; impossible in a real table. */
+    /**
+     * Equivalent to {@link #TS} but under a different ID; impossible in a real table.
+     */
     private static final SortOrder TS_DUPLICATE =
             SortOrder.builderFor(SCHEMA).withOrderId(6).asc("ts").build();
 
     private static final SortOrder TS_SYMBOL =
             SortOrder.builderFor(SCHEMA).withOrderId(7).asc("ts").asc("symbol").build();
 
+    /**
+     * Coarsens only the final field; satisfied by [ts, symbol].
+     */
+    private static final SortOrder TS_TRUNC_SYMBOL =
+            SortOrder.builderFor(SCHEMA)
+                    .withOrderId(8)
+                    .asc("ts")
+                    .asc(Expressions.truncate("symbol", 2))
+                    .build();
+
+    private static final SortOrder TS_SYMBOL_PRICE =
+            SortOrder.builderFor(SCHEMA).withOrderId(9).asc("ts").asc("symbol").asc("price").build();
+
+    @Nested
+    class Satisfies {
+
+        @Test
+        void everyOrderSatisfiesUnsorted() {
+            assertThat(SortOrderHelper.satisfies(DESIRED, SortOrder.unsorted())).isTrue();
+            assertThat(SortOrderHelper.satisfies(SortOrder.unsorted(), SortOrder.unsorted())).isTrue();
+        }
+
+        @Test
+        void unsortedSatisfiesNoSortedOrder() {
+            assertThat(SortOrderHelper.satisfies(SortOrder.unsorted(), TS)).isFalse();
+        }
+
+        @Test
+        void identicalOrdersSatisfyEachOther() {
+            assertThat(SortOrderHelper.satisfies(TS_SYMBOL, DESIRED)).isTrue();
+            assertThat(SortOrderHelper.satisfies(DESIRED, TS_SYMBOL)).isTrue();
+        }
+
+        @Test
+        void satisfiesItsPrefixes() {
+            assertThat(SortOrderHelper.satisfies(DESIRED, TS)).isTrue();
+        }
+
+        @Test
+        void doesNotSatisfyLongerOrder() {
+            assertThat(SortOrderHelper.satisfies(DESIRED, TS_SYMBOL_PRICE)).isFalse();
+        }
+
+        @Test
+        void finerFieldSatisfiesCoarserFinalField() {
+            assertThat(SortOrderHelper.satisfies(TS, DAY_TS)).isTrue();
+            assertThat(SortOrderHelper.satisfies(DESIRED, DAY_TS)).isTrue();
+            assertThat(SortOrderHelper.satisfies(DESIRED, TS_TRUNC_SYMBOL)).isTrue();
+        }
+
+        @Test
+        void coarserFieldDoesNotSatisfyFinerField() {
+            assertThat(SortOrderHelper.satisfies(DAY_TS, TS)).isFalse();
+            assertThat(SortOrderHelper.satisfies(TS_TRUNC_SYMBOL, DESIRED)).isFalse();
+        }
+
+        @Test
+        void finerFieldCannotStandInForCoarserNonFinalField() {
+            // Within a day, rows sorted by [ts, symbol] are ordered by ts, not by symbol.
+            assertThat(SortOrderHelper.satisfies(DESIRED, DAY_TS_SYMBOL)).isFalse();
+        }
+
+        @Test
+        void differsFromIcebergSortOrderSatisfiesForCoarsenedNonFinalField() {
+            // Documents the divergence this class exists to correct. If Iceberg changes
+            // SortOrder#satisfies to be lexicographic, this assertion will fail and can be removed.
+            assertThat(DESIRED.satisfies(DAY_TS_SYMBOL)).isTrue();
+        }
+
+        @Test
+        void directionMustMatch() {
+            assertThat(SortOrderHelper.satisfies(DESIRED, TS_DESC)).isFalse();
+        }
+
+        @Test
+        void differentLeadingColumnIsNotSatisfied() {
+            assertThat(SortOrderHelper.satisfies(DESIRED, SYMBOL)).isFalse();
+        }
+
+        @Test
+        void rejectsNullArguments() {
+            assertThatThrownBy(() -> SortOrderHelper.satisfies(null, TS))
+                    .isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> SortOrderHelper.satisfies(TS, null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+    }
+
     @Nested
     class BestDeclaredOrderFromCandidates {
 
         private final Comparator<SortOrder> tieBreaker = SortOrderSelection.defaultTieBreaker(-1);
+
+        private final Comparator<SortOrder> fewerFields =
+                Comparator.comparingInt((SortOrder o) -> o.fields().size()).reversed();
 
         @Test
         void returnsUnsortedWhenThereAreNoCandidates() {
@@ -79,7 +180,8 @@ class SortOrderSelectionTest {
         @Test
         void returnsUnsortedWhenNoCandidateIsSatisfied() {
             SortOrder result =
-                    SortOrderSelection.bestDeclaredOrder(List.of(SYMBOL, TS_DESC), DESIRED, tieBreaker);
+                    SortOrderSelection.bestDeclaredOrder(
+                            List.of(SYMBOL, TS_DESC, DAY_TS_SYMBOL), DESIRED, tieBreaker);
 
             assertThat(result.isUnsorted()).isTrue();
         }
@@ -97,7 +199,7 @@ class SortOrderSelectionTest {
         void prefersExactMatch() {
             SortOrder result =
                     SortOrderSelection.bestDeclaredOrder(
-                            List.of(TS, DAY_TS, DAY_TS_SYMBOL, TS_SYMBOL), DESIRED, tieBreaker);
+                            List.of(TS, DAY_TS, TS_TRUNC_SYMBOL, TS_SYMBOL), DESIRED, tieBreaker);
 
             assertThat(result).isEqualTo(TS_SYMBOL);
         }
@@ -115,6 +217,23 @@ class SortOrderSelectionTest {
         }
 
         @Test
+        void longerSatisfiedOrderDominatesItsPrefixRegardlessOfTieBreaker() {
+            SortOrder result =
+                    SortOrderSelection.bestDeclaredOrder(List.of(TS, TS_TRUNC_SYMBOL), DESIRED, fewerFields);
+
+            assertThat(result).isEqualTo(TS_TRUNC_SYMBOL);
+        }
+
+        @Test
+        void ignoresOrderThatCoarsensANonFinalField() {
+            // [day(ts), symbol] is longer than [ts] but is not satisfied, so it cannot be chosen.
+            SortOrder result =
+                    SortOrderSelection.bestDeclaredOrder(List.of(TS, DAY_TS_SYMBOL), DESIRED, tieBreaker);
+
+            assertThat(result).isEqualTo(TS);
+        }
+
+        @Test
         void ignoresCandidatesThatAreNotSatisfied() {
             SortOrder result =
                     SortOrderSelection.bestDeclaredOrder(
@@ -124,33 +243,23 @@ class SortOrderSelectionTest {
         }
 
         @Test
-        void defaultTieBreakerPrefersMoreFieldsAmongIncomparableCandidates() {
-            // [ts] and [day(ts), symbol] are both satisfied by [ts, symbol] but incomparable.
-            SortOrder result =
-                    SortOrderSelection.bestDeclaredOrder(List.of(TS, DAY_TS_SYMBOL), DESIRED, tieBreaker);
-
-            assertThat(result).isEqualTo(DAY_TS_SYMBOL);
-        }
-
-        @Test
         void equivalentCandidatesAreResolvedByTieBreaker() {
-            SortOrder preferLower =
+            SortOrder preferDefault =
                     SortOrderSelection.bestDeclaredOrder(
                             List.of(TS, TS_DUPLICATE), DESIRED, SortOrderSelection.defaultTieBreaker(TS.orderId()));
-            SortOrder preferHigher =
+            SortOrder preferHigherId =
                     SortOrderSelection.bestDeclaredOrder(List.of(TS, TS_DUPLICATE), DESIRED, tieBreaker);
 
-            assertThat(preferLower).isEqualTo(TS);
-            assertThat(preferHigher).isEqualTo(TS_DUPLICATE);
+            assertThat(preferDefault).isEqualTo(TS);
+            assertThat(preferHigherId).isEqualTo(TS_DUPLICATE);
         }
 
         @Test
-        void customTieBreakerDecidesAmongIncomparableCandidates() {
-            Comparator<SortOrder> fewerFields =
-                    Comparator.comparingInt((SortOrder o) -> o.fields().size()).reversed();
+        void customTieBreakerDecidesAmongEquivalentCandidates() {
+            Comparator<SortOrder> lowerId = Comparator.comparingInt(SortOrder::orderId).reversed();
 
             SortOrder result =
-                    SortOrderSelection.bestDeclaredOrder(List.of(TS, DAY_TS_SYMBOL), DESIRED, fewerFields);
+                    SortOrderSelection.bestDeclaredOrder(List.of(TS_DUPLICATE, TS), DESIRED, lowerId);
 
             assertThat(result).isEqualTo(TS);
         }
@@ -159,9 +268,6 @@ class SortOrderSelectionTest {
         void customTieBreakerCannotPromoteADominatedCandidate() {
             // Unsorted is dominated by every satisfied sorted order, so a tie-breaker that
             // prefers fewer fields still cannot select it.
-            Comparator<SortOrder> fewerFields =
-                    Comparator.comparingInt((SortOrder o) -> o.fields().size()).reversed();
-
             SortOrder result = SortOrderSelection.bestDeclaredOrder(List.of(TS), DESIRED, fewerFields);
 
             assertThat(result).isEqualTo(TS);
@@ -208,7 +314,9 @@ class SortOrderSelectionTest {
                     .create();
         }
 
-        /** Commits a new sort order, which also becomes the default, and returns it as registered. */
+        /**
+         * Commits a new sort order, which also becomes the default, and returns it as registered.
+         */
         private SortOrder register(Table table, Consumer<ReplaceSortOrder> fields) {
             ReplaceSortOrder replace = table.replaceSortOrder();
             fields.accept(replace);
@@ -258,34 +366,35 @@ class SortOrderSelectionTest {
         }
 
         @Test
-        void prefersDefaultAmongIncomparableOrdersOfEqualLength() {
-            // [day(ts), symbol] and [ts, truncate(symbol, 2)] are both satisfied by [ts, symbol],
-            // have the same length, and neither satisfies the other.
-            Table table = createTable(b -> b.asc(Expressions.day("ts")).asc("symbol"));
-            SortOrder daySymbol = table.sortOrder();
-            SortOrder tsTruncated =
-                    register(table, r -> r.asc("ts").asc(Expressions.truncate("symbol", 2)));
+        void longerOrderWithCoarsenedFinalFieldWinsEvenWhenPrefixIsDefault() {
+            Table table = createTable(b -> b.asc("ts").asc(Expressions.truncate("symbol", 2)));
+            SortOrder tsTruncated = table.sortOrder();
+            register(table, r -> r.asc("ts")); // now the default
 
             assertThat(SortOrderSelection.bestDeclaredOrder(table, DESIRED)).isEqualTo(tsTruncated);
+        }
 
-            // Switching the default back reuses the existing ID and flips the choice.
-            register(table, r -> r.asc(Expressions.day("ts")).asc("symbol"));
+        @Test
+        void doesNotSelectOrderThatCoarsensANonFinalField() {
+            Table table = createTable(b -> b.asc("ts"));
+            SortOrder ts = table.sortOrder();
+            register(table, r -> r.asc(Expressions.day("ts")).asc("symbol")); // now the default
 
-            assertThat(SortOrderSelection.bestDeclaredOrder(table, DESIRED)).isEqualTo(daySymbol);
+            assertThat(SortOrderSelection.bestDeclaredOrder(table, DESIRED)).isEqualTo(ts);
         }
 
         @Test
         void returnsUnsortedWhenNoRegisteredOrderIsSatisfied() {
             Table table = createTable(b -> b.asc("symbol"));
             register(table, r -> r.desc("ts"));
+            register(table, r -> r.asc(Expressions.day("ts")).asc("symbol"));
 
             assertThat(SortOrderSelection.bestDeclaredOrder(table, DESIRED).isUnsorted()).isTrue();
         }
 
         @Test
         void returnsUnsortedForUnsortedTable() {
-            Table table =
-                    catalog.buildTable(TableIdentifier.of("db", "unsorted"), SCHEMA).create();
+            Table table = catalog.buildTable(TableIdentifier.of("db", "unsorted"), SCHEMA).create();
 
             assertThat(SortOrderSelection.bestDeclaredOrder(table, DESIRED).isUnsorted()).isTrue();
         }
@@ -313,6 +422,12 @@ class SortOrderSelectionTest {
         }
 
         @Test
+        void finerFinalFieldIsStrictlyMoreSpecific() {
+            assertThat(SortOrderSelection.strictlyMoreSpecific(TS_SYMBOL, TS_TRUNC_SYMBOL)).isTrue();
+            assertThat(SortOrderSelection.strictlyMoreSpecific(TS_TRUNC_SYMBOL, TS_SYMBOL)).isFalse();
+        }
+
+        @Test
         void anySortedOrderIsStrictlyMoreSpecificThanUnsorted() {
             assertThat(SortOrderSelection.strictlyMoreSpecific(TS, SortOrder.unsorted())).isTrue();
             assertThat(SortOrderSelection.strictlyMoreSpecific(SortOrder.unsorted(), TS)).isFalse();
@@ -322,6 +437,14 @@ class SortOrderSelectionTest {
         void equivalentOrdersAreNotStrictlyMoreSpecific() {
             assertThat(SortOrderSelection.strictlyMoreSpecific(TS, TS_DUPLICATE)).isFalse();
             assertThat(SortOrderSelection.strictlyMoreSpecific(TS_DUPLICATE, TS)).isFalse();
+        }
+
+        @Test
+        void finerNonFinalFieldIsNotStrictlyMoreSpecific() {
+            // Iceberg's SortOrder#satisfies would rank TS_SYMBOL above DAY_TS_SYMBOL; lexicographically
+            // the two are incomparable.
+            assertThat(SortOrderSelection.strictlyMoreSpecific(TS_SYMBOL, DAY_TS_SYMBOL)).isFalse();
+            assertThat(SortOrderSelection.strictlyMoreSpecific(DAY_TS_SYMBOL, TS_SYMBOL)).isFalse();
         }
 
         @Test
@@ -341,7 +464,7 @@ class SortOrderSelectionTest {
             Comparator<SortOrder> cmp = SortOrderSelection.defaultTieBreaker(TS.orderId());
 
             // More fields wins even over the default order.
-            assertThat(cmp.compare(DAY_TS_SYMBOL, TS)).isPositive();
+            assertThat(cmp.compare(TS_SYMBOL, TS)).isPositive();
         }
 
         @Test

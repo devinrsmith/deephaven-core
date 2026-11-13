@@ -5,12 +5,13 @@ package io.deephaven.iceberg.util;
 
 import io.deephaven.api.SortColumn;
 import org.apache.iceberg.SortOrder;
+import org.apache.iceberg.Table;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * A specification for providing {@link org.apache.iceberg.SortOrder} while writing to an iceberg table.
+ * A specification for sorting {@link io.deephaven.engine.table.Table} and writing {@link org.apache.iceberg.SortOrder} to an Iceberg table.
  * <p>
  * Deephaven sorts new data by the provided sort order with its own comparisons, which differ from the Iceberg
  * specification's for strings and floating point values. New data files declare the sort order in the Iceberg metadata
@@ -21,8 +22,17 @@ import java.util.Objects;
  */
 public sealed interface SortOrderProvider {
 
-    record Unsorted() implements SortOrderProvider {}
+    /**
+     * Does not sort.
+     */
+    record Unsorted() implements SortOrderProvider {
+    }
 
+    /**
+     * Uses {@link Table#sortOrder()} to infer the Deephaven sort. If an exact
+     *
+     * @param failOnUnmapped
+     */
     record UseTableDefaults(boolean failOnUnmapped) implements SortOrderProvider {
 
         public UseTableDefaults withFailOnUnmapped(boolean failOnUnmapped) {
@@ -108,5 +118,5 @@ public sealed interface SortOrderProvider {
      * @param failOnUnmapped whether to fail if the sort order cannot be applied to the tables being written. If
      *        {@code false} and the sort order cannot be applied, the tables will be written without sorting.
      */
-    //SortOrderProvider withFailOnUnmapped(boolean failOnUnmapped);
+    // SortOrderProvider withFailOnUnmapped(boolean failOnUnmapped);
 }

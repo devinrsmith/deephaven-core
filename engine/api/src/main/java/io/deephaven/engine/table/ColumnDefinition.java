@@ -30,6 +30,7 @@ import io.deephaven.qst.type.PrimitiveVectorType;
 import io.deephaven.qst.type.ShortType;
 import io.deephaven.qst.type.StringType;
 import io.deephaven.qst.type.Type;
+import io.deephaven.util.type.TypeUtils;
 import io.deephaven.vector.ByteVector;
 import io.deephaven.vector.CharVector;
 import io.deephaven.vector.DoubleVector;
@@ -47,7 +48,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -420,19 +420,6 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
     }
 
     /**
-     * Boxed primitive types, mapped to their primitive types. Column definitions use the primitive type rather than the
-     * boxed type; {@link Boolean} is not included, as it is the data type for boolean columns.
-     */
-    private static final Map<Class<?>, Class<?>> BOXED_PRIMITIVE_TYPES = Map.of(
-            Byte.class, byte.class,
-            Character.class, char.class,
-            Short.class, short.class,
-            Integer.class, int.class,
-            Long.class, long.class,
-            Float.class, float.class,
-            Double.class, double.class);
-
-    /**
      * Describes why {@code dataType} is not a valid column data type, or returns {@code null} if it is valid.
      * {@code void} and {@link Void} are never valid. Boolean columns use {@link Boolean} rather than {@code boolean},
      * and the other primitive columns use their primitive type rather than its boxed type.
@@ -442,12 +429,10 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
         if (dataType == void.class || dataType == Void.class) {
             return "Invalid data type " + dataType.getTypeName() + " for column " + name + ": not a valid column type";
         }
-        if (dataType == boolean.class) {
-            return "Invalid data type boolean for column " + name + ": use " + Boolean.class.getName();
-        }
-        final Class<?> primitiveType = BOXED_PRIMITIVE_TYPES.get(dataType);
-        if (primitiveType != null) {
-            return "Invalid data type " + dataType.getTypeName() + " for column " + name + ": use " + primitiveType;
+        final Class<?> normalizedDataType = normalizeDataType(dataType);
+        if (dataType != normalizedDataType) {
+            return "Invalid data type " + dataType.getTypeName() + " for column " + name + ": use "
+                    + normalizedDataType.getTypeName();
         }
         return null;
     }
@@ -457,13 +442,11 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
      * the primitive type for the other boxed primitive types. Other types are returned unchanged.
      */
     private static <T> Class<T> normalizeDataType(@NotNull final Class<T> dataType) {
-        if (dataType == boolean.class) {
+        if (dataType == boolean.class || dataType == Boolean.class) {
             // noinspection unchecked
             return (Class<T>) Boolean.class;
         }
-        final Class<?> primitiveType = BOXED_PRIMITIVE_TYPES.get(dataType);
-        // noinspection unchecked
-        return primitiveType != null ? (Class<T>) primitiveType : dataType;
+        return TypeUtils.getUnboxedTypeIfBoxed(dataType);
     }
 
     /**
@@ -764,26 +747,45 @@ public class ColumnDefinition<TYPE> implements LogOutputAppendable {
 
     /**
      * Creates a {@link ColumnType#Normal normal} column definition with no component type, after checking that it is
-     * valid. See {@link #create(String, Class, Class, ColumnType)}.
+     * valid. This calls {@link #create(String, Class, Class, ColumnType)} with a {@code null} component type, and so,
+     * as there, uses the values as provided without normalization or inference.
+     *
+     * @param name the column name
+     * @param dataType the data type; array and {@link Vector} data types are invalid here, as they require a component
+     *        type
+     * @return the column definition
+     * @throws NameValidator.InvalidNameException if {@code name} is not a valid column name
+     * @throws IllegalArgumentException if {@code dataType} is not valid
      */
-    private static <T> ColumnDefinition<T> create(@NotNull final String name, @NotNull final Class<T> dataType) {
+    public static <T> ColumnDefinition<T> create(@NotNull final String name, @NotNull final Class<T> dataType) {
         return create(name, dataType, null, ColumnType.Normal);
     }
 
     /**
      * Creates a column definition, after checking that it is valid: that {@code name} is a valid column name, that
-     * {@code dataType} is a valid column data type, and that {@code componentType} is valid for {@code dataType}. Any
-     * normalization or inference of the types must already have been done.
+     * {@code dataType} is a valid column data type, and that {@code componentType} is valid for {@code dataType}.
      *
      * <p>
-     * All construction paths that take arguments from callers go through this method. Only paths that already know the
-     * result is valid, such as {@link #withPartitioning()}, call the constructor directly, so that they need not repeat
-     * the checks.
+     * The values are used exactly as provided, without normalization or inference. Unlike
+     * {@link #fromGenericType(String, Class, Class, ColumnType)}, this does not map {@code boolean} or the boxed
+     * primitive types to the types that columns use, and does not infer a missing component type: a {@code dataType} of
+     * {@code boolean} or {@link Integer} is rejected rather than converted to {@link Boolean} or {@code int}, and an
+     * array or {@link Vector} data type with a {@code null} {@code componentType} is rejected rather than given one.
+     * Callers that want normalization or inference should use {@code fromGenericType}, {@code of}, or one of the
+     * {@code ofVector} methods.
      *
+     * @param name the column name
+     * @param dataType the data type, as column definitions represent it: {@link Boolean} rather than {@code boolean},
+     *        and the primitive type rather than its boxed type for other primitives; never {@code void} or {@link Void}
+     * @param componentType the component type; required for array and {@link Vector} data types, where it is validated
+     *        against the data type as described at {@link #getComponentType()}; may be {@code null} for other data
+     *        types
+     * @param columnType the column type
+     * @return the column definition
      * @throws NameValidator.InvalidNameException if {@code name} is not a valid column name
      * @throws IllegalArgumentException if {@code dataType} or {@code componentType} is not valid
      */
-    private static <T> ColumnDefinition<T> create(
+    public static <T> ColumnDefinition<T> create(
             @NotNull final String name,
             @NotNull final Class<T> dataType,
             @Nullable final Class<?> componentType,

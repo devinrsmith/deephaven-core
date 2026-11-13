@@ -10,12 +10,9 @@ This can be called *only* from table.py or execution_context.py.  Using this fro
 
 import contextlib
 import inspect
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, TypeAlias, cast
 
 import jpy
-
-if TYPE_CHECKING:
-    from typing_extensions import TypeAlias  # novermin  # noqa
 
 from deephaven import DHError
 from deephaven._jpy import strict_cast
@@ -24,9 +21,9 @@ _JExecutionContext = jpy.get_type("io.deephaven.engine.context.ExecutionContext"
 _JScriptSessionQueryScope = jpy.get_type(
     "io.deephaven.engine.util.AbstractScriptSession$ScriptSessionQueryScope"
 )
-_JPythonScriptSession = cast(
+_JPythonScriptSession: TypeAlias = cast(
     type[Any], jpy.get_type("io.deephaven.integrations.python.PythonDeephavenSession")
-)  # type: TypeAlias
+)
 
 
 def _j_py_script_session() -> _JPythonScriptSession:
@@ -56,6 +53,7 @@ def query_scope_ctx():
     Table operations.
 
     This can be called *only* from table.py or execution_context.py.  Using this from any other file does not work!
+    To call it from another module, add that module to _DH_FILES.
     """
 
     # Read f_back directly. Do not use inspect.stack() or inspect.getouterframes(). They call inspect.getmodule() on
@@ -67,7 +65,12 @@ def query_scope_ctx():
     while frame is not None and frame.f_code.co_filename not in _DH_FILES:
         frame = frame.f_back
 
-    caller_frame = frame.f_back if frame is not None else None
+    # walk past the rest of the Deephaven frames, so that a private helper that enters this context manager on behalf
+    # of a public table operation still gets the user's scope instead of the public method's
+    while frame is not None and frame.f_code.co_filename in _DH_FILES:
+        frame = frame.f_back
+
+    caller_frame = frame
     if caller_frame is None:
         # we didn't match anything, just bail out without an error
         yield

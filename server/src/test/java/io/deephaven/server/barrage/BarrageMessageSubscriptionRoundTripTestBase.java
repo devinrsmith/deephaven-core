@@ -183,6 +183,48 @@ public abstract class BarrageMessageSubscriptionRoundTripTestBase extends Barrag
         }
     }
 
+    /**
+     * Subscriptions to some of a table's columns share a producer with subscriptions to all of them, so the producer's
+     * messages carry every column. {@link RemoteClient} checks that each subscription is sent only its own columns'
+     * data, and that its replicated table reads null in, and never reports modified, the others.
+     */
+    @Test
+    public void testColumnSubsetsShareProducerWithAllColumnSubscriptions() {
+        for (final int size : new int[] {10, 100, 1000}) {
+            for (final int numProducerCoalesce : new int[] {1, 4}) {
+                for (final int numConsumerCoalesce : new int[] {1, 4}) {
+                    final TestHelper helper = new SharedProducerForAllClients(numProducerCoalesce,
+                            numConsumerCoalesce, size, 0, new MutableInt(20)) {
+                        @Override
+                        void createNuggetsForTableMaker(final Supplier<Table> makeTable) {
+                            super.createNuggetsForTableMaker(makeTable);
+                            final RemoteNugget nugget = nuggets.get(nuggets.size() - 1);
+                            final int numColumns = nugget.originalTable.numColumns();
+                            final BitSet firstHalf = new BitSet();
+                            firstHalf.set(0, Math.max(1, numColumns / 2));
+                            final BitSet everyOther = new BitSet();
+                            for (int ci = 0; ci < numColumns; ci += 2) {
+                                everyOther.set(ci);
+                            }
+                            nugget.newClient(null, firstHalf, "full first half");
+                            nugget.newClient(null, everyOther, "full every other");
+                            nugget.newClient(RowSetFactory.fromRange(0, size / 10), everyOther, "header every other");
+                            nugget.newClient(RowSetFactory.fromRange(size / 2, size * 3L / 4), firstHalf, true,
+                                    "reverse floating first half");
+                        }
+                    };
+                    helper.runTest(() -> {
+                        final ControlledUpdateGraph updateGraph =
+                                ExecutionContext.getContext().getUpdateGraph().cast();
+                        updateGraph.runWithinUnitTestCycle(() -> GenerateTableUpdates.generateShiftAwareTableUpdates(
+                                GenerateTableUpdates.DEFAULT_PROFILE, helper.size, helper.random, helper.sourceTable,
+                                helper.columnInfo));
+                    });
+                }
+            }
+        }
+    }
+
     @Test
     public void testViewportSubscribeMidCycle() {
         // This is a regression test for IDS-6392. It catches a race between when a subscription becomes active and
@@ -488,6 +530,62 @@ public abstract class BarrageMessageSubscriptionRoundTripTestBase extends Barrag
     }
 
     /**
+     * A message holds added rows only for the columns that some subscription needs, so a message holds no added rows
+     * for the table's first column when no subscription has that column. The added rows of the other columns must still
+     * be split into record batches at the chunk boundaries of those other columns. Without that split, a delta that
+     * adds more rows than one chunk holds fails with "Subset {..} is out of bounds for context of size N".
+     * <p>
+     * A delta exercises the failure deterministically. A growing snapshot reaches the same writer code, but the size of
+     * each growth round depends on timing, so a snapshot message of more than one chunk cannot be forced here.
+     */
+    @Test
+    public void testAddedRowsSpanningChunksWithoutTheFirstColumn() {
+        final QueryTable sourceTable = TstUtils.testRefreshingTable(RowSetFactory.empty().toTracking(),
+                TableTools.intCol("I"), TableTools.stringCol("S"));
+        sourceTable.setFlat();
+
+        // every column except the first
+        final BitSet allButFirst = new BitSet();
+        allButFirst.set(1, sourceTable.numColumns());
+
+        final RemoteNugget remoteNugget = new RemoteNugget(() -> sourceTable);
+        // noinspection unused
+        final RemoteClient fullClient = remoteNugget.newClient(null, allButFirst, "full-without-first-column");
+        // noinspection unused
+        final RemoteClient viewportClient = remoteNugget.newClient(RowSetFactory.fromRange(0, Long.MAX_VALUE - 1),
+                allButFirst, "viewport-without-first-column");
+
+        // Obtain the (empty) initial snapshot.
+        flushProducerTable();
+        remoteNugget.flushClientEvents();
+        final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
+        updateGraph.runWithinUnitTestCycle(updateSourceCombiner::run);
+        remoteNugget.validate("initial snapshot");
+
+        // Add enough rows in one delta to fill more than two delta chunks.
+        final int numRows = 2 * BarrageMessageProducer.DELTA_CHUNK_SIZE + 100;
+        final int[] ints = new int[numRows];
+        final String[] strings = new String[numRows];
+        for (int ii = 0; ii < numRows; ++ii) {
+            ints[ii] = ii;
+            strings[ii] = ii % 7 == 0 ? null : Integer.toString(ii);
+        }
+        updateGraph.runWithinUnitTestCycle(() -> {
+            final RowSet added = RowSetFactory.flat(numRows);
+            TstUtils.addToTable(sourceTable, added, TableTools.intCol("I", ints), TableTools.stringCol("S", strings));
+            sourceTable.notifyListeners(new TableUpdateImpl(added, RowSetFactory.empty(), RowSetFactory.empty(),
+                    RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY));
+        });
+
+        // This flush serializes the delta; without the fix it throws:
+        // "Subset {..} is out of bounds for context of size N"
+        flushProducerTable();
+        remoteNugget.flushClientEvents();
+        updateGraph.runWithinUnitTestCycle(updateSourceCombiner::run);
+        remoteNugget.validate("added rows spanning chunks without the first column");
+    }
+
+    /**
      * The server grows a large full subscription's initial snapshot over several rounds; every growth message
      * re-declares the entire consistent key space as {@code added} while only {@code rowsIncluded} is incremental. A
      * client that consumes those messages across more than one of its own update graph cycles must publish none of
@@ -526,7 +624,7 @@ public abstract class BarrageMessageSubscriptionRoundTripTestBase extends Barrag
         // deliver them one at a time, running an update graph cycle in between as a live client would
         final ControlledUpdateGraph updateGraph = ExecutionContext.getContext().getUpdateGraph().cast();
         while (client.pendingMessageCount() > 0) {
-            client.flushEventsToReplicatedTable(1);
+            client.flushMessages(1);
             updateGraph.runWithinUnitTestCycle(updateSourceCombiner::run);
         }
 
@@ -582,7 +680,7 @@ public abstract class BarrageMessageSubscriptionRoundTripTestBase extends Barrag
         // Deliver only the first of the growth messages, leaving the subscription unsatisfied.
         flushProducerTable();
         assertTrue(client.pendingMessageCount() > 1);
-        client.flushEventsToReplicatedTable(1);
+        client.flushMessages(1);
         updateGraph.runWithinUnitTestCycle(updateSourceCombiner::run);
         assertNotNull(client.barrageTable.getServerViewport());
 
@@ -595,7 +693,7 @@ public abstract class BarrageMessageSubscriptionRoundTripTestBase extends Barrag
 
         // Once the subscription is satisfied the table may be listened to as usual.
         while (client.pendingMessageCount() > 0) {
-            client.flushEventsToReplicatedTable(1);
+            client.flushMessages(1);
             updateGraph.runWithinUnitTestCycle(updateSourceCombiner::run);
         }
         assertNull(client.barrageTable.getServerViewport());

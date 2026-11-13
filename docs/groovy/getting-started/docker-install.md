@@ -32,7 +32,7 @@ The following shell command downloads and runs the `server-slim` image (Deephave
 docker run --name deephaven -p 10000:10000 ghcr.io/deephaven/server-slim:latest
 ```
 
-Once the container is running, [open the Deephaven IDE](#open-the-deephaven-ide) and log in with the [pre-shared key](../how-to-guides/authentication/auth-psk.md) that Deephaven prints to the Docker logs. To set your own key, see [Set a pre-shared key](#set-a-pre-shared-key).
+Once the container is running, [open the Deephaven IDE](#open-the-deephaven-ide) and log in. That section explains where to find your key, and [Set a pre-shared key](#set-a-pre-shared-key) shows how to choose your own.
 
 > [!WARNING]
 > [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/) creates a new container from an image every time you call it. To reuse a container that `docker run` created, use [`docker start`](https://docs.docker.com/reference/cli/docker/container/start/).
@@ -99,7 +99,7 @@ After you run a `docker create` command or edit the file, see [Start the applica
 
 ### Set a pre-shared key
 
-By default, Deephaven uses a [pre-shared key](../how-to-guides/authentication/auth-psk.md) to authenticate users. If you don't set a key, Deephaven generates a random one and prints it to the Docker logs.
+By default, Deephaven uses a [pre-shared key](../how-to-guides/authentication/auth-psk.md) to authenticate users. Set your own key so you don't have to [look up the generated one](#open-the-deephaven-ide) each time the server starts.
 
 The following deployment sets the pre-shared key to `YOUR_PASSWORD_HERE`.
 
@@ -338,7 +338,7 @@ Once Deephaven is running, you can open the Deephaven IDE in your web browser. T
 
 If you [changed the port](#change-the-port), replace `10000` with that port.
 
-Unless you [disabled authentication](#disable-authentication), the IDE asks for a key when it opens. Enter the [pre-shared key](#set-a-pre-shared-key) you set. If you didn't set one, use the key that Deephaven prints to the container's logs. To see the logs, run [`docker logs deephaven`](https://docs.docker.com/reference/cli/docker/container/logs/), or [`docker compose logs`](https://docs.docker.com/reference/cli/docker/compose/logs/) for a Compose deployment.
+Unless you [disabled authentication](#disable-authentication), the IDE asks for a key when it opens. Enter the [pre-shared key](#set-a-pre-shared-key) you set. If you didn't set one, Deephaven generates a random key each time it starts and prints it to the container's logs. To see the logs, run [`docker logs deephaven`](https://docs.docker.com/reference/cli/docker/container/logs/), or [`docker compose logs`](https://docs.docker.com/reference/cli/docker/compose/logs/) for a Compose deployment.
 
 ![The Deephaven IDE upon startup](../assets/tutorials/launch/ide_startup.png)
 
@@ -346,7 +346,7 @@ Unless you [disabled authentication](#disable-authentication), the IDE asks for 
 
 The [Deephaven examples repository](https://github.com/deephaven/examples) contains datasets that help you learn Deephaven. Deephaven's documentation uses these datasets extensively, and some examples require them.
 
-If you chose a [deployment](#choose-a-deployment) with example data, the example datasets appear in a `data/examples` directory next to your `docker-compose.yml` file. Inside the container, the same files are at `/data/examples`. See [Docker data volumes](../conceptual/docker-data-volumes.md) for more information on how Docker mounts files.
+If you chose a [deployment](#choose-a-deployment) with example data, the example datasets appear in a `data/examples` directory next to your `docker-compose.yml` file. Inside the container, the same files are at `/data/examples`. See [Docker bind mounts](../conceptual/docker-data-volumes.md) for more information on how Docker mounts files.
 
 ## Next steps
 
@@ -359,5 +359,5 @@ import { TutorialCTA } from '@theme/deephaven/CTA';
 ## Related documentation
 
 - [Pre-shared key authentication](../how-to-guides/authentication/auth-psk.md)
-- [Docker data volumes](../conceptual/docker-data-volumes.md)
+- [Docker bind mounts](../conceptual/docker-data-volumes.md)
 - [Build and launch Deephaven from source code](./launch-build.md)

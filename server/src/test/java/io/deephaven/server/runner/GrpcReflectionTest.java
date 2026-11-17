@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,15 +76,16 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
                 ServerReflectionGrpc.newBlockingV2Stub(channel).serverReflectionInfo();
         final ServerReflectionResponse response;
         try {
-            if (!call.write(ServerReflectionRequest.newBuilder().setListServices("").build(), TIMEOUT_SECONDS,
-                    TimeUnit.SECONDS)) {
-                throw new TimeoutException("Timed out writing the reflection request");
-            }
+            // Throws TimeoutException on timeout. The return value is deliberately ignored: if the call was already
+            // closed (e.g. the request was denied), the read below reports the call's status.
+            call.write(ServerReflectionRequest.newBuilder().setListServices("").build(), TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS);
             call.halfClose();
             response = call.read(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } finally {
             call.cancel("done", null);
         }
+        assertThat(response).as("reflection response").isNotNull();
         return response.getListServicesResponse().getServiceList().stream()
                 .map(ServiceResponse::getName).collect(Collectors.toSet());
     }

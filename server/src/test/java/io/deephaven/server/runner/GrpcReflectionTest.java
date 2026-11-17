@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
  * governs access.
  */
 public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBase {
+    private static final long TIMEOUT_SECONDS = 30;
     private final TestAuthorizationProvider authProvider = new TestAuthorizationProvider();
     private String previousEnabled;
 
@@ -75,9 +77,12 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
                 ServerReflectionGrpc.newBlockingV2Stub(channel).serverReflectionInfo();
         final ServerReflectionResponse response;
         try {
-            call.write(ServerReflectionRequest.newBuilder().setListServices("").build());
+            if (!call.write(ServerReflectionRequest.newBuilder().setListServices("").build(), TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS)) {
+                throw new TimeoutException("Timed out writing the reflection request");
+            }
             call.halfClose();
-            response = call.read(30, TimeUnit.SECONDS);
+            response = call.read(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } finally {
             call.cancel("done", null);
         }

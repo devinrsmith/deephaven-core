@@ -6,18 +6,61 @@ package io.deephaven.server.grpc;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.ElementsIntoSet;
+import io.deephaven.configuration.Configuration;
+import io.deephaven.server.session.SessionService;
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
+import io.grpc.ServerInterceptors;
+import io.grpc.protobuf.services.ProtoReflectionServiceV1;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.ServiceLoader;
 import java.util.Set;
 
+/**
+ * Binds the gRPC services that are decided at runtime, rather than at compile time:
+ * <ul>
+ * <li>Any {@link BindableService} registered with the {@link ServiceLoader} (a
+ * {@code META-INF/services/io.grpc.BindableService} entry on the classpath). These are bound as-is; they are not
+ * wrapped in any authorization, so an implementation is responsible for its own.</li>
+ * <li>The gRPC server reflection service ({@code grpc.reflection.v1.ServerReflection}), when the configuration property
+ * {@value #REFLECTION_ENABLED_PROP} is {@code true}. It is disabled by default. Reflection exposes the schema of every
+ * service on the server, so it is only available to callers with an authenticated session.</li>
+ * </ul>
+ */
 @Module
 public class GrpcModule {
+
+    /**
+     * Set to {@code true} to enable the gRPC server reflection service. Defaults to {@code false}.
+     */
+    public static final String REFLECTION_ENABLED_PROP = "grpc.reflection.enabled";
+
     @Provides
     @ElementsIntoSet
     static Set<BindableService> primeServices() {
         return Collections.emptySet();
+    }
+
+    @Provides
+    @ElementsIntoSet
+    static Set<BindableService> serviceLoaderServices() {
+        final Set<BindableService> services = new HashSet<>();
+        ServiceLoader.load(BindableService.class).forEach(services::add);
+        return services;
+    }
+
+    @Provides
+    @ElementsIntoSet
+    static Set<BindableService> reflectionService(final SessionService sessionService) {
+        if (!Configuration.getInstance().getBooleanWithDefault(REFLECTION_ENABLED_PROP, false)) {
+            return Collections.emptySet();
+        }
+        final ServerInterceptor requireSession = new RequireSessionInterceptor(sessionService);
+        final BindableService reflection = () -> ServerInterceptors.intercept(
+                ProtoReflectionServiceV1.newInstance(), requireSession);
+        return Set.of(reflection);
     }
 
     @Provides

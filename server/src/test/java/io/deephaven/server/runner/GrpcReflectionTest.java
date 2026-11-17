@@ -71,14 +71,15 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
     private static Set<String> listServices(final Channel channel) throws Exception {
         final BlockingClientCall<ServerReflectionRequest, ServerReflectionResponse> call =
                 ServerReflectionGrpc.newBlockingV2Stub(channel).serverReflectionInfo();
+        final ServerReflectionResponse response;
         try {
             call.write(ServerReflectionRequest.newBuilder().setListServices("").build());
             call.halfClose();
-            final ServerReflectionResponse response = call.read(30, TimeUnit.SECONDS);
-            return response.getListServicesResponse().getServiceList().stream()
-                    .map(ServiceResponse::getName).collect(Collectors.toSet());
+            response = call.read(30, TimeUnit.SECONDS);
         } finally {
             call.cancel("done", null);
         }
+        return response.getListServicesResponse().getServiceList().stream()
+                .map(ServiceResponse::getName).collect(Collectors.toSet());
     }
 }

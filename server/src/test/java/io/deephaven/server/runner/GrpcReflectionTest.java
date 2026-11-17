@@ -8,18 +8,17 @@ import io.deephaven.server.auth.AuthorizationProvider;
 import io.deephaven.server.test.TestAuthorizationProvider;
 import io.grpc.Channel;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import io.grpc.StatusException;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
 import io.grpc.reflection.v1.ServerReflectionRequest;
 import io.grpc.reflection.v1.ServerReflectionResponse;
 import io.grpc.reflection.v1.ServiceResponse;
-import io.grpc.stub.StreamObserver;
+import io.grpc.stub.BlockingClientCall;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -63,34 +62,23 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
         authProvider.getServerReflectionAuthWiring().delegate = new ServerReflectionAuthWiring.DenyAll();
         try {
             listServices(channel.channel());
-            failBecauseExceptionWasNotThrown(StatusRuntimeException.class);
-        } catch (java.util.concurrent.ExecutionException e) {
-            assertThat(Status.fromThrowable(e.getCause()).getCode()).isEqualTo(Status.Code.PERMISSION_DENIED);
+            failBecauseExceptionWasNotThrown(StatusException.class);
+        } catch (StatusException e) {
+            assertThat(e.getStatus().getCode()).isEqualTo(Status.Code.PERMISSION_DENIED);
         }
     }
 
     private static Set<String> listServices(final Channel channel) throws Exception {
-        final CompletableFuture<ServerReflectionResponse> result = new CompletableFuture<>();
-        final StreamObserver<ServerReflectionRequest> requests = ServerReflectionGrpc.newStub(channel)
-                .serverReflectionInfo(new StreamObserver<>() {
-                    @Override
-                    public void onNext(final ServerReflectionResponse value) {
-                        result.complete(value);
-                    }
-
-                    @Override
-                    public void onError(final Throwable t) {
-                        result.completeExceptionally(t);
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        result.completeExceptionally(new IllegalStateException("completed without a response"));
-                    }
-                });
-        requests.onNext(ServerReflectionRequest.newBuilder().setListServices("").build());
-        requests.onCompleted();
-        return result.get(30, TimeUnit.SECONDS).getListServicesResponse().getServiceList().stream()
-                .map(ServiceResponse::getName).collect(Collectors.toSet());
+        final BlockingClientCall<ServerReflectionRequest, ServerReflectionResponse> call =
+                ServerReflectionGrpc.newBlockingV2Stub(channel).serverReflectionInfo();
+        try {
+            call.write(ServerReflectionRequest.newBuilder().setListServices("").build());
+            call.halfClose();
+            final ServerReflectionResponse response = call.read(30, TimeUnit.SECONDS);
+            return response.getListServicesResponse().getServiceList().stream()
+                    .map(ServiceResponse::getName).collect(Collectors.toSet());
+        } finally {
+            call.cancel("done", null);
+        }
     }
 }

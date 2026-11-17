@@ -8,6 +8,7 @@ import io.deephaven.auth.codegen.impl.ApplicationServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.ConfigServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.ConsoleServiceAuthWiring;
 import io.deephaven.auth.codegen.impl.HealthAuthWiring;
+import io.deephaven.auth.codegen.impl.ServerReflectionAuthWiring;
 import io.deephaven.auth.codegen.impl.HierarchicalTableServiceContextualAuthWiring;
 import io.deephaven.auth.codegen.impl.InputTableServiceContextualAuthWiring;
 import io.deephaven.auth.codegen.impl.ObjectServiceAuthWiring;
@@ -61,6 +62,11 @@ public class AllowAllAuthorizationProvider implements AuthorizationProvider {
     @Override
     public HealthAuthWiring getHealthAuthWiring() {
         return new HealthAuthWiring.AllowAll();
+    }
+
+    @Override
+    public ServerReflectionAuthWiring getServerReflectionAuthWiring() {
+        return new ServerReflectionAuthWiring.AllowAll();
     }
 
     @Override

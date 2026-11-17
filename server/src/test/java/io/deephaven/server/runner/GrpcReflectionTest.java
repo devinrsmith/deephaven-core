@@ -3,6 +3,9 @@
 //
 package io.deephaven.server.runner;
 
+import io.deephaven.auth.codegen.impl.ServerReflectionAuthWiring;
+import io.deephaven.server.auth.AuthorizationProvider;
+import io.deephaven.server.test.TestAuthorizationProvider;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -24,10 +27,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
- * Tests that {@code grpc.reflection.enabled} turns the gRPC reflection service on, and that it requires a session.
+ * Tests that {@code grpc.reflection.enabled} turns the gRPC reflection service on, and that the authorization wiring
+ * governs access.
  */
 public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBase {
     private static final String PROP = "grpc.reflection.enabled";
+    private final TestAuthorizationProvider authProvider = new TestAuthorizationProvider();
+
+    @Override
+    protected AuthorizationProvider authorizationProvider() {
+        return authProvider;
+    }
 
     @Override
     @Before
@@ -49,12 +59,13 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
     }
 
     @Test
-    public void unauthenticatedRejected() throws Exception {
+    public void deniedByAuthorizationWiring() throws Exception {
+        authProvider.getServerReflectionAuthWiring().delegate = new ServerReflectionAuthWiring.DenyAll();
         try {
-            listServices(createChannel().channel());
+            listServices(channel.channel());
             failBecauseExceptionWasNotThrown(StatusRuntimeException.class);
         } catch (java.util.concurrent.ExecutionException e) {
-            assertThat(Status.fromThrowable(e.getCause()).getCode()).isEqualTo(Status.Code.UNAUTHENTICATED);
+            assertThat(Status.fromThrowable(e.getCause()).getCode()).isEqualTo(Status.Code.PERMISSION_DENIED);
         }
     }
 

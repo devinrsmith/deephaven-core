@@ -44,6 +44,17 @@ public interface AuthorizationProvider {
     HealthAuthWiring getHealthAuthWiring();
 
     /**
+     * The authorization wiring for the gRPC server reflection service, which is only bound when the configuration
+     * property {@code grpc.reflection.enabled} is {@code true}. Defaults to denying all requests, so that providers
+     * written before reflection was available do not expose it.
+     *
+     * @return the authorization provider for ServerReflection
+     */
+    default ServerReflectionAuthWiring getServerReflectionAuthWiring() {
+        return new ServerReflectionAuthWiring.DenyAll();
+    }
+
+    /**
      * @return the authorization provider for TableService
      */
     TableServiceContextualAuthWiring getTableServiceContextualAuthWiring();

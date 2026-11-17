@@ -19,7 +19,8 @@ public interface ServerReflectionAuthWiring extends ServiceAuthWiring<ServerRefl
      * @param delegate the real service implementation
      * @return the wrapped service implementation
      */
-    default ServerServiceDefinition intercept(ServerReflectionGrpc.ServerReflectionImplBase delegate) {
+    default ServerServiceDefinition intercept(
+            ServerReflectionGrpc.ServerReflectionImplBase delegate) {
         final ServerServiceDefinition service = delegate.bindService();
         final ServerServiceDefinition.Builder serviceBuilder =
                 ServerServiceDefinition.builder(service.getServiceDescriptor());
@@ -32,7 +33,7 @@ public interface ServerReflectionAuthWiring extends ServiceAuthWiring<ServerRefl
     }
 
     /**
-     * Authorize a request to open a bidirectional-streaming rpc ServerReflectionInfo.
+     * Authorize a request to open a client-streaming rpc ServerReflectionInfo.
      *
      * @param authContext the authentication context of the request
      * @throws io.grpc.StatusRuntimeException if the user is not authorized to invoke ServerReflectionInfo
@@ -46,12 +47,14 @@ public interface ServerReflectionAuthWiring extends ServiceAuthWiring<ServerRefl
      * @param request the request to authorize
      * @throws io.grpc.StatusRuntimeException if the user is not authorized to invoke ServerReflectionInfo
      */
-    void onMessageReceivedServerReflectionInfo(AuthContext authContext, ServerReflectionRequest request);
+    void onMessageReceivedServerReflectionInfo(AuthContext authContext,
+            ServerReflectionRequest request);
 
     class AllowAll implements ServerReflectionAuthWiring {
         public void onCallStartedServerReflectionInfo(AuthContext authContext) {}
 
-        public void onMessageReceivedServerReflectionInfo(AuthContext authContext, ServerReflectionRequest request) {}
+        public void onMessageReceivedServerReflectionInfo(AuthContext authContext,
+                ServerReflectionRequest request) {}
     }
 
     class DenyAll implements ServerReflectionAuthWiring {
@@ -59,7 +62,8 @@ public interface ServerReflectionAuthWiring extends ServiceAuthWiring<ServerRefl
             ServiceAuthWiring.operationNotAllowed();
         }
 
-        public void onMessageReceivedServerReflectionInfo(AuthContext authContext, ServerReflectionRequest request) {
+        public void onMessageReceivedServerReflectionInfo(AuthContext authContext,
+                ServerReflectionRequest request) {
             ServiceAuthWiring.operationNotAllowed();
         }
     }
@@ -73,7 +77,8 @@ public interface ServerReflectionAuthWiring extends ServiceAuthWiring<ServerRefl
             }
         }
 
-        public void onMessageReceivedServerReflectionInfo(AuthContext authContext, ServerReflectionRequest request) {
+        public void onMessageReceivedServerReflectionInfo(AuthContext authContext,
+                ServerReflectionRequest request) {
             if (delegate != null) {
                 delegate.onMessageReceivedServerReflectionInfo(authContext, request);
             }

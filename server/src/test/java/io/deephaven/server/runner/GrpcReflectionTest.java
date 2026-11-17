@@ -4,6 +4,7 @@
 package io.deephaven.server.runner;
 
 import io.deephaven.auth.codegen.impl.ServerReflectionAuthWiring;
+import io.deephaven.configuration.Configuration;
 import io.deephaven.server.auth.AuthorizationProvider;
 import io.deephaven.server.grpc.GrpcReflectionModule;
 import io.deephaven.server.test.TestAuthorizationProvider;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
  */
 public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBase {
     private final TestAuthorizationProvider authProvider = new TestAuthorizationProvider();
+    private String previousEnabled;
 
     @Override
     protected AuthorizationProvider authorizationProvider() {
@@ -41,13 +43,13 @@ public class GrpcReflectionTest extends DeephavenApiServerSingleAuthenticatedBas
     @Override
     @Before
     public void setUp() throws Exception {
-        System.setProperty(GrpcReflectionModule.REFLECTION_ENABLED_PROP, "true");
+        previousEnabled = Configuration.getInstance().setProperty(GrpcReflectionModule.REFLECTION_ENABLED_PROP, "true");
         super.setUp();
     }
 
     @After
     public void clearProperty() {
-        System.clearProperty(GrpcReflectionModule.REFLECTION_ENABLED_PROP);
+        Configuration.getInstance().setProperty(GrpcReflectionModule.REFLECTION_ENABLED_PROP, previousEnabled);
     }
 
     @Test

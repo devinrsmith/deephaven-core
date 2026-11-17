@@ -55,6 +55,13 @@ ROOT_DIR=$PROTO_DIR
 DEEPHAVEN_VERSION=${DEEPHAVEN_VERSION}  PATH=authorization-codegen:$PATH protoc --service-auth-wiring_out=$OUT_DIR -I $PROTO_DIR    \
      $ROOT_DIR/health.proto
 
+OUT_DIR=authorization/src/main/java/
+PROTO_DIR=../grpc/src/proto/grpc/reflection/v1/
+ROOT_DIR=$PROTO_DIR
+
+DEEPHAVEN_VERSION=${DEEPHAVEN_VERSION}  PATH=authorization-codegen:$PATH protoc --service-auth-wiring_out=$OUT_DIR -I $PROTO_DIR    \
+     $ROOT_DIR/reflection.proto
+
 ./gradlew :authorization:spotlessApply
 ```
 

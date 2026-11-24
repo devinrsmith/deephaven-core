@@ -63,5 +63,21 @@ For more information, see:
 The [styleguide](style/README.md) is applied globally to the entire project, except for generated code that gets checked in.
 To apply the styleguide, run `./gradlew spotlessApply`.
 
+## Dependency verification
+
+Gradle verifies the SHA-256 checksum of every resolved dependency and plugin artifact (including POMs and Gradle
+module metadata) against `gradle/verification-metadata.xml`, so artifacts are the same locally and in CI. The
+Gradle distribution itself is pinned by `distributionSha256Sum` in `gradle/wrapper/gradle-wrapper.properties`.
+
+When you add or update a dependency, the build fails with a verification error until the new checksums are recorded.
+After confirming the change is intended, update the file with:
+
+```shell
+./gradlew --write-verification-metadata sha256 spotlessCheck quick testClasses
+```
+
+and commit the result. See the Gradle documentation on
+[verifying dependencies](https://docs.gradle.org/current/userguide/dependency_verification.html).
+
 ## Deephaven Contributor License Agreement (CLA)
 The [Deephaven Contributor License Agreement (CLA)](https://github.com/deephaven/cla/blob/main/CLA.md) must be accepted before a pull request can be merged.  A bot monitors all pull requests.  Follow the instructions from the bot in the pull request comments to accept the CLA.  The Deephaven CLA and associated signatures are maintained at [https://github.com/deephaven/cla](https://github.com/deephaven/cla).
